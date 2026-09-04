@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="pawBlue" x1="20%" y1="0%" x2="80%" y2="100%">
+      <stop offset="0%" stop-color="#0062ff"/>
+      <stop offset="45%" stop-color="#0047d4"/>
+      <stop offset="100%" stop-color="#002d99"/>
+    </linearGradient>
+
+    <filter id="softGlow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#0038b8" flood-opacity="0.3"/>
+    </filter>
+  </defs>
+
+  <g filter="url(#softGlow)" transform="translate(0, -10)">
+    <!-- Outer Left Toe -->
+    <ellipse cx="145" cy="240" rx="42" ry="54" transform="rotate(-28 145 240)" fill="url(#pawBlue)"/>
+
+    <!-- Center Left Toe -->
+    <ellipse cx="212" cy="180" rx="43" ry="58" transform="rotate(-9 212 180)" fill="url(#pawBlue)"/>
+
+    <!-- Center Right Toe -->
+    <ellipse cx="300" cy="180" rx="43" ry="58" transform="rotate(9 300 180)" fill="url(#pawBlue)"/>
+
+    <!-- Outer Right Toe -->
+    <ellipse cx="367" cy="240" rx="42" ry="54" transform="rotate(28 367 240)" fill="url(#pawBlue)"/>
+
+    <!-- Main Central Pad -->
+    <path d="M 256 226
+             C 212 226, 164 262, 160 312
+             C 156 358, 188 386, 216 386
+             C 238 386, 248 370, 256 370
+             C 264 370, 274 386, 296 386
+             C 324 386, 356 358, 352 312
+             C 348 262, 300 226, 256 226 Z"
+          fill="url(#pawBlue)"/>
+  </g>
+</svg>

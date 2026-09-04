@@ -1,0 +1,323 @@
+#!/usr/bin/env php
+<?php
+/**
+ * ASENA Enterprise - Command Line Interface (CLI)
+ * 
+ * Usage:
+ *   php bin/asena status
+ *   php bin/asena set-tier <basic|standard|premium|pharmacy|enterprise>
+ *   php bin/asena package --tier=<tier> [--name=<client_name>]
+ *   php bin/asena autoship:run
+ *   php bin/asena migrate
+ */
+
+define('ASENA_ROOT', dirname(__DIR__));
+require_once ASENA_ROOT . '/includes/Feature.php';
+
+// CLI Output Formatting Helpers
+function out(string $msg, string $color = '37'): void {
+    echo "\033[{$color}m{$msg}\033[0m\n";
+}
+function success(string $msg): void { out("✔ $msg", '32'); }
+function info(string $msg): void { out("ℹ $msg", '36'); }
+function warn(string $msg): void { out("⚠ $msg", '33'); }
+function error(string $msg): void { out("✖ $msg", '31'); }
+
+$cmd = $argv[1] ?? 'help';
+
+switch ($cmd) {
+    case 'status':
+        showStatus();
+        break;
+
+    case 'set-tier':
+        $tier = $argv[2] ?? null;
+        if (!$tier) {
+            error("لطفاً نام نسخه را وارد کنید: basic, standard, premium, pharmacy, enterprise");
+            exit(1);
+        }
+        setTierInEnv($tier);
+        break;
+
+    case 'package':
+        $options = parseArgs(array_slice($argv, 2));
+        $tier = $options['tier'] ?? 'enterprise';
+        $clientName = $options['name'] ?? 'Client';
+        packageDistribution($tier, $clientName);
+        break;
+
+    case 'autoship:run':
+        runAutoshipWorker();
+        break;
+
+    case 'help':
+    default:
+        showHelp();
+        break;
+}
+
+/**
+ * Display system status & feature matrix
+ */
+function showStatus(): void {
+    out("\n==================================================", '34');
+    out("       ASENA ENTERPRISE - STATUS & TIERS          ", '34');
+    out("==================================================\n", '34');
+
+    $tier = Feature::currentTier();
+    $name = Feature::tierName();
+
+    info("نسخه فعال (Active Tier): \033[1m$tier\033[0m ($name)");
+    out("\nقابلیت‌های فعال (Active Features):", '33');
+
+    $allTiers = Feature::allTiers();
+    $activeFeatures = $allTiers[$tier]['features'] ?? [];
+
+    foreach ($activeFeatures as $feat) {
+        out("  ✔ $feat", '32');
+    }
+
+    out("\nنسخه‌های قابل ارائه برای خریداران:", '36');
+    foreach ($allTiers as $code => $data) {
+        $marker = ($code === $tier) ? '➔ [ACTIVE]' : ' ';
+        out("  $marker {$code}: {$data['name']} (" . count($data['features']) . " قابلیت)");
+    }
+
+    // Database check
+    out("\nوضعیت دیتابیس:", '33');
+    try {
+        require_once ASENA_ROOT . '/includes/db.php';
+        /** @var PDO $pdo */
+        $tables = $pdo->query("SHOW TABLES")->fetchAll(PDO::FETCH_COLUMN);
+        success("اتصال موفق به دیتابیس (" . count($tables) . " جدول پیدا شد)");
+    } catch (Exception $e) {
+        warn("عدم امکان اتصال به دیتابیس: " . $e->getMessage());
+    }
+    echo "\n";
+}
+
+/**
+ * Set active tier in .env file
+ */
+function setTierInEnv(string $tier): void {
+    $validTiers = array_keys(Feature::allTiers());
+    if (!in_array($tier, $validTiers, true)) {
+        error("نسخه نامعتبر است! گزینه‌های مجاز: " . implode(', ', $validTiers));
+        exit(1);
+    }
+
+    $envFile = ASENA_ROOT . '/.env';
+    if (!file_exists($envFile)) {
+        $example = ASENA_ROOT . '/.env.example';
+        if (file_exists($example)) {
+            copy($example, $envFile);
+        } else {
+            file_put_contents($envFile, "ASENA_TIER=enterprise\n");
+        }
+    }
+
+    $content = file_get_contents($envFile);
+    if (preg_match('/^ASENA_TIER=.*$/m', $content)) {
+        $content = preg_replace('/^ASENA_TIER=.*$/m', "ASENA_TIER={$tier}", $content);
+    } else {
+        $content .= "\nASENA_TIER={$tier}\n";
+    }
+
+    file_put_contents($envFile, $content);
+    success("نسخه با موفقیت به «{$tier}» تغییر یافت.");
+    Feature::setTier($tier);
+    info("عنوان نسخه: " . Feature::tierName());
+}
+
+/**
+ * Package a standalone distribution zip ready for customer hosting (cPanel/DirectAdmin)
+ */
+function packageDistribution(string $tier, string $clientName): void {
+    $validTiers = array_keys(Feature::allTiers());
+    if (!in_array($tier, $validTiers, true)) {
+        error("نسخه درخواستی نامعتبر است: $tier");
+        exit(1);
+    }
+
+    $dateStr = date('Ymd_His');
+    $safeName = preg_replace('/[^a-zA-Z0-9_-]/', '_', $clientName);
+    $buildId = "asena_{$tier}_{$safeName}_{$dateStr}";
+    $distDir = ASENA_ROOT . '/dist';
+    $buildDir = "{$distDir}/{$buildId}";
+    $zipFile = "{$distDir}/{$buildId}_cPanel_Ready.zip";
+
+    if (!is_dir($distDir)) {
+        mkdir($distDir, 0777, true);
+    }
+
+    info("در حال آماده‌سازی پکیج تجاری برای: $clientName (نسخه: $tier)");
+    info("مسیر ساخت موقت: $buildDir");
+
+    mkdir($buildDir, 0777, true);
+
+    // Exclude patterns
+    $excludes = [
+        '.git',
+        'dist',
+        'tests',
+        '.vscode',
+        'bin',
+        'uploads/*',
+        '*.zip',
+        '*.pdf',
+        '*.log',
+    ];
+
+    $excludeFlags = '';
+    foreach ($excludes as $exc) {
+        $excludeFlags .= " --exclude=" . escapeshellarg($exc);
+    }
+
+    // Rsync to build directory
+    $rsyncCmd = "rsync -avq {$excludeFlags} " . escapeshellarg(ASENA_ROOT . '/') . ' ' . escapeshellarg($buildDir . '/');
+    shell_exec($rsyncCmd);
+
+    // Write customized .env
+    $clientEnv = <<<ENV
+# ASENA Customer Deployment Configuration
+APP_NAME="ASENA {$tier}"
+ASENA_TIER={$tier}
+APP_ENV=production
+APP_DEBUG=false
+
+# Database Configuration (Enter customer's cPanel MySQL details)
+DB_HOST=localhost
+DB_NAME=asena_client
+DB_USER=cpanel_user
+DB_PASS=cpanel_password
+
+# Base URL
+BASE_URL="http://yourdomain.com/"
+ENV;
+    file_put_contents($buildDir . '/.env', $clientEnv);
+
+    // Create automated web installer in root for cPanel
+    $installerPhp = <<<PHP
+<?php
+// ASENA One-Click Web Installer
+if (file_exists(__DIR__ . '/config.php') && filesize(__DIR__ . '/config.php') > 50) {
+    die("سامانه قبلاً نصب شده است. برای نصب مجدد فایل config.php را حذف کنید یا وارد پنل شوید: <a href='login.php'>ورود</a>");
+}
+
+if (\$_SERVER['REQUEST_METHOD'] === 'POST') {
+    \$host = trim(\$_POST['db_host'] ?? 'localhost');
+    \$dbname = trim(\$_POST['db_name'] ?? '');
+    \$user = trim(\$_POST['db_user'] ?? '');
+    \$pass = trim(\$_POST['db_pass'] ?? '');
+
+    try {
+        \$pdo = new PDO("mysql:host=\$host;dbname=\$dbname;charset=utf8mb4", \$user, \$pass, [
+            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION
+        ]);
+
+        \$sqlFile = __DIR__ . '/petshop_db.sql';
+        if (file_exists(\$sqlFile)) {
+            \$sql = file_get_contents(\$sqlFile);
+            \$pdo->exec(\$sql);
+        }
+
+        \$configContent = "<?php\\ndefine('DB_HOST', '{\$host}');\\ndefine('DB_NAME', '{\$dbname}');\\ndefine('DB_USER', '{\$user}');\\ndefine('DB_PASS', '{\$pass}');\\n";
+        file_put_contents(__DIR__ . '/config.php', \$configContent);
+
+        header('Location: login.php?installed=1');
+        exit;
+    } catch (Exception \$e) {
+        \$error = "خطا در اتصال به دیتابیس: " . \$e->getMessage();
+    }
+}
+?>
+<!DOCTYPE html>
+<html dir="rtl" lang="fa">
+<head>
+    <meta charset="utf-8">
+    <title>نصب خودکار سامانه آسنا | ASENA Installer</title>
+    <style>
+        body { font-family: system-ui, sans-serif; background: #001a48; color: #fff; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; }
+        .card { background: #fff; color: #1e293b; padding: 32px; border-radius: 20px; width: 100%; max-width: 440px; box-shadow: 0 20px 40px rgba(0,0,0,0.3); }
+        h1 { margin-top: 0; color: #002d72; font-size: 20px; text-align: center; }
+        label { display: block; margin-top: 14px; font-weight: bold; font-size: 13px; }
+        input { width: 100%; padding: 10px 12px; margin-top: 6px; border: 1px solid #cbd5e1; border-radius: 10px; box-sizing: border-box; }
+        button { width: 100%; margin-top: 24px; padding: 12px; background: #002d72; color: #fff; font-weight: bold; border: none; border-radius: 10px; cursor: pointer; font-size: 14px; }
+        .err { background: #fee2e2; color: #991b1b; padding: 10px; border-radius: 8px; margin-bottom: 14px; font-size: 13px; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>راه‌اندازی سامانه آسنا (نسخه {$tier})</h1>
+        <?php if (!empty(\$error)): ?><div class="err"><?= htmlspecialchars(\$error) ?></div><?php endif; ?>
+        <form method="POST">
+            <label>هاست دیتابیس (معمولاً localhost):</label>
+            <input type="text" name="db_host" value="localhost" required>
+            <label>نام پایگاه داده (Database Name):</label>
+            <input type="text" name="db_name" required>
+            <label>نام کاربری دیتابیس (User):</label>
+            <input type="text" name="db_user" required>
+            <label>رمز عبور دیتابیس (Password):</label>
+            <input type="password" name="db_pass">
+            <button type="submit">نصب پایگاه داده و شروع کار</button>
+        </form>
+    </div>
+</body>
+</html>
+PHP;
+    file_put_contents($buildDir . '/install.php', $installerPhp);
+
+    // Create ZIP archive
+    info("در حال فشرده‌سازی و ساخت فایل zip نهایی...");
+    $zipCmd = "cd " . escapeshellarg($buildDir) . " && zip -rq " . escapeshellarg($zipFile) . " .";
+    shell_exec($zipCmd);
+
+    // Clean up temporary build folder
+    shell_exec("rm -rf " . escapeshellarg($buildDir));
+
+    $fileSizeMb = round(filesize($zipFile) / 1048576, 2);
+    success("پکیج با موفقیت آماده شد!");
+    out("فایل زیپ نهایی: $zipFile ({$fileSizeMb} MB)", '32');
+    out("کافی است این فایل را در File Manager هاست خریدار (cPanel/DirectAdmin) آپلود کرده و اکسترکت کنید.", '36');
+}
+
+/**
+ * Headless Autoship Worker Runner
+ */
+function runAutoshipWorker(): void {
+    info("در حال اجرای موتور بررسی و ارسال سفارشات خودکار دوره‌ای (Autoship)...");
+    $workerFile = ASENA_ROOT . '/actions/autoship_worker.php';
+    if (file_exists($workerFile)) {
+        require_once $workerFile;
+        success("فرآیند Autoship با موفقیت خاتمه یافت.");
+    } else {
+        warn("فایل actions/autoship_worker.php پیدا نشد.");
+    }
+}
+
+/**
+ * Helper to parse CLI arguments
+ */
+function parseArgs(array $args): array {
+    $result = [];
+    foreach ($args as $arg) {
+        if (strpos($arg, '--') === 0) {
+            $parts = explode('=', substr($arg, 2), 2);
+            $result[$parts[0]] = $parts[1] ?? true;
+        }
+    }
+    return $result;
+}
+
+/**
+ * Display help instructions
+ */
+function showHelp(): void {
+    out("ASENA Enterprise CLI Tool\n", '34');
+    out("دستورات موجود:");
+    out("  php bin/asena status                         مشاهده وضعیت نسخه فعال و قابلیت‌ها");
+    out("  php bin/asena set-tier <tier>                تغییر نسخه در حال اجرا (basic, standard, premium, pharmacy, enterprise)");
+    out("  php bin/asena package --tier=<tier>          تولید فایل زیپ اختصاصی برای هاست خریدار");
+    out("  php bin/asena autoship:run                   اجرای تسک پس‌زمینه شارژ و پردازش سفارشات ادواری");
+    echo "\n";
+}

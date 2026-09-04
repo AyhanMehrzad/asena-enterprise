@@ -1,0 +1,26 @@
+# Dependencies & Environment
+vendor/
+node_modules/
+.env
+
+# System & OS
+.DS_Store
+Thumbs.db
+*.log
+*.tmp
+*.bak
+
+# IDE & Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Temporary uploads / cache
+uploads/tmp/
+.tempmediaStorage/
+
+# Build artifacts
+dist/*.zip
+dist/*_*
+!dist/.gitkeep

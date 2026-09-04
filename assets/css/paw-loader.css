@@ -1,0 +1,134 @@
+/* ASENA Multi-Animal Liquid Fill Rising Paw Loader */
+#asena-paw-loader {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    height: 100dvh !important;
+    z-index: 2147483647 !important;
+    background-color: #ffffff !important;
+    backdrop-filter: blur(16px) !important;
+    -webkit-backdrop-filter: blur(16px) !important;
+    display: grid !important;
+    place-items: center !important;
+    margin: 0 !important;
+    padding: 16px !important;
+    box-sizing: border-box !important;
+    transition: opacity 0.35s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.35s !important;
+    user-select: none !important;
+    -webkit-user-select: none !important;
+    overflow: hidden !important;
+    direction: rtl !important;
+}
+
+#asena-paw-loader.loader-hidden {
+    opacity: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+}
+
+.paw-loader-card {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    text-align: center !important;
+    gap: 14px !important;
+    padding: 24px 28px !important;
+    border-radius: 26px !important;
+    background: #ffffff !important;
+    width: min(88vw, 300px) !important;
+    margin: 0 auto !important;
+    box-sizing: border-box !important;
+    box-shadow: 0 20px 45px -12px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(0, 0, 0, 0.05) !important;
+    animation: pawCardFloat 2.5s ease-in-out infinite alternate !important;
+}
+
+.paw-svg-container {
+    width: 108px;
+    height: 108px;
+    position: relative;
+    padding: 8px;
+    border-radius: 24px;
+    background: #f8fafc;
+    border: 1px solid #f1f5f9;
+}
+
+/* Background outline path */
+.paw-bg-path {
+    fill: #e2e8f0;
+    opacity: 0.45;
+    transition: all 0.3s;
+}
+
+/* Rising liquid animation with smooth meniscus fill */
+@keyframes liquidRise {
+    0% {
+        clip-path: inset(100% 0 0 0);
+    }
+    30% {
+        clip-path: inset(65% 0 0 0);
+    }
+    60% {
+        clip-path: inset(30% 0 0 0);
+    }
+    85% {
+        clip-path: inset(10% 0 0 0);
+    }
+    100% {
+        clip-path: inset(0% 0 0 0);
+    }
+}
+
+.paw-fill-path {
+    animation: liquidRise 1.4s cubic-bezier(0.33, 1, 0.68, 1) forwards;
+    filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.12));
+}
+
+.paw-loader-title {
+    font-family: 'Vazirmatn', 'Geist', sans-serif;
+    font-size: 15px;
+    font-weight: 800;
+    letter-spacing: -0.3px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.paw-loader-sub {
+    font-family: 'Vazirmatn', sans-serif;
+    font-size: 12px;
+    color: #64748b;
+    font-weight: 600;
+    margin-top: 3px;
+}
+
+.paw-progress-pill {
+    width: 120px;
+    height: 4px;
+    background: #e2e8f0;
+    border-radius: 999px;
+    overflow: hidden;
+    position: relative;
+    margin-top: 10px;
+}
+
+.paw-progress-bar {
+    height: 100%;
+    width: 0%;
+    border-radius: 999px;
+    animation: barProgress 1.4s cubic-bezier(0.33, 1, 0.68, 1) forwards;
+}
+
+@keyframes barProgress {
+    0% { width: 0%; }
+    100% { width: 100%; }
+}
+
+@keyframes pawCardFloat {
+    0% { transform: translateY(0px); }
+    100% { transform: translateY(-6px); }
+}

@@ -1,0 +1,75 @@
+# robots.txt for ASENA Veterinary Clinic, Pet Shop & Pharmacy Platform
+# Website: https://asena.company/
+
+User-agent: *
+Allow: /
+Allow: /llms.txt
+Allow: /llms-full.txt
+Allow: /standard/
+Allow: /pharmacy-standard/
+Allow: /premium/
+Allow: /pharmacy-premium/
+Allow: /basic/
+Allow: /pharmacy-basic/
+Allow: /assets/
+Allow: /uploads/
+Allow: /*.css$
+Allow: /*.js$
+Allow: /*.png$
+Allow: /*.jpg$
+Allow: /*.jpeg$
+Allow: /*.webp$
+Allow: /*.svg$
+Allow: /*.woff2$
+
+# Dedicated Rules for Generative AI Search Engines (GEO)
+User-agent: GPTBot
+Allow: /
+Allow: /llms.txt
+Allow: /llms-full.txt
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+Allow: /llms.txt
+Allow: /llms-full.txt
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: Applebot-Extended
+Allow: /
+
+User-agent: CCBot
+Allow: /
+
+# Disallow internal scripts, APIs, admin panels, and payment processing
+Disallow: /admin/
+Disallow: /actions/
+Disallow: /logs/
+Disallow: /tmp/
+Disallow: /*/admin/
+Disallow: /*/actions/
+Disallow: /cart.php
+Disallow: /*/cart.php
+Disallow: /payment.php
+Disallow: /*/payment.php
+Disallow: /mock_payment_gateway.php
+Disallow: /*/mock_payment_gateway.php
+Disallow: /charity_payment.php
+Disallow: /*/charity_payment.php
+Disallow: /subscription_checkout.php
+Disallow: /*/subscription_checkout.php
+Disallow: /setup_db.php
+Disallow: /*/setup_db.php
+Disallow: /config.php
+Disallow: /*/config.php
+Disallow: /.env*
+
+# Declare dynamic XML Sitemap for Search Engines
+Sitemap: https://asena.company/sitemap.xml
