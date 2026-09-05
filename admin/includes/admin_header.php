@@ -189,6 +189,8 @@ $adminName = $adminCheck['name'] ?? 'مدیر سیستم';
             $activeKey = 'verifications';
         } elseif ($currentFile === 'security_logs.php') {
             $activeKey = 'security_logs';
+        } elseif ($currentFile === 'payouts.php') {
+            $activeKey = 'payouts';
         } elseif ($currentFile === 'guide.php') {
             $activeKey = 'guide';
         }
@@ -206,6 +208,7 @@ $adminName = $adminCheck['name'] ?? 'مدیر سیستم';
             ],
             'فروشگاه و اشتراک' => [
                 'orders' => ['icon' => 'local_shipping', 'title' => 'سفارشات و ارسال', 'url' => 'orders.php'],
+                'payouts' => ['icon' => 'account_balance_wallet', 'title' => 'تسویه حساب و وجوه امانی (Escrow)', 'url' => 'payouts.php'],
                 'inventory' => ['icon' => 'inventory_2', 'title' => 'انبار و محصولات', 'url' => 'inventory.php'],
                 'rfq_management' => ['icon' => 'request_quote', 'title' => 'استعلام عمده و مناقصات (RFQ)', 'url' => 'rfq_management.php'],
                 'subscriptions' => ['icon' => 'event_repeat', 'title' => 'مدیریت اشتراک‌ها (Autoship)', 'url' => 'subscriptions.php', 'feature' => 'autoship'],

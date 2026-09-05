@@ -330,6 +330,103 @@ $_SESSION['user_id'] = $testUid;
 $loadedUser = AuthGuard::user($pdo);
 assertTest(is_array($loadedUser) && $loadedUser['role'] === 'doctor', 'AuthGuard: Resolves authenticated user role accurately');
 
+// =========================================================================
+// 11. Testing Marketplace Escrow, Iran Post API & Weekly Payout Engine
+// =========================================================================
+echo "\n11. Testing Marketplace Escrow, Iran Post API & Weekly Payouts:\n";
+
+$iranPost = App::iranPost();
+$escrow = App::escrow();
+
+assertTest($iranPost instanceof IranPostService, 'Service Container: App::iranPost() returns IranPostService singleton');
+assertTest($escrow instanceof MarketplaceEscrowService, 'Service Container: App::escrow() returns MarketplaceEscrowService singleton');
+
+// Test 24-digit barcode validation
+$validBarcode = '100012345678901234567890';
+$invalidBarcode = '123456';
+assertTest($iranPost->isValidBarcode($validBarcode) === true, 'IranPostService: Validates authentic 24-digit barcode format');
+assertTest($iranPost->isValidBarcode($invalidBarcode) === false, 'IranPostService: Rejects malformed tracking barcode');
+
+// Test Tracking simulation events
+$trackRes = $iranPost->trackBarcode($validBarcode);
+assertTest($trackRes['success'] === true && count($trackRes['events']) >= 4, 'IranPostService: Generates full multi-stage transit timeline');
+assertTest($trackRes['is_delivered'] === true, 'IranPostService: Correctly detects delivered parcel status');
+
+// Test Sheba validation
+$validSheba = 'IR120120000000001234567890';
+$invalidSheba = 'IR1234';
+$bankUpdateValid = $escrow->updateBankDetails($testUid, ['bank_sheba' => $validSheba, 'bank_name' => 'بانک سامان']);
+$bankUpdateInvalid = $escrow->updateBankDetails($testUid, ['bank_sheba' => $invalidSheba]);
+assertTest($bankUpdateValid['success'] === true, 'MarketplaceEscrowService: Accepts valid 24-digit Iranian Sheba (IR...)');
+assertTest($bankUpdateInvalid['success'] === false, 'MarketplaceEscrowService: Rejects malformed Sheba number');
+
+// Test Escrow Inflow for a test order
+$testOrderStmt = $pdo->prepare("
+    INSERT INTO orders (user_id, total_amount, status, post_tracking_code) 
+    VALUES (:uid, 500000, 'shipped', :barcode)
+");
+$testOrderStmt->execute([
+    'uid' => $testUid,
+    'barcode' => $validBarcode
+]);
+$testOrderId = (int)$pdo->lastInsertId();
+
+$itemStmt = $pdo->prepare("
+    INSERT INTO order_items (order_id, product_id, seller_id, quantity, price_at_purchase, product_name_snapshot) 
+    VALUES (:oid, 1, :sid, 2, 250000, 'غذای سگ رویال کنین')
+");
+$itemStmt->execute([
+    'oid' => $testOrderId,
+    'sid' => $testUid
+]);
+
+// Deposit order to escrow
+$depositRes = $escrow->depositOrderToEscrow($testOrderId);
+assertTest($depositRes['success'] === true, 'MarketplaceEscrowService: Successfully deposits paid order into corporate escrow');
+
+// Check commission deduction (10% on 500,000 = 50,000 commission, 450,000 net)
+assertTest($depositRes['total_commission'] === 50000, 'MarketplaceEscrowService: Accurately deducts 10% platform corporate commission');
+assertTest($depositRes['total_seller_net'] === 450000, 'MarketplaceEscrowService: Holds remaining 90% net revenue in seller pending escrow');
+
+// Verify seller wallet has pending balance
+$walletBefore = $escrow->getSellerWallet($testUid);
+assertTest((int)$walletBefore['balance_pending_escrow'] >= 450000, 'MarketplaceEscrowService: Reflects pending escrow balance in seller wallet');
+
+// Simulate Post Delivery Sync
+$syncPostRes = $iranPost->syncInTransitShipments();
+assertTest($syncPostRes['success'] === true && $syncPostRes['delivered_count'] >= 1, 'IranPostService: Automatically syncs delivered status from Post API');
+
+// Verify order marked delivered and 7-day maturation scheduled
+$checkOrder = $pdo->prepare("SELECT status, delivered_at, escrow_status FROM orders WHERE id = ?");
+$checkOrder->execute([$testOrderId]);
+$orderRow = $checkOrder->fetch(PDO::FETCH_ASSOC);
+assertTest($orderRow['status'] === 'delivered' && $orderRow['escrow_status'] === 'delivered_in_inspection', 'IranPostService: Order transitions to delivered with 7-day inspection window active');
+
+// Test 7-Day Guarantee Matured Release
+// Fast-forward payout_eligible_at to simulate 7 days elapsed
+$pdo->prepare("
+    UPDATE seller_escrow_ledger 
+    SET payout_eligible_at = DATE_SUB(NOW(), INTERVAL 1 HOUR) 
+    WHERE order_id = ?
+")->execute([$testOrderId]);
+
+$releaseRes = $escrow->releaseMaturedEscrow();
+assertTest($releaseRes['success'] === true && $releaseRes['released_count'] >= 1, 'MarketplaceEscrowService: Releases escrow funds to available balance after 7-day period expires');
+
+$walletAfter = $escrow->getSellerWallet($testUid);
+assertTest((int)$walletAfter['balance_available_for_payout'] >= 450000, 'MarketplaceEscrowService: Moves matured balance to balance_available_for_payout');
+
+// Test Weekly Paya Batch Generation
+$payoutRes = $escrow->generateWeeklyPayoutBatch(1);
+assertTest($payoutRes['success'] === true, 'MarketplaceEscrowService: Generates weekly Central Bank Paya payout batch');
+assertTest(str_contains($payoutRes['export_content'], 'IR120120000000001234567890'), 'MarketplaceEscrowService: Paya export file contains valid seller Sheba and amounts');
+assertTest(str_starts_with($payoutRes['batch_code'], 'PAYA-'), 'MarketplaceEscrowService: Formats standard Paya batch tracking reference');
+
+// Verify wallet balance moved to settled lifetime
+$walletFinal = $escrow->getSellerWallet($testUid);
+assertTest((int)$walletFinal['balance_available_for_payout'] === 0, 'MarketplaceEscrowService: Resets available payout balance to zero after batch dispatch');
+assertTest((int)$walletFinal['balance_settled_lifetime'] >= 450000, 'MarketplaceEscrowService: Credits lifetime settled volume in seller wallet');
+
 echo "\n=========================================================\n";
 echo "   TEST SUMMARY: {$passedTests} / {$totalTests} TESTS PASSED (" . round(($passedTests / $totalTests) * 100) . "%)\n";
 echo "=========================================================\n";

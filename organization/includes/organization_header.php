@@ -89,6 +89,11 @@ $currentFile = basename($_SERVER['PHP_SELF']);
                     <span>داروخانه و محصولات اختصاصی</span>
                 </a>
 
+                <a href="wallet.php" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all <?= $currentFile === 'wallet.php' ? 'bg-sky-600 text-white shadow-md' : 'text-slate-400 hover:text-white hover:bg-white/5' ?>">
+                    <span class="material-symbols-outlined text-lg">account_balance_wallet</span>
+                    <span>کیف پول و تسویه حساب (Escrow)</span>
+                </a>
+
                 <div class="pt-3 border-t border-white/10">
                     <a href="../organization_profile.php?slug=<?= urlencode($orgSlug) ?>" target="_blank" class="flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold text-slate-400 hover:text-white hover:bg-white/5 transition-all">
                         <div class="flex items-center gap-3">

@@ -21,6 +21,8 @@ require_once __DIR__ . '/OrganizationService.php';
 require_once __DIR__ . '/SecurityAuditService.php';
 require_once __DIR__ . '/WafMiddleware.php';
 require_once __DIR__ . '/AuthGuard.php';
+require_once __DIR__ . '/IranPostService.php';
+require_once __DIR__ . '/MarketplaceEscrowService.php';
 
 class App {
     private static ?PDO $db = null;
@@ -37,6 +39,8 @@ class App {
     private static ?RoleVerificationService $roleVerification = null;
     private static ?OrganizationService $organization = null;
     private static ?SecurityAuditService $securityAudit = null;
+    private static ?IranPostService $iranPost = null;
+    private static ?MarketplaceEscrowService $escrow = null;
 
 
     public static function db(): PDO {
@@ -135,6 +139,20 @@ class App {
             self::$securityAudit = new SecurityAuditService(self::db());
         }
         return self::$securityAudit;
+    }
+
+    public static function iranPost(): IranPostService {
+        if (self::$iranPost === null) {
+            self::$iranPost = new IranPostService(self::db());
+        }
+        return self::$iranPost;
+    }
+
+    public static function escrow(): MarketplaceEscrowService {
+        if (self::$escrow === null) {
+            self::$escrow = new MarketplaceEscrowService(self::db());
+        }
+        return self::$escrow;
     }
 
     /**

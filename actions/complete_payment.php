@@ -176,6 +176,16 @@ try {
     }
 } // End of else block for regular orders
 
+    // 2.5 Escrow Deposit: Hold seller net revenue in corporate escrow pending 7-day post delivery
+    if (!$is_booking && !$is_subscription && !empty($order_id)) {
+        try {
+            require_once __DIR__ . '/../includes/App.php';
+            App::escrow()->depositOrderToEscrow((int)$order_id);
+        } catch (Throwable $escrowEx) {
+            error_log("Escrow Deposit Warning: " . $escrowEx->getMessage());
+        }
+    }
+
     // 3. Loyalty points, booking approval & SMS Notifications
     require_once __DIR__ . '/../includes/SmsService.php';
     $sms = new SmsService();

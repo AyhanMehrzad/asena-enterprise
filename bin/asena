@@ -50,6 +50,18 @@ switch ($cmd) {
         runAutoshipWorker();
         break;
 
+    case 'escrow:sync-post':
+        runEscrowPostSyncWorker();
+        break;
+
+    case 'escrow:release-matured':
+        runEscrowReleaseWorker();
+        break;
+
+    case 'escrow:weekly-payout':
+        runEscrowWeeklyPayoutWorker();
+        break;
+
     case 'b2b:rfq-expire':
         runRfqExpireWorker();
         break;
@@ -483,6 +495,49 @@ function runDatabaseBackup(): void {
 }
 
 /**
+ * Iran Post Web Service Delivery Verification Worker
+ */
+function runEscrowPostSyncWorker(): void {
+    info("در حال استعلام وضعیت بسته‌های پستی در جریان از وب‌سرویس پست ایران...");
+    require_once ASENA_ROOT . '/includes/App.php';
+    $res = App::iranPost()->syncInTransitShipments();
+    success("بررسی بسته‌های پستی به اتمام رسید:");
+    out("  تعداد کل مرسولات بررسی شده: {$res['checked_count']}");
+    out("  تعداد مرسولات تحویل داده شده (شروع مهلت ۷ روزه): {$res['delivered_count']}", '32');
+    out("  تعداد مرسولات در مسیر: {$res['in_transit_count']}", '33');
+}
+
+/**
+ * Escrow 7-Day Guarantee Matured Release Worker
+ */
+function runEscrowReleaseWorker(): void {
+    info("در حال بررسی وجوه امانی گذشته از موعد ۷ روزه ضمانت بازگشت...");
+    require_once ASENA_ROOT . '/includes/App.php';
+    $res = App::escrow()->releaseMaturedEscrow();
+    success("عملیات آزادسازی وجوه منقضی شده با موفقیت انجام شد:");
+    out("  تعداد اقلام آزاد شده: {$res['released_count']}");
+    out("  مجموع مبلغ واریز شده به موجودی تسویه: " . number_format($res['total_amount']) . " تومان", '32');
+    out("  تعداد فروشندگان متأثر: {$res['sellers_affected_count']}");
+}
+
+/**
+ * Weekly Central Bank Paya Interbank Payout Batch Worker
+ */
+function runEscrowWeeklyPayoutWorker(): void {
+    info("در حال پردازش چرخه تسویه حساب هفتگی و صدور فایل پایا...");
+    require_once ASENA_ROOT . '/includes/App.php';
+    $res = App::escrow()->generateWeeklyPayoutBatch(1);
+    if ($res['success']) {
+        success("بسته تسویه حساب هفتگی صادر شد:");
+        out("  شناسه دسته پایا: {$res['batch_code']}", '32');
+        out("  مجموع مبلغ تسویه شده: " . number_format($res['total_amount']) . " تومان", '32');
+        out("  تعداد فروشندگان تسویه شده: {$res['seller_count']}");
+    } else {
+        warn($res['message']);
+    }
+}
+
+/**
  * Database Restore CLI Tool
  */
 function runDatabaseRestore(string $filepath): void {
@@ -533,6 +588,9 @@ function showHelp(): void {
     out("  php bin/asena set-tier <tier>                تغییر نسخه در حال اجرا (basic, standard, premium, pharmacy, enterprise)");
     out("  php bin/asena package --tier=<tier>          تولید فایل زیپ اختصاصی برای هاست خریدار");
     out("  php bin/asena autoship:run                   اجرای موتور اتوشیپ و ارسال پیامک‌های نوبت (Chewy)");
+    out("  php bin/asena escrow:sync-post               استعلام خودکار تحویل از وب‌سرویس پست ایران و آغاز مهلت ۷ روزه");
+    out("  php bin/asena escrow:release-matured         آزادسازی وجوه امانی سپری شده از موعد ۷ روزه به موجودی تسویه");
+    out("  php bin/asena escrow:weekly-payout           اجرای چرخه هفتگی تسویه، صدور فایل پایا (بانک مرکزی) و ارسال پیامک");
     out("  php bin/asena b2b:rfq-expire                 منقضی‌سازی پیش‌فاکتورهای گذشته از موعد استعلام عمده (Alibaba)");
     out("  php bin/asena flash:sync                     همگام‌سازی و بستن پیشنهادات شگفت‌انگیز منقضی (Digikala)");
     out("  php bin/asena system:health                  بررسی سلامت زیرساخت، دیتابیس و دسترسی‌های دایرکتوری");
