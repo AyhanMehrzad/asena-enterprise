@@ -295,6 +295,149 @@ $autoship_price = round($base_price * (100 - $autoship_discount) / 100);
                     <?php endif; ?>
                 </div>
             </div>
+    </div>
+
+    <?php
+    // Amazon.com Benchmark: Frequently Bought Together
+    require_once __DIR__ . '/includes/RecommendationService.php';
+    $recService = new RecommendationService($pdo);
+    $bundle = $recService->getFrequentlyBoughtTogether($product_id);
+
+    // Alibaba.com Benchmark: Wholesale Pricing Tiers
+    $wholesaleTiers = App::wholesale()->getPriceTiers($product_id);
+    ?>
+
+    <!-- Amazon.com Benchmark: خرید مکرر با هم (Frequently Bought Together) -->
+    <?php if ($bundle): ?>
+    <section class="glass-card p-6 md:p-8 mb-12 border-2 border-primary/15 relative overflow-hidden">
+        <div class="flex items-center gap-3 mb-6">
+            <span class="material-symbols-outlined text-secondary-container text-2xl">shopping_basket</span>
+            <div>
+                <h2 class="text-lg md:text-xl font-bold text-primary">خرید مکرر با هم (پک اقتصادی پیشنهادی)</h2>
+                <p class="text-xs text-on-surface-variant">مشتریانی که این کالا را خریده‌اند، این اقلام را نیز به همراه آن تهیه کرده‌اند</p>
+            </div>
+        </div>
+
+        <div class="flex flex-col lg:flex-row items-center justify-between gap-8">
+            <!-- Items Visual Display -->
+            <div class="flex flex-wrap items-center justify-center gap-4 sm:gap-6 flex-1">
+                <!-- Item 1: Current Product -->
+                <div class="flex items-center gap-3 bg-white p-3 rounded-2xl border border-outline-variant/30 shadow-sm max-w-[260px]">
+                    <img src="<?php echo htmlspecialchars($product['image_url'] ?? 'assets/images/logo.png'); ?>" alt="<?php echo htmlspecialchars($product['name']); ?>" class="w-16 h-16 object-cover rounded-xl">
+                    <div>
+                        <div class="text-xs font-bold text-slate-800 line-clamp-1"><?php echo htmlspecialchars($product['name']); ?></div>
+                        <div class="text-xs font-bold text-primary mt-1 toman-price"><?php echo number_format($product['price']); ?> تومان</div>
+                    </div>
+                </div>
+
+                <span class="material-symbols-outlined text-secondary-container font-extrabold text-2xl">+</span>
+
+                <!-- Item 2: Recommended Complement -->
+                <div class="flex items-center gap-3 bg-white p-3 rounded-2xl border border-outline-variant/30 shadow-sm max-w-[260px]">
+                    <img src="<?php echo htmlspecialchars($bundle['complement_product']['image_url'] ?? 'assets/images/logo.png'); ?>" alt="<?php echo htmlspecialchars($bundle['complement_product']['name']); ?>" class="w-16 h-16 object-cover rounded-xl">
+                    <div>
+                        <div class="text-xs font-bold text-slate-800 line-clamp-1"><?php echo htmlspecialchars($bundle['complement_product']['name']); ?></div>
+                        <div class="text-xs font-bold text-primary mt-1 toman-price"><?php echo number_format($bundle['complement_product']['price']); ?> تومان</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Price & Add Bundle CTA -->
+            <div class="flex flex-col items-center lg:items-end gap-2 text-center lg:text-right border-t lg:border-t-0 lg:border-r border-outline-variant/30 pt-4 lg:pt-0 lg:pr-8">
+                <div class="text-xs text-on-surface-variant">قیمت مجموع دو کالا:</div>
+                <div class="flex items-center gap-2">
+                    <span class="line-through text-xs text-slate-400 toman-price"><?php echo number_format($bundle['regular_total']); ?></span>
+                    <span class="text-xl font-extrabold text-emerald-600 toman-price"><?php echo number_format($bundle['discounted_total']); ?> تومان</span>
+                </div>
+                <span class="bg-emerald-50 text-emerald-700 text-xs font-bold px-2.5 py-1 rounded-lg border border-emerald-200">
+                    ۵٪ تخفیف خرید بسته ای (سود شما: <?php echo number_format($bundle['savings']); ?> تومان)
+                </span>
+                <button type="button" onclick="addToCart(this, <?php echo $product['id']; ?>); setTimeout(() => addToCart(this, <?php echo $bundle['complement_product']['id']; ?>), 300);" class="mt-3 px-6 py-3 bg-secondary-container text-white text-xs font-bold rounded-xl hover:bg-[#ea580c] transition-all shadow-md flex items-center gap-2">
+                    <span class="material-symbols-outlined text-sm">add_circle</span>
+                    افزودن هر دو قلم به سبد خرید
+                </button>
+            </div>
+        </div>
+    </section>
+    <?php endif; ?>
+
+    <!-- Alibaba.com Benchmark: جدول قیمت عمده و استعلام کلینیک‌ها (Wholesale Tier & RFQ) -->
+    <section class="glass-card p-6 md:p-8 mb-12 border border-outline-variant/30">
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+            <div class="flex items-center gap-3">
+                <span class="material-symbols-outlined text-primary text-2xl">warehouse</span>
+                <div>
+                    <h2 class="text-lg md:text-xl font-bold text-primary">خرید عمده، تخفیف پلکانی و استعلام کلینیک‌ها</h2>
+                    <p class="text-xs text-on-surface-variant">ویژه داروخانه‌ها، کلینیک‌های دامپزشکی و پرورش‌دهندگان دارای پروانه معتبر</p>
+                </div>
+            </div>
+            <button type="button" onclick="document.getElementById('rfqModal').classList.remove('hidden')" class="px-5 py-2.5 bg-primary/10 hover:bg-primary hover:text-white text-primary text-xs font-bold rounded-xl transition-all flex items-center gap-2 border border-primary/20">
+                <span class="material-symbols-outlined text-sm">request_quote</span>
+                درخواست استعلام قیمت اختصاصی (RFQ)
+            </button>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div class="wholesale-tier-card">
+                <div class="text-xs text-slate-500 font-bold mb-1">خرید تکی و خرد</div>
+                <div class="text-sm font-extrabold text-slate-800">۱ تا ۹ عدد</div>
+                <div class="text-base font-extrabold text-primary mt-2 toman-price"><?php echo number_format($product['price']); ?> تومان</div>
+                <div class="text-[11px] text-slate-400 mt-1">قیمت رسمی مصرف‌کننده</div>
+            </div>
+            <div class="wholesale-tier-card">
+                <div class="text-xs text-emerald-600 font-bold mb-1">بسته کلینیکی (۱۰٪ تخفیف)</div>
+                <div class="text-sm font-extrabold text-slate-800">۱۰ تا ۴۹ عدد</div>
+                <div class="text-base font-extrabold text-emerald-600 mt-2 toman-price"><?php echo number_format(round($product['price'] * 0.9)); ?> تومان</div>
+                <div class="text-[11px] text-emerald-700 mt-1">تحویل اکسپرس با بارنامه</div>
+            </div>
+            <div class="wholesale-tier-card active">
+                <div class="text-xs text-secondary-container font-bold mb-1">پالت عمده همکاران (۲۰٪ تخفیف)</div>
+                <div class="text-sm font-extrabold text-slate-800">۵۰ عدد به بالا</div>
+                <div class="text-base font-extrabold text-secondary-container mt-2 toman-price"><?php echo number_format(round($product['price'] * 0.8)); ?> تومان</div>
+                <div class="text-[11px] text-orange-700 mt-1">امکان تسویه اعتباری و فاکتور رسمی</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- RFQ Tender Modal for Clinics -->
+    <div id="rfqModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-lg w-full p-6 md:p-8 shadow-2xl relative text-right border border-outline-variant/30">
+            <div class="flex items-center justify-between pb-4 mb-4 border-b border-outline-variant/20">
+                <h3 class="text-lg font-bold text-primary flex items-center gap-2">
+                    <span class="material-symbols-outlined text-secondary-container">request_quote</span>
+                    ثبت استعلام عمده قیمت (RFQ)
+                </h3>
+                <button type="button" onclick="document.getElementById('rfqModal').classList.add('hidden')" class="text-slate-400 hover:text-slate-600">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+            <form action="actions/rfq_action.php" method="POST" class="space-y-4">
+                <?php echo csrf_field(); ?>
+                <input type="hidden" name="product_id" value="<?php echo $product['id']; ?>">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">نام کلینیک / داروخانه / مجموعه</label>
+                    <input type="text" name="company_name" required placeholder="مثال: بیمارستان دامپزشکی پایتخت" class="w-full text-xs p-3 rounded-xl border border-slate-200 focus:border-primary outline-none">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">تعداد مورد نیاز</label>
+                        <input type="number" name="quantity" min="10" value="50" required class="w-full text-xs p-3 rounded-xl border border-slate-200 focus:border-primary outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">شماره نظام دامپزشکی</label>
+                        <input type="text" name="vet_license" placeholder="مثال: IR-98432" class="w-full text-xs p-3 rounded-xl border border-slate-200 focus:border-primary outline-none">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">توضیحات و مشخصات سفارش</label>
+                    <textarea name="notes" rows="3" placeholder="تاریخ تحویل مدنظر، شرایط نگهداری، زنجیره سرد و ..." class="w-full text-xs p-3 rounded-xl border border-slate-200 focus:border-primary outline-none"></textarea>
+                </div>
+                <div class="pt-2">
+                    <button type="submit" class="w-full py-3 bg-primary text-white text-xs font-bold rounded-xl hover:bg-primary-hover transition-all shadow-md">
+                        ارسال استعلام و صدور پیش‌فاکتور
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 

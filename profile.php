@@ -672,12 +672,65 @@ $fmtDateText = new IntlDateFormatter('fa_IR@calendar=persian', IntlDateFormatter
                         </div>
                     <?php endif; ?>
 
-                    <!-- Order Footer with Total Amount -->
-                    <div class="flex items-center justify-between pt-3 border-t border-outline-variant/20 text-xs">
-                        <span class="text-on-surface-variant">مبلغ کل فاکتور:</span>
-                        <span class="font-bold text-sm text-primary font-mono">
-                            <span class="text-base text-emerald-700"><?= number_format($order['total_amount']) ?></span> تومان
-                        </span>
+                    <!-- Amazon.com Benchmark: 8-Stage Visual Fulfillment Stepper -->
+                    <?php
+                    $stages = [
+                        'pending_payment' => ['title' => 'ثبت اولیه', 'step' => 1, 'icon' => 'receipt'],
+                        'paid'            => ['title' => 'پرداخت شد', 'step' => 2, 'icon' => 'credit_card'],
+                        'confirmed'       => ['title' => 'تأیید سفارش', 'step' => 3, 'icon' => 'verified'],
+                        'picking'         => ['title' => 'انبارداری', 'step' => 4, 'icon' => 'inventory_2'],
+                        'packed'          => ['title' => 'بسته‌بندی', 'step' => 5, 'icon' => 'package_2'],
+                        'handed_over'     => ['title' => 'تحویل به ناوگان', 'step' => 6, 'icon' => 'local_shipping'],
+                        'out_for_delivery'=> ['title' => 'در مسیر توزیع', 'step' => 7, 'icon' => 'electric_moped'],
+                        'delivered'       => ['title' => 'تحویل شد', 'step' => 8, 'icon' => 'task_alt']
+                    ];
+                    $currentStageKey = $order['status'] ?? 'pending_payment';
+                    $currentStepNum = $stages[$currentStageKey]['step'] ?? 1;
+                    if ($order['status'] === 'shipped') $currentStepNum = 6;
+                    if ($order['status'] === 'processing') $currentStepNum = 4;
+                    ?>
+                    <div class="p-4 bg-slate-50/70 rounded-2xl border border-slate-200/60 my-3">
+                        <div class="flex items-center justify-between text-xs font-bold text-slate-700 mb-3">
+                            <span class="flex items-center gap-1 text-primary">
+                                <span class="material-symbols-outlined text-base text-secondary-container">timeline</span>
+                                رهگیری لحظه‌ای مراحل ارسال (Amazon Fulfillment)
+                            </span>
+                            <span class="text-slate-500 font-normal text-[11px]">مرحله <?= $currentStepNum ?> از ۸</span>
+                        </div>
+                        <div class="overflow-x-auto pb-2">
+                            <div class="flex items-center justify-between min-w-[540px] relative px-2">
+                                <?php foreach($stages as $key => $meta): 
+                                    $isDone = ($meta['step'] < $currentStepNum);
+                                    $isActive = ($meta['step'] === $currentStepNum);
+                                ?>
+                                <div class="flex flex-col items-center text-center relative z-10 w-16">
+                                    <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all shadow-sm
+                                        <?= $isDone ? 'bg-emerald-600 text-white' : ($isActive ? 'bg-primary text-white ring-4 ring-primary/20 scale-110 animate-pulse' : 'bg-white text-slate-400 border border-slate-300') ?>">
+                                        <span class="material-symbols-outlined text-[15px]"><?= $meta['icon'] ?></span>
+                                    </div>
+                                    <span class="text-[10px] font-bold mt-1.5 leading-tight <?= $isActive ? 'text-primary' : ($isDone ? 'text-emerald-700' : 'text-slate-400') ?>">
+                                        <?= $meta['title'] ?>
+                                    </span>
+                                </div>
+                                <?php endforeach; ?>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Order Footer with Total Amount & Tax Invoice Button -->
+                    <div class="flex flex-col sm:flex-row items-center justify-between pt-3 border-t border-outline-variant/20 gap-3 text-xs">
+                        <div class="flex items-center gap-2">
+                            <a href="actions/generate_invoice.php?order_id=<?= $order['id'] ?>" target="_blank" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white hover:bg-primary hover:text-white text-slate-700 text-xs font-bold transition-all shadow-sm border border-slate-200">
+                                <span class="material-symbols-outlined text-sm text-secondary-container">receipt_long</span>
+                                مشاهده فاکتور رسمی ماده ۱۶۹ (قانون مالیات)
+                            </a>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-on-surface-variant">مبلغ کل پرداختی:</span>
+                            <span class="font-bold text-sm text-primary font-mono">
+                                <span class="text-base text-emerald-700"><?= number_format($order['total_amount']) ?></span> تومان
+                            </span>
+                        </div>
                     </div>
                 </div>
             <?php endforeach; ?>
@@ -777,13 +830,68 @@ $fmtDateText = new IntlDateFormatter('fa_IR@calendar=persian', IntlDateFormatter
     </div>
     <?php endforeach; ?>
 <?php endif; ?>
-<!-- Add New Pet Button/Form Area -->
-<div class="pt-2">
-<button onclick="document.getElementById('addPetModal').classList.remove('hidden')" class="w-full border-2 border-dashed border-outline-variant text-on-surface-variant py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 hover:bg-white hover:border-primary-container hover:text-primary transition-all group">
-<span class="material-symbols-outlined group-hover:scale-110 transition-transform">add_circle</span>
-                افزودن حیوان جدید
-            </button>
-</div>
+    <!-- Chewy.com Benchmark: ابزار تخصصی محاسبه بالینی دوز داروی پت (Clinical Dosage Calculator) -->
+    <div class="mt-4 p-4 rounded-2xl bg-gradient-to-r from-blue-50/80 to-indigo-50/80 border border-blue-200/60 text-right">
+        <div class="flex items-center gap-2 mb-2">
+            <span class="material-symbols-outlined text-primary text-xl">calculate</span>
+            <h4 class="text-xs font-bold text-primary">محاسبه‌گر بالینی دوز دارویی پت (بر اساس وزن)</h4>
+        </div>
+        <p class="text-[11px] text-slate-600 mb-3 leading-relaxed">
+            جهت تجویز ایمن دوز ضدانگل، قطره ضدکک و مسکن، وزن پت خود را مشخص کنید:
+        </p>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-3">
+            <div>
+                <label class="block text-[10px] text-slate-500 font-bold mb-1">گونه حیوان</label>
+                <select id="calcSpecies" class="w-full text-xs p-2 rounded-xl bg-white border border-slate-200 outline-none">
+                    <option value="dog">سگ (Dog)</option>
+                    <option value="cat">گربه (Cat)</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-[10px] text-slate-500 font-bold mb-1">وزن پت (کیلوگرم)</label>
+                <input type="number" id="calcWeight" value="10" min="0.5" max="90" step="0.5" class="w-full text-xs p-2 rounded-xl bg-white border border-slate-200 outline-none">
+            </div>
+            <div>
+                <label class="block text-[10px] text-slate-500 font-bold mb-1">نوع دارو / درمان</label>
+                <select id="calcMedType" class="w-full text-xs p-2 rounded-xl bg-white border border-slate-200 outline-none">
+                    <option value="dewormer">قرص ضد انگل عمومی</option>
+                    <option value="flea_tick">ضد کک و کنه موضعی</option>
+                    <option value="antibiotic">آنتی‌بیوتیک عمومی</option>
+                    <option value="pain_relief">مسکن و ضدالتهاب</option>
+                </select>
+            </div>
+        </div>
+        <button type="button" onclick="runDosageCalc()" class="w-full py-2 bg-primary text-white text-xs font-bold rounded-xl hover:bg-primary-hover transition-colors shadow-sm">
+            محاسبه فوری دوز و بازه مجاز
+        </button>
+
+        <div id="dosageResultBox" class="mt-3 p-3 rounded-xl bg-white border border-blue-200 text-xs hidden space-y-1">
+            <div class="font-bold text-primary flex items-center gap-1">
+                <span class="material-symbols-outlined text-sm text-emerald-600">check_circle</span>
+                دوز پیشنهادی: <span id="resDosage" class="text-emerald-700"></span>
+            </div>
+            <div class="text-[11px] text-slate-500" id="resInstructions"></div>
+        </div>
+    </div>
+
+    <script>
+    function runDosageCalc() {
+        const species = document.getElementById('calcSpecies').value;
+        const weight = parseFloat(document.getElementById('calcWeight').value) || 10;
+        const med = document.getElementById('calcMedType').value;
+
+        fetch(`api/v1/pets.php?action=calculate_dosage&species=${species}&weight_kg=${weight}&medication_type=${med}`)
+            .then(res => res.json())
+            .then(res => {
+                if (res.success && res.data) {
+                    const box = document.getElementById('dosageResultBox');
+                    document.getElementById('resDosage').innerText = res.data.dosage_display;
+                    document.getElementById('resInstructions').innerText = res.data.instructions;
+                    box.classList.remove('hidden');
+                }
+            }).catch(e => console.error(e));
+    }
+    </script>
 </div>
 </div><div class="bg-surface-container-lowest rounded-2xl border border-outline-variant shadow-sm overflow-hidden">
 <div class="px-6 py-4 border-b border-outline-variant bg-white flex justify-between items-center">

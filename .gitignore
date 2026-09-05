@@ -19,8 +19,12 @@ Thumbs.db
 # Temporary uploads / cache
 uploads/tmp/
 .tempmediaStorage/
+database/backups/
+*.cache
+*.metadata.json
 
 # Build artifacts
 dist/*.zip
 dist/*_*
 !dist/.gitkeep
+

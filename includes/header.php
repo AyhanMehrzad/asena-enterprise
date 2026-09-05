@@ -1,5 +1,7 @@
 <?php
 require_once __DIR__ . '/db.php';
+require_once __DIR__ . '/App.php';
+App::boot();
 
 // Monthly Loyalty Points Check & Role Refresh
 if (isset($_SESSION['user_id'])) {
@@ -159,8 +161,21 @@ $effective_og_image = isset($og_image) ? (strpos($og_image, 'http') === 0 ? $og_
     <script src="assets/js/tailwindcss-cdn.js"></script>
     <script src="assets/js/tailwind-config.js?v=<?php echo time(); ?>"></script>
     <link rel="stylesheet" href="assets/css/style.css?v=<?php echo time(); ?>">
+    <link rel="stylesheet" href="assets/css/enterprise-ui.css?v=<?php echo time(); ?>">
     <link rel="stylesheet" href="assets/css/paw-loader.css">
     <script src="assets/js/paw-loader.js" defer></script>
+    <!-- PWA Service Worker Registration -->
+    <script>
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', function() {
+            navigator.serviceWorker.register('/sw.js').then(function(reg) {
+                console.log('[PWA] ServiceWorker registered:', reg.scope);
+            }).catch(function(err) {
+                console.warn('[PWA] ServiceWorker error:', err);
+            });
+        });
+    }
+    </script>
 </head>
 <body class="bg-background text-on-background overflow-x-hidden">
 <?php

@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>آسنا | اتصال اینترنت برقرار نیست</title>
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="stylesheet" href="/assets/css/vazirmatn.css">
+    <link rel="stylesheet" href="/assets/css/material-symbols.css">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Vazirmatn', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        body {
+            background-color: #f8fafc;
+            color: #1e293b;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 24px;
+            text-align: center;
+        }
+        .offline-card {
+            background: #ffffff;
+            border-radius: 28px;
+            box-shadow: 0 20px 40px -15px rgba(0, 45, 114, 0.08);
+            border: 1px solid #e2e8f0;
+            max-width: 520px;
+            width: 100%;
+            padding: 48px 32px;
+            position: relative;
+            overflow: hidden;
+        }
+        .offline-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 6px;
+            background: linear-gradient(90deg, #002d72, #10b981, #002d72);
+        }
+        .icon-bubble {
+            width: 88px;
+            height: 88px;
+            border-radius: 24px;
+            background: #eff6ff;
+            color: #002d72;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 24px;
+        }
+        .icon-bubble .material-symbols-outlined {
+            font-size: 44px;
+        }
+        h1 {
+            font-size: 22px;
+            font-weight: 800;
+            color: #0f172a;
+            margin-bottom: 12px;
+        }
+        p {
+            font-size: 14px;
+            color: #64748b;
+            line-height: 1.8;
+            margin-bottom: 28px;
+        }
+        .btn-retry {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            background: #002d72;
+            color: #ffffff;
+            font-size: 15px;
+            font-weight: 700;
+            padding: 14px 28px;
+            border-radius: 16px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 12px rgba(0, 45, 114, 0.25);
+            width: 100%;
+            max-width: 260px;
+            text-decoration: none;
+        }
+        .btn-retry:hover {
+            background: #001f4d;
+            transform: translateY(-2px);
+        }
+        .emergency-box {
+            margin-top: 32px;
+            padding-top: 24px;
+            border-top: 1px dashed #e2e8f0;
+            font-size: 13px;
+            color: #64748b;
+        }
+        .emergency-link {
+            color: #ef4444;
+            font-weight: 800;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 8px;
+            font-size: 16px;
+            direction: ltr;
+        }
+    </style>
+</head>
+<body>
+    <div class="offline-card">
+        <div class="icon-bubble">
+            <span class="material-symbols-outlined">wifi_off</span>
+        </div>
+        <h1>اتصال اینترنت شما برقرار نیست</h1>
+        <p>
+            به نظر می‌رسد ارتباط اینترنتی شما قطع شده است. آسنا صفحات بازدید شده اخیر شما را در حافظه موقت (PWA) ذخیره کرده تا بتوانید اطلاعات کلینیک و اقلام قبلی را مرور کنید.
+        </p>
+
+        <button onclick="window.location.reload()" class="btn-retry">
+            <span class="material-symbols-outlined">refresh</span>
+            تلاش مجدد برای اتصال
+        </button>
+
+        <div class="emergency-box">
+            <div>نیاز فوری به راهنمایی درمانی یا شرایط اورژانس دامپزشکی دارید؟</div>
+            <a href="tel:+989146676978" class="emergency-link">
+                <span class="material-symbols-outlined" style="font-size: 18px;">phone_in_talk</span>
+                +98 914 667 6978
+            </a>
+        </div>
+    </div>
+</body>
+</html>

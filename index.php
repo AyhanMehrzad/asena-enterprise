@@ -91,6 +91,97 @@ $top_donors = $donor_stmt->fetchAll(PDO::FETCH_ASSOC);
             </div>
         </section>
         
+        <?php
+        $activeFlash = App::flashSale()->getActiveFlashSale();
+        if ($activeFlash):
+            $discountPercent = round((1 - ($activeFlash['flash_price'] / max(1, $activeFlash['original_price']))) * 100);
+            $endsTimestamp = strtotime($activeFlash['ends_at']);
+        ?>
+        <!-- Digikala Benchmark: پیشنهاد شگفت‌انگیز (Incredible Offer) Flash Sale Banner -->
+        <section class="flash-sale-wrapper my-6 relative overflow-hidden" id="flashSaleBanner">
+            <div class="flex flex-col lg:flex-row items-center justify-between gap-6 relative z-10">
+                <div class="flex flex-col sm:flex-row items-center gap-5 text-center sm:text-right">
+                    <div class="w-16 h-16 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center text-white shadow-inner flex-shrink-0">
+                        <span class="material-symbols-outlined text-4xl animate-pulse">local_fire_department</span>
+                    </div>
+                    <div>
+                        <div class="flex items-center justify-center sm:justify-start gap-2 mb-1">
+                            <span class="bg-white text-[#ef394e] text-xs font-extrabold px-2.5 py-0.5 rounded-full uppercase tracking-wider">پیشنهاد شگفت‌انگیز</span>
+                            <span class="text-xs text-white/80 font-medium">فرصت محدود</span>
+                        </div>
+                        <h3 class="text-xl sm:text-2xl font-bold text-white"><?php echo htmlspecialchars($activeFlash['title']); ?></h3>
+                        <p class="text-xs sm:text-sm text-white/90 mt-1"><?php echo htmlspecialchars($activeFlash['product_name']); ?></p>
+                    </div>
+                </div>
+
+                <div class="flex flex-col sm:flex-row items-center gap-6 w-full lg:w-auto justify-end">
+                    <!-- Countdown Clock -->
+                    <div class="flex flex-col items-center sm:items-end">
+                        <span class="text-xs text-white/80 mb-1.5 font-medium">زمان باقی‌مانده تا پایان تخفیف:</span>
+                        <div class="countdown-clock" id="flashCountdown" data-end="<?php echo $endsTimestamp; ?>">
+                            <div class="countdown-box"><span id="cdSeconds">00</span><div class="text-[9px] font-normal text-white/70">ثانیه</div></div>
+                            <span class="text-lg font-bold text-white/60">:</span>
+                            <div class="countdown-box"><span id="cdMinutes">00</span><div class="text-[9px] font-normal text-white/70">دقیقه</div></div>
+                            <span class="text-lg font-bold text-white/60">:</span>
+                            <div class="countdown-box"><span id="cdHours">00</span><div class="text-[9px] font-normal text-white/70">ساعت</div></div>
+                        </div>
+                    </div>
+
+                    <!-- Price & Action -->
+                    <div class="flex flex-col items-center sm:items-end gap-2">
+                        <div class="flex items-baseline gap-2">
+                            <span class="bg-amber-400 text-slate-900 font-extrabold text-sm px-2 py-0.5 rounded-lg"><?php echo $discountPercent; ?>% تخفیف</span>
+                            <span class="line-through text-white/60 text-xs toman-price"><?php echo number_format($activeFlash['original_price']); ?></span>
+                            <span class="text-2xl font-extrabold text-white toman-price"><?php echo number_format($activeFlash['flash_price']); ?> تومان</span>
+                        </div>
+                        
+                        <!-- Quota Progress Bar -->
+                        <div class="w-48 sm:w-56">
+                            <div class="flex justify-between text-[11px] text-white/90 mb-1">
+                                <span>ظرفیت باقیمانده</span>
+                                <span><?php echo $activeFlash['claimed_percent']; ?>% فروخته شد</span>
+                            </div>
+                            <div class="progress-container">
+                                <div class="progress-bar-fill" style="width: <?php echo min(100, $activeFlash['claimed_percent']); ?>%;"></div>
+                            </div>
+                        </div>
+
+                        <a href="product_details.php?id=<?php echo $activeFlash['product_id']; ?>" class="mt-2 w-full sm:w-auto px-6 py-2.5 rounded-xl bg-white text-[#ef394e] font-bold text-sm hover:bg-white/90 transition-all shadow-lg text-center">
+                            مشاهده و خرید با تخفیف ویژه
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <script>
+        // Real-time Digikala Countdown Ticker
+        (function() {
+            const clock = document.getElementById('flashCountdown');
+            if (!clock) return;
+            const end = parseInt(clock.getAttribute('data-end')) * 1000;
+
+            function update() {
+                const now = Date.now();
+                const diff = Math.max(0, end - now);
+                const s = Math.floor((diff / 1000) % 60);
+                const m = Math.floor((diff / 1000 / 60) % 60);
+                const h = Math.floor(diff / (1000 * 60 * 60));
+
+                document.getElementById('cdSeconds').innerText = String(s).padStart(2, '0');
+                document.getElementById('cdMinutes').innerText = String(m).padStart(2, '0');
+                document.getElementById('cdHours').innerText = String(h).padStart(2, '0');
+
+                if (diff <= 0) {
+                    document.getElementById('flashSaleBanner')?.remove();
+                }
+            }
+            update();
+            setInterval(update, 1000);
+        })();
+        </script>
+        <?php endif; ?>
+        
         <!-- Cycle Section - Rail Density (Functional & Clickable) -->
         <section class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
             <div class="lg:col-span-3 flex flex-col justify-center p-10 bg-surface-container-low rounded-[2rem] space-y-4">

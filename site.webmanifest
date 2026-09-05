@@ -1,14 +1,15 @@
 {
-  "name": "ASENA Company - Veterinary Clinic & Pet Care Platform",
-  "short_name": "ASENA",
-  "description": "پلتفرم یکپارچه کلینیک دامپزشکی، پت‌شاپ و داروخانه تخصصی آنلاین آسنا",
-  "start_url": "/",
+  "name": "ASENA Company - پلتفرم جامع دامپزشکی و تجارت حیوانات خانگی",
+  "short_name": "آسنا (ASENA)",
+  "description": "اکوسیستم هوشمند مراقبت، نوبت‌دهی کلینیک، داروخانه تخصصی و تحویل دوره‌ای ملزومات حیوانات خانگی",
+  "start_url": "/index.php",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#f8fafc",
   "theme_color": "#002d72",
   "lang": "fa-IR",
   "dir": "rtl",
+  "categories": ["medical", "shopping", "lifestyle"],
   "icons": [
     {
       "src": "/assets/images/favicon-192x192.png",
@@ -26,6 +27,36 @@
       "src": "/apple-touch-icon.png",
       "sizes": "180x180",
       "type": "image/png"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "پرونده سلامت حیوان خانگی (Pet Passport)",
+      "short_name": "حیوانات من",
+      "description": "مشاهده وضعیت سلامت، سوابق واکسیناسیون و دوز داروهای پت",
+      "url": "/profile.php#pets",
+      "icons": [{ "src": "/assets/images/favicon-192x192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "سفارشات ادواری و تحویل خودکار (Autoship)",
+      "short_name": "اتوشیپ",
+      "description": "مدیریت دوره‌های تحویل خودکار غذا و مکمل با تخفیف دائمی",
+      "url": "/subscriptions.php",
+      "icons": [{ "src": "/assets/images/favicon-192x192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "داروخانه آنلاین و ثبت نسخه پزشک",
+      "short_name": "داروخانه",
+      "description": "خرید مکمل‌های دارویی و بارگذاری فوری نسخه پزشک",
+      "url": "/pharmacy.php",
+      "icons": [{ "src": "/assets/images/favicon-192x192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "پیشنهادات شگفت‌انگیز (تخفیف‌های ویژه)",
+      "short_name": "شگفت‌انگیز",
+      "description": "مشاهده تخفیف‌های محدود و پرفروش‌ترین ملزومات پت",
+      "url": "/shop.php",
+      "icons": [{ "src": "/assets/images/favicon-192x192.png", "sizes": "192x192" }]
     }
   ]
 }

@@ -62,6 +62,14 @@ switch ($cmd) {
         runSystemHealthCheck();
         break;
 
+    case 'db:backup':
+        runDatabaseBackup();
+        break;
+
+    case 'db:restore':
+        runDatabaseRestore($argv[2] ?? '');
+        break;
+
     case 'help':
     default:
         showHelp();
@@ -424,6 +432,84 @@ function runSystemHealthCheck(): void {
 }
 
 /**
+ * Automated Database Backup (DevOps Tooling)
+ */
+function runDatabaseBackup(): void {
+    info("در حال تهیه نسخه پشتیبان کامل از پایگاه داده (Database Backup)...");
+    require_once ASENA_ROOT . '/includes/db.php';
+    $pdo = $GLOBALS['pdo'];
+
+    $backupDir = ASENA_ROOT . '/database/backups';
+    if (!is_dir($backupDir)) {
+        @mkdir($backupDir, 0755, true);
+    }
+
+    $filename = 'backup_' . date('Y_m_d_His') . '.sql';
+    $targetPath = $backupDir . '/' . $filename;
+
+    $tables = $pdo->query("SHOW TABLES")->fetchAll(PDO::FETCH_COLUMN);
+    $handle = fopen($targetPath, 'w');
+    if (!$handle) {
+        error("امکان ایجاد فایل بکاپ وجود ندارد.");
+        return;
+    }
+
+    fwrite($handle, "-- ASENA Enterprise Master Database Backup\n");
+    fwrite($handle, "-- Generated: " . date('Y-m-d H:i:s') . "\n\n");
+    fwrite($handle, "SET FOREIGN_KEY_CHECKS=0;\n\n");
+
+    foreach ($tables as $t) {
+        $createSql = $pdo->query("SHOW CREATE TABLE `$t`")->fetch(PDO::FETCH_ASSOC);
+        fwrite($handle, "DROP TABLE IF EXISTS `$t`;\n");
+        fwrite($handle, $createSql['Create Table'] . ";\n\n");
+
+        $rows = $pdo->query("SELECT * FROM `$t`")->fetchAll(PDO::FETCH_ASSOC);
+        if (!empty($rows)) {
+            foreach ($rows as $row) {
+                $cols = array_map(fn($c) => "`$c`", array_keys($row));
+                $vals = array_map(fn($v) => $v === null ? "NULL" : $pdo->quote((string)$v), array_values($row));
+                fwrite($handle, "INSERT INTO `$t` (" . implode(', ', $cols) . ") VALUES (" . implode(', ', $vals) . ");\n");
+            }
+            fwrite($handle, "\n");
+        }
+    }
+
+    fwrite($handle, "SET FOREIGN_KEY_CHECKS=1;\n");
+    fclose($handle);
+
+    $sizeKb = round(filesize($targetPath) / 1024, 2);
+    success("نسخه پشتیبان با موفقیت در مسیر زیر ایجاد شد ($sizeKb KB):");
+    out("  $targetPath\n", '32');
+}
+
+/**
+ * Database Restore CLI Tool
+ */
+function runDatabaseRestore(string $filepath): void {
+    if (empty($filepath)) {
+        error("لطفاً مسیر فایل بکاپ را مشخص کنید: php bin/asena db:restore <filepath>");
+        return;
+    }
+
+    if (!file_exists($filepath)) {
+        error("فایل بکاپ در مسیر مشخص شده یافت نشد: $filepath");
+        return;
+    }
+
+    info("در حال بازیابی اطلاعات پایگاه داده از فایل: " . basename($filepath) . "...");
+    require_once ASENA_ROOT . '/includes/db.php';
+    $pdo = $GLOBALS['pdo'];
+
+    try {
+        $sql = file_get_contents($filepath);
+        $pdo->exec($sql);
+        success("بازیابی پایگاه داده با موفقیت انجام شد.");
+    } catch (Exception $e) {
+        error("خطا در بازیابی: " . $e->getMessage());
+    }
+}
+
+/**
  * Helper to parse CLI arguments
  */
 function parseArgs(array $args): array {
@@ -450,5 +536,8 @@ function showHelp(): void {
     out("  php bin/asena b2b:rfq-expire                 منقضی‌سازی پیش‌فاکتورهای گذشته از موعد استعلام عمده (Alibaba)");
     out("  php bin/asena flash:sync                     همگام‌سازی و بستن پیشنهادات شگفت‌انگیز منقضی (Digikala)");
     out("  php bin/asena system:health                  بررسی سلامت زیرساخت، دیتابیس و دسترسی‌های دایرکتوری");
+    out("  php bin/asena db:backup                      تهیه نسخه پشتیبان کامل از دیتابیس (SQL dump)");
+    out("  php bin/asena db:restore <file>              بازیابی ایمن دیتابیس از فایل بکاپ");
     echo "\n";
 }
+

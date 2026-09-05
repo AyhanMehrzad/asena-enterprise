@@ -85,6 +85,80 @@
         fetch('actions/autoship_worker.php', { method: 'POST' }).catch(() => {});
     </script>
 
+    <!-- Mobile Bottom Navigation Bar (PWA UX) -->
+    <nav class="mobile-bottom-nav">
+        <a href="index.php" class="bottom-nav-link <?php echo ($current_page === 'index.php') ? 'active' : ''; ?>">
+            <span class="material-symbols-outlined">home</span>
+            <span>خانه</span>
+        </a>
+        <a href="shop.php" class="bottom-nav-link <?php echo ($current_page === 'shop.php' || $current_page === 'pharmacy.php') ? 'active' : ''; ?>">
+            <span class="material-symbols-outlined">storefront</span>
+            <span>فروشگاه</span>
+        </a>
+        <a href="cart.php" class="bottom-nav-link <?php echo ($current_page === 'cart.php') ? 'active' : ''; ?>">
+            <span class="material-symbols-outlined">shopping_cart</span>
+            <?php if (!empty($cart_count) && $cart_count > 0): ?>
+                <span class="nav-cart-badge"><?php echo $cart_count; ?></span>
+            <?php endif; ?>
+            <span>سبد خرید</span>
+        </a>
+        <a href="profile.php#pets" class="bottom-nav-link">
+            <span class="material-symbols-outlined">pets</span>
+            <span>پت پاسپورت</span>
+        </a>
+        <a href="profile.php" class="bottom-nav-link <?php echo ($current_page === 'profile.php' || $current_page === 'login.php') ? 'active' : ''; ?>">
+            <span class="material-symbols-outlined">account_circle</span>
+            <span>حساب من</span>
+        </a>
+    </nav>
+
+    <!-- Floating PWA Install Prompt Banner -->
+    <div id="pwaInstallBanner" class="pwa-install-banner">
+        <div class="pwa-logo-box flex items-center justify-center">
+            <img src="assets/images/logo.png" alt="آسنا" class="w-7 h-7 object-contain">
+        </div>
+        <div class="flex-1 text-right">
+            <div class="text-sm font-bold text-slate-800">نصب اپلیکیشن آسنا</div>
+            <div class="text-xs text-slate-500">دسترسی سریع‌تر، آفلاین و یادآوری واکسن</div>
+        </div>
+        <button id="pwaInstallBtn" class="px-3.5 py-1.5 rounded-xl bg-primary text-white text-xs font-bold hover:bg-primary-hover transition-colors shadow-sm">
+            نصب
+        </button>
+        <button id="pwaDismissBtn" class="text-slate-400 hover:text-slate-600 p-1">
+            <span class="material-symbols-outlined text-base">close</span>
+        </button>
+    </div>
+
+    <script>
+    // PWA Install Prompt Logic
+    let deferredPrompt = null;
+    window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+        const dismissed = localStorage.getItem('asena_pwa_dismissed');
+        if (!dismissed) {
+            setTimeout(() => {
+                const banner = document.getElementById('pwaInstallBanner');
+                if (banner) banner.classList.add('show');
+            }, 3000);
+        }
+    });
+
+    document.getElementById('pwaInstallBtn')?.addEventListener('click', async () => {
+        if (deferredPrompt) {
+            deferredPrompt.prompt();
+            const { outcome } = await deferredPrompt.userChoice;
+            deferredPrompt = null;
+            document.getElementById('pwaInstallBanner')?.classList.remove('show');
+        }
+    });
+
+    document.getElementById('pwaDismissBtn')?.addEventListener('click', () => {
+        document.getElementById('pwaInstallBanner')?.classList.remove('show');
+        localStorage.setItem('asena_pwa_dismissed', '1');
+    });
+    </script>
+
     <?php require_once __DIR__ . '/cookie_consent.php'; ?>
 </body>
 </html>

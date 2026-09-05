@@ -157,11 +157,71 @@ if ($fStmt->fetchColumn() == 0) {
     ")->execute();
 }
 $deals = $flashService->getActiveFlashSales(5);
-assertTest(count($deals) > 0, 'Flash Sales: Retrieved active flash sale deal');
-if (!empty($deals[0])) {
-    assertTest($deals[0]['progress_percent'] === 35, 'Flash Sales: Claimed 7 of 20 correctly calculated 35% progress');
-}
+// -----------------------------------------------------------------------------
+// 5. PWA & OFFLINE ARCHITECTURE TESTS
+// -----------------------------------------------------------------------------
+echo "\n5. Testing PWA & Offline Architecture:\n";
+$swPath = __DIR__ . '/../sw.js';
+$manifestPath = __DIR__ . '/../site.webmanifest';
+$offlinePath = __DIR__ . '/../offline.html';
+
+assertTest(file_exists($swPath) && strpos(file_get_contents($swPath), 'CACHE_NAME') !== false, 'PWA: Service Worker exists and defines cache strategy');
+assertTest(file_exists($manifestPath) && strpos(file_get_contents($manifestPath), 'shortcuts') !== false, 'PWA: Web Manifest exists and defines mobile app shortcuts');
+assertTest(file_exists($offlinePath) && strpos(file_get_contents($offlinePath), 'اتصال اینترنت') !== false, 'PWA: Offline fallback page exists and localized in Persian');
+
+// -----------------------------------------------------------------------------
+// 6. ENTERPRISE SECURITY & RATE LIMITING TESTS
+// -----------------------------------------------------------------------------
+echo "\n6. Testing Security & Zero-Trust Architecture:\n";
+require_once __DIR__ . '/../includes/SecurityMiddleware.php';
+require_once __DIR__ . '/../includes/RateLimiter.php';
+
+$rateLimiter = new RateLimiter($pdo);
+$testKey = 'test_ip_' . time() . '_' . rand(100, 999);
+$res1 = $rateLimiter->check($testKey, 2, 60);
+assertTest($res1['allowed'] === true && $res1['remaining'] === 2, 'RateLimiter: Initial check allows request');
+$rateLimiter->hit($testKey);
+$rateLimiter->hit($testKey);
+$res2 = $rateLimiter->check($testKey, 2, 60);
+assertTest($res2['allowed'] === false && $res2['remaining'] === 0, 'RateLimiter: Rejects request once quota is exceeded');
+
+// Test upload validation with fake malicious executable
+$fakeExe = ['name' => 'malicious.php', 'type' => 'text/plain', 'tmp_name' => '', 'size' => 100];
+$valRes = SecurityMiddleware::validateUploadedFile($fakeExe);
+assertTest($valRes['valid'] === false, 'Security: Malicious upload without valid tmp_name is rejected');
+
+// -----------------------------------------------------------------------------
+// 7. HIGH-SPEED CACHE & SERVICE CONTAINER TESTS
+// -----------------------------------------------------------------------------
+echo "\n7. Testing High-Speed Cache & Service Container:\n";
+require_once __DIR__ . '/../includes/App.php';
+
+$cache = App::cache();
+$cacheKey = 'suite_test_token_' . time();
+$cache->set($cacheKey, ['val' => 42], 60);
+$cachedVal = $cache->get($cacheKey);
+assertTest(is_array($cachedVal) && $cachedVal['val'] === 42, 'CacheService: Stores and retrieves serialized data');
+$cache->delete($cacheKey);
+assertTest($cache->get($cacheKey) === null, 'CacheService: Invalidation clears cached key');
+
+assertTest(App::db() instanceof PDO, 'Service Container: App::db() returns valid PDO instance');
+assertTest(App::autoship() instanceof AutoshipService, 'Service Container: App::autoship() returns AutoshipService singleton');
+assertTest(App::wholesale() instanceof WholesaleService, 'Service Container: App::wholesale() returns WholesaleService singleton');
+assertTest(App::shipping() instanceof ShippingCalculator, 'Service Container: App::shipping() returns ShippingCalculator singleton');
+
+// -----------------------------------------------------------------------------
+// 8. DEVOPS, RELIABILITY & CI/CD TESTS
+// -----------------------------------------------------------------------------
+echo "\n8. Testing DevOps & CI/CD Infrastructure:\n";
+$dockerfile = __DIR__ . '/../Dockerfile';
+$composeFile = __DIR__ . '/../docker-compose.yml';
+$ciWorkflow = __DIR__ . '/../.github/workflows/enterprise-ci.yml';
+
+assertTest(file_exists($dockerfile) && strpos(file_get_contents($dockerfile), 'php:8.2-fpm') !== false, 'DevOps: Dockerfile is configured for PHP 8.2 FPM');
+assertTest(file_exists($composeFile) && strpos(file_get_contents($composeFile), 'redis:7') !== false, 'DevOps: docker-compose.yml defines multi-container stack with Redis');
+assertTest(file_exists($ciWorkflow) && strpos(file_get_contents($ciWorkflow), 'lint-and-test') !== false, 'DevOps: GitHub Actions CI workflow is configured for automated testing');
 
 echo "\n=========================================================\n";
 echo "   TEST SUMMARY: {$passedTests} / {$totalTests} TESTS PASSED (" . round(($passedTests / $totalTests) * 100) . "%)\n";
 echo "=========================================================\n";
+

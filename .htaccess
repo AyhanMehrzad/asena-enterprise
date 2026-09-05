@@ -53,10 +53,20 @@ Options -Indexes
     Header set X-Content-Type-Options "nosniff"
     Header set X-Frame-Options "SAMEORIGIN"
     Header set Referrer-Policy "strict-origin-when-cross-origin"
+    Header set Permissions-Policy "geolocation=(self), camera=(), microphone=()"
 </IfModule>
 
-# 8. Block access to sensitive configuration, database and log files
-<FilesMatch "\.(env|env\.example|sql|log|md|git|gitignore)$">
+# 8. PWA Service Worker Header Rules
+<Files "sw.js">
+    <IfModule mod_headers.c>
+        Header set Service-Worker-Allowed "/"
+        Header set Cache-Control "no-cache, no-store, must-revalidate"
+    </IfModule>
+</Files>
+
+# 9. Block access to sensitive configuration, database, container and log files
+<FilesMatch "\.(env|env\.example|sql|log|md|git|gitignore|yml|yaml|dockerignore)$">
     Require all denied
 </FilesMatch>
+
 

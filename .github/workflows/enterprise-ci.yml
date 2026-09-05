@@ -1,0 +1,52 @@
+name: ASENA Enterprise CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  lint-and-test:
+    name: Lint, Static Security & Automated Test Suite
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: petshop_db
+        ports:
+          - 3306:3306
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP Environment
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: pdo, pdo_mysql, gd, zip, intl, bcmath, fileinfo
+          coverage: none
+
+      - name: Verify PHP Syntax (All Files)
+        run: |
+          echo "Linting all PHP files for syntax errors..."
+          find . -name "*.php" -not -path "./vendor/*" -exec php -l {} \;
+
+      - name: Initialize Database Schema
+        run: |
+          mysql -h 127.0.0.1 -u root -proot petshop_db < petshop_db.sql || true
+          mysql -h 127.0.0.1 -u root -proot petshop_db < database/migrations/01_enterprise_master_schema.sql || true
+
+      - name: Run Enterprise Automated Test Suite
+        env:
+          DB_HOST: 127.0.0.1
+          DB_NAME: petshop_db
+          DB_USER: root
+          DB_PASS: root
+        run: |
+          php tests/test_enterprise_suite.php
