@@ -23,6 +23,7 @@ require_once __DIR__ . '/WafMiddleware.php';
 require_once __DIR__ . '/AuthGuard.php';
 require_once __DIR__ . '/IranPostService.php';
 require_once __DIR__ . '/MarketplaceEscrowService.php';
+require_once __DIR__ . '/TrafficMonitoringService.php';
 
 class App {
     private static ?PDO $db = null;
@@ -41,6 +42,7 @@ class App {
     private static ?SecurityAuditService $securityAudit = null;
     private static ?IranPostService $iranPost = null;
     private static ?MarketplaceEscrowService $escrow = null;
+    private static ?TrafficMonitoringService $traffic = null;
 
 
     public static function db(): PDO {
@@ -155,12 +157,20 @@ class App {
         return self::$escrow;
     }
 
+    public static function traffic(): TrafficMonitoringService {
+        if (self::$traffic === null) {
+            self::$traffic = new TrafficMonitoringService(self::db());
+        }
+        return self::$traffic;
+    }
+
     /**
-     * Boot enterprise request environment: Headers, Secure Session, WAF Inspection
+     * Boot enterprise request environment: Headers, Secure Session, Traffic Inspection, WAF
      */
     public static function boot(): void {
         SecurityMiddleware::applyHeaders();
         SecurityMiddleware::secureSession();
+        TrafficMonitoringService::inspectAndLog(self::db());
         WafMiddleware::inspect(self::db());
     }
 }

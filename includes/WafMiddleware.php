@@ -45,10 +45,13 @@ class WafMiddleware {
     public static function inspect(?PDO $pdo = null): bool {
         $audit = new SecurityAuditService($pdo);
 
-        // 1. IP Ban check
-        $clientIp = $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1';
+        // 1. IP Ban check (Cloudflare-aware)
+        require_once __DIR__ . '/TrafficMonitoringService.php';
+        $clientIp = TrafficMonitoringService::resolveClientIp();
+        $cfRay = TrafficMonitoringService::getCloudflareRayId();
+
         if ($audit->isIpBanned($clientIp)) {
-            self::blockRequest('دسترسی شما به دلیل نقض مکرر قوانین امنیتی مسدود شده است.', 403);
+            TrafficMonitoringService::renderRestrictionShield($clientIp, 1800, $cfRay, 'دسترسی شما به دلیل نقض مکرر قوانین امنیتی مسدود شده است.');
             return false;
         }
 

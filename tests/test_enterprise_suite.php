@@ -427,6 +427,97 @@ $walletFinal = $escrow->getSellerWallet($testUid);
 assertTest((int)$walletFinal['balance_available_for_payout'] === 0, 'MarketplaceEscrowService: Resets available payout balance to zero after batch dispatch');
 assertTest((int)$walletFinal['balance_settled_lifetime'] >= 450000, 'MarketplaceEscrowService: Credits lifetime settled volume in seller wallet');
 
+// =========================================================================
+// 12. Testing Universal Request Logging, Cloudflare Anomaly & DDoS Defense
+// =========================================================================
+echo "\n12. Testing Universal Request Logging, Cloudflare Anomaly & DDoS Defense:\n";
+
+$traffic = App::traffic();
+assertTest($traffic instanceof TrafficMonitoringService, 'Service Container: App::traffic() returns TrafficMonitoringService singleton');
+
+// Test Cloudflare IP and Header resolution
+$_SERVER['HTTP_CF_CONNECTING_IP'] = '203.0.113.195';
+$_SERVER['HTTP_CF_RAY'] = '8b4920aef1234567';
+$_SERVER['HTTP_CF_IPCOUNTRY'] = 'IR';
+assertTest(TrafficMonitoringService::resolveClientIp() === '203.0.113.195', 'TrafficMonitoringService: Correctly resolves real client IP from Cloudflare header');
+assertTest(TrafficMonitoringService::getCloudflareRayId() === '8b4920aef1234567', 'TrafficMonitoringService: Extracts Cloudflare Ray ID');
+assertTest(TrafficMonitoringService::getCloudflareCountry() === 'IR', 'TrafficMonitoringService: Extracts Cloudflare country code');
+
+// Test Sensitive Payload Redaction
+$testPayload = [
+    'username' => 'testuser',
+    'password' => 'super_secret_123',
+    'token' => 'jwt_secret_token',
+    'card_number' => '6037991234567890',
+    'public_note' => 'سلام سفارش عادی'
+];
+$redactedJson = TrafficMonitoringService::sanitizePayload($testPayload);
+assertTest(!str_contains($redactedJson, 'super_secret_123'), 'TrafficMonitoringService: Redacts password from interaction logs');
+assertTest(!str_contains($redactedJson, '6037991234567890'), 'TrafficMonitoringService: Redacts card number from interaction logs');
+assertTest(str_contains($redactedJson, 'سلام سفارش عادی'), 'TrafficMonitoringService: Preserves non-sensitive request parameters');
+
+// Test Malicious Scanner Probe Detection
+$envProbe = TrafficMonitoringService::checkScannerProbe('/.env');
+$wpProbe = TrafficMonitoringService::checkScannerProbe('/wp-login.php');
+$shellProbe = TrafficMonitoringService::checkScannerProbe('/eval-stdin.php');
+$normalUri = TrafficMonitoringService::checkScannerProbe('/products.php?category=pet-food');
+assertTest(!empty($envProbe), 'TrafficMonitoringService: Detects environmental file (.env) scanner probe');
+assertTest(!empty($wpProbe), 'TrafficMonitoringService: Detects CMS/WordPress scanner probe');
+assertTest(!empty($shellProbe), 'TrafficMonitoringService: Detects webshell execution probe');
+assertTest($normalUri === null, 'TrafficMonitoringService: Allows legitimate product and catalog URIs');
+
+// Test Universal Request Logging
+$logId1 = $traffic->logRequest([
+    'ip_address' => '203.0.113.195',
+    'user_id' => $testUid,
+    'user_name' => 'دکتر امینی',
+    'session_id' => 'sess_test_abc123',
+    'action_type' => 'browse',
+    'request_method' => 'GET',
+    'request_uri' => '/products.php',
+    'payload_summary' => '',
+    'cf_ray' => '8b4920aef1234567',
+    'cf_country' => 'IR',
+    'user_agent' => 'Mozilla/5.0 ASENA-Test',
+    'response_code' => 200,
+    'is_suspicious' => 0
+]);
+$logId2 = $traffic->logRequest([
+    'ip_address' => '203.0.113.195',
+    'user_id' => $testUid,
+    'user_name' => 'دکتر امینی',
+    'session_id' => 'sess_test_abc123',
+    'action_type' => 'checkout',
+    'request_method' => 'POST',
+    'request_uri' => '/checkout.php',
+    'payload_summary' => '{"plan":"premium"}',
+    'cf_ray' => '8b4920aef1234568',
+    'cf_country' => 'IR',
+    'user_agent' => 'Mozilla/5.0 ASENA-Test',
+    'response_code' => 200,
+    'is_suspicious' => 0
+]);
+assertTest($logId1 > 0 && $logId2 > 0, 'TrafficMonitoringService: Successfully records universal request interaction log');
+
+// Test User / IP Request Journey Investigation ("what other requests has he given")
+$ipHistory = $traffic->getRequestHistoryByIp('203.0.113.195');
+assertTest(count($ipHistory) >= 2, 'TrafficMonitoringService: Retrieves chronological request journey by IP address');
+$userHistory = $traffic->getRequestHistoryByUser($testUid);
+assertTest(count($userHistory) >= 2, 'TrafficMonitoringService: Retrieves complete request trajectory by User ID');
+
+// Test Automated Time-Based IP Restriction (DDoS / Anomaly Ban)
+$testAttackerIp = '198.51.100.222';
+$restrictOk = $traffic->autoRestrictIp($testAttackerIp, 15, 'ddos_flood', 'حمله سیل‌آسای لایه ۷ (DDoS Test)', 'CF-RAY-BURST');
+assertTest($restrictOk === true, 'TrafficMonitoringService: Imposes automated time-based restriction on attacking IP');
+
+$remainingBanSec = $traffic->getBanRemainingSeconds($testAttackerIp);
+assertTest($remainingBanSec > 800, 'TrafficMonitoringService: Enforces remaining ban countdown timer');
+
+// Test Unban
+$unbanOk = $audit->unbanIp($testAttackerIp);
+assertTest($unbanOk === true, 'TrafficMonitoringService: Successfully removes temporary IP restriction');
+assertTest($traffic->getBanRemainingSeconds($testAttackerIp) === 0, 'TrafficMonitoringService: Confirms zero remaining ban duration post-unban');
+
 echo "\n=========================================================\n";
 echo "   TEST SUMMARY: {$passedTests} / {$totalTests} TESTS PASSED (" . round(($passedTests / $totalTests) * 100) . "%)\n";
 echo "=========================================================\n";
