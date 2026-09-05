@@ -185,9 +185,16 @@ $adminName = $adminCheck['name'] ?? 'مدیر سیستم';
             $activeKey = 'pharmacist_queue';
         } elseif ($currentFile === 'rfq_management.php') {
             $activeKey = 'rfq_management';
+        } elseif ($currentFile === 'verifications.php') {
+            $activeKey = 'verifications';
         } elseif ($currentFile === 'guide.php') {
             $activeKey = 'guide';
         }
+
+        $pendingVerificationsCount = 0;
+        try {
+            $pendingVerificationsCount = (int)$pdo->query("SELECT COUNT(*) FROM role_applications WHERE status = 'pending'")->fetchColumn();
+        } catch (Throwable $e) {}
 
         $navSections = [
             'مدیریت و پیشخوان' => [
@@ -208,6 +215,7 @@ $adminName = $adminCheck['name'] ?? 'مدیر سیستم';
                 'donations' => ['icon' => 'volunteer_activism', 'title' => 'گزارش کمک‌های خیریه', 'url' => 'donations.php', 'feature' => 'charity_campaigns'],
             ],
             'کاربران و پشتیبانی' => [
+                'verifications' => ['icon' => 'verified_user', 'title' => 'احراز صلاحیت پزشکان و مراکز', 'url' => 'verifications.php', 'badge' => $pendingVerificationsCount],
                 'users' => ['icon' => 'group', 'title' => 'مدیریت کاربران', 'url' => 'user_management.php'],
                 'tickets' => ['icon' => 'support_agent', 'title' => 'تیکت و پشتیبانی', 'url' => 'tickets.php'],
                 'campaigns' => ['icon' => 'campaign', 'title' => 'مدیریت کمپین‌ها', 'url' => 'campaigns.php', 'feature' => 'sms_automation'],
@@ -240,7 +248,9 @@ $adminName = $adminCheck['name'] ?? 'مدیر سیستم';
             <a class="<?= $classes ?>" href="<?= $item['url'] ?>" <?= !empty($item['external']) ? 'target="_blank"' : '' ?>>
                 <span class="material-symbols-outlined text-[20px] <?= $isActive ? 'text-secondary-container' : '' ?>"><?= $item['icon'] ?></span>
                 <span class="text-xs font-bold leading-tight"><?= $item['title'] ?></span>
-                <?php if (!empty($item['external'])): ?>
+                <?php if (!empty($item['badge']) && $item['badge'] > 0): ?>
+                    <span class="mr-auto px-2 py-0.5 rounded-full text-[10px] font-black bg-rose-500 text-white shadow-sm"><?= $item['badge'] ?></span>
+                <?php elseif (!empty($item['external'])): ?>
                     <span class="material-symbols-outlined text-xs mr-auto opacity-70">north_east</span>
                 <?php endif; ?>
             </a>

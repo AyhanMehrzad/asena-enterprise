@@ -235,7 +235,8 @@ if (function_exists('get_curated_recommendations')) {
                         <a class="text-white text-sm font-medium hover:text-secondary-container transition-all duration-200 <?php echo $current_page == 'pharmacy.php' ? 'border-b-2 border-white pb-1 opacity-100' : 'opacity-90'; ?>" href="pharmacy.php">داروخانه تخصصی</a>
                     <?php endif; ?>
                     <?php if (Feature::has('clinic_booking')): ?>
-                        <a class="text-white text-sm font-medium hover:text-secondary-container transition-all duration-200 <?php echo $current_page == 'booking.php' ? 'border-b-2 border-white pb-1 opacity-100' : 'opacity-90'; ?>" href="booking.php">کلینیک</a>
+                        <a class="text-white text-sm font-medium hover:text-secondary-container transition-all duration-200 <?php echo $current_page == 'booking.php' ? 'border-b-2 border-white pb-1 opacity-100' : 'opacity-90'; ?>" href="booking.php">نوبت‌دهی</a>
+                        <a class="text-white text-sm font-medium hover:text-secondary-container transition-all duration-200 <?php echo in_array($current_page, ['organizations.php', 'organization_profile.php']) ? 'border-b-2 border-white pb-1 opacity-100' : 'opacity-90'; ?>" href="organizations.php">مراکز درمانی</a>
                     <?php endif; ?>
                     <?php if (Feature::has('autoship')): ?>
                         <a class="text-white text-sm font-medium hover:text-secondary-container transition-all duration-200 <?php echo $current_page == 'subscriptions.php' ? 'border-b-2 border-white pb-1 opacity-100' : 'opacity-90'; ?>" href="subscriptions.php">اشتراک خودکار</a>
@@ -327,7 +328,10 @@ if (function_exists('get_curated_recommendations')) {
                     <?php endif; ?>
                     <?php if (Feature::has('clinic_booking')): ?>
                         <a class="flex items-center gap-4 text-on-surface font-bold p-3 rounded-xl hover:bg-primary-container/10 hover:text-primary transition-colors" href="booking.php">
-                            <span class="material-symbols-outlined text-outline">medical_services</span> کلینیک
+                            <span class="material-symbols-outlined text-outline">calendar_month</span> نوبت‌دهی آنلاین
+                        </a>
+                        <a class="flex items-center gap-4 text-on-surface font-bold p-3 rounded-xl hover:bg-primary-container/10 hover:text-primary transition-colors" href="organizations.php">
+                            <span class="material-symbols-outlined text-outline">local_hospital</span> مراکز درمانی و کلینیک‌ها
                         </a>
                     <?php endif; ?>
                     <?php if (Feature::has('autoship')): ?>

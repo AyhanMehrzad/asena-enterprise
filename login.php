@@ -259,12 +259,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <?php else: ?>
 <div class="max-w-md w-full mx-auto" id="auth-container">
 <!-- Toggle Header -->
-<div class="mb-12 mt-12 lg:mt-0">
+<div class="mb-8 mt-12 lg:mt-0">
 <h2 class="text-3xl font-bold text-on-surface mb-2" id="form-title">خوش آمدید</h2>
 <p class="text-sm text-on-surface-variant" id="form-subtitle">لطفاً برای ورود به پنل کاربری اطلاعات خود را وارد کنید.</p>
-<div class="flex mt-8 p-1 bg-surface-container-low rounded-xl">
+
+<div class="mt-4 p-3 bg-gradient-to-r from-sky-50 to-indigo-50 border border-sky-200 rounded-2xl flex items-center justify-between">
+    <div class="flex items-center gap-2">
+        <span class="material-symbols-outlined text-sky-600 text-xl">stethoscope</span>
+        <span class="text-xs font-bold text-slate-800">پزشک، کلینیک یا داروساز هستید؟</span>
+    </div>
+    <a href="register.php" class="px-3 py-1.5 bg-sky-600 hover:bg-sky-700 text-white rounded-xl text-xs font-bold transition-all shadow-sm">
+        ثبت‌نام تخصصی
+    </a>
+</div>
+
+<div class="flex mt-6 p-1 bg-surface-container-low rounded-xl">
 <button class="flex-1 py-3 rounded-lg font-bold text-sm transition-all duration-300 bg-white shadow-sm text-primary" id="btn-login" onclick="toggleMode('login')">ورود</button>
-<button class="flex-1 py-3 rounded-lg font-bold text-sm transition-all duration-300 text-on-surface-variant hover:text-on-surface" id="btn-signup" onclick="toggleMode('signup')">ثبت‌نام</button>
+<button class="flex-1 py-3 rounded-lg font-bold text-sm transition-all duration-300 text-on-surface-variant hover:text-on-surface" id="btn-signup" onclick="toggleMode('signup')">ثبت‌نام عادی</button>
 </div>
 </div>
 

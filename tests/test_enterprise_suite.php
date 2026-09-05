@@ -221,6 +221,66 @@ assertTest(file_exists($dockerfile) && strpos(file_get_contents($dockerfile), 'p
 assertTest(file_exists($composeFile) && strpos(file_get_contents($composeFile), 'redis:7') !== false, 'DevOps: docker-compose.yml defines multi-container stack with Redis');
 assertTest(file_exists($ciWorkflow) && strpos(file_get_contents($ciWorkflow), 'lint-and-test') !== false, 'DevOps: GitHub Actions CI workflow is configured for automated testing');
 
+// -----------------------------------------------------------------------------
+// 9. MULTI-ROLE CREDENTIAL VERIFICATION & ORGANIZATION DIRECTORY TESTS
+// -----------------------------------------------------------------------------
+echo "\n9. Testing Multi-Role Verification & Organizations:\n";
+assertTest(App::roleVerification() instanceof RoleVerificationService, 'Service Container: App::roleVerification() returns RoleVerificationService');
+assertTest(App::organization() instanceof OrganizationService, 'Service Container: App::organization() returns OrganizationService');
+
+// Create test user for credential application
+$testPhone = '0912' . rand(1000000, 9999999);
+$insU = $pdo->prepare("INSERT INTO users (phone, name, password, role, pending_role, verification_status) VALUES (?, 'دکتر آزمایشی نیازی', 'pass123', 'user', 'doctor', 'pending')");
+$insU->execute([$testPhone]);
+$testUid = (int)$pdo->lastInsertId();
+
+$appService = App::roleVerification();
+$subResult = $appService->submitApplication($testUid, [
+    'applied_role' => 'doctor',
+    'full_name' => 'دکتر آزمایشی نیازی',
+    'phone' => $testPhone,
+    'license_number' => 'MED-' . rand(1000, 9999),
+    'specialty' => 'متخصص جراحی دامپزشکی',
+    'city' => 'تهران'
+], []);
+
+assertTest($subResult['success'] === true && !empty($subResult['application_id']), 'RoleVerificationService: Successfully submits professional application');
+
+$appId = (int)$subResult['application_id'];
+$pendingList = $appService->getApplications('doctor', 'pending');
+$foundInPending = false;
+foreach ($pendingList as $p) {
+    if ((int)$p['id'] === $appId) {
+        $foundInPending = true;
+        break;
+    }
+}
+assertTest($foundInPending, 'RoleVerificationService: Application appears in admin pending queue');
+
+// 1-Click Approve Test
+$approved = $appService->approveApplication($appId, 1, 'مدارک پزشکی بررسی و تایید گردید');
+assertTest($approved === true, 'RoleVerificationService: approveApplication executes 1-click approval');
+
+// Verify role promotion
+$chkRole = $pdo->prepare("SELECT role, verification_status, is_verified_vet FROM users WHERE id = ?");
+$chkRole->execute([$testUid]);
+$uRow = $chkRole->fetch(PDO::FETCH_ASSOC);
+assertTest($uRow['role'] === 'doctor' && $uRow['verification_status'] === 'approved' && $uRow['is_verified_vet'] == 1, 'RoleVerificationService: User role promoted to doctor with verified status');
+
+// OrganizationService Tests
+$orgService = App::organization();
+$orgs = $orgService->getOrganizations(['city' => 'تهران']);
+assertTest(count($orgs) >= 2, 'OrganizationService: Retrieves active organizations in Tehran');
+
+$hosp = $orgService->getBySlug('payetakht-hospital');
+assertTest($hosp !== null && $hosp['is_24_7'] == 1, 'OrganizationService: Fetches payetakht-hospital with 24/7 badge');
+
+$hospDocs = $orgService->getDoctors((int)$hosp['id']);
+assertTest(count($hospDocs) >= 1, 'OrganizationService: Retrieves affiliated doctors roster');
+
+$hospInventory = $orgService->getInventory((int)$hosp['id']);
+assertTest(count($hospInventory) >= 1, 'OrganizationService: Retrieves facility pharmacy inventory');
+
 echo "\n=========================================================\n";
 echo "   TEST SUMMARY: {$passedTests} / {$totalTests} TESTS PASSED (" . round(($passedTests / $totalTests) * 100) . "%)\n";
 echo "=========================================================\n";

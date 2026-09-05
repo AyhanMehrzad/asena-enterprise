@@ -16,6 +16,8 @@ require_once __DIR__ . '/OrderLifecycleService.php';
 require_once __DIR__ . '/WholesaleService.php';
 require_once __DIR__ . '/ShippingCalculator.php';
 require_once __DIR__ . '/FlashSaleService.php';
+require_once __DIR__ . '/RoleVerificationService.php';
+require_once __DIR__ . '/OrganizationService.php';
 
 class App {
     private static ?PDO $db = null;
@@ -29,6 +31,9 @@ class App {
     private static ?WholesaleService $wholesale = null;
     private static ?ShippingCalculator $shipping = null;
     private static ?FlashSaleService $flashSale = null;
+    private static ?RoleVerificationService $roleVerification = null;
+    private static ?OrganizationService $organization = null;
+
 
     public static function db(): PDO {
         if (self::$db === null) {
@@ -105,6 +110,20 @@ class App {
             self::$flashSale = new FlashSaleService(self::db());
         }
         return self::$flashSale;
+    }
+
+    public static function roleVerification(): RoleVerificationService {
+        if (self::$roleVerification === null) {
+            self::$roleVerification = new RoleVerificationService(self::db(), self::sms());
+        }
+        return self::$roleVerification;
+    }
+
+    public static function organization(): OrganizationService {
+        if (self::$organization === null) {
+            self::$organization = new OrganizationService(self::db());
+        }
+        return self::$organization;
     }
 
     /**

@@ -623,6 +623,16 @@ $booked_slots_json = json_encode($booked_slots);
             submitBtn.textContent = "لطفا فرم را تکمیل کنید";
         }
     }
+
+    <?php if (!empty($_GET['doctor_id'])): ?>
+    window.addEventListener('DOMContentLoaded', () => {
+        const targetDoc = document.querySelector(`.doctor-card[data-id="<?= (int)$_GET['doctor_id'] ?>"]`);
+        if (targetDoc) {
+            targetDoc.click();
+            targetDoc.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    });
+    <?php endif; ?>
 </script>
 
 <script src="assets/js/booking.js"></script>
