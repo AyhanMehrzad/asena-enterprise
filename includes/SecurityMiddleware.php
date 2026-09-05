@@ -107,6 +107,12 @@ class SecurityMiddleware {
             return ['valid' => false, 'error' => "فرمت فایل ({$mimeType}) غیرمجاز است. تنها فایل‌های JPG، PNG و PDF پذیرفته می‌شوند."];
         }
 
+        // Anti-Polyglot & embedded script detection in file content
+        $contentSample = file_get_contents($file['tmp_name'], false, null, 0, 4096);
+        if ($contentSample !== false && preg_match('/<\?(?:php|=)|<script\b/i', $contentSample)) {
+            return ['valid' => false, 'error' => 'محتوای فایل حاوی کدهای غیرمجاز یا اسکریپت اجرایی می‌باشد.'];
+        }
+
         // Sanitize and create safe storage filename
         $ext = pathinfo($file['name'], PATHINFO_EXTENSION);
         $safeName = bin2hex(random_bytes(16)) . '_' . time() . '.' . strtolower($ext);

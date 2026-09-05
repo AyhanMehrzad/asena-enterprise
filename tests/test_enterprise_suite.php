@@ -281,6 +281,55 @@ assertTest(count($hospDocs) >= 1, 'OrganizationService: Retrieves affiliated doc
 $hospInventory = $orgService->getInventory((int)$hosp['id']);
 assertTest(count($hospInventory) >= 1, 'OrganizationService: Retrieves facility pharmacy inventory');
 
+// -----------------------------------------------------------------------------
+// 10. ZERO-TRUST WAF, SECURITY AUDIT & RBAC GUARD TESTS
+// -----------------------------------------------------------------------------
+echo "\n10. Testing Zero-Trust Security, WAF & RBAC Guard:\n";
+assertTest(App::securityAudit() instanceof SecurityAuditService, 'Service Container: App::securityAudit() returns SecurityAuditService singleton');
+
+$audit = App::securityAudit();
+$logSuccess = $audit->logEvent('test_probe', 'info', 1, 'Automated test suite audit verification probe', ['test_key' => 'suite_val']);
+assertTest($logSuccess === true, 'SecurityAuditService: Successfully records structured security log');
+
+$recentEvents = $audit->getRecentEvents(10, 'info');
+$foundProbe = false;
+foreach ($recentEvents as $ev) {
+    if ($ev['event_type'] === 'test_probe') {
+        $foundProbe = true;
+        break;
+    }
+}
+assertTest($foundProbe, 'SecurityAuditService: Retrieves newly logged audit event');
+
+// IP Ban and Unban Test
+$dummyIp = '198.51.100.99';
+$audit->banIp($dummyIp, 30, 'Test ban for verification suite', 1);
+assertTest($audit->isIpBanned($dummyIp) === true, 'SecurityAuditService: Identifies banned IP address');
+
+$audit->unbanIp($dummyIp);
+assertTest($audit->isIpBanned($dummyIp) === false, 'SecurityAuditService: Successfully removes IP ban');
+
+$secMetrics = $audit->getSecurityMetrics();
+assertTest(is_array($secMetrics) && isset($secMetrics['total_events_24h']), 'SecurityAuditService: Computes security metrics for SOC console');
+
+// Anti-Polyglot Upload Protection Test
+$polyglotFile = sys_get_temp_dir() . '/fake_image.jpg';
+file_put_contents($polyglotFile, "\xFF\xD8\xFF\xE0<?php phpinfo(); ?>");
+$mockUpload = [
+    'tmp_name' => $polyglotFile,
+    'name' => 'fake_image.jpg',
+    'size' => filesize($polyglotFile),
+    'error' => 0
+];
+$polyglotResult = SecurityMiddleware::validateUploadedFile($mockUpload);
+assertTest($polyglotResult['valid'] === false, 'SecurityMiddleware: Rejects polyglot image containing embedded executable code');
+@unlink($polyglotFile);
+
+// AuthGuard RBAC check
+$_SESSION['user_id'] = $testUid;
+$loadedUser = AuthGuard::user($pdo);
+assertTest(is_array($loadedUser) && $loadedUser['role'] === 'doctor', 'AuthGuard: Resolves authenticated user role accurately');
+
 echo "\n=========================================================\n";
 echo "   TEST SUMMARY: {$passedTests} / {$totalTests} TESTS PASSED (" . round(($passedTests / $totalTests) * 100) . "%)\n";
 echo "=========================================================\n";

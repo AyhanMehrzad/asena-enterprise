@@ -266,6 +266,8 @@ if (function_exists('get_curated_recommendations')) {
                             <a href="admin/index.php" class="bg-secondary-container text-white px-6 py-2 rounded-lg text-sm font-bold shadow-md hover:shadow-lg transition-all">پنل مدیریت</a>
                         <?php elseif(isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'doctor'): ?>
                             <a href="doctor/index.php" class="bg-white text-primary px-6 py-2 rounded-lg text-sm font-bold shadow-md hover:shadow-lg transition-all">پنل پزشک</a>
+                        <?php elseif(isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'organization'): ?>
+                            <a href="organization/index.php" class="bg-teal-600 text-white px-5 py-2 rounded-lg text-sm font-bold shadow-md hover:shadow-lg transition-all">پنل مرکز درمانی</a>
                         <?php endif; ?>
                     <?php else: ?>
                         <a href="login.php" class="bg-secondary-container text-white px-6 py-2 rounded-lg text-sm font-bold shadow-md hover:shadow-lg transition-all">ورود / ثبت‌نام</a>

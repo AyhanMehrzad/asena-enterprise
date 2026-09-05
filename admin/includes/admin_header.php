@@ -187,6 +187,8 @@ $adminName = $adminCheck['name'] ?? 'مدیر سیستم';
             $activeKey = 'rfq_management';
         } elseif ($currentFile === 'verifications.php') {
             $activeKey = 'verifications';
+        } elseif ($currentFile === 'security_logs.php') {
+            $activeKey = 'security_logs';
         } elseif ($currentFile === 'guide.php') {
             $activeKey = 'guide';
         }
@@ -215,6 +217,7 @@ $adminName = $adminCheck['name'] ?? 'مدیر سیستم';
                 'donations' => ['icon' => 'volunteer_activism', 'title' => 'گزارش کمک‌های خیریه', 'url' => 'donations.php', 'feature' => 'charity_campaigns'],
             ],
             'کاربران و پشتیبانی' => [
+                'security_logs' => ['icon' => 'shield', 'title' => 'پایش امنیت و لاگ‌ها (SOC)', 'url' => 'security_logs.php'],
                 'verifications' => ['icon' => 'verified_user', 'title' => 'احراز صلاحیت پزشکان و مراکز', 'url' => 'verifications.php', 'badge' => $pendingVerificationsCount],
                 'users' => ['icon' => 'group', 'title' => 'مدیریت کاربران', 'url' => 'user_management.php'],
                 'tickets' => ['icon' => 'support_agent', 'title' => 'تیکت و پشتیبانی', 'url' => 'tickets.php'],

@@ -18,6 +18,9 @@ require_once __DIR__ . '/ShippingCalculator.php';
 require_once __DIR__ . '/FlashSaleService.php';
 require_once __DIR__ . '/RoleVerificationService.php';
 require_once __DIR__ . '/OrganizationService.php';
+require_once __DIR__ . '/SecurityAuditService.php';
+require_once __DIR__ . '/WafMiddleware.php';
+require_once __DIR__ . '/AuthGuard.php';
 
 class App {
     private static ?PDO $db = null;
@@ -33,6 +36,7 @@ class App {
     private static ?FlashSaleService $flashSale = null;
     private static ?RoleVerificationService $roleVerification = null;
     private static ?OrganizationService $organization = null;
+    private static ?SecurityAuditService $securityAudit = null;
 
 
     public static function db(): PDO {
@@ -126,11 +130,19 @@ class App {
         return self::$organization;
     }
 
+    public static function securityAudit(): SecurityAuditService {
+        if (self::$securityAudit === null) {
+            self::$securityAudit = new SecurityAuditService(self::db());
+        }
+        return self::$securityAudit;
+    }
+
     /**
-     * Boot enterprise request environment
+     * Boot enterprise request environment: Headers, Secure Session, WAF Inspection
      */
     public static function boot(): void {
         SecurityMiddleware::applyHeaders();
         SecurityMiddleware::secureSession();
+        WafMiddleware::inspect(self::db());
     }
 }
