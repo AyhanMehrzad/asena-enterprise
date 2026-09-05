@@ -60,6 +60,7 @@ try {
         }
     }
 }
+$GLOBALS['pdo'] = $pdo;
 require_once __DIR__ . '/Feature.php';
 require_once __DIR__ . '/functions.php';
 ?>

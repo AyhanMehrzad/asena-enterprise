@@ -181,6 +181,10 @@ $adminName = $adminCheck['name'] ?? 'مدیر سیستم';
             $activeKey = 'sms_settings';
         } elseif ($currentFile === 'blogs.php') {
             $activeKey = 'blogs';
+        } elseif ($currentFile === 'pharmacist_queue.php') {
+            $activeKey = 'pharmacist_queue';
+        } elseif ($currentFile === 'rfq_management.php') {
+            $activeKey = 'rfq_management';
         } elseif ($currentFile === 'guide.php') {
             $activeKey = 'guide';
         }
@@ -194,10 +198,12 @@ $adminName = $adminCheck['name'] ?? 'مدیر سیستم';
             'فروشگاه و اشتراک' => [
                 'orders' => ['icon' => 'local_shipping', 'title' => 'سفارشات و ارسال', 'url' => 'orders.php'],
                 'inventory' => ['icon' => 'inventory_2', 'title' => 'انبار و محصولات', 'url' => 'inventory.php'],
+                'rfq_management' => ['icon' => 'request_quote', 'title' => 'استعلام عمده و مناقصات (RFQ)', 'url' => 'rfq_management.php'],
                 'subscriptions' => ['icon' => 'event_repeat', 'title' => 'مدیریت اشتراک‌ها (Autoship)', 'url' => 'subscriptions.php', 'feature' => 'autoship'],
                 'recommendations' => ['icon' => 'auto_awesome', 'title' => 'پیشنهادات و بنرها', 'url' => 'recommendations.php'],
             ],
             'کلینیک و خدمات' => [
+                'pharmacist_queue' => ['icon' => 'prescriptions', 'title' => 'تایید نسخه الکترونیک (Rx)', 'url' => 'pharmacist_queue.php', 'feature' => 'prescription_rx'],
                 'clinic' => ['icon' => 'medical_services', 'title' => 'مدیریت کلینیک و پزشکان', 'url' => 'clinic_management.php', 'feature' => 'clinic_booking'],
                 'donations' => ['icon' => 'volunteer_activism', 'title' => 'گزارش کمک‌های خیریه', 'url' => 'donations.php', 'feature' => 'charity_campaigns'],
             ],

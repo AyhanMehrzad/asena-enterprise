@@ -448,6 +448,13 @@ class SmsService {
     }
 
     /**
+     * General send alias pointing to sendDirectSms
+     */
+    public function send($phone, $text) {
+        return $this->sendDirectSms($phone, $text);
+    }
+
+    /**
      * Send Direct / Simple SMS (Used for general alerts and pattern fallback)
      */
     public function sendDirectSms($phone, $text, $actionTag = 'DIRECT') {

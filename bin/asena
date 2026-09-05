@@ -50,6 +50,18 @@ switch ($cmd) {
         runAutoshipWorker();
         break;
 
+    case 'b2b:rfq-expire':
+        runRfqExpireWorker();
+        break;
+
+    case 'flash:sync':
+        runFlashSaleSyncWorker();
+        break;
+
+    case 'system:health':
+        runSystemHealthCheck();
+        break;
+
     case 'help':
     default:
         showHelp();
@@ -282,17 +294,133 @@ PHP;
 }
 
 /**
- * Headless Autoship Worker Runner
+ * Headless Autoship Worker Runner (Chewy.com Benchmark)
  */
 function runAutoshipWorker(): void {
-    info("در حال اجرای موتور بررسی و ارسال سفارشات خودکار دوره‌ای (Autoship)...");
-    $workerFile = ASENA_ROOT . '/actions/autoship_worker.php';
-    if (file_exists($workerFile)) {
-        require_once $workerFile;
-        success("فرآیند Autoship با موفقیت خاتمه یافت.");
-    } else {
-        warn("فایل actions/autoship_worker.php پیدا نشد.");
+    info("در حال اجرای موتور بررسی و ارسال سفارشات خودکار دوره‌ای (Autoship Engine)...");
+    require_once ASENA_ROOT . '/includes/db.php';
+    require_once ASENA_ROOT . '/includes/AutoshipService.php';
+    require_once ASENA_ROOT . '/includes/SmsService.php';
+
+    global $pdo;
+    $autoship = new AutoshipService($pdo);
+    $sms = new SmsService();
+
+    // 1. Process orders due today or earlier
+    $dueList = $autoship->getDueSubscriptions();
+    info("تعداد اشتراک‌های سررسید شده برای پردازش: " . count($dueList));
+
+    $processed = 0;
+    foreach ($dueList as $sub) {
+        $subId = (int)$sub['id'];
+        $userId = (int)$sub['user_id'];
+        $orderId = $autoship->shipNow($subId, $userId);
+
+        if ($orderId) {
+            $processed++;
+            success("سفارش #{$orderId} برای کاربر {$sub['user_name']} ({$sub['user_phone']}) با موفقیت ایجاد شد.");
+            
+            if (!empty($sub['user_phone'])) {
+                $text = "آسنا: اشتراک ادواری شما (#{$subId}) پردازش گردید و سفارش (#{$orderId}) در حال آماده‌سازی است.";
+                $sms->send($sub['user_phone'], $text);
+            }
+        }
     }
+
+    // 2. Proactive 3-day reminder SMS
+    $upcoming = $autoship->getUpcomingReminders(3);
+    info("تعداد یادآوری‌های ارسالی برای سفارشات ۳ روز آینده: " . count($upcoming));
+    foreach ($upcoming as $up) {
+        if (!empty($up['user_phone'])) {
+            $text = "آسنا: سفارش ادواری (Autoship) شما ۳ روز دیگر ارسال خواهد شد. در صورت نیاز به تغییر اقلام یا تعویق تاریخ، به پنل کاربری مراجعه کنید.";
+            $sms->send($up['user_phone'], $text);
+        }
+    }
+
+    success("پردازش اتوشیپ با موفقیت تکمیل شد ($processed سفارش پردازش شد).");
+}
+
+/**
+ * Expire Outdated RFQ Quotes (Alibaba.com Benchmark)
+ */
+function runRfqExpireWorker(): void {
+    info("در حال بررسی و منقضی‌سازی استعلام‌های گذشته از تاریخ اعتبار (RFQ Tender Expirer)...");
+    require_once ASENA_ROOT . '/includes/db.php';
+    $pdo = $GLOBALS['pdo'];
+
+    $stmt = $pdo->prepare("
+        UPDATE b2b_rfqs 
+        SET status = 'expired' 
+        WHERE status = 'quoted' AND quote_valid_until < CURRENT_DATE
+    ");
+    $stmt->execute();
+    $count = $stmt->rowCount();
+    success("تعداد {$count} پیش‌فاکتور منقضی شده با موفقیت علامت‌گذاری شدند.");
+}
+
+/**
+ * Sync and Expire Flash Deals (Digikala.com Benchmark)
+ */
+function runFlashSaleSyncWorker(): void {
+    info("در حال همگام‌سازی و بررسی پیشنهادات شگفت‌انگیز (Flash Sales)...");
+    require_once ASENA_ROOT . '/includes/db.php';
+    $pdo = $GLOBALS['pdo'];
+
+    $stmt = $pdo->prepare("
+        UPDATE flash_sales 
+        SET is_active = 0 
+        WHERE is_active = 1 AND (ends_at <= NOW() OR claimed_count >= stock_quota)
+    ");
+    $stmt->execute();
+    $count = $stmt->rowCount();
+    success("تعداد {$count} پیشنهاد شگفت‌انگیز خاتمه‌یافته یا تکمیل ظرفیت با موفقیت غیرفعال شدند.");
+}
+
+/**
+ * Full Enterprise System Diagnostic Health Check
+ */
+function runSystemHealthCheck(): void {
+    out("\n==================================================", '34');
+    out("       ASENA ENTERPRISE - SYSTEM HEALTH CHECK     ", '34');
+    out("==================================================\n", '34');
+
+    // 1. PHP Version
+    info("نسخه PHP: " . phpversion());
+
+    // 2. Database Connection
+    require_once ASENA_ROOT . '/includes/db.php';
+    $db = $GLOBALS['pdo'] ?? null;
+    try {
+        if ($db) {
+            $dbName = $db->query("SELECT DATABASE()")->fetchColumn();
+            $tables = $db->query("SHOW TABLES")->fetchAll(PDO::FETCH_COLUMN);
+            success("پایگاه داده: {$dbName} (متصل، شامل " . count($tables) . " جدول)");
+        } else {
+            error("اتصال به دیتابیس برقرار نشد.");
+        }
+    } catch (Exception $e) {
+        error("خطای دیتابیس: " . $e->getMessage());
+    }
+
+    // 3. Writable Directories
+    $dirs = [
+        ASENA_ROOT . '/uploads',
+        ASENA_ROOT . '/uploads/prescriptions',
+        ASENA_ROOT . '/dist'
+    ];
+    foreach ($dirs as $d) {
+        if (!is_dir($d)) @mkdir($d, 0755, true);
+        if (is_writable($d)) {
+            success("دایرکتوری قابل نوشتن: " . basename($d));
+        } else {
+            warn("دایرکتوری فاقد دسترسی نوشتن: " . basename($d));
+        }
+    }
+
+    // 4. Feature Matrix Check
+    $tier = Feature::currentTier();
+    info("نسخه فعال: {$tier} (" . Feature::tierName() . ")");
+    echo "\n";
 }
 
 /**
@@ -318,6 +446,9 @@ function showHelp(): void {
     out("  php bin/asena status                         مشاهده وضعیت نسخه فعال و قابلیت‌ها");
     out("  php bin/asena set-tier <tier>                تغییر نسخه در حال اجرا (basic, standard, premium, pharmacy, enterprise)");
     out("  php bin/asena package --tier=<tier>          تولید فایل زیپ اختصاصی برای هاست خریدار");
-    out("  php bin/asena autoship:run                   اجرای تسک پس‌زمینه شارژ و پردازش سفارشات ادواری");
+    out("  php bin/asena autoship:run                   اجرای موتور اتوشیپ و ارسال پیامک‌های نوبت (Chewy)");
+    out("  php bin/asena b2b:rfq-expire                 منقضی‌سازی پیش‌فاکتورهای گذشته از موعد استعلام عمده (Alibaba)");
+    out("  php bin/asena flash:sync                     همگام‌سازی و بستن پیشنهادات شگفت‌انگیز منقضی (Digikala)");
+    out("  php bin/asena system:health                  بررسی سلامت زیرساخت، دیتابیس و دسترسی‌های دایرکتوری");
     echo "\n";
 }
