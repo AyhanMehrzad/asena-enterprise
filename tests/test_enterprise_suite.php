@@ -518,6 +518,33 @@ $unbanOk = $audit->unbanIp($testAttackerIp);
 assertTest($unbanOk === true, 'TrafficMonitoringService: Successfully removes temporary IP restriction');
 assertTest($traffic->getBanRemainingSeconds($testAttackerIp) === 0, 'TrafficMonitoringService: Confirms zero remaining ban duration post-unban');
 
+// 13. Testing Platform Resilience, CSRF, SMS Sandbox & Error Pages
+echo "\n13. Testing Platform Resilience, CSRF, SMS Sandbox & Error Pages:\n";
+
+// CSRF tokens
+$csrfToken = SecurityMiddleware::generateCsrfToken();
+assertTest(!empty($csrfToken) && strlen($csrfToken) === 64, 'CSRF: Generates secure 64-character token');
+assertTest(SecurityMiddleware::validateCsrfToken($csrfToken) === true, 'CSRF: Successfully validates matching CSRF token');
+assertTest(SecurityMiddleware::validateCsrfToken('tampered_token_value_xyz') === false, 'CSRF: Rejects forged/tampered CSRF token');
+
+// SMS Sandbox Mock Delivery
+$smsService = new SmsService();
+$smsResult = $smsService->sendPatternRequest('09120000000', 12345, ['998877'], 'OTP_TEST');
+assertTest($smsResult === true, 'SmsService: Mock/Sandbox mode executes without external gateway latency');
+
+// Verify mock delivery log in DB
+$checkSmsLog = $pdo->prepare("SELECT * FROM sms_delivery_logs WHERE phone = ? ORDER BY id DESC LIMIT 1");
+$checkSmsLog->execute(['09120000000']);
+$smsLogEntry = $checkSmsLog->fetch(PDO::FETCH_ASSOC);
+assertTest($smsLogEntry !== false && $smsLogEntry['body_id'] == 12345, 'SmsService: Successfully records SMS dispatch history in database');
+
+// Error Pages & .htaccess
+assertTest(file_exists(__DIR__ . '/../404.php'), 'Resilience: Custom branded 404 error page exists');
+assertTest(file_exists(__DIR__ . '/../500.php'), 'Resilience: Custom branded 500 error page exists');
+$htaccessContent = file_get_contents(__DIR__ . '/../.htaccess');
+assertTest(strpos($htaccessContent, 'ErrorDocument 404 /404.php') !== false, 'Resilience: .htaccess routes 404 errors to custom Persian page');
+assertTest(strpos($htaccessContent, 'ErrorDocument 500 /500.php') !== false, 'Resilience: .htaccess routes 500 errors to custom Persian page');
+
 echo "\n=========================================================\n";
 echo "   TEST SUMMARY: {$passedTests} / {$totalTests} TESTS PASSED (" . round(($passedTests / $totalTests) * 100) . "%)\n";
 echo "=========================================================\n";

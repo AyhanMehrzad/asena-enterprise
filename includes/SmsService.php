@@ -14,6 +14,7 @@ class SmsService {
     private $username;
     private $password;
     private $from;
+    private bool $isMock = false;
 
     private $lastError = '';
     private $lastLog = [];
@@ -31,11 +32,22 @@ class SmsService {
     public function __construct() {
         self::loadEnv();
 
-        $this->apiKey   = getenv('MELIPAYAMAK_API_KEY') ?: 'd3cbc1e6-79e8-4a25-910e-35e86370cad0';
-        $rawUsername    = getenv('MELIPAYAMAK_USERNAME') ?: '09146676978';
-        $this->username = self::normalizePhone($rawUsername) ?: '09146676978';
-        $this->password = getenv('MELIPAYAMAK_PASSWORD') ?: 'd3cbc1e6-79e8-4a25-910e-35e86370cad0';
-        $this->from     = getenv('MELIPAYAMAK_FROM') ?: '2170007653';
+        $this->apiKey   = getenv('MELIPAYAMAK_API_KEY') ?: '';
+        $rawUsername    = getenv('MELIPAYAMAK_USERNAME') ?: '';
+        $this->username = self::normalizePhone($rawUsername) ?: '';
+        $this->password = getenv('MELIPAYAMAK_PASSWORD') ?: '';
+        $this->from     = getenv('MELIPAYAMAK_FROM') ?: '';
+
+        // Safe Sandbox Detection:
+        // Automatically mock if explicit sandbox flag is set, credentials are empty/placeholder, or running in CLI tests
+        $this->isMock = (
+            getenv('MELIPAYAMAK_SANDBOX') === 'true' ||
+            empty($this->username) ||
+            empty($this->password) ||
+            $this->username === 'your_username' ||
+            $this->password === 'your_password' ||
+            (php_sapi_name() === 'cli' && empty(getenv('MELIPAYAMAK_LIVE')))
+        );
     }
 
     /**
@@ -350,6 +362,12 @@ class SmsService {
             return false;
         }
 
+        // Safe Mock Delivery in Sandbox Mode
+        if ($this->isMock) {
+            $this->logMockDelivery($actionTag, $phone, (string)$intBodyId, implode(' ; ', $textVariables));
+            return true;
+        }
+
         $indexedArgs = array_values(array_map('strval', $textVariables));
         $effectiveUser = $this->getEffectiveUsername();
 
@@ -464,6 +482,12 @@ class SmsService {
             return false;
         }
 
+        // Safe Mock Delivery in Sandbox Mode
+        if ($this->isMock) {
+            $this->logMockDelivery($actionTag, $phone, null, (string)$text);
+            return true;
+        }
+
         $url = "https://rest.payamak-panel.com/api/SendSMS/SendSMS";
         $headers = ['Content-Type: application/json; charset=utf-8'];
         $payload = [
@@ -505,6 +529,27 @@ class SmsService {
         }
 
         return false;
+    }
+
+    /**
+     * Record simulated SMS delivery in sandbox mode without hitting external network
+     */
+    private function logMockDelivery(string $actionTag, string $phone, ?string $bodyId, string $message): void {
+        try {
+            $pdo = $GLOBALS['pdo'] ?? null;
+            if ($pdo) {
+                $stmt = $pdo->prepare("
+                    INSERT INTO sms_delivery_logs (phone, action_tag, body_id, message, is_mock, status, gateway_response, created_at)
+                    VALUES (:phone, :tag, :body, :msg, 1, 'mock_delivered', '200 OK (Simulated Sandbox)', NOW())
+                ");
+                $stmt->execute([
+                    'phone' => $phone,
+                    'tag' => $actionTag,
+                    'body' => $bodyId,
+                    'msg' => substr($message, 0, 500)
+                ]);
+            }
+        } catch (Throwable $e) {}
     }
 
     /**

@@ -29,19 +29,19 @@ if (!is_dir(dirname($lock_file))) {
     mkdir(dirname($lock_file), 0755, true);
 }
 
-// --- TELEGRAM BOT CONFIGURATION ---
-define('TELEGRAM_BOT_TOKEN', 'YOUR_BOT_TOKEN_HERE');
-define('TELEGRAM_ADMIN_CHAT_ID', 'YOUR_CHAT_ID_HERE');
-
+// --- TELEGRAM BOT CONFIGURATION (Decoupled to environment) ---
 function sendTelegramMessage($message) {
-    if (TELEGRAM_BOT_TOKEN === 'YOUR_BOT_TOKEN_HERE') {
-        error_log("Telegram notification skipped: Bot token not configured.");
+    $botToken = Env::get('TELEGRAM_BOT_TOKEN', '');
+    $chatId = Env::get('TELEGRAM_ADMIN_CHAT_ID', '');
+
+    if (empty($botToken) || empty($chatId) || $botToken === 'YOUR_BOT_TOKEN_HERE') {
+        error_log("Telegram notification skipped: Bot token or Chat ID not configured.");
         return false;
     }
     
-    $url = "https://api.telegram.org/bot" . TELEGRAM_BOT_TOKEN . "/sendMessage";
+    $url = "https://api.telegram.org/bot" . $botToken . "/sendMessage";
     $data = [
-        'chat_id' => TELEGRAM_ADMIN_CHAT_ID,
+        'chat_id' => $chatId,
         'text' => $message,
         'parse_mode' => 'HTML'
     ];

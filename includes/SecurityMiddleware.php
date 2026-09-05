@@ -123,4 +123,31 @@ class SecurityMiddleware {
             'safe_filename' => $safeName
         ];
     }
+
+    /**
+     * Generate or retrieve session CSRF token
+     */
+    public static function generateCsrfToken(): string {
+        if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
+            @session_start();
+        }
+        if (empty($_SESSION['csrf_token'])) {
+            $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+        }
+        return $_SESSION['csrf_token'];
+    }
+
+    /**
+     * Validate submitted CSRF token using constant-time comparison
+     */
+    public static function validateCsrfToken(?string $token): bool {
+        if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
+            @session_start();
+        }
+        $expected = $_SESSION['csrf_token'] ?? '';
+        if (empty($expected) || empty($token) || !hash_equals($expected, trim($token))) {
+            return false;
+        }
+        return true;
+    }
 }

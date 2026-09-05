@@ -69,4 +69,6 @@ Options -Indexes
     Require all denied
 </FilesMatch>
 
-
+# 10. Custom Branded Error Documents
+ErrorDocument 404 /404.php
+ErrorDocument 500 /500.php

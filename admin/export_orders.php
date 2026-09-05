@@ -25,12 +25,12 @@ $stmt = $pdo->prepare("
 $stmt->execute();
 $orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-// Send Telegram Notification
-$botToken = 'YOUR_TELEGRAM_BOT_TOKEN_HERE';
-$chatId = 'YOUR_ADMIN_CHAT_ID_HERE'; // The admin's chat ID
+// Send Telegram Notification (Decoupled to environment)
+$botToken = Env::get('TELEGRAM_BOT_TOKEN', '');
+$chatId = Env::get('TELEGRAM_ADMIN_CHAT_ID', '');
 
 $shipmentCount = count($orders);
-if ($shipmentCount > 0 && $botToken !== 'YOUR_TELEGRAM_BOT_TOKEN_HERE') {
+if ($shipmentCount > 0 && !empty($botToken) && !empty($chatId)) {
     $message = "📦 *گزارش ارسال‌های امروز*\n\n";
     $message .= "تعداد سفارشات برای پردازش و ارسال: *" . $shipmentCount . "* سفارش\n";
     $message .= "لطفاً پنل مدیریت را برای جزئیات بررسی کنید.";
