@@ -60,6 +60,25 @@ class FlashSaleService
     }
 
     /**
+     * Retrieve the primary active flash sale deal for hero/banner promotion.
+     */
+    public function getActiveFlashSale(): ?array
+    {
+        $deals = $this->getActiveFlashSales(1);
+        if (empty($deals)) {
+            return null;
+        }
+
+        $deal = $deals[0];
+        $deal['title'] = $deal['title'] ?? ($deal['product_name'] ? 'تخفیف ویژه: ' . $deal['product_name'] : 'پیشنهاد شگفت‌انگیز آسنا');
+        $deal['flash_price'] = (int)($deal['special_price'] ?? 0);
+        $deal['original_price'] = (int)($deal['regular_price'] ?? 0);
+        $deal['claimed_percent'] = (int)($deal['progress_percent'] ?? 0);
+
+        return $deal;
+    }
+
+    /**
      * Claim / decrement a flash sale item upon purchase.
      */
     public function recordClaim(int $flashSaleId, int $qty = 1): bool

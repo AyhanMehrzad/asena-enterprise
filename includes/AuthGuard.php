@@ -52,7 +52,15 @@ class AuthGuard {
         $u = self::user();
         if (!$u) {
             $url = $returnUrl ?? ($_SERVER['REQUEST_URI'] ?? 'index.php');
-            header("Location: /login.php?return_url=" . urlencode($url));
+            $script = str_replace('\\', '/', $_SERVER['SCRIPT_NAME'] ?? '');
+            if (preg_match('#/(organization|admin|pharmacist|doctor|seller)/#', $script)) {
+                $baseApp = dirname(dirname($script));
+            } else {
+                $baseApp = dirname($script);
+            }
+            $baseApp = rtrim(str_replace('\\', '/', $baseApp), '/');
+            $loginTarget = (!empty($baseApp) && $baseApp !== '.') ? ($baseApp . '/login.php') : 'login.php';
+            header("Location: " . $loginTarget . "?return_url=" . urlencode($url));
             exit;
         }
         return $u;
@@ -64,6 +72,12 @@ class AuthGuard {
     public static function requireRole($roles, ?PDO $pdo = null): array {
         $u = self::requireAuth();
         $allowedRoles = is_array($roles) ? $roles : [$roles];
+        if (in_array('organization', $allowedRoles, true) && !in_array('organization_manager', $allowedRoles, true)) {
+            $allowedRoles[] = 'organization_manager';
+        }
+        if (in_array('organization_manager', $allowedRoles, true) && !in_array('organization', $allowedRoles, true)) {
+            $allowedRoles[] = 'organization';
+        }
 
         $currentRole = $u['role'] ?? 'user';
         if (!in_array($currentRole, $allowedRoles, true)) {

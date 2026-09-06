@@ -5,7 +5,7 @@ $message = '';
 $messageType = '';
 
 // Handle Facility Details Update
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'update_profile') {
+if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POST['action']) && $_POST['action'] === 'update_profile') {
     csrf_verify();
 
     $name           = trim($_POST['name'] ?? '');
@@ -68,49 +68,158 @@ $reviewCount = (int)($currentOrg['review_count'] ?? 0);
         </div>
     <?php endif; ?>
 
-    <!-- Metric Cards -->
-    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-3.5">
-            <div class="w-12 h-12 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
+    <!-- Metric Cards Matching Reference Screenshot -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="bg-surface-container-lowest p-5 rounded-2xl stat-card-shadow border border-outline-variant/10 flex items-center justify-between">
+            <div class="space-y-1">
+                <span class="text-xs font-bold text-on-surface-variant">پزشکان و کادر همکار</span>
+                <div class="flex items-baseline gap-2">
+                    <span class="text-2xl font-black text-on-surface"><?= $docCount ?></span>
+                    <span class="text-xs text-secondary-container font-bold">متخصص</span>
+                </div>
+                <p class="text-[11px] text-slate-400">پزشک، داروساز و گرومر</p>
+            </div>
+            <div class="w-12 h-12 rounded-2xl bg-indigo-500/10 text-indigo-600 flex items-center justify-center">
                 <span class="material-symbols-outlined text-2xl">stethoscope</span>
             </div>
-            <div>
-                <span class="text-xs text-slate-500 font-bold block">پزشکان همکار</span>
-                <span class="text-2xl font-black text-slate-900"><?= $docCount ?></span>
-            </div>
         </div>
 
-        <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-3.5">
-            <div class="w-12 h-12 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center">
+        <div class="bg-surface-container-lowest p-5 rounded-2xl stat-card-shadow border border-outline-variant/10 flex items-center justify-between">
+            <div class="space-y-1">
+                <span class="text-xs font-bold text-on-surface-variant">اقلام فعال در داروخانه</span>
+                <div class="flex items-baseline gap-2">
+                    <span class="text-2xl font-black text-on-surface"><?= $invCount ?></span>
+                    <span class="text-xs text-blue-600 font-bold">قلم دارو</span>
+                </div>
+                <p class="text-[11px] text-slate-400">موجودی انبار و ثبت نسخه</p>
+            </div>
+            <div class="w-12 h-12 rounded-2xl bg-teal-500/10 text-teal-600 flex items-center justify-center">
                 <span class="material-symbols-outlined text-2xl">medication</span>
             </div>
-            <div>
-                <span class="text-xs text-slate-500 font-bold block">اقلام داروخانه</span>
-                <span class="text-2xl font-black text-slate-900"><?= $invCount ?></span>
-            </div>
         </div>
 
-        <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-3.5">
-            <div class="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
+        <div class="bg-surface-container-lowest p-5 rounded-2xl stat-card-shadow border border-outline-variant/10 flex items-center justify-between">
+            <div class="space-y-1">
+                <span class="text-xs font-bold text-on-surface-variant">امتیاز رضایت مراجعین</span>
+                <div class="flex items-baseline gap-2">
+                    <span class="text-2xl font-black text-amber-500"><?= number_format($rating, 1) ?></span>
+                    <span class="text-xs text-amber-500 font-bold">★ ۵.۰</span>
+                </div>
+                <p class="text-[11px] text-slate-400">بر اساس بازخورد بیماران</p>
+            </div>
+            <div class="w-12 h-12 rounded-2xl bg-amber-500/10 text-amber-600 flex items-center justify-center">
                 <span class="material-symbols-outlined text-2xl">star</span>
             </div>
-            <div>
-                <span class="text-xs text-slate-500 font-bold block">امتیاز مراجعین</span>
-                <span class="text-2xl font-black text-slate-900"><?= number_format($rating, 1) ?></span>
-            </div>
         </div>
 
-        <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-3.5">
-            <div class="w-12 h-12 rounded-xl <?= !empty($currentOrg['is_24_7']) ? 'bg-rose-50 text-rose-600' : 'bg-slate-100 text-slate-400' ?> flex items-center justify-center">
+        <div class="bg-surface-container-lowest p-5 rounded-2xl stat-card-shadow border border-outline-variant/10 flex items-center justify-between">
+            <div class="space-y-1">
+                <span class="text-xs font-bold text-on-surface-variant">وضعیت بخش اورژانس</span>
+                <div class="flex items-baseline gap-2">
+                    <span class="text-lg font-black <?= !empty($currentOrg['is_24_7']) ? 'text-rose-600' : 'text-slate-600' ?>">
+                        <?= !empty($currentOrg['is_24_7']) ? '۲۴ ساعته فعال' : 'شیفت روزانه' ?>
+                    </span>
+                </div>
+                <p class="text-[11px] text-slate-400"><?= !empty($currentOrg['is_24_7']) ? 'پذیرش شبانه‌روزی فوری' : 'ساعات کاری مندرج' ?></p>
+            </div>
+            <div class="w-12 h-12 rounded-2xl <?= !empty($currentOrg['is_24_7']) ? 'bg-rose-500/10 text-rose-600' : 'bg-slate-100 text-slate-400' ?> flex items-center justify-center">
                 <span class="material-symbols-outlined text-2xl">e911_emergency</span>
             </div>
-            <div>
-                <span class="text-xs text-slate-500 font-bold block">بخش اورژانس</span>
-                <span class="text-sm font-black <?= !empty($currentOrg['is_24_7']) ? 'text-rose-600' : 'text-slate-600' ?>">
-                    <?= !empty($currentOrg['is_24_7']) ? '۲۴ ساعته فعال' : 'غیرفعال' ?>
-                </span>
-            </div>
         </div>
+    </div>
+
+    <!-- Quick Management Action Tiles -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <a href="appointments.php" class="bg-white p-4 rounded-2xl border border-slate-200 hover:border-sky-500 hover:shadow-md transition-all group flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-sky-50 group-hover:bg-sky-600 text-sky-600 group-hover:text-white transition-colors flex items-center justify-center">
+                    <span class="material-symbols-outlined text-xl">calendar_month</span>
+                </div>
+                <div>
+                    <h3 class="text-xs font-black text-slate-800">نوبت‌دهی و پذیرش</h3>
+                    <p class="text-[11px] text-slate-400">ثبت نوبت، پزشکان و گرومرها</p>
+                </div>
+            </div>
+            <span class="material-symbols-outlined text-slate-400 group-hover:text-sky-600 group-hover:-translate-x-1 transition-all text-lg">arrow_back</span>
+        </a>
+
+        <a href="shifts.php" class="bg-white p-4 rounded-2xl border border-slate-200 hover:border-sky-500 hover:shadow-md transition-all group flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-blue-50 group-hover:bg-blue-600 text-blue-600 group-hover:text-white transition-colors flex items-center justify-center">
+                    <span class="material-symbols-outlined text-xl">more_time</span>
+                </div>
+                <div>
+                    <h3 class="text-xs font-black text-slate-800">مدیریت زمان و شیفت‌ها</h3>
+                    <p class="text-[11px] text-slate-400">تقویم کاری و ثبت مرخصی</p>
+                </div>
+            </div>
+            <span class="material-symbols-outlined text-slate-400 group-hover:text-blue-600 group-hover:-translate-x-1 transition-all text-lg">arrow_back</span>
+        </a>
+
+        <a href="doctors.php" class="bg-white p-4 rounded-2xl border border-slate-200 hover:border-sky-500 hover:shadow-md transition-all group flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-purple-50 group-hover:bg-purple-600 text-purple-600 group-hover:text-white transition-colors flex items-center justify-center">
+                    <span class="material-symbols-outlined text-xl">group</span>
+                </div>
+                <div>
+                    <h3 class="text-xs font-black text-slate-800">کادر درمانی و گرومرها</h3>
+                    <p class="text-[11px] text-slate-400">پزشکان، گرومرها و داروسازان</p>
+                </div>
+            </div>
+            <span class="material-symbols-outlined text-slate-400 group-hover:text-purple-600 group-hover:-translate-x-1 transition-all text-lg">arrow_back</span>
+        </a>
+
+        <a href="subscriptions.php" class="bg-white p-4 rounded-2xl border border-slate-200 hover:border-sky-500 hover:shadow-md transition-all group flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-amber-50 group-hover:bg-amber-600 text-amber-600 group-hover:text-white transition-colors flex items-center justify-center">
+                    <span class="material-symbols-outlined text-xl">autorenew</span>
+                </div>
+                <div>
+                    <h3 class="text-xs font-black text-slate-800">اشتراک‌ها و اتوشیپ</h3>
+                    <p class="text-[11px] text-slate-400">تکرار خودکار غذا و دارو</p>
+                </div>
+            </div>
+            <span class="material-symbols-outlined text-slate-400 group-hover:text-amber-600 group-hover:-translate-x-1 transition-all text-lg">arrow_back</span>
+        </a>
+
+        <a href="orders.php" class="bg-white p-4 rounded-2xl border border-slate-200 hover:border-sky-500 hover:shadow-md transition-all group flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-indigo-50 group-hover:bg-indigo-600 text-indigo-600 group-hover:text-white transition-colors flex items-center justify-center">
+                    <span class="material-symbols-outlined text-xl">local_shipping</span>
+                </div>
+                <div>
+                    <h3 class="text-xs font-black text-slate-800">سفارشات فروش و پست</h3>
+                    <p class="text-[11px] text-slate-400">کدهای رهگیری و مرسولات</p>
+                </div>
+            </div>
+            <span class="material-symbols-outlined text-slate-400 group-hover:text-indigo-600 group-hover:-translate-x-1 transition-all text-lg">arrow_back</span>
+        </a>
+
+        <a href="inventory.php" class="bg-white p-4 rounded-2xl border border-slate-200 hover:border-sky-500 hover:shadow-md transition-all group flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-teal-50 group-hover:bg-teal-600 text-teal-600 group-hover:text-white transition-colors flex items-center justify-center">
+                    <span class="material-symbols-outlined text-xl">medication</span>
+                </div>
+                <div>
+                    <h3 class="text-xs font-black text-slate-800">داروخانه و کالاها</h3>
+                    <p class="text-[11px] text-slate-400">قیمت‌گذاری و انبار</p>
+                </div>
+            </div>
+            <span class="material-symbols-outlined text-slate-400 group-hover:text-teal-600 group-hover:-translate-x-1 transition-all text-lg">arrow_back</span>
+        </a>
+
+        <a href="wallet.php" class="bg-white p-4 rounded-2xl border border-slate-200 hover:border-sky-500 hover:shadow-md transition-all group flex items-center justify-between col-span-1 sm:col-span-2">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-emerald-50 group-hover:bg-emerald-600 text-emerald-600 group-hover:text-white transition-colors flex items-center justify-center">
+                    <span class="material-symbols-outlined text-xl">account_balance_wallet</span>
+                </div>
+                <div>
+                    <h3 class="text-xs font-black text-slate-800">مدیریت مالی، کارمزد ۵٪ پلتفرم و تسویه پایا</h3>
+                    <p class="text-[11px] text-slate-400">تسویه هفتگی پنج‌شنبه‌ها به شماره شبا</p>
+                </div>
+            </div>
+            <span class="material-symbols-outlined text-slate-400 group-hover:text-emerald-600 group-hover:-translate-x-1 transition-all text-lg">arrow_back</span>
+        </a>
     </div>
 
     <!-- Edit Profile Form -->

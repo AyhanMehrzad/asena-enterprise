@@ -68,7 +68,7 @@ $effective_desc = isset($page_description) ? $page_description : $default_seo['d
 
 $proto = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') || (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https') ? 'https' : 'http';
 $host = $_SERVER['HTTP_HOST'] ?? 'asena.company';
-$effective_canonical = isset($canonical_url) ? $canonical_url : "$proto://$host" . strtok($_SERVER['REQUEST_URI'], '?');
+$effective_canonical = isset($canonical_url) ? $canonical_url : "$proto://$host" . strtok($_SERVER['REQUEST_URI'] ?? '/', '?');
 $effective_og_image = isset($og_image) ? (strpos($og_image, 'http') === 0 ? $og_image : "$proto://$host/" . ltrim($og_image, '/')) : "$proto://$host/assets/images/og-asena.png";
 ?>
 <!DOCTYPE html>
@@ -225,35 +225,81 @@ if (function_exists('get_curated_recommendations')) {
                     <span class="material-symbols-outlined text-2xl">menu</span>
                 </button>
 
-                <!-- Desktop Links -->
-                <div class="hidden lg:flex gap-8 flex-row shrink-0">
-                    <a class="text-white text-sm font-medium hover:text-secondary-container transition-all duration-200 <?php echo $current_page == 'index.php' ? 'border-b-2 border-white pb-1 opacity-100' : 'opacity-90'; ?>" href="index.php">خانه</a>
+                <!-- Desktop Links (Streamlined) -->
+                <div class="hidden lg:flex gap-5 xl:gap-7 flex-row shrink-0 items-center">
+                    <a class="text-white text-sm font-semibold hover:text-secondary-container transition-all duration-200 <?php echo $current_page == 'index.php' ? 'border-b-2 border-white pb-1 opacity-100' : 'opacity-90'; ?>" href="index.php">خانه</a>
                     <?php if (Feature::has('petshop_catalog')): ?>
-                        <a class="text-white text-sm font-medium hover:text-secondary-container transition-all duration-200 <?php echo $current_page == 'shop.php' ? 'border-b-2 border-white pb-1 opacity-100' : 'opacity-90'; ?>" href="shop.php">فروشگاه</a>
+                        <a class="text-white text-sm font-semibold hover:text-secondary-container transition-all duration-200 <?php echo $current_page == 'shop.php' ? 'border-b-2 border-white pb-1 opacity-100' : 'opacity-90'; ?>" href="shop.php">فروشگاه</a>
                     <?php endif; ?>
                     <?php if (Feature::has('pharmacy_catalog')): ?>
-                        <a class="text-white text-sm font-medium hover:text-secondary-container transition-all duration-200 <?php echo $current_page == 'pharmacy.php' ? 'border-b-2 border-white pb-1 opacity-100' : 'opacity-90'; ?>" href="pharmacy.php">داروخانه تخصصی</a>
+                        <a class="text-white text-sm font-semibold hover:text-secondary-container transition-all duration-200 <?php echo $current_page == 'pharmacy.php' ? 'border-b-2 border-white pb-1 opacity-100' : 'opacity-90'; ?>" href="pharmacy.php">داروخانه تخصصی</a>
                     <?php endif; ?>
                     <?php if (Feature::has('clinic_booking')): ?>
-                        <a class="text-white text-sm font-medium hover:text-secondary-container transition-all duration-200 <?php echo $current_page == 'booking.php' ? 'border-b-2 border-white pb-1 opacity-100' : 'opacity-90'; ?>" href="booking.php">نوبت‌دهی</a>
-                        <a class="text-white text-sm font-medium hover:text-secondary-container transition-all duration-200 <?php echo in_array($current_page, ['organizations.php', 'organization_profile.php']) ? 'border-b-2 border-white pb-1 opacity-100' : 'opacity-90'; ?>" href="organizations.php">مراکز درمانی</a>
+                        <a class="text-white text-sm font-semibold hover:text-secondary-container transition-all duration-200 <?php echo $current_page == 'booking.php' ? 'border-b-2 border-white pb-1 opacity-100' : 'opacity-90'; ?>" href="booking.php">نوبت‌دهی</a>
                     <?php endif; ?>
-                    <?php if (Feature::has('autoship')): ?>
-                        <a class="text-white text-sm font-medium hover:text-secondary-container transition-all duration-200 <?php echo $current_page == 'subscriptions.php' ? 'border-b-2 border-white pb-1 opacity-100' : 'opacity-90'; ?>" href="subscriptions.php">اشتراک خودکار</a>
-                    <?php endif; ?>
-                    <?php if (Feature::has('blog_engine')): ?>
-                        <a class="text-white text-sm font-medium hover:text-secondary-container transition-all duration-200 <?php echo $current_page == 'knowledge_base.php' ? 'border-b-2 border-white pb-1 opacity-100' : 'opacity-90'; ?>" href="knowledge_base.php">دانشنامه</a>
-                    <?php endif; ?>
-                    <?php if (Feature::has('charity_campaigns')): ?>
-                        <a class="text-white text-sm font-medium hover:text-secondary-container transition-all duration-200 <?php echo $current_page == 'charity.php' ? 'border-b-2 border-white pb-1 opacity-100' : 'opacity-90'; ?>" href="charity.php">خیریه</a>
-                    <?php endif; ?>
+
+                    <!-- Dropdown for Other Services (Clean & Compact) -->
+                    <div class="relative group">
+                        <button type="button" class="text-white text-sm font-semibold hover:text-secondary-container transition-all duration-200 flex items-center gap-1 opacity-90 group-hover:opacity-100 cursor-pointer py-2">
+                            <span>سایر خدمات</span>
+                            <span class="material-symbols-outlined text-base transition-transform duration-200 group-hover:rotate-180">expand_more</span>
+                        </button>
+                        <div class="absolute right-0 top-full pt-1 w-60 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 transform origin-top-right">
+                            <div class="bg-white rounded-2xl shadow-2xl border border-slate-100 py-2 overflow-hidden">
+                                <?php if (Feature::has('clinic_booking')): ?>
+                                    <a href="organizations.php" class="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 hover:text-primary transition-colors">
+                                        <div class="w-8 h-8 rounded-lg bg-teal-50 text-teal-600 flex items-center justify-center shrink-0">
+                                            <span class="material-symbols-outlined text-lg">domain</span>
+                                        </div>
+                                        <div>
+                                            <div class="font-bold text-xs text-slate-800">مراکز درمانی</div>
+                                            <div class="text-[10px] text-slate-400">کلینیک‌ها و بیمارستان‌ها</div>
+                                        </div>
+                                    </a>
+                                <?php endif; ?>
+                                <?php if (Feature::has('autoship')): ?>
+                                    <a href="subscriptions.php" class="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 hover:text-secondary-container transition-colors">
+                                        <div class="w-8 h-8 rounded-lg bg-orange-50 text-secondary-container flex items-center justify-center shrink-0">
+                                            <span class="material-symbols-outlined text-lg">autorenew</span>
+                                        </div>
+                                        <div>
+                                            <div class="font-bold text-xs text-slate-800">اشتراک خودکار</div>
+                                            <div class="text-[10px] text-slate-400">تحویل دوره‌ای با تخفیف</div>
+                                        </div>
+                                    </a>
+                                <?php endif; ?>
+                                <?php if (Feature::has('blog_engine')): ?>
+                                    <a href="knowledge_base.php" class="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 hover:text-blue-600 transition-colors">
+                                        <div class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+                                            <span class="material-symbols-outlined text-lg">auto_stories</span>
+                                        </div>
+                                        <div>
+                                            <div class="font-bold text-xs text-slate-800">دانشنامه و مقالات</div>
+                                            <div class="text-[10px] text-slate-400">مرجع سلامت و نگهداری پت</div>
+                                        </div>
+                                    </a>
+                                <?php endif; ?>
+                                <?php if (Feature::has('charity_campaigns')): ?>
+                                    <a href="charity.php" class="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 hover:text-rose-600 transition-colors">
+                                        <div class="w-8 h-8 rounded-lg bg-rose-50 text-rose-500 flex items-center justify-center shrink-0">
+                                            <span class="material-symbols-outlined text-lg">volunteer_activism</span>
+                                        </div>
+                                        <div>
+                                            <div class="font-bold text-xs text-slate-800">خیریه و امداد</div>
+                                            <div class="text-[10px] text-slate-400">پویش‌های درمانی حیوانات</div>
+                                        </div>
+                                    </a>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 
                 <!-- Desktop Search -->
-                <div class="hidden lg:flex items-center bg-white/10 rounded-full px-4 py-2 text-white gap-2 w-full max-w-md">
+                <div class="hidden lg:flex items-center bg-white/10 hover:bg-white/15 focus-within:bg-white/20 border border-white/15 focus-within:border-white/40 transition-all rounded-full px-4 py-2 text-white gap-2 w-full max-w-md">
                     <form action="shop.php" method="GET" class="flex items-center w-full">
-                        <button type="submit" class="material-symbols-outlined text-lg bg-transparent border-none outline-none text-white cursor-pointer flex items-center justify-center p-0">search</button>
-                        <input name="q" value="<?php echo htmlspecialchars($_GET['q'] ?? ''); ?>" class="bg-transparent border-none focus:ring-0 text-sm w-full placeholder-white/60 text-white mr-2" placeholder="جستجو در محصولات و خدمات..." type="text">
+                        <button type="submit" class="material-symbols-outlined text-lg bg-transparent border-none outline-none text-white cursor-pointer flex items-center justify-center p-0 hover:scale-110 transition-transform">search</button>
+                        <input name="q" value="<?php echo htmlspecialchars($_GET['q'] ?? ''); ?>" class="bg-transparent border-none focus:ring-0 text-sm w-full placeholder-white/70 text-white mr-2 outline-none font-medium" placeholder="جستجو در داروها، محصولات، کلینیک‌ها..." type="text">
                     </form>
                 </div>
             </div>

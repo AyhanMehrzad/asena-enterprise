@@ -33,10 +33,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     $action = $_POST['action'];
 
     if ($action === 'sync_post') {
-        $syncRes = $postService->syncInTransitShipments();
-        $flashMessage = "استعلام پست انجام شد: {$syncRes['checked_count']} مرسوله بررسی شد، {$syncRes['delivered_count']} مرسوله تحویل شده ثبت گردید و مهلت ۷ روزه آغاز شد.";
+        $postexService = App::postex();
+        $postexRes = $postexService->syncInTransitParcels();
+        $iranPostRes = $postService->syncInTransitShipments();
+
+        $totalChecked = ($postexRes['checked_count'] ?? 0) + ($iranPostRes['checked_count'] ?? 0);
+        $totalDelivered = ($postexRes['delivered_count'] ?? 0) + ($iranPostRes['delivered_count'] ?? 0);
+
+        $flashMessage = "استعلام وب‌سرویس‌های پستی (Postex & Iran Post) با موفقیت انجام شد: {$totalChecked} مرسوله بررسی شد، {$totalDelivered} مرسوله تحویل شده ثبت گردید و مهلت ۷ روزه بازگشت کالا آغاز شد.";
         $flashType = 'success';
     } elseif ($action === 'release_matured') {
+
         $relRes = $escrowService->releaseMaturedEscrow();
         $flashMessage = "آزادسازی وجوه: {$relRes['released_count']} قلم کالا به مبلغ " . number_format($relRes['total_amount']) . " تومان به موجودی آماده تسویه افزوده شد.";
         $flashType = 'success';
@@ -399,16 +406,69 @@ require_once __DIR__ . '/includes/admin_header.php';
                                     <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">تکمیل شده</span>
                                 </td>
                                 <td class="px-4 py-3">
-                                    <a href="?download_batch=<?= $b['id'] ?>" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold transition">
-                                        <span class="material-symbols-outlined text-xs">download</span>
-                                        <span>فایل پایا (.txt)</span>
-                                    </a>
+                                    <div class="flex items-center gap-2">
+                                        <a href="?download_batch=<?= $b['id'] ?>" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold transition">
+                                            <span class="material-symbols-outlined text-xs">download</span>
+                                            <span>فایل پایا (.txt)</span>
+                                        </a>
+                                        <a href="../actions/generate_payout_receipt.php?batch_code=<?= urlencode($b['batch_code']) ?>" target="_blank" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-bold transition text-xs border border-emerald-200">
+                                            <span class="material-symbols-outlined text-xs">receipt_long</span>
+                                            <span>رسید حواله پایا</span>
+                                        </a>
+                                    </div>
                                 </td>
                             </tr>
                         <?php endforeach; ?>
                     <?php endif; ?>
                 </tbody>
             </table>
+        </div>
+    </div>
+
+    <!-- Section 4: Automated Payout Protocols & Integration Guide (اتوماسیون تسویه) -->
+    <div class="bg-gradient-to-br from-slate-900 via-primary to-[#001f4f] rounded-2xl p-6 text-white shadow-md border border-white/10 space-y-4">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/15 pb-4">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center text-emerald-400">
+                    <span class="material-symbols-outlined text-2xl">auto_mode</span>
+                </div>
+                <div>
+                    <h3 class="font-black text-sm text-white">راهنمای فعال‌سازی اتوماسیون تسویه حساب خودکار (Automated Payout Engine)</h3>
+                    <p class="text-xs text-white/70 mt-0.5">پروتکل‌های واریز خودکار هفتگی بدون نیاز به کلیک ادمین منطبق با شبکه بانکی کشور</p>
+                </div>
+            </div>
+            <span class="text-xs font-bold bg-emerald-500/20 text-emerald-300 px-3 py-1 rounded-full border border-emerald-400/30 shrink-0">
+                نرخ کارمزد فعال: ۵٪ پلتفرم
+            </span>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+            <div class="bg-white/5 rounded-xl p-4 border border-white/10">
+                <div class="font-bold text-emerald-400 flex items-center gap-1.5 mb-2">
+                    <span class="material-symbols-outlined text-base">schedule</span>
+                    روش ۱: زمان‌بندی خودکار با CronJob (پیشنهادی سرور)
+                </div>
+                <p class="text-white/80 leading-relaxed">
+                    با تعریف کران‌جاب زیر، هر پنج‌شنبه راس ساعت ۲۲:۰۰ تسویه حساب تمام فروشندگان واجد شرایط صادر و پیامک واریز با کد پیگیری برای آن‌ها ارسال می‌شود:
+                </p>
+                <div class="mt-2.5 bg-black/40 p-2.5 rounded-lg font-mono text-emerald-300 select-all dir-ltr text-left overflow-x-auto">
+                    0 22 * * 4 php <?= htmlspecialchars(defined('ASENA_ROOT') ? ASENA_ROOT : dirname(__DIR__)) ?>/bin/asena escrow:weekly-payout
+                </div>
+            </div>
+
+            <div class="bg-white/5 rounded-xl p-4 border border-white/10">
+                <div class="font-bold text-teal-300 flex items-center gap-1.5 mb-2">
+                    <span class="material-symbols-outlined text-base">api</span>
+                    روش ۲: وب‌سرویس واریز مستقیم شبا (Open Banking API)
+                </div>
+                <p class="text-white/80 leading-relaxed">
+                    با اتصال کلید API بانکداری باز (زرین‌پال تسویه پایا / وندار / به پرداخت ملت)، مبالغ تسویه مستقیماً بدون نیاز به آپلود فایل TXT به شماره شبای فروشندگان واریز می‌گردد.
+                </p>
+                <div class="mt-2.5 flex items-center gap-2">
+                    <span class="px-2.5 py-1 rounded bg-emerald-500/20 text-emerald-300 font-mono text-[11px]">ZarinPal Payout API: آماده</span>
+                    <span class="px-2.5 py-1 rounded bg-blue-500/20 text-blue-300 font-mono text-[11px]">Vandar Settlement: آماده</span>
+                </div>
+            </div>
         </div>
     </div>
 </div>

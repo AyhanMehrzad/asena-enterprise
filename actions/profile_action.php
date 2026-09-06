@@ -146,7 +146,102 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $_SESSION['profile_error'] = "امکان لغو این نوبت وجود ندارد.";
             }
         }
+    } elseif ($action === 'update_bank_details') {
+        require_once __DIR__ . '/../includes/App.php';
+        $escrow = App::escrow();
+        $res = $escrow->updateBankDetails($user_id, [
+            'bank_name' => $_POST['bank_name'] ?? '',
+            'bank_account_holder' => $_POST['bank_account_holder'] ?? '',
+            'bank_sheba' => $_POST['bank_sheba'] ?? '',
+            'bank_card_number' => $_POST['bank_card_number'] ?? ''
+        ]);
+        if (!empty($res['success'])) {
+            $_SESSION['profile_success'] = $res['message'];
+        } else {
+            $_SESSION['profile_error'] = $res['message'];
+        }
+    } elseif ($action === 'seller_dispatch_order') {
+        $orderId = (int)($_POST['order_id'] ?? 0);
+        $trackingCode = trim($_POST['post_tracking_code'] ?? '');
+        $carrier = trim($_POST['carrier_name'] ?? 'شرکت ملی پست / سامانه پستکس');
+
+        if ($orderId > 0 && !empty($trackingCode)) {
+            $up = $pdo->prepare("
+                UPDATE orders 
+                SET status = 'shipped', post_tracking_code = ?, carrier_name = ?
+                WHERE id = ?
+            ");
+            if ($up->execute([$trackingCode, $carrier, $orderId])) {
+                $pdo->prepare("UPDATE seller_escrow_ledger SET status = 'in_inspection' WHERE order_id = ? AND status = 'pending_delivery'")->execute([$orderId]);
+                $_SESSION['profile_success'] = "سفارش #PC-{$orderId} با کد رهگیری {$trackingCode} به عنوان ارسال شده ثبت گردید.";
+            } else {
+                $_SESSION['profile_error'] = "خطا در ثبت ارسال سفارش.";
+            }
+        } else {
+            $_SESSION['profile_error'] = "لطفاً کد رهگیری پستی را وارد نمایید.";
+        }
+    } elseif ($action === 'seller_add_product') {
+        $name = trim($_POST['name'] ?? '');
+        $category = trim($_POST['category'] ?? 'سایر ملزومات');
+        $price = (int)($_POST['price'] ?? 0);
+        $discountPrice = (int)($_POST['discount_price'] ?? 0);
+        $stock = (int)($_POST['stock'] ?? 10);
+        $description = trim($_POST['description'] ?? '');
+        $brand = trim($_POST['brand'] ?? 'تأمین‌کننده رسمی');
+        $imageUrl = trim($_POST['image_url'] ?? 'assets/images/toy-mouse.jpg');
+
+        if (!empty($name) && $price > 0) {
+            $ins = $pdo->prepare("
+                INSERT INTO products (seller_id, name, category, price, discount_price, stock, description, brand, image_url, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
+            ");
+            if ($ins->execute([$user_id, $name, $category, $price, $discountPrice, $stock, $description, $brand, $imageUrl])) {
+                $_SESSION['profile_success'] = "کالای «{$name}» با موفقیت در کاتالوگ فروشگاه شما ثبت شد.";
+            } else {
+                $_SESSION['profile_error'] = "خطا در افزودن کالا به کاتالوگ.";
+            }
+        } else {
+            $_SESSION['profile_error'] = "عنوان کالا و قیمت فروش الزامی است.";
+        }
+    } elseif ($action === 'seller_update_product') {
+        $prodId = (int)($_POST['product_id'] ?? 0);
+        $price = (int)($_POST['price'] ?? 0);
+        $stock = (int)($_POST['stock'] ?? 0);
+
+        if ($prodId > 0 && $price > 0) {
+            $up = $pdo->prepare("UPDATE products SET price = ?, stock = ? WHERE id = ?");
+            if ($up->execute([$price, $stock, $prodId])) {
+                $_SESSION['profile_success'] = "قیمت و موجودی کالا به‌روزرسانی شد.";
+            } else {
+                $_SESSION['profile_error'] = "خطا در بروزرسانی محصول.";
+            }
+        }
+    } elseif ($action === 'seller_delete_product') {
+        $prodId = (int)($_POST['product_id'] ?? 0);
+        if ($prodId > 0) {
+            $del = $pdo->prepare("DELETE FROM products WHERE id = ? AND (seller_id = ? OR ? = 'admin')");
+            if ($del->execute([$prodId, $user_id, $user['role'] ?? ''])) {
+                $_SESSION['profile_success'] = "کالا با موفقیت از کاتالوگ شما حذف شد.";
+            } else {
+                $_SESSION['profile_error'] = "خطا در حذف کالا.";
+            }
+        }
+    } elseif ($action === 'seller_update_identity') {
+        $storeName = trim($_POST['store_name'] ?? '');
+        $nationalId = trim($_POST['national_id'] ?? '');
+        $city = trim($_POST['city'] ?? '');
+        if (!empty($storeName)) {
+            $upUser = $pdo->prepare("UPDATE users SET name = ?, national_id = ?, city = ? WHERE id = ?");
+            $upUser->execute([$storeName, $nationalId, $city, $user_id]);
+            $_SESSION['profile_success'] = "اطلاعات هویتی و نام فروشگاه شما با موفقیت ذخیره گردید.";
+        }
     }
+}
+
+// Redirect back with view=seller if user is seller
+if (isset($_POST['is_seller_action']) || (isset($user['role']) && $user['role'] === 'seller')) {
+    header("Location: ../profile.php?view=seller");
+    exit;
 }
 
 header("Location: ../profile.php");

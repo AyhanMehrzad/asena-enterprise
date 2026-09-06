@@ -18,10 +18,12 @@ Thumbs.db
 
 # Temporary uploads / cache
 uploads/tmp/
+uploads/.autoship_last_run
 .tempmediaStorage/
 database/backups/
 *.cache
 *.metadata.json
+scratch/
 
 # Build artifacts
 dist/*.zip

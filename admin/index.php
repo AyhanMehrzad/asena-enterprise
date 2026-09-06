@@ -59,75 +59,111 @@ $top_product = $stmt->fetch(PDO::FETCH_ASSOC);
 // 7. Dashboard Events
 $stmt = $pdo->query("SELECT * FROM dashboard_events ORDER BY event_time ASC");
 $dashboard_events = $stmt->fetchAll(PDO::FETCH_ASSOC);
+// Ecosystem Macro Stats
+$orgCount = (int)$pdo->query("SELECT COUNT(*) FROM organizations")->fetchColumn();
+$docCount = (int)$pdo->query("SELECT COUNT(*) FROM doctors")->fetchColumn();
+$sellerCount = (int)$pdo->query("SELECT COUNT(*) FROM users WHERE role = 'seller'")->fetchColumn();
+$totalClearedPayouts = (int)$pdo->query("SELECT COALESCE(SUM(balance_available_for_payout), 0) FROM seller_wallets")->fetchColumn();
 ?>
 <!-- Dashboard Content Container -->
 <div class="p-4 md:p-8 space-y-6 md:space-y-8">
-    <!-- Section 1: Overview Statistics -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <!-- Card: Appointments -->
-        <div class="bg-white p-6 rounded-xl stat-card-shadow border border-outline-variant/30 group hover:border-primary-container transition-colors">
-            <div class="flex justify-between items-start mb-4">
-                <div class="w-12 h-12 rounded-lg bg-primary-container/10 flex items-center justify-center text-primary-container">
-                    <span class="material-symbols-outlined text-[32px]">calendar_today</span>
-                </div>
-                <span class="text-status-active font-label-sm flex items-center gap-1">
-                    امروز
-                </span>
-            </div>
-            <h3 class="font-label-lg text-label-lg text-on-surface-variant">نوبت‌های امروز</h3>
-            <p class="font-display-lg text-display-lg text-primary mt-1"><?= (int)$appt_stats['total'] ?></p>
-            <p class="text-label-sm text-on-surface-variant mt-2"><?= (int)$appt_stats['approved'] ?> نوبت تایید شده، <?= (int)$appt_stats['pending'] ?> در انتظار</p>
-        </div>
 
-        <!-- Card: Subscriptions -->
-        <div class="bg-white p-6 rounded-xl stat-card-shadow border border-outline-variant/30 group hover:border-secondary-container transition-colors">
-            <div class="flex justify-between items-start mb-4">
-                <div class="w-12 h-12 rounded-lg bg-secondary-fixed/30 flex items-center justify-center text-secondary">
-                    <span class="material-symbols-outlined text-[32px]">autorenew</span>
+    <!-- Section 1: Overview Macro Ecosystem KPI Cards Matching Reference Screenshot -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <!-- Card 1: Organizations -->
+        <a href="organizations.php" class="bg-surface-container-lowest p-5 rounded-2xl stat-card-shadow border border-outline-variant/10 flex items-center justify-between hover:border-secondary-container transition-all group">
+            <div class="space-y-1">
+                <span class="text-xs font-bold text-on-surface-variant">مراکز درمانی و بیمارستان‌ها</span>
+                <div class="flex items-baseline gap-2">
+                    <span class="text-2xl font-black text-on-surface group-hover:text-secondary-container transition-colors"><?= number_format($orgCount) ?></span>
+                    <span class="text-xs text-secondary-container font-bold">مرکز</span>
                 </div>
-                <span class="text-status-active font-label-sm flex items-center gap-1">
-                    ۵٪+ <span class="material-symbols-outlined text-sm">trending_up</span>
-                </span>
+                <p class="text-[11px] text-slate-400">کلینیک‌ها، بیمارستان‌ها و درمانگاه‌ها</p>
             </div>
-            <h3 class="font-label-lg text-label-lg text-on-surface-variant">اشتراک‌های فعال (شارژ خودکار)</h3>
-            <p class="font-display-lg text-display-lg text-primary mt-1"><?= number_format((int)$sub_stats['total']) ?></p>
-            <p class="text-label-sm text-on-surface-variant mt-2"><?= (int)$sub_stats['recent'] ?> اشتراک جدید در این هفته</p>
-        </div>
+            <div class="w-12 h-12 rounded-2xl bg-indigo-500/10 text-indigo-600 flex items-center justify-center">
+                <span class="material-symbols-outlined text-2xl">apartment</span>
+            </div>
+        </a>
 
-        <!-- Card: Donations -->
-        <div class="bg-white p-6 rounded-xl stat-card-shadow border border-outline-variant/30 group hover:border-primary-container transition-colors">
-            <div class="flex justify-between items-start mb-4">
-                <div class="w-12 h-12 rounded-lg bg-tertiary-fixed/30 flex items-center justify-center text-tertiary">
-                    <span class="material-symbols-outlined text-[32px]">volunteer_activism</span>
+        <!-- Card 2: Doctors & Providers -->
+        <a href="doctors.php" class="bg-surface-container-lowest p-5 rounded-2xl stat-card-shadow border border-outline-variant/10 flex items-center justify-between hover:border-secondary-container transition-all group">
+            <div class="space-y-1">
+                <span class="text-xs font-bold text-on-surface-variant">پزشکان و متخصصین سراسری</span>
+                <div class="flex items-baseline gap-2">
+                    <span class="text-2xl font-black text-on-surface group-hover:text-secondary-container transition-colors"><?= number_format($docCount) ?></span>
+                    <span class="text-xs text-blue-600 font-bold">پزشک</span>
                 </div>
-                <span class="text-status-active font-label-sm flex items-center gap-1">
-                    فعال
-                </span>
+                <p class="text-[11px] text-slate-400">دارای پروانه و نوبت‌دهی آنلاین</p>
             </div>
-            <h3 class="font-label-lg text-label-lg text-on-surface-variant">مجموع امتیاز وفاداری کاربران</h3>
-            <div class="flex items-baseline gap-2 mt-1">
-                <p class="font-display-lg text-display-lg text-primary"><?= number_format((int)$loyalty_stats['total_points']) ?></p>
-                <span class="text-label-lg text-on-surface-variant">امتیاز</span>
+            <div class="w-12 h-12 rounded-2xl bg-blue-500/10 text-blue-600 flex items-center justify-center">
+                <span class="material-symbols-outlined text-2xl">stethoscope</span>
             </div>
-            <p class="text-label-sm text-on-surface-variant mt-2">از سمت <?= (int)$loyalty_stats['users_count'] ?> کاربر وفادار</p>
-        </div>
+        </a>
 
-        <!-- Card: Inventory -->
-        <div class="bg-white p-6 rounded-xl stat-card-shadow border border-outline-variant/30 group hover:border-error transition-colors">
-            <div class="flex justify-between items-start mb-4">
-                <div class="w-12 h-12 rounded-lg bg-error-container/50 flex items-center justify-center text-error">
-                    <span class="material-symbols-outlined text-[32px]">warning</span>
+        <!-- Card 3: Sellers & Petshops -->
+        <a href="sellers.php" class="bg-surface-container-lowest p-5 rounded-2xl stat-card-shadow border border-outline-variant/10 flex items-center justify-between hover:border-secondary-container transition-all group">
+            <div class="space-y-1">
+                <span class="text-xs font-bold text-on-surface-variant">فروشندگان مستقل و پت‌شاپ‌ها</span>
+                <div class="flex items-baseline gap-2">
+                    <span class="text-2xl font-black text-on-surface group-hover:text-secondary-container transition-colors"><?= number_format($sellerCount) ?></span>
+                    <span class="text-xs text-amber-600 font-bold">فروشگاه</span>
                 </div>
-                <?php if($inv_stats['low_stock'] > 0): ?>
-                    <span class="text-error font-bold font-label-sm">بحرانی</span>
-                <?php else: ?>
-                    <span class="text-status-active font-bold font-label-sm">ایمن</span>
-                <?php endif; ?>
+                <p class="text-[11px] text-slate-400">تامین‌کنندگان کالا با مهلت ۷ روزه</p>
             </div>
-            <h3 class="font-label-lg text-label-lg text-on-surface-variant">هشدار موجودی انبار</h3>
-            <p class="font-display-lg text-display-lg text-primary mt-1"><?= (int)$inv_stats['low_stock'] ?></p>
-            <p class="text-label-sm text-on-surface-variant mt-2">کالاهای زیر حد نصاب ایمنی</p>
-        </div>
+            <div class="w-12 h-12 rounded-2xl bg-amber-500/10 text-amber-600 flex items-center justify-center">
+                <span class="material-symbols-outlined text-2xl">storefront</span>
+            </div>
+        </a>
+
+        <!-- Card 4: Cleared Paya & 5% Fee -->
+        <a href="payouts.php" class="bg-surface-container-lowest p-5 rounded-2xl stat-card-shadow border border-outline-variant/10 flex items-center justify-between hover:border-secondary-container transition-all group">
+            <div class="space-y-1">
+                <span class="text-xs font-bold text-on-surface-variant">موجودی آماده تسویه پایا</span>
+                <div class="flex items-baseline gap-2">
+                    <span class="text-2xl font-black text-emerald-600"><?= number_format($totalClearedPayouts) ?></span>
+                    <span class="text-xs text-on-surface-variant font-bold">تومان</span>
+                </div>
+                <p class="text-[11px] text-slate-400">با کسر کارمزد ۵٪ پلتفرم</p>
+            </div>
+            <div class="w-12 h-12 rounded-2xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center">
+                <span class="material-symbols-outlined text-2xl">account_balance_wallet</span>
+            </div>
+        </a>
+    </div>
+
+    <!-- Quick Navigation Bar for Ecosystem Entities -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        <a href="organizations.php" class="p-3.5 rounded-2xl bg-surface-container-lowest stat-card-shadow border border-outline-variant/10 hover:border-secondary-container transition-all flex items-center justify-between group">
+            <div class="flex items-center gap-2.5">
+                <span class="material-symbols-outlined text-indigo-600 text-xl">apartment</span>
+                <span class="text-xs font-bold text-slate-800 group-hover:text-secondary-container">مدیریت مراکز درمانی</span>
+            </div>
+            <span class="material-symbols-outlined text-sm text-slate-400 group-hover:-translate-x-1 transition-transform">arrow_back</span>
+        </a>
+
+        <a href="doctors.php" class="p-3.5 rounded-2xl bg-surface-container-lowest stat-card-shadow border border-outline-variant/10 hover:border-secondary-container transition-all flex items-center justify-between group">
+            <div class="flex items-center gap-2.5">
+                <span class="material-symbols-outlined text-blue-600 text-xl">stethoscope</span>
+                <span class="text-xs font-bold text-slate-800 group-hover:text-secondary-container">پزشکان و تعاملات درمانی</span>
+            </div>
+            <span class="material-symbols-outlined text-sm text-slate-400 group-hover:-translate-x-1 transition-transform">arrow_back</span>
+        </a>
+
+        <a href="sellers.php" class="p-3.5 rounded-2xl bg-surface-container-lowest stat-card-shadow border border-outline-variant/10 hover:border-secondary-container transition-all flex items-center justify-between group">
+            <div class="flex items-center gap-2.5">
+                <span class="material-symbols-outlined text-amber-600 text-xl">store</span>
+                <span class="text-xs font-bold text-slate-800 group-hover:text-secondary-container">فروشندگان و پت‌شاپ‌ها</span>
+            </div>
+            <span class="material-symbols-outlined text-sm text-slate-400 group-hover:-translate-x-1 transition-transform">arrow_back</span>
+        </a>
+
+        <a href="payouts.php" class="p-3.5 rounded-2xl bg-surface-container-lowest stat-card-shadow border border-outline-variant/10 hover:border-secondary-container transition-all flex items-center justify-between group">
+            <div class="flex items-center gap-2.5">
+                <span class="material-symbols-outlined text-emerald-600 text-xl">account_balance_wallet</span>
+                <span class="text-xs font-bold text-slate-800 group-hover:text-secondary-container">تسویه پایا و کارمزد ۵٪</span>
+            </div>
+            <span class="material-symbols-outlined text-sm text-slate-400 group-hover:-translate-x-1 transition-transform">arrow_back</span>
+        </a>
     </div>
 
     <!-- Main Layout Grid: Clinic Status & Charity Impact -->

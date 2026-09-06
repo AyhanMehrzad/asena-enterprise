@@ -12,7 +12,7 @@
 
 class MarketplaceEscrowService {
     private PDO $db;
-    public const DEFAULT_COMMISSION_RATE = 10.00; // 10% platform commission
+    public const DEFAULT_COMMISSION_RATE = 5.00; // 5% platform commission
     public const ESCROW_HOLD_DAYS = 7; // 7 days under Iranian E-Commerce Law
 
     public function __construct(PDO $db) {

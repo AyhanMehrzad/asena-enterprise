@@ -91,6 +91,97 @@ $top_donors = $donor_stmt->fetchAll(PDO::FETCH_ASSOC);
             </div>
         </section>
         
+        <!-- Asena Ecosystem Quick Services Hub (Relocated & Enhanced from Header) -->
+        <section class="quick-services-hub my-6 lg:my-10" id="asenaServicesHub">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 px-2">
+                <div class="flex items-center gap-3">
+                    <div class="w-2.5 h-9 bg-primary rounded-full"></div>
+                    <div>
+                        <h2 class="text-xl sm:text-2xl font-black text-primary tracking-tight">سامانه‌ها و خدمات تخصصی آسنا</h2>
+                        <p class="text-xs sm:text-sm text-on-surface-variant font-medium mt-0.5">دسترسی سریع به کلیه بخش‌های سلامت، پزشکی، اشتراک هوشمند و ملزومات حیوانات خانگی</p>
+                    </div>
+                </div>
+                <div class="hidden sm:flex items-center gap-2 bg-surface-container-low px-3.5 py-1.5 rounded-full border border-outline-variant/20 text-xs font-bold text-primary">
+                    <span class="material-symbols-outlined text-sm text-secondary-container">verified_user</span>
+                    <span>اکوسیستم یکپارچه آسنا</span>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3.5 lg:gap-5">
+                <!-- 1. مراکز درمانی و کلینیک‌ها -->
+                <a href="organizations.php" class="group bg-white hover:bg-teal-50/40 border border-outline-variant/25 hover:border-teal-500/40 rounded-3xl p-5 flex flex-col items-center text-center transition-all duration-300 shadow-sm hover:shadow-xl hover:-translate-y-1.5 relative overflow-hidden">
+                    <div class="w-14 h-14 rounded-2xl bg-teal-50 text-teal-600 flex items-center justify-center mb-3 group-hover:scale-110 group-hover:bg-teal-600 group-hover:text-white transition-all duration-300 shadow-inner">
+                        <span class="material-symbols-outlined text-3xl">domain</span>
+                    </div>
+                    <span class="font-bold text-sm text-slate-800 group-hover:text-teal-700 transition-colors">مراکز درمانی</span>
+                    <span class="text-[11px] text-slate-400 mt-1 group-hover:text-slate-600 transition-colors">کلینیک‌ها و آزمایشگاه‌ها</span>
+                    <span class="mt-3 text-[10px] font-bold text-teal-600 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-0.5">
+                        مشاهده مراکز <span class="material-symbols-outlined text-xs">arrow_back</span>
+                    </span>
+                </a>
+
+                <!-- 2. اشتراک خودکار (Autoship) -->
+                <a href="subscriptions.php" class="group bg-white hover:bg-orange-50/40 border border-outline-variant/25 hover:border-secondary-container/40 rounded-3xl p-5 flex flex-col items-center text-center transition-all duration-300 shadow-sm hover:shadow-xl hover:-translate-y-1.5 relative overflow-hidden">
+                    <div class="w-14 h-14 rounded-2xl bg-orange-50 text-secondary-container flex items-center justify-center mb-3 group-hover:scale-110 group-hover:bg-secondary-container group-hover:text-white transition-all duration-300 shadow-inner">
+                        <span class="material-symbols-outlined text-3xl">autorenew</span>
+                    </div>
+                    <span class="font-bold text-sm text-slate-800 group-hover:text-secondary-container transition-colors">اشتراک خودکار</span>
+                    <span class="text-[11px] text-slate-400 mt-1 group-hover:text-slate-600 transition-colors">تحویل دوره‌ای با تخفیف</span>
+                    <span class="mt-3 text-[10px] font-bold text-secondary-container opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-0.5">
+                        شروع اشتراک <span class="material-symbols-outlined text-xs">arrow_back</span>
+                    </span>
+                </a>
+
+                <!-- 3. دانشنامه تخصصی سلامت -->
+                <a href="knowledge_base.php" class="group bg-white hover:bg-blue-50/40 border border-outline-variant/25 hover:border-blue-500/40 rounded-3xl p-5 flex flex-col items-center text-center transition-all duration-300 shadow-sm hover:shadow-xl hover:-translate-y-1.5 relative overflow-hidden">
+                    <div class="w-14 h-14 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mb-3 group-hover:scale-110 group-hover:bg-blue-600 group-hover:text-white transition-all duration-300 shadow-inner">
+                        <span class="material-symbols-outlined text-3xl">auto_stories</span>
+                    </div>
+                    <span class="font-bold text-sm text-slate-800 group-hover:text-blue-700 transition-colors">دانشنامه و مقالات</span>
+                    <span class="text-[11px] text-slate-400 mt-1 group-hover:text-slate-600 transition-colors">راهنمای جامع بیماری و غذا</span>
+                    <span class="mt-3 text-[10px] font-bold text-blue-600 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-0.5">
+                        مطالعه مقالات <span class="material-symbols-outlined text-xs">arrow_back</span>
+                    </span>
+                </a>
+
+                <!-- 4. خیریه و نجات حیوانات -->
+                <a href="charity.php" class="group bg-white hover:bg-rose-50/40 border border-outline-variant/25 hover:border-rose-500/40 rounded-3xl p-5 flex flex-col items-center text-center transition-all duration-300 shadow-sm hover:shadow-xl hover:-translate-y-1.5 relative overflow-hidden">
+                    <div class="w-14 h-14 rounded-2xl bg-rose-50 text-rose-500 flex items-center justify-center mb-3 group-hover:scale-110 group-hover:bg-rose-500 group-hover:text-white transition-all duration-300 shadow-inner">
+                        <span class="material-symbols-outlined text-3xl">volunteer_activism</span>
+                    </div>
+                    <span class="font-bold text-sm text-slate-800 group-hover:text-rose-600 transition-colors">خیریه و امداد</span>
+                    <span class="text-[11px] text-slate-400 mt-1 group-hover:text-slate-600 transition-colors">درمان و غذارسانی حیوانات</span>
+                    <span class="mt-3 text-[10px] font-bold text-rose-500 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-0.5">
+                        حمایت و پویش‌ها <span class="material-symbols-outlined text-xs">arrow_back</span>
+                    </span>
+                </a>
+
+                <!-- 5. داروخانه تخصصی آنلاین -->
+                <a href="pharmacy.php" class="group bg-white hover:bg-indigo-50/40 border border-outline-variant/25 hover:border-indigo-500/40 rounded-3xl p-5 flex flex-col items-center text-center transition-all duration-300 shadow-sm hover:shadow-xl hover:-translate-y-1.5 relative overflow-hidden">
+                    <div class="w-14 h-14 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center mb-3 group-hover:scale-110 group-hover:bg-indigo-600 group-hover:text-white transition-all duration-300 shadow-inner">
+                        <span class="material-symbols-outlined text-3xl">medication</span>
+                    </div>
+                    <span class="font-bold text-sm text-slate-800 group-hover:text-indigo-700 transition-colors">داروخانه تخصصی</span>
+                    <span class="text-[11px] text-slate-400 mt-1 group-hover:text-slate-600 transition-colors">ارسال نسخه و داروهای کمیاب</span>
+                    <span class="mt-3 text-[10px] font-bold text-indigo-600 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-0.5">
+                        ورود به داروخانه <span class="material-symbols-outlined text-xs">arrow_back</span>
+                    </span>
+                </a>
+
+                <!-- 6. نوبت‌دهی آنلاین -->
+                <a href="booking.php" class="group bg-white hover:bg-emerald-50/40 border border-outline-variant/25 hover:border-emerald-500/40 rounded-3xl p-5 flex flex-col items-center text-center transition-all duration-300 shadow-sm hover:shadow-xl hover:-translate-y-1.5 relative overflow-hidden">
+                    <div class="w-14 h-14 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center mb-3 group-hover:scale-110 group-hover:bg-emerald-600 group-hover:text-white transition-all duration-300 shadow-inner">
+                        <span class="material-symbols-outlined text-3xl">calendar_month</span>
+                    </div>
+                    <span class="font-bold text-sm text-slate-800 group-hover:text-emerald-700 transition-colors">نوبت‌دهی آنلاین</span>
+                    <span class="text-[11px] text-slate-400 mt-1 group-hover:text-slate-600 transition-colors">رزرو ویزیت با پزشک متخصص</span>
+                    <span class="mt-3 text-[10px] font-bold text-emerald-600 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-0.5">
+                        رزرو آنلاین <span class="material-symbols-outlined text-xs">arrow_back</span>
+                    </span>
+                </a>
+            </div>
+        </section>
+        
         <?php
         $activeFlash = App::flashSale()->getActiveFlashSale();
         if ($activeFlash):
@@ -109,8 +200,8 @@ $top_donors = $donor_stmt->fetchAll(PDO::FETCH_ASSOC);
                             <span class="bg-white text-[#ef394e] text-xs font-extrabold px-2.5 py-0.5 rounded-full uppercase tracking-wider">پیشنهاد شگفت‌انگیز</span>
                             <span class="text-xs text-white/80 font-medium">فرصت محدود</span>
                         </div>
-                        <h3 class="text-xl sm:text-2xl font-bold text-white"><?php echo htmlspecialchars($activeFlash['title']); ?></h3>
-                        <p class="text-xs sm:text-sm text-white/90 mt-1"><?php echo htmlspecialchars($activeFlash['product_name']); ?></p>
+                        <h3 class="text-xl sm:text-2xl font-bold text-white"><?php echo htmlspecialchars($activeFlash['title'] ?? $activeFlash['product_name'] ?? 'پیشنهاد ویژه آسنا'); ?></h3>
+                        <p class="text-xs sm:text-sm text-white/90 mt-1"><?php echo htmlspecialchars($activeFlash['product_name'] ?? ''); ?></p>
                     </div>
                 </div>
 

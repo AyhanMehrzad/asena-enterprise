@@ -105,7 +105,8 @@ class OrderLifecycleService
                 $params[] = $carrierName;
             }
             if (!empty($trackingCode)) {
-                $upSql .= ", tracking_code = ?";
+                $upSql .= ", tracking_code = ?, post_tracking_code = ?";
+                $params[] = $trackingCode;
                 $params[] = $trackingCode;
             }
             $upSql .= " WHERE id = ?";
@@ -118,10 +119,17 @@ class OrderLifecycleService
             if (!empty($trackingCode)) {
                 if (stripos($carrierName, 'tipax') !== false || stripos($carrierName, 'تیپاکس') !== false) {
                     $trackingUrl = "https://tipaxco.com/tracking?id=" . urlencode($trackingCode);
+                } elseif (stripos($carrierName, 'postex') !== false || stripos($carrierName, 'پستکس') !== false) {
+                    $trackingUrl = "https://postex.ir/tracking?tracking_code=" . urlencode($trackingCode);
+                } elseif (stripos($carrierName, 'chapar') !== false || stripos($carrierName, 'چاپار') !== false) {
+                    $trackingUrl = "https://chaparnet.com/track/?tracking_number=" . urlencode($trackingCode);
                 } elseif (stripos($carrierName, 'post') !== false || stripos($carrierName, 'پیشتاز') !== false) {
                     $trackingUrl = "https://tracking.post.ir/?id=" . urlencode($trackingCode);
+                } else {
+                    $trackingUrl = "https://postex.ir/tracking?tracking_code=" . urlencode($trackingCode);
                 }
             }
+
 
             // Insert into order_status_logs
             $logStmt = $this->pdo->prepare("

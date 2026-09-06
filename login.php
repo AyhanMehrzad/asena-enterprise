@@ -68,17 +68,57 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $phone = $signupData['phone'];
                 $name = $signupData['name'];
                 $password = $signupData['password'];
+                $accountType = $signupData['account_type'] ?? 'user';
+                $role = 'user';
+                if ($accountType === 'organization') {
+                    $role = 'organization';
+                } elseif ($accountType === 'seller') {
+                    $role = 'seller';
+                }
                 
+                $nationalId = trim($signupData['national_id'] ?? '');
+                $storeName = trim($signupData['store_name'] ?? '');
+                $displayName = (!empty($storeName) && $role === 'seller') ? $storeName : $name;
+
                 $hash = password_hash($password, PASSWORD_DEFAULT);
-                $stmt = $pdo->prepare("INSERT INTO users (phone, name, password, loyalty_points) VALUES (?, ?, ?, 50)");
-                if ($stmt->execute([$phone, $name, $hash])) {
+                $stmt = $pdo->prepare("INSERT INTO users (phone, name, password, role, national_id, verification_status, loyalty_points, created_at) VALUES (?, ?, ?, ?, ?, 'approved', 50, NOW())");
+                if ($stmt->execute([$phone, $displayName, $hash, $role, $nationalId])) {
                     $user_id = $pdo->lastInsertId();
                     session_regenerate_id(true);
                     $_SESSION['user_id'] = $user_id;
-                    $_SESSION['user_role'] = 'user';
+                    $_SESSION['user_role'] = $role;
                     
                     $pdo->prepare("DELETE FROM login_attempts WHERE ip_address = ?")->execute([$_SERVER['REMOTE_ADDR'] ?? '127.0.0.1']);
                     
+                    if ($role === 'organization') {
+                        $orgName = !empty($signupData['org_name']) ? $signupData['org_name'] : ($name . ' (مرکز درمانی)');
+                        $orgType = $signupData['org_type'] ?? 'clinic';
+                        $orgCity = !empty($signupData['org_city']) ? $signupData['org_city'] : 'تهران';
+                        $slug = 'org-' . $user_id . '-' . time();
+                        
+                        $insOrg = $pdo->prepare("
+                            INSERT INTO organizations (user_id, name, slug, type, manager_name, phone, city, status, created_at)
+                            VALUES (?, ?, ?, ?, ?, ?, ?, 'approved', NOW())
+                        ");
+                        $insOrg->execute([$user_id, $orgName, $slug, $orgType, $name, $phone, $orgCity]);
+                        
+                        unset($_SESSION['signup_data']);
+                        header("Location: organization/index.php");
+                        exit;
+                    } elseif ($role === 'seller') {
+                        // Initialize wallet for single person seller
+                        $insWallet = $pdo->prepare("
+                            INSERT INTO seller_wallets (seller_id, bank_account_holder, created_at, updated_at) 
+                            VALUES (?, ?, NOW(), NOW())
+                            ON DUPLICATE KEY UPDATE updated_at = NOW()
+                        ");
+                        $insWallet->execute([$user_id, $name]);
+
+                        unset($_SESSION['signup_data']);
+                        header("Location: seller/index.php");
+                        exit;
+                    }
+
                     unset($_SESSION['signup_data']);
                     header("Location: index.php");
                     exit;
@@ -105,6 +145,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             } else {
                 if ($mode === 'signup') {
                     $name = trim($_POST['name'] ?? '');
+                    $accountType = trim($_POST['account_type'] ?? 'user');
+                    $orgName = trim($_POST['org_name'] ?? '');
+                    $orgType = trim($_POST['org_type'] ?? 'clinic');
+                    $orgCity = trim($_POST['org_city'] ?? 'تهران');
+                    $storeName = trim($_POST['store_name'] ?? '');
+                    $nationalId = trim($_POST['national_id'] ?? '');
                     
                     $stmt = $pdo->prepare("SELECT id FROM users WHERE phone = ?");
                     $stmt->execute([$phone]);
@@ -119,6 +165,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             'phone'          => $phone,
                             'name'           => $name,
                             'password'       => $password,
+                            'account_type'   => $accountType,
+                            'org_name'       => $orgName,
+                            'org_type'       => $orgType,
+                            'org_city'       => $orgCity,
+                            'store_name'     => $storeName,
+                            'national_id'    => $nationalId,
                             'otp'            => $otp,
                             'otp_expires_at' => time() + 180 // Valid for 3 minutes
                         ];
@@ -134,6 +186,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $_SESSION['user_role'] = $user['role'];
                         
                         $pdo->prepare("DELETE FROM login_attempts WHERE ip_address = ?")->execute([$_SERVER['REMOTE_ADDR'] ?? '127.0.0.1']);
+                        
+                        if (in_array($user['role'], ['organization', 'organization_manager'])) {
+                            header("Location: organization/index.php");
+                            exit;
+                        } elseif ($user['role'] === 'seller') {
+                            header("Location: seller/index.php");
+                            exit;
+                        } elseif ($user['role'] === 'doctor') {
+                            header("Location: doctor/index.php");
+                            exit;
+                        } elseif ($user['role'] === 'pharmacist') {
+                            header("Location: pharmacist/index.php");
+                            exit;
+                        } elseif ($user['role'] === 'admin') {
+                            header("Location: admin/index.php");
+                            exit;
+                        }
                         
                         header("Location: index.php");
                         exit;
@@ -315,10 +384,75 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </div>
 </div>
 
-<div class="space-y-5 <?php echo (isset($_POST['mode']) && $_POST['mode'] === 'signup') ? '' : 'hidden'; ?>" id="signup-fields">
+<div class="space-y-4 <?php echo (isset($_POST['mode']) && $_POST['mode'] === 'signup') ? '' : 'hidden'; ?>" id="signup-fields">
 <div class="input-group">
-<label class="block font-bold text-sm text-on-surface-variant mb-2">نام و نام خانوادگی</label>
+<label class="block font-bold text-xs text-on-surface-variant mb-1.5">نوع حساب کاربری در آسنا</label>
+<div class="grid grid-cols-3 gap-1.5 p-1 bg-surface-container-low rounded-xl text-xs font-bold">
+    <label class="flex flex-col sm:flex-row items-center justify-center gap-1.5 py-2 px-1.5 rounded-lg cursor-pointer transition-all bg-white shadow-sm text-primary text-center" id="lbl-type-user">
+        <input type="radio" name="account_type" value="user" checked onchange="toggleAccountType('user')" class="hidden">
+        <span class="material-symbols-outlined text-base">pets</span>
+        <span class="text-[11px]">سرپرست پت</span>
+    </label>
+    <label class="flex flex-col sm:flex-row items-center justify-center gap-1.5 py-2 px-1.5 rounded-lg cursor-pointer transition-all text-on-surface-variant hover:text-primary text-center" id="lbl-type-seller">
+        <input type="radio" name="account_type" value="seller" onchange="toggleAccountType('seller')" class="hidden">
+        <span class="material-symbols-outlined text-base text-emerald-600">storefront</span>
+        <span class="text-[11px]">فروشنده حقیقی</span>
+    </label>
+    <label class="flex flex-col sm:flex-row items-center justify-center gap-1.5 py-2 px-1.5 rounded-lg cursor-pointer transition-all text-on-surface-variant hover:text-primary text-center" id="lbl-type-org">
+        <input type="radio" name="account_type" value="organization" onchange="toggleAccountType('organization')" class="hidden">
+        <span class="material-symbols-outlined text-base text-sky-600">local_hospital</span>
+        <span class="text-[11px]">مرکز / کلینیک</span>
+    </label>
+</div>
+</div>
+
+<div class="input-group">
+<label class="block font-bold text-sm text-on-surface-variant mb-2">نام و نام خانوادگی مدیر یا مسئول</label>
 <input name="name" value="<?php echo htmlspecialchars($_POST['name'] ?? ''); ?>" class="w-full h-12 px-4 rounded-lg border border-outline-variant focus:border-primary-container focus:ring-1 focus:ring-primary-container bg-surface-container-lowest transition-all text-sm" placeholder="نام شما" type="text"/>
+</div>
+
+<!-- Additional fields for Single Person Seller -->
+<div id="seller-extra-fields" class="hidden space-y-3 p-3.5 bg-emerald-50/70 rounded-xl border border-emerald-200 animate-fade-in">
+    <div>
+        <label class="block font-bold text-xs text-emerald-950 mb-1">نام فروشگاه یا برند تجاری شما *</label>
+        <input name="store_name" value="<?php echo htmlspecialchars($_POST['store_name'] ?? ''); ?>" class="w-full h-10 px-3 rounded-lg border border-emerald-200 text-xs focus:ring-2 focus:ring-emerald-500 bg-white" placeholder="مثال: پت‌شاپ پامرانین یا فروشگاه ملزومات آریا" type="text"/>
+    </div>
+    <div class="grid grid-cols-2 gap-2">
+        <div>
+            <label class="block font-bold text-xs text-emerald-950 mb-1">کد ملی ۱۰ رقمی *</label>
+            <input name="national_id" value="<?php echo htmlspecialchars($_POST['national_id'] ?? ''); ?>" maxlength="10" class="w-full h-10 px-3 rounded-lg border border-emerald-200 text-xs focus:ring-2 focus:ring-emerald-500 bg-white font-mono dir-ltr text-left" placeholder="0012345678" type="text"/>
+        </div>
+        <div>
+            <label class="block font-bold text-xs text-emerald-950 mb-1">شهر انبار و ارسال</label>
+            <input name="org_city" value="<?php echo htmlspecialchars($_POST['org_city'] ?? 'تهران'); ?>" class="w-full h-10 px-3 rounded-lg border border-emerald-200 text-xs focus:ring-2 focus:ring-emerald-500 bg-white" placeholder="تهران" type="text"/>
+        </div>
+    </div>
+    <p class="text-[10px] text-emerald-800 font-medium leading-relaxed">
+        تسویه حساب فروشندگان حقیقی هر هفته مستقیماً به شماره شبای شما واریز شده و نیازی به مجوز بیمارستانی نیست.
+    </p>
+</div>
+
+<!-- Additional fields for Organization -->
+<div id="org-extra-fields" class="hidden space-y-3 p-3.5 bg-sky-50/70 rounded-xl border border-sky-100 animate-fade-in">
+    <div>
+        <label class="block font-bold text-xs text-slate-700 mb-1">نام مرکز، کلینیک یا بیمارستان *</label>
+        <input name="org_name" value="<?php echo htmlspecialchars($_POST['org_name'] ?? ''); ?>" class="w-full h-10 px-3 rounded-lg border border-slate-200 text-xs focus:ring-2 focus:ring-sky-500 bg-white" placeholder="مثال: کلینیک تخصصی مهر یا بیمارستان پایتخت" type="text"/>
+    </div>
+    <div class="grid grid-cols-2 gap-2">
+        <div>
+            <label class="block font-bold text-xs text-slate-700 mb-1">نوع مجموعه</label>
+            <select name="org_type" class="w-full h-10 px-2 rounded-lg border border-slate-200 text-xs focus:ring-2 focus:ring-sky-500 bg-white">
+                <option value="clinic">کلینیک دامپزشکی</option>
+                <option value="hospital">بیمارستان تخصصی</option>
+                <option value="pharmacy">داروخانه دامپزشکی</option>
+                <option value="shelter_charity">مرکز درمانی و خدمات جامع</option>
+            </select>
+        </div>
+        <div>
+            <label class="block font-bold text-xs text-slate-700 mb-1">شهر فعالیت</label>
+            <input name="org_city" value="<?php echo htmlspecialchars($_POST['org_city'] ?? 'تهران'); ?>" class="w-full h-10 px-3 rounded-lg border border-slate-200 text-xs focus:ring-2 focus:ring-sky-500 bg-white" placeholder="تهران" type="text"/>
+        </div>
+    </div>
 </div>
 </div>
 
@@ -400,6 +534,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 signupCountdownEl.innerText = timeLeft;
             }
         }, 1000);
+    }
+
+    function toggleAccountType(type) {
+        const orgExtra = document.getElementById('org-extra-fields');
+        const sellerExtra = document.getElementById('seller-extra-fields');
+        const lblUser = document.getElementById('lbl-type-user');
+        const lblSeller = document.getElementById('lbl-type-seller');
+        const lblOrg = document.getElementById('lbl-type-org');
+        if (!lblUser || !lblSeller || !lblOrg) return;
+        
+        // Reset all labels
+        [lblUser, lblSeller, lblOrg].forEach(lbl => {
+            lbl.classList.remove('bg-white', 'shadow-sm', 'text-primary');
+            lbl.classList.add('text-on-surface-variant');
+        });
+        if (orgExtra) orgExtra.classList.add('hidden');
+        if (sellerExtra) sellerExtra.classList.add('hidden');
+
+        if (type === 'organization') {
+            if (orgExtra) orgExtra.classList.remove('hidden');
+            lblOrg.classList.add('bg-white', 'shadow-sm', 'text-primary');
+            lblOrg.classList.remove('text-on-surface-variant');
+        } else if (type === 'seller') {
+            if (sellerExtra) sellerExtra.classList.remove('hidden');
+            lblSeller.classList.add('bg-white', 'shadow-sm', 'text-primary');
+            lblSeller.classList.remove('text-on-surface-variant');
+        } else {
+            lblUser.classList.add('bg-white', 'shadow-sm', 'text-primary');
+            lblUser.classList.remove('text-on-surface-variant');
+        }
     }
 </script>
 </body>

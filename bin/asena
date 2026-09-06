@@ -498,13 +498,20 @@ function runDatabaseBackup(): void {
  * Iran Post Web Service Delivery Verification Worker
  */
 function runEscrowPostSyncWorker(): void {
-    info("در حال استعلام وضعیت بسته‌های پستی در جریان از وب‌سرویس پست ایران...");
+    info("در حال استعلام وضعیت بسته‌های پستی در جریان از وب‌سرویس‌های لجستیک (Postex & Iran Post)...");
     require_once ASENA_ROOT . '/includes/App.php';
-    $res = App::iranPost()->syncInTransitShipments();
+    
+    $postexRes = App::postex()->syncInTransitParcels();
+    $iranPostRes = App::iranPost()->syncInTransitShipments();
+
+    $totalChecked = ($postexRes['checked_count'] ?? 0) + ($iranPostRes['checked_count'] ?? 0);
+    $totalDelivered = ($postexRes['delivered_count'] ?? 0) + ($iranPostRes['delivered_count'] ?? 0);
+    $totalInTransit = ($postexRes['in_transit_count'] ?? 0) + ($iranPostRes['in_transit_count'] ?? 0);
+
     success("بررسی بسته‌های پستی به اتمام رسید:");
-    out("  تعداد کل مرسولات بررسی شده: {$res['checked_count']}");
-    out("  تعداد مرسولات تحویل داده شده (شروع مهلت ۷ روزه): {$res['delivered_count']}", '32');
-    out("  تعداد مرسولات در مسیر: {$res['in_transit_count']}", '33');
+    out("  تعداد کل مرسولات بررسی شده: {$totalChecked}");
+    out("  تعداد مرسولات تحویل داده شده (شروع مهلت ۷ روزه): {$totalDelivered}", '32');
+    out("  تعداد مرسولات در مسیر: {$totalInTransit}", '33');
 }
 
 /**

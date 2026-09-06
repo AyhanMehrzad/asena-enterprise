@@ -34,9 +34,9 @@ class WafMiddleware {
     ];
 
     private static array $traversalPatterns = [
-        '/(?:\.\.[\\\/])+/i',
-        '/(?:%2e%2e[%2f%5c])+/i',
-        '/\x00|\%00/'
+        '#(?:\.\.[\\\\/])+#i',
+        '#(?:%2e%2e(?:%2f|%5c))+#i',
+        '#\x00|%00#i'
     ];
 
     /**

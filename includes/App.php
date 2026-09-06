@@ -24,6 +24,7 @@ require_once __DIR__ . '/AuthGuard.php';
 require_once __DIR__ . '/IranPostService.php';
 require_once __DIR__ . '/MarketplaceEscrowService.php';
 require_once __DIR__ . '/TrafficMonitoringService.php';
+require_once __DIR__ . '/PostexShippingService.php';
 
 class App {
     private static ?PDO $db = null;
@@ -43,6 +44,8 @@ class App {
     private static ?IranPostService $iranPost = null;
     private static ?MarketplaceEscrowService $escrow = null;
     private static ?TrafficMonitoringService $traffic = null;
+    private static ?PostexShippingService $postex = null;
+
 
 
     public static function db(): PDO {
@@ -162,6 +165,13 @@ class App {
             self::$traffic = new TrafficMonitoringService(self::db());
         }
         return self::$traffic;
+    }
+
+    public static function postex(): PostexShippingService {
+        if (self::$postex === null) {
+            self::$postex = new PostexShippingService(self::db());
+        }
+        return self::$postex;
     }
 
     /**

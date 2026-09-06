@@ -155,7 +155,13 @@ $adminName = $adminCheck['name'] ?? 'مدیر سیستم';
         
         // Auto-detect active page key intelligently based on current file and $currentPage
         $activeKey = $currentPage ?? '';
-        if ($currentFile === 'subscriptions.php' || $currentFile === 'subscription_details.php' || $activeKey === 'user_subscriptions') {
+        if ($currentFile === 'organizations.php') {
+            $activeKey = 'organizations';
+        } elseif ($currentFile === 'doctors.php') {
+            $activeKey = 'doctors';
+        } elseif ($currentFile === 'sellers.php') {
+            $activeKey = 'sellers';
+        } elseif ($currentFile === 'subscriptions.php' || $currentFile === 'subscription_details.php' || $activeKey === 'user_subscriptions') {
             $activeKey = 'subscriptions';
         } elseif ($currentFile === 'index.php' || $currentFile === 'dashboard.php') {
             $activeKey = 'dashboard';
@@ -201,35 +207,33 @@ $adminName = $adminCheck['name'] ?? 'مدیر سیستم';
         } catch (Throwable $e) {}
 
         $navSections = [
-            'مدیریت و پیشخوان' => [
-                'dashboard' => ['icon' => 'dashboard', 'title' => 'پیشخوان مدیریت', 'url' => 'index.php'],
-                'analytics' => ['icon' => 'analytics', 'title' => 'تحلیل و آمار', 'url' => 'analytics.php'],
-                'calendar_notes' => ['icon' => 'calendar_month', 'title' => 'تقویم کاری و یادداشت‌ها', 'url' => 'calendar_notes.php', 'feature' => 'clinic_booking'],
+            'اکوسیستم و مراکز' => [
+                'dashboard'     => ['icon' => 'dashboard', 'title' => 'پیشخوان مدیریت کلان', 'url' => 'index.php'],
+                'organizations' => ['icon' => 'apartment', 'title' => 'مراکز درمانی و بیمارستان‌ها', 'url' => 'organizations.php'],
+                'doctors'       => ['icon' => 'stethoscope', 'title' => 'پزشکان و تعاملات درمانی', 'url' => 'doctors.php'],
+                'sellers'       => ['icon' => 'store', 'title' => 'فروشندگان و پت‌شاپ‌ها', 'url' => 'sellers.php'],
             ],
-            'فروشگاه و اشتراک' => [
-                'orders' => ['icon' => 'local_shipping', 'title' => 'سفارشات و ارسال', 'url' => 'orders.php'],
-                'payouts' => ['icon' => 'account_balance_wallet', 'title' => 'تسویه حساب و وجوه امانی (Escrow)', 'url' => 'payouts.php'],
-                'inventory' => ['icon' => 'inventory_2', 'title' => 'انبار و محصولات', 'url' => 'inventory.php'],
-                'rfq_management' => ['icon' => 'request_quote', 'title' => 'استعلام عمده و مناقصات (RFQ)', 'url' => 'rfq_management.php'],
-                'subscriptions' => ['icon' => 'event_repeat', 'title' => 'مدیریت اشتراک‌ها (Autoship)', 'url' => 'subscriptions.php', 'feature' => 'autoship'],
-                'recommendations' => ['icon' => 'auto_awesome', 'title' => 'پیشنهادات و بنرها', 'url' => 'recommendations.php'],
+            'مالی و تسویه پایا' => [
+                'payouts'   => ['icon' => 'account_balance_wallet', 'title' => 'تسویه پایا و کارمزد ۵٪', 'url' => 'payouts.php'],
+                'analytics' => ['icon' => 'analytics', 'title' => 'تحلیل و آمار کلان', 'url' => 'analytics.php'],
             ],
-            'کلینیک و خدمات' => [
-                'pharmacist_queue' => ['icon' => 'prescriptions', 'title' => 'تایید نسخه الکترونیک (Rx)', 'url' => 'pharmacist_queue.php', 'feature' => 'prescription_rx'],
-                'clinic' => ['icon' => 'medical_services', 'title' => 'مدیریت کلینیک و پزشکان', 'url' => 'clinic_management.php', 'feature' => 'clinic_booking'],
-                'donations' => ['icon' => 'volunteer_activism', 'title' => 'گزارش کمک‌های خیریه', 'url' => 'donations.php', 'feature' => 'charity_campaigns'],
+            'فروشگاه و عملیات' => [
+                'orders'          => ['icon' => 'local_shipping', 'title' => 'سفارشات سراسری', 'url' => 'orders.php'],
+                'inventory'       => ['icon' => 'inventory_2', 'title' => 'انبار و محصولات', 'url' => 'inventory.php'],
+                'pharmacist_queue'=> ['icon' => 'prescriptions', 'title' => 'تایید نسخه الکترونیک (Rx)', 'url' => 'pharmacist_queue.php', 'feature' => 'prescription_rx'],
+                'subscriptions'   => ['icon' => 'event_repeat', 'title' => 'مدیریت اشتراک‌ها (Autoship)', 'url' => 'subscriptions.php', 'feature' => 'autoship'],
+                'rfq_management'  => ['icon' => 'request_quote', 'title' => 'استعلام عمده و مناقصات (RFQ)', 'url' => 'rfq_management.php'],
             ],
-            'کاربران و پشتیبانی' => [
+            'کاربران و امنیت' => [
                 'security_logs' => ['icon' => 'shield', 'title' => 'پایش امنیت و لاگ‌ها (SOC)', 'url' => 'security_logs.php'],
                 'verifications' => ['icon' => 'verified_user', 'title' => 'احراز صلاحیت پزشکان و مراکز', 'url' => 'verifications.php', 'badge' => $pendingVerificationsCount],
-                'users' => ['icon' => 'group', 'title' => 'مدیریت کاربران', 'url' => 'user_management.php'],
-                'tickets' => ['icon' => 'support_agent', 'title' => 'تیکت و پشتیبانی', 'url' => 'tickets.php'],
-                'campaigns' => ['icon' => 'campaign', 'title' => 'مدیریت کمپین‌ها', 'url' => 'campaigns.php', 'feature' => 'sms_automation'],
-                'sms_settings' => ['icon' => 'sms', 'title' => 'تنظیمات پیامک و اعلان', 'url' => 'sms_settings.php', 'feature' => 'sms_automation'],
+                'users'         => ['icon' => 'group', 'title' => 'مدیریت کاربران و نقش‌ها', 'url' => 'user_management.php'],
+                'tickets'       => ['icon' => 'support_agent', 'title' => 'تیکت و پشتیبانی', 'url' => 'tickets.php'],
+                'sms_settings'  => ['icon' => 'sms', 'title' => 'تنظیمات پیامک و اعلان', 'url' => 'sms_settings.php', 'feature' => 'sms_automation'],
             ],
             'محتوا و راهنما' => [
                 'blogs' => ['icon' => 'edit_note', 'title' => 'مدیریت وبلاگ و مقالات', 'url' => 'blogs.php', 'feature' => 'blog_engine'],
-                'blog' => ['icon' => 'auto_stories', 'title' => 'مشاهده پایگاه دانش', 'url' => '../knowledge_base.php', 'external' => true, 'feature' => 'blog_engine'],
+                'blog'  => ['icon' => 'auto_stories', 'title' => 'مشاهده پایگاه دانش', 'url' => '../knowledge_base.php', 'external' => true, 'feature' => 'blog_engine'],
                 'guide' => ['icon' => 'menu_book', 'title' => 'راهنمای پنل ادمین', 'url' => 'guide.php'],
             ]
         ];

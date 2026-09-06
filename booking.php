@@ -144,63 +144,159 @@ $booked_slots_json = json_encode($booked_slots);
 
         <!-- Left Side: Main Selection -->
         <div class="flex-grow space-y-10 min-w-0">
-            <!-- Doctor Selection Section -->
+            <!-- Doctor & Specialist Selection Section -->
             <section>
-                <div class="flex justify-between items-end mb-6">
-                    <h2 class="text-2xl font-black text-slate-800 flex items-center gap-2">
-                        <span class="material-symbols-outlined text-indigo-500">stethoscope</span>
-                        ۱. انتخاب پزشک
-                    </h2>
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                    <div>
+                        <h2 class="text-2xl font-black text-slate-800 flex items-center gap-2">
+                            <span class="material-symbols-outlined text-indigo-600">health_and_safety</span>
+                            <span>۱. انتخاب متخصص (پزشک یا گرومر)</span>
+                        </h2>
+                        <p class="text-xs text-slate-500 mt-1">دامپزشکان عمومی، متخصصان جراحی، و آرایشگران حرفه‌ای پت (گرومینگ و اسپا)</p>
+                    </div>
                 </div>
-                <!-- Doctors Grid (Y-axis movement) -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar" id="doctors-list">
+
+                <!-- Live Search & Category Filter Toolbar -->
+                <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm mb-6 space-y-3">
+                    <!-- Search Input -->
+                    <div class="relative">
+                        <span class="material-symbols-outlined absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xl">search</span>
+                        <input type="text" id="specialist-search" oninput="applySpecialistFilters()" 
+                               placeholder="جستجوی نام پزشک یا گرومر، تخصص، کلینیک یا خدمات (مثلاً: آرایشگر، ارتوپدی، گره‌زدایی، اورژانس)..."
+                               class="w-full h-12 pr-11 pl-10 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 text-xs font-medium bg-slate-50 focus:bg-white transition-all">
+                        <button type="button" onclick="document.getElementById('specialist-search').value=''; applySpecialistFilters();" class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                            <span class="material-symbols-outlined text-lg">cancel</span>
+                        </button>
+                    </div>
+
+                    <!-- Filter Tabs / Chips -->
+                    <div class="flex items-center justify-between gap-2 flex-wrap pt-1 border-t border-slate-100">
+                        <div class="flex items-center gap-1.5 overflow-x-auto pb-1" id="filter-tabs">
+                            <button type="button" onclick="setSpecialistFilter('all', this)" class="specialist-filter-btn px-3.5 py-2 rounded-xl text-xs font-bold transition-all bg-indigo-600 text-white shadow-sm flex items-center gap-1.5">
+                                <span class="material-symbols-outlined text-sm">view_agenda</span>
+                                <span>همه متخصصین</span>
+                            </button>
+                            <button type="button" onclick="setSpecialistFilter('doctor', this)" class="specialist-filter-btn px-3.5 py-2 rounded-xl text-xs font-bold transition-all bg-slate-100 text-slate-700 hover:bg-slate-200 flex items-center gap-1.5">
+                                <span class="material-symbols-outlined text-sm text-indigo-600">stethoscope</span>
+                                <span>دامپزشکان و جراحان</span>
+                            </button>
+                            <button type="button" onclick="setSpecialistFilter('groomer', this)" class="specialist-filter-btn px-3.5 py-2 rounded-xl text-xs font-bold transition-all bg-slate-100 text-slate-700 hover:bg-slate-200 flex items-center gap-1.5">
+                                <span class="material-symbols-outlined text-sm text-pink-600">content_cut</span>
+                                <span>گرومرها و آرایشگران پت</span>
+                            </button>
+                            <button type="button" onclick="setSpecialistFilter('emergency', this)" class="specialist-filter-btn px-3.5 py-2 rounded-xl text-xs font-bold transition-all bg-slate-100 text-slate-700 hover:bg-slate-200 flex items-center gap-1.5">
+                                <span class="material-symbols-outlined text-sm text-rose-600">emergency</span>
+                                <span>اورژانس شبانه‌روزی</span>
+                            </button>
+                        </div>
+
+                        <span id="matching-count-badge" class="text-[11px] font-bold text-slate-500 bg-slate-100 px-3 py-1.5 rounded-xl border border-slate-200">
+                            <?= count($doctors) ?> متخصص آماده نوبت‌دهی
+                        </span>
+                    </div>
+                </div>
+
+                <!-- No Results State -->
+                <div id="no-specialists-found" class="hidden text-center py-12 bg-white rounded-2xl border border-dashed border-slate-300 p-8 space-y-2">
+                    <span class="material-symbols-outlined text-4xl text-slate-400">search_off</span>
+                    <h3 class="text-sm font-bold text-slate-700">متخصصی با این مشخصات یافت نشد</h3>
+                    <p class="text-xs text-slate-400">لطفاً عبارت دیگری را جستجو کرده یا فیلتر دسته‌بندی را تغییر دهید.</p>
+                </div>
+
+                <!-- Doctors & Groomers Grid -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 max-h-[640px] overflow-y-auto pr-2 custom-scrollbar" id="doctors-list">
                     
-                    <?php foreach($doctors as $index => $doctor): ?>
-                    <div class="doctor-card w-full bg-white border border-slate-200 rounded-2xl p-4 hover:shadow-xl hover:border-indigo-200 transition-all duration-300 group cursor-pointer hover:-translate-y-1 relative overflow-hidden"
+                    <?php foreach($doctors as $index => $doctor): 
+                        $isGroomer = ($doctor['provider_type'] ?? '') === 'groomer';
+                        $isEmergency = !empty($doctor['is_emergency']);
+                    ?>
+                    <div class="doctor-card w-full bg-white border border-slate-200 rounded-2xl p-4 hover:shadow-xl hover:border-indigo-300 transition-all duration-300 group cursor-pointer hover:-translate-y-1 relative overflow-hidden flex flex-col justify-between"
                          data-id="<?php echo $doctor['id']; ?>"
                          data-name="<?php echo htmlspecialchars($doctor['name']); ?>"
+                         data-type="<?php echo htmlspecialchars($doctor['provider_type'] ?? 'doctor'); ?>"
+                         data-emergency="<?php echo $isEmergency ? '1' : '0'; ?>"
+                         data-clinic="<?php echo htmlspecialchars($doctor['clinic_name'] ?? 'مرکز تخصصی آسنا'); ?>"
                          data-image="<?php echo htmlspecialchars($doctor['image_url'] ?: 'assets/images/presentation-dog.jpg'); ?>"
                          data-price="<?php echo $doctor['price']; ?>"
+                         data-specialty="<?php echo htmlspecialchars($doctor['specialty']); ?>"
+                         data-bio="<?php echo htmlspecialchars($doctor['bio'] ?? ''); ?>"
                          data-schedule="<?php echo htmlspecialchars($doctor['schedule_info'] ?? '{}'); ?>"
                          data-services="<?php echo htmlspecialchars($doctor['services_json'] ?? '[]'); ?>"
                          data-tags="<?php echo htmlspecialchars($doctor['tags'] ?? ''); ?>"
                          onclick="selectDoctor(this)">
                         
-                        <div class="relative mb-4 overflow-hidden rounded-xl">
-                            <img class="w-full h-48 object-cover transform group-hover:scale-105 transition-transform duration-500" src="<?php echo htmlspecialchars($doctor['image_url'] ?: 'assets/images/presentation-dog.jpg'); ?>" alt="<?php echo htmlspecialchars($doctor['name']); ?>"/>
-                            <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                            <?php if($index === 0): ?>
-                            <div class="absolute top-2 right-2 bg-emerald-500 text-white text-xs font-bold px-3 py-1.5 rounded-full flex items-center gap-1.5 shadow-lg shadow-emerald-500/30">
-                                <span class="w-2 h-2 bg-white rounded-full animate-pulse"></span>
-                                آماده ویزیت
-                            </div>
-                            <?php endif; ?>
-                        </div>
-                        <div class="space-y-1.5">
-                            <h3 class="text-xl font-bold text-slate-800"><?php echo htmlspecialchars($doctor['name']); ?></h3>
-                            <p class="text-sm font-medium text-indigo-600 bg-indigo-50 inline-block px-2 py-0.5 rounded-md"><?php echo htmlspecialchars($doctor['specialty']); ?></p>
-                            
-                            <?php if(!empty($doctor['tags'])): ?>
-                            <div class="flex flex-wrap gap-1 mt-1.5">
-                                <?php foreach(array_slice(explode(',', $doctor['tags']), 0, 3) as $tg): ?>
-                                    <span class="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md font-medium">#<?php echo trim(htmlspecialchars($tg)); ?></span>
-                                <?php endforeach; ?>
-                            </div>
-                            <?php endif; ?>
-
-                            <div class="flex items-center gap-1 text-amber-500 mt-2">
-                                <span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">star</span>
-                                <span class="text-sm font-bold text-slate-700"><?php echo $doctor['rating']; ?></span>
-                                <span class="text-xs text-slate-400 mr-1">
-                                    <?php if($doctor['review_count'] > 0): ?>
-                                        (<?php echo $doctor['review_count']; ?> نظر مراجعین)
+                        <div>
+                            <div class="relative mb-3.5 overflow-hidden rounded-xl">
+                                <img class="w-full h-44 object-cover transform group-hover:scale-105 transition-transform duration-500" src="<?php echo htmlspecialchars($doctor['image_url'] ?: 'assets/images/presentation-dog.jpg'); ?>" alt="<?php echo htmlspecialchars($doctor['name']); ?>"/>
+                                <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                                
+                                <!-- Role Badge -->
+                                <div class="absolute top-2 right-2">
+                                    <?php if ($isEmergency): ?>
+                                        <span class="bg-rose-600 text-white text-[10px] font-black px-2.5 py-1 rounded-full flex items-center gap-1 shadow-md">
+                                            <span class="w-1.5 h-1.5 bg-white rounded-full animate-ping"></span>
+                                            اورژانس ۲۴/۷
+                                        </span>
+                                    <?php elseif ($isGroomer): ?>
+                                        <span class="bg-pink-600 text-white text-[10px] font-black px-2.5 py-1 rounded-full flex items-center gap-1 shadow-md">
+                                            <span class="material-symbols-outlined text-xs">content_cut</span>
+                                            گرومر و آرایشگر پت
+                                        </span>
                                     <?php else: ?>
-                                        (امتیاز تخصصی آسنا)
+                                        <span class="bg-indigo-600 text-white text-[10px] font-black px-2.5 py-1 rounded-full flex items-center gap-1 shadow-md">
+                                            <span class="material-symbols-outlined text-xs">stethoscope</span>
+                                            پزشک متخصص
+                                        </span>
                                     <?php endif; ?>
-                                </span>
+                                </div>
+
+                                <!-- Clinic Badge -->
+                                <?php if (!empty($doctor['clinic_name'])): ?>
+                                    <div class="absolute bottom-2 right-2 bg-black/60 backdrop-blur-md text-white text-[10px] font-bold px-2 py-0.5 rounded-lg flex items-center gap-1">
+                                        <span class="material-symbols-outlined text-xs text-sky-400">local_hospital</span>
+                                        <span><?= htmlspecialchars($doctor['clinic_name']) ?></span>
+                                    </div>
+                                <?php endif; ?>
+                            </div>
+
+                            <div class="space-y-1.5">
+                                <h3 class="text-base font-black text-slate-800 group-hover:text-indigo-600 transition-colors"><?php echo htmlspecialchars($doctor['name']); ?></h3>
+                                <p class="text-xs font-bold <?= $isGroomer ? 'text-pink-700 bg-pink-50' : 'text-indigo-700 bg-indigo-50' ?> inline-block px-2.5 py-0.5 rounded-lg"><?php echo htmlspecialchars($doctor['specialty']); ?></p>
+                                
+                                <?php if(!empty($doctor['bio'])): ?>
+                                    <p class="text-[11px] text-slate-500 line-clamp-2 leading-relaxed mt-1">
+                                        <?= htmlspecialchars($doctor['bio']) ?>
+                                    </p>
+                                <?php endif; ?>
+
+                                <?php if(!empty($doctor['tags'])): ?>
+                                <div class="flex flex-wrap gap-1 mt-1.5">
+                                    <?php foreach(array_slice(explode(',', $doctor['tags']), 0, 3) as $tg): ?>
+                                        <span class="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md font-medium">#<?php echo trim(htmlspecialchars($tg)); ?></span>
+                                    <?php endforeach; ?>
+                                </div>
+                                <?php endif; ?>
+
+                                <div class="flex items-center justify-between pt-2">
+                                    <div class="flex items-center gap-1 text-amber-500">
+                                        <span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 1;">star</span>
+                                        <span class="text-xs font-black text-slate-800"><?php echo $doctor['rating']; ?></span>
+                                        <span class="text-[11px] text-slate-400 mr-0.5">
+                                            (<?php echo $doctor['review_count']; ?> نظر)
+                                        </span>
+                                    </div>
+
+                                    <div class="text-xs font-black text-indigo-700 font-mono">
+                                        <?= number_format($doctor['price']) ?> <span class="text-[10px] text-slate-400 font-normal">تومان</span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                        <button type="button" class="w-full mt-5 border-2 border-indigo-100 bg-indigo-50/50 text-indigo-700 py-2.5 rounded-xl text-sm font-bold hover:bg-indigo-600 hover:border-indigo-600 hover:text-white transition-all shadow-sm select-btn">انتخاب پزشک</button>
+
+                        <button type="button" class="w-full mt-4 border-2 border-indigo-100 bg-indigo-50/60 text-indigo-700 py-2.5 rounded-xl text-xs font-bold hover:bg-indigo-600 hover:border-indigo-600 hover:text-white transition-all shadow-sm select-btn flex items-center justify-center gap-1">
+                            <span class="material-symbols-outlined text-sm"><?= $isGroomer ? 'content_cut' : 'event_available' ?></span>
+                            <span><?= $isGroomer ? 'انتخاب گرومر و رزرو اصلاح' : 'انتخاب پزشک و رزرو نوبت' ?></span>
+                        </button>
                     </div>
                     <?php endforeach; ?>
 
@@ -303,63 +399,80 @@ $booked_slots_json = json_encode($booked_slots);
         
         <!-- Right Side: Sticky Summary Sidebar -->
         <aside class="w-full lg:w-[400px] shrink-0">
-            <div class="sticky top-28 bg-white rounded-3xl border border-slate-200 shadow-2xl shadow-indigo-900/5 space-y-8 p-8 overflow-hidden relative">
-                <div class="absolute top-0 right-0 w-full h-2 bg-gradient-to-r from-indigo-500 to-pink-500"></div>
-                <h2 class="text-2xl font-black text-slate-800 mb-6 flex items-center gap-2">
-                    <span class="material-symbols-outlined text-pink-500">receipt_long</span>
-                    خلاصه نوبت
+            <div class="sticky top-28 bg-white rounded-3xl border border-slate-200 shadow-2xl shadow-indigo-900/5 space-y-7 p-7 overflow-hidden relative">
+                <div class="absolute top-0 right-0 w-full h-2 bg-gradient-to-r from-indigo-500 via-pink-500 to-amber-500"></div>
+                <h2 class="text-xl font-black text-slate-800 flex items-center gap-2">
+                    <span class="material-symbols-outlined text-pink-500 text-2xl">receipt_long</span>
+                    <span>خلاصه رزرو نوبت</span>
                 </h2>
+
                 <div class="space-y-6">
-                    <!-- Selected Doctor Summary -->
+                    <!-- Selected Doctor/Groomer Summary Card -->
                     <div id="summary-doctor" class="flex items-center gap-4 p-4 bg-slate-50 border border-slate-100 rounded-2xl opacity-50 transition-all duration-300 group">
-                        <img id="summary-doctor-img" class="w-16 h-16 rounded-full object-cover border-4 border-white shadow-md transition-transform group-hover:scale-110" src="assets/images/presentation-dog.jpg"/>
-                        <div>
-                            <p class="text-xs font-bold text-slate-400 mb-1">پزشک انتخابی</p>
-                            <h4 id="summary-doctor-name" class="text-lg font-bold text-slate-800">پزشک را انتخاب کنید</h4>
+                        <img id="summary-doctor-img" class="w-16 h-16 rounded-2xl object-cover border-2 border-white shadow-md transition-transform group-hover:scale-105" src="assets/images/presentation-dog.jpg" alt="متخصص"/>
+                        <div class="min-w-0 flex-1">
+                            <p id="summary-role-label" class="text-[11px] font-bold text-slate-400 mb-0.5">متخصص انتخابی</p>
+                            <h4 id="summary-doctor-name" class="text-base font-black text-slate-900 truncate">متخصص را انتخاب کنید</h4>
+                            <span id="summary-doctor-spec" class="text-xs text-indigo-600 font-bold block truncate">---</span>
                         </div>
                     </div>
                     
                     <!-- Details List -->
-                    <div class="space-y-4">
-                        <div class="flex justify-between items-center text-body-md font-body-md">
-                            <div class="flex items-center gap-2 text-on-surface-variant">
-                                <span class="material-symbols-outlined text-[18px]">calendar_today</span>
-                                تاریخ
+                    <div class="space-y-3.5 text-xs">
+                        <div class="flex justify-between items-center py-1">
+                            <div class="flex items-center gap-2 text-slate-500">
+                                <span class="material-symbols-outlined text-base text-indigo-500">calendar_today</span>
+                                <span>تاریخ مراجعه</span>
                             </div>
-                            <span id="summary-date" class="text-on-surface font-semibold text-on-surface-variant">انتخاب نشده</span>
+                            <span id="summary-date" class="text-slate-800 font-bold">انتخاب نشده</span>
                         </div>
-                        <div class="flex justify-between items-center text-body-md font-body-md">
-                            <div class="flex items-center gap-2 text-on-surface-variant">
-                                <span class="material-symbols-outlined text-[18px]">schedule</span>
-                                ساعت
+                        <div class="flex justify-between items-center py-1">
+                            <div class="flex items-center gap-2 text-slate-500">
+                                <span class="material-symbols-outlined text-base text-indigo-500">schedule</span>
+                                <span>ساعت شیفت</span>
                             </div>
-                            <span id="summary-time" class="text-on-surface font-semibold text-on-surface-variant">انتخاب نشده</span>
+                            <span id="summary-time" class="text-slate-800 font-bold">انتخاب نشده</span>
                         </div>
-                        <div class="flex justify-between items-center text-body-md font-body-md">
-                            <div class="flex items-center gap-2 text-on-surface-variant">
-                                <span class="material-symbols-outlined text-[18px]">location_on</span>
-                                کلینیک
+                        <div class="flex justify-between items-center py-1">
+                            <div class="flex items-center gap-2 text-slate-500">
+                                <span class="material-symbols-outlined text-base text-indigo-500">location_on</span>
+                                <span>مرکز / سالن</span>
                             </div>
-                            <span class="text-on-surface font-semibold">شعبه مرکزی ونک</span>
+                            <span id="summary-clinic" class="text-slate-800 font-bold truncate max-w-[200px]">شعبه مرکزی آسنا</span>
                         </div>
                     </div>
                     
-                    <div class="border-t border-slate-200 pt-6">
-                        <div class="flex justify-between items-center mb-8 bg-indigo-50/50 p-4 rounded-xl border border-indigo-100/50">
-                            <span class="text-lg font-bold text-slate-700">هزینه ویزیت</span>
-                            <div class="text-right flex items-baseline gap-1.5">
-                                <span id="summary-price" class="text-2xl font-black text-indigo-600 tracking-tight">---</span>
-                                <span class="text-sm font-bold text-slate-500">تومان</span>
+                    <!-- Transparent Fee & Platform Interest Breakdown -->
+                    <div class="border-t border-slate-200 pt-5 space-y-3">
+                        <div class="bg-indigo-50/60 p-4 rounded-2xl border border-indigo-100/80 space-y-2.5">
+                            <div class="flex justify-between items-center text-xs text-slate-600">
+                                <span>تعرفه پایه خدمت / ویزیت:</span>
+                                <span id="summary-base-fee" class="font-mono font-bold text-slate-800">--- تومان</span>
+                            </div>
+                            <div class="flex justify-between items-center text-[11px] text-emerald-800 bg-emerald-100/60 px-2.5 py-1.5 rounded-xl">
+                                <span class="flex items-center gap-1">
+                                    <span class="material-symbols-outlined text-sm text-emerald-600">verified</span>
+                                    <span>سهم پلتفرم (۵٪ تضمین و پیامک):</span>
+                                </span>
+                                <span id="summary-commission" class="font-mono font-black text-emerald-900">شامل در تعرفه</span>
+                            </div>
+                            <div class="flex justify-between items-center pt-2 border-t border-indigo-100/80">
+                                <span class="text-sm font-black text-slate-900">مبلغ نهایی پرداخت:</span>
+                                <div class="text-right flex items-baseline gap-1">
+                                    <span id="summary-price" class="text-xl font-black text-indigo-700 tracking-tight">---</span>
+                                    <span class="text-xs font-bold text-slate-500">تومان</span>
+                                </div>
                             </div>
                         </div>
                         
-                        <button type="submit" id="submit-btn" disabled class="w-full bg-slate-100 text-slate-400 py-4 rounded-xl text-lg font-bold transition-all duration-300 flex justify-center items-center gap-2 cursor-not-allowed">
+                        <button type="submit" id="submit-btn" disabled class="w-full bg-slate-100 text-slate-400 py-3.5 rounded-xl text-base font-bold transition-all duration-300 flex justify-center items-center gap-2 cursor-not-allowed">
                             لطفا فرم را تکمیل کنید
                         </button>
                         
-                        <p class="mt-4 text-center text-label-sm font-label-sm text-on-surface-variant">
-                            امکان لغو رایگان تا ۲۴ ساعت قبل از نوبت
-                        </p>
+                        <div class="flex items-center justify-center gap-2 text-[11px] text-slate-400 font-medium">
+                            <span class="material-symbols-outlined text-sm text-emerald-500">check_circle</span>
+                            <span>امکان لغو رایگان تا ۲۴ ساعت قبل از موعد</span>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -371,27 +484,92 @@ $booked_slots_json = json_encode($booked_slots);
     // Global Booked Slots from PHP
     const bookedSlots = <?php echo $booked_slots_json; ?>;
     
-    // Booking interactive logic
+    // Booking interactive state
     let selectedDoctorId = null;
     let selectedDoctorSchedule = null;
     let selectedDate = null;
     let selectedTime = null;
+    let currentCategoryFilter = 'all';
 
     const daysMap = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
     const daysFa = ['یکشنبه', 'دوشنبه', 'سه‌شنبه', 'چهارشنبه', 'پنجشنبه', 'جمعه', 'شنبه'];
 
+    // Category Filter Handler
+    function setSpecialistFilter(category, btn) {
+        currentCategoryFilter = category;
+        document.querySelectorAll('.specialist-filter-btn').forEach(b => {
+            b.className = "specialist-filter-btn px-3.5 py-2 rounded-xl text-xs font-bold transition-all bg-slate-100 text-slate-700 hover:bg-slate-200 flex items-center gap-1.5";
+        });
+        btn.className = "specialist-filter-btn px-3.5 py-2 rounded-xl text-xs font-bold transition-all bg-indigo-600 text-white shadow-sm flex items-center gap-1.5";
+        applySpecialistFilters();
+    }
+
+    // Live Search and Category Filter combined
+    function applySpecialistFilters() {
+        const query = (document.getElementById('specialist-search').value || '').trim().toLowerCase();
+        const cards = document.querySelectorAll('.doctor-card');
+        let visibleCount = 0;
+
+        cards.forEach(card => {
+            const name = (card.dataset.name || '').toLowerCase();
+            const specialty = (card.dataset.specialty || '').toLowerCase();
+            const clinic = (card.dataset.clinic || '').toLowerCase();
+            const bio = (card.dataset.bio || '').toLowerCase();
+            const tags = (card.dataset.tags || '').toLowerCase();
+            const type = (card.dataset.type || 'doctor').toLowerCase();
+            const isEmergency = card.dataset.emergency === '1';
+
+            // Match query
+            const matchesQuery = !query || name.includes(query) || specialty.includes(query) || clinic.includes(query) || bio.includes(query) || tags.includes(query);
+
+            // Match category
+            let matchesCategory = true;
+            if (currentCategoryFilter === 'doctor') {
+                matchesCategory = (type === 'doctor');
+            } else if (currentCategoryFilter === 'groomer') {
+                matchesCategory = (type === 'groomer');
+            } else if (currentCategoryFilter === 'emergency') {
+                matchesCategory = isEmergency;
+            }
+
+            if (matchesQuery && matchesCategory) {
+                card.classList.remove('hidden');
+                visibleCount++;
+            } else {
+                card.classList.add('hidden');
+            }
+        });
+
+        // Toggle No Results View
+        const noResults = document.getElementById('no-specialists-found');
+        if (visibleCount === 0) {
+            noResults.classList.remove('hidden');
+        } else {
+            noResults.classList.add('hidden');
+        }
+
+        // Update badge
+        const badge = document.getElementById('matching-count-badge');
+        if (badge) {
+            badge.textContent = visibleCount + ' متخصص آماده نوبت‌دهی';
+        }
+    }
+
     function selectDoctor(card) {
         // Reset all
         document.querySelectorAll('.doctor-card').forEach(c => {
-            c.classList.remove('selected', 'border-secondary-container');
-            c.querySelector('.select-btn').className = "w-full mt-4 border border-primary text-primary py-2 rounded-lg text-label-lg font-label-lg hover:bg-primary-container hover:text-white transition-colors select-btn";
-            c.querySelector('.select-btn').textContent = "انتخاب پزشک";
+            c.classList.remove('selected', 'border-indigo-600', 'ring-2', 'ring-indigo-500/30');
+            const btn = c.querySelector('.select-btn');
+            const isGr = (c.dataset.type === 'groomer');
+            btn.className = "w-full mt-4 border-2 border-indigo-100 bg-indigo-50/60 text-indigo-700 py-2.5 rounded-xl text-xs font-bold hover:bg-indigo-600 hover:border-indigo-600 hover:text-white transition-all shadow-sm select-btn flex items-center justify-center gap-1";
+            btn.innerHTML = `<span class="material-symbols-outlined text-sm">${isGr ? 'content_cut' : 'event_available'}</span><span>${isGr ? 'انتخاب گرومر و رزرو اصلاح' : 'انتخاب پزشک و رزرو نوبت'}</span>`;
         });
         
         // Select this
-        card.classList.add('selected', 'border-secondary-container');
-        card.querySelector('.select-btn').className = "w-full mt-4 bg-primary text-white py-2 rounded-lg text-label-lg font-label-lg select-btn";
-        card.querySelector('.select-btn').textContent = "انتخاب شد";
+        card.classList.add('selected', 'border-indigo-600', 'ring-2', 'ring-indigo-500/30');
+        const activeBtn = card.querySelector('.select-btn');
+        activeBtn.className = "w-full mt-4 bg-indigo-600 text-white py-2.5 rounded-xl text-xs font-bold transition-all shadow-md select-btn flex items-center justify-center gap-1";
+        activeBtn.innerHTML = `<span class="material-symbols-outlined text-sm">check_circle</span><span>انتخاب شد</span>`;
         
         selectedDoctorId = card.dataset.id;
         document.getElementById('input_doctor_id').value = selectedDoctorId;
@@ -404,13 +582,20 @@ $booked_slots_json = json_encode($booked_slots);
         }
         
         // Update summary
+        const isGroomer = (card.dataset.type === 'groomer');
         document.getElementById('summary-doctor').classList.remove('opacity-50');
         document.getElementById('summary-doctor-name').textContent = card.dataset.name;
         document.getElementById('summary-doctor-img').src = card.dataset.image;
+        document.getElementById('summary-doctor-spec').textContent = card.dataset.specialty;
+        document.getElementById('summary-role-label').textContent = isGroomer ? 'گرومر و استایلیست انتخابی' : 'پزشک متخصص انتخابی';
+        document.getElementById('summary-clinic').textContent = card.dataset.clinic || 'مرکز تخصصی ونک';
         
-        // Format price
-        let priceStr = new Intl.NumberFormat('fa-IR').format(card.dataset.price);
-        document.getElementById('summary-price').textContent = priceStr;
+        // Format fee breakdown
+        const priceNum = parseInt(card.dataset.price, 10) || 0;
+        const commNum = Math.round(priceNum * 0.05);
+        document.getElementById('summary-base-fee').textContent = new Intl.NumberFormat('fa-IR').format(priceNum) + ' تومان';
+        document.getElementById('summary-commission').textContent = new Intl.NumberFormat('fa-IR').format(commNum) + ' تومان (شامل در تعرفه)';
+        document.getElementById('summary-price').textContent = new Intl.NumberFormat('fa-IR').format(priceNum);
         
         // Reset Date & Time
         selectedDate = null;
@@ -420,21 +605,52 @@ $booked_slots_json = json_encode($booked_slots);
         document.getElementById('summary-date').textContent = "انتخاب نشده";
         document.getElementById('summary-time').textContent = "انتخاب نشده";
         
-        // Parse Services & Populate visit_purpose dropdown
+        // Parse Services & Populate visit_purpose dropdown intelligently
         const purposeSelect = document.getElementById('visit_purpose');
         if (purposeSelect) {
+            purposeSelect.innerHTML = '';
+            let services = [];
             try {
-                const services = JSON.parse(card.dataset.services || "[]");
-                if (Array.isArray(services) && services.length > 0) {
-                    purposeSelect.innerHTML = '';
-                    services.forEach(srv => {
-                        const opt = document.createElement('option');
-                        opt.value = srv.name || srv.title || srv;
-                        opt.textContent = `${srv.name || srv.title || srv} ${srv.duration ? '(' + srv.duration + ')' : ''}`;
-                        purposeSelect.appendChild(opt);
-                    });
-                }
-            } catch(e) {}
+                services = JSON.parse(card.dataset.services || "[]");
+            } catch(e) { services = []; }
+
+            if (Array.isArray(services) && services.length > 0) {
+                services.forEach(srv => {
+                    const opt = document.createElement('option');
+                    opt.value = srv.name || srv.title || srv;
+                    opt.textContent = `${srv.name || srv.title || srv} ${srv.duration ? '(' + srv.duration + ')' : ''}`;
+                    purposeSelect.appendChild(opt);
+                });
+            } else if (isGroomer) {
+                const groomingDefaults = [
+                    'کوپ فانتزی و آرایش قیچی ژورنالی (۶۰ دقیقه)',
+                    'شستشوی نرم‌کننده، اسپا و حمام معطر (۴۵ دقیقه)',
+                    'گره‌زدایی تخصصی بدون کچلی (۶۰ دقیقه)',
+                    'کوتاهی ناخن، بهداشت گوش و تخلیه کیسه مقعدی (۲۰ دقیقه)',
+                    'پکیج کامل گرومینگ، شستشو و اسپا VIP (۹۰ دقیقه)'
+                ];
+                groomingDefaults.forEach(srv => {
+                    const opt = document.createElement('option');
+                    opt.value = srv;
+                    opt.textContent = srv;
+                    purposeSelect.appendChild(opt);
+                });
+            } else {
+                const medicalDefaults = [
+                    'معاینه عمومی و چکاپ دوره ای (۳۰ دقیقه)',
+                    'واکسیناسیون و انگل‌زدایی جامع (۲۰ دقیقه)',
+                    'دندانپزشکی و جرم‌گیری تخصصی (۴۵ دقیقه)',
+                    'مشاوره و جراحی‌های تخصصی (۶۰ دقیقه)',
+                    'ویزیت اورژانسی و مراقبت‌های ویژه (فوری)',
+                    'کاشت میکروچیپ و صدور شناسنامه بین‌المللی (۲۰ دقیقه)'
+                ];
+                medicalDefaults.forEach(srv => {
+                    const opt = document.createElement('option');
+                    opt.value = srv;
+                    opt.textContent = srv;
+                    purposeSelect.appendChild(opt);
+                });
+            }
         }
         
         renderDates();

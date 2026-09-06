@@ -68,18 +68,26 @@ class OrganizationService {
     }
 
     /**
-     * Get doctors affiliated with this organization
+     * Get staff (doctors, groomers, sellers) affiliated with this organization
      */
-    public function getDoctors(int $orgId): array {
+    public function getDoctors(int $orgId, ?string $roleFilter = null): array {
+        $where = ["od.organization_id = ?"];
+        $params = [$orgId];
+
+        if (!empty($roleFilter) && $roleFilter !== 'all') {
+            $where[] = "od.role_type = ?";
+            $params[] = $roleFilter;
+        }
+
         $sql = "
-            SELECT d.*, od.is_head_physician, od.working_days, od.working_hours
+            SELECT d.*, od.is_head_physician, od.role_type, od.working_days, od.working_hours
             FROM organization_doctors od
             JOIN doctors d ON od.doctor_id = d.id
-            WHERE od.organization_id = ?
+            WHERE " . implode(' AND ', $where) . "
             ORDER BY od.is_head_physician DESC, d.rating DESC
         ";
         $stmt = $this->pdo->prepare($sql);
-        $stmt->execute([$orgId]);
+        $stmt->execute($params);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
@@ -113,17 +121,18 @@ class OrganizationService {
     }
 
     /**
-     * Link doctor to an organization
+     * Link staff (doctor, groomer, seller) to an organization
      */
-    public function linkDoctor(int $orgId, int $doctorId, int $isHead = 0, string $days = 'شنبه تا چهارشنبه', string $hours = '۱۶:۰۰ الی ۲۱:۰۰'): bool {
+    public function linkDoctor(int $orgId, int $doctorId, int $isHead = 0, string $days = 'شنبه تا چهارشنبه', string $hours = '۱۶:۰۰ الی ۲۱:۰۰', string $roleType = 'doctor'): bool {
         $stmt = $this->pdo->prepare("
-            INSERT INTO organization_doctors (organization_id, doctor_id, is_head_physician, working_days, working_hours)
-            VALUES (?, ?, ?, ?, ?)
+            INSERT INTO organization_doctors (organization_id, doctor_id, is_head_physician, role_type, working_days, working_hours)
+            VALUES (?, ?, ?, ?, ?, ?)
             ON DUPLICATE KEY UPDATE 
                 is_head_physician = VALUES(is_head_physician),
+                role_type = VALUES(role_type),
                 working_days = VALUES(working_days),
                 working_hours = VALUES(working_hours)
         ");
-        return $stmt->execute([$orgId, $doctorId, $isHead, $days, $hours]);
+        return $stmt->execute([$orgId, $doctorId, $isHead, $roleType, $days, $hours]);
     }
 }

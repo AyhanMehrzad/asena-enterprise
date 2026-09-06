@@ -6,6 +6,7 @@ if (php_sapi_name() !== 'cli' && session_status() === PHP_SESSION_NONE) {
 
 // Load Environment Configuration
 require_once __DIR__ . '/Env.php';
+require_once __DIR__ . '/IntlDateFormatterFallback.php';
 
 // Master configuration file in root (if exists)
 $rootConfig = __DIR__ . '/../../config.php';

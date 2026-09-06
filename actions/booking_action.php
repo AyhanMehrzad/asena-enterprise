@@ -56,16 +56,24 @@ if (!preg_match('/^\d{2}:\d{2}$/', $time)) {
 }
 
 try {
-    // ── Doctor validation ──────────────────────────────────────────────────────
-    $docCheck = $pdo->prepare("SELECT id, price FROM doctors WHERE id = ?");
+    // ── Doctor validation & fee calculation ──────────────────────────────────
+    $docCheck = $pdo->prepare("SELECT id, price, provider_type, organization_id FROM doctors WHERE id = ?");
     $docCheck->execute([$doctor_id]);
     $doctorRow = $docCheck->fetch();
     if (!$doctorRow) {
-        $_SESSION['booking_error'] = 'پزشک انتخابی معتبر نیست.';
+        $_SESSION['booking_error'] = 'متخصص انتخابی معتبر نیست.';
         header('Location: ../booking.php');
         exit;
     }
     $doctor_price = (int)$doctorRow['price'];
+    $provider_type = $doctorRow['provider_type'] ?? 'doctor';
+    $organization_id = !empty($doctorRow['organization_id']) ? (int)$doctorRow['organization_id'] : 1;
+    
+    // Calculate 5% platform interest / commission and 95% clinic net share
+    $commission_rate = 0.05;
+    $commission_amount = (int)round($doctor_price * $commission_rate);
+    $net_amount = $doctor_price - $commission_amount;
+    $service_type = ($provider_type === 'groomer') ? 'grooming' : 'consultation';
 
     $pdo->beginTransaction();
 
@@ -96,17 +104,24 @@ try {
     $blkStmt->execute([$doctor_id, $date, $time, $time]);
     if ($blkStmt->fetch()) {
         $pdo->rollBack();
-        $_SESSION['booking_error'] = 'این زمان توسط پزشک جهت نوبت‌های تلفنی یا استراحت مسدود شده است. لطفاً زمان دیگری را انتخاب نمایید.';
+        $_SESSION['booking_error'] = 'این زمان توسط مرکز جهت نوبت‌های تلفنی یا استراحت مسدود شده است. لطفاً زمان دیگری را انتخاب نمایید.';
         header('Location: ../booking.php');
         exit;
     }
 
-    // ── Insert appointment with visit_purpose and pet_notes ───────────────────
+    // ── Insert appointment with financial breakdown and purpose ───────────────
     $stmt = $pdo->prepare(
-        "INSERT INTO appointments (user_id, doctor_id, appointment_date, appointment_time, pet_type, pet_race, visit_purpose, pet_notes, status)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending')"
+        "INSERT INTO appointments (
+            user_id, doctor_id, organization_id, appointment_date, appointment_time, 
+            pet_type, pet_race, visit_purpose, pet_notes, fee, commission_amount, 
+            net_amount, service_type, settlement_status, status
+         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending_service', 'pending')"
     );
-    $stmt->execute([$_SESSION['user_id'], $doctor_id, $date, $time, $pet_type, $pet_race, $visit_purpose, $pet_notes]);
+    $stmt->execute([
+        $_SESSION['user_id'], $doctor_id, $organization_id, $date, $time,
+        $pet_type, $pet_race, $visit_purpose, $pet_notes,
+        $doctor_price, $commission_amount, $net_amount, $service_type
+    ]);
     $appointment_id = $pdo->lastInsertId();
 
     // ── Store booking pending order in session for payment flow ───────────────
@@ -115,6 +130,8 @@ try {
         'booking_id'     => $appointment_id,
         'items'          => [],
         'total_amount'   => $doctor_price,
+        'commission'     => $commission_amount,
+        'net_amount'     => $net_amount,
         'created_at'     => time(),
     ];
     $_SESSION['pay_nonce'] = bin2hex(random_bytes(24));
