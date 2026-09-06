@@ -4,19 +4,22 @@ require_once __DIR__ . '/App.php';
 App::boot();
 
 // Monthly Loyalty Points Check & Role Refresh
+$user_points_balance = 0;
 if (isset($_SESSION['user_id'])) {
-    $stmt = $pdo->prepare("SELECT last_monthly_points_date, role FROM users WHERE id = ?");
+    $stmt = $pdo->prepare("SELECT last_monthly_points_date, role, loyalty_points FROM users WHERE id = ?");
     $stmt->execute([$_SESSION['user_id']]);
     $user_pts = $stmt->fetch(PDO::FETCH_ASSOC);
     
     if ($user_pts) {
         $_SESSION['user_role'] = $user_pts['role'];
+        $user_points_balance = (int)($user_pts['loyalty_points'] ?? 0);
         $current_month = date('Y-m');
         $last_month = $user_pts['last_monthly_points_date'] ? date('Y-m', strtotime($user_pts['last_monthly_points_date'])) : '';
         
         if ($current_month !== $last_month) {
             $update_stmt = $pdo->prepare("UPDATE users SET loyalty_points = loyalty_points + 20, last_monthly_points_date = CURDATE() WHERE id = ?");
             $update_stmt->execute([$_SESSION['user_id']]);
+            $user_points_balance += 20;
         }
     }
 }
@@ -295,35 +298,62 @@ if (function_exists('get_curated_recommendations')) {
                     </div>
                 </div>
                 
-                <!-- Desktop Search -->
-                <div class="hidden lg:flex items-center bg-white/10 hover:bg-white/15 focus-within:bg-white/20 border border-white/15 focus-within:border-white/40 transition-all rounded-full px-4 py-2 text-white gap-2 w-full max-w-md">
-                    <form action="shop.php" method="GET" class="flex items-center w-full">
-                        <button type="submit" class="material-symbols-outlined text-lg bg-transparent border-none outline-none text-white cursor-pointer flex items-center justify-center p-0 hover:scale-110 transition-transform">search</button>
-                        <input name="q" value="<?php echo htmlspecialchars($_GET['q'] ?? ''); ?>" class="bg-transparent border-none focus:ring-0 text-sm w-full placeholder-white/70 text-white mr-2 outline-none font-medium" placeholder="جستجو در داروها، محصولات، کلینیک‌ها..." type="text">
-                    </form>
+                <!-- Desktop Search with Instant Autocomplete Dropdown -->
+                <div class="hidden lg:block relative flex-1 max-w-md" id="headerSearchWrapper">
+                    <div class="flex items-center bg-white/10 hover:bg-white/15 focus-within:bg-white/20 border border-white/15 focus-within:border-white/40 transition-all rounded-full px-4 py-2 text-white gap-2 w-full">
+                        <form action="shop.php" method="GET" class="flex items-center w-full" id="headerSearchForm">
+                            <button type="submit" class="material-symbols-outlined text-lg bg-transparent border-none outline-none text-white cursor-pointer flex items-center justify-center p-0 hover:scale-110 transition-transform">search</button>
+                            <input id="headerSearchInput" name="q" value="<?php echo htmlspecialchars($_GET['q'] ?? ''); ?>" class="bg-transparent border-none focus:ring-0 text-sm w-full placeholder-white/70 text-white mr-2 outline-none font-medium" placeholder="جستجو در داروها، کالاها، کلینیک‌ها..." type="text" autocomplete="off">
+                            <span id="headerSearchSpinner" class="material-symbols-outlined text-sm animate-spin hidden text-white/70">sync</span>
+                        </form>
+                    </div>
+                    <!-- Live Results Dropdown -->
+                    <div id="headerSearchResults" class="absolute right-0 top-full mt-2 w-full min-w-[340px] max-w-md bg-white rounded-2xl shadow-2xl border border-slate-100 overflow-hidden hidden z-50 text-slate-800 text-right"></div>
                 </div>
             </div>
 
-            <!-- Left side: Icons and Logo -->
-            <div class="flex items-center gap-3 lg:gap-6 shrink-0">
-                <div class="hidden lg:flex items-center gap-3">
+            <!-- Left side: Icons, Roles, Points, and Logo -->
+            <div class="flex items-center gap-3 lg:gap-5 shrink-0">
+                <div class="hidden lg:flex items-center gap-2.5">
                     <?php if(isset($_SESSION['user_id'])): ?>
                         <?php if(isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'admin'): ?>
-                            <a href="admin/index.php" class="bg-secondary-container text-white px-6 py-2 rounded-lg text-sm font-bold shadow-md hover:shadow-lg transition-all">پنل مدیریت</a>
+                            <a href="admin/index.php" class="bg-secondary-container text-white px-4 py-2 rounded-xl text-xs font-bold shadow-md hover:shadow-lg transition-all flex items-center gap-1.5">
+                                <span class="material-symbols-outlined text-sm">admin_panel_settings</span> پنل مدیریت
+                            </a>
                         <?php elseif(isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'doctor'): ?>
-                            <a href="doctor/index.php" class="bg-white text-primary px-6 py-2 rounded-lg text-sm font-bold shadow-md hover:shadow-lg transition-all">پنل پزشک</a>
+                            <a href="doctor/index.php" class="bg-white text-primary px-4 py-2 rounded-xl text-xs font-bold shadow-md hover:shadow-lg transition-all flex items-center gap-1.5">
+                                <span class="material-symbols-outlined text-sm">stethoscope</span> پنل پزشک
+                            </a>
                         <?php elseif(isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'organization'): ?>
-                            <a href="organization/index.php" class="bg-teal-600 text-white px-5 py-2 rounded-lg text-sm font-bold shadow-md hover:shadow-lg transition-all">پنل مرکز درمانی</a>
+                            <a href="organization/index.php" class="bg-teal-600 text-white px-4 py-2 rounded-xl text-xs font-bold shadow-md hover:shadow-lg transition-all flex items-center gap-1.5">
+                                <span class="material-symbols-outlined text-sm">domain</span> پنل مرکز درمانی
+                            </a>
+                        <?php elseif(isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'pharmacist'): ?>
+                            <a href="pharmacist/index.php" class="bg-indigo-600 text-white px-4 py-2 rounded-xl text-xs font-bold shadow-md hover:shadow-lg transition-all flex items-center gap-1.5">
+                                <span class="material-symbols-outlined text-sm">medication</span> پنل داروساز
+                            </a>
+                        <?php elseif(isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'seller'): ?>
+                            <a href="seller/index.php" class="bg-amber-600 text-white px-4 py-2 rounded-xl text-xs font-bold shadow-md hover:shadow-lg transition-all flex items-center gap-1.5">
+                                <span class="material-symbols-outlined text-sm">storefront</span> پنل فروشنده
+                            </a>
                         <?php endif; ?>
+
+                        <!-- Loyalty Points Badge -->
+                        <a href="rewards.php" class="hidden xl:inline-flex items-center gap-1 bg-white/10 hover:bg-white/20 border border-white/20 px-3 py-1.5 rounded-full text-xs font-bold text-amber-300 transition-all" title="امتیاز وفاداری باشگاه مشتریان">
+                            <span class="material-symbols-outlined text-sm text-amber-400">stars</span>
+                            <span><?php echo number_format($user_points_balance); ?> امتیاز</span>
+                        </a>
                     <?php else: ?>
-                        <a href="login.php" class="bg-secondary-container text-white px-6 py-2 rounded-lg text-sm font-bold shadow-md hover:shadow-lg transition-all">ورود / ثبت‌نام</a>
+                        <a href="login.php" class="bg-secondary-container text-white px-5 py-2 rounded-xl text-xs font-bold shadow-md hover:shadow-lg transition-all flex items-center gap-1.5">
+                            <span class="material-symbols-outlined text-sm">login</span> ورود / ثبت‌نام
+                        </a>
                     <?php endif; ?>
                 </div>
                 
-                <div class="flex items-center gap-1 lg:gap-3">
-                    <a href="<?php echo isset($_SESSION['user_id']) ? 'profile.php' : 'login.php'; ?>" class="material-symbols-outlined text-white p-2 hover:bg-white/10 rounded-full transition-colors hidden sm:flex">person</a>
+                <div class="flex items-center gap-1 lg:gap-2">
+                    <a href="<?php echo isset($_SESSION['user_id']) ? 'profile.php' : 'login.php'; ?>" class="material-symbols-outlined text-white p-2 hover:bg-white/10 rounded-full transition-colors hidden sm:flex" title="حساب کاربری">person</a>
                     
-                    <a href="cart.php" class="relative material-symbols-outlined text-white p-2 hover:bg-white/10 rounded-full transition-colors flex">
+                    <a href="cart.php" class="relative material-symbols-outlined text-white p-2 hover:bg-white/10 rounded-full transition-colors flex" title="سبد خرید">
                         shopping_cart
                         <?php if($cart_count > 0): ?>
                             <span class="absolute top-0 right-0 bg-secondary-container text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-bold"><?php echo $cart_count; ?></span>
@@ -404,16 +434,34 @@ if (function_exists('get_curated_recommendations')) {
                 <!-- Auth Buttons for Mobile -->
                 <div class="flex flex-col gap-3">
                     <?php if(isset($_SESSION['user_id'])): ?>
-                        <a href="profile.php" class="flex items-center justify-center gap-2 bg-surface-container-high text-primary px-6 py-4 rounded-xl text-sm font-bold shadow-sm">
-                            <span class="material-symbols-outlined">person</span> حساب کاربری
-                        </a>
+                        <div class="flex items-center justify-between bg-surface-container-high px-4 py-3 rounded-xl">
+                            <a href="profile.php" class="flex items-center gap-2 text-primary text-sm font-bold">
+                                <span class="material-symbols-outlined">person</span> حساب کاربری
+                            </a>
+                            <a href="rewards.php" class="flex items-center gap-1 text-xs font-bold text-amber-700 bg-amber-50 px-2.5 py-1 rounded-full border border-amber-200">
+                                <span class="material-symbols-outlined text-sm text-amber-500">stars</span>
+                                <span><?php echo number_format($user_points_balance); ?> امتیاز</span>
+                            </a>
+                        </div>
                         <?php if(isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'admin'): ?>
-                            <a href="admin/index.php" class="flex items-center justify-center gap-2 bg-secondary-container text-white px-6 py-4 rounded-xl text-sm font-bold shadow-md">
-                                پنل مدیریت
+                            <a href="admin/index.php" class="flex items-center justify-center gap-2 bg-secondary-container text-white px-6 py-3.5 rounded-xl text-sm font-bold shadow-md">
+                                <span class="material-symbols-outlined text-sm">admin_panel_settings</span> پنل مدیریت مرکزی
                             </a>
                         <?php elseif(isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'doctor'): ?>
-                            <a href="doctor/index.php" class="flex items-center justify-center gap-2 bg-secondary-container text-white px-6 py-4 rounded-xl text-sm font-bold shadow-md">
-                                پنل پزشک
+                            <a href="doctor/index.php" class="flex items-center justify-center gap-2 bg-secondary-container text-white px-6 py-3.5 rounded-xl text-sm font-bold shadow-md">
+                                <span class="material-symbols-outlined text-sm">stethoscope</span> پنل پزشک
+                            </a>
+                        <?php elseif(isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'organization'): ?>
+                            <a href="organization/index.php" class="flex items-center justify-center gap-2 bg-teal-600 text-white px-6 py-3.5 rounded-xl text-sm font-bold shadow-md">
+                                <span class="material-symbols-outlined text-sm">domain</span> پنل مرکز درمانی
+                            </a>
+                        <?php elseif(isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'pharmacist'): ?>
+                            <a href="pharmacist/index.php" class="flex items-center justify-center gap-2 bg-indigo-600 text-white px-6 py-3.5 rounded-xl text-sm font-bold shadow-md">
+                                <span class="material-symbols-outlined text-sm">medication</span> پنل داروساز
+                            </a>
+                        <?php elseif(isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'seller'): ?>
+                            <a href="seller/index.php" class="flex items-center justify-center gap-2 bg-amber-600 text-white px-6 py-3.5 rounded-xl text-sm font-bold shadow-md">
+                                <span class="material-symbols-outlined text-sm">storefront</span> پنل فروشنده مارکت‌پلیس
                             </a>
                         <?php endif; ?>
                     <?php else: ?>
@@ -433,7 +481,6 @@ if (function_exists('get_curated_recommendations')) {
             
             if (menu.classList.contains('hidden')) {
                 menu.classList.remove('hidden');
-                // Trigger reflow
                 void menu.offsetWidth;
                 menu.classList.remove('opacity-0');
                 panel.classList.remove('translate-x-full');
@@ -448,4 +495,178 @@ if (function_exists('get_curated_recommendations')) {
                 }, 300);
             }
         }
+
+        // Universal Live Search Autocomplete Controller
+        function initLiveSearch(inputId, resultsId, spinnerId) {
+            const input = document.getElementById(inputId);
+            const resultsBox = document.getElementById(resultsId);
+            const spinner = spinnerId ? document.getElementById(spinnerId) : null;
+            if (!input || !resultsBox) return;
+
+            let debounceTimer = null;
+
+            input.addEventListener('input', function() {
+                const query = this.value.trim();
+                clearTimeout(debounceTimer);
+
+                if (query.length < 2) {
+                    resultsBox.classList.add('hidden');
+                    resultsBox.innerHTML = '';
+                    if (spinner) spinner.classList.add('hidden');
+                    return;
+                }
+
+                if (spinner) spinner.classList.remove('hidden');
+
+                debounceTimer = setTimeout(() => {
+                    fetch('actions/live_search.php?q=' + encodeURIComponent(query))
+                        .then(res => res.json())
+                        .then(data => {
+                            if (spinner) spinner.classList.add('hidden');
+                            if (data.status === 'success') {
+                                renderLiveSearchResults(data, resultsBox, query);
+                            }
+                        })
+                        .catch(() => {
+                            if (spinner) spinner.classList.add('hidden');
+                        });
+                }, 220);
+            });
+
+            // Close on click outside
+            document.addEventListener('click', function(e) {
+                if (!input.contains(e.target) && !resultsBox.contains(e.target)) {
+                    resultsBox.classList.add('hidden');
+                }
+            });
+
+            input.addEventListener('focus', function() {
+                if (this.value.trim().length >= 2 && resultsBox.innerHTML.trim() !== '') {
+                    resultsBox.classList.remove('hidden');
+                }
+            });
+        }
+
+        function renderLiveSearchResults(data, container, query) {
+            if (data.total === 0) {
+                container.innerHTML = `
+                    <div class="p-6 text-center text-slate-500 text-xs">
+                        <span class="material-symbols-outlined text-3xl text-slate-400 mb-1 block">search_off</span>
+                        موردی برای <b>"${query}"</b> یافت نشد. اینتر بزنید تا در کل فروشگاه جستجو شود.
+                    </div>
+                `;
+                container.classList.remove('hidden');
+                return;
+            }
+
+            let html = '<div class="p-2 divide-y divide-slate-100 max-h-[420px] overflow-y-auto custom-scrollbar">';
+
+            // Products
+            if (data.results.products && data.results.products.length > 0) {
+                html += '<div class="py-2"><div class="px-3 py-1 text-[11px] font-extrabold text-primary flex items-center gap-1"><span class="material-symbols-outlined text-sm text-secondary-container">storefront</span> پت‌شاپ و ملزومات</div>';
+                data.results.products.forEach(p => {
+                    html += `
+                        <a href="${p.url}" class="flex items-center justify-between gap-3 p-2 rounded-xl hover:bg-slate-50 transition-colors group">
+                            <div class="flex items-center gap-2.5 overflow-hidden">
+                                <img src="${p.image}" class="w-10 h-10 rounded-lg object-cover bg-slate-100 shrink-0 border border-slate-200" alt="">
+                                <div class="truncate">
+                                    <div class="text-xs font-bold text-slate-800 group-hover:text-primary transition-colors truncate">${p.title}</div>
+                                    <div class="text-[10px] text-slate-400">${p.category}</div>
+                                </div>
+                            </div>
+                            <div class="text-left shrink-0">
+                                <div class="text-xs font-extrabold text-primary">${p.price.toLocaleString('fa-IR')} <span class="text-[9px] font-normal text-slate-500">تومان</span></div>
+                            </div>
+                        </a>
+                    `;
+                });
+                html += '</div>';
+            }
+
+            // Pharmacy
+            if (data.results.pharmacy && data.results.pharmacy.length > 0) {
+                html += '<div class="py-2"><div class="px-3 py-1 text-[11px] font-extrabold text-indigo-700 flex items-center gap-1"><span class="material-symbols-outlined text-sm text-indigo-600">medication</span> داروخانه تخصصی دامپزشکی</div>';
+                data.results.pharmacy.forEach(m => {
+                    const rxBadge = m.requires_prescription ? '<span class="bg-rose-100 text-rose-700 text-[9px] px-1.5 py-0.5 rounded font-bold mr-1">نسخه</span>' : '';
+                    html += `
+                        <a href="${m.url}" class="flex items-center justify-between gap-3 p-2 rounded-xl hover:bg-indigo-50/40 transition-colors group">
+                            <div class="flex items-center gap-2.5 overflow-hidden">
+                                <img src="${m.image}" class="w-10 h-10 rounded-lg object-cover bg-slate-100 shrink-0 border border-slate-200" alt="">
+                                <div class="truncate">
+                                    <div class="text-xs font-bold text-slate-800 group-hover:text-indigo-700 transition-colors truncate">${m.title} ${rxBadge}</div>
+                                    <div class="text-[10px] text-slate-400">${m.category}</div>
+                                </div>
+                            </div>
+                            <div class="text-left shrink-0">
+                                <div class="text-xs font-extrabold text-indigo-700">${m.price.toLocaleString('fa-IR')} <span class="text-[9px] font-normal text-slate-500">تومان</span></div>
+                            </div>
+                        </a>
+                    `;
+                });
+                html += '</div>';
+            }
+
+            // Organizations
+            if (data.results.organizations && data.results.organizations.length > 0) {
+                html += '<div class="py-2"><div class="px-3 py-1 text-[11px] font-extrabold text-teal-700 flex items-center gap-1"><span class="material-symbols-outlined text-sm text-teal-600">domain</span> کلینیک‌ها و بیمارستان‌ها</div>';
+                data.results.organizations.forEach(o => {
+                    const badge247 = o.is_24_7 ? '<span class="bg-emerald-100 text-emerald-800 text-[9px] px-1.5 py-0.5 rounded-full font-black mr-1">۲۴/۷</span>' : '';
+                    html += `
+                        <a href="${o.url}" class="flex items-center justify-between gap-3 p-2 rounded-xl hover:bg-teal-50/40 transition-colors group">
+                            <div class="flex items-center gap-2.5 overflow-hidden">
+                                <img src="${o.image}" class="w-10 h-10 rounded-lg object-cover bg-slate-100 shrink-0 border border-slate-200" alt="">
+                                <div class="truncate">
+                                    <div class="text-xs font-bold text-slate-800 group-hover:text-teal-700 transition-colors truncate">${o.title} ${badge247}</div>
+                                    <div class="text-[10px] text-slate-400">${o.city}</div>
+                                </div>
+                            </div>
+                            <div class="text-left shrink-0 flex items-center gap-1 text-amber-500 text-xs font-bold">
+                                <span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">star</span>
+                                <span>${o.rating}</span>
+                            </div>
+                        </a>
+                    `;
+                });
+                html += '</div>';
+            }
+
+            // Doctors
+            if (data.results.doctors && data.results.doctors.length > 0) {
+                html += '<div class="py-2"><div class="px-3 py-1 text-[11px] font-extrabold text-emerald-700 flex items-center gap-1"><span class="material-symbols-outlined text-sm text-emerald-600">stethoscope</span> پزشکان متخصص</div>';
+                data.results.doctors.forEach(d => {
+                    html += `
+                        <a href="${d.url}" class="flex items-center justify-between gap-3 p-2 rounded-xl hover:bg-emerald-50/40 transition-colors group">
+                            <div class="flex items-center gap-2.5 overflow-hidden">
+                                <img src="${d.image}" class="w-10 h-10 rounded-lg object-cover bg-slate-100 shrink-0 border border-slate-200" alt="">
+                                <div class="truncate">
+                                    <div class="text-xs font-bold text-slate-800 group-hover:text-emerald-700 transition-colors truncate">${d.title}</div>
+                                    <div class="text-[10px] text-slate-400 truncate max-w-[180px]">${d.specialty}</div>
+                                </div>
+                            </div>
+                            <div class="text-left shrink-0 text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-lg">
+                                رزرو نوبت
+                            </div>
+                        </a>
+                    `;
+                });
+                html += '</div>';
+            }
+
+            html += `
+                </div>
+                <div class="p-2.5 bg-slate-50 border-t border-slate-100 text-center">
+                    <a href="shop.php?q=${encodeURIComponent(query)}" class="text-xs font-bold text-primary hover:text-secondary-container transition-colors flex items-center justify-center gap-1">
+                        <span>مشاهده کلیه نتایج جستجو برای "${query}"</span>
+                        <span class="material-symbols-outlined text-sm">arrow_back</span>
+                    </a>
+                </div>
+            `;
+
+            container.innerHTML = html;
+            container.classList.remove('hidden');
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            initLiveSearch('headerSearchInput', 'headerSearchResults', 'headerSearchSpinner');
+        });
     </script>

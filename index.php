@@ -6,6 +6,42 @@ $stmt = $pdo->prepare("SELECT * FROM pharmacy_medicines ORDER BY created_at DESC
 $stmt->execute();
 $premium_products = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
+// Fetch featured pet shop products
+$petshop_products = [];
+if (Feature::has('petshop_catalog')) {
+    try {
+        $pStmt = $pdo->prepare("SELECT * FROM products ORDER BY id DESC LIMIT 12");
+        $pStmt->execute();
+        $petshop_products = $pStmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (Exception $e) {}
+}
+
+// Fetch featured 24/7 emergency medical centers & clinics
+$featured_organizations = [];
+if (Feature::has('clinic_booking')) {
+    try {
+        $org_stmt = $pdo->prepare("
+            SELECT id, name, slug, type, city, address, phone, emergency_phone, rating, review_count, is_24_7, facilities, logo_url, banner_url 
+            FROM organizations 
+            WHERE status = 'approved' 
+            ORDER BY is_24_7 DESC, rating DESC 
+            LIMIT 3
+        ");
+        $org_stmt->execute();
+        $featured_organizations = $org_stmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (Exception $e) {}
+}
+
+// Live Platform Counters
+$count_orgs = 12;
+$count_doctors = 48;
+$count_medicines = 160;
+try {
+    $count_orgs = (int)$pdo->query("SELECT count(*) FROM organizations WHERE status = 'approved'")->fetchColumn() ?: 12;
+    $count_doctors = (int)$pdo->query("SELECT count(*) FROM doctors")->fetchColumn() ?: 48;
+    $count_medicines = (int)$pdo->query("SELECT count(*) FROM pharmacy_medicines")->fetchColumn() ?: 160;
+} catch (Exception $e) {}
+
 // Fetch user wishlist if logged in
 $user_wishlist = [];
 if (isset($_SESSION['user_id'])) {
@@ -90,6 +126,78 @@ $top_donors = $donor_stmt->fetchAll(PDO::FETCH_ASSOC);
                 <button onclick="goToSlide(3)" class="w-3 h-2 rounded-full bg-primary-container/20 hover:bg-primary-container/40 transition-all cursor-pointer"></button>
             </div>
         </section>
+        
+        <!-- Hero Unified Live Search Bar (Shared & Synced with Header Component) -->
+        <div class="relative -mt-10 lg:-mt-14 z-40 max-w-4xl mx-auto px-4 w-full">
+            <div class="bg-white/95 backdrop-blur-xl p-4 sm:p-6 rounded-3xl shadow-2xl border border-slate-100 flex flex-col gap-3.5">
+                <form action="shop.php" method="GET" class="relative flex items-center bg-slate-50 hover:bg-slate-100/80 focus-within:bg-white focus-within:ring-2 focus-within:ring-primary/20 border border-slate-200/80 rounded-2xl transition-all px-4 py-2.5">
+                    <span class="material-symbols-outlined text-2xl text-primary shrink-0 ml-3">search</span>
+                    <input id="heroSearchInput" name="q" class="w-full bg-transparent border-none outline-none text-sm sm:text-base text-slate-800 placeholder-slate-400 font-medium" placeholder="جستجوی سریع داروهای کمیاب، غذای سگ و گربه، کلینیک‌ها و پزشکان..." autocomplete="off">
+                    <span id="heroSearchSpinner" class="material-symbols-outlined text-sm animate-spin hidden text-slate-400 mr-2">sync</span>
+                    <button type="submit" class="bg-primary hover:bg-primary-container text-white px-5 sm:px-7 py-2.5 rounded-xl text-xs sm:text-sm font-bold shadow-md hover:shadow-lg transition-all shrink-0 flex items-center gap-1.5 mr-2">
+                        <span>جستجو</span>
+                        <span class="material-symbols-outlined text-sm hidden sm:inline">arrow_back</span>
+                    </button>
+                </form>
+                <!-- Hero Instant Autocomplete Dropdown -->
+                <div id="heroSearchResults" class="hidden bg-white rounded-2xl shadow-2xl border border-slate-100 overflow-hidden text-slate-800 text-right"></div>
+
+                <!-- Trending Search Chips -->
+                <div class="flex items-center gap-2 flex-wrap text-xs text-slate-500 pt-1">
+                    <span class="font-bold text-slate-700 flex items-center gap-1">
+                        <span class="material-symbols-outlined text-sm text-secondary-container">trending_up</span> محبوب‌ترین جستجوها:
+                    </span>
+                    <a href="shop.php?q=غذای خشک" class="bg-slate-100 hover:bg-primary/10 hover:text-primary px-3 py-1 rounded-full transition-colors font-medium">غذای خشک رویال</a>
+                    <a href="pharmacy.php?tag=vaccines" class="bg-slate-100 hover:bg-indigo-50 hover:text-indigo-700 px-3 py-1 rounded-full transition-colors font-medium">واکسن هاری</a>
+                    <a href="organizations.php?type=hospital" class="bg-slate-100 hover:bg-teal-50 hover:text-teal-700 px-3 py-1 rounded-full transition-colors font-medium">بیمارستان شبانه‌روزی</a>
+                    <a href="subscriptions.php" class="bg-slate-100 hover:bg-orange-50 hover:text-secondary-container px-3 py-1 rounded-full transition-colors font-medium">سفارش خودکار Autoship</a>
+                    <a href="pharmacy.php?animal=cat" class="bg-slate-100 hover:bg-indigo-50 hover:text-indigo-700 px-3 py-1 rounded-full transition-colors font-medium">داروی گربه</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Live Platform Metrics & Trust Counters -->
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-5 max-w-5xl mx-auto px-4 -mt-12 lg:-mt-14 mb-4">
+            <div class="bg-white rounded-3xl p-4 sm:p-5 border border-slate-100 shadow-sm hover:shadow-md transition-all flex items-center gap-3.5">
+                <div class="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+                    <span class="material-symbols-outlined text-2xl">verified_user</span>
+                </div>
+                <div>
+                    <div class="text-xl sm:text-2xl font-black text-primary tracking-tight">+۲۵,۰۰۰</div>
+                    <div class="text-[11px] text-slate-500 font-medium">تحویل موفق در کشور</div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-3xl p-4 sm:p-5 border border-slate-100 shadow-sm hover:shadow-md transition-all flex items-center gap-3.5">
+                <div class="w-12 h-12 rounded-2xl bg-teal-50 text-teal-600 flex items-center justify-center shrink-0">
+                    <span class="material-symbols-outlined text-2xl">local_hospital</span>
+                </div>
+                <div>
+                    <div class="text-xl sm:text-2xl font-black text-primary tracking-tight">+<?php echo $count_orgs; ?> مرکز</div>
+                    <div class="text-[11px] text-slate-500 font-medium">بیمارستان و کلینیک</div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-3xl p-4 sm:p-5 border border-slate-100 shadow-sm hover:shadow-md transition-all flex items-center gap-3.5">
+                <div class="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+                    <span class="material-symbols-outlined text-2xl">medical_services</span>
+                </div>
+                <div>
+                    <div class="text-xl sm:text-2xl font-black text-primary tracking-tight">+<?php echo $count_doctors; ?> پزشک</div>
+                    <div class="text-[11px] text-slate-500 font-medium">متخصص و جراح کشیک</div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-3xl p-4 sm:p-5 border border-slate-100 shadow-sm hover:shadow-md transition-all flex items-center gap-3.5">
+                <div class="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
+                    <span class="material-symbols-outlined text-2xl">ac_unit</span>
+                </div>
+                <div>
+                    <div class="text-xl sm:text-2xl font-black text-primary tracking-tight">۲۴/۷ کشیک</div>
+                    <div class="text-[11px] text-slate-500 font-medium">ارسال زنجیره سرد</div>
+                </div>
+            </div>
+        </div>
         
         <!-- Asena Ecosystem Quick Services Hub (Relocated & Enhanced from Header) -->
         <section class="quick-services-hub my-6 lg:my-10" id="asenaServicesHub">
@@ -273,6 +381,91 @@ $top_donors = $donor_stmt->fetchAll(PDO::FETCH_ASSOC);
         </script>
         <?php endif; ?>
         
+        <!-- Featured 24/7 Emergency Medical Centers & Clinics Showcase -->
+        <?php if (!empty($featured_organizations)): ?>
+        <section class="medical-centers-showcase space-y-6 my-6">
+            <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4 px-2">
+                <div class="space-y-1.5">
+                    <div class="inline-flex items-center gap-2 px-3.5 py-1 bg-teal-50 text-teal-700 border border-teal-200/60 rounded-full text-xs font-bold">
+                        <span class="w-2 h-2 rounded-full bg-teal-500 animate-ping"></span>
+                        <span class="material-symbols-outlined text-sm">local_hospital</span>
+                        شبکه کلینیک‌ها و بیمارستان‌های شبانه‌روزی
+                    </div>
+                    <h2 class="text-2xl sm:text-3xl font-black text-primary tracking-tight">مراکز درمانی و اورژانس ۲۴ ساعته همکار</h2>
+                    <p class="text-xs sm:text-sm text-on-surface-variant font-medium">پوشش سراسری بهترین بیمارستان‌های دامپزشکی کشور با امکان رزرو آنلاین و نوبت اورژانسی</p>
+                </div>
+                <a href="organizations.php" class="bg-primary/5 text-primary hover:bg-primary hover:text-white px-5 py-2.5 rounded-2xl text-xs sm:text-sm font-bold transition-all shadow-sm flex items-center gap-1.5 self-start sm:self-auto shrink-0">
+                    <span>مشاهده تمام مراکز درمانی</span>
+                    <span class="material-symbols-outlined text-sm">arrow_left_alt</span>
+                </a>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <?php foreach ($featured_organizations as $org): ?>
+                <div class="bg-white rounded-3xl p-5 border border-outline-variant/20 hover:border-teal-500/40 shadow-sm hover:shadow-2xl transition-all duration-300 flex flex-col group relative overflow-hidden">
+                    <!-- Top Status Badges -->
+                    <div class="flex items-center justify-between gap-2 mb-4">
+                        <?php if ($org['is_24_7']): ?>
+                            <span class="bg-emerald-50 text-emerald-700 border border-emerald-200/80 text-[11px] font-black px-2.5 py-1 rounded-full flex items-center gap-1">
+                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                                شبانه‌روزی ۲۴/۷
+                            </span>
+                        <?php else: ?>
+                            <span class="bg-slate-100 text-slate-700 text-[11px] font-bold px-2.5 py-1 rounded-full">
+                                کلینیک تخصصی
+                            </span>
+                        <?php endif; ?>
+
+                        <div class="flex items-center gap-1 text-amber-500 text-xs font-bold bg-amber-50 px-2 py-0.5 rounded-lg">
+                            <span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">star</span>
+                            <span><?= number_format($org['rating'], 1) ?></span>
+                            <span class="text-[10px] text-slate-400">(<?= (int)$org['review_count'] ?>)</span>
+                        </div>
+                    </div>
+
+                    <!-- Organization Info -->
+                    <div class="flex items-start gap-3.5 mb-4">
+                        <div class="w-14 h-14 rounded-2xl bg-teal-50 text-teal-700 flex items-center justify-center shrink-0 border border-teal-100 overflow-hidden group-hover:scale-105 transition-transform">
+                            <img src="<?= htmlspecialchars($org['logo_url'] ?: 'assets/images/logo.png') ?>" alt="" class="w-full h-full object-cover">
+                        </div>
+                        <div>
+                            <h3 class="font-black text-slate-800 text-base group-hover:text-primary transition-colors line-clamp-1">
+                                <?= htmlspecialchars($org['name']) ?>
+                            </h3>
+                            <div class="flex items-center gap-1 text-[11px] text-slate-400 mt-1">
+                                <span class="material-symbols-outlined text-xs text-slate-400">location_on</span>
+                                <span class="font-bold text-slate-600"><?= htmlspecialchars($org['city']) ?></span> — <span class="truncate max-w-[180px]"><?= htmlspecialchars($org['address']) ?></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Facilities Chips -->
+                    <?php if (!empty($org['facilities'])): 
+                        $facList = array_slice(explode(',', $org['facilities']), 0, 3);
+                    ?>
+                    <div class="flex items-center gap-1.5 flex-wrap my-2">
+                        <?php foreach ($facList as $fac): ?>
+                            <span class="bg-slate-50 text-slate-600 text-[10px] font-medium px-2 py-0.5 rounded-md border border-slate-100"><?= htmlspecialchars(trim($fac)) ?></span>
+                        <?php endforeach; ?>
+                    </div>
+                    <?php endif; ?>
+
+                    <!-- Action Buttons -->
+                    <div class="mt-auto pt-4 border-t border-slate-100 flex items-center gap-2">
+                        <a href="booking.php?org=<?= (int)$org['id'] ?>" class="flex-1 bg-primary hover:bg-primary-container text-white py-2.5 rounded-xl text-xs font-bold text-center transition-all shadow-sm flex items-center justify-center gap-1">
+                            <span class="material-symbols-outlined text-sm">calendar_month</span>
+                            <span>رزرو نوبت پزشک</span>
+                        </a>
+                        <a href="organization_profile.php?slug=<?= urlencode($org['slug'] ?: $org['id']) ?>" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-2.5 rounded-xl text-xs font-bold transition-colors flex items-center justify-center gap-1" title="مشاهده مشخصات و تجهیزات">
+                            <span class="material-symbols-outlined text-sm">visibility</span>
+                        </a>
+                    </div>
+                </div>
+                <?php endforeach; ?>
+            </div>
+        </section>
+        <?php endif; ?>
+
         <!-- Cycle Section - Rail Density (Functional & Clickable) -->
         <section class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
             <div class="lg:col-span-3 flex flex-col justify-center p-10 bg-surface-container-low rounded-[2rem] space-y-4">
@@ -713,58 +906,66 @@ $top_donors = $donor_stmt->fetchAll(PDO::FETCH_ASSOC);
                 <a href="shop.php" class="text-sm font-bold text-white before:absolute before:inset-0">مشاهده همه</a>
             </div>
         </section>
-        <!-- Premium Products Section (Dynamic High Density) -->
-        <section class="space-y-12 pb-12">
-            <div class="flex items-end justify-between">
-                <div class="space-y-4">
-                    <h2 class="text-4xl font-bold text-primary tracking-tight">محصولات ویژه</h2>
-                    <p class="text-on-surface-variant font-light text-lg">پیشنهادات استثنایی و پرفروش‌ترین‌ها</p>
+        <!-- Dual-Catalog Showcase: Pet Shop & Veterinary Pharmacy -->
+        <section class="space-y-8 pb-12" id="catalogShowcase">
+            <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+                <div class="space-y-3">
+                    <div class="inline-flex items-center gap-2 px-3.5 py-1 bg-secondary-container/10 text-secondary-container rounded-full text-xs font-bold">
+                        <span class="material-symbols-outlined text-sm">shopping_bag</span>
+                        ویترین جامع کاتالوگ آسنا
+                    </div>
+                    <h2 class="text-3xl sm:text-4xl font-black text-primary tracking-tight">محصولات برگزیده و داروهای تخصصی</h2>
+                    <p class="text-on-surface-variant font-medium text-sm sm:text-base">تامین معتبرترین برندهای غذای پت، تشویقی، داروها و مکمل‌های درمانی با ضمانت اصالت</p>
                 </div>
-                <a href="shop.php" class="bg-primary/5 text-primary px-6 py-3 rounded-full font-bold flex items-center gap-2 hover:bg-primary hover:text-white transition-all shadow-sm">
-                    مشاهده کل فروشگاه
-                    <span class="material-symbols-outlined">arrow_left_alt</span>
-                </a>
+                
+                <!-- Catalog Tabs -->
+                <div class="flex items-center gap-2 bg-slate-100 p-1.5 rounded-2xl border border-slate-200/60 self-start sm:self-auto">
+                    <button type="button" onclick="switchCatalogTab('petshop')" id="btn-tab-petshop" class="catalog-tab-btn px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 bg-primary text-white shadow-sm">
+                        <span class="material-symbols-outlined text-sm">pets</span>
+                        <span>پت‌شاپ و ملزومات</span>
+                    </button>
+                    <button type="button" onclick="switchCatalogTab('pharmacy')" id="btn-tab-pharmacy" class="catalog-tab-btn px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 text-slate-600 hover:text-primary">
+                        <span class="material-symbols-outlined text-sm">medication</span>
+                        <span>داروخانه تخصصی</span>
+                    </button>
+                </div>
             </div>
             
-            <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                <?php foreach($premium_products as $product): ?>
-                <div class="bg-white rounded-3xl p-4 shadow-lg hover:shadow-2xl transition-all duration-300 group flex flex-col relative border border-outline-variant/10">
-                    <!-- Badge -->
-                    <?php if($product['discount_price']): ?>
-                    <div class="absolute top-4 left-4 bg-secondary-container text-on-secondary-container text-[10px] px-2 py-1 rounded-full z-10 font-bold">تخفیف ویژه</div>
+            <!-- Panel 1: Pet Shop Products -->
+            <div id="panel-petshop" class="catalog-panel grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                <?php 
+                $shopItems = !empty($petshop_products) ? $petshop_products : $premium_products;
+                foreach($shopItems as $product): 
+                ?>
+                <div class="bg-white rounded-3xl p-4 shadow-md hover:shadow-2xl transition-all duration-300 group flex flex-col relative border border-outline-variant/10">
+                    <?php if(!empty($product['discount_price'])): ?>
+                    <div class="absolute top-4 left-4 bg-secondary-container text-white text-[10px] px-2 py-1 rounded-full z-10 font-bold shadow-sm">تخفیف ویژه</div>
                     <?php endif; ?>
                     
-                    <!-- Wishlist Button -->
                     <?php $in_wishlist = in_array($product['id'], $user_wishlist); ?>
                     <button type="button" onclick="toggleWishlist(this, <?php echo $product['id']; ?>)" class="absolute top-4 right-4 z-10 w-8 h-8 bg-white/80 backdrop-blur-md rounded-full flex items-center justify-center text-on-surface hover:text-error transition-colors shadow-sm">
                         <span class="material-symbols-outlined text-[16px]" style="font-variation-settings: 'FILL' <?php echo $in_wishlist ? '1' : '0'; ?>; color: <?php echo $in_wishlist ? '#dc2626' : 'inherit'; ?>;">favorite</span>
                     </button>
 
                     <div class="aspect-square bg-surface-container-lowest rounded-2xl mb-4 overflow-hidden relative">
-                        <img loading="lazy" src="<?php echo htmlspecialchars($product['image_url']); ?>" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" alt="<?php echo htmlspecialchars($product['name']); ?>">
+                        <img loading="lazy" src="<?php echo htmlspecialchars($product['image_url'] ?: 'assets/images/logo.png'); ?>" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" alt="<?php echo htmlspecialchars($product['name']); ?>">
                         
-                        <!-- Quick add to cart overlay -->
                         <div class="absolute inset-x-0 bottom-0 p-2 translate-y-full group-hover:translate-y-0 transition-transform duration-300 bg-gradient-to-t from-black/60 to-transparent flex justify-center z-20">
                             <button type="button" onclick="addToCart(this, <?php echo $product['id']; ?>, 'standard')" class="bg-primary text-white w-full py-2 rounded-xl text-xs font-bold flex justify-center items-center gap-1 hover:bg-primary-container">
                                 <span class="material-symbols-outlined text-sm">add_shopping_cart</span>
                                 افزودن به سبد
                             </button>
                         </div>
-                        
-                        <!-- Mobile Quick Add to Cart -->
-                        <button type="button" onclick="addToCart(this, <?php echo $product['id']; ?>, 'standard')" class="lg:hidden absolute bottom-3 left-3 z-30 w-9 h-9 bg-primary/90 backdrop-blur-md text-white rounded-full flex items-center justify-center shadow-lg active:scale-95 transition-transform border border-white/20">
-                            <span class="material-symbols-outlined text-[18px]">add_shopping_cart</span>
-                        </button>
                     </div>
                     <div class="flex-1 flex flex-col">
                         <p class="text-[10px] text-on-surface-variant mb-1 line-clamp-1">
-                            <?php echo htmlspecialchars($product['category']); ?>
+                            <?php echo htmlspecialchars($product['category'] ?? 'پت‌شاپ'); ?>
                             <?php if(!empty($product['brand'])) echo ' • <span class="text-primary font-bold">' . htmlspecialchars($product['brand']) . '</span>'; ?>
                         </p>
-                        <a href="product_details.php?id=<?php echo $product['id']; ?>"><h3 class="text-sm font-bold text-on-surface mb-2 line-clamp-2 hover:text-primary transition-colors cursor-pointer leading-tight"><?php echo htmlspecialchars($product['name']); ?></h3></a>
+                        <a href="product_details.php?id=<?php echo $product['id']; ?>&type=product"><h3 class="text-sm font-bold text-on-surface mb-2 line-clamp-2 hover:text-primary transition-colors cursor-pointer leading-tight"><?php echo htmlspecialchars($product['name']); ?></h3></a>
                         <div class="mt-auto flex justify-between items-center">
                             <div class="flex flex-col">
-                                <?php if($product['discount_price']): ?>
+                                <?php if(!empty($product['discount_price'])): ?>
                                 <span class="text-[10px] text-on-surface-variant line-through mb-0.5"><?php echo number_format($product['price']); ?> تومان</span>
                                 <span class="text-sm font-bold text-primary"><?php echo number_format($product['discount_price']); ?> تومان</span>
                                 <?php else: ?>
@@ -772,12 +973,85 @@ $top_donors = $donor_stmt->fetchAll(PDO::FETCH_ASSOC);
                                 <?php endif; ?>
                             </div>
                         </div>
-
                     </div>
                 </div>
                 <?php endforeach; ?>
             </div>
+
+            <!-- Panel 2: Veterinary Pharmacy Medicines -->
+            <div id="panel-pharmacy" class="catalog-panel hidden grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                <?php foreach($premium_products as $product): ?>
+                <div class="bg-white rounded-3xl p-4 shadow-md hover:shadow-2xl transition-all duration-300 group flex flex-col relative border border-outline-variant/10">
+                    <div class="absolute top-4 left-4 flex flex-col gap-1 z-10">
+                        <?php if(!empty($product['requires_prescription'])): ?>
+                            <span class="bg-rose-500 text-white text-[9px] px-2 py-0.5 rounded-full font-bold shadow-sm">نسخه‌ای</span>
+                        <?php endif; ?>
+                        <?php if(!empty($product['is_cold_chain'])): ?>
+                            <span class="bg-blue-500 text-white text-[9px] px-2 py-0.5 rounded-full font-bold shadow-sm">زنجیره سرد</span>
+                        <?php endif; ?>
+                    </div>
+                    
+                    <?php $in_wishlist = in_array($product['id'], $user_wishlist); ?>
+                    <button type="button" onclick="toggleWishlist(this, <?php echo $product['id']; ?>)" class="absolute top-4 right-4 z-10 w-8 h-8 bg-white/80 backdrop-blur-md rounded-full flex items-center justify-center text-on-surface hover:text-error transition-colors shadow-sm">
+                        <span class="material-symbols-outlined text-[16px]" style="font-variation-settings: 'FILL' <?php echo $in_wishlist ? '1' : '0'; ?>; color: <?php echo $in_wishlist ? '#dc2626' : 'inherit'; ?>;">favorite</span>
+                    </button>
+
+                    <div class="aspect-square bg-surface-container-lowest rounded-2xl mb-4 overflow-hidden relative">
+                        <img loading="lazy" src="<?php echo htmlspecialchars($product['image_url'] ?: 'assets/images/logo.png'); ?>" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" alt="<?php echo htmlspecialchars($product['name']); ?>">
+                        
+                        <div class="absolute inset-x-0 bottom-0 p-2 translate-y-full group-hover:translate-y-0 transition-transform duration-300 bg-gradient-to-t from-black/60 to-transparent flex justify-center z-20">
+                            <button type="button" onclick="addToCart(this, <?php echo $product['id']; ?>, 'standard')" class="bg-indigo-600 text-white w-full py-2 rounded-xl text-xs font-bold flex justify-center items-center gap-1 hover:bg-indigo-700">
+                                <span class="material-symbols-outlined text-sm">add_shopping_cart</span>
+                                افزودن به سبد
+                            </button>
+                        </div>
+                    </div>
+                    <div class="flex-1 flex flex-col">
+                        <p class="text-[10px] text-indigo-600 font-bold mb-1 line-clamp-1">
+                            <?php echo htmlspecialchars($product['category'] ?? 'داروخانه'); ?>
+                        </p>
+                        <a href="product_details.php?id=<?php echo $product['id']; ?>&type=pharmacy"><h3 class="text-sm font-bold text-on-surface mb-2 line-clamp-2 hover:text-indigo-600 transition-colors cursor-pointer leading-tight"><?php echo htmlspecialchars($product['name']); ?></h3></a>
+                        <div class="mt-auto flex justify-between items-center">
+                            <div class="flex flex-col">
+                                <?php if(!empty($product['discount_price'])): ?>
+                                <span class="text-[10px] text-on-surface-variant line-through mb-0.5"><?php echo number_format($product['price']); ?> تومان</span>
+                                <span class="text-sm font-bold text-indigo-700"><?php echo number_format($product['discount_price']); ?> تومان</span>
+                                <?php else: ?>
+                                <span class="text-sm font-bold text-indigo-700"><?php echo number_format($product['price']); ?> تومان</span>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <?php endforeach; ?>
+            </div>
+
+            <!-- Footer Link -->
+            <div class="text-center pt-4">
+                <a href="shop.php" class="inline-flex items-center gap-2 bg-primary text-white hover:bg-primary-container px-8 py-3.5 rounded-2xl text-sm font-bold shadow-lg hover:shadow-xl transition-all">
+                    <span>مشاهده کلیه کاتالوگ فروشگاه و داروخانه</span>
+                    <span class="material-symbols-outlined text-sm">arrow_back</span>
+                </a>
+            </div>
         </section>
+
+        <script>
+        function switchCatalogTab(tab) {
+            document.querySelectorAll('.catalog-tab-btn').forEach(b => {
+                b.classList.remove('bg-primary', 'text-white', 'shadow-sm');
+                b.classList.add('text-slate-600');
+            });
+            document.querySelectorAll('.catalog-panel').forEach(p => p.classList.add('hidden'));
+
+            const btn = document.getElementById('btn-tab-' + tab);
+            const panel = document.getElementById('panel-' + tab);
+            if (btn && panel) {
+                btn.classList.add('bg-primary', 'text-white', 'shadow-sm');
+                btn.classList.remove('text-slate-600');
+                panel.classList.remove('hidden');
+            }
+        }
+        </script>
 
         <!-- Community Heroes -->
         <section class="bg-white py-24 rounded-[4rem] border border-outline-variant/10 text-center space-y-12">
@@ -1277,7 +1551,15 @@ function resetInterval() {
             pagination: {
                 el: '.swiper-pagination',
                 clickable: true,
+            }
+        });
     }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        if (typeof initLiveSearch === 'function') {
+            initLiveSearch('heroSearchInput', 'heroSearchResults', 'heroSearchSpinner');
+        }
+    });
 </script>
 
 <!-- Schema.org JSON-LD Structured Data for Pharmacy & Pet Care Organization -->
@@ -1287,8 +1569,8 @@ function resetInterval() {
   "@type": "Pharmacy",
   "name": "داروخانه آنلاین و پت‌شاپ تخصصی آسنا",
   "alternateName": "ASENA Pet Care & Veterinary Pharmacy",
-  "url": "http://localhost/asena/asena-pharmacy-golzari/",
-  "logo": "http://localhost/asena/asena-pharmacy-golzari/assets/images/logo.png",
+  "url": "<?php echo $proto . '://' . $host; ?>/",
+  "logo": "<?php echo $proto . '://' . $host; ?>/assets/images/logo.png",
   "description": "مرجع تخصصی خرید آنلاین داروهای دامپزشکی، مکمل‌ها، واکسن‌ها و ملزومات حیوانات خانگی با تاییدیه دکتر داروساز و ارسال زنجیره سرد",
   "telephone": "+98-21-88888888",
   "priceRange": "$$",
