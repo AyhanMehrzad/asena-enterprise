@@ -6,6 +6,18 @@ AuthGuard::requireRole('admin');
 $pdo = App::db();
 $currentPage = 'organizations';
 
+// Handle Organization Status Toggle
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'toggle_status') {
+    $targetOrgId = (int)($_POST['org_id'] ?? 0);
+    $newStatus = trim($_POST['status'] ?? 'approved');
+    if ($targetOrgId > 0 && in_array($newStatus, ['approved', 'suspended', 'pending'])) {
+        $upd = $pdo->prepare("UPDATE organizations SET status = ? WHERE id = ?");
+        $upd->execute([$newStatus, $targetOrgId]);
+    }
+    header("Location: organizations.php");
+    exit;
+}
+
 // ── Search & Filter ───────────────────────────────────────────────────────────
 $search = trim($_GET['search'] ?? '');
 $cityFilter = trim($_GET['city'] ?? '');
@@ -253,9 +265,19 @@ require_once __DIR__ . '/includes/admin_header.php';
                             <?= number_format((int)($org['balance_available_for_payout'] ?? 0)) ?>
                         </td>
                         <td class="p-3.5">
-                            <span class="inline-block px-2.5 py-1 rounded-lg text-[11px] font-bold border <?= ($org['status'] ?? 'approved') === 'approved' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-amber-50 text-amber-700 border-amber-200' ?>">
-                                <?= ($org['status'] ?? 'approved') === 'approved' ? 'تایید شده' : 'در انتظار بررسی' ?>
-                            </span>
+                            <div class="flex items-center gap-1.5">
+                                <span class="inline-block px-2.5 py-1 rounded-lg text-[11px] font-bold border <?= ($org['status'] ?? 'approved') === 'approved' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-amber-50 text-amber-700 border-amber-200' ?>">
+                                    <?= ($org['status'] ?? 'approved') === 'approved' ? 'فعال / تایید شده' : 'معلق / بررسی' ?>
+                                </span>
+                                <form method="POST" class="inline" onsubmit="return confirm('آیا از تغییر وضعیت این مرکز اطمینان دارید؟');">
+                                    <input type="hidden" name="action" value="toggle_status">
+                                    <input type="hidden" name="org_id" value="<?= $org['id'] ?>">
+                                    <input type="hidden" name="status" value="<?= ($org['status'] ?? 'approved') === 'approved' ? 'suspended' : 'approved' ?>">
+                                    <button type="submit" class="p-1 rounded hover:bg-slate-100 text-slate-400 hover:text-secondary-container transition-colors" title="تغییر وضعیت">
+                                        <span class="material-symbols-outlined text-sm"><?= ($org['status'] ?? 'approved') === 'approved' ? 'pause_circle' : 'play_circle' ?></span>
+                                    </button>
+                                </form>
+                            </div>
                         </td>
                         <td class="p-3.5 text-center">
                             <button onclick="viewOrgDetails(<?= $org['id'] ?>)" class="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-secondary-container hover:text-white text-slate-700 font-bold text-xs transition-all flex items-center gap-1 mx-auto">

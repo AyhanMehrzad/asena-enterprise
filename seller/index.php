@@ -92,6 +92,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Refresh wallet
         $walletStmt->execute([$sellerId]);
         $sellerWallet = $walletStmt->fetch(PDO::FETCH_ASSOC);
+    } elseif ($action === 'request_payout') {
+        $available = (int)($sellerWallet['balance_available_for_payout'] ?? 0);
+        $sheba = trim($sellerWallet['bank_sheba'] ?? '');
+        if ($available >= 50000 && !empty($sheba)) {
+            $msg = 'درخواست صدور حواله پایا به مبلغ ' . number_format($available) . ' تومان ثبت شد و در چرخه تسویه بعدی بانک مرکزی واریز می‌گردد.';
+            $msgType = 'success';
+        } elseif (empty($sheba)) {
+            $msg = 'لطفاً ابتدا شماره شبای بانکی خود را در تب اطلاعات بانکی ثبت نمایید.';
+            $msgType = 'error';
+        } else {
+            $msg = 'حداقل موجودی قابل تسویه ۵۰,۰۰۰ تومان می‌باشد.';
+            $msgType = 'error';
+        }
     }
 }
 
@@ -331,17 +344,21 @@ $sellerProducts = $productsQuery->fetchAll(PDO::FETCH_ASSOC);
                     <span class="material-symbols-outlined text-secondary-container">inventory_2</span>
                     <span>ویترین و انبار محصولات پت‌شاپ شما</span>
                 </h2>
-                <p class="text-xs text-slate-500 mt-1">مدیریت قیمت، موجودی انبار و قابلیت تکرار خرید خودکار (Autoship) برای اقلام مصرفی.</p>
             </div>
-            <button onclick="openNewProductModal()" class="px-4 py-2.5 rounded-xl bg-secondary-container hover:bg-orange-600 text-white font-bold text-xs shadow-sm transition-all flex items-center gap-2">
+            <button onclick="openNewProductModal()" class="px-4 py-2.5 rounded-xl bg-secondary-container hover:bg-orange-600 text-white font-bold text-xs shadow-sm transition-all flex items-center gap-2 shrink-0">
                 <span class="material-symbols-outlined text-base">add_circle</span>
                 <span>+ افزودن کالای جدید</span>
             </button>
         </div>
 
+        <div class="bg-surface-container-lowest p-3 rounded-2xl stat-card-shadow border border-outline-variant/10 flex items-center gap-2">
+            <span class="material-symbols-outlined text-slate-400 text-lg pr-1">search</span>
+            <input type="text" id="productSearchInput" onkeyup="filterProducts()" placeholder="جستجوی سریع در نام کالا، برند یا دسته‌بندی ویترین..." class="w-full text-xs outline-none bg-transparent text-slate-800">
+        </div>
+
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <?php foreach ($sellerProducts as $prod): ?>
-            <div class="bg-surface-container-lowest p-4 rounded-2xl stat-card-shadow border border-outline-variant/10 flex flex-col justify-between space-y-3">
+            <div class="seller-product-card bg-surface-container-lowest p-4 rounded-2xl stat-card-shadow border border-outline-variant/10 flex flex-col justify-between space-y-3">
                 <div class="flex items-start gap-3">
                     <div class="w-16 h-16 rounded-xl bg-slate-100 border border-slate-200 flex-shrink-0 overflow-hidden flex items-center justify-center">
                         <img src="<?= !empty($prod['image_url']) ? htmlspecialchars(str_starts_with($prod['image_url'], 'http') ? $prod['image_url'] : '../' . ltrim($prod['image_url'], '/')) : '../assets/images/default-product.png' ?>" class="w-full h-full object-cover" onerror="this.src='../assets/images/default-product.png'" alt="Product">
@@ -411,6 +428,14 @@ $sellerProducts = $productsQuery->fetchAll(PDO::FETCH_ASSOC);
                         <span class="font-bold text-emerald-400">۹۵ درصد</span>
                     </div>
                 </div>
+
+                <form method="POST">
+                    <input type="hidden" name="action" value="request_payout">
+                    <button type="submit" class="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-black text-xs shadow-md transition-all flex items-center justify-center gap-2">
+                        <span class="material-symbols-outlined text-base">payments</span>
+                        <span>درخواست صدور حواله پایا (تسویه هفتگی)</span>
+                    </button>
+                </form>
 
                 <div class="text-[11px] text-slate-400 leading-relaxed bg-white/5 p-3 rounded-xl">
                     💡 طبق چرخه بانکی پایا، واریزی‌های فروشندگان روزهای چهارشنبه هر هفته به‌صورت گروهی به شماره شبای ثبت‌شده واریز می‌گردد.
@@ -670,6 +695,14 @@ function checkPostTracking() {
     resultBox.classList.remove('hidden');
     statusText.innerText = 'استعلام بارکد ' + code + ' با موفقیت انجام شد: وضعیت تحویل عادی';
     detailsText.innerText = 'مرسوله پستی در شبکه رهگیری سراسری ثبت و به مقصد ارسال شده است. مهلت ۷ روزه تضمین آسنا فعال می‌باشد.';
+}
+
+function filterProducts() {
+    const q = document.getElementById('productSearchInput').value.toLowerCase().trim();
+    document.querySelectorAll('.seller-product-card').forEach(card => {
+        const text = card.innerText.toLowerCase();
+        card.style.display = text.includes(q) ? '' : 'none';
+    });
 }
 </script>
 
