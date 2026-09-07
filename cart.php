@@ -83,6 +83,36 @@ $default_tab = $_GET['tab'] ?? $_SESSION['active_cart_tab'] ?? ((empty($standard
 if (!in_array($default_tab, ['standard', 'autoship'])) {
     $default_tab = 'standard';
 }
+
+// Digikala-style Favorite Items / Next Shopping List
+$wishlist_products = [];
+if (isset($_SESSION['user_id']) && !empty($_SESSION['user_id'])) {
+    $wStmt = $pdo->prepare("
+        SELECT p.*, 'product' as item_source, w.created_at as favorited_at
+        FROM products p
+        JOIN wishlist w ON p.id = w.product_id
+        WHERE w.user_id = ?
+        ORDER BY w.created_at DESC
+        LIMIT 8
+    ");
+    $wStmt->execute([(int)$_SESSION['user_id']]);
+    $wishlist_products = $wStmt->fetchAll(PDO::FETCH_ASSOC);
+} elseif (!empty($_SESSION['guest_wishlist']) && is_array($_SESSION['guest_wishlist'])) {
+    $gIds = array_filter(array_map('intval', $_SESSION['guest_wishlist']));
+    if (!empty($gIds)) {
+        $gPlaceholders = implode(',', array_fill(0, count($gIds), '?'));
+        $wStmt = $pdo->prepare("SELECT p.*, 'product' as item_source FROM products p WHERE p.id IN ($gPlaceholders) LIMIT 8");
+        $wStmt->execute(array_values($gIds));
+        $wishlist_products = $wStmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+}
+
+// Fallback: If wishlist is empty, fetch recommended popular products for cross-sell
+$recommended_products = [];
+if (empty($wishlist_products)) {
+    $recStmt = $pdo->query("SELECT *, 'product' as item_source FROM products WHERE stock > 0 ORDER BY id DESC LIMIT 4");
+    $recommended_products = $recStmt->fetchAll(PDO::FETCH_ASSOC);
+}
 ?>
 
 <main class="max-w-container-max mx-auto overflow-hidden py-10 lg:py-16 px-margin-desktop min-h-[70vh]">
@@ -634,6 +664,197 @@ if (!in_array($default_tab, ['standard', 'autoship'])) {
         </div>
 
     <?php endif; ?>
+
+    <!-- ========================================================================= -->
+    <!-- DIGIKALA-STYLE FAVORITE ITEMS / NEXT SHOPPING LIST (لیست خرید بعدی)       -->
+    <!-- ========================================================================= -->
+    <section class="mt-14 pt-10 border-t border-outline-variant/30 scroll-mt-28" id="cartWishlistSection">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-2xl bg-rose-50 border border-rose-200 flex items-center justify-center text-rose-600 shadow-sm shrink-0">
+                    <span class="material-symbols-outlined text-2xl" style="font-variation-settings: 'FILL' 1;">favorite</span>
+                </div>
+                <div>
+                    <div class="flex items-center gap-2">
+                        <h2 class="text-base sm:text-xl font-bold text-on-surface">
+                            <?= !empty($wishlist_products) ? 'کالاهای مورد علاقه شما (لیست خرید بعدی)' : 'پیشنهادهای ویژه بر اساس علاقه‌مندی‌ها' ?>
+                        </h2>
+                        <?php if (!empty($wishlist_products)): ?>
+                            <span class="bg-rose-100 text-rose-700 text-xs font-mono font-bold px-2 py-0.5 rounded-full" id="wishlistCountBadge">
+                                <?= count($wishlist_products) ?> کالا
+                            </span>
+                        <?php endif; ?>
+                    </div>
+                    <p class="text-xs text-on-surface-variant mt-0.5">
+                        <?= !empty($wishlist_products) 
+                            ? 'کالاهای ذخیره شده در لیست علاقه‌مندی را با ۱ کلیک به سبد خرید انتقال دهید.' 
+                            : 'اقلام پرطرفدار و متناسب با نیاز حیوان خانگی شما جهت افزودن سریع به سبد سفارش.' ?>
+                    </p>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-2 self-start sm:self-auto">
+                <a href="wishlist.php" class="text-xs font-bold text-primary hover:text-secondary-container transition-colors flex items-center gap-1 group">
+                    <span>مشاهده همه در لیست علاقه‌مندی‌ها</span>
+                    <span class="material-symbols-outlined text-base group-hover:-translate-x-1 transition-transform">arrow_left</span>
+                </a>
+            </div>
+        </div>
+
+        <?php if (!empty($wishlist_products)): ?>
+            <!-- Wishlist Products Grid -->
+            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6" id="cartWishlistGrid">
+                <?php foreach ($wishlist_products as $wProd): 
+                    $wPrice = (float)$wProd['price'];
+                    $wDiscountPrice = !empty($wProd['discount_price']) ? (float)$wProd['discount_price'] : 0;
+                    $wHasDiscount = ($wDiscountPrice > 0 && $wDiscountPrice < $wPrice);
+                    $wPct = $wHasDiscount ? round((($wPrice - $wDiscountPrice) / $wPrice) * 100) : 0;
+                    $wImg = !empty($wProd['image_url']) ? $wProd['image_url'] : 'assets/images/default-product.png';
+                ?>
+                <div class="bg-white rounded-2xl border border-outline-variant/30 p-3 sm:p-4 shadow-sm hover:shadow-md transition-all flex flex-col justify-between group relative" id="wishlist-card-<?= $wProd['id'] ?>">
+                    
+                    <!-- Quick Remove from Wishlist Button -->
+                    <button type="button" onclick="removeCartWishlistItem(this, <?= $wProd['id'] ?>)" 
+                            class="absolute top-2 left-2 z-10 w-7 h-7 rounded-full bg-white/90 backdrop-blur-sm border border-outline-variant/30 text-on-surface-variant hover:text-rose-600 hover:border-rose-300 flex items-center justify-center transition-all shadow-sm cursor-pointer"
+                            title="حذف از لیست علاقه‌مندی">
+                        <span class="material-symbols-outlined text-sm">close</span>
+                    </button>
+
+                    <div>
+                        <!-- Product Image -->
+                        <a href="product_details.php?id=<?= $wProd['id'] ?>" class="block overflow-hidden rounded-xl bg-surface-container/20 aspect-square mb-3 relative">
+                            <img src="<?= htmlspecialchars($wImg) ?>" alt="<?= htmlspecialchars($wProd['name']) ?>" 
+                                 class="w-full h-full object-contain p-2 group-hover:scale-105 transition-transform duration-300"
+                                 loading="lazy">
+                            <?php if ($wHasDiscount): ?>
+                                <span class="absolute top-2 right-2 bg-rose-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-md shadow-sm font-mono">
+                                    <?= $wPct ?>٪
+                                </span>
+                            <?php endif; ?>
+                        </a>
+
+                        <!-- Category Tag -->
+                        <?php if (!empty($wProd['category'])): ?>
+                            <span class="text-[10px] font-bold text-primary/80 bg-primary/5 px-2 py-0.5 rounded-md inline-block mb-1.5">
+                                <?= htmlspecialchars($wProd['category']) ?>
+                            </span>
+                        <?php endif; ?>
+
+                        <!-- Title -->
+                        <a href="product_details.php?id=<?= $wProd['id'] ?>" class="block font-bold text-xs sm:text-sm text-on-surface hover:text-primary transition-colors line-clamp-2 leading-relaxed h-10 mb-2">
+                            <?= htmlspecialchars($wProd['name']) ?>
+                        </a>
+                    </div>
+
+                    <div class="pt-2 border-t border-outline-variant/20 mt-2">
+                        <!-- Pricing -->
+                        <div class="mb-3">
+                            <?php if ($wHasDiscount): ?>
+                                <div class="text-[10px] text-on-surface-variant/60 line-through font-mono">
+                                    <?= number_format($wPrice) ?> تومان
+                                </div>
+                                <div class="text-sm sm:text-base font-bold text-rose-600 font-mono">
+                                    <?= number_format($wDiscountPrice) ?> <span class="text-[10px] text-on-surface-variant font-normal">تومان</span>
+                                </div>
+                            <?php else: ?>
+                                <div class="text-sm sm:text-base font-bold text-primary font-mono">
+                                    <?= number_format($wPrice) ?> <span class="text-[10px] text-on-surface-variant font-normal">تومان</span>
+                                </div>
+                            <?php endif; ?>
+                        </div>
+
+                        <!-- 1-Click Add to Cart CTA -->
+                        <form action="actions/cart_action.php" method="POST" class="m-0 wishlist-add-cart-form" onsubmit="handleWishlistAddToCart(event, this, <?= $wProd['id'] ?>)">
+                            <?= csrf_field() ?>
+                            <input type="hidden" name="action" value="add">
+                            <input type="hidden" name="product_id" value="<?= $wProd['id'] ?>">
+                            <input type="hidden" name="type" value="standard">
+                            <input type="hidden" name="active_tab" value="<?= htmlspecialchars($default_tab) ?>">
+                            <button type="submit" class="w-full bg-primary/10 hover:bg-primary text-primary hover:text-white py-2.5 px-3 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all shadow-sm active:scale-95 cursor-pointer">
+                                <span class="material-symbols-outlined text-[16px]">add_shopping_cart</span>
+                                <span>افزودن به سبد خرید</span>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+                <?php endforeach; ?>
+            </div>
+        <?php else: ?>
+            <!-- Empty Wishlist Fallback: Recommendations Grid -->
+            <div class="bg-surface-container-lowest border border-outline-variant/30 rounded-3xl p-5 sm:p-6 mb-6">
+                <div class="flex items-center gap-3 mb-6 pb-4 border-b border-outline-variant/20">
+                    <div class="w-9 h-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                        <span class="material-symbols-outlined text-xl">recommend</span>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-sm text-on-surface">کالاهای پرطرفدار و پیشنهادی برای شما</h3>
+                        <p class="text-xs text-on-surface-variant">محصولاتی که ممکن است برای سفارش فعلی به آن‌ها نیاز داشته باشید:</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                    <?php foreach ($recommended_products as $rProd): 
+                        $rPrice = (float)$rProd['price'];
+                        $rDiscount = !empty($rProd['discount_price']) ? (float)$rProd['discount_price'] : 0;
+                        $rHasDiscount = ($rDiscount > 0 && $rDiscount < $rPrice);
+                        $rPct = $rHasDiscount ? round((($rPrice - $rDiscount) / $rPrice) * 100) : 0;
+                        $rImg = !empty($rProd['image_url']) ? $rProd['image_url'] : 'assets/images/default-product.png';
+                    ?>
+                    <div class="bg-white rounded-2xl border border-outline-variant/30 p-3 shadow-sm hover:shadow-md transition-all flex flex-col justify-between group">
+                        <div>
+                            <a href="product_details.php?id=<?= $rProd['id'] ?>" class="block overflow-hidden rounded-xl bg-surface-container/20 aspect-square mb-2 relative">
+                                <img src="<?= htmlspecialchars($rImg) ?>" alt="<?= htmlspecialchars($rProd['name']) ?>" class="w-full h-full object-contain p-2 group-hover:scale-105 transition-transform" loading="lazy">
+                                <?php if ($rHasDiscount): ?>
+                                    <span class="absolute top-2 right-2 bg-rose-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-md font-mono"><?= $rPct ?>٪</span>
+                                <?php endif; ?>
+                            </a>
+                            <a href="product_details.php?id=<?= $rProd['id'] ?>" class="block font-bold text-xs text-on-surface hover:text-primary transition-colors line-clamp-2 h-9 mb-2">
+                                <?= htmlspecialchars($rProd['name']) ?>
+                            </a>
+                        </div>
+                        <div class="pt-2 border-t border-outline-variant/20">
+                            <div class="mb-2">
+                                <span class="font-bold text-xs text-primary font-mono">
+                                    <?= number_format($rHasDiscount ? $rDiscount : $rPrice) ?> <span class="text-[9px] text-on-surface-variant">تومان</span>
+                                </span>
+                            </div>
+                            <form action="actions/cart_action.php" method="POST" class="m-0" onsubmit="handleWishlistAddToCart(event, this, <?= $rProd['id'] ?>)">
+                                <?= csrf_field() ?>
+                                <input type="hidden" name="action" value="add">
+                                <input type="hidden" name="product_id" value="<?= $rProd['id'] ?>">
+                                <input type="hidden" name="type" value="standard">
+                                <input type="hidden" name="active_tab" value="<?= htmlspecialchars($default_tab) ?>">
+                                <button type="submit" class="w-full bg-primary/10 hover:bg-primary text-primary hover:text-white py-2 rounded-xl font-bold text-[11px] flex items-center justify-center gap-1 transition-all cursor-pointer">
+                                    <span class="material-symbols-outlined text-sm">add_shopping_cart</span>
+                                    <span>افزودن به سبد</span>
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+
+            <?php if (!isset($_SESSION['user_id'])): ?>
+                <!-- Guest Banner encouraging login -->
+                <div class="bg-gradient-to-l from-primary/5 via-white to-primary/10 border border-primary/20 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row items-center justify-between gap-4 mt-4">
+                    <div class="flex items-center gap-3 text-center sm:text-right">
+                        <div class="w-10 h-10 rounded-2xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                            <span class="material-symbols-outlined text-xl">account_circle</span>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-sm text-primary">لیست علاقه‌مندی‌های خود را ذخیره کنید</h4>
+                            <p class="text-xs text-on-surface-variant">با ورود به حساب کاربری، اقلام مورد علاقه شما در همه دستگاه‌ها همگام خواهد شد.</p>
+                        </div>
+                    </div>
+                    <a href="login.php" class="bg-primary hover:bg-primary-container text-white px-5 py-2.5 rounded-xl font-bold text-xs transition-all shadow-sm shrink-0 flex items-center gap-1.5">
+                        <span class="material-symbols-outlined text-sm">login</span>
+                        ورود به حساب کاربری
+                    </a>
+                </div>
+            <?php endif; ?>
+        <?php endif; ?>
+    </section>
 </main>
 
 <script>
@@ -735,6 +956,95 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     updateAutoshipCalculations();
 });
+
+function removeCartWishlistItem(btn, productId) {
+    const card = document.getElementById('wishlist-card-' + productId);
+    if (card) {
+        card.style.transition = 'all 0.35s cubic-bezier(0.4, 0, 0.2, 1)';
+        card.style.opacity = '0';
+        card.style.transform = 'scale(0.9) translateY(10px)';
+    }
+
+    fetch('actions/wishlist_action.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: 'product_id=' + encodeURIComponent(productId)
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.status === 'success') {
+            if (typeof showWishlistToast === 'function') {
+                showWishlistToast('کالا از لیست علاقه‌مندی‌ها حذف شد', 'removed');
+            }
+            if (card) {
+                card.remove();
+            }
+            const grid = document.getElementById('cartWishlistGrid');
+            if (grid && grid.children.length === 0) {
+                location.reload();
+            } else if (grid) {
+                const countBadge = document.getElementById('wishlistCountBadge');
+                if (countBadge) countBadge.textContent = grid.children.length + ' کالا';
+            }
+        } else {
+            if (card) {
+                card.style.opacity = '1';
+                card.style.transform = 'none';
+            }
+        }
+    })
+    .catch(err => {
+        console.error(err);
+        if (card) {
+            card.style.opacity = '1';
+            card.style.transform = 'none';
+        }
+    });
+}
+
+function handleWishlistAddToCart(e, form, productId) {
+    e.preventDefault();
+    const btn = form.querySelector('button');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="material-symbols-outlined text-[16px] animate-spin">refresh</span> <span>در حال افزودن...</span>';
+
+    const formData = new FormData(form);
+    fetch('actions/cart_action.php', {
+        method: 'POST',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: formData
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.status === 'success') {
+            btn.innerHTML = '<span class="material-symbols-outlined text-[16px] text-emerald-600">check</span> <span>به سبد اضافه شد</span>';
+            btn.classList.remove('bg-primary/10', 'text-primary');
+            btn.classList.add('bg-emerald-50', 'text-emerald-700', 'border', 'border-emerald-300');
+            
+            // Update live cart badges in desktop and mobile bottom bar
+            document.querySelectorAll('.nav-cart-badge, .cart-badge-count').forEach(badge => {
+                badge.textContent = data.cart_count;
+                badge.classList.remove('hidden');
+            });
+            
+            if (typeof showWishlistToast === 'function') {
+                showWishlistToast('کالا به سبد خرید اضافه شد 🛒', 'added');
+            }
+
+            // Smooth reload after 600ms so cart totals update
+            setTimeout(() => {
+                location.reload();
+            }, 600);
+        } else {
+            form.submit();
+        }
+    })
+    .catch(() => {
+        form.submit();
+    });
+}
 </script>
 
 <?php include 'includes/footer.php'; ?>

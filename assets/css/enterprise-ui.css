@@ -277,22 +277,22 @@ body, button, input, select, textarea {
 
 .nav-cart-badge {
     position: absolute;
-    top: 6px;
-    left: 50%;
-    margin-left: 4px;
+    top: -4px;
+    right: -8px;
     background: #ef4444;
     color: #ffffff;
     font-size: 10px;
     font-weight: 800;
-    min-width: 17px;
-    height: 17px;
-    padding: 0 3px;
+    min-width: 16px;
+    height: 16px;
+    padding: 0 4px;
     border-radius: 9999px;
     display: flex;
     align-items: center;
     justify-content: center;
     box-shadow: 0 2px 5px rgba(239, 68, 68, 0.4);
     font-family: monospace;
+    line-height: 1;
 }
 
 /* Digikala-Style Mobile Categories Bottom Sheet */

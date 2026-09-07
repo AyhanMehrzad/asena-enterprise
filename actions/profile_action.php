@@ -16,10 +16,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $name = trim($_POST['pet_name'] ?? '');
         $type = trim($_POST['pet_type'] ?? '');
         $race = trim($_POST['pet_race'] ?? '');
+        $gender = trim($_POST['pet_gender'] ?? '');
+        $age = trim($_POST['pet_age'] ?? '');
         
         if (!empty($name) && !empty($type)) {
-            $stmt = $pdo->prepare("INSERT INTO user_pets (user_id, name, type, race) VALUES (?, ?, ?, ?)");
-            if ($stmt->execute([$user_id, $name, $type, $race])) {
+            $stmt = $pdo->prepare("INSERT INTO user_pets (user_id, name, type, race, gender, age) VALUES (?, ?, ?, ?, ?, ?)");
+            if ($stmt->execute([$user_id, $name, $type, $race, $gender, $age])) {
                 $_SESSION['profile_success'] = "حیوان خانگی جدید با موفقیت اضافه شد.";
             } else {
                 $_SESSION['profile_error'] = "خطا در ثبت حیوان خانگی.";
@@ -70,11 +72,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $name = trim($_POST['pet_name'] ?? '');
         $type = trim($_POST['pet_type'] ?? '');
         $race = trim($_POST['pet_race'] ?? '');
+        $gender = trim($_POST['pet_gender'] ?? '');
+        $age = trim($_POST['pet_age'] ?? '');
         
         if ($pet_id > 0 && !empty($name) && !empty($type)) {
             // Ensure the pet belongs to the user
-            $stmt = $pdo->prepare("UPDATE user_pets SET name = ?, type = ?, race = ? WHERE id = ? AND user_id = ?");
-            if ($stmt->execute([$name, $type, $race, $pet_id, $user_id])) {
+            $stmt = $pdo->prepare("UPDATE user_pets SET name = ?, type = ?, race = ?, gender = ?, age = ? WHERE id = ? AND user_id = ?");
+            if ($stmt->execute([$name, $type, $race, $gender, $age, $pet_id, $user_id])) {
                 $_SESSION['profile_success'] = "مشخصات حیوان خانگی با موفقیت بروزرسانی شد.";
             } else {
                 $_SESSION['profile_error'] = "خطا در بروزرسانی حیوان خانگی.";
@@ -235,12 +239,83 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $upUser->execute([$storeName, $nationalId, $city, $user_id]);
             $_SESSION['profile_success'] = "اطلاعات هویتی و نام فروشگاه شما با موفقیت ذخیره گردید.";
         }
+    } elseif ($action === 'update_personal_info') {
+        $name = trim($_POST['name'] ?? '');
+        $email = trim($_POST['email'] ?? '');
+        $nationalId = trim($_POST['national_id'] ?? '');
+        $currentPassword = $_POST['current_password'] ?? '';
+        $newPassword = $_POST['new_password'] ?? '';
+
+        if (empty($name)) {
+            $_SESSION['profile_error'] = "نام و نام خانوادگی نمی‌تواند خالی باشد.";
+        } else {
+            try {
+                if (!empty($newPassword)) {
+                    // Password change requested - verify current password
+                    $uStmt = $pdo->prepare("SELECT password FROM users WHERE id = ?");
+                    $uStmt->execute([$user_id]);
+                    $currHash = $uStmt->fetchColumn();
+
+                    if (!empty($currHash) && !password_verify($currentPassword, $currHash)) {
+                        $_SESSION['profile_error'] = "کلمه عبور فعلی وارد شده نادرست است.";
+                    } elseif (strlen($newPassword) < 6) {
+                        $_SESSION['profile_error'] = "کلمه عبور جدید باید حداقل ۶ کاراکتر باشد.";
+                    } else {
+                        $hashed = password_hash($newPassword, PASSWORD_DEFAULT);
+                        $stmt = $pdo->prepare("UPDATE users SET name = ?, email = ?, national_id = ?, password = ? WHERE id = ?");
+                        $stmt->execute([$name, $email, $nationalId, $hashed, $user_id]);
+                        $_SESSION['profile_success'] = "اطلاعات کاربری و کلمه عبور با موفقیت به‌روزرسانی شد.";
+                    }
+                } else {
+                    $stmt = $pdo->prepare("UPDATE users SET name = ?, email = ?, national_id = ? WHERE id = ?");
+                    $stmt->execute([$name, $email, $nationalId, $user_id]);
+                    $_SESSION['profile_success'] = "اطلاعات حساب کاربری با موفقیت ذخیره گردید.";
+                }
+            } catch (PDOException $e) {
+                $_SESSION['profile_error'] = "خطا در به‌روزرسانی اطلاعات حساب کاربری.";
+            }
+        }
+    } elseif ($action === 'update_address') {
+        $city = trim($_POST['city'] ?? 'تبریز');
+        $postal_code = trim($_POST['postal_code'] ?? '');
+        $address = trim($_POST['address'] ?? '');
+        $latitude = !empty($_POST['latitude']) ? (float)$_POST['latitude'] : null;
+        $longitude = !empty($_POST['longitude']) ? (float)$_POST['longitude'] : null;
+
+        if (empty($postal_code)) {
+            $_SESSION['profile_error'] = "وارد کردن کد پستی ده‌رقمی الزامی است.";
+        } elseif (empty($address)) {
+            $_SESSION['profile_error'] = "لطفاً نشانی دقیق پستی را وارد نمایید.";
+        } else {
+            try {
+                $stmt = $pdo->prepare("UPDATE users SET city = ?, postal_code = ?, address = ?, latitude = ?, longitude = ? WHERE id = ?");
+                $stmt->execute([$city, $postal_code, $address, $latitude, $longitude, $user_id]);
+                $_SESSION['profile_success'] = "نشانی پستی و موقعیت مکانی با موفقیت ذخیره شد.";
+            } catch (PDOException $e) {
+                $_SESSION['profile_error'] = "خطا در به‌روزرسانی نشانی و موقعیت مکانی.";
+            }
+        }
     }
 }
 
 // Redirect back with view=seller if user is seller
 if (isset($_POST['is_seller_action']) || (isset($user['role']) && $user['role'] === 'seller')) {
     header("Location: ../profile.php?view=seller");
+    exit;
+}
+
+if (in_array($action, ['add_pet', 'edit_pet', 'delete_pet', 'upload_document'])) {
+    header("Location: ../profile.php#pets");
+    exit;
+}
+
+if ($action === 'update_personal_info' || $action === 'update_bank_details') {
+    header("Location: ../profile.php#personal-info");
+    exit;
+}
+
+if ($action === 'update_address') {
+    header("Location: ../profile.php#addresses");
     exit;
 }
 

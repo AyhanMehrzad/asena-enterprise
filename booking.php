@@ -334,13 +334,30 @@ $booked_slots_json = json_encode($booked_slots);
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <?php if(count($user_pets) > 0): ?>
                     <div class="col-span-1 md:col-span-2 space-y-2 mb-2">
-                        <label class="text-label-md font-bold text-on-surface-variant">انتخاب از حیوانات ثبت شده شما</label>
+                        <div class="flex items-center justify-between">
+                            <label class="text-label-md font-bold text-on-surface-variant">انتخاب از حیوانات ثبت شده شما</label>
+                            <a href="profile.php#pets-section" target="_blank" class="text-xs text-primary font-bold hover:underline flex items-center gap-1">
+                                <span class="material-symbols-outlined text-sm">edit</span>
+                                <span>مدیریت حیوانات خانگی در پروفایل</span>
+                            </a>
+                        </div>
                         <select class="w-full h-12 px-4 appearance-none rounded-lg border border-outline-variant focus:border-primary-container bg-white text-sm" onchange="if(this.value){ const p = JSON.parse(this.value); document.getElementById('pet_type').value = p.type; document.getElementById('pet_race').value = p.race; checkFormCompleteness(); }">
                             <option value="">-- انتخاب کنید یا اطلاعات را به صورت دستی وارد کنید --</option>
                             <?php foreach($user_pets as $pet): ?>
                                 <option value='<?php echo json_encode(["type" => $pet["type"], "race" => $pet["race"]]); ?>'><?php echo htmlspecialchars($pet['name'] . ' (' . $pet['type'] . ')'); ?></option>
                             <?php endforeach; ?>
                         </select>
+                    </div>
+                    <?php else: ?>
+                    <div class="col-span-1 md:col-span-2 p-3.5 rounded-2xl bg-blue-50/60 border border-blue-200/60 flex items-center justify-between text-xs mb-2">
+                        <div class="flex items-center gap-2 text-slate-700">
+                            <span class="material-symbols-outlined text-primary text-base">pets</span>
+                            <span>حیوان خانگی در پروفایل خود ثبت نکرده‌اید؟</span>
+                        </div>
+                        <a href="profile.php#pets-section" target="_blank" class="px-3 py-1.5 rounded-xl bg-primary text-white font-bold hover:bg-primary-hover transition-colors flex items-center gap-1 shadow-sm">
+                            <span class="material-symbols-outlined text-sm">add_circle</span>
+                            <span>ثبت و پرونده‌سازی در پروفایل</span>
+                        </a>
                     </div>
                     <?php endif; ?>
                     

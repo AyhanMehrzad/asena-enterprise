@@ -6,16 +6,17 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 $user_id = $_SESSION['user_id'];
-$success = $_SESSION['settings_success'] ?? '';
-$error = $_SESSION['settings_error'] ?? '';
-unset($_SESSION['settings_success'], $_SESSION['settings_error']);
+if (isset($_SESSION['settings_success'])) {
+    $_SESSION['profile_success'] = $_SESSION['settings_success'];
+    unset($_SESSION['settings_success']);
+}
+if (isset($_SESSION['settings_error'])) {
+    $_SESSION['profile_error'] = $_SESSION['settings_error'];
+    unset($_SESSION['settings_error']);
+}
 
-// Fetch user info
-$stmt = $pdo->prepare("SELECT * FROM users WHERE id = ?");
-$stmt->execute([$user_id]);
-$user = $stmt->fetch(PDO::FETCH_ASSOC);
-
-require_once 'includes/header.php';
+header("Location: profile.php#personal-info");
+exit;
 ?>
 <style>
         :root {
@@ -158,7 +159,7 @@ require_once 'includes/header.php';
                 <span class="material-symbols-outlined text-[24px]">help</span>
                 پشتیبانی
             </a>
-            <a href="logout.php" class="flex items-center gap-3 p-4 rounded-xl text-error hover:bg-error/10 font-bold text-body-md transition-colors mt-4">
+            <a href="logout.php" onclick="return confirm('آیا از خروج از حساب کاربری اطمینان دارید؟');" class="flex items-center gap-3 p-4 rounded-xl text-error hover:bg-error/10 font-bold text-body-md transition-colors mt-4">
                 <span class="material-symbols-outlined text-[24px]">logout</span>
                 خروج از حساب
             </a>

@@ -155,7 +155,7 @@ $orgId = (int)($linkedOrg['id'] ?? 1);
         </a>
 
         <div class="mt-2">
-            <a class="flex items-center gap-3 px-4 py-2 text-on-tertiary-container hover:text-white transition-all text-xs font-bold" href="../logout.php">
+            <a class="flex items-center gap-3 px-4 py-2 text-on-tertiary-container hover:text-white transition-all text-xs font-bold" href="../logout.php" onclick="return confirm('آیا از خروج از حساب کاربری اطمینان دارید؟');">
                 <span class="material-symbols-outlined text-rose-400">logout</span>
                 <span>خروج از حساب</span>
             </a>

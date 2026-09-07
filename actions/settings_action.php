@@ -27,8 +27,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $stmt->execute([$name, $email, $user_id]);
             }
             $_SESSION['settings_success'] = "اطلاعات حساب با موفقیت بروزرسانی شد.";
+            $_SESSION['profile_success'] = "اطلاعات حساب با موفقیت بروزرسانی شد.";
+            header("Location: ../profile.php#personal-info");
+            exit;
         } catch (PDOException $e) {
             $_SESSION['settings_error'] = "خطا در بروزرسانی اطلاعات حساب.";
+            $_SESSION['profile_error'] = "خطا در بروزرسانی اطلاعات حساب.";
+            header("Location: ../profile.php#personal-info");
+            exit;
         }
     } elseif ($action === 'update_address') {
         $city = trim($_POST['city'] ?? '');
@@ -43,18 +49,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         if (empty($postal_code)) {
             $_SESSION['settings_error'] = "وارد کردن کد پستی الزامی است.";
+            $_SESSION['profile_error'] = "وارد کردن کد پستی الزامی است.";
+            header("Location: ../profile.php#addresses");
+            exit;
         } else {
             try {
                 $stmt = $pdo->prepare("UPDATE users SET city = ?, postal_code = ?, address = ?, latitude = ?, longitude = ? WHERE id = ?");
                 $stmt->execute([$city, $postal_code, $address, $latitude, $longitude, $user_id]);
                 $_SESSION['settings_success'] = "نشانی با موفقیت بروزرسانی شد.";
+                $_SESSION['profile_success'] = "نشانی با موفقیت بروزرسانی شد.";
+                header("Location: ../profile.php#addresses");
+                exit;
             } catch (PDOException $e) {
                 $_SESSION['settings_error'] = "خطا در بروزرسانی نشانی.";
+                $_SESSION['profile_error'] = "خطا در بروزرسانی نشانی.";
+                header("Location: ../profile.php#addresses");
+                exit;
             }
         }
     }
 }
 
-header("Location: ../profile_settings.php");
+header("Location: ../profile.php#personal-info");
 exit;
 ?>

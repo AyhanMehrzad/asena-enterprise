@@ -221,7 +221,7 @@ $currentFile = basename($_SERVER['PHP_SELF']);
         </a>
         
         <div class="mt-4 space-y-1">
-            <a class="flex items-center gap-3 px-4 py-2 text-on-tertiary-container hover:text-white transition-all text-xs" href="../logout.php">
+            <a class="flex items-center gap-3 px-4 py-2 text-on-tertiary-container hover:text-white transition-all text-xs" href="../logout.php" onclick="return confirm('آیا از خروج از حساب کاربری اطمینان دارید؟');">
                 <span class="material-symbols-outlined text-error text-lg">logout</span>
                 <span>خروج از حساب</span>
             </a>

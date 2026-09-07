@@ -163,7 +163,7 @@ require_once 'includes/header.php';
                 <span class="material-symbols-outlined text-[24px]">help</span>
                 پشتیبانی
             </a>
-            <a href="logout.php" class="flex items-center gap-3 p-4 rounded-xl text-error hover:bg-error/10 font-bold text-body-md transition-colors mt-4">
+            <a href="logout.php" onclick="return confirm('آیا از خروج از حساب کاربری اطمینان دارید؟');" class="flex items-center gap-3 p-4 rounded-xl text-error hover:bg-error/10 font-bold text-body-md transition-colors mt-4">
                 <span class="material-symbols-outlined text-[24px]">logout</span>
                 خروج از حساب
             </a>

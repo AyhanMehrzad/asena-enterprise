@@ -167,7 +167,7 @@ if (!$userDigitalWallet) {
 }
 
 // Handle User Digital Wallet Charge Action
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'charge_user_wallet') {
+if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POST['action']) && $_POST['action'] === 'charge_user_wallet') {
     csrf_verify();
     $amount = (int)($_POST['amount'] ?? 0);
     if ($amount >= 10000) {
@@ -240,8 +240,6 @@ if ((int)$nowTz->format('N') === 4 && (int)$nowTz->format('H') < 22) {
 $diff = $nowTz->diff($nextThursday);
 $daysUntilPayout = $diff->days;
 $hoursUntilPayout = $diff->h;
-
-// Date Formatter for Jalali
 $fmtDate = new IntlDateFormatter('fa_IR@calendar=persian', IntlDateFormatter::FULL, IntlDateFormatter::NONE, 'Asia/Tehran', IntlDateFormatter::TRADITIONAL, 'yyyy/MM/dd');
 $fmtDateTime = new IntlDateFormatter('fa_IR@calendar=persian', IntlDateFormatter::FULL, IntlDateFormatter::FULL, 'Asia/Tehran', IntlDateFormatter::TRADITIONAL, 'd MMMM YYYY - HH:mm');
 $fmtDateText = new IntlDateFormatter('fa_IR@calendar=persian', IntlDateFormatter::FULL, IntlDateFormatter::NONE, 'Asia/Tehran', IntlDateFormatter::TRADITIONAL, 'd MMMM YYYY');
@@ -249,6 +247,9 @@ $nextPayoutFormatted = $fmtDateText->format($nextThursday) . ' ساعت ۲۲:۰�
 ?>
 
 <?php require_once 'includes/header.php'; ?>
+<!-- Leaflet Map Assets for Address Pinpointing -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
     .persian-number {
         font-feature-settings: "ss01", "ss02", "ss03", "ss04";
@@ -274,19 +275,28 @@ $nextPayoutFormatted = $fmtDateText->format($nextThursday) . ' ساعت ۲۲:۰�
     </div>
     <p class="text-[11px] text-on-surface-variant font-medium">سامانه محصولات، سفارشات و تسویه</p>
 <?php else: ?>
-    <h2 class="text-lg font-bold text-primary">پنل کاربری</h2>
-    <p class="text-xs text-on-surface-variant">خدمات حرفه‌ای حیوانات خانگی</p>
+    <h2 class="text-lg font-bold text-primary">پنل کاربری آسنا</h2>
+    <p class="text-xs text-on-surface-variant">خدمات جامع سلامت و فروشگاهی پت</p>
 <?php endif; ?>
 </div>
-<button onclick="toggleProfileSidebar()" class="lg:hidden w-8 h-8 flex items-center justify-center rounded-full bg-surface-container hover:bg-error/10 hover:text-error transition-colors">
-<span class="material-symbols-outlined text-[20px]">close</span>
+<button class="lg:hidden text-on-surface-variant" onclick="toggleProfileSidebar()">
+<span class="material-symbols-outlined">close</span>
 </button>
 </div>
-<nav class="flex-1 flex flex-col gap-1">
+<div class="flex items-center gap-3 mb-6 p-2 bg-surface-container-low rounded-xl">
+<div class="w-10 h-10 rounded-full bg-primary-container text-white flex items-center justify-center font-bold">
+            <?php echo mb_substr(htmlspecialchars($user['name'] ?? 'ک'), 0, 1, 'UTF-8'); ?>
+        </div>
+<div class="overflow-hidden">
+<p class="text-sm font-bold truncate text-on-surface"><?php echo htmlspecialchars($user['name'] ?? 'کاربر مهمان'); ?></p>
+<p class="text-xs text-on-surface-variant truncate"><?php echo htmlspecialchars($user['phone']); ?></p>
+</div>
+</div>
+<nav class="flex flex-col gap-1 flex-1 overflow-y-auto">
 <?php if ($isSeller): ?>
-    <!-- Commercial / Seller Sidebar Links -->
+    <!-- Seller Sidebar Navigation Links -->
     <a class="flex items-center gap-3 px-4 py-3 bg-primary-container text-white rounded-xl font-bold transition-all shadow-md" href="profile.php?view=seller">
-        <span class="material-symbols-outlined">analytics</span>
+        <span class="material-symbols-outlined text-secondary">dashboard</span>
         <span class="text-sm">پیشخوان و آمار فروش</span>
     </a>
     <a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-low rounded-xl transition-all" href="#seller-orders-section">
@@ -322,33 +332,41 @@ $nextPayoutFormatted = $fmtDateText->format($nextThursday) . ' ساعت ۲۲:۰�
         </a>
     <?php endif; ?>
 <?php else: ?>
-    <!-- Normal Pet Owner Sidebar Links -->
-    <a class="flex items-center gap-3 px-4 py-3 bg-primary-container text-white rounded-xl font-bold transition-all shadow-md" href="profile.php">
+    <!-- Normal Pet Owner Sidebar Links (Digikala Architecture) -->
+    <a id="sidebar-btn-overview" class="flex items-center gap-3 px-4 py-3 bg-primary-container text-white rounded-xl font-bold transition-all shadow-md cursor-pointer" onclick="switchCustomerView('overview')">
         <span class="material-symbols-outlined">dashboard</span>
         <span class="text-sm">پیشخوان</span>
     </a>
-    <a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-low rounded-xl transition-all" href="#appointments-section">
-        <span class="material-symbols-outlined">calendar_today</span>
-        <span class="text-sm">نوبت‌های من</span>
+    <a id="sidebar-btn-personal-info" class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-low rounded-xl transition-all cursor-pointer font-bold" onclick="switchCustomerView('personal-info')">
+        <span class="material-symbols-outlined text-primary">person</span>
+        <span class="text-sm">اطلاعات حساب کاربری</span>
     </a>
-    <a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-low rounded-xl transition-all" href="#subscriptions-section">
-        <span class="material-symbols-outlined">event_repeat</span>
-        <span class="text-sm">اشتراک‌های فعال</span>
+    <a id="sidebar-btn-addresses" class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-low rounded-xl transition-all cursor-pointer font-bold" onclick="switchCustomerView('addresses')">
+        <span class="material-symbols-outlined text-rose-600">location_on</span>
+        <span class="text-sm">آدرس‌ها و نشانی</span>
     </a>
-    <a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-low rounded-xl transition-all" href="#orders-section">
-        <span class="material-symbols-outlined">history</span>
-        <span class="text-sm">تاریخچه سفارشات</span>
-    </a>
-    <a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-low rounded-xl transition-all" href="#wallet-section">
-        <span class="material-symbols-outlined text-indigo-600">account_balance_wallet</span>
-        <span class="text-sm font-bold text-indigo-900">کیف پول دیجیتال (اعتباری)</span>
-    </a>
-    <a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-low rounded-xl transition-all" href="#pets-section">
-        <span class="material-symbols-outlined">pets</span>
+    <a id="sidebar-btn-pets" class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-low rounded-xl transition-all cursor-pointer font-bold" onclick="switchCustomerView('pets')">
+        <span class="material-symbols-outlined text-amber-600">pets</span>
         <span class="text-sm">حیوانات من</span>
     </a>
-    <a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-low rounded-xl transition-all" href="wishlist.php">
-        <span class="material-symbols-outlined">favorite</span>
+    <a id="sidebar-btn-appointments" class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-low rounded-xl transition-all cursor-pointer font-bold" onclick="switchCustomerView('appointments')">
+        <span class="material-symbols-outlined text-teal-600">calendar_month</span>
+        <span class="text-sm">نوبت‌های من</span>
+    </a>
+    <a id="sidebar-btn-orders" class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-low rounded-xl transition-all cursor-pointer font-bold" onclick="switchCustomerView('orders')">
+        <span class="material-symbols-outlined text-indigo-600">receipt_long</span>
+        <span class="text-sm">تاریخچه سفارشات</span>
+    </a>
+    <a id="sidebar-btn-subscriptions" class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-low rounded-xl transition-all cursor-pointer font-bold" onclick="switchCustomerView('subscriptions')">
+        <span class="material-symbols-outlined text-orange-600">autorenew</span>
+        <span class="text-sm">اشتراک‌های فعال</span>
+    </a>
+    <a id="sidebar-btn-wallet" class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-low rounded-xl transition-all cursor-pointer font-bold" onclick="switchCustomerView('wallet')">
+        <span class="material-symbols-outlined text-emerald-600">account_balance_wallet</span>
+        <span class="text-sm">کیف پول اعتباری</span>
+    </a>
+    <a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-low rounded-xl transition-all font-bold" href="wishlist.php">
+        <span class="material-symbols-outlined text-red-500">favorite</span>
         <span class="text-sm">علاقه‌مندی‌ها</span>
     </a>
     <?php if(isset($user['role']) && $user['role'] === 'admin'): ?>
@@ -366,10 +384,6 @@ $nextPayoutFormatted = $fmtDateText->format($nextThursday) . ' ساعت ۲۲:۰�
 <?php endif; ?>
 </nav>
 <div class="pt-6 border-t border-outline-variant flex flex-col gap-1">
-<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-low rounded-xl transition-all" href="profile_settings.php">
-<span class="material-symbols-outlined">settings</span>
-<span class="text-sm">تنظیمات</span>
-</a>
 <a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-low rounded-xl transition-all" href="user_tickets.php">
 <span class="material-symbols-outlined">help</span>
 <span class="text-sm">پشتیبانی و تیکت‌ها</span>
@@ -380,7 +394,7 @@ $nextPayoutFormatted = $fmtDateText->format($nextThursday) . ' ساعت ۲۲:۰�
         <span>مشاهده پنل خریدار</span>
     </a>
 <?php endif; ?>
-<a class="flex items-center gap-3 px-4 py-3 text-red-600 hover:bg-red-50 rounded-xl transition-all" href="logout.php">
+<a class="flex items-center gap-3 px-4 py-3 text-red-600 hover:bg-red-50 rounded-xl transition-all" href="logout.php" onclick="return confirm('آیا از خروج از حساب کاربری اطمینان دارید؟');">
 <span class="material-symbols-outlined">logout</span>
 <span class="text-sm">خروج</span>
 </a>
@@ -429,31 +443,39 @@ $nextPayoutFormatted = $fmtDateText->format($nextThursday) . ' ساعت ۲۲:۰�
             <span>تسویه پایا</span>
         </a>
     <?php else: ?>
-        <a href="profile.php" class="px-3.5 py-2 rounded-xl bg-primary text-white shadow-sm shrink-0 flex items-center gap-1.5">
+        <button type="button" id="mob-tab-btn-overview" onclick="switchCustomerView('overview')" class="px-3.5 py-2 rounded-xl bg-primary text-white shadow-sm shrink-0 flex items-center gap-1.5 cursor-pointer">
             <span class="material-symbols-outlined text-sm">dashboard</span>
             <span>پیشخوان</span>
-        </a>
-        <a href="#appointments-section" class="px-3.5 py-2 rounded-xl bg-white border border-slate-200 text-slate-700 hover:border-primary shrink-0 flex items-center gap-1.5">
+        </button>
+        <button type="button" id="mob-tab-btn-personal-info" onclick="switchCustomerView('personal-info')" class="px-3.5 py-2 rounded-xl bg-white border border-slate-200 text-slate-700 hover:border-primary shrink-0 flex items-center gap-1.5 cursor-pointer">
+            <span class="material-symbols-outlined text-sm text-primary">person</span>
+            <span>اطلاعات فردی</span>
+        </button>
+        <button type="button" id="mob-tab-btn-addresses" onclick="switchCustomerView('addresses')" class="px-3.5 py-2 rounded-xl bg-white border border-slate-200 text-slate-700 hover:border-primary shrink-0 flex items-center gap-1.5 cursor-pointer">
+            <span class="material-symbols-outlined text-sm text-rose-600">location_on</span>
+            <span>آدرس‌ها</span>
+        </button>
+        <button type="button" id="mob-tab-btn-pets" onclick="switchCustomerView('pets')" class="px-3.5 py-2 rounded-xl bg-white border border-slate-200 text-slate-700 hover:border-primary shrink-0 flex items-center gap-1.5 cursor-pointer">
+            <span class="material-symbols-outlined text-sm text-amber-600">pets</span>
+            <span>حیوانات من</span>
+        </button>
+        <button type="button" id="mob-tab-btn-appointments" onclick="switchCustomerView('appointments')" class="px-3.5 py-2 rounded-xl bg-white border border-slate-200 text-slate-700 hover:border-primary shrink-0 flex items-center gap-1.5 cursor-pointer">
             <span class="material-symbols-outlined text-sm text-teal-600">calendar_month</span>
-            <span>نوبت‌های من</span>
-        </a>
-        <a href="#orders-section" class="px-3.5 py-2 rounded-xl bg-white border border-slate-200 text-slate-700 hover:border-primary shrink-0 flex items-center gap-1.5">
-            <span class="material-symbols-outlined text-sm text-indigo-600">local_shipping</span>
+            <span>نوبت‌ها</span>
+        </button>
+        <button type="button" id="mob-tab-btn-orders" onclick="switchCustomerView('orders')" class="px-3.5 py-2 rounded-xl bg-white border border-slate-200 text-slate-700 hover:border-primary shrink-0 flex items-center gap-1.5 cursor-pointer">
+            <span class="material-symbols-outlined text-sm text-indigo-600">receipt_long</span>
             <span>سفارشات</span>
-        </a>
-        <a href="#wallet-section" class="px-3.5 py-2 rounded-xl bg-white border border-slate-200 text-slate-700 hover:border-primary shrink-0 flex items-center gap-1.5">
+        </button>
+        <button type="button" id="mob-tab-btn-wallet" onclick="switchCustomerView('wallet')" class="px-3.5 py-2 rounded-xl bg-white border border-slate-200 text-slate-700 hover:border-primary shrink-0 flex items-center gap-1.5 cursor-pointer">
             <span class="material-symbols-outlined text-sm text-emerald-600">account_balance_wallet</span>
             <span>کیف پول</span>
-        </a>
-        <a href="#pets-section" class="px-3.5 py-2 rounded-xl bg-white border border-slate-200 text-slate-700 hover:border-primary shrink-0 flex items-center gap-1.5">
-            <span class="material-symbols-outlined text-sm text-amber-600">pets</span>
-            <span>پت پاسپورت</span>
-        </a>
-        <a href="#subscriptions-section" class="px-3.5 py-2 rounded-xl bg-white border border-slate-200 text-slate-700 hover:border-primary shrink-0 flex items-center gap-1.5">
+        </button>
+        <button type="button" id="mob-tab-btn-subscriptions" onclick="switchCustomerView('subscriptions')" class="px-3.5 py-2 rounded-xl bg-white border border-slate-200 text-slate-700 hover:border-primary shrink-0 flex items-center gap-1.5 cursor-pointer">
             <span class="material-symbols-outlined text-sm text-orange-600">autorenew</span>
             <span>اشتراک‌ها</span>
         </a>
-        <a href="profile_settings.php" class="px-3.5 py-2 rounded-xl bg-white border border-slate-200 text-slate-700 hover:border-primary shrink-0 flex items-center gap-1.5">
+        <a href="#personal-info" onclick="switchCustomerView('personal-info')" class="px-3.5 py-2 rounded-xl bg-white border border-slate-200 text-slate-700 hover:border-primary shrink-0 flex items-center gap-1.5">
             <span class="material-symbols-outlined text-sm text-slate-500">settings</span>
             <span>تنظیمات</span>
         </a>
@@ -476,7 +498,7 @@ $nextPayoutFormatted = $fmtDateText->format($nextThursday) . ' ساعت ۲۲:۰�
                 </div>
             </div>
             <div class="flex items-center gap-2.5 self-end md:self-center">
-                <a href="#orders-section" class="bg-white text-emerald-800 hover:bg-emerald-50 px-5 py-2.5 rounded-xl font-bold text-xs shadow-md transition-all flex items-center gap-1.5 active:scale-95">
+                <a href="#orders" onclick="switchCustomerView('orders')" class="bg-white text-emerald-800 hover:bg-emerald-50 px-5 py-2.5 rounded-xl font-bold text-xs shadow-md transition-all flex items-center gap-1.5 active:scale-95">
                     <span class="material-symbols-outlined text-base">receipt_long</span>
                     مشاهده فاکتور
                 </a>
@@ -488,14 +510,18 @@ $nextPayoutFormatted = $fmtDateText->format($nextThursday) . ' ساعت ۲۲:۰�
     </div>
 <?php endif; ?>
 <?php if ($error): ?>
-    <a href="profile_settings.php" class="block bg-error/10 text-error p-4 rounded-2xl flex items-center gap-3 border border-error/20 hover:bg-error/20 transition-colors cursor-pointer group mb-6">
+    <a href="#personal-info" onclick="switchCustomerView('personal-info')" class="block bg-error/10 text-error p-4 rounded-2xl flex items-center gap-3 border border-error/20 hover:bg-error/20 transition-colors cursor-pointer group mb-6">
         <span class="material-symbols-outlined group-hover:scale-110 transition-transform">error</span>
         <span class="font-bold text-sm flex-1"><?php echo htmlspecialchars($error); ?></span>
         <span class="material-symbols-outlined">chevron_left</span>
     </a>
 <?php endif; ?>
+
 <?php if ($isSeller): ?>
-<!-- Seller Overview Bento -->
+    <!-- ═══════════════════════════════════════════════════════════════════════ -->
+    <!-- COMMERCIAL SELLER SUITE (فروشندگان رسمی بازارگاه)                       -->
+    <!-- ═══════════════════════════════════════════════════════════════════════ -->
+    <!-- Seller Overview Bento -->
 <section id="seller-overview-section" class="glass-card rounded-3xl p-6 sm:p-8 border border-outline-variant shadow-lg flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 relative overflow-hidden bg-gradient-to-br from-white via-slate-50 to-emerald-50/30">
     <div class="absolute top-0 right-0 w-48 h-48 bg-emerald-500/5 rounded-full -mr-24 -mt-24 pointer-events-none"></div>
     <div class="flex items-center gap-5 relative z-10">
@@ -599,52 +625,8 @@ $nextPayoutFormatted = $fmtDateText->format($nextThursday) . ' ساعت ۲۲:۰�
         </div>
     </form>
 </section>
-<?php else: ?>
-<!-- Profile Overview Card (Intelligent Dashboard style) -->
-<section class="glass-card rounded-2xl p-8 border border-outline-variant shadow-lg flex flex-col lg:flex-row justify-between items-center gap-8 relative overflow-hidden">
-<div class="absolute top-0 right-0 w-32 h-32 bg-primary-container/5 rounded-full -mr-16 -mt-16"></div>
-<div class="flex items-center gap-6 relative z-10">
-<div class="w-20 h-20 rounded-2xl bg-primary-container flex items-center justify-center text-white font-bold text-3xl shadow-inner">
-                    <?php echo mb_substr(htmlspecialchars($user['name'] ?? 'ک'), 0, 1, 'UTF-8'); ?>
-                </div>
-<div>
-<h2 class="text-2xl font-bold text-on-surface"><?php echo htmlspecialchars($user['name'] ?? 'کاربر مهمان'); ?> عزیز، خوش آمدید</h2>
-<p class="text-sm text-on-surface-variant">
-    <?php if(count($pets) > 0): ?>
-        والدِ <span class="font-bold text-primary"><?php echo htmlspecialchars(implode(' و ', array_column($pets, 'name'))); ?></span> • 
-    <?php endif; ?>
-    عضو سطح طلایی
-</p>
-</div>
-</div>
-<div class="flex gap-4 items-center relative z-10">
-<div class="flex flex-col items-center bg-white px-6 py-4 rounded-2xl border border-outline-variant shadow-sm min-w-[140px]">
-<p class="text-[10px] uppercase tracking-wider text-on-surface-variant font-bold mb-1">امتیاز وفاداری</p>
-<p class="text-2xl font-bold text-secondary persian-number"><?php echo number_format($user['loyalty_points'] ?? 0); ?></p>
-</div>
-<div class="flex flex-col items-center bg-primary-container text-white px-6 py-4 rounded-2xl shadow-md min-w-[180px]">
-<p class="text-[10px] uppercase tracking-wider opacity-80 font-bold mb-1">نوبت بعدی</p>
-<div class="flex items-center gap-2">
-<span class="material-symbols-outlined text-sm">calendar_month</span>
-<?php if (!empty($appointments)): ?>
-    <p class="text-base font-bold persian-number"><?php 
-        $next_date = new DateTime($appointments[0]['appointment_date'] . ' ' . $appointments[0]['appointment_time']);
-        echo $fmtDateTime->format($next_date); 
-    ?></p>
-<?php else: ?>
-    <p class="text-base font-bold">ندارید</p>
-<?php endif; ?>
-</div>
-</div>
-</div>
-<a href="booking.php" class="bg-primary-container text-white px-8 py-3.5 rounded-xl font-bold text-sm hover:bg-primary transition-all active:scale-95 shadow-lg shadow-primary-container/20 flex items-center gap-2">
-                رزرو نوبت جدید
-            </a>
-</section>
-<?php endif; ?>
 
-<?php if ($isSeller): ?>
-<!-- ─── Marketplace Escrow Wallet & Weekly Payout Section (Sellers only) ───────── -->
+    <!-- ─── Marketplace Escrow Wallet & Weekly Payout Section (Sellers only) ───────── -->
 <section id="wallet-section" class="bg-surface-container-lowest rounded-3xl border border-outline-variant shadow-sm overflow-hidden p-6 md:p-8 space-y-6">
     <!-- Header with Next Payout Countdown Banner -->
     <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-6 border-b border-outline-variant/60 pb-6">
@@ -1131,158 +1113,8 @@ function updateShebaPreview(input) {
     }
     document.getElementById('cardPreviewSheba').innerText = val.length > 8 ? (val.substring(0, 8) + '...' + val.slice(-4)) : (val || 'IR••••');
 }
-<?php else: ?>
-<!-- ─── User Digital Credit Wallet Section (No Payout / IBAN Clutter) ──────── -->
-<section id="wallet-section" class="bg-surface-container-lowest rounded-3xl border border-outline-variant shadow-sm overflow-hidden p-6 md:p-8 space-y-6">
-    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-outline-variant/60 pb-5">
-        <div>
-            <div class="flex items-center gap-2">
-                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-500/10 text-indigo-800 font-bold text-xs border border-indigo-500/20">
-                    <span class="material-symbols-outlined text-sm text-indigo-600">account_balance_wallet</span>
-                    کیف پول دیجیتال اعتباری آسنا
-                </span>
-                <span class="text-xs text-on-surface-variant font-medium">• پرداخت سریع ۱-کلیکه و تمدید خودکار اشتراک</span>
-            </div>
-            <h3 class="text-xl md:text-2xl font-black text-primary mt-2 flex items-center gap-2">
-                <span class="material-symbols-outlined text-2xl text-indigo-600">wallet</span>
-                مدیریت اعتبار و کیف پول دیجیتال
-            </h3>
-            <p class="text-xs text-on-surface-variant mt-1 max-w-2xl leading-relaxed">
-                با شارژ کیف پول خود، می‌توانید بدون نیاز به ورود به درگاه بانکی در هر سفارش، محصولات مورد نیاز پت خود را با ۱ کلیک خریداری کرده و هزینه تمدید دوره‌ای اشتراک‌های درمانی (اتوشیپ) را به صورت خودکار پرداخت کنید.
-            </p>
-        </div>
 
-        <button type="button" onclick="document.getElementById('chargeWalletModal').classList.remove('hidden')" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs px-5 py-3 rounded-2xl shadow-md shadow-indigo-600/20 flex items-center gap-2 transition-all">
-            <span class="material-symbols-outlined text-base">add_circle</span>
-            <span>افزایش موجودی و شارژ کیف پول</span>
-        </button>
-    </div>
-
-    <!-- 3 User Metric Cards -->
-    <div class="grid grid-cols-1 sm:grid-cols-3 gap-5">
-        <div class="rounded-2xl p-5 bg-gradient-to-br from-indigo-50 to-white border border-indigo-200/80 shadow-sm flex flex-col justify-between">
-            <div class="flex items-center justify-between">
-                <span class="text-xs font-bold text-indigo-800">موجودی فعلی کیف پول</span>
-                <span class="material-symbols-outlined text-indigo-600">payments</span>
-            </div>
-            <div class="text-2xl sm:text-3xl font-black text-indigo-900 mt-2 font-mono">
-                <?= number_format($userDigitalWallet['balance'] ?? 0) ?> <span class="text-xs font-normal text-slate-500">تومان</span>
-            </div>
-            <p class="text-[11px] text-slate-500 mt-3 pt-2 border-t border-indigo-100">آماده برای خرید کالا، خدمات و تمدید خودکار اشتراک</p>
-        </div>
-
-        <div class="rounded-2xl p-5 bg-gradient-to-br from-teal-50 to-white border border-teal-200/80 shadow-sm flex flex-col justify-between">
-            <div class="flex items-center justify-between">
-                <span class="text-xs font-bold text-teal-800">اتصال به تمدید خودکار اشتراک‌ها (اتوشیپ)</span>
-                <span class="material-symbols-outlined text-teal-600">autorenew</span>
-            </div>
-            <div class="text-sm font-bold text-teal-900 mt-2 flex items-center gap-2">
-                <span class="w-2.5 h-2.5 rounded-full bg-teal-500 animate-pulse"></span>
-                <span>پرداخت خودکار فعال</span>
-            </div>
-            <p class="text-[11px] text-slate-500 mt-3 pt-2 border-t border-teal-100">در سررسید اشتراک، بسته پت بدون معطلی آماده و ارسال می‌شود</p>
-        </div>
-
-        <div class="rounded-2xl p-5 bg-gradient-to-br from-amber-50 to-white border border-amber-200/80 shadow-sm flex flex-col justify-between">
-            <div class="flex items-center justify-between">
-                <span class="text-xs font-bold text-amber-800">خرید سریع ۱-کلیکه</span>
-                <span class="material-symbols-outlined text-amber-600">bolt</span>
-            </div>
-            <div class="text-sm font-bold text-amber-900 mt-2">
-                ثبت سفارش بدون نیاز به رمز پویا
-            </div>
-            <p class="text-[11px] text-slate-500 mt-3 pt-2 border-t border-amber-100">در سبد خرید، گزینه «پرداخت با کیف پول اعتباری» فعال است</p>
-        </div>
-    </div>
-
-    <!-- Transactions History -->
-    <div class="space-y-3">
-        <h4 class="text-sm font-black text-slate-800 flex items-center gap-2">
-            <span class="material-symbols-outlined text-slate-500 text-lg">receipt_long</span>
-            گردش تراکنش‌های کیف پول شما
-        </h4>
-        <div class="overflow-x-auto border border-outline-variant/40 rounded-2xl">
-            <table class="w-full text-right text-xs">
-                <thead class="bg-slate-50 text-slate-600 font-bold border-b border-slate-200">
-                    <tr>
-                        <th class="p-3.5">کد رهگیری</th>
-                        <th class="p-3.5">نوع تراکنش</th>
-                        <th class="p-3.5">شرح تراکنش</th>
-                        <th class="p-3.5">مبلغ</th>
-                        <th class="p-3.5">تاریخ و ساعت</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-slate-100 text-slate-700">
-                    <?php if (empty($userWalletTransactions)): ?>
-                        <tr>
-                            <td colspan="5" class="p-8 text-center text-slate-400 font-medium">
-                                هنوز تراکنشی در کیف پول شما ثبت نشده است. با کلیک بر روی «افزایش موجودی»، کیف پول خود را شارژ نمایید.
-                            </td>
-                        </tr>
-                    <?php else: ?>
-                        <?php foreach ($userWalletTransactions as $tx): 
-                            $isDeposit = in_array($tx['type'], ['deposit', 'cashback', 'refund']);
-                        ?>
-                            <tr class="hover:bg-slate-50/70">
-                                <td class="p-3.5 font-mono text-slate-500"><?= htmlspecialchars($tx['reference_id'] ?: ('TX-' . $tx['id'])) ?></td>
-                                <td class="p-3.5">
-                                    <?php if ($isDeposit): ?>
-                                        <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">واریز / شارژ اعتبار</span>
-                                    <?php else: ?>
-                                        <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-800">کسر / پرداخت سفارش</span>
-                                    <?php endif; ?>
-                                </td>
-                                <td class="p-3.5"><?= htmlspecialchars($tx['description']) ?></td>
-                                <td class="p-3.5 font-mono font-bold <?= $isDeposit ? 'text-emerald-600' : 'text-rose-600' ?>">
-                                    <?= $isDeposit ? '+' : '-' ?><?= number_format($tx['amount']) ?> تومان
-                                </td>
-                                <td class="p-3.5 font-mono text-slate-400"><?= htmlspecialchars($tx['created_at']) ?></td>
-                            </tr>
-                        <?php endforeach; ?>
-                    <?php endif; ?>
-                </tbody>
-            </table>
-        </div>
-    </div>
-</section>
-
-<!-- Modal for Quick Wallet Charge -->
-<div id="chargeWalletModal" class="hidden fixed inset-0 bg-slate-900/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
-    <div class="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl space-y-4">
-        <div class="flex items-center justify-between border-b border-slate-100 pb-3">
-            <h3 class="text-sm font-black text-slate-900 flex items-center gap-2">
-                <span class="material-symbols-outlined text-indigo-600">account_balance_wallet</span>
-                شارژ آنلاین کیف پول اعتباری آسنا
-            </h3>
-            <button onclick="document.getElementById('chargeWalletModal').classList.add('hidden')" class="text-slate-400 hover:text-slate-600">
-                <span class="material-symbols-outlined">close</span>
-            </button>
-        </div>
-        <form method="POST" action="profile.php" class="space-y-4">
-            <?= csrf_field() ?>
-            <input type="hidden" name="action" value="charge_user_wallet">
-            <div>
-                <label class="block text-xs font-bold text-slate-700 mb-1.5">مبلغ شارژ (تومان)</label>
-                <input type="number" name="amount" id="charge_amount_input" min="10000" step="10000" required value="200000" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-indigo-500 font-mono outline-none">
-            </div>
-            <!-- Quick Preset Pills -->
-            <div class="flex items-center gap-2 flex-wrap">
-                <button type="button" onclick="document.getElementById('charge_amount_input').value=100000" class="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-[11px] font-bold text-slate-700">۱۰۰ هزار</button>
-                <button type="button" onclick="document.getElementById('charge_amount_input').value=250000" class="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-[11px] font-bold text-slate-700">۲۵۰ هزار</button>
-                <button type="button" onclick="document.getElementById('charge_amount_input').value=500000" class="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-[11px] font-bold text-slate-700">۵۰۰ هزار</button>
-                <button type="button" onclick="document.getElementById('charge_amount_input').value=1000000" class="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-[11px] font-bold text-slate-700">۱ میلیون</button>
-            </div>
-            <div class="pt-2 flex justify-end gap-2">
-                <button type="button" onclick="document.getElementById('chargeWalletModal').classList.add('hidden')" class="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-xs font-bold text-slate-700">انصراف</button>
-                <button type="submit" class="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-md">پرداخت و شارژ آنی</button>
-            </div>
-        </form>
-    </div>
-</div>
-<?php endif; ?>
-
-<?php if ($isSeller): ?>
-<!-- ═══════════════════════════════════════════════════════════════════════════ -->
+    <!-- ═══════════════════════════════════════════════════════════════════════════ -->
 <!-- COMMERCIAL SELLER SUITE: Orders & Product Catalog Management              -->
 <!-- ═══════════════════════════════════════════════════════════════════════════ -->
 
@@ -1547,13 +1379,846 @@ function updateShebaPreview(input) {
     <?php endif; ?>
 </section>
 
-<?php else: ?>
-<!-- Standard Customer Grid Layout -->
-<div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
 
-<!-- Right Column: Appointments & History -->
-<div class="lg:col-span-8 space-y-8">
-<!-- Upcoming Appointments (High Fidelity) -->
+<?php else: ?>
+    <!-- ═══════════════════════════════════════════════════════════════════════ -->
+    <!-- ENTERPRISE CUSTOMER SUITE (دیجی‌کالا گرید: ۸ نمای تفکیک‌شده و واکنش‌گرا)  -->
+    <!-- ═══════════════════════════════════════════════════════════════════════ -->
+    
+    <!-- ═══════════════════════════════════════════════════════════════════════ -->
+    <!-- VIEW 1: Overview (پیشخوان و خلاصه جامع وضعیت کاربری)                     -->
+    <!-- ═══════════════════════════════════════════════════════════════════════ -->
+    <div id="view-overview" class="customer-view space-y-6">
+        <!-- 1. Hero Welcome Bento Banner -->
+        <div class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary via-[#001f5c] to-secondary-container text-white p-6 sm:p-8 shadow-xl border border-white/10">
+            <div class="absolute -top-12 -right-12 w-64 h-64 bg-secondary-container/20 rounded-full blur-3xl pointer-events-none"></div>
+            <div class="absolute -bottom-12 -left-12 w-64 h-64 bg-primary-container/30 rounded-full blur-3xl pointer-events-none"></div>
+
+            <div class="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+                <div class="flex items-center gap-5">
+                    <div class="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-white/15 backdrop-blur-md border border-white/20 flex items-center justify-center text-white font-black text-2xl sm:text-3xl shadow-inner shrink-0">
+                        <?= mb_substr(htmlspecialchars($user['name'] ?? 'ک'), 0, 1, 'UTF-8') ?>
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2 flex-wrap mb-1.5">
+                            <span class="px-3 py-0.5 rounded-full bg-secondary-container/30 text-white text-xs font-black border border-white/20 flex items-center gap-1">
+                                <span class="material-symbols-outlined text-xs">star</span>
+                                کاربر سطح طلایی آسنا
+                            </span>
+                            <span class="text-xs text-white/80 font-medium persian-number">همراه: <?= htmlspecialchars($user['phone'] ?? '') ?></span>
+                        </div>
+                        <h2 class="text-xl sm:text-2xl font-black text-white"><?= htmlspecialchars($user['name'] ?? 'کاربر محترم') ?> عزیز، خوش آمدید 👋</h2>
+                        <p class="text-xs text-white/80 mt-1">
+                            <?php if (count($pets) > 0): ?>
+                                سرپرست مهربانِ <span class="font-bold text-amber-300"><?= htmlspecialchars(implode(' و ', array_column($pets, 'name'))) ?></span>
+                            <?php else: ?>
+                                به سامانه جامع سلامت، داروخانه و مراقبت هوشمند حیوانات خانگی آسنا خوش آمدید
+                            <?php endif; ?>
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Quick Action Buttons -->
+                <div class="flex items-center gap-2.5 flex-wrap">
+                    <a href="booking.php" class="px-4 py-2.5 rounded-xl bg-white text-primary hover:bg-slate-100 font-bold text-xs shadow-md transition-all flex items-center gap-1.5 active:scale-95">
+                        <span class="material-symbols-outlined text-base text-secondary-container">calendar_month</span>
+                        رزرو نوبت پزشک
+                    </a>
+                    <a href="subscriptions.php" class="px-4 py-2.5 rounded-xl bg-secondary-container hover:bg-[#ea580c] text-white font-bold text-xs shadow-md transition-all flex items-center gap-1.5 active:scale-95">
+                        <span class="material-symbols-outlined text-base">cached</span>
+                        اشتراک اتوشیپ
+                    </a>
+                </div>
+            </div>
+
+            <!-- 4 Quick Overview Metrics Strip -->
+            <div class="relative z-10 grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 pt-6 border-t border-white/15">
+                <div class="bg-white/10 backdrop-blur-sm rounded-2xl p-3.5 border border-white/10">
+                    <p class="text-[11px] text-white/70 font-bold mb-0.5">موجودی کیف پول</p>
+                    <p class="text-base font-black text-white persian-number font-mono">
+                        <?= number_format($userDigitalWallet['balance'] ?? 0) ?> <span class="text-[10px] font-normal text-white/70">تومان</span>
+                    </p>
+                </div>
+                <div class="bg-white/10 backdrop-blur-sm rounded-2xl p-3.5 border border-white/10">
+                    <p class="text-[11px] text-white/70 font-bold mb-0.5">امتیاز وفاداری</p>
+                    <a href="rewards.php" class="text-base font-black text-amber-300 persian-number hover:underline flex items-center gap-1">
+                        <?= number_format($user['loyalty_points'] ?? 0) ?> <span class="text-[10px] font-normal text-white/70">امتیاز</span>
+                    </a>
+                </div>
+                <div class="bg-white/10 backdrop-blur-sm rounded-2xl p-3.5 border border-white/10">
+                    <p class="text-[11px] text-white/70 font-bold mb-0.5">پت‌های ثبت شده</p>
+                    <p class="text-base font-black text-white persian-number">
+                        <?= count($pets) ?> <span class="text-[10px] font-normal text-white/70">حیوان</span>
+                    </p>
+                </div>
+                <div class="bg-white/10 backdrop-blur-sm rounded-2xl p-3.5 border border-white/10">
+                    <p class="text-[11px] text-white/70 font-bold mb-0.5">نوبت‌های فعال</p>
+                    <p class="text-base font-black text-white persian-number">
+                        <?= count($appointments) ?> <span class="text-[10px] font-normal text-white/70">نوبت</span>
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. Digikala-Style Quick Summary Bento (Personal Info & Address) -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <!-- Card 1: اطلاعات فردی و شناسنامه کاربری -->
+            <div class="bg-surface-container-lowest rounded-3xl border border-outline-variant p-6 shadow-sm flex flex-col justify-between hover:shadow-md transition-all">
+                <div class="space-y-4">
+                    <div class="flex items-center justify-between pb-3 border-b border-outline-variant/50">
+                        <div class="flex items-center gap-2.5">
+                            <div class="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
+                                <span class="material-symbols-outlined text-xl">badge</span>
+                            </div>
+                            <div>
+                                <h3 class="text-sm font-black text-primary">اطلاعات هویتی و فردی</h3>
+                                <p class="text-[11px] text-on-surface-variant">مشخصات سجلی و ارتباطی حساب کاربری</p>
+                            </div>
+                        </div>
+                        <?php if (!empty($user['national_id'])): ?>
+                            <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1">
+                                <span class="material-symbols-outlined text-xs">verified</span>
+                                تکمیل شده
+                            </span>
+                        <?php else: ?>
+                            <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-50 text-amber-700 border border-amber-200 flex items-center gap-1">
+                                <span class="material-symbols-outlined text-xs">warning</span>
+                                نیازمند کد ملی
+                            </span>
+                        <?php endif; ?>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3 text-xs">
+                        <div class="bg-surface-container-low/60 p-3 rounded-xl border border-outline-variant/40">
+                            <span class="text-[10px] text-on-surface-variant block mb-0.5">نام و نام خانوادگی:</span>
+                            <span class="font-bold text-slate-800"><?= htmlspecialchars($user['name'] ?? 'ثبت نشده') ?></span>
+                        </div>
+                        <div class="bg-surface-container-low/60 p-3 rounded-xl border border-outline-variant/40">
+                            <span class="text-[10px] text-on-surface-variant block mb-0.5">کد ملی:</span>
+                            <span class="font-mono font-bold text-slate-800"><?= htmlspecialchars($user['national_id'] ?? 'ثبت نشده') ?></span>
+                        </div>
+                        <div class="bg-surface-container-low/60 p-3 rounded-xl border border-outline-variant/40">
+                            <span class="text-[10px] text-on-surface-variant block mb-0.5">شماره همراه:</span>
+                            <span class="font-mono font-bold text-slate-800 dir-ltr text-right"><?= htmlspecialchars($user['phone'] ?? 'ثبت نشده') ?></span>
+                        </div>
+                        <div class="bg-surface-container-low/60 p-3 rounded-xl border border-outline-variant/40 truncate">
+                            <span class="text-[10px] text-on-surface-variant block mb-0.5">پست الکترونیک:</span>
+                            <span class="font-mono font-bold text-slate-800 truncate text-[11px]"><?= htmlspecialchars($user['email'] ?? 'ثبت نشده') ?></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="pt-4 mt-2 border-t border-outline-variant/40 flex justify-end">
+                    <button type="button" onclick="switchCustomerView('personal-info')" class="text-xs font-bold text-primary hover:text-primary-container flex items-center gap-1 group">
+                        <span>مشاهده و ویرایش اطلاعات فردی</span>
+                        <span class="material-symbols-outlined text-base group-hover:-translate-x-1 transition-transform">arrow_left</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Card 2: نشانی تحویل پیش‌فرض مرسولات -->
+            <div class="bg-surface-container-lowest rounded-3xl border border-outline-variant p-6 shadow-sm flex flex-col justify-between hover:shadow-md transition-all">
+                <div class="space-y-4">
+                    <div class="flex items-center justify-between pb-3 border-b border-outline-variant/50">
+                        <div class="flex items-center gap-2.5">
+                            <div class="w-10 h-10 rounded-xl bg-secondary-container/10 text-secondary-container flex items-center justify-center">
+                                <span class="material-symbols-outlined text-xl">location_on</span>
+                            </div>
+                            <div>
+                                <h3 class="text-sm font-black text-primary">نشانی تحویل مرسولات</h3>
+                                <p class="text-[11px] text-on-surface-variant">مقصد ارسال داروها، غذاها و بسته‌های پت‌شاپ</p>
+                            </div>
+                        </div>
+                        <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-blue-50 text-blue-700 border border-blue-200">
+                            <?= htmlspecialchars($user['city'] ?? 'تبریز') ?>
+                        </span>
+                    </div>
+
+                    <div class="bg-surface-container-low/60 p-3.5 rounded-xl border border-outline-variant/40 space-y-2">
+                        <p class="text-xs font-bold text-slate-800 leading-relaxed">
+                            <span class="material-symbols-outlined text-xs text-secondary-container align-middle">home_pin</span>
+                            <?= htmlspecialchars($user['address'] ?: 'هنوز نشانی پستی برای این حساب ثبت نشده است.') ?>
+                        </p>
+                        <div class="flex items-center justify-between text-[11px] text-on-surface-variant pt-2 border-t border-outline-variant/30">
+                            <span>کد پستی: <strong class="font-mono text-slate-800"><?= htmlspecialchars($user['postal_code'] ?? 'ثبت نشده') ?></strong></span>
+                            <span>موقعیت نقشه: <strong class="text-emerald-700"><?= !empty($user['latitude']) ? 'ثبت روی نقشه ✔' : 'تنظیم نشده' ?></strong></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="pt-4 mt-2 border-t border-outline-variant/40 flex justify-end">
+                    <button type="button" onclick="switchCustomerView('addresses')" class="text-xs font-bold text-secondary-container hover:underline flex items-center gap-1 group">
+                        <span>مدیریت آدرس‌ها و موقعیت نقشه</span>
+                        <span class="material-symbols-outlined text-base group-hover:-translate-x-1 transition-transform">arrow_left</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. Two-Column Activity Dashboard -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <!-- Right Column: Appointments & Orders (8 cols) -->
+            <div class="lg:col-span-8 space-y-6">
+                <!-- Recent Appointments Preview -->
+                <div class="bg-surface-container-lowest rounded-3xl border border-outline-variant shadow-sm p-6 space-y-4">
+                    <div class="flex items-center justify-between pb-3 border-b border-outline-variant/50">
+                        <div class="flex items-center gap-2">
+                            <span class="material-symbols-outlined text-teal-600">calendar_month</span>
+                            <h3 class="text-sm font-black text-primary">نوبت‌های ویزیت و مشاوره پیش‌رو</h3>
+                        </div>
+                        <button type="button" onclick="switchCustomerView('appointments')" class="text-xs font-bold text-primary hover:underline">
+                            مشاهده همه (<?= count($appointments) ?>)
+                        </button>
+                    </div>
+
+                    <?php if (empty($appointments)): ?>
+                        <div class="text-center py-6 text-on-surface-variant space-y-2">
+                            <p class="text-xs font-bold">شما در حال حاضر نوبت رزرو شده‌ای ندارید.</p>
+                            <a href="booking.php" class="inline-flex items-center gap-1 text-xs font-bold text-primary hover:underline">
+                                <span class="material-symbols-outlined text-sm">add_circle</span> رزرو اولین نوبت آنلاین
+                            </a>
+                        </div>
+                    <?php else: ?>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <?php foreach (array_slice($appointments, 0, 2) as $apt): ?>
+                                <div class="p-4 rounded-2xl border border-outline-variant/60 bg-white hover:border-primary/40 transition-all space-y-3 shadow-sm">
+                                    <div class="flex items-center gap-3">
+                                        <img src="<?= htmlspecialchars($apt['doctor_image'] ?? 'assets/images/vet-avatar.jpg') ?>" class="w-12 h-12 rounded-xl object-cover border border-slate-200" alt="دکتر">
+                                        <div class="min-w-0 flex-1">
+                                            <h4 class="text-xs font-black text-slate-900 truncate"><?= htmlspecialchars($apt['doctor_name']) ?></h4>
+                                            <p class="text-[11px] text-slate-500 truncate"><?= htmlspecialchars($apt['doctor_specialty']) ?></p>
+                                        </div>
+                                        <span class="px-2 py-0.5 rounded-full text-[10px] font-bold <?= $apt['status'] === 'approved' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700' ?>">
+                                            <?= $apt['status'] === 'approved' ? 'تایید شده' : 'در انتظار' ?>
+                                        </span>
+                                    </div>
+                                    <div class="bg-slate-50 p-2.5 rounded-xl text-[11px] font-bold text-slate-700 flex items-center justify-between">
+                                        <span><?= $fmtDateText->format(new DateTime($apt['appointment_date'])) ?></span>
+                                        <span>ساعت <?= substr($apt['appointment_time'], 0, 5) ?></span>
+                                    </div>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                    <?php endif; ?>
+                </div>
+
+                <!-- Recent Orders Preview -->
+                <div class="bg-surface-container-lowest rounded-3xl border border-outline-variant shadow-sm p-6 space-y-4">
+                    <div class="flex items-center justify-between pb-3 border-b border-outline-variant/50">
+                        <div class="flex items-center gap-2">
+                            <span class="material-symbols-outlined text-indigo-600">receipt_long</span>
+                            <h3 class="text-sm font-black text-primary">آخرین سفارشات پت‌شاپ و داروخانه</h3>
+                        </div>
+                        <button type="button" onclick="switchCustomerView('orders')" class="text-xs font-bold text-primary hover:underline">
+                            مشاهده همه (<?= count($orders) ?>)
+                        </button>
+                    </div>
+
+                    <?php if (empty($orders)): ?>
+                        <div class="text-center py-6 text-on-surface-variant space-y-2">
+                            <p class="text-xs font-bold">هنوز سفارشی ثبت نکرده‌اید.</p>
+                            <a href="pharmacy.php" class="inline-flex items-center gap-1 text-xs font-bold text-primary hover:underline">
+                                <span class="material-symbols-outlined text-sm">local_pharmacy</span> مشاهده داروخانه و پت‌شاپ
+                            </a>
+                        </div>
+                    <?php else: ?>
+                        <div class="space-y-3">
+                            <?php foreach (array_slice($orders, 0, 2) as $ord): ?>
+                                <div class="p-4 rounded-2xl border border-outline-variant/60 bg-white hover:border-primary/40 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-600 font-mono font-bold text-xs">
+                                            #<?= $ord['id'] ?>
+                                        </div>
+                                        <div>
+                                            <div class="flex items-center gap-2">
+                                                <span class="text-xs font-bold text-slate-800 font-mono">سفارش #PC-<?= $ord['id'] ?></span>
+                                                <span class="text-[10px] px-2 py-0.5 rounded-full font-bold bg-blue-50 text-blue-700">
+                                                    <?= $ord['status'] === 'delivered' ? 'تحویل داده شده' : 'در حال پردازش' ?>
+                                                </span>
+                                            </div>
+                                            <span class="text-[11px] text-slate-400 persian-number"><?= $fmtDateText->format(new DateTime($ord['created_at'])) ?></span>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center justify-between sm:justify-end gap-4 text-xs">
+                                        <span class="font-black text-emerald-700 persian-number"><?= number_format($ord['total_amount']) ?> تومان</span>
+                                        <button type="button" onclick="switchCustomerView('orders')" class="text-primary font-bold text-xs hover:underline">مشاهده جزییات</button>
+                                    </div>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                    <?php endif; ?>
+                </div>
+            </div>
+
+            <!-- Left Column: Pets & Subscriptions Widgets (4 cols) -->
+            <div class="lg:col-span-4 space-y-6">
+                <!-- Pets Widget -->
+                <div class="bg-surface-container-lowest rounded-3xl border border-outline-variant shadow-sm p-6 space-y-4">
+                    <div class="flex items-center justify-between pb-3 border-b border-outline-variant/50">
+                        <div class="flex items-center gap-2">
+                            <span class="material-symbols-outlined text-amber-600">pets</span>
+                            <h3 class="text-sm font-black text-primary">حیوانات خانگی من</h3>
+                        </div>
+                        <button type="button" onclick="switchCustomerView('pets')" class="text-xs font-bold text-primary hover:underline">
+                            مدیریت
+                        </button>
+                    </div>
+
+                    <?php if (empty($pets)): ?>
+                        <div class="text-center py-4 space-y-2">
+                            <p class="text-xs text-on-surface-variant">هنوز حیوانی ثبت نشده است.</p>
+                            <button type="button" onclick="document.getElementById('addPetModal').classList.remove('hidden')" class="w-full py-2 bg-primary/10 text-primary text-xs font-bold rounded-xl hover:bg-primary hover:text-white transition-colors">
+                                + افزودن حیوان جدید
+                            </button>
+                        </div>
+                    <?php else: ?>
+                        <div class="space-y-2.5">
+                            <?php foreach (array_slice($pets, 0, 3) as $pt): ?>
+                                <div class="flex items-center gap-3 p-2.5 rounded-xl bg-surface-container-low/50 border border-outline-variant/30">
+                                    <div class="w-9 h-9 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                                        <span class="material-symbols-outlined text-lg"><?= $pt['type'] === 'گربه' ? 'cat' : ($pt['type'] === 'سگ' ? 'dog' : 'pets') ?></span>
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <h4 class="text-xs font-bold text-slate-800 truncate"><?= htmlspecialchars($pt['name']) ?></h4>
+                                        <p class="text-[10px] text-slate-400"><?= htmlspecialchars($pt['type']) ?> • <?= htmlspecialchars($pt['race'] ?? 'نژاد نامشخص') ?></p>
+                                    </div>
+                                </div>
+                            <?php endforeach; ?>
+                            <button type="button" onclick="switchCustomerView('pets')" class="w-full py-2 border border-dashed border-outline-variant rounded-xl text-xs font-bold text-slate-600 hover:text-primary hover:border-primary transition-colors">
+                                مشاهده شناسنامه همه پت‌ها (<?= count($pets) ?>)
+                            </button>
+                        </div>
+                    <?php endif; ?>
+                </div>
+
+                <!-- Subscriptions Widget -->
+                <div class="bg-surface-container-lowest rounded-3xl border border-outline-variant shadow-sm p-6 space-y-4">
+                    <div class="flex items-center justify-between pb-3 border-b border-outline-variant/50">
+                        <div class="flex items-center gap-2">
+                            <span class="material-symbols-outlined text-orange-600">autorenew</span>
+                            <h3 class="text-sm font-black text-primary">اشتراک‌های دوره‌ای اتوشیپ</h3>
+                        </div>
+                        <button type="button" onclick="switchCustomerView('subscriptions')" class="text-xs font-bold text-secondary-container hover:underline">
+                            مدیریت
+                        </button>
+                    </div>
+                    <p class="text-xs text-on-surface-variant leading-relaxed">
+                        بسته‌های غذایی و درمانی با ۱۵٪ تخفیف بدون دغدغه اتمام و سر وقت برای شما ارسال می‌شوند.
+                    </p>
+                    <button type="button" onclick="switchCustomerView('subscriptions')" class="w-full py-2.5 rounded-xl bg-secondary-container hover:bg-[#ea580c] text-white font-bold text-xs shadow-md transition-all flex items-center justify-center gap-1.5">
+                        <span class="material-symbols-outlined text-base">local_shipping</span>
+                        <span>مشاهده وضعیت اشتراک‌های فعال</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    
+    <!-- ═══════════════════════════════════════════════════════════════════════ -->
+    <!-- VIEW 2: Personal Info (اطلاعات فردی و شناسنامه کاربری - استاندارد دیجی‌کالا)-->
+    <!-- ═══════════════════════════════════════════════════════════════════════ -->
+    <div id="view-personal-info" class="customer-view space-y-6 hidden">
+        <!-- Header -->
+        <div class="bg-surface-container-lowest rounded-3xl border border-outline-variant p-6 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+                <div class="flex items-center gap-2">
+                    <span class="px-3 py-0.5 rounded-full bg-primary/10 text-primary font-black text-xs border border-primary/20">
+                        مرکز هویت و امنیت کاربری
+                    </span>
+                    <span class="text-xs text-on-surface-variant">• استاندارد دیجی‌کالا و مراجع نظارتی</span>
+                </div>
+                <h3 class="text-xl font-black text-primary mt-1.5 flex items-center gap-2">
+                    <span class="material-symbols-outlined text-2xl text-primary">account_circle</span>
+                    اطلاعات فردی و شناسنامه کاربری
+                </h3>
+                <p class="text-xs text-on-surface-variant mt-1">مشخصات سجلی شما برای صدور فاکتورهای رسمی ماده ۱۶۹ و خدمات بالینی ثبت و محرمانه نگهداری می‌شود.</p>
+            </div>
+            <button type="button" onclick="openEditPersonalInfoModal()" class="px-5 py-2.5 rounded-xl bg-primary hover:bg-primary-hover text-white font-bold text-xs shadow-md transition-all flex items-center gap-1.5 self-start sm:self-auto">
+                <span class="material-symbols-outlined text-base">edit</span>
+                <span>ویرایش اطلاعات فردی</span>
+            </button>
+        </div>
+
+        <!-- Digikala 6-Card Bento Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            <!-- Card 1: Full Name -->
+            <div class="bg-white rounded-2xl border border-outline-variant/80 p-5 shadow-sm hover:border-primary/50 transition-all flex flex-col justify-between space-y-4">
+                <div class="flex items-start justify-between">
+                    <div>
+                        <span class="text-xs text-slate-400 font-bold block mb-1">نام و نام خانوادگی</span>
+                        <h4 class="text-base font-black text-slate-900"><?= htmlspecialchars($user['name'] ?? 'ثبت نشده') ?></h4>
+                    </div>
+                    <div class="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
+                        <span class="material-symbols-outlined text-xl">person</span>
+                    </div>
+                </div>
+                <button type="button" onclick="openEditPersonalInfoModal()" class="text-xs font-bold text-primary hover:underline flex items-center gap-1">
+                    <span class="material-symbols-outlined text-sm">edit</span> ویرایش نام
+                </button>
+            </div>
+
+            <!-- Card 2: National ID -->
+            <div class="bg-white rounded-2xl border border-outline-variant/80 p-5 shadow-sm hover:border-primary/50 transition-all flex flex-col justify-between space-y-4">
+                <div class="flex items-start justify-between">
+                    <div>
+                        <span class="text-xs text-slate-400 font-bold block mb-1">کد ملی ۱۰ رقمی</span>
+                        <h4 class="text-base font-mono font-black text-slate-900"><?= htmlspecialchars($user['national_id'] ?? 'ثبت نشده') ?></h4>
+                    </div>
+                    <div class="w-10 h-10 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center">
+                        <span class="material-symbols-outlined text-xl">badge</span>
+                    </div>
+                </div>
+                <div class="flex items-center justify-between">
+                    <?php if (!empty($user['national_id'])): ?>
+                        <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">ثبت در سامانه مودیان</span>
+                    <?php else: ?>
+                        <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200">نیازمند ثبت کد ملی</span>
+                    <?php endif; ?>
+                    <button type="button" onclick="openEditPersonalInfoModal()" class="text-xs font-bold text-primary hover:underline">ویرایش</button>
+                </div>
+            </div>
+
+            <!-- Card 3: Phone Number -->
+            <div class="bg-white rounded-2xl border border-outline-variant/80 p-5 shadow-sm hover:border-primary/50 transition-all flex flex-col justify-between space-y-4">
+                <div class="flex items-start justify-between">
+                    <div>
+                        <span class="text-xs text-slate-400 font-bold block mb-1">شماره تلفن همراه</span>
+                        <h4 class="text-base font-mono font-black text-slate-900 dir-ltr text-right"><?= htmlspecialchars($user['phone'] ?? 'ثبت نشده') ?></h4>
+                    </div>
+                    <div class="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center">
+                        <span class="material-symbols-outlined text-xl">smartphone</span>
+                    </div>
+                </div>
+                <div class="flex items-center justify-between">
+                    <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">تایید شده با پیامک</span>
+                    <span class="text-[11px] text-slate-400">شناسه ورود</span>
+                </div>
+            </div>
+
+            <!-- Card 4: Email -->
+            <div class="bg-white rounded-2xl border border-outline-variant/80 p-5 shadow-sm hover:border-primary/50 transition-all flex flex-col justify-between space-y-4">
+                <div class="flex items-start justify-between">
+                    <div class="min-w-0">
+                        <span class="text-xs text-slate-400 font-bold block mb-1">پست الکترونیک (ایمیل)</span>
+                        <h4 class="text-sm font-mono font-bold text-slate-900 truncate"><?= htmlspecialchars($user['email'] ?? 'ثبت نشده') ?></h4>
+                    </div>
+                    <div class="w-10 h-10 rounded-xl bg-purple-50 text-purple-700 flex items-center justify-center shrink-0">
+                        <span class="material-symbols-outlined text-xl">mail</span>
+                    </div>
+                </div>
+                <button type="button" onclick="openEditPersonalInfoModal()" class="text-xs font-bold text-primary hover:underline flex items-center gap-1">
+                    <span class="material-symbols-outlined text-sm">edit</span> تغییر ایمیل
+                </button>
+            </div>
+
+            <!-- Card 5: Password -->
+            <div class="bg-white rounded-2xl border border-outline-variant/80 p-5 shadow-sm hover:border-primary/50 transition-all flex flex-col justify-between space-y-4">
+                <div class="flex items-start justify-between">
+                    <div>
+                        <span class="text-xs text-slate-400 font-bold block mb-1">کلمه عبور حساب کاربری</span>
+                        <h4 class="text-base font-mono font-black text-slate-900 tracking-widest">••••••••••••</h4>
+                    </div>
+                    <div class="w-10 h-10 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center">
+                        <span class="material-symbols-outlined text-xl">lock</span>
+                    </div>
+                </div>
+                <button type="button" onclick="openChangePasswordModal()" class="text-xs font-bold text-amber-700 hover:underline flex items-center gap-1">
+                    <span class="material-symbols-outlined text-sm">key</span> تغییر رمز عبور
+                </button>
+            </div>
+
+            <!-- Card 6: Bank Sheba & Shetab Card -->
+            <div class="bg-white rounded-2xl border border-outline-variant/80 p-5 shadow-sm hover:border-primary/50 transition-all flex flex-col justify-between space-y-4">
+                <div class="flex items-start justify-between">
+                    <div class="min-w-0">
+                        <span class="text-xs text-slate-400 font-bold block mb-1">حساب بانکی جهت استرداد وجه</span>
+                        <h4 class="text-xs font-mono font-bold text-slate-900 truncate"><?= !empty($wallet['bank_sheba']) ? htmlspecialchars($wallet['bank_sheba']) : 'شماره شبا ثبت نشده' ?></h4>
+                    </div>
+                    <div class="w-10 h-10 rounded-xl bg-teal-50 text-teal-700 flex items-center justify-center shrink-0">
+                        <span class="material-symbols-outlined text-xl">credit_card</span>
+                    </div>
+                </div>
+                <div class="flex items-center justify-between">
+                    <span class="text-[11px] text-slate-500 font-bold"><?= htmlspecialchars($wallet['bank_name'] ?? 'بانک شتاب') ?></span>
+                    <button type="button" onclick="openEditShebaModal()" class="text-xs font-bold text-primary hover:underline flex items-center gap-1">
+                        <span class="material-symbols-outlined text-sm">edit</span> ویرایش اطلاعات بانکی
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Visual Shetab Card Preview Banner -->
+        <div class="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white rounded-3xl p-6 sm:p-8 shadow-xl border border-white/10 flex flex-col md:flex-row items-center justify-between gap-6">
+            <div class="space-y-3">
+                <div class="flex items-center gap-2">
+                    <span class="material-symbols-outlined text-amber-400">credit_card</span>
+                    <h4 class="text-base font-black">کارت بانکی عضو شتاب جهت مرجوعی و جوایز باشگاه</h4>
+                </div>
+                <p class="text-xs text-slate-300 max-w-xl leading-relaxed">
+                    در صورت لغو هرگونه سفارش یا واریز جوایز نقدی جشنواره‌های آسنا، مبالغ به صورت پایا مستقیماً به شماره شبای تایید شده زیر واریز می‌گردد.
+                </p>
+                <div class="flex items-center gap-4 pt-1 text-xs font-mono">
+                    <span class="bg-white/10 px-3 py-1.5 rounded-xl border border-white/15">
+                        شماره کارت: <?= htmlspecialchars($wallet['bank_card_number'] ?: '••••-••••-••••-••••') ?>
+                    </span>
+                    <span class="bg-white/10 px-3 py-1.5 rounded-xl border border-white/15">
+                        بانک: <?= htmlspecialchars($wallet['bank_name'] ?: 'بانک متصل شتاب') ?>
+                    </span>
+                </div>
+            </div>
+            <button type="button" onclick="openEditShebaModal()" class="px-5 py-3 rounded-2xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-xs shadow-lg transition-all flex items-center gap-2 shrink-0">
+                <span class="material-symbols-outlined text-base">add_card</span>
+                <span>تنظیم یا تعویض کارت بانکی</span>
+            </button>
+        </div>
+    </div>
+
+    
+    <!-- ═══════════════════════════════════════════════════════════════════════ -->
+    <!-- VIEW 3: Addresses & Delivery Map (آدرس‌ها و موقعیت مکانی تحویل)          -->
+    <!-- ═══════════════════════════════════════════════════════════════════════ -->
+    <div id="view-addresses" class="customer-view space-y-6 hidden">
+        <!-- Header -->
+        <div class="bg-surface-container-lowest rounded-3xl border border-outline-variant p-6 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+                <div class="flex items-center gap-2">
+                    <span class="px-3 py-0.5 rounded-full bg-secondary-container/10 text-secondary-container font-black text-xs border border-secondary-container/20">
+                        مدیریت نشانی‌ها و تحویل سفارشات
+                    </span>
+                    <span class="text-xs text-on-surface-variant">• اتصال به نقشه و وب‌سرویس پستکس</span>
+                </div>
+                <h3 class="text-xl font-black text-primary mt-1.5 flex items-center gap-2">
+                    <span class="material-symbols-outlined text-2xl text-secondary-container">home_pin</span>
+                    آدرس‌ها و موقعیت مکانی تحویل
+                </h3>
+                <p class="text-xs text-on-surface-variant mt-1">سفارشات دارویی، مکمل‌ها و بسته‌های اتوشیپ به نشانی پیش‌فرض زیر تحویل داده می‌شوند.</p>
+            </div>
+            <button type="button" onclick="document.getElementById('address_city').focus()" class="px-5 py-2.5 rounded-xl bg-secondary-container hover:bg-[#ea580c] text-white font-bold text-xs shadow-md transition-all flex items-center gap-1.5 self-start sm:self-auto">
+                <span class="material-symbols-outlined text-base">edit_location_alt</span>
+                <span>ویرایش نشانی پستی</span>
+            </button>
+        </div>
+
+        <!-- Current Default Address Card -->
+        <div class="bg-white rounded-3xl border border-outline-variant p-6 shadow-sm space-y-4">
+            <div class="flex items-center justify-between pb-3 border-b border-outline-variant/40">
+                <div class="flex items-center gap-2">
+                    <span class="material-symbols-outlined text-secondary-container">verified</span>
+                    <h4 class="text-sm font-black text-slate-900">آدرس پیش‌فرض تحویل گیرنده</h4>
+                </div>
+                <span class="px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                    پیش‌فرض فعال
+                </span>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+                <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200/80">
+                    <span class="text-slate-400 font-bold block mb-1">تحویل‌گیرنده:</span>
+                    <p class="font-bold text-slate-900"><?= htmlspecialchars($user['name'] ?? '') ?> (<?= htmlspecialchars($user['phone'] ?? '') ?>)</p>
+                </div>
+                <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200/80">
+                    <span class="text-slate-400 font-bold block mb-1">شهر و کد پستی:</span>
+                    <p class="font-bold text-slate-900"><?= htmlspecialchars($user['city'] ?? 'تبریز') ?> • کد پستی: <span class="font-mono"><?= htmlspecialchars($user['postal_code'] ?? 'ثبت نشده') ?></span></p>
+                </div>
+                <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200/80">
+                    <span class="text-slate-400 font-bold block mb-1">موقعیت جغرافیایی GPS:</span>
+                    <p class="font-bold text-slate-900">
+                        <?php if (!empty($user['latitude']) && !empty($user['longitude'])): ?>
+                            <span class="text-emerald-700 font-mono"><?= number_format($user['latitude'], 4) ?>, <?= number_format($user['longitude'], 4) ?></span>
+                        <?php else: ?>
+                            <span class="text-slate-400">روی نقشه تنظیم نشده</span>
+                        <?php endif; ?>
+                    </p>
+                </div>
+            </div>
+
+            <div class="p-4 rounded-2xl bg-amber-50/60 border border-amber-200/70 text-xs">
+                <span class="font-bold text-amber-900 block mb-1">نشانی دقیق پستی:</span>
+                <p class="text-slate-800 leading-relaxed font-medium">
+                    <?= htmlspecialchars($user['address'] ?: 'نشانی پستی هنوز تکمیل نشده است. لطفاً فرم زیر را پر کنید.') ?>
+                </p>
+            </div>
+        </div>
+
+        <!-- Interactive Leaflet Map & Form Container -->
+        <div class="bg-white rounded-3xl border border-outline-variant p-6 sm:p-8 shadow-sm space-y-6">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100">
+                <div>
+                    <h4 class="text-base font-black text-slate-900 flex items-center gap-2">
+                        <span class="material-symbols-outlined text-secondary-container">pin_drop</span>
+                        انتخاب موقعیت دقیق مکانی روی نقشه آنلاین
+                    </h4>
+                    <p class="text-xs text-slate-500 mt-1">نشانگر را روی نقشه جابجا کنید تا مختصات دقیق محل سکونت شما ثبت شود.</p>
+                </div>
+                <button type="button" onclick="locateUserPosition()" class="px-4 py-2 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-bold transition-all border border-blue-200 flex items-center gap-1.5 self-start sm:self-auto">
+                    <span class="material-symbols-outlined text-base">my_location</span>
+                    <span>موقعیت مکانی من (GPS)</span>
+                </button>
+            </div>
+
+            <!-- Leaflet Map Container -->
+            <div class="relative w-full rounded-2xl overflow-hidden border border-slate-200 shadow-inner">
+                <div id="customer-address-map" class="w-full h-80 z-0"></div>
+                <div class="absolute bottom-3 right-3 bg-white/90 backdrop-blur-md px-3 py-1.5 rounded-xl text-[11px] font-bold text-slate-700 shadow-md border border-slate-200 z-10 pointer-events-none">
+                    برای تغییر موقعیت، روی نقشه کلیک کنید یا نشانگر را بکشید
+                </div>
+            </div>
+
+            <!-- Address Update Form -->
+            <form method="POST" action="actions/profile_action.php" class="space-y-4 pt-2">
+                <?= csrf_field() ?>
+                <input type="hidden" name="action" value="update_address">
+                <input type="hidden" name="latitude" id="address_latitude" value="<?= htmlspecialchars($user['latitude'] ?? '35.6892') ?>">
+                <input type="hidden" name="longitude" id="address_longitude" value="<?= htmlspecialchars($user['longitude'] ?? '51.3890') ?>">
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1.5">استان / شهر تحویل گیرنده *</label>
+                        <input type="text" name="city" id="address_city" value="<?= htmlspecialchars($user['city'] ?? 'تبریز') ?>" required class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-secondary-container font-medium text-xs text-slate-800 bg-slate-50 focus:bg-white transition-all">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1.5">کد پستی ۱۰ رقمی (بدون خط تیره) *</label>
+                        <input type="text" name="postal_code" id="address_postal_code" value="<?= htmlspecialchars($user['postal_code'] ?? '') ?>" maxlength="10" required placeholder="مثلاً: 5138612345" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-secondary-container font-mono text-left dir-ltr text-xs text-slate-800 bg-slate-50 focus:bg-white transition-all">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1.5">نشانی پستی دقیق (نام خیابان، کوچه، پلاک، طبقه و واحد) *</label>
+                    <textarea name="address" id="address_text" rows="3" required placeholder="مثال: ولیعصر، خیابان توانیر، کوچه مریم، پلاک ۱۴، زنگ ۲" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-secondary-container font-medium text-xs text-slate-800 bg-slate-50 focus:bg-white transition-all leading-relaxed"><?= htmlspecialchars($user['address'] ?? '') ?></textarea>
+                </div>
+
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 border-t border-slate-100">
+                    <span class="text-[11px] text-slate-400">
+                        با ذخیره این نشانی، تمام سفارشات آتی و اتوشیپ به این آدرس ارسال خواهند شد.
+                    </span>
+                    <button type="submit" class="px-6 py-3 rounded-xl bg-secondary-container hover:bg-[#ea580c] text-white font-bold text-xs shadow-md transition-all flex items-center justify-center gap-2">
+                        <span class="material-symbols-outlined text-base">save</span>
+                        <span>ثبت و به‌روزرسانی نهایی نشانی تحویل</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    
+    <!-- ═══════════════════════════════════════════════════════════════════════ -->
+    <!-- VIEW 4: Pets (حیوانات خانگی، ماشین‌حساب دوز بالینی و مدارک پزشکی)          -->
+    <!-- ═══════════════════════════════════════════════════════════════════════ -->
+    <div id="view-pets" class="customer-view space-y-6 hidden">
+        <div id="pets-section" class="bg-surface-container-lowest rounded-3xl border border-outline-variant shadow-sm overflow-hidden mb-8 scroll-mt-24">
+    <div class="px-6 py-4 border-b border-outline-variant bg-white flex items-center justify-between">
+        <h3 class="text-sm font-bold text-primary flex items-center gap-2">
+            <span class="material-symbols-outlined text-primary">pets</span>
+            <span>حیوانات خانگی من</span>
+        </h3>
+        <button type="button" onclick="document.getElementById('addPetModal').classList.remove('hidden')" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-primary/10 hover:bg-primary hover:text-white text-primary text-xs font-bold transition-all shadow-sm">
+            <span class="material-symbols-outlined text-sm">add_circle</span>
+            <span>افزودن حیوان جدید</span>
+        </button>
+    </div>
+    <div class="p-6 space-y-4">
+    <?php if(empty($pets)): ?>
+        <div class="text-center py-6 border-2 border-dashed border-outline-variant/70 rounded-2xl p-5 bg-slate-50/60 space-y-3">
+            <div class="w-12 h-12 mx-auto rounded-2xl bg-primary/10 text-primary flex items-center justify-center shadow-inner">
+                <span class="material-symbols-outlined text-2xl">pets</span>
+            </div>
+            <div>
+                <p class="text-sm font-bold text-on-surface">هنوز حیوان خانگی ثبت نکرده‌اید.</p>
+                <p class="text-xs text-on-surface-variant mt-1 leading-relaxed">
+                    با ثبت مشخصات پت، پرونده سلامت فعال شده و نوبت‌گیری پزشک با یک کلیک انجام می‌شود.
+                </p>
+            </div>
+            <button type="button" onclick="document.getElementById('addPetModal').classList.remove('hidden')" class="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-primary hover:bg-primary-hover text-white text-xs font-bold transition-all shadow-md active:scale-95">
+                <span class="material-symbols-outlined text-sm">add_circle</span>
+                <span>افزودن و تکمیل شناسنامه پت</span>
+            </button>
+        </div>
+    <?php else: ?>
+        <?php foreach($pets as $pet): ?>
+        <div class="flex items-center gap-4 p-3.5 border border-outline-variant rounded-2xl hover:border-primary transition-all bg-white shadow-sm group">
+            <div class="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary font-bold transition-transform group-hover:scale-105">
+                <span class="material-symbols-outlined text-2xl"><?php echo $pet['type'] == 'گربه' ? 'cat' : ($pet['type'] == 'سگ' ? 'dog' : 'pets'); ?></span>
+            </div>
+            <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-2">
+                    <h4 class="text-sm font-black text-on-surface truncate"><?php echo htmlspecialchars($pet['name']); ?></h4>
+                    <span class="text-[10px] px-2 py-0.5 rounded-md font-bold bg-blue-50 text-blue-700 border border-blue-200"><?php echo htmlspecialchars($pet['type']); ?></span>
+                </div>
+                <p class="text-[11px] text-on-surface-variant mt-0.5 truncate">
+                    <?php if(!empty($pet['race'])) echo htmlspecialchars($pet['race']); ?>
+                    <?php if(!empty($pet['gender'])) echo ' • ' . htmlspecialchars($pet['gender']); ?>
+                    <?php if(!empty($pet['age'])) echo ' • سن: ' . htmlspecialchars($pet['age']); ?>
+                </p>
+            </div>
+            <div class="flex items-center gap-1">
+                <button type="button" onclick="openEditPetModal(<?php echo $pet['id']; ?>, '<?php echo addslashes(htmlspecialchars($pet['name'])); ?>', '<?php echo addslashes(htmlspecialchars($pet['type'])); ?>', '<?php echo addslashes(htmlspecialchars($pet['race'] ?? '')); ?>', '<?php echo addslashes(htmlspecialchars($pet['gender'] ?? '')); ?>', '<?php echo addslashes(htmlspecialchars($pet['age'] ?? '')); ?>')" class="p-2 rounded-lg text-on-surface-variant hover:text-primary hover:bg-slate-100 transition-colors" title="ویرایش">
+                    <span class="material-symbols-outlined text-base">edit</span>
+                </button>
+                <form action="actions/profile_action.php" method="POST" onsubmit="return confirm('آیا از حذف این حیوان خانگی اطمینان دارید؟');" class="inline m-0">
+                    <?php echo csrf_field(); ?>
+                    <input type="hidden" name="action" value="delete_pet">
+                    <input type="hidden" name="pet_id" value="<?php echo $pet['id']; ?>">
+                    <button type="submit" class="p-2 rounded-lg text-on-surface-variant hover:text-error hover:bg-rose-50 transition-colors" title="حذف">
+                        <span class="material-symbols-outlined text-base">delete</span>
+                    </button>
+                </form>
+            </div>
+        </div>
+        <?php endforeach; ?>
+
+        <!-- Add New Pet Button/Form Area (put back in its place) -->
+        <div class="pt-2">
+            <button type="button" onclick="document.getElementById('addPetModal').classList.remove('hidden')" class="w-full border-2 border-dashed border-outline-variant text-on-surface-variant py-3 rounded-2xl font-bold text-xs flex items-center justify-center gap-2 hover:bg-white hover:border-primary hover:text-primary transition-all group shadow-sm">
+                <span class="material-symbols-outlined group-hover:scale-110 transition-transform text-sm">add_circle</span>
+                <span>افزودن حیوان جدید</span>
+            </button>
+        </div>
+    <?php endif; ?>
+    </div>
+</div>
+
+
+        <!-- Standalone Clinical Dosage & BMI Calculator Section (Moved to its own place) -->
+<div id="dosage-calc-section" class="bg-surface-container-lowest rounded-3xl border border-outline-variant shadow-sm overflow-hidden mb-8 scroll-mt-24">
+    <div class="px-6 py-4 border-b border-outline-variant bg-white flex items-center justify-between">
+        <h3 class="text-sm font-bold text-primary flex items-center gap-2">
+            <span class="material-symbols-outlined text-secondary-container">calculate</span>
+            <span>محاسبه‌گر بالینی و شاخص سلامت پت (دوز و BMI)</span>
+        </h3>
+        <span class="text-[10px] bg-blue-50 text-blue-700 px-2.5 py-0.5 rounded-full font-bold border border-blue-200">بر اساس وزن</span>
+    </div>
+    <div class="p-6 space-y-4 text-right">
+        <p class="text-[11px] text-slate-600 leading-relaxed">
+            جهت تجویز ایمن دوز ضدانگل، قطره ضدکک و مسکن و بررسی شاخص وضعیت بدنی (BMI)، وزن پت را مشخص فرمایید:
+        </p>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+            <div>
+                <label class="block text-[10px] text-slate-500 font-bold mb-1">گونه حیوان</label>
+                <select id="calcSpecies" class="w-full text-xs p-2.5 rounded-xl bg-white border border-slate-200 outline-none focus:ring-1 focus:ring-primary">
+                    <option value="dog">سگ (Dog)</option>
+                    <option value="cat">گربه (Cat)</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-[10px] text-slate-500 font-bold mb-1">وزن پت (کیلوگرم)</label>
+                <input type="number" id="calcWeight" value="10" min="0.5" max="90" step="0.5" class="w-full text-xs p-2.5 rounded-xl bg-white border border-slate-200 outline-none focus:ring-1 focus:ring-primary">
+            </div>
+            <div>
+                <label class="block text-[10px] text-slate-500 font-bold mb-1">نوع دارو / درمان</label>
+                <select id="calcMedType" class="w-full text-xs p-2.5 rounded-xl bg-white border border-slate-200 outline-none focus:ring-1 focus:ring-primary">
+                    <option value="dewormer">قرص ضد انگل عمومی</option>
+                    <option value="flea_tick">ضد کک و کنه موضعی</option>
+                    <option value="antibiotic">آنتی‌بیوتیک عمومی</option>
+                    <option value="pain_relief">مسکن و ضدالتهاب</option>
+                </select>
+            </div>
+        </div>
+        <button type="button" onclick="runDosageCalc()" class="w-full py-2.5 bg-primary text-white text-xs font-bold rounded-xl hover:bg-primary-hover transition-colors shadow-sm flex items-center justify-center gap-1.5 active:scale-[0.99]">
+            <span class="material-symbols-outlined text-sm">health_and_safety</span>
+            <span>محاسبه فوری دوز و شاخص سلامت</span>
+        </button>
+
+        <div id="dosageResultBox" class="p-3.5 rounded-2xl bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 text-xs hidden space-y-2">
+            <div class="font-bold text-primary flex items-center gap-1.5">
+                <span class="material-symbols-outlined text-base text-emerald-600">check_circle</span>
+                <span>دوز پیشنهادی:</span>
+                <span id="resDosage" class="text-emerald-700 font-black"></span>
+            </div>
+            <div class="text-[11px] text-slate-600 flex items-start gap-1">
+                <span class="material-symbols-outlined text-xs text-secondary-container mt-0.5">info</span>
+                <span id="resInstructions"></span>
+            </div>
+            <div id="resBmiBadge" class="pt-2 text-[11px] font-bold text-indigo-900 border-t border-blue-200/60 flex items-center gap-1.5">
+                <span class="material-symbols-outlined text-sm text-indigo-600">monitor_weight</span>
+                <span id="resBmiText"></span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    function runDosageCalc() {
+        const species = document.getElementById('calcSpecies').value;
+        const weight = parseFloat(document.getElementById('calcWeight').value) || 10;
+        const med = document.getElementById('calcMedType').value;
+
+        fetch(`api/v1/pets.php?action=calculate_dosage&species=${species}&weight_kg=${weight}&medication_type=${med}`)
+            .then(res => res.json())
+            .then(res => {
+                if (res.success && res.data) {
+                    const box = document.getElementById('dosageResultBox');
+                    document.getElementById('resDosage').innerText = res.data.dosage_display || res.data.dosage;
+                    document.getElementById('resInstructions').innerText = res.data.instructions || res.data.frequency || '';
+                    if (res.data.bmi_status) {
+                        document.getElementById('resBmiText').innerText = res.data.bmi_status;
+                        document.getElementById('resBmiBadge').classList.remove('hidden');
+                    } else {
+                        document.getElementById('resBmiBadge').classList.add('hidden');
+                    }
+                    box.classList.remove('hidden');
+                }
+            }).catch(e => console.error(e));
+    }
+    </script>
+</div>
+
+        </div><div class="bg-surface-container-lowest rounded-2xl border border-outline-variant shadow-sm overflow-hidden">
+<div class="px-6 py-4 border-b border-outline-variant bg-white flex justify-between items-center">
+<h3 class="text-lg font-bold text-primary flex items-center gap-2">
+<span class="material-symbols-outlined">description</span>
+                            سوابق پزشکی <?php echo count($pets) > 0 ? htmlspecialchars(implode(' و ', array_column($pets, 'name'))) : ''; ?>
+                        </h3>
+<button onclick="document.getElementById('addDocModal').classList.remove('hidden')" class="text-sm font-bold text-primary flex items-center gap-1 hover:underline">
+    <span class="material-symbols-outlined text-sm">add</span> آپلود
+</button>
+</div>
+<div class="p-6 space-y-4">
+<?php if(empty($documents)): ?>
+    <p class="text-sm text-on-surface-variant">هیچ سندی آپلود نشده است.</p>
+<?php else: ?>
+    <?php foreach($documents as $doc): ?>
+    <a href="<?php echo htmlspecialchars($doc['file_path']); ?>" download class="group p-4 bg-surface-container-low rounded-2xl flex items-center justify-between cursor-pointer hover:bg-white hover:shadow-md border border-transparent hover:border-primary-container transition-all">
+    <div class="flex items-center gap-4">
+    <div class="p-3 bg-status-active/10 text-status-active rounded-xl group-hover:scale-105 transition-transform">
+    <span class="material-symbols-outlined">description</span>
+    </div>
+    <div>
+    <h4 class="text-sm font-bold text-on-surface"><?php echo htmlspecialchars($doc['title']); ?> - <?php echo htmlspecialchars($doc['pet_name']); ?></h4>
+    <p class="text-[11px] text-on-surface-variant font-medium persian-number mt-0.5">آپلود شده در: <?php echo date('Y/m/d', strtotime($doc['uploaded_at'])); ?></p>
+    </div>
+    </div>
+    <span class="material-symbols-outlined text-on-surface-variant group-hover:-translate-x-1 transition-transform">download</span>
+    </a>
+    <?php endforeach; ?>
+<?php endif; ?>
+<a href="download_all.php" class="w-full bg-primary-container text-white py-4 rounded-2xl font-bold text-sm flex items-center justify-center gap-3 hover:shadow-xl transition-all shadow-lg shadow-primary-container/20">
+<span class="material-symbols-outlined">download</span>
+                            دریافت پرونده کامل سلامت (ZIP)
+                        </a>
+</div>
+</div>
+
+    </div>
+
+    
+    <!-- ═══════════════════════════════════════════════════════════════════════ -->
+    <!-- VIEW 5: Appointments (نوبت‌های مشاوره و ویزیت دامپزشکی)                 -->
+    <!-- ═══════════════════════════════════════════════════════════════════════ -->
+    <div id="view-appointments" class="customer-view space-y-6 hidden">
+        <div class="flex items-center justify-between bg-surface-container-lowest rounded-3xl border border-outline-variant p-6 shadow-sm">
+            <div>
+                <h3 class="text-lg font-black text-primary flex items-center gap-2">
+                    <span class="material-symbols-outlined text-teal-600">calendar_month</span>
+                    نوبت‌های رزرو شده و مشاوره‌های آنلاین
+                </h3>
+                <p class="text-xs text-on-surface-variant mt-1">مدیریت نوبت‌های ویزیت، اتاق مشاوره ویدیویی و پرونده پزشکان</p>
+            </div>
+            <a href="booking.php" class="bg-primary text-white px-5 py-2.5 rounded-xl font-bold text-xs hover:bg-primary-hover transition-all shadow-md flex items-center gap-1.5">
+                <span class="material-symbols-outlined text-base">add_circle</span>
+                رزرو نوبت جدید
+            </a>
+        </div>
+        <!-- Upcoming Appointments (High Fidelity) -->
 <div class="bg-surface-container-lowest rounded-2xl border border-outline-variant shadow-sm overflow-hidden">
 <div class="px-6 py-4 border-b border-outline-variant flex justify-between items-center">
 <h3 class="text-lg font-bold text-primary flex items-center gap-2">
@@ -1651,157 +2316,15 @@ function updateShebaPreview(input) {
 <?php endif; ?>
 </div>
 </div>
-<!-- My Subscriptions -->
-<div id="subscriptions-section" class="bg-surface-container-lowest rounded-3xl border border-outline-variant shadow-sm overflow-hidden mb-8 scroll-mt-24">
-<div class="px-6 py-5 border-b border-outline-variant flex justify-between items-center bg-gradient-to-r from-secondary-container/10 via-primary-container/5 to-transparent">
-<h3 class="text-base font-bold text-primary flex items-center gap-2">
-<span class="material-symbols-outlined text-secondary-container">event_repeat</span>
-برنامه‌های اشتراک هوشمند و Autoship
-</h3>
-<a href="subscriptions.php" class="text-xs font-bold text-secondary-container hover:underline bg-white px-3 py-1.5 rounded-xl border border-secondary-container/30 shadow-sm flex items-center gap-1">
-<span class="material-symbols-outlined text-sm">add_circle</span>
-خرید پلن جدید
-</a>
-</div>
-<div class="overflow-x-auto">
-<table class="w-full text-right text-sm">
-<thead>
-<tr class="bg-surface-container-low text-on-surface-variant font-bold border-b border-outline-variant">
-<th class="px-6 py-4">پلن اشتراک</th>
-<th class="px-6 py-4">مبلغ (تومان)</th>
-<th class="px-6 py-4">وضعیت</th>
-<th class="px-6 py-4">تاریخ خرید</th>
-<th class="px-6 py-4">زمان ارسال بعدی</th>
-</tr>
-</thead>
-<tbody class="divide-y divide-outline-variant/50">
-<?php if (empty($user_subscriptions)): ?>
-    <tr>
-        <td colspan="5" class="px-6 py-8 text-center text-on-surface-variant font-bold">شما در حال حاضر اشتراک فعالی ندارید.</td>
-    </tr>
-<?php else: ?>
-    <?php foreach ($user_subscriptions as $sub): ?>
-    <tr class="hover:bg-surface-container-low/50 transition-colors group">
-        <td class="px-6 py-4 font-bold text-primary"><?php echo htmlspecialchars($sub['plan_name']); ?></td>
-        <td class="px-6 py-4 font-bold persian-number"><?php echo number_format($sub['amount']); ?></td>
-        <td class="px-6 py-4">
-            <span class="px-3 py-1 text-xs font-bold rounded-full <?php
-                if($sub['status'] == 'active') echo 'bg-primary-container/20 text-primary-container';
-                elseif($sub['status'] == 'ended') echo 'bg-surface-variant text-on-surface-variant';
-                elseif($sub['status'] == 'cancelled') echo 'bg-error/20 text-error';
-                else echo 'bg-surface-container text-on-surface';
-            ?>">
-                <?php 
-                    $status_map = ['active'=>'فعال', 'ended'=>'پایان یافته', 'cancelled'=>'لغو شده'];
-                    echo $status_map[$sub['status']] ?? $sub['status']; 
-                ?>
-            </span>
-        </td>
-        <td class="px-6 py-4 text-on-surface-variant persian-number text-xs" dir="ltr">
-            <?php echo $fmtDateTime->format(new DateTime($sub['created_at'])); ?>
-        </td>
-        <td class="px-6 py-4 font-bold text-secondary-container persian-number">
-            <?php echo $sub['next_delivery_date'] ? $fmtDateText->format(new DateTime($sub['next_delivery_date'])) : 'نامشخص'; ?>
-        </td>
-    </tr>
-    <?php if ($sub['status'] === 'active'): ?>
-    <!-- User Self-Service Action Bar (Reschedule / Postpone / Cancel) -->
-    <tr class="bg-surface-container-low/30 border-b border-outline-variant/20">
-        <td colspan="5" class="px-6 py-3">
-            <div class="flex flex-wrap items-center justify-between gap-3 text-xs">
-                <span class="font-bold text-on-surface-variant">مدیریت نوبت تحویل:</span>
-                <div class="flex flex-wrap items-center gap-2">
-                    <!-- Reschedule Form -->
-                    <form action="actions/subscription_action.php" method="POST" class="inline-flex items-center gap-1 m-0">
-                        <?php echo csrf_field(); ?>
-                        <input type="hidden" name="action" value="reschedule_delivery">
-                        <input type="hidden" name="subscription_id" value="<?php echo $sub['id']; ?>">
-                        <input type="date" name="new_date" min="<?php echo date('Y-m-d'); ?>" required class="p-1 px-2 rounded-lg border border-outline-variant text-xs outline-none bg-white">
-                        <button type="submit" class="bg-primary text-white px-2.5 py-1 rounded-lg font-bold hover:bg-primary-container transition-all">تغییر تاریخ</button>
-                    </form>
-                    
-                    <!-- Skip / Postpone -->
-                    <form action="actions/subscription_action.php" method="POST" class="inline m-0" onsubmit="return confirm('آیا از به تعویق انداختن این نوبت ارسال به مدت ۳۰ روز اطمینان دارید؟');">
-                        <?php echo csrf_field(); ?>
-                        <input type="hidden" name="action" value="skip_delivery">
-                        <input type="hidden" name="subscription_id" value="<?php echo $sub['id']; ?>">
-                        <input type="hidden" name="skip_days" value="30">
-                        <button type="submit" class="bg-surface-container-high hover:bg-surface-container-highest text-primary px-3 py-1 rounded-lg font-bold transition-all border border-outline-variant/40">به تعویق انداختن (+۳۰ روز)</button>
-                    </form>
 
-                    <!-- Cancel Anytime -->
-                    <form action="actions/subscription_action.php" method="POST" class="inline m-0" onsubmit="return confirm('آیا از لغو این اشتراک اطمینان دارید؟');">
-                        <?php echo csrf_field(); ?>
-                        <input type="hidden" name="action" value="cancel_subscription">
-                        <input type="hidden" name="subscription_id" value="<?php echo $sub['id']; ?>">
-                        <button type="submit" class="text-error hover:bg-error/10 px-2.5 py-1 rounded-lg font-bold transition-colors">لغو اشتراک</button>
-                    </form>
-                </div>
-            </div>
-        </td>
-    </tr>
-    <?php endif; ?>
-    <?php if (!empty($sub['deliveries'])): ?>
-    <tr class="bg-surface-container-lowest border-b border-outline-variant/30">
-        <td colspan="5" class="p-4">
-            <div class="space-y-2 pl-4 max-w-2xl text-right">
-                <h4 class="font-bold text-primary text-xs mb-2">زمان‌بندی ارسال‌ها:</h4>
-                <?php foreach($sub['deliveries'] as $del): ?>
-                    <div class="flex flex-col md:flex-row md:items-center justify-between bg-surface-container-low border border-outline-variant/20 p-2.5 rounded-lg text-xs gap-3">
-                        <div class="flex items-center gap-3">
-                            <span class="font-black text-on-surface-variant persian-number bg-white px-2 py-1 rounded-md shadow-sm">ماه <?php echo $del['delivery_month']; ?></span>
-                            <span class="text-outline persian-number"><?php echo $del['scheduled_date'] ? $fmtDateText->format(new DateTime($del['scheduled_date'])) : ''; ?></span>
-                            
-                            <?php 
-                            $statusText = '';
-                            switch($del['status']) {
-                                case 'pending': $statusText = '<span class="text-status-warning bg-status-warning/10 px-2 py-0.5 rounded-full font-bold">آماده‌سازی نوبت</span>'; break;
-                                case 'processing': $statusText = '<span class="text-blue-700 bg-blue-100 px-2 py-0.5 rounded-full font-bold">در حال پردازش انبار</span>'; break;
-                                case 'shipped': $statusText = '<span class="text-primary-fixed bg-primary-fixed-dim/20 px-2 py-0.5 rounded-full font-bold">ارسال شده</span>'; break;
-                                case 'delivered': $statusText = '<span class="text-status-active bg-status-active/10 px-2 py-0.5 rounded-full font-bold">تحویل داده شده</span>'; break;
-                                case 'not_received': $statusText = '<span class="text-error bg-error/10 px-2 py-0.5 rounded-full font-bold">گزارش عدم دریافت</span>'; break;
-                            }
-                            echo $statusText;
-                            ?>
+    </div>
 
-                            <?php if (($del['payment_status'] ?? 'paid') === 'paid'): ?>
-                                <span class="text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full font-bold text-[10px] inline-flex items-center gap-0.5">
-                                    <span class="material-symbols-outlined text-[12px]">check_circle</span>
-                                    تسویه شده
-                                </span>
-                            <?php else: ?>
-                                <span class="text-amber-800 bg-amber-100 px-2 py-0.5 rounded-full font-bold text-[10px] inline-flex items-center gap-0.5" title="پیش از موعد ارسال پیامک پرداخت ارسال می‌شود">
-                                    <span class="material-symbols-outlined text-[12px]">payments</span>
-                                    پرداخت ماهانه در موعد (پیامک یادآوری)
-                                </span>
-                            <?php endif; ?>
-                        </div>
-                        <?php if ($del['status'] === 'shipped'): ?>
-                            <div class="flex items-center gap-2 bg-secondary-container/30 px-3 py-1.5 rounded-lg">
-                                <span class="font-bold text-primary mr-2">بسته این ماه را دریافت کردید؟</span>
-                                <form action="actions/subscription_action.php" method="POST" class="m-0 inline">
-                                    <?php echo csrf_field(); ?>
-                                    <input type="hidden" name="action" value="confirm_delivery">
-                                    <input type="hidden" name="delivery_id" value="<?php echo $del['id']; ?>">
-                                    <button type="submit" name="received" value="1" class="bg-status-active text-white px-3 py-1 rounded-md shadow-sm hover:opacity-90 font-bold transition-opacity">بله</button>
-                                    <button type="submit" name="received" value="0" class="bg-error text-white px-3 py-1 rounded-md shadow-sm hover:opacity-90 font-bold transition-opacity">خیر</button>
-                                </form>
-                            </div>
-                        <?php endif; ?>
-                    </div>
-                <?php endforeach; ?>
-            </div>
-        </td>
-    </tr>
-    <?php endif; ?>
-    <?php endforeach; ?>
-<?php endif; ?>
-</tbody>
-</table>
-</div>
-</div>
-<!-- Order History (Modern Card-Based Design) -->
-<div id="orders-section" class="bg-surface-container-lowest rounded-3xl border border-outline-variant shadow-sm overflow-hidden scroll-mt-24">
+    
+    <!-- ═══════════════════════════════════════════════════════════════════════ -->
+    <!-- VIEW 6: Orders (تاریخچه سفارشات و فاکتورهای رسمی)                       -->
+    <!-- ═══════════════════════════════════════════════════════════════════════ -->
+    <div id="view-orders" class="customer-view space-y-6 hidden">
+        <div id="orders-section" class="bg-surface-container-lowest rounded-3xl border border-outline-variant shadow-sm overflow-hidden scroll-mt-24">
     <div class="px-6 py-5 border-b border-outline-variant flex justify-between items-center bg-gradient-to-r from-surface-container-low to-transparent">
         <h3 class="text-base font-bold text-primary flex items-center gap-2">
             <span class="material-symbols-outlined text-secondary-container">shopping_bag</span>
@@ -2008,9 +2531,15 @@ function updateShebaPreview(input) {
     </div>
 </div>
 </div>
-<!-- Left Column: Subscriptions & Records -->
-<div class="lg:col-span-4 space-y-8">
-<!-- Subscriptions (Visual Autoship Widget) -->
+
+    </div>
+
+    
+    <!-- ═══════════════════════════════════════════════════════════════════════ -->
+    <!-- VIEW 7: Subscriptions (برنامه‌های اشتراک هوشمند و اتوشیپ)               -->
+    <!-- ═══════════════════════════════════════════════════════════════════════ -->
+    <div id="view-subscriptions" class="customer-view space-y-6 hidden">
+        <!-- Subscriptions (Visual Autoship Widget) -->
 <div class="bg-surface-container-lowest rounded-3xl border border-outline-variant shadow-sm overflow-hidden">
     <div class="px-6 py-4 border-b border-outline-variant flex items-center justify-between bg-gradient-to-r from-surface-container-low to-transparent">
         <h3 class="text-sm font-bold text-primary flex items-center gap-2">
@@ -2062,147 +2591,468 @@ function updateShebaPreview(input) {
         <?php endif; ?>
     </div>
 </div>
-<!-- Pets Section -->
-<div id="pets-section" class="bg-surface-container-lowest rounded-3xl border border-outline-variant shadow-sm overflow-hidden mb-8 scroll-mt-24">
-<div class="px-6 py-4 border-b border-outline-variant bg-white flex items-center justify-between">
-<h3 class="text-sm font-bold text-primary flex items-center gap-2">
-<span class="material-symbols-outlined text-primary">pets</span>
-حیوانات خانگی من
+
+        <div id="subscriptions-section" class="bg-surface-container-lowest rounded-3xl border border-outline-variant shadow-sm overflow-hidden mb-8 scroll-mt-24">
+<div class="px-6 py-5 border-b border-outline-variant flex justify-between items-center bg-gradient-to-r from-secondary-container/10 via-primary-container/5 to-transparent">
+<h3 class="text-base font-bold text-primary flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary-container">event_repeat</span>
+برنامه‌های اشتراک هوشمند و Autoship
 </h3>
+<a href="subscriptions.php" class="text-xs font-bold text-secondary-container hover:underline bg-white px-3 py-1.5 rounded-xl border border-secondary-container/30 shadow-sm flex items-center gap-1">
+<span class="material-symbols-outlined text-sm">add_circle</span>
+خرید پلن جدید
+</a>
 </div>
-<div class="p-6 space-y-4">
-<?php if(empty($pets)): ?>
-    <p class="text-sm text-on-surface-variant">هنوز حیوان خانگی ثبت نکرده‌اید.</p>
+<div class="overflow-x-auto">
+<table class="w-full text-right text-sm">
+<thead>
+<tr class="bg-surface-container-low text-on-surface-variant font-bold border-b border-outline-variant">
+<th class="px-6 py-4">پلن اشتراک</th>
+<th class="px-6 py-4">مبلغ (تومان)</th>
+<th class="px-6 py-4">وضعیت</th>
+<th class="px-6 py-4">تاریخ خرید</th>
+<th class="px-6 py-4">زمان ارسال بعدی</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant/50">
+<?php if (empty($user_subscriptions)): ?>
+    <tr>
+        <td colspan="5" class="px-6 py-8 text-center text-on-surface-variant font-bold">شما در حال حاضر اشتراک فعالی ندارید.</td>
+    </tr>
 <?php else: ?>
-    <?php foreach($pets as $pet): ?>
-    <div class="flex items-center gap-4 p-3 border border-outline-variant rounded-xl hover:border-primary-container transition-all">
-        <div class="w-12 h-12 rounded-full bg-primary-container/10 flex items-center justify-center text-primary-container">
-            <span class="material-symbols-outlined"><?php echo $pet['type'] == 'گربه' ? 'cat' : 'dog'; ?></span>
-        </div>
-        <div class="flex-1">
-            <h4 class="text-sm font-bold text-on-surface"><?php echo htmlspecialchars($pet['name']); ?></h4>
-            <p class="text-[11px] text-on-surface-variant">
-                <?php echo htmlspecialchars($pet['type']); ?> 
-                <?php if(!empty($pet['race'])) echo ' • ' . htmlspecialchars($pet['race']); ?>
-                <?php if(!empty($pet['gender'])) echo ' • ' . htmlspecialchars($pet['gender']); ?>
-                <?php if(!empty($pet['age'])) echo ' • سن: ' . htmlspecialchars($pet['age']); ?>
+    <?php foreach ($user_subscriptions as $sub): ?>
+    <tr class="hover:bg-surface-container-low/50 transition-colors group">
+        <td class="px-6 py-4 font-bold text-primary"><?php echo htmlspecialchars($sub['plan_name']); ?></td>
+        <td class="px-6 py-4 font-bold persian-number"><?php echo number_format($sub['amount']); ?></td>
+        <td class="px-6 py-4">
+            <span class="px-3 py-1 text-xs font-bold rounded-full <?php
+                if($sub['status'] == 'active') echo 'bg-primary-container/20 text-primary-container';
+                elseif($sub['status'] == 'ended') echo 'bg-surface-variant text-on-surface-variant';
+                elseif($sub['status'] == 'cancelled') echo 'bg-error/20 text-error';
+                else echo 'bg-surface-container text-on-surface';
+            ?>">
+                <?php 
+                    $status_map = ['active'=>'فعال', 'ended'=>'پایان یافته', 'cancelled'=>'لغو شده'];
+                    echo $status_map[$sub['status']] ?? $sub['status']; 
+                ?>
+            </span>
+        </td>
+        <td class="px-6 py-4 text-on-surface-variant persian-number text-xs" dir="ltr">
+            <?php echo $fmtDateTime->format(new DateTime($sub['created_at'])); ?>
+        </td>
+        <td class="px-6 py-4 font-bold text-secondary-container persian-number">
+            <?php echo $sub['next_delivery_date'] ? $fmtDateText->format(new DateTime($sub['next_delivery_date'])) : 'نامشخص'; ?>
+        </td>
+    </tr>
+    <?php if ($sub['status'] === 'active'): ?>
+    <!-- User Self-Service Action Bar (Reschedule / Postpone / Cancel) -->
+    <tr class="bg-surface-container-low/30 border-b border-outline-variant/20">
+        <td colspan="5" class="px-6 py-3">
+            <div class="flex flex-wrap items-center justify-between gap-3 text-xs">
+                <span class="font-bold text-on-surface-variant">مدیریت نوبت تحویل:</span>
+                <div class="flex flex-wrap items-center gap-2">
+                    <!-- Reschedule Form -->
+                    <form action="actions/subscription_action.php" method="POST" class="inline-flex items-center gap-1 m-0">
+                        <?php echo csrf_field(); ?>
+                        <input type="hidden" name="action" value="reschedule_delivery">
+                        <input type="hidden" name="subscription_id" value="<?php echo $sub['id']; ?>">
+                        <input type="date" name="new_date" min="<?php echo date('Y-m-d'); ?>" required class="p-1 px-2 rounded-lg border border-outline-variant text-xs outline-none bg-white">
+                        <button type="submit" class="bg-primary text-white px-2.5 py-1 rounded-lg font-bold hover:bg-primary-container transition-all">تغییر تاریخ</button>
+                    </form>
+                    
+                    <!-- Skip / Postpone -->
+                    <form action="actions/subscription_action.php" method="POST" class="inline m-0" onsubmit="return confirm('آیا از به تعویق انداختن این نوبت ارسال به مدت ۳۰ روز اطمینان دارید؟');">
+                        <?php echo csrf_field(); ?>
+                        <input type="hidden" name="action" value="skip_delivery">
+                        <input type="hidden" name="subscription_id" value="<?php echo $sub['id']; ?>">
+                        <input type="hidden" name="skip_days" value="30">
+                        <button type="submit" class="bg-surface-container-high hover:bg-surface-container-highest text-primary px-3 py-1 rounded-lg font-bold transition-all border border-outline-variant/40">به تعویق انداختن (+۳۰ روز)</button>
+                    </form>
+
+                    <!-- Cancel Anytime -->
+                    <form action="actions/subscription_action.php" method="POST" class="inline m-0" onsubmit="return confirm('آیا از لغو این اشتراک اطمینان دارید؟');">
+                        <?php echo csrf_field(); ?>
+                        <input type="hidden" name="action" value="cancel_subscription">
+                        <input type="hidden" name="subscription_id" value="<?php echo $sub['id']; ?>">
+                        <button type="submit" class="text-error hover:bg-error/10 px-2.5 py-1 rounded-lg font-bold transition-colors">لغو اشتراک</button>
+                    </form>
+                </div>
+            </div>
+        </td>
+    </tr>
+    <?php endif; ?>
+    <?php if (!empty($sub['deliveries'])): ?>
+    <tr class="bg-surface-container-lowest border-b border-outline-variant/30">
+        <td colspan="5" class="p-4">
+            <div class="space-y-2 pl-4 max-w-2xl text-right">
+                <h4 class="font-bold text-primary text-xs mb-2">زمان‌بندی ارسال‌ها:</h4>
+                <?php foreach($sub['deliveries'] as $del): ?>
+                    <div class="flex flex-col md:flex-row md:items-center justify-between bg-surface-container-low border border-outline-variant/20 p-2.5 rounded-lg text-xs gap-3">
+                        <div class="flex items-center gap-3">
+                            <span class="font-black text-on-surface-variant persian-number bg-white px-2 py-1 rounded-md shadow-sm">ماه <?php echo $del['delivery_month']; ?></span>
+                            <span class="text-outline persian-number"><?php echo $del['scheduled_date'] ? $fmtDateText->format(new DateTime($del['scheduled_date'])) : ''; ?></span>
+                            
+                            <?php 
+                            $statusText = '';
+                            switch($del['status']) {
+                                case 'pending': $statusText = '<span class="text-status-warning bg-status-warning/10 px-2 py-0.5 rounded-full font-bold">آماده‌سازی نوبت</span>'; break;
+                                case 'processing': $statusText = '<span class="text-blue-700 bg-blue-100 px-2 py-0.5 rounded-full font-bold">در حال پردازش انبار</span>'; break;
+                                case 'shipped': $statusText = '<span class="text-primary-fixed bg-primary-fixed-dim/20 px-2 py-0.5 rounded-full font-bold">ارسال شده</span>'; break;
+                                case 'delivered': $statusText = '<span class="text-status-active bg-status-active/10 px-2 py-0.5 rounded-full font-bold">تحویل داده شده</span>'; break;
+                                case 'not_received': $statusText = '<span class="text-error bg-error/10 px-2 py-0.5 rounded-full font-bold">گزارش عدم دریافت</span>'; break;
+                            }
+                            echo $statusText;
+                            ?>
+
+                            <?php if (($del['payment_status'] ?? 'paid') === 'paid'): ?>
+                                <span class="text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full font-bold text-[10px] inline-flex items-center gap-0.5">
+                                    <span class="material-symbols-outlined text-[12px]">check_circle</span>
+                                    تسویه شده
+                                </span>
+                            <?php else: ?>
+                                <span class="text-amber-800 bg-amber-100 px-2 py-0.5 rounded-full font-bold text-[10px] inline-flex items-center gap-0.5" title="پیش از موعد ارسال پیامک پرداخت ارسال می‌شود">
+                                    <span class="material-symbols-outlined text-[12px]">payments</span>
+                                    پرداخت ماهانه در موعد (پیامک یادآوری)
+                                </span>
+                            <?php endif; ?>
+                        </div>
+                        <?php if ($del['status'] === 'shipped'): ?>
+                            <div class="flex items-center gap-2 bg-secondary-container/30 px-3 py-1.5 rounded-lg">
+                                <span class="font-bold text-primary mr-2">بسته این ماه را دریافت کردید؟</span>
+                                <form action="actions/subscription_action.php" method="POST" class="m-0 inline">
+                                    <?php echo csrf_field(); ?>
+                                    <input type="hidden" name="action" value="confirm_delivery">
+                                    <input type="hidden" name="delivery_id" value="<?php echo $del['id']; ?>">
+                                    <button type="submit" name="received" value="1" class="bg-status-active text-white px-3 py-1 rounded-md shadow-sm hover:opacity-90 font-bold transition-opacity">بله</button>
+                                    <button type="submit" name="received" value="0" class="bg-error text-white px-3 py-1 rounded-md shadow-sm hover:opacity-90 font-bold transition-opacity">خیر</button>
+                                </form>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+        </td>
+    </tr>
+    <?php endif; ?>
+    <?php endforeach; ?>
+<?php endif; ?>
+</tbody>
+</table>
+</div>
+</div>
+
+    </div>
+
+    
+    <!-- ═══════════════════════════════════════════════════════════════════════ -->
+    <!-- VIEW 8: Wallet (کیف پول اعتباری دیجیتال و تراکنش‌ها)                    -->
+    <!-- ═══════════════════════════════════════════════════════════════════════ -->
+    <div id="view-wallet" class="customer-view space-y-6 hidden">
+        <section id="wallet-section" class="bg-surface-container-lowest rounded-3xl border border-outline-variant shadow-sm overflow-hidden p-6 md:p-8 space-y-6">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-outline-variant/60 pb-5">
+        <div>
+            <div class="flex items-center gap-2">
+                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-500/10 text-indigo-800 font-bold text-xs border border-indigo-500/20">
+                    <span class="material-symbols-outlined text-sm text-indigo-600">account_balance_wallet</span>
+                    کیف پول دیجیتال اعتباری آسنا
+                </span>
+                <span class="text-xs text-on-surface-variant font-medium">• پرداخت سریع ۱-کلیکه و تمدید خودکار اشتراک</span>
+            </div>
+            <h3 class="text-xl md:text-2xl font-black text-primary mt-2 flex items-center gap-2">
+                <span class="material-symbols-outlined text-2xl text-indigo-600">wallet</span>
+                مدیریت اعتبار و کیف پول دیجیتال
+            </h3>
+            <p class="text-xs text-on-surface-variant mt-1 max-w-2xl leading-relaxed">
+                با شارژ کیف پول خود، می‌توانید بدون نیاز به ورود به درگاه بانکی در هر سفارش، محصولات مورد نیاز پت خود را با ۱ کلیک خریداری کرده و هزینه تمدید دوره‌ای اشتراک‌های درمانی (اتوشیپ) را به صورت خودکار پرداخت کنید.
             </p>
         </div>
-        <div class="flex gap-2">
-            <span onclick="openEditPetModal(<?php echo $pet['id']; ?>, '<?php echo addslashes(htmlspecialchars($pet['name'])); ?>', '<?php echo addslashes(htmlspecialchars($pet['type'])); ?>', '<?php echo addslashes(htmlspecialchars($pet['race'])); ?>', '<?php echo addslashes(htmlspecialchars($pet['gender'] ?? '')); ?>', '<?php echo addslashes(htmlspecialchars($pet['age'] ?? '')); ?>')" class="material-symbols-outlined text-on-surface-variant cursor-pointer hover:text-primary">edit</span>
-            <form action="actions/profile_action.php" method="POST" onsubmit="return confirm('آیا از حذف این حیوان خانگی اطمینان دارید؟');" class="inline">
-                <?php echo csrf_field(); ?>
-                <input type="hidden" name="action" value="delete_pet">
-                <input type="hidden" name="pet_id" value="<?php echo $pet['id']; ?>">
-                <button type="submit" class="material-symbols-outlined text-on-surface-variant cursor-pointer hover:text-error bg-transparent border-0 p-0 m-0 flex items-center">delete</button>
-            </form>
-        </div>
-    </div>
-    <?php endforeach; ?>
-<?php endif; ?>
-    <!-- Chewy.com Benchmark: ابزار تخصصی محاسبه بالینی دوز داروی پت (Clinical Dosage Calculator) -->
-    <div class="mt-4 p-4 rounded-2xl bg-gradient-to-r from-blue-50/80 to-indigo-50/80 border border-blue-200/60 text-right">
-        <div class="flex items-center gap-2 mb-2">
-            <span class="material-symbols-outlined text-primary text-xl">calculate</span>
-            <h4 class="text-xs font-bold text-primary">محاسبه‌گر بالینی دوز دارویی پت (بر اساس وزن)</h4>
-        </div>
-        <p class="text-[11px] text-slate-600 mb-3 leading-relaxed">
-            جهت تجویز ایمن دوز ضدانگل، قطره ضدکک و مسکن، وزن پت خود را مشخص کنید:
-        </p>
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-3">
-            <div>
-                <label class="block text-[10px] text-slate-500 font-bold mb-1">گونه حیوان</label>
-                <select id="calcSpecies" class="w-full text-xs p-2 rounded-xl bg-white border border-slate-200 outline-none">
-                    <option value="dog">سگ (Dog)</option>
-                    <option value="cat">گربه (Cat)</option>
-                </select>
-            </div>
-            <div>
-                <label class="block text-[10px] text-slate-500 font-bold mb-1">وزن پت (کیلوگرم)</label>
-                <input type="number" id="calcWeight" value="10" min="0.5" max="90" step="0.5" class="w-full text-xs p-2 rounded-xl bg-white border border-slate-200 outline-none">
-            </div>
-            <div>
-                <label class="block text-[10px] text-slate-500 font-bold mb-1">نوع دارو / درمان</label>
-                <select id="calcMedType" class="w-full text-xs p-2 rounded-xl bg-white border border-slate-200 outline-none">
-                    <option value="dewormer">قرص ضد انگل عمومی</option>
-                    <option value="flea_tick">ضد کک و کنه موضعی</option>
-                    <option value="antibiotic">آنتی‌بیوتیک عمومی</option>
-                    <option value="pain_relief">مسکن و ضدالتهاب</option>
-                </select>
-            </div>
-        </div>
-        <button type="button" onclick="runDosageCalc()" class="w-full py-2 bg-primary text-white text-xs font-bold rounded-xl hover:bg-primary-hover transition-colors shadow-sm">
-            محاسبه فوری دوز و بازه مجاز
+
+        <button type="button" onclick="document.getElementById('chargeWalletModal').classList.remove('hidden')" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs px-5 py-3 rounded-2xl shadow-md shadow-indigo-600/20 flex items-center gap-2 transition-all">
+            <span class="material-symbols-outlined text-base">add_circle</span>
+            <span>افزایش موجودی و شارژ کیف پول</span>
         </button>
+    </div>
 
-        <div id="dosageResultBox" class="mt-3 p-3 rounded-xl bg-white border border-blue-200 text-xs hidden space-y-1">
-            <div class="font-bold text-primary flex items-center gap-1">
-                <span class="material-symbols-outlined text-sm text-emerald-600">check_circle</span>
-                دوز پیشنهادی: <span id="resDosage" class="text-emerald-700"></span>
+    <!-- 3 User Metric Cards -->
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-5">
+        <div class="rounded-2xl p-5 bg-gradient-to-br from-indigo-50 to-white border border-indigo-200/80 shadow-sm flex flex-col justify-between">
+            <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-indigo-800">موجودی فعلی کیف پول</span>
+                <span class="material-symbols-outlined text-indigo-600">payments</span>
             </div>
-            <div class="text-[11px] text-slate-500" id="resInstructions"></div>
+            <div class="text-2xl sm:text-3xl font-black text-indigo-900 mt-2 font-mono">
+                <?= number_format($userDigitalWallet['balance'] ?? 0) ?> <span class="text-xs font-normal text-slate-500">تومان</span>
+            </div>
+            <p class="text-[11px] text-slate-500 mt-3 pt-2 border-t border-indigo-100">آماده برای خرید کالا، خدمات و تمدید خودکار اشتراک</p>
+        </div>
+
+        <div class="rounded-2xl p-5 bg-gradient-to-br from-teal-50 to-white border border-teal-200/80 shadow-sm flex flex-col justify-between">
+            <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-teal-800">اتصال به تمدید خودکار اشتراک‌ها (اتوشیپ)</span>
+                <span class="material-symbols-outlined text-teal-600">autorenew</span>
+            </div>
+            <div class="text-sm font-bold text-teal-900 mt-2 flex items-center gap-2">
+                <span class="w-2.5 h-2.5 rounded-full bg-teal-500 animate-pulse"></span>
+                <span>پرداخت خودکار فعال</span>
+            </div>
+            <p class="text-[11px] text-slate-500 mt-3 pt-2 border-t border-teal-100">در سررسید اشتراک، بسته پت بدون معطلی آماده و ارسال می‌شود</p>
+        </div>
+
+        <div class="rounded-2xl p-5 bg-gradient-to-br from-amber-50 to-white border border-amber-200/80 shadow-sm flex flex-col justify-between">
+            <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-amber-800">خرید سریع ۱-کلیکه</span>
+                <span class="material-symbols-outlined text-amber-600">bolt</span>
+            </div>
+            <div class="text-sm font-bold text-amber-900 mt-2">
+                ثبت سفارش بدون نیاز به رمز پویا
+            </div>
+            <p class="text-[11px] text-slate-500 mt-3 pt-2 border-t border-amber-100">در سبد خرید، گزینه «پرداخت با کیف پول اعتباری» فعال است</p>
         </div>
     </div>
 
-    <script>
-    function runDosageCalc() {
-        const species = document.getElementById('calcSpecies').value;
-        const weight = parseFloat(document.getElementById('calcWeight').value) || 10;
-        const med = document.getElementById('calcMedType').value;
+    <!-- Transactions History -->
+    <div class="space-y-3">
+        <h4 class="text-sm font-black text-slate-800 flex items-center gap-2">
+            <span class="material-symbols-outlined text-slate-500 text-lg">receipt_long</span>
+            گردش تراکنش‌های کیف پول شما
+        </h4>
+        <div class="overflow-x-auto border border-outline-variant/40 rounded-2xl">
+            <table class="w-full text-right text-xs">
+                <thead class="bg-slate-50 text-slate-600 font-bold border-b border-slate-200">
+                    <tr>
+                        <th class="p-3.5">کد رهگیری</th>
+                        <th class="p-3.5">نوع تراکنش</th>
+                        <th class="p-3.5">شرح تراکنش</th>
+                        <th class="p-3.5">مبلغ</th>
+                        <th class="p-3.5">تاریخ و ساعت</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100 text-slate-700">
+                    <?php if (empty($userWalletTransactions)): ?>
+                        <tr>
+                            <td colspan="5" class="p-8 text-center text-slate-400 font-medium">
+                                هنوز تراکنشی در کیف پول شما ثبت نشده است. با کلیک بر روی «افزایش موجودی»، کیف پول خود را شارژ نمایید.
+                            </td>
+                        </tr>
+                    <?php else: ?>
+                        <?php foreach ($userWalletTransactions as $tx): 
+                            $isDeposit = in_array($tx['type'], ['deposit', 'cashback', 'refund']);
+                        ?>
+                            <tr class="hover:bg-slate-50/70">
+                                <td class="p-3.5 font-mono text-slate-500"><?= htmlspecialchars($tx['reference_id'] ?: ('TX-' . $tx['id'])) ?></td>
+                                <td class="p-3.5">
+                                    <?php if ($isDeposit): ?>
+                                        <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">واریز / شارژ اعتبار</span>
+                                    <?php else: ?>
+                                        <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-800">کسر / پرداخت سفارش</span>
+                                    <?php endif; ?>
+                                </td>
+                                <td class="p-3.5"><?= htmlspecialchars($tx['description']) ?></td>
+                                <td class="p-3.5 font-mono font-bold <?= $isDeposit ? 'text-emerald-600' : 'text-rose-600' ?>">
+                                    <?= $isDeposit ? '+' : '-' ?><?= number_format($tx['amount']) ?> تومان
+                                </td>
+                                <td class="p-3.5 font-mono text-slate-400"><?= htmlspecialchars($tx['created_at']) ?></td>
+                            </tr>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
 
-        fetch(`api/v1/pets.php?action=calculate_dosage&species=${species}&weight_kg=${weight}&medication_type=${med}`)
-            .then(res => res.json())
-            .then(res => {
-                if (res.success && res.data) {
-                    const box = document.getElementById('dosageResultBox');
-                    document.getElementById('resDosage').innerText = res.data.dosage_display;
-                    document.getElementById('resInstructions').innerText = res.data.instructions;
-                    box.classList.remove('hidden');
-                }
-            }).catch(e => console.error(e));
-    }
-    </script>
-</div>
-</div><div class="bg-surface-container-lowest rounded-2xl border border-outline-variant shadow-sm overflow-hidden">
-<div class="px-6 py-4 border-b border-outline-variant bg-white flex justify-between items-center">
-<h3 class="text-lg font-bold text-primary flex items-center gap-2">
-<span class="material-symbols-outlined">description</span>
-                            سوابق پزشکی <?php echo count($pets) > 0 ? htmlspecialchars(implode(' و ', array_column($pets, 'name'))) : ''; ?>
-                        </h3>
-<button onclick="document.getElementById('addDocModal').classList.remove('hidden')" class="text-sm font-bold text-primary flex items-center gap-1 hover:underline">
-    <span class="material-symbols-outlined text-sm">add</span> آپلود
-</button>
-</div>
-<div class="p-6 space-y-4">
-<?php if(empty($documents)): ?>
-    <p class="text-sm text-on-surface-variant">هیچ سندی آپلود نشده است.</p>
-<?php else: ?>
-    <?php foreach($documents as $doc): ?>
-    <a href="<?php echo htmlspecialchars($doc['file_path']); ?>" download class="group p-4 bg-surface-container-low rounded-2xl flex items-center justify-between cursor-pointer hover:bg-white hover:shadow-md border border-transparent hover:border-primary-container transition-all">
-    <div class="flex items-center gap-4">
-    <div class="p-3 bg-status-active/10 text-status-active rounded-xl group-hover:scale-105 transition-transform">
-    <span class="material-symbols-outlined">description</span>
+
     </div>
-    <div>
-    <h4 class="text-sm font-bold text-on-surface"><?php echo htmlspecialchars($doc['title']); ?> - <?php echo htmlspecialchars($doc['pet_name']); ?></h4>
-    <p class="text-[11px] text-on-surface-variant font-medium persian-number mt-0.5">آپلود شده در: <?php echo date('Y/m/d', strtotime($doc['uploaded_at'])); ?></p>
-    </div>
-    </div>
-    <span class="material-symbols-outlined text-on-surface-variant group-hover:-translate-x-1 transition-transform">download</span>
-    </a>
-    <?php endforeach; ?>
-<?php endif; ?>
-<a href="download_all.php" class="w-full bg-primary-container text-white py-4 rounded-2xl font-bold text-sm flex items-center justify-center gap-3 hover:shadow-xl transition-all shadow-lg shadow-primary-container/20">
-<span class="material-symbols-outlined">download</span>
-                            دریافت پرونده کامل سلامت (ZIP)
-                        </a>
-</div>
-</div>
-</div>
-</div>
+
 <?php endif; ?>
 </div>
 </main>
+
+<!-- Modal for Quick Wallet Charge -->
+<div id="chargeWalletModal" class="hidden fixed inset-0 bg-slate-900/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+    <div class="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl space-y-4">
+        <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+            <h3 class="text-sm font-black text-slate-900 flex items-center gap-2">
+                <span class="material-symbols-outlined text-indigo-600">account_balance_wallet</span>
+                شارژ آنلاین کیف پول اعتباری آسنا
+            </h3>
+            <button onclick="document.getElementById('chargeWalletModal').classList.add('hidden')" class="text-slate-400 hover:text-slate-600">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+        </div>
+        <form method="POST" action="profile.php" class="space-y-4">
+            <?= csrf_field() ?>
+            <input type="hidden" name="action" value="charge_user_wallet">
+            <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1.5">مبلغ شارژ (تومان)</label>
+                <input type="number" name="amount" id="charge_amount_input" min="10000" step="10000" required value="200000" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-indigo-500 font-mono outline-none">
+            </div>
+            <!-- Quick Preset Pills -->
+            <div class="flex items-center gap-2 flex-wrap">
+                <button type="button" onclick="document.getElementById('charge_amount_input').value=100000" class="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-[11px] font-bold text-slate-700">۱۰۰ هزار</button>
+                <button type="button" onclick="document.getElementById('charge_amount_input').value=250000" class="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-[11px] font-bold text-slate-700">۲۵۰ هزار</button>
+                <button type="button" onclick="document.getElementById('charge_amount_input').value=500000" class="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-[11px] font-bold text-slate-700">۵۰۰ هزار</button>
+                <button type="button" onclick="document.getElementById('charge_amount_input').value=1000000" class="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-[11px] font-bold text-slate-700">۱ میلیون</button>
+            </div>
+            <div class="pt-2 flex justify-end gap-2">
+                <button type="button" onclick="document.getElementById('chargeWalletModal').classList.add('hidden')" class="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-xs font-bold text-slate-700">انصراف</button>
+                <button type="submit" class="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-md">پرداخت و شارژ آنی</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal for Edit Personal Info -->
+<div id="editPersonalInfoModal" class="hidden fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 backdrop-blur-sm">
+    <div class="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl space-y-5 relative animate-fade-in">
+        <button type="button" onclick="closeEditPersonalInfoModal()" class="absolute top-5 left-5 text-slate-400 hover:text-slate-600 transition-colors">
+            <span class="material-symbols-outlined">close</span>
+        </button>
+        
+        <div class="flex items-center gap-2.5 border-b border-slate-100 pb-4">
+            <div class="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
+                <span class="material-symbols-outlined text-xl">manage_accounts</span>
+            </div>
+            <div>
+                <h3 class="text-base font-black text-slate-900">ویرایش اطلاعات فردی و هویتی</h3>
+                <p class="text-[11px] text-slate-500 mt-0.5">ثبت مشخصات دقیق مطابق با کارت ملی و شناسنامه</p>
+            </div>
+        </div>
+
+        <form action="actions/profile_action.php" method="POST" class="space-y-4">
+            <?= csrf_field() ?>
+            <input type="hidden" name="action" value="update_personal_info">
+
+            <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1.5">نام و نام خانوادگی *</label>
+                <input type="text" name="name" required value="<?= htmlspecialchars($user['name'] ?? '') ?>" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-primary outline-none">
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1.5">کد ملی ۱۰ رقمی (بدون خط تیره)</label>
+                <input type="text" name="national_id" maxlength="10" value="<?= htmlspecialchars($user['national_id'] ?? '') ?>" placeholder="مثال: 0012345678" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-mono dir-ltr text-left focus:ring-2 focus:ring-primary outline-none">
+                <span class="text-[10px] text-slate-400 mt-1 block">جهت صدور فاکتور رسمی ماده ۱۶۹ قانون مالیات</span>
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1.5">پست الکترونیک (ایمیل)</label>
+                <input type="email" name="email" value="<?= htmlspecialchars($user['email'] ?? '') ?>" placeholder="example@mail.com" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-mono dir-ltr text-left focus:ring-2 focus:ring-primary outline-none">
+            </div>
+
+            <div class="pt-2 flex justify-end gap-2.5">
+                <button type="button" onclick="closeEditPersonalInfoModal()" class="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-all">
+                    انصراف
+                </button>
+                <button type="submit" class="px-6 py-2.5 rounded-xl bg-primary hover:bg-primary-hover text-white text-xs font-bold transition-all shadow-md">
+                    ذخیره تغییرات
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal for Change Password -->
+<div id="changePasswordModal" class="hidden fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 backdrop-blur-sm">
+    <div class="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl space-y-5 relative animate-fade-in">
+        <button type="button" onclick="closeChangePasswordModal()" class="absolute top-5 left-5 text-slate-400 hover:text-slate-600 transition-colors">
+            <span class="material-symbols-outlined">close</span>
+        </button>
+        
+        <div class="flex items-center gap-2.5 border-b border-slate-100 pb-4">
+            <div class="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
+                <span class="material-symbols-outlined text-xl">lock_reset</span>
+            </div>
+            <div>
+                <h3 class="text-base font-black text-slate-900">تغییر کلمه عبور</h3>
+                <p class="text-[11px] text-slate-500 mt-0.5">برای ارتقای امنیت حساب کاربری خود، از کلمه عبور پیچیده استفاده نمایید.</p>
+            </div>
+        </div>
+
+        <form action="actions/profile_action.php" method="POST" class="space-y-4">
+            <?= csrf_field() ?>
+            <input type="hidden" name="action" value="update_personal_info">
+            <input type="hidden" name="name" value="<?= htmlspecialchars($user['name'] ?? '') ?>">
+            <input type="hidden" name="national_id" value="<?= htmlspecialchars($user['national_id'] ?? '') ?>">
+            <input type="hidden" name="email" value="<?= htmlspecialchars($user['email'] ?? '') ?>">
+
+            <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1.5">کلمه عبور فعلی *</label>
+                <input type="password" name="current_password" required placeholder="رمز فعلی حساب" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-amber-500 outline-none dir-ltr text-left">
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1.5">کلمه عبور جدید (حداقل ۶ کاراکتر) *</label>
+                <input type="password" name="new_password" required minlength="6" placeholder="رمز عبور جدید" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-amber-500 outline-none dir-ltr text-left">
+            </div>
+
+            <div class="pt-2 flex justify-end gap-2.5">
+                <button type="button" onclick="closeChangePasswordModal()" class="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-all">
+                    انصراف
+                </button>
+                <button type="submit" class="px-6 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold transition-all shadow-md">
+                    به‌روزرسانی رمز عبور
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal for Edit Sheba & Bank Details -->
+<div id="editShebaModal" class="hidden fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 backdrop-blur-sm">
+    <div class="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl space-y-5 relative animate-fade-in">
+        <button type="button" onclick="closeEditShebaModal()" class="absolute top-5 left-5 text-slate-400 hover:text-slate-600 transition-colors">
+            <span class="material-symbols-outlined">close</span>
+        </button>
+        
+        <div class="flex items-center gap-2.5 border-b border-slate-100 pb-4">
+            <div class="w-10 h-10 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center">
+                <span class="material-symbols-outlined text-xl">credit_card</span>
+            </div>
+            <div>
+                <h3 class="text-base font-black text-slate-900">تنظیم اطلاعات حساب و شماره شبا</h3>
+                <p class="text-[11px] text-slate-500 mt-0.5">جهت استرداد وجوه، لغو سفارشات و واریز جوایز باشگاه مشتریان</p>
+            </div>
+        </div>
+
+        <form action="actions/profile_action.php" method="POST" class="space-y-4">
+            <?= csrf_field() ?>
+            <input type="hidden" name="action" value="update_bank_details">
+
+            <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1.5 flex items-center justify-between">
+                    <span>شماره کارت ۱۶ رقمی شتاب</span>
+                    <span id="cust_detected_bank" class="text-[10px] text-emerald-600 font-bold"></span>
+                </label>
+                <input type="text" name="bank_card_number" id="cust_bank_card_input" maxlength="19" value="<?= htmlspecialchars($wallet['bank_card_number'] ?? '') ?>" placeholder="xxxx-xxxx-xxxx-xxxx" oninput="formatCustomerCardInput(this)" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-mono dir-ltr text-left focus:ring-2 focus:ring-teal-500 outline-none">
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1.5">نام بانک صادرکننده</label>
+                <input type="text" name="bank_name" id="cust_bank_name_input" value="<?= htmlspecialchars($wallet['bank_name'] ?? '') ?>" placeholder="مثال: بانک سامان، ملی، ملت..." class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-teal-500 outline-none">
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1.5">نام و نام خانوادگی صاحب حساب</label>
+                <input type="text" name="bank_account_holder" value="<?= htmlspecialchars($wallet['bank_account_holder'] ?? $user['name'] ?? '') ?>" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-teal-500 outline-none">
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1.5">شماره شبا (IBAN) بدون فاصله *</label>
+                <input type="text" name="bank_sheba" id="cust_bank_sheba_input" required maxlength="26" value="<?= htmlspecialchars($wallet['bank_sheba'] ?? '') ?>" placeholder="IR120120000000001234567890" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-mono dir-ltr text-left uppercase focus:ring-2 focus:ring-teal-500 outline-none">
+                <span class="text-[10px] text-slate-400 mt-1 block">شروع با IR به همراه ۲۴ رقم</span>
+            </div>
+
+            <div class="pt-2 flex justify-end gap-2.5">
+                <button type="button" onclick="closeEditShebaModal()" class="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-all">
+                    انصراف
+                </button>
+                <button type="submit" class="px-6 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold transition-all shadow-md">
+                    ذخیره اطلاعات بانکی
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
 
 <!-- Add Product Modal for Sellers -->
 <div id="addProductModal" class="hidden fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 backdrop-blur-sm">
@@ -2611,5 +3461,190 @@ function updateShebaPreview(input) {
         switchWalletTab('bank');
         panel.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
+
+
+    // ─── Digikala-Grade Customer View Switcher ─────────────────────────────────────
+    const validCustomerTabs = ['overview', 'personal-info', 'addresses', 'pets', 'appointments', 'orders', 'subscriptions', 'wallet'];
+
+    function switchCustomerView(tabName) {
+        if (!validCustomerTabs.includes(tabName)) {
+            tabName = 'overview';
+        }
+
+        // 1. Hide all customer views
+        document.querySelectorAll('.customer-view').forEach(el => {
+            el.classList.add('hidden');
+        });
+
+        // 2. Show targeted view
+        const targetView = document.getElementById('view-' + tabName);
+        if (targetView) {
+            targetView.classList.remove('hidden');
+        }
+
+        // 3. Update desktop sidebar styles
+        validCustomerTabs.forEach(t => {
+            const btn = document.getElementById('sidebar-btn-' + t);
+            if (btn) {
+                if (t === tabName) {
+                    btn.className = 'flex items-center gap-3 px-4 py-3 bg-primary-container text-white rounded-xl font-bold transition-all shadow-md cursor-pointer';
+                } else {
+                    btn.className = 'flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-low rounded-xl transition-all cursor-pointer font-bold';
+                }
+            }
+        });
+
+        // 4. Update mobile carousel button styles
+        validCustomerTabs.forEach(t => {
+            const mBtn = document.getElementById('mob-tab-btn-' + t);
+            if (mBtn) {
+                if (t === tabName) {
+                    mBtn.className = 'px-3.5 py-2 rounded-xl bg-primary text-white shadow-sm shrink-0 flex items-center gap-1.5 cursor-pointer';
+                } else {
+                    mBtn.className = 'px-3.5 py-2 rounded-xl bg-white border border-slate-200 text-slate-700 hover:border-primary shrink-0 flex items-center gap-1.5 cursor-pointer';
+                }
+            }
+        });
+
+        // 5. Update URL hash without scrolling
+        if (history.replaceState) {
+            history.replaceState(null, null, '#' + tabName);
+        } else {
+            location.hash = '#' + tabName;
+        }
+
+        // 6. If addresses tab, initialize or invalidate Leaflet map size
+        if (tabName === 'addresses') {
+            setTimeout(() => {
+                if (!customerMap) {
+                    initCustomerAddressMap();
+                } else {
+                    customerMap.invalidateSize();
+                }
+            }, 80);
+        }
+
+        // Scroll top on mobile if needed
+        if (window.innerWidth < 1024) {
+            window.scrollTo({ top: 120, behavior: 'smooth' });
+        }
+    }
+
+    // ─── Leaflet Map & Geocoding for Customer Addresses ───────────────────────────
+    let customerMap = null;
+    let customerMarker = null;
+
+    function initCustomerAddressMap() {
+        const mapContainer = document.getElementById('customer-address-map');
+        if (!mapContainer || customerMap) return;
+
+        let initialLat = parseFloat(document.getElementById('address_latitude').value) || 35.6892;
+        let initialLng = parseFloat(document.getElementById('address_longitude').value) || 51.3890;
+
+        customerMap = L.map('customer-address-map').setView([initialLat, initialLng], 13);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(customerMap);
+
+        // Marker
+        customerMarker = L.marker([initialLat, initialLng], {
+            draggable: true
+        }).addTo(customerMap);
+
+        customerMarker.on('dragend', function(e) {
+            const pos = e.target.getLatLng();
+            updateLatLngInputs(pos.lat, pos.lng);
+        });
+
+        customerMap.on('click', function(e) {
+            customerMarker.setLatLng(e.latlng);
+            updateLatLngInputs(e.latlng.lat, e.latlng.lng);
+        });
+    }
+
+    function updateLatLngInputs(lat, lng) {
+        const latInput = document.getElementById('address_latitude');
+        const lngInput = document.getElementById('address_longitude');
+        if (latInput) latInput.value = lat.toFixed(6);
+        if (lngInput) lngInput.value = lng.toFixed(6);
+    }
+
+    function locateUserPosition() {
+        if (!navigator.geolocation) {
+            alert('مرورگر شما از قابلیت مکان‌یابی پشتیبانی نمی‌کند.');
+            return;
+        }
+        navigator.geolocation.getCurrentPosition(pos => {
+            const lat = pos.coords.latitude;
+            const lng = pos.coords.longitude;
+            if (customerMap && customerMarker) {
+                customerMap.setView([lat, lng], 15);
+                customerMarker.setLatLng([lat, lng]);
+                updateLatLngInputs(lat, lng);
+            }
+        }, err => {
+            alert('دسترسی به موقعیت مکانی انجام نشد یا رد گردید.');
+        }, { enableHighAccuracy: true });
+    }
+
+    // ─── Modal Helpers ────────────────────────────────────────────────────────────
+    function openEditPersonalInfoModal() {
+        document.getElementById('editPersonalInfoModal').classList.remove('hidden');
+    }
+    function closeEditPersonalInfoModal() {
+        document.getElementById('editPersonalInfoModal').classList.add('hidden');
+    }
+
+    function openChangePasswordModal() {
+        document.getElementById('changePasswordModal').classList.remove('hidden');
+    }
+    function closeChangePasswordModal() {
+        document.getElementById('changePasswordModal').classList.add('hidden');
+    }
+
+    function openEditShebaModal() {
+        document.getElementById('editShebaModal').classList.remove('hidden');
+    }
+    function closeEditShebaModal() {
+        document.getElementById('editShebaModal').classList.add('hidden');
+    }
+
+    function formatCustomerCardInput(input) {
+        let val = input.value.replace(/\D/g, '');
+        let formatted = '';
+        for (let i = 0; i < val.length && i < 16; i++) {
+            if (i > 0 && i % 4 === 0) formatted += '-';
+            formatted += val[i];
+        }
+        input.value = formatted;
+
+        if (val.length >= 6) {
+            let bin = val.substring(0, 6);
+            if (typeof bankBins !== 'undefined' && bankBins[bin]) {
+                const bName = bankBins[bin];
+                document.getElementById('cust_detected_bank').innerText = '✔ ' + bName;
+                const bInput = document.getElementById('cust_bank_name_input');
+                if (bInput && !bInput.value) bInput.value = bName;
+            }
+        }
+    }
+
+    // Auto-detect view from URL Hash on page load and hashchange
+    window.addEventListener('DOMContentLoaded', () => {
+        const rawHash = window.location.hash.replace('#', '').trim();
+        if (rawHash && validCustomerTabs.includes(rawHash)) {
+            switchCustomerView(rawHash);
+        }
+    });
+
+    window.addEventListener('hashchange', () => {
+        const rawHash = window.location.hash.replace('#', '').trim();
+        if (rawHash && validCustomerTabs.includes(rawHash)) {
+            switchCustomerView(rawHash);
+        }
+    });
+
 </script>
 <?php require_once 'includes/footer.php'; ?>

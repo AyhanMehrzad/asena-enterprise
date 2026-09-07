@@ -1,5 +1,5 @@
 <?php
-require_once '../includes/db.php';
+require_once dirname(__DIR__, 2) . '/includes/db.php';
 
 // Route Guard
 if (!isset($_SESSION['user_id'])) {
@@ -280,7 +280,7 @@ $adminName = $adminCheck['name'] ?? 'مدیر سیستم';
         </a>
         
         <div class="mt-4 space-y-1">
-            <a class="flex items-center gap-3 px-4 py-2 text-on-tertiary-container hover:text-white transition-all" href="../logout.php">
+            <a class="flex items-center gap-3 px-4 py-2 text-on-tertiary-container hover:text-white transition-all" href="../logout.php" onclick="return confirm('آیا از خروج از حساب کاربری اطمینان دارید؟');">
                 <span class="material-symbols-outlined text-error">logout</span>
                 <span class="font-label-sm text-label-sm">خروج از حساب</span>
             </a>

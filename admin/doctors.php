@@ -15,11 +15,13 @@ $query = "
         d.*,
         u.phone as user_phone,
         u.email as user_email,
+        u.vet_council_number,
+        u.is_verified_vet,
         o.name as organization_name,
         o.city as organization_city,
         (SELECT COUNT(*) FROM appointments a WHERE a.doctor_id = d.id) as total_appointments,
         (SELECT COUNT(*) FROM appointments a WHERE a.doctor_id = d.id AND a.status = 'completed') as completed_appointments,
-        (SELECT COUNT(*) FROM prescriptions p WHERE p.doctor_id = d.id) as total_prescriptions,
+        COALESCE((SELECT COUNT(*) FROM prescriptions p WHERE (p.doctor_id IS NOT NULL AND p.doctor_id = d.id) OR (p.vet_phone IS NOT NULL AND p.vet_phone != '' AND p.vet_phone = d.phone)), 0) as total_prescriptions,
         (SELECT COALESCE(SUM(a.fee), 0) FROM appointments a WHERE a.doctor_id = d.id) as gross_consultation_value
     FROM doctors d
     LEFT JOIN users u ON d.user_id = u.id
@@ -229,8 +231,8 @@ require_once __DIR__ . '/includes/admin_header.php';
                             <div class="text-[11px] text-slate-400"><?= htmlspecialchars($doc['organization_city'] ?: 'سراسری') ?></div>
                         </td>
                         <td class="p-3.5">
-                            <div class="font-mono text-xs font-bold text-slate-700"><?= htmlspecialchars($doc['medical_council_code'] ?: 'نظام ۹۲۸۳') ?></div>
-                            <div class="text-[11px] text-emerald-600 font-bold"><?= number_format((int)$doc['price']) ?> تومان</div>
+                            <div class="font-mono text-xs font-bold text-slate-700"><?= htmlspecialchars(!empty($doc['vet_council_number']) ? 'نظام: ' . $doc['vet_council_number'] : (!empty($doc['medical_council_code']) ? $doc['medical_council_code'] : 'نظام معتبر')) ?></div>
+                            <div class="text-[11px] text-emerald-600 font-bold"><?= number_format((int)($doc['price'] ?? 0)) ?> تومان</div>
                         </td>
                         <td class="p-3.5 text-center font-bold text-slate-600">
                             <?= (int)$doc['total_appointments'] ?>
@@ -239,7 +241,7 @@ require_once __DIR__ . '/includes/admin_header.php';
                             <?= (int)$doc['completed_appointments'] ?>
                         </td>
                         <td class="p-3.5 text-center font-bold text-amber-500">
-                            ★ <?= number_format((float)($doc['rating_cache'] ?? 5.0), 1) ?>
+                            ★ <?= number_format((float)($doc['rating_cache'] ?? $doc['rating'] ?? 5.0), 1) ?>
                         </td>
                         <td class="p-3.5 text-center">
                             <button onclick="viewDoctorInteractions(<?= $doc['id'] ?>)" class="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-secondary-container hover:text-white text-slate-700 font-bold text-xs transition-all flex items-center gap-1 mx-auto">

@@ -3,10 +3,8 @@
  * Version: 1.0.0
  */
 
-const CACHE_NAME = 'asena-enterprise-v1.0.1';
+const CACHE_NAME = 'asena-enterprise-v1.0.2';
 const STATIC_ASSETS = [
-    './',
-    './index.php',
     './offline.html',
     './assets/css/style.css',
     './assets/css/vazirmatn.css',
@@ -86,18 +84,12 @@ self.addEventListener('fetch', (event) => {
         return;
     }
 
-    // B. HTML / Navigation Requests -> Network-First with Offline Fallback
+    // B. HTML / Navigation Requests -> Always Network-First (never cache dynamic authenticated HTML)
     if (request.mode === 'navigate' || request.headers.get('accept')?.includes('text/html')) {
         event.respondWith(
-            fetch(request).then((networkResponse) => {
-                if (networkResponse && networkResponse.status === 200) {
-                    const clone = networkResponse.clone();
-                    caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
-                }
-                return networkResponse;
-            }).catch(() => {
-                return caches.match(request).then((cachedResponse) => {
-                    return cachedResponse || caches.match('/offline.html');
+            fetch(request).catch(() => {
+                return caches.match('./offline.html').then((cached) => {
+                    return cached || caches.match('/offline.html');
                 });
             })
         );

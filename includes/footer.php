@@ -85,33 +85,41 @@
         fetch('actions/autoship_worker.php', { method: 'POST' }).catch(() => {});
     </script>
 
-    <!-- Digikala-Style Mobile Bottom Navigation Bar -->
+    <!-- Digikala-Style 5-Tab Mobile Bottom Navigation Bar -->
     <nav class="mobile-bottom-nav" id="mobileBottomNavBar" role="navigation" aria-label="ناوبری اصلی موبایل">
-        <!-- 1. Home -->
+        <!-- 1. خانه (Home) -->
         <a href="index.php" class="bottom-nav-link <?php echo ($current_page === 'index.php') ? 'active' : ''; ?>">
             <span class="material-symbols-outlined">home</span>
             <span>خانه</span>
         </a>
 
-        <!-- 2. Categories (Triggers Bottom Sheet Drawer) -->
-        <a href="javascript:void(0)" onclick="openMobileCategoriesSheet()" class="bottom-nav-link <?php echo in_array($current_page, ['shop.php', 'pharmacy.php', 'organizations.php']) ? 'active' : ''; ?>">
+        <!-- 2. دسته‌بندی‌ها (Categories Sheet) -->
+        <a href="javascript:void(0)" onclick="openMobileCategoriesSheet()" class="bottom-nav-link <?php echo in_array($current_page, ['shop.php', 'pharmacy.php']) ? 'active' : ''; ?>">
             <span class="material-symbols-outlined">grid_view</span>
             <span>دسته‌بندی‌ها</span>
         </a>
 
-        <!-- 3. Fast Booking (With Special Accent) -->
-        <a href="booking.php" onclick="if(document.getElementById('timeReservationSection')){document.getElementById('timeReservationSection').scrollIntoView({behavior:'smooth', block:'start'});return false;}" class="bottom-nav-link <?php echo ($current_page === 'booking.php') ? 'active' : ''; ?>">
-            <span class="material-symbols-outlined">calendar_month</span>
-            <span>نوبت‌دهی</span>
+        <!-- 3. سبد خرید (Cart with Live Counter Badge) -->
+        <a href="cart.php" class="bottom-nav-link <?php echo ($current_page === 'cart.php') ? 'active' : ''; ?>">
+            <div class="relative flex items-center justify-center">
+                <span class="material-symbols-outlined">shopping_cart</span>
+                <?php if (!empty($cart_count) && $cart_count > 0): ?>
+                    <span class="nav-cart-badge"><?php echo $cart_count; ?></span>
+                <?php endif; ?>
+            </div>
+            <span>سبد خرید</span>
         </a>
 
-        <!-- 4. Cart with Dynamic Badge -->
-        <a href="cart.php" class="bottom-nav-link <?php echo ($current_page === 'cart.php') ? 'active' : ''; ?>">
-            <span class="material-symbols-outlined">shopping_cart</span>
-            <?php if (!empty($cart_count) && $cart_count > 0): ?>
-                <span class="nav-cart-badge"><?php echo $cart_count; ?></span>
-            <?php endif; ?>
-            <span>سبد خرید</span>
+        <!-- 4. خدمات و پزشکان (Services / Booking) -->
+        <a href="booking.php" class="bottom-nav-link <?php echo in_array($current_page, ['booking.php', 'organizations.php']) ? 'active' : ''; ?>">
+            <span class="material-symbols-outlined">medical_services</span>
+            <span>خدمات پزشکان</span>
+        </a>
+
+        <!-- 5. آسنای من (My Asena / Profile) -->
+        <a href="<?php echo isset($_SESSION['user_id']) ? 'profile.php' : 'login.php'; ?>" class="bottom-nav-link <?php echo in_array($current_page, ['profile.php', 'profile_settings.php', 'login.php', 'rewards.php', 'wishlist.php']) ? 'active' : ''; ?>">
+            <span class="material-symbols-outlined">person</span>
+            <span>آسنای من</span>
         </a>
     </nav>
 

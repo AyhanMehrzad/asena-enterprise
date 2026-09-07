@@ -224,20 +224,48 @@ if (function_exists('get_curated_recommendations')) {
 </div>
 <?php endif; ?>
 
-    <!-- Header Section -->
-    <header class="bg-primary shadow-md sticky top-0 z-50 transition-all w-full lg:w-[96%] max-w-[1600px] mx-auto rounded-b-2xl lg:rounded-3xl mb-4 lg:mb-8 mt-0 lg:mt-6 px-3 lg:px-8 py-2.5 lg:py-4">
+    <!-- Digikala-Style Mobile Top App Bar (Sleek Minimalist Search & Notification Bar) -->
+    <div class="lg:hidden sticky top-0 z-50 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md px-3 py-2 border-b border-slate-200/80 dark:border-slate-800 flex items-center gap-2.5 shadow-sm transition-all" id="digikalaMobileHeader">
+        <!-- Notifications Bell Button (Left side in RTL) -->
+        <a href="<?= isset($_SESSION['user_id']) ? 'profile.php#appointments' : 'login.php' ?>" class="w-10 h-10 rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-200 flex items-center justify-center shrink-0 border border-slate-200/60 dark:border-slate-700 transition-colors relative" title="اعلان‌ها و یادآوری‌ها">
+            <span class="material-symbols-outlined text-[22px]">notifications</span>
+            <?php if (!empty($appointments) && count($appointments) > 0): ?>
+                <span class="absolute top-1.5 right-1.5 w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-white animate-pulse"></span>
+            <?php endif; ?>
+        </a>
+
+        <!-- Digikala Search Pill Bar (Filling remaining width) -->
+        <div class="relative flex-1" id="mobileHeaderSearchWrapper">
+            <form action="shop.php" method="GET" class="relative flex items-center bg-slate-100 dark:bg-slate-800/90 border border-slate-200/90 dark:border-slate-700 rounded-full px-3.5 py-1.5 text-slate-800 dark:text-slate-100 hover:border-primary/40 focus-within:border-primary focus-within:bg-white dark:focus-within:bg-slate-900 focus-within:shadow-md transition-all" id="mobileHeaderSearchForm">
+                <span class="material-symbols-outlined text-[20px] text-slate-400 shrink-0 ml-1.5 focus-within:text-primary">search</span>
+                <input type="text" name="q" id="mobileHeaderSearchInput" value="<?= htmlspecialchars($_GET['q'] ?? '') ?>" oninput="toggleDigikalaPlaceholder(this)" onfocus="toggleDigikalaPlaceholder(this)" onblur="toggleDigikalaPlaceholder(this)" class="w-full bg-transparent border-none outline-none text-xs sm:text-sm font-medium text-slate-800 dark:text-slate-100 placeholder-transparent" placeholder="جستجو در" autocomplete="off">
+                
+                <!-- Digikala Styled Placeholder Badge -->
+                <span id="digikalaSearchPlaceholder" class="absolute right-9 pointer-events-none text-xs flex items-center gap-1 font-bold text-slate-400 select-none transition-opacity duration-200 <?= !empty($_GET['q']) ? 'opacity-0' : 'opacity-100' ?>">
+                    <span>جستجو در</span>
+                    <span class="text-[#fd8100] font-black text-sm">آسنا</span>
+                </span>
+                
+                <button type="button" onclick="openMobileCategoriesSheet()" class="text-primary hover:text-secondary-container transition-colors shrink-0 mr-1 p-1 hover:bg-slate-200/60 rounded-full flex items-center justify-center" title="اسکن و دسته‌بندی‌ها">
+                    <span class="material-symbols-outlined text-[19px] text-[#002d72] dark:text-sky-400">photo_camera</span>
+                </button>
+                <span id="mobileHeaderSearchSpinner" class="material-symbols-outlined text-xs animate-spin hidden text-slate-400 mr-1">sync</span>
+            </form>
+
+            <!-- Mobile Live Search Autocomplete Dropdown -->
+            <div id="mobileHeaderSearchResults" class="absolute right-0 left-0 top-full mt-2 bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-100 dark:border-slate-700 overflow-hidden hidden z-50 text-slate-800 dark:text-slate-100 text-right"></div>
+        </div>
+    </div>
+
+    <!-- Desktop Header Section (Hidden on Mobile) -->
+    <header class="hidden lg:block bg-primary shadow-md sticky top-0 z-50 transition-all w-[96%] max-w-[1600px] mx-auto rounded-3xl mb-8 mt-6 px-8 py-4">
         <!-- Main Bar Row -->
         <div class="flex justify-between items-center w-full flex-row">
             
-            <!-- Right side: Links and Search (Desktop) / Drawer (Mobile) -->
-            <div class="flex items-center gap-2.5 lg:gap-8 flex-1">
-                <!-- Mobile Drawer Toggle Button -->
-                <button type="button" onclick="openMobileCategoriesSheet()" class="lg:hidden text-white p-1.5 hover:bg-white/10 rounded-xl transition-colors flex items-center justify-center" title="دسته‌بندی‌ها و خدمات">
-                    <span class="material-symbols-outlined text-2xl">grid_view</span>
-                </button>
-
+            <!-- Right side: Links and Search (Desktop) -->
+            <div class="flex items-center gap-8 flex-1">
                 <!-- Desktop Links (Streamlined) -->
-                <div class="hidden lg:flex gap-5 xl:gap-7 flex-row shrink-0 items-center">
+                <div class="flex gap-5 xl:gap-7 flex-row shrink-0 items-center">
                     <a class="text-white text-sm font-semibold hover:text-secondary-container transition-all duration-200 <?php echo $current_page == 'index.php' ? 'border-b-2 border-white pb-1 opacity-100' : 'opacity-90'; ?>" href="index.php">خانه</a>
                     <?php if (Feature::has('petshop_catalog')): ?>
                         <a class="text-white text-sm font-semibold hover:text-secondary-container transition-all duration-200 <?php echo $current_page == 'shop.php' ? 'border-b-2 border-white pb-1 opacity-100' : 'opacity-90'; ?>" href="shop.php">فروشگاه</a>
@@ -322,7 +350,7 @@ if (function_exists('get_curated_recommendations')) {
 
             <!-- Left side: Icons, Roles, Points, and Logo -->
             <div class="flex items-center gap-2 lg:gap-5 shrink-0">
-                <div class="hidden lg:flex items-center gap-2.5">
+                <div class="flex items-center gap-2.5">
                     <?php if(isset($_SESSION['user_id'])): ?>
                         <?php if(isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'admin'): ?>
                             <a href="admin/index.php" class="bg-secondary-container text-white px-4 py-2 rounded-xl text-xs font-bold shadow-md hover:shadow-lg transition-all flex items-center gap-1.5">
@@ -374,17 +402,6 @@ if (function_exists('get_curated_recommendations')) {
                     <h1 class="text-lg lg:text-2xl font-black text-white tracking-tight group-hover:text-secondary-container transition-colors">ASENA</h1>
                 </a>
             </div>
-        </div>
-
-        <!-- Row 2 (Mobile Only): Digikala App Style Omnibox Search Bar -->
-        <div class="block lg:hidden relative w-full mt-2.5" id="mobileHeaderSearchWrapper">
-            <form action="shop.php" method="GET" class="relative flex items-center bg-white/15 hover:bg-white/20 focus-within:bg-white focus-within:text-slate-800 border border-white/20 focus-within:border-white rounded-2xl transition-all px-3 py-2 text-white" id="mobileHeaderSearchForm">
-                <span class="material-symbols-outlined text-xl text-white/80 shrink-0 ml-2 focus-within:text-primary">search</span>
-                <input id="mobileHeaderSearchInput" name="q" value="<?php echo htmlspecialchars($_GET['q'] ?? ''); ?>" class="w-full bg-transparent border-none outline-none text-xs sm:text-sm placeholder-white/75 focus:placeholder-slate-400 focus:text-slate-800 font-medium" placeholder="جستجو در آسنا (دارو، کالا، پزشک، کلینیک)..." autocomplete="off">
-                <span id="mobileHeaderSearchSpinner" class="material-symbols-outlined text-sm animate-spin hidden text-white/70 mr-1">sync</span>
-            </form>
-            <!-- Mobile Live Search Autocomplete Dropdown -->
-            <div id="mobileHeaderSearchResults" class="absolute right-0 left-0 top-full mt-2 bg-white rounded-2xl shadow-2xl border border-slate-100 overflow-hidden hidden z-50 text-slate-800 text-right"></div>
         </div>
     </header>
 
@@ -781,8 +798,26 @@ if (function_exists('get_curated_recommendations')) {
             container.classList.remove('hidden');
         }
 
+        function toggleDigikalaPlaceholder(input) {
+            const ph = document.getElementById('digikalaSearchPlaceholder');
+            if (ph) {
+                if (input.value && input.value.trim().length > 0) {
+                    ph.style.opacity = '0';
+                } else if (document.activeElement === input) {
+                    ph.style.opacity = '0.3';
+                } else {
+                    ph.style.opacity = '1';
+                }
+            }
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
             initLiveSearch('headerSearchInput', 'headerSearchResults', 'headerSearchSpinner');
             initLiveSearch('mobileHeaderSearchInput', 'mobileHeaderSearchResults', 'mobileHeaderSearchSpinner');
+            
+            const mobInput = document.getElementById('mobileHeaderSearchInput');
+            if (mobInput) {
+                toggleDigikalaPlaceholder(mobInput);
+            }
         });
     </script>
