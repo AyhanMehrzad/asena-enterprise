@@ -99,7 +99,7 @@ $effective_og_image = isset($og_image) ? (strpos($og_image, 'http') === 0 ? $og_
     <link rel="icon" type="image/x-icon" href="assets/images/favicon.ico?v=2">
     <link rel="apple-touch-icon" sizes="180x180" href="assets/images/apple-touch-icon.png?v=2">
     <link rel="apple-touch-icon-precomposed" sizes="180x180" href="assets/images/apple-touch-icon.png?v=2">
-    <link rel="manifest" href="/site.webmanifest?v=2">
+    <link rel="manifest" href="site.webmanifest?v=2">
     <meta name="theme-color" content="#002d72">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -107,7 +107,7 @@ $effective_og_image = isset($og_image) ? (strpos($og_image, 'http') === 0 ? $og_
     <meta name="application-name" content="ASENA Company">
 
     <!-- Preload Critical Font for Core Web Vitals (LCP) -->
-    <link rel="preload" href="/assets/fonts/Dxxo8j6PP2D_kU2muijlGMWWMmk.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="assets/fonts/Dxxo8j6PP2D_kU2muijlGMWWMmk.woff2" as="font" type="font/woff2" crossorigin>
     
     <!-- Open Graph / Facebook / Telegram -->
     <meta property="og:type" content="website">
@@ -171,10 +171,17 @@ $effective_og_image = isset($og_image) ? (strpos($og_image, 'http') === 0 ? $og_
     <script>
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', function() {
-            navigator.serviceWorker.register('/sw.js').then(function(reg) {
-                console.log('[PWA] ServiceWorker registered:', reg.scope);
+            const pathParts = window.location.pathname.split('/');
+            pathParts.pop(); // remove current file
+            const basePath = pathParts.join('/') + '/';
+            const swUrl = basePath + 'sw.js';
+            
+            navigator.serviceWorker.register(swUrl, { scope: basePath }).then(function(reg) {
+                console.log('[PWA] ServiceWorker registered with scope:', reg.scope);
             }).catch(function(err) {
-                console.warn('[PWA] ServiceWorker error:', err);
+                navigator.serviceWorker.register('sw.js').catch(function(e) {
+                    console.warn('[PWA] ServiceWorker fallback error:', e);
+                });
             });
         });
     }

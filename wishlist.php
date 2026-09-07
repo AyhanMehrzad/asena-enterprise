@@ -76,20 +76,29 @@ $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 <script>
 function removeFromWishlist(btn, productId) {
-    if(!confirm('آیا از حذف این محصول از علاقه‌مندی‌ها اطمینان دارید؟')) return;
+    const card = btn.closest('div.bg-white') || btn.closest('.group');
     
+    // Instant smooth optimistic visual removal
+    if (card) {
+        card.style.transition = 'all 0.35s cubic-bezier(0.4, 0, 0.2, 1)';
+        card.style.opacity = '0';
+        card.style.transform = 'scale(0.9) translateY(10px)';
+    }
+
     fetch('actions/wishlist_action.php', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/x-www-form-urlencoded',
         },
-        body: 'product_id=' + productId
+        body: 'product_id=' + encodeURIComponent(productId)
     })
     .then(response => response.json())
     .then(data => {
         if (data.status === 'success') {
-            // Remove the card from the DOM
-            btn.closest('div.bg-white').remove();
+            if (typeof showWishlistToast === 'function') {
+                showWishlistToast('محصول از لیست علاقه‌مندی‌ها حذف شد', 'removed');
+            }
+            if (card) card.remove();
             
             // Check if grid is empty
             const grid = document.querySelector('.grid');
@@ -97,11 +106,24 @@ function removeFromWishlist(btn, productId) {
                 location.reload(); // reload to show empty state
             }
         } else {
-            alert(data.message || 'خطایی رخ داد.');
+            if (card) {
+                card.style.opacity = '1';
+                card.style.transform = 'none';
+            }
+            if (typeof showWishlistToast === 'function') {
+                showWishlistToast(data.message || 'خطایی رخ داد.', 'error');
+            }
         }
     })
     .catch(error => {
         console.error('Error:', error);
+        if (card) {
+            card.style.opacity = '1';
+            card.style.transform = 'none';
+        }
+        if (typeof showWishlistToast === 'function') {
+            showWishlistToast('خطا در ارتباط با سرور', 'error');
+        }
     });
 }
 </script>

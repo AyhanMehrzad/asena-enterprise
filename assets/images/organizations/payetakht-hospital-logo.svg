@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="100%" height="100%">
+  <defs>
+    <linearGradient id="payetakhtBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#001a48"/>
+      <stop offset="100%" stop-color="#002d72"/>
+    </linearGradient>
+    <linearGradient id="payetakhtGold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8"/>
+      <stop offset="100%" stop-color="#0284c7"/>
+    </linearGradient>
+  </defs>
+  <!-- Background Rounded Badge -->
+  <rect width="200" height="200" rx="40" fill="url(#payetakhtBg)"/>
+  <circle cx="100" cy="100" r="86" fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="2.5"/>
+  
+  <!-- Hospital Red/Blue Cross -->
+  <path d="M82 42 H118 V78 H154 V114 H118 V150 H82 V114 H46 V78 H82 Z" fill="url(#payetakhtGold)" opacity="0.25"/>
+  
+  <!-- Caduceus / Medical Staff -->
+  <line x1="100" y1="46" x2="100" y2="152" stroke="#38bdf8" stroke-width="6" stroke-linecap="round"/>
+  <!-- Snake coils -->
+  <path d="M84 70 C84 60 116 60 116 78 C116 96 84 96 84 114 C84 132 116 132 116 122" fill="none" stroke="#ffffff" stroke-width="4.5" stroke-linecap="round"/>
+  <!-- Staff Top Sphere -->
+  <circle cx="100" cy="44" r="9" fill="#f59e0b"/>
+
+  <!-- Pet Profile Silhouette In Negative/White -->
+  <path d="M72 136 C72 120 86 112 100 112 C114 112 128 120 128 136 L128 144 H72 Z" fill="#ffffff" opacity="0.9"/>
+  <circle cx="86" cy="120" r="4.5" fill="#38bdf8"/>
+  <circle cx="114" cy="120" r="4.5" fill="#38bdf8"/>
+</svg>

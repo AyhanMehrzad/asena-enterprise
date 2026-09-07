@@ -33,6 +33,7 @@ $doctors   = $orgService->getDoctors($orgId);
 $inventory = $orgService->getInventory($orgId);
 $reviews   = $orgService->getReviews($orgId);
 $isOpen    = $orgService->isOpenNow($org['operating_hours'] ?? '', (int)$org['is_24_7']);
+$isTop5    = App::leaderboard()->isTopOrganization($orgId);
 
 // Facility types Persian map
 $typePersian = match($org['type']) {
@@ -95,8 +96,8 @@ require_once __DIR__ . '/includes/header.php';
         <div class="bg-white rounded-3xl border border-slate-200/90 overflow-hidden shadow-sm">
             
             <!-- Banner Image or Gradient Atmosphere -->
-            <div class="h-48 sm:h-64 bg-gradient-to-r from-sky-950 via-indigo-950 to-slate-900 relative p-6 flex flex-col justify-between overflow-hidden">
-                <div class="absolute inset-0 opacity-20 bg-[radial-gradient(#38bdf8_1px,transparent_1px)] [background-size:20px_20px]"></div>
+            <div class="h-48 sm:h-64 bg-gradient-to-r from-sky-950 via-indigo-950 to-slate-900 relative p-6 flex flex-col justify-between overflow-hidden bg-cover bg-center" style="<?= !empty($org['banner_url']) ? "background-image: url('" . htmlspecialchars($org['banner_url']) . "');" : '' ?>">
+                <div class="absolute inset-0 opacity-20 bg-[radial-gradient(#38bdf8_1px,transparent_1px)] [background-size:20px_20px] <?= !empty($org['banner_url']) ? 'bg-black/50' : '' ?>"></div>
 
                 <div class="flex items-center justify-between relative z-10">
                     <div class="flex flex-wrap items-center gap-2">
@@ -104,6 +105,13 @@ require_once __DIR__ . '/includes/header.php';
                             <span class="material-symbols-outlined text-sm text-sky-300">verified</span>
                             <span>مرکز دارای پروانه رسمی و تاییدشده</span>
                         </span>
+
+                        <?php if ($isTop5): ?>
+                            <span class="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-black bg-gradient-to-r from-amber-400 to-yellow-300 text-slate-950 border border-amber-300 shadow-md animate-pulse">
+                                <span class="material-symbols-outlined text-sm">military_tech</span>
+                                <span>جزو ۵ مرکز برتر کشور</span>
+                            </span>
+                        <?php endif; ?>
 
                         <?php if (!empty($org['license_number'])): ?>
                             <span class="px-3 py-1 rounded-full text-xs font-bold bg-black/30 text-sky-200 backdrop-blur-md border border-white/10">
@@ -135,18 +143,26 @@ require_once __DIR__ . '/includes/header.php';
             <!-- Profile Info Body -->
             <div class="px-6 sm:px-10 pb-8 relative">
                 <!-- Logo & Heading Strip -->
-                <div class="-mt-16 sm:-mt-20 mb-6 flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
-                    <div class="flex items-end gap-4 sm:gap-6">
-                        <div class="w-24 h-24 sm:w-32 sm:h-32 rounded-3xl bg-white shadow-xl border-4 border-white flex items-center justify-center overflow-hidden shrink-0 z-10">
+                <div class="mb-6 flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
+                    <div class="flex flex-col sm:flex-row sm:items-end gap-4 sm:gap-6">
+                        <div class="-mt-14 sm:-mt-18 w-24 h-24 sm:w-32 sm:h-32 rounded-3xl bg-white shadow-xl border-4 border-white flex items-center justify-center overflow-hidden shrink-0 z-20 p-2">
                             <?php if (!empty($org['logo_url'])): ?>
-                                <img src="<?= htmlspecialchars($org['logo_url']) ?>" alt="<?= htmlspecialchars($org['name']) ?>" class="w-full h-full object-cover">
+                                <img src="<?= htmlspecialchars($org['logo_url']) ?>" alt="<?= htmlspecialchars($org['name']) ?>" class="w-full h-full object-contain">
                             <?php else: ?>
                                 <span class="material-symbols-outlined text-5xl text-sky-600">local_hospital</span>
                             <?php endif; ?>
                         </div>
-                        <div class="pb-2">
+                        <div class="pt-2">
                             <span class="text-xs font-bold text-sky-600 block"><?= $typePersian ?></span>
-                            <h1 class="text-2xl sm:text-3xl font-black text-slate-900"><?= htmlspecialchars($org['name']) ?></h1>
+                            <div class="flex flex-wrap items-center gap-2 mt-0.5">
+                                <h1 class="text-2xl sm:text-3xl font-black text-slate-900"><?= htmlspecialchars($org['name']) ?></h1>
+                                <?php if ($isTop5): ?>
+                                    <span class="inline-flex items-center gap-1 px-3 py-1 rounded-xl text-xs font-black bg-gradient-to-r from-amber-400 to-yellow-300 text-slate-950 border border-amber-400 shadow-sm" title="جزو ۵ مرکز برتر کشور">
+                                        <span class="material-symbols-outlined text-sm">trophy</span>
+                                        <span>مرکز برگزیده کشور</span>
+                                    </span>
+                                <?php endif; ?>
+                            </div>
                             <?php if (!empty($org['manager_name'])): ?>
                                 <span class="text-xs text-slate-500 font-medium block mt-1">
                                     مدیریت و مسئول فنی: <strong class="text-slate-700"><?= htmlspecialchars($org['manager_name']) ?></strong>

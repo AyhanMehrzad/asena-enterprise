@@ -54,6 +54,7 @@ return [
                 'telehealth_chat',
                 'charity_campaigns',
                 'sms_automation',
+                'organization_subadmins',
             ],
         ],
         'pharmacy' => [
@@ -96,6 +97,7 @@ return [
                 'telehealth_chat',
                 'charity_campaigns',
                 'sms_automation',
+                'organization_subadmins',
             ],
         ],
     ],

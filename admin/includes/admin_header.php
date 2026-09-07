@@ -156,7 +156,9 @@ $adminName = $adminCheck['name'] ?? 'مدیر سیستم';
         
         // Auto-detect active page key intelligently based on current file and $currentPage
         $activeKey = $currentPage ?? '';
-        if ($currentFile === 'organizations.php') {
+        if ($currentFile === 'top_performers.php') {
+            $activeKey = 'top_performers';
+        } elseif ($currentFile === 'organizations.php') {
             $activeKey = 'organizations';
         } elseif ($currentFile === 'doctors.php') {
             $activeKey = 'doctors';
@@ -209,10 +211,11 @@ $adminName = $adminCheck['name'] ?? 'مدیر سیستم';
 
         $navSections = [
             'اکوسیستم و مراکز' => [
-                'dashboard'     => ['icon' => 'dashboard', 'title' => 'پیشخوان مدیریت کلان', 'url' => 'index.php'],
-                'organizations' => ['icon' => 'apartment', 'title' => 'مراکز درمانی و بیمارستان‌ها', 'url' => 'organizations.php'],
-                'doctors'       => ['icon' => 'stethoscope', 'title' => 'پزشکان و تعاملات درمانی', 'url' => 'doctors.php'],
-                'sellers'       => ['icon' => 'store', 'title' => 'فروشندگان و پت‌شاپ‌ها', 'url' => 'sellers.php'],
+                'dashboard'      => ['icon' => 'dashboard', 'title' => 'پیشخوان مدیریت کلان', 'url' => 'index.php'],
+                'top_performers' => ['icon' => 'military_tech', 'title' => 'تالار برگزیدگان (Top 5)', 'url' => 'top_performers.php'],
+                'organizations'  => ['icon' => 'apartment', 'title' => 'مراکز درمانی و بیمارستان‌ها', 'url' => 'organizations.php'],
+                'doctors'        => ['icon' => 'stethoscope', 'title' => 'پزشکان و تعاملات درمانی', 'url' => 'doctors.php'],
+                'sellers'        => ['icon' => 'store', 'title' => 'فروشندگان و پت‌شاپ‌ها', 'url' => 'sellers.php'],
             ],
             'مالی و تسویه پایا' => [
                 'payouts'   => ['icon' => 'account_balance_wallet', 'title' => 'تسویه پایا و کارمزد ۵٪', 'url' => 'payouts.php'],

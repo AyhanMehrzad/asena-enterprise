@@ -258,51 +258,352 @@
     </script>
 
     <!-- Floating PWA Install Prompt Banner -->
-    <div id="pwaInstallBanner" class="pwa-install-banner">
-        <div class="pwa-logo-box flex items-center justify-center">
-            <img src="assets/images/logo.png" alt="آسنا" class="w-7 h-7 object-contain">
+    <div id="pwaInstallBanner" class="pwa-install-banner" role="dialog" aria-label="پیشنهاد نصب اپلیکیشن آسنا">
+        <div class="pwa-logo-box flex items-center justify-center shrink-0">
+            <span class="material-symbols-outlined text-primary text-2xl">pets</span>
         </div>
-        <div class="flex-1 text-right">
-            <div class="text-sm font-bold text-slate-800">نصب اپلیکیشن آسنا</div>
-            <div class="text-xs text-slate-500">دسترسی سریع‌تر، آفلاین و یادآوری واکسن</div>
+        <div class="flex-1 text-right min-w-0">
+            <div class="text-sm font-black text-slate-800 leading-tight truncate">نصب اپلیکیشن آسنا</div>
+            <div class="text-[11px] text-slate-500 mt-0.5 truncate">دسترسی سریع‌تر، آفلاین و یادآوری واکسن</div>
         </div>
-        <button id="pwaInstallBtn" class="px-3.5 py-1.5 rounded-xl bg-primary text-white text-xs font-bold hover:bg-primary-hover transition-colors shadow-sm">
-            نصب
-        </button>
-        <button id="pwaDismissBtn" class="text-slate-400 hover:text-slate-600 p-1">
-            <span class="material-symbols-outlined text-base">close</span>
-        </button>
+        <div class="flex items-center gap-1.5 shrink-0">
+            <button id="pwaInstallBtn" type="button" onclick="handlePwaInstallAction(event)" class="px-3.5 py-1.5 rounded-xl bg-primary hover:bg-primary-container text-white text-xs font-black transition-all shadow-sm active:scale-95 flex items-center gap-1 cursor-pointer">
+                <span>نصب</span>
+            </button>
+            <button id="pwaDismissBtn" type="button" onclick="dismissPwaBanner(event)" class="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 active:scale-90 transition-all cursor-pointer" title="بستن" aria-label="بستن">
+                <span class="material-symbols-outlined text-base">close</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- PWA Install Guide Modal (For iOS / Desktop / Manual Install) -->
+    <div id="pwaInstallGuideModal" class="fixed inset-0 z-[10050] hidden items-center justify-center p-4 bg-black/60 backdrop-blur-sm rtl text-right" onclick="if(event.target === this) closePwaInstallGuide();">
+        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden border border-slate-100 transform transition-all animate-fade-in flex flex-col">
+            <!-- Modal Header -->
+            <div class="px-5 py-4 border-b border-slate-100 flex items-center justify-between bg-gradient-to-r from-teal-50/50 to-white">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-2xl bg-teal-50 border border-teal-100 flex items-center justify-center text-primary shadow-sm">
+                        <span class="material-symbols-outlined text-2xl">pets</span>
+                    </div>
+                    <div>
+                        <h3 class="font-black text-slate-800 text-sm">راهنمای نصب اپلیکیشن آسنا</h3>
+                        <p class="text-[11px] text-slate-500">نصب نسخه وب پیشرو (PWA) بدون نیاز به دانلود از استور</p>
+                    </div>
+                </div>
+                <button type="button" onclick="closePwaInstallGuide()" class="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors">
+                    <span class="material-symbols-outlined text-lg">close</span>
+                </button>
+            </div>
+
+            <!-- Platform Tabs -->
+            <div class="px-5 pt-3 pb-1 bg-slate-50/60 border-b border-slate-100 flex gap-2">
+                <button type="button" id="pwaTabBtnIos" onclick="switchPwaTab('ios')" class="flex-1 py-2 px-2 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-1.5 bg-white text-primary shadow-xs border border-slate-200">
+                    <span class="material-symbols-outlined text-base">phone_iphone</span>
+                    <span>آیفون (iOS)</span>
+                </button>
+                <button type="button" id="pwaTabBtnAndroid" onclick="switchPwaTab('android')" class="flex-1 py-2 px-2 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-1.5 text-slate-600 hover:bg-white/60">
+                    <span class="material-symbols-outlined text-base">phone_android</span>
+                    <span>اندروید</span>
+                </button>
+                <button type="button" id="pwaTabBtnDesktop" onclick="switchPwaTab('desktop')" class="flex-1 py-2 px-2 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-1.5 text-slate-600 hover:bg-white/60">
+                    <span class="material-symbols-outlined text-base">laptop_mac</span>
+                    <span>کامپیوتر</span>
+                </button>
+            </div>
+
+            <!-- Tab Content: iOS Safari -->
+            <div id="pwaTabContentIos" class="p-5 space-y-3.5">
+                <div class="flex items-start gap-3 p-3 rounded-2xl bg-teal-50/60 border border-teal-100/80">
+                    <span class="w-6 h-6 rounded-full bg-primary text-white text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">۱</span>
+                    <div class="text-xs text-slate-700 leading-relaxed">
+                        در نوار پایین مرورگر <strong>سافاری (Safari)</strong>، دکمه اشتراک‌گذاری 
+                        <span class="inline-flex items-center px-1.5 py-0.5 rounded bg-white border border-slate-200 text-primary font-bold mx-1">
+                            <span class="material-symbols-outlined text-sm align-middle">ios_share</span> Share
+                        </span>
+                        را لمس نمایید.
+                    </div>
+                </div>
+
+                <div class="flex items-start gap-3 p-3 rounded-2xl bg-teal-50/60 border border-teal-100/80">
+                    <span class="w-6 h-6 rounded-full bg-primary text-white text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">۲</span>
+                    <div class="text-xs text-slate-700 leading-relaxed">
+                        منوی باز شده را به پایین اسکرول کرده و گزینه 
+                        <strong class="text-primary font-bold">«Add to Home Screen»</strong> 
+                        (افزودن به صفحه اصلی) را انتخاب کنید.
+                    </div>
+                </div>
+
+                <div class="flex items-start gap-3 p-3 rounded-2xl bg-teal-50/60 border border-teal-100/80">
+                    <span class="w-6 h-6 rounded-full bg-primary text-white text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">۳</span>
+                    <div class="text-xs text-slate-700 leading-relaxed">
+                        در بالای صفحه، دکمه <strong>«Add»</strong> یا <strong>«افزودن»</strong> را لمس کنید تا آیکون اپلیکیشن به صفحه اصلی گوشی شما اضافه شود.
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab Content: Android -->
+            <div id="pwaTabContentAndroid" class="p-5 space-y-3.5 hidden">
+                <div class="flex items-start gap-3 p-3 rounded-2xl bg-teal-50/60 border border-teal-100/80">
+                    <span class="w-6 h-6 rounded-full bg-primary text-white text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">۱</span>
+                    <div class="text-xs text-slate-700 leading-relaxed">
+                        روی منوی <strong>سه نقطه (⋮)</strong> در بالای صفحه مرورگر کروم یا سامسونگ اینترنت ضربه بزنید.
+                    </div>
+                </div>
+
+                <div class="flex items-start gap-3 p-3 rounded-2xl bg-teal-50/60 border border-teal-100/80">
+                    <span class="w-6 h-6 rounded-full bg-primary text-white text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">۲</span>
+                    <div class="text-xs text-slate-700 leading-relaxed">
+                        گزینه <strong>«نصب برنامه» (Install app)</strong> یا <strong>«افزودن به صفحه اصلی»</strong> را لمس نمایید.
+                    </div>
+                </div>
+
+                <div class="flex items-start gap-3 p-3 rounded-2xl bg-teal-50/60 border border-teal-100/80">
+                    <span class="w-6 h-6 rounded-full bg-primary text-white text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">۳</span>
+                    <div class="text-xs text-slate-700 leading-relaxed">
+                        در پنجره تأیید ظاهر شده، دکمه <strong>«نصب» (Install)</strong> را انتخاب کنید.
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab Content: Desktop -->
+            <div id="pwaTabContentDesktop" class="p-5 space-y-3.5 hidden">
+                <div class="flex items-start gap-3 p-3 rounded-2xl bg-teal-50/60 border border-teal-100/80">
+                    <span class="w-6 h-6 rounded-full bg-primary text-white text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">۱</span>
+                    <div class="text-xs text-slate-700 leading-relaxed">
+                        در نوار آدرس مرورگر (سمت راست آدرس سایت)، روی آیکون <strong>نصب برنامه (Install <span class="material-symbols-outlined text-sm align-middle">install_desktop</span>)</strong> کلیک فرمایید.
+                    </div>
+                </div>
+
+                <div class="flex items-start gap-3 p-3 rounded-2xl bg-teal-50/60 border border-teal-100/80">
+                    <span class="w-6 h-6 rounded-full bg-primary text-white text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">۲</span>
+                    <div class="text-xs text-slate-700 leading-relaxed">
+                        همچنین می‌توانید از منوی سه نقطه (⋮) مرورگر، گزینه <strong>«Install ASENA...»</strong> را انتخاب نمایید.
+                    </div>
+                </div>
+
+                <div class="flex items-start gap-3 p-3 rounded-2xl bg-teal-50/60 border border-teal-100/80">
+                    <span class="w-6 h-6 rounded-full bg-primary text-white text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">۳</span>
+                    <div class="text-xs text-slate-700 leading-relaxed">
+                        با تأیید نصب، اپلیکیشن آسنا به شکل نرم‌افزار مستقل، فوق‌سریع و بدون نوار آدرس اجرا خواهد شد.
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="p-4 bg-slate-50 border-t border-slate-100 flex items-center justify-between gap-3">
+                <div class="text-[11px] text-slate-500 flex items-center gap-1">
+                    <span class="material-symbols-outlined text-primary text-base">verified</span>
+                    <span>بدون اشغال حجم و به‌روزرسانی آنی</span>
+                </div>
+                <button type="button" onclick="closePwaInstallGuide()" class="px-5 py-2 rounded-xl bg-primary text-white text-xs font-bold hover:bg-primary-container transition-all active:scale-95 shadow-sm cursor-pointer">
+                    متوجه شدم و بستن
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification for PWA Events -->
+    <div id="pwaToast" class="fixed top-6 left-1/2 -translate-x-1/2 z-[10060] hidden max-w-sm px-4 py-2.5 rounded-2xl bg-slate-900/95 text-white text-xs font-bold shadow-2xl backdrop-blur-md flex items-center gap-2.5 transition-all duration-300 pointer-events-none">
+        <span id="pwaToastIcon" class="material-symbols-outlined text-emerald-400 text-lg">check_circle</span>
+        <span id="pwaToastMsg">پیام سیستم</span>
     </div>
 
     <script>
-    // PWA Install Prompt Logic
-    let deferredPrompt = null;
+    // PWA Install Prompt & Dismiss Logic
+    let deferredPwaPrompt = null;
+
+    function isPwaStandalone() {
+        return window.matchMedia('(display-mode: standalone)').matches || 
+               window.navigator.standalone === true || 
+               document.referrer.includes('android-app://');
+    }
+
+    function isPwaDismissed() {
+        try {
+            return localStorage.getItem('asena_pwa_dismissed') === '1' || 
+                   sessionStorage.getItem('asena_pwa_dismissed') === '1';
+        } catch (e) {
+            return false;
+        }
+    }
+
+    function showPwaToast(message, type = 'success') {
+        const toast = document.getElementById('pwaToast');
+        const msg = document.getElementById('pwaToastMsg');
+        const icon = document.getElementById('pwaToastIcon');
+        if (!toast || !msg) return;
+
+        msg.textContent = message;
+        if (type === 'success') {
+            icon.textContent = 'check_circle';
+            icon.className = 'material-symbols-outlined text-emerald-400 text-lg';
+        } else if (type === 'info') {
+            icon.textContent = 'info';
+            icon.className = 'material-symbols-outlined text-sky-400 text-lg';
+        } else {
+            icon.textContent = 'warning';
+            icon.className = 'material-symbols-outlined text-amber-400 text-lg';
+        }
+
+        toast.classList.remove('hidden');
+        toast.style.opacity = '1';
+        toast.style.transform = 'translate(-50%, 0)';
+
+        setTimeout(() => {
+            toast.style.opacity = '0';
+            toast.style.transform = 'translate(-50%, -10px)';
+            setTimeout(() => toast.classList.add('hidden'), 300);
+        }, 3500);
+    }
+
+    function displayPwaBanner() {
+        if (isPwaStandalone() || isPwaDismissed()) return;
+        const banner = document.getElementById('pwaInstallBanner');
+        if (banner) {
+            banner.classList.remove('hidden', 'closing');
+            banner.style.display = 'flex';
+            // Force browser reflow to ensure smooth transition
+            void banner.offsetWidth;
+            banner.classList.add('show');
+        }
+    }
+
+    function dismissPwaBanner(e) {
+        if (e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+        const banner = document.getElementById('pwaInstallBanner');
+        if (banner) {
+            banner.classList.remove('show');
+            banner.classList.add('closing');
+            setTimeout(() => {
+                banner.classList.add('hidden');
+                banner.style.setProperty('display', 'none', 'important');
+            }, 350);
+        }
+        try {
+            localStorage.setItem('asena_pwa_dismissed', '1');
+            sessionStorage.setItem('asena_pwa_dismissed', '1');
+        } catch (err) {}
+    }
+
+    async function handlePwaInstallAction(e) {
+        if (e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        if (isPwaStandalone()) {
+            showPwaToast('اپلیکیشن آسنا هم‌اکنون روی دستگاه شما نصب و در حال اجرا است.', 'info');
+            dismissPwaBanner();
+            return;
+        }
+
+        if (deferredPwaPrompt) {
+            try {
+                deferredPwaPrompt.prompt();
+                const choice = await deferredPwaPrompt.userChoice;
+                if (choice && choice.outcome === 'accepted') {
+                    showPwaToast('در حال نصب اپلیکیشن آسنا...', 'success');
+                    dismissPwaBanner();
+                }
+                deferredPwaPrompt = null;
+                return;
+            } catch (err) {
+                console.warn('[PWA] Prompt error:', err);
+            }
+        }
+
+        // Native prompt unavailable -> open guide modal!
+        openPwaInstallGuide();
+    }
+
+    function openPwaInstallGuide() {
+        const modal = document.getElementById('pwaInstallGuideModal');
+        if (!modal) return;
+
+        // Auto-detect OS / browser
+        const ua = navigator.userAgent || '';
+        const isIos = /iPhone|iPad|iPod/i.test(ua);
+        const isAndroid = /Android/i.test(ua);
+
+        if (isIos) {
+            switchPwaTab('ios');
+        } else if (isAndroid) {
+            switchPwaTab('android');
+        } else {
+            switchPwaTab('desktop');
+        }
+
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closePwaInstallGuide() {
+        const modal = document.getElementById('pwaInstallGuideModal');
+        if (modal) {
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+            document.body.style.overflow = '';
+        }
+        dismissPwaBanner();
+    }
+
+    function switchPwaTab(platform) {
+        const tabs = ['ios', 'android', 'desktop'];
+        tabs.forEach(t => {
+            const btn = document.getElementById('pwaTabBtn' + t.charAt(0).toUpperCase() + t.slice(1));
+            const content = document.getElementById('pwaTabContent' + t.charAt(0).toUpperCase() + t.slice(1));
+            if (t === platform) {
+                if (btn) {
+                    btn.className = 'flex-1 py-2 px-2 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-1.5 bg-white text-primary shadow-xs border border-slate-200';
+                }
+                if (content) content.classList.remove('hidden');
+            } else {
+                if (btn) {
+                    btn.className = 'flex-1 py-2 px-2 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-1.5 text-slate-600 hover:bg-white/60';
+                }
+                if (content) content.classList.add('hidden');
+            }
+        });
+    }
+
+    // Capture browser install prompt
     window.addEventListener('beforeinstallprompt', (e) => {
         e.preventDefault();
-        deferredPrompt = e;
-        const dismissed = localStorage.getItem('asena_pwa_dismissed');
-        if (!dismissed) {
-            setTimeout(() => {
-                const banner = document.getElementById('pwaInstallBanner');
-                if (banner) banner.classList.add('show');
-            }, 3000);
+        deferredPwaPrompt = e;
+        setTimeout(displayPwaBanner, 2000);
+    });
+
+    // Installed listener
+    window.addEventListener('appinstalled', () => {
+        deferredPwaPrompt = null;
+        showPwaToast('اپلیکیشن آسنا با موفقیت نصب شد!', 'success');
+        dismissPwaBanner();
+    });
+
+    // Initial page load check
+    document.addEventListener('DOMContentLoaded', () => {
+        if (!isPwaStandalone() && !isPwaDismissed()) {
+            setTimeout(displayPwaBanner, 3000);
         }
     });
 
-    document.getElementById('pwaInstallBtn')?.addEventListener('click', async () => {
-        if (deferredPrompt) {
-            deferredPrompt.prompt();
-            const { outcome } = await deferredPrompt.userChoice;
-            deferredPrompt = null;
-            document.getElementById('pwaInstallBanner')?.classList.remove('show');
+    // Close guide on ESC key
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            const modal = document.getElementById('pwaInstallGuideModal');
+            if (modal && !modal.classList.contains('hidden')) {
+                closePwaInstallGuide();
+            }
         }
-    });
-
-    document.getElementById('pwaDismissBtn')?.addEventListener('click', () => {
-        document.getElementById('pwaInstallBanner')?.classList.remove('show');
-        localStorage.setItem('asena_pwa_dismissed', '1');
     });
     </script>
+    
+    <!-- Universal Wishlist Manager (Instant Optimistic UI + Micro-Animations + Toast Alerts) -->
+    <script src="assets/js/wishlist-manager.js?v=<?php echo time(); ?>"></script>
 
     <?php require_once __DIR__ . '/cookie_consent.php'; ?>
 </body>

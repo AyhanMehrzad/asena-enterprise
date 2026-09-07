@@ -2,7 +2,8 @@
   "name": "ASENA Company - پلتفرم جامع دامپزشکی و تجارت حیوانات خانگی",
   "short_name": "آسنا (ASENA)",
   "description": "اکوسیستم هوشمند مراقبت، نوبت‌دهی کلینیک، داروخانه تخصصی و تحویل دوره‌ای ملزومات حیوانات خانگی",
-  "start_url": "/index.php",
+  "start_url": "./index.php",
+  "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#f8fafc",
@@ -12,19 +13,19 @@
   "categories": ["medical", "shopping", "lifestyle"],
   "icons": [
     {
-      "src": "/assets/images/favicon-192x192.png",
+      "src": "assets/images/favicon-192x192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "/assets/images/favicon-512x512.png",
+      "src": "assets/images/favicon-512x512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "/apple-touch-icon.png",
+      "src": "apple-touch-icon.png",
       "sizes": "180x180",
       "type": "image/png"
     }
@@ -34,29 +35,29 @@
       "name": "پرونده سلامت حیوان خانگی (Pet Passport)",
       "short_name": "حیوانات من",
       "description": "مشاهده وضعیت سلامت، سوابق واکسیناسیون و دوز داروهای پت",
-      "url": "/profile.php#pets",
-      "icons": [{ "src": "/assets/images/favicon-192x192.png", "sizes": "192x192" }]
+      "url": "profile.php#pets",
+      "icons": [{ "src": "assets/images/favicon-192x192.png", "sizes": "192x192" }]
     },
     {
       "name": "سفارشات ادواری و تحویل خودکار (Autoship)",
       "short_name": "اتوشیپ",
       "description": "مدیریت دوره‌های تحویل خودکار غذا و مکمل با تخفیف دائمی",
-      "url": "/subscriptions.php",
-      "icons": [{ "src": "/assets/images/favicon-192x192.png", "sizes": "192x192" }]
+      "url": "subscriptions.php",
+      "icons": [{ "src": "assets/images/favicon-192x192.png", "sizes": "192x192" }]
     },
     {
       "name": "داروخانه آنلاین و ثبت نسخه پزشک",
       "short_name": "داروخانه",
       "description": "خرید مکمل‌های دارویی و بارگذاری فوری نسخه پزشک",
-      "url": "/pharmacy.php",
-      "icons": [{ "src": "/assets/images/favicon-192x192.png", "sizes": "192x192" }]
+      "url": "pharmacy.php",
+      "icons": [{ "src": "assets/images/favicon-192x192.png", "sizes": "192x192" }]
     },
     {
       "name": "پیشنهادات شگفت‌انگیز (تخفیف‌های ویژه)",
       "short_name": "شگفت‌انگیز",
       "description": "مشاهده تخفیف‌های محدود و پرفروش‌ترین ملزومات پت",
-      "url": "/shop.php",
-      "icons": [{ "src": "/assets/images/favicon-192x192.png", "sizes": "192x192" }]
+      "url": "shop.php",
+      "icons": [{ "src": "assets/images/favicon-192x192.png", "sizes": "192x192" }]
     }
   ]
 }

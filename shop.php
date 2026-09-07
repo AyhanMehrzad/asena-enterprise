@@ -152,16 +152,56 @@ $all_brands = $brandsStmt->fetchAll(PDO::FETCH_COLUMN);
 // Fetch Suggested Autoship Offers (for top banner)
 $autoship_offers = [];
 if ($has_autoship_col) {
-    $autoStmt = $pdo->query("SELECT * FROM products WHERE is_autoship = 1 ORDER BY (price - IFNULL(discount_price, price)) DESC, rating_cache DESC LIMIT 4");
+    $autoStmt = $pdo->query("SELECT * FROM products WHERE is_autoship = 1 GROUP BY name ORDER BY (price - IFNULL(discount_price, price)) DESC, rating_cache DESC LIMIT 4");
     $autoship_offers = $autoStmt->fetchAll(PDO::FETCH_ASSOC);
 }
 
-// Fetch Automatic Best Offers (Highest discounts / highest rated)
+// Fetch Automatic Best Offers (Highest discounts across distinct product categories/lines)
 $best_offers = [];
 try {
-    $bestStmt = $pdo->query("SELECT * FROM products WHERE discount_price IS NOT NULL AND discount_price < price ORDER BY (price - discount_price) DESC LIMIT 4");
+    $bestStmt = $pdo->query("
+        SELECT * FROM (
+            SELECT *, 
+                   ROUND((price - discount_price)*100/price) as discount_pct,
+                   ROW_NUMBER() OVER (
+                       PARTITION BY (
+                           CASE 
+                               WHEN name LIKE '%کنسرو%' THEN 'canned'
+                               WHEN name LIKE '%قطره%' OR category = 'مکمل دارویی' THEN 'supplement'
+                               WHEN category = 'غذای سگ' THEN 'dog_food'
+                               WHEN category = 'غذای گربه' THEN 'cat_dry'
+                               ELSE category 
+                           END
+                       ) 
+                       ORDER BY (price - discount_price) DESC, baseline_rating DESC, id ASC
+                   ) as rn
+            FROM products 
+            WHERE discount_price IS NOT NULL AND discount_price < price AND stock > 0
+        ) ranked
+        WHERE rn = 1
+        ORDER BY discount_pct DESC, (price - discount_price) DESC
+        LIMIT 4
+    ");
     $best_offers = $bestStmt->fetchAll(PDO::FETCH_ASSOC);
-} catch (Exception $e) {}
+
+    // If fewer than 4 distinct categories found, backfill with unique items by name
+    if (count($best_offers) < 4) {
+        $existingIds = array_column($best_offers, 'id') ?: [0];
+        $inClause = implode(',', array_map('intval', $existingIds));
+        $backfillStmt = $pdo->query("
+            SELECT *, ROUND((price - discount_price)*100/price) as discount_pct
+            FROM products 
+            WHERE discount_price IS NOT NULL AND discount_price < price AND stock > 0 AND id NOT IN ($inClause)
+            GROUP BY name
+            ORDER BY discount_pct DESC, (price - discount_price) DESC 
+            LIMIT " . (4 - count($best_offers))
+        );
+        $best_offers = array_merge($best_offers, $backfillStmt->fetchAll(PDO::FETCH_ASSOC));
+    }
+} catch (Exception $e) {
+    $bestStmt = $pdo->query("SELECT *, ROUND((price - discount_price)*100/price) as discount_pct FROM products WHERE discount_price IS NOT NULL AND discount_price < price GROUP BY name ORDER BY (price - discount_price) DESC LIMIT 4");
+    $best_offers = $bestStmt->fetchAll(PDO::FETCH_ASSOC);
+}
 
 // Fetch Recommended Products (Smart recommendation engine)
 $recommended_products = [];
@@ -170,12 +210,14 @@ try {
     $recommended_products = $recStmt->fetchAll(PDO::FETCH_ASSOC);
 } catch (Exception $e) {}
 
-// Fetch user wishlist if logged in
+// Fetch user wishlist if logged in or guest session
 $user_wishlist = [];
 if (isset($_SESSION['user_id'])) {
     $wishlist_stmt = $pdo->prepare("SELECT product_id FROM wishlist WHERE user_id = ?");
     $wishlist_stmt->execute([$_SESSION['user_id']]);
     $user_wishlist = $wishlist_stmt->fetchAll(PDO::FETCH_COLUMN);
+} elseif (isset($_SESSION['guest_wishlist']) && is_array($_SESSION['guest_wishlist'])) {
+    $user_wishlist = $_SESSION['guest_wishlist'];
 }
 
 // Companion Pet Animal definitions (Local self-hosted SVGs for Iran network compatibility)
@@ -342,49 +384,103 @@ function buildUrlRemoveArrayItem($arrayName, $valueToRemove) {
     <!-- SECTION 3: SUGGESTED AUTOSHIP OFFERS BANNER (Page 6 Top)                  -->
     <!-- ========================================================================= -->
     <?php if(!empty($autoship_offers) && ($autoship_only || empty($category))): ?>
-    <section class="mb-12 bg-gradient-to-l from-secondary-container/10 via-amber-50 to-orange-50 border-2 border-secondary-container/30 rounded-3xl p-6 lg:p-8 relative overflow-hidden shadow-sm">
-        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+    <section class="mb-12 bg-gradient-to-l from-emerald-50/70 via-amber-50/50 to-orange-50/60 border border-emerald-200/70 rounded-3xl p-6 lg:p-8 relative overflow-hidden shadow-sm">
+        <!-- Ambient decorative blur effects -->
+        <div class="absolute -left-12 -top-12 w-56 h-56 rounded-full bg-emerald-400/10 blur-3xl pointer-events-none"></div>
+        <div class="absolute right-1/4 -bottom-12 w-64 h-64 rounded-full bg-amber-400/10 blur-3xl pointer-events-none"></div>
+
+        <div class="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
             <div>
-                <div class="inline-flex items-center gap-2 px-3 py-1 bg-secondary-container text-white rounded-full text-xs font-bold mb-2">
-                    <span class="material-symbols-outlined text-[14px]">local_shipping</span>
-                    پیشنهاد ویژه تحویل دوره‌ای هوشمند
+                <div class="inline-flex items-center gap-2 px-3.5 py-1 bg-gradient-to-r from-emerald-600 to-teal-700 text-white rounded-full text-xs font-black shadow-sm mb-2.5">
+                    <span class="material-symbols-outlined text-[15px]">autorenew</span>
+                    <span>پیشنهاد ویژه تحویل دوره‌ای هوشمند</span>
                 </div>
-                <h3 class="text-2xl font-bold text-primary">پیشنهادات برگزیده ارسال خودکار (Suggested Autoship Offers)</h3>
-                <p class="text-sm text-on-surface-variant">با فعال‌سازی ارسال دوره‌ای، علاوه بر تضمین عدم اتمام داروی حیوان خانگی، تا ۱۵٪ تخفیف ثابت دریافت کنید.</p>
+                <h3 class="text-xl lg:text-2xl font-black text-slate-900 tracking-tight">پیشنهادات برگزیده ارسال خودکار (Suggested Autoship Offers)</h3>
+                <p class="text-xs lg:text-sm text-slate-600 font-medium mt-1">با فعال‌سازی ارسال دوره‌ای، علاوه بر تضمین عدم اتمام غذای حیوان خانگی، تا ۱۵٪ تخفیف ثابت دریافت کنید.</p>
             </div>
-            <a href="subscriptions.php" class="bg-primary text-white px-6 py-2.5 rounded-xl text-sm font-bold hover:bg-primary-container transition-all self-start md:self-auto shrink-0 shadow-md">
-                مشاهده پلن‌های اشتراک
+            <a href="subscriptions.php" class="bg-primary hover:bg-[#002d72] text-white px-5 py-2.5 rounded-2xl text-xs lg:text-sm font-black transition-all self-start md:self-auto shrink-0 shadow-md flex items-center gap-2">
+                <span>مشاهده پلن‌های اشتراک</span>
+                <span class="material-symbols-outlined text-base">arrow_forward</span>
             </a>
         </div>
 
         <!-- Autoship Suggested Cards Grid -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            <?php foreach($autoship_offers as $auto_item): ?>
-            <div class="bg-white rounded-2xl p-5 shadow-md border border-outline-variant/20 flex flex-col justify-between relative hover:-translate-y-1 transition-transform">
-                <div class="absolute top-4 left-4 bg-status-active text-white text-[11px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
-                    <span class="material-symbols-outlined text-[12px]">autorenew</span>
-                    <?php echo $auto_item['autoship_discount'] ?? 10; ?>٪ تخفیف دائمی
+        <div class="relative z-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            <?php foreach($autoship_offers as $auto_item): 
+                $disc = (int)($auto_item['autoship_discount'] ?? 15);
+                if ($disc <= 0) $disc = 15;
+                $basePrice = (float)($auto_item['discount_price'] ?: $auto_item['price']);
+                $auto_price = round($basePrice * (100 - $disc) / 100);
+            ?>
+            <div class="group bg-white rounded-3xl p-4 shadow-sm hover:shadow-xl border border-slate-200/90 hover:border-emerald-300 flex flex-col justify-between relative transition-all duration-300 hover:-translate-y-1.5">
+                
+                <!-- Image Wrapper with Visible Top Badges -->
+                <div class="aspect-square bg-slate-50/80 rounded-2xl overflow-hidden mb-3 relative p-4 flex items-center justify-center border border-slate-100">
+                    <!-- Top Right: Autoship Discount Pill (Guaranteed high z-index and unobscured) -->
+                    <div class="absolute top-2.5 right-2.5 z-20 bg-emerald-600 text-white text-[10px] font-black px-2.5 py-1 rounded-full shadow-md flex items-center gap-1">
+                        <span class="material-symbols-outlined text-[13px]">autorenew</span>
+                        <span><?= $disc ?>٪ تخفیف اشتراک</span>
+                    </div>
+
+                    <!-- Top Left: Delivery Interval Badge -->
+                    <div class="absolute top-2.5 left-2.5 z-20 bg-slate-900/70 text-white text-[10px] font-bold px-2 py-0.5 rounded-full backdrop-blur-md flex items-center gap-1">
+                        <span class="material-symbols-outlined text-[11px]">schedule</span>
+                        <span>ارسال دوره‌ای</span>
+                    </div>
+
+                    <a href="product_details.php?id=<?= (int)$auto_item['id'] ?>" class="w-full h-full flex items-center justify-center">
+                        <img loading="lazy" 
+                             src="<?= htmlspecialchars($auto_item['image_url']) ?>" 
+                             onerror="this.src='assets/images/pharma-default.svg'" 
+                             class="max-w-full max-h-full object-contain group-hover:scale-105 transition-transform duration-300 drop-shadow-sm" 
+                             alt="<?= htmlspecialchars($auto_item['name']) ?>">
+                    </a>
                 </div>
 
-                <div class="aspect-square bg-surface-container-lowest rounded-xl overflow-hidden mb-4 relative">
-                    <img loading="lazy" src="<?php echo htmlspecialchars($auto_item['image_url']); ?>" onerror="this.src='assets/images/pharma-default.svg'" class="w-full h-full object-cover" alt="<?php echo htmlspecialchars($auto_item['name']); ?>">
-                </div>
-
-                <div>
-                    <span class="text-[11px] text-on-surface-variant font-bold"><?php echo htmlspecialchars($auto_item['brand'] ?? 'آسنا'); ?></span>
-                    <h4 class="text-sm font-bold text-primary line-clamp-2 mb-2"><?php echo htmlspecialchars($auto_item['name']); ?></h4>
-                    
-                    <div class="flex items-center justify-between mt-3 pt-3 border-t border-outline-variant/20">
-                        <div class="flex flex-col">
-                            <span class="text-[10px] text-on-surface-variant line-through"><?php echo number_format($auto_item['price']); ?> ت</span>
-                            <?php 
-                                $disc = $auto_item['autoship_discount'] ?? 10;
-                                $auto_price = $auto_item['discount_price'] ? ($auto_item['discount_price'] * (100 - $disc) / 100) : ($auto_item['price'] * (100 - $disc) / 100);
-                            ?>
-                            <span class="text-sm font-bold text-secondary-container"><?php echo number_format($auto_price); ?> تومان</span>
+                <!-- Product Information -->
+                <div class="flex-1 flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center justify-between gap-2 mb-1.5">
+                            <span class="text-[11px] text-slate-500 font-bold bg-slate-100 px-2 py-0.5 rounded-md truncate max-w-[140px]">
+                                <?= htmlspecialchars($auto_item['brand'] ?? 'آسنا') ?>
+                            </span>
+                            <div class="flex items-center gap-1 text-[11px] font-bold text-amber-500 shrink-0">
+                                <span class="material-symbols-outlined text-xs">star</span>
+                                <span class="font-mono">۴.۹</span>
+                            </div>
                         </div>
-                        <button type="button" onclick="addToCart(this, <?php echo $auto_item['id']; ?>, 'autoship')" class="bg-secondary-container text-white p-2 rounded-xl hover:bg-[#ea580c] transition-colors cursor-pointer" title="افزودن با اشتراک دوره‌ای (Autoship)">
-                            <span class="material-symbols-outlined text-[18px]">add_shopping_cart</span>
+
+                        <a href="product_details.php?id=<?= (int)$auto_item['id'] ?>">
+                            <h4 class="text-xs font-black text-slate-900 line-clamp-2 hover:text-emerald-700 transition-colors leading-relaxed min-h-[2.5rem]" title="<?= htmlspecialchars($auto_item['name']) ?>">
+                                <?= htmlspecialchars($auto_item['name']) ?>
+                            </h4>
+                        </a>
+
+                        <div class="flex items-center gap-1.5 text-[10px] text-emerald-800 font-bold my-2 bg-emerald-50/90 px-2.5 py-1 rounded-xl border border-emerald-100/80">
+                            <span class="material-symbols-outlined text-[13px] text-emerald-600">local_shipping</span>
+                            <span>تحویل خودکار + تضمین اصالت کالا</span>
+                        </div>
+                    </div>
+
+                    <!-- Price & Action Button Row -->
+                    <div class="flex items-center justify-between pt-2.5 border-t border-slate-100 mt-2 gap-2">
+                        <div class="flex flex-col">
+                            <div class="flex items-center gap-1">
+                                <span class="text-[10px] text-slate-400 line-through font-mono"><?= number_format($auto_item['price']) ?></span>
+                                <span class="text-[9px] font-black text-rose-600 bg-rose-50 px-1 py-0.2 rounded font-mono">-<?= $disc ?>%</span>
+                            </div>
+                            <div class="flex items-baseline gap-1">
+                                <span class="text-sm lg:text-base font-black text-emerald-600 font-mono tracking-tight"><?= number_format($auto_price) ?></span>
+                                <span class="text-[10px] font-bold text-slate-500">تومان</span>
+                            </div>
+                        </div>
+
+                        <button type="button" 
+                                onclick="addToCart(this, <?= (int)$auto_item['id'] ?>, 'autoship')" 
+                                class="bg-secondary-container hover:bg-[#e07300] text-white px-3 py-2 rounded-xl text-xs font-black shadow-sm flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer shrink-0" 
+                                title="افزودن با اشتراک دوره‌ای (Autoship)">
+                            <span class="material-symbols-outlined text-[16px]">add_shopping_cart</span>
+                            <span class="text-[11px] font-bold">خرید اشتراکی</span>
                         </button>
                     </div>
                 </div>
@@ -846,29 +942,74 @@ function buildUrlRemoveArrayItem($arrayName, $valueToRemove) {
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            <?php foreach($best_offers as $bo_item): ?>
-            <div class="hot-offer-card bg-white rounded-3xl p-5 shadow-lg border border-secondary-container/30 flex flex-col justify-between relative group hover:-translate-y-1 transition-all">
-                <div class="absolute top-4 left-4 bg-error text-white text-[11px] font-bold px-2.5 py-0.5 rounded-full shadow-sm z-10">
-                    🔥 تخفیف ویژه
-                </div>
+            <?php foreach($best_offers as $bo_item): 
+                $discPct = !empty($bo_item['discount_pct']) ? (int)$bo_item['discount_pct'] : round(($bo_item['price'] - $bo_item['discount_price']) * 100 / $bo_item['price']);
+                $savedAmount = $bo_item['price'] - $bo_item['discount_price'];
+            ?>
+            <div class="hot-offer-card group bg-white rounded-3xl p-4 sm:p-5 shadow-sm hover:shadow-xl border border-secondary-container/20 flex flex-col justify-between relative transition-all duration-300 hover:-translate-y-1.5">
                 
-                <div class="aspect-square bg-surface-container-lowest rounded-2xl overflow-hidden mb-4 relative">
-                    <img loading="lazy" src="<?php echo htmlspecialchars($bo_item['image_url']); ?>" onerror="this.src='assets/images/pharma-default.svg'" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" alt="<?php echo htmlspecialchars($bo_item['name']); ?>">
+                <!-- Image Wrapper with Badges -->
+                <div class="aspect-square bg-gradient-to-b from-slate-50/90 to-surface-container-lowest rounded-2xl overflow-hidden mb-3 relative p-4 flex items-center justify-center border border-slate-100">
+                    <!-- Top Right: Discount Percent Pill -->
+                    <div class="absolute top-2.5 right-2.5 z-20 bg-gradient-to-r from-red-600 to-amber-500 text-white text-[10px] font-black px-2.5 py-1 rounded-full shadow-md flex items-center gap-1">
+                        <span class="material-symbols-outlined text-[13px]">local_fire_department</span>
+                        <span><?= $discPct ?>٪ تخفیف ویژه</span>
+                    </div>
+
+                    <!-- Top Left: Limited Stock / Special Offer Pill -->
+                    <div class="absolute top-2.5 left-2.5 z-20 bg-slate-900/70 text-white text-[10px] font-bold px-2 py-0.5 rounded-full backdrop-blur-md flex items-center gap-1">
+                        <span class="material-symbols-outlined text-[11px]">bolt</span>
+                        <span>شگفت‌انگیز</span>
+                    </div>
+
+                    <a href="product_details.php?id=<?= (int)$bo_item['id'] ?>" class="w-full h-full flex items-center justify-center">
+                        <img loading="lazy" 
+                             src="<?= htmlspecialchars($bo_item['image_url']) ?>" 
+                             onerror="this.src='assets/images/pharma-default.svg'" 
+                             class="max-w-full max-h-full object-contain group-hover:scale-105 transition-transform duration-300 drop-shadow-sm" 
+                             alt="<?= htmlspecialchars($bo_item['name']) ?>">
+                    </a>
                 </div>
 
-                <div>
-                    <span class="text-[11px] text-on-surface-variant"><?php echo htmlspecialchars($bo_item['category']); ?></span>
-                    <a href="product_details.php?id=<?php echo $bo_item['id']; ?>">
-                        <h4 class="text-sm font-bold text-on-surface line-clamp-2 hover:text-primary transition-colors mb-2"><?php echo htmlspecialchars($bo_item['name']); ?></h4>
-                    </a>
-
-                    <div class="flex items-center justify-between mt-3 pt-3 border-t border-outline-variant/20">
-                        <div class="flex flex-col">
-                            <span class="text-[11px] text-on-surface-variant line-through"><?php echo number_format($bo_item['price']); ?> تومان</span>
-                            <span class="text-sm font-bold text-primary"><?php echo number_format($bo_item['discount_price']); ?> تومان</span>
+                <!-- Product Information -->
+                <div class="flex-1 flex flex-col justify-between">
+                    <div>
+                        <!-- Category, Brand & Rating -->
+                        <div class="flex items-center justify-between gap-2 mb-1.5">
+                            <span class="text-[11px] text-slate-500 font-bold bg-slate-100 px-2 py-0.5 rounded-md truncate max-w-[130px]">
+                                <?= htmlspecialchars($bo_item['brand'] ?? $bo_item['category']) ?>
+                            </span>
+                            <div class="flex items-center gap-1 text-[11px] font-bold text-amber-500 shrink-0">
+                                <span class="material-symbols-outlined text-xs">star</span>
+                                <span class="font-mono"><?= number_format($bo_item['rating_cache'] ?: 4.9, 1) ?></span>
+                            </div>
                         </div>
-                        <button type="button" onclick="addToCart(this, <?php echo $bo_item['id']; ?>)" class="bg-primary text-white p-2.5 rounded-xl hover:bg-primary-container transition-colors shadow-sm" title="خرید سریع">
-                            <span class="material-symbols-outlined text-[18px]">shopping_cart</span>
+
+                        <!-- Product Title -->
+                        <a href="product_details.php?id=<?= (int)$bo_item['id'] ?>">
+                            <h4 class="text-xs sm:text-sm font-black text-slate-900 line-clamp-2 hover:text-primary transition-colors leading-relaxed min-h-[2.5rem] mb-2" title="<?= htmlspecialchars($bo_item['name']) ?>">
+                                <?= htmlspecialchars($bo_item['name']) ?>
+                            </h4>
+                        </a>
+
+                        <!-- Savings Badge -->
+                        <div class="inline-flex items-center gap-1 text-[10px] text-amber-800 font-bold mb-2 bg-amber-50 px-2.5 py-1 rounded-xl border border-amber-200/60">
+                            <span>سود شما از خرید:</span>
+                            <span class="font-mono font-black text-secondary-container"><?= number_format($savedAmount) ?> تومان</span>
+                        </div>
+                    </div>
+
+                    <!-- Price & CTA Action -->
+                    <div class="flex items-center justify-between pt-3 border-t border-slate-100 mt-2">
+                        <div class="flex flex-col">
+                            <span class="text-[11px] text-slate-400 line-through font-mono"><?= number_format($bo_item['price']) ?> تومان</span>
+                            <span class="text-sm sm:text-base font-black text-primary font-mono"><?= number_format($bo_item['discount_price']) ?> <span class="text-[10px] font-normal text-slate-600">تومان</span></span>
+                        </div>
+                        <button type="button" onclick="addToCart(this, <?= (int)$bo_item['id'] ?>, 'standard')" 
+                                class="bg-primary hover:bg-[#002d72] text-white px-3 py-2 sm:px-3.5 sm:py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 shadow-md active:scale-95 transition-all cursor-pointer"
+                                title="خرید مستقیم">
+                            <span class="material-symbols-outlined text-[18px]">add_shopping_cart</span>
+                            <span class="hidden sm:inline">خرید</span>
                         </button>
                     </div>
                 </div>
@@ -1020,34 +1161,8 @@ function addToCart(btn, productId, type = 'standard') {
     });
 }
 
-// Toggle Wishlist with AJAX
-function toggleWishlist(btn, productId) {
-    if(window.event) window.event.preventDefault();
-    
-    fetch('actions/wishlist_action.php', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: 'product_id=' + productId + '&csrf_token=<?php echo csrf_token(); ?>'
-    })
-    .then(response => response.json())
-    .then(data => {
-        if(data.status === 'success') {
-            const icon = btn.querySelector('.material-symbols-outlined');
-            if(data.in_wishlist) {
-                icon.style.fontVariationSettings = "'FILL' 1";
-                icon.style.color = '#dc2626';
-            } else {
-                icon.style.fontVariationSettings = "'FILL' 0";
-                icon.style.color = 'inherit';
-            }
-        } else {
-            if(data.message) alert(data.message);
-        }
-    })
-    .catch(err => console.error(err));
-}
+// Wishlist interactions are handled universally by assets/js/wishlist-manager.js
+// (Optimistic zero-latency UI + Particle burst + Floating toast)
 </script>
 
 <?php include 'includes/footer.php'; ?>

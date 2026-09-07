@@ -343,7 +343,7 @@ body, button, input, select, textarea {
     margin: 12px auto 8px auto;
 }
 
-/* 5. Floating PWA Install Prompt Banner */
+/* 5. Floating PWA Install Prompt Banner & Guide Modal */
 .pwa-install-banner {
     position: fixed;
     bottom: 90px;
@@ -352,27 +352,69 @@ body, button, input, select, textarea {
     max-width: 440px;
     margin: 0 auto;
     background: #ffffff;
-    border: 1px solid var(--asena-border);
-    border-radius: 20px;
-    padding: 16px 20px;
-    box-shadow: var(--asena-shadow-lg);
-    z-index: 1000;
+    border: 1px solid rgba(15, 118, 110, 0.15);
+    border-radius: 22px;
+    padding: 14px 18px;
+    box-shadow: 0 20px 45px -10px rgba(15, 118, 110, 0.25), 0 0 0 1px rgba(0, 45, 114, 0.06);
+    z-index: 9999;
     display: flex;
     align-items: center;
-    gap: 14px;
-    transform: translateY(150%);
-    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    gap: 12px;
+    transform: translateY(220px) scale(0.96);
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease, visibility 0.3s ease;
 }
+
+@media (min-width: 1024px) {
+    .pwa-install-banner {
+        bottom: 24px;
+        right: 24px;
+        left: auto;
+        margin: 0;
+        max-width: 430px;
+    }
+}
+
+@media (max-width: 1023px) {
+    .pwa-install-banner {
+        bottom: calc(76px + env(safe-area-inset-bottom, 0px));
+        left: 14px;
+        right: 14px;
+        max-width: calc(100% - 28px);
+    }
+}
+
 .pwa-install-banner.show {
-    transform: translateY(0);
+    transform: translateY(0) scale(1);
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
 }
+
+.pwa-install-banner.closing {
+    transform: translateY(220px) scale(0.92);
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+}
+
+.pwa-install-banner.hidden {
+    display: none !important;
+}
+
 .pwa-logo-box {
     width: 44px;
     height: 44px;
-    border-radius: 12px;
-    background: #eff6ff;
+    border-radius: 14px;
+    background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+    border: 1px solid #bfdbfe;
     padding: 6px;
     flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 /* 6. Universal Live Search Dropdown & Micro-Interactions */
@@ -431,4 +473,219 @@ body, button, input, select, textarea {
         opacity: 0;
     }
 }
+
+/* 8. Landing Page Best Sellers & Autoship Enhancement Tokens */
+.bestseller-rank-badge {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    color: #ffffff;
+    font-weight: 800;
+    box-shadow: 0 4px 12px -2px rgba(217, 119, 6, 0.4);
+}
+
+.autoship-pill-tag {
+    background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%);
+    border: 1px solid rgba(249, 115, 22, 0.3);
+    color: #c2410c;
+    font-weight: 700;
+}
+
+.combo-box-card {
+    background: #ffffff;
+    border: 1px solid rgba(226, 232, 240, 0.8);
+    border-radius: 1.75rem;
+    transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    position: relative;
+    overflow: hidden;
+}
+.combo-box-card:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 25px 50px -12px rgba(0, 45, 114, 0.16);
+    border-color: rgba(249, 115, 22, 0.4);
+}
+
+.category-tile-modern {
+    background: #ffffff;
+    border: 1px solid rgba(226, 232, 240, 0.7);
+    border-radius: 1.5rem;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.category-tile-modern:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 16px 32px -8px rgba(0, 45, 114, 0.12);
+    border-color: var(--asena-secondary);
+}
+
+.testimonial-card-modern {
+    background: #ffffff;
+    border: 1px solid rgba(226, 232, 240, 0.7);
+    border-radius: 1.75rem;
+    transition: all 0.3s ease;
+}
+.testimonial-card-modern:hover {
+    box-shadow: 0 16px 32px -8px rgba(0, 45, 114, 0.08);
+    border-color: rgba(0, 45, 114, 0.2);
+}
+
+.brand-badge-partner {
+    background: #ffffff;
+    border: 1px solid rgba(226, 232, 240, 0.7);
+    border-radius: 1.25rem;
+    padding: 1rem 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.25s ease;
+    filter: grayscale(40%);
+    opacity: 0.85;
+}
+.brand-badge-partner:hover {
+    filter: grayscale(0%);
+    opacity: 1;
+    transform: scale(1.05);
+    border-color: var(--asena-primary);
+    box-shadow: 0 10px 20px -5px rgba(0, 45, 114, 0.1);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════ */
+/* ASENA FAVORITE HEART MICRO-ANIMATIONS & TOAST SYSTEM                      */
+/* ══════════════════════════════════════════════════════════════════════════ */
+
+/* Button Hover & Active Physics */
+.wishlist-btn {
+    transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), background-color 0.2s ease, box-shadow 0.2s ease !important;
+}
+.wishlist-btn:hover {
+    transform: scale(1.12);
+}
+.wishlist-btn:active {
+    transform: scale(0.9);
+}
+
+/* Heart Pop Keyframe Animation */
+@keyframes heartBouncePop {
+    0% {
+        transform: scale(1);
+    }
+    35% {
+        transform: scale(1.48);
+    }
+    60% {
+        transform: scale(0.88);
+    }
+    80% {
+        transform: scale(1.18);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+@keyframes heartUnpop {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(0.75);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+.heart-pop-anim {
+    animation: heartBouncePop 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards !important;
+}
+
+.heart-unpop-anim {
+    animation: heartUnpop 0.3s ease-out forwards !important;
+}
+
+/* Floating Heart Particles */
+.floating-heart-particle {
+    position: absolute;
+    font-size: 16px;
+    user-select: none;
+    pointer-events: none;
+    animation: floatHeartFade 0.75s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+}
+
+@keyframes floatHeartFade {
+    0% {
+        transform: translate(0, 0) scale(0.3) rotate(0deg);
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.9;
+    }
+    100% {
+        transform: translate(var(--tx), var(--ty)) scale(1.15) rotate(var(--rot));
+        opacity: 0;
+    }
+}
+
+/* Wishlist Toast Notification */
+.wishlist-toast-container {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    z-index: 999999;
+    display: flex;
+    flex-direction: column-reverse;
+    gap: 10px;
+    pointer-events: none;
+    max-width: calc(100vw - 48px);
+}
+
+.wishlist-toast {
+    pointer-events: auto;
+    background: rgba(15, 23, 42, 0.94);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    color: #ffffff;
+    padding: 12px 20px;
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    box-shadow: 0 16px 36px -6px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.12);
+    animation: wishlistToastSlideIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    min-width: 260px;
+}
+
+.wishlist-toast-added {
+    border-right: 4px solid #f43f5e;
+}
+
+.wishlist-toast-removed {
+    border-right: 4px solid #94a3b8;
+}
+
+@keyframes wishlistToastSlideIn {
+    0% {
+        opacity: 0;
+        transform: translateY(24px) scale(0.92);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.wishlist-toast-fadeout {
+    animation: wishlistToastSlideOut 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards !important;
+}
+
+@keyframes wishlistToastSlideOut {
+    0% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+    100% {
+        opacity: 0;
+        transform: translateY(-12px) scale(0.92);
+    }
+}
+
+
 

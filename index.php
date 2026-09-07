@@ -8,13 +8,30 @@ $premium_products = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Fetch featured pet shop products
 $petshop_products = [];
+$bestseller_products = [];
 if (Feature::has('petshop_catalog')) {
     try {
         $pStmt = $pdo->prepare("SELECT * FROM products ORDER BY id DESC LIMIT 12");
         $pStmt->execute();
         $petshop_products = $pStmt->fetchAll(PDO::FETCH_ASSOC);
+
+        // Fetch top best sellers & trending items with autoship prioritization
+        $bs_stmt = $pdo->prepare("
+            SELECT id, name, category, price, discount_price, image_url, brand, stock, 
+                   target_animal, is_autoship, autoship_discount, rating_cache, review_count_cache 
+            FROM products 
+            WHERE stock > 0 
+            ORDER BY is_autoship DESC, rating_cache DESC, review_count_cache DESC, id DESC 
+            LIMIT 12
+        ");
+        $bs_stmt->execute();
+        $bestseller_products = $bs_stmt->fetchAll(PDO::FETCH_ASSOC);
     } catch (Exception $e) {}
 }
+if (empty($bestseller_products) && !empty($petshop_products)) {
+    $bestseller_products = array_slice($petshop_products, 0, 12);
+}
+
 
 // Fetch top rated doctors based on rating & reviews
 $top_doctors = [];
@@ -100,12 +117,14 @@ try {
     $count_medicines = (int)$pdo->query("SELECT count(*) FROM pharmacy_medicines")->fetchColumn() ?: 160;
 } catch (Exception $e) {}
 
-// Fetch user wishlist if logged in
+// Fetch user wishlist if logged in or guest session
 $user_wishlist = [];
 if (isset($_SESSION['user_id'])) {
     $wishlist_stmt = $pdo->prepare("SELECT product_id FROM wishlist WHERE user_id = ?");
     $wishlist_stmt->execute([$_SESSION['user_id']]);
     $user_wishlist = $wishlist_stmt->fetchAll(PDO::FETCH_COLUMN);
+} elseif (isset($_SESSION['guest_wishlist']) && is_array($_SESSION['guest_wishlist'])) {
+    $user_wishlist = $_SESSION['guest_wishlist'];
 }
 
 // Fetch active campaigns
@@ -601,8 +620,8 @@ $top_donors = $donor_stmt->fetchAll(PDO::FETCH_ASSOC);
 
                     <!-- Organization Info -->
                     <div class="flex items-start gap-4 mb-4">
-                        <div class="w-16 h-16 rounded-2xl bg-teal-50 text-teal-700 flex items-center justify-center shrink-0 border border-teal-100 overflow-hidden group-hover:scale-105 transition-transform shadow-inner">
-                            <img src="<?= htmlspecialchars($org['logo_url'] ?: 'assets/images/logo.png') ?>" alt="" class="w-full h-full object-cover">
+                        <div class="w-16 h-16 rounded-2xl bg-white text-teal-700 flex items-center justify-center shrink-0 border border-slate-200 overflow-hidden group-hover:scale-105 transition-transform shadow-sm p-1.5">
+                            <img src="<?= htmlspecialchars($org['logo_url'] ?: 'assets/images/logo.png') ?>" alt="" class="w-full h-full object-contain">
                         </div>
                         <div class="overflow-hidden">
                             <h3 class="font-black text-slate-900 text-base group-hover:text-primary transition-colors line-clamp-1">
@@ -864,7 +883,578 @@ $top_donors = $donor_stmt->fetchAll(PDO::FETCH_ASSOC);
                         مشاهده در پنل کاربری
                     </a>
                 </div>
+            </div>
         </div>
+
+        <!-- ══════════════════════════════════════════════════════════════════════════ -->
+        <!-- NEW SECTION: BEST SELLERS & TRENDING PRODUCTS SHOWCASE                     -->
+        <!-- ══════════════════════════════════════════════════════════════════════════ -->
+        <?php if (!empty($bestseller_products)): ?>
+        <section class="bestsellers-showcase space-y-6 my-12" id="bestSellersSection">
+            <div class="flex flex-col md:flex-row md:items-end justify-between gap-4 px-2">
+                <div class="space-y-2">
+                    <div class="inline-flex items-center gap-2 px-3.5 py-1 bg-amber-50 text-amber-800 border border-amber-200/70 rounded-full text-xs font-black">
+                        <span class="material-symbols-outlined text-sm text-amber-500" style="font-variation-settings: 'FILL' 1;">local_fire_department</span>
+                        <span>پرفروش‌ترین و محبوب‌ترین‌های پت‌شاپ و مکمل‌ها</span>
+                    </div>
+                    <h2 class="text-2xl sm:text-3xl lg:text-4xl font-black text-primary tracking-tight">
+                        محبوب‌ترین انتخاب‌های سرپرستان پت
+                    </h2>
+                    <p class="text-xs sm:text-sm text-on-surface-variant font-medium max-w-2xl">
+                        برترین محصولات غذایی، درمانی، بهداشتی و اسباب‌بازی بر اساس بیش از ۲۵,۰۰۰ خرید موفق؛ دارای امتیاز بالای ۴.۸ و امکان فعال‌سازی ارسال خودکار (Autoship).
+                    </p>
+                </div>
+                <div class="flex items-center gap-2 self-start md:self-auto">
+                    <a href="shop.php" class="bg-primary hover:bg-primary-container text-white px-5 py-2.5 rounded-2xl text-xs sm:text-sm font-bold transition-all shadow-md flex items-center gap-1.5 shrink-0">
+                        <span>مشاهده کل ویترین فروشگاه</span>
+                        <span class="material-symbols-outlined text-sm">arrow_left_alt</span>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Best Seller Category Filters -->
+            <div class="flex items-center gap-2 overflow-x-auto pb-2 px-2 custom-scrollbar" id="bestSellerFilterPills">
+                <button type="button" onclick="filterBestSellers('all', this)" class="bestseller-tab-btn active bg-primary text-white px-4 py-2 rounded-2xl text-xs font-bold transition-all shrink-0 flex items-center gap-1.5 shadow-sm">
+                    <span class="material-symbols-outlined text-sm">auto_awesome</span>
+                    <span>همه پرفروش‌ها</span>
+                </button>
+                <button type="button" onclick="filterBestSellers('dog', this)" class="bestseller-tab-btn bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2 rounded-2xl text-xs font-bold transition-all shrink-0 flex items-center gap-1.5">
+                    <span class="text-sm">🐕</span>
+                    <span>غذای سگ</span>
+                </button>
+                <button type="button" onclick="filterBestSellers('cat', this)" class="bestseller-tab-btn bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2 rounded-2xl text-xs font-bold transition-all shrink-0 flex items-center gap-1.5">
+                    <span class="text-sm">🐈</span>
+                    <span>غذای گربه</span>
+                </button>
+                <button type="button" onclick="filterBestSellers('supplement', this)" class="bestseller-tab-btn bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2 rounded-2xl text-xs font-bold transition-all shrink-0 flex items-center gap-1.5">
+                    <span class="material-symbols-outlined text-sm text-teal-600">medication_liquid</span>
+                    <span>مکمل و درمانی</span>
+                </button>
+                <button type="button" onclick="filterBestSellers('hygiene', this)" class="bestseller-tab-btn bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2 rounded-2xl text-xs font-bold transition-all shrink-0 flex items-center gap-1.5">
+                    <span class="material-symbols-outlined text-sm text-sky-600">cleaning_services</span>
+                    <span>خاک و بهداشتی</span>
+                </button>
+                <button type="button" onclick="filterBestSellers('toy', this)" class="bestseller-tab-btn bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2 rounded-2xl text-xs font-bold transition-all shrink-0 flex items-center gap-1.5">
+                    <span class="material-symbols-outlined text-sm text-amber-600">toys</span>
+                    <span>اسباب‌بازی و سرگرمی</span>
+                </button>
+            </div>
+
+            <!-- Best Sellers Grid -->
+            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6" id="bestSellersGrid">
+                <?php 
+                $rank = 1;
+                foreach ($bestseller_products as $prod): 
+                    $cat = mb_strtolower($prod['category'] ?? '', 'UTF-8');
+                    $target = mb_strtolower($prod['target_animal'] ?? '', 'UTF-8');
+                    $filterGroup = 'other';
+                    if (strpos($cat, 'سگ') !== false || $target === 'dog') $filterGroup = 'dog';
+                    elseif (strpos($cat, 'گربه') !== false || $target === 'cat') $filterGroup = 'cat';
+                    elseif (strpos($cat, 'مکمل') !== false || strpos($cat, 'دارو') !== false) $filterGroup = 'supplement';
+                    elseif (strpos($cat, 'بهداشت') !== false || strpos($prod['name'], 'خاک') !== false || strpos($prod['name'], 'شامپو') !== false) $filterGroup = 'hygiene';
+                    elseif (strpos($cat, 'اسباب') !== false || strpos($cat, 'toy') !== false) $filterGroup = 'toy';
+
+                    $hasDiscount = !empty($prod['discount_price']) && $prod['discount_price'] < $prod['price'];
+                    $discountPct = $hasDiscount ? round((1 - ($prod['discount_price'] / $prod['price'])) * 100) : 0;
+                    $in_wishlist = in_array($prod['id'], $user_wishlist);
+                ?>
+                <div class="bestseller-card bg-white rounded-3xl p-4 sm:p-5 border border-slate-100 hover:border-amber-400/50 shadow-sm hover:shadow-2xl transition-all duration-300 flex flex-col group relative overflow-hidden" data-group="<?= $filterGroup ?>">
+                    
+                    <!-- Sales Rank Ribbon & Discount Badge -->
+                    <div class="flex items-center justify-between gap-2 mb-3">
+                        <span class="bestseller-rank-badge text-[10px] sm:text-xs px-2.5 py-1 rounded-full flex items-center gap-1">
+                            <span class="material-symbols-outlined text-xs">military_tech</span>
+                            <span>رتبه <?= $rank ?> فروش</span>
+                        </span>
+
+                        <?php if ($hasDiscount): ?>
+                        <span class="bg-rose-500 text-white text-[10px] font-black px-2 py-0.5 rounded-lg shadow-sm">
+                            <?= $discountPct ?>% تخفیف
+                        </span>
+                        <?php endif; ?>
+                    </div>
+
+                    <!-- Product Image & Wishlist -->
+                    <div class="aspect-square bg-slate-50 rounded-2xl mb-3.5 overflow-hidden relative border border-slate-100/60">
+                        <img loading="lazy" src="<?= htmlspecialchars($prod['image_url'] ?: 'assets/images/logo.png') ?>" alt="<?= htmlspecialchars($prod['name']) ?>" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+                        
+                        <button type="button" onclick="toggleWishlist(this, <?= (int)$prod['id'] ?>)" class="absolute top-2.5 right-2.5 z-10 w-8 h-8 bg-white/90 backdrop-blur-md rounded-full flex items-center justify-center text-slate-400 hover:text-rose-600 transition-colors shadow-sm">
+                            <span class="material-symbols-outlined text-[16px]" style="font-variation-settings: 'FILL' <?= $in_wishlist ? '1' : '0' ?>; color: <?= $in_wishlist ? '#dc2626' : 'inherit' ?>;">favorite</span>
+                        </button>
+
+                        <?php if (!empty($prod['is_autoship'])): ?>
+                        <div class="absolute bottom-2 inset-x-2 bg-orange-600/90 backdrop-blur-md text-white py-1 px-2 rounded-xl text-[10px] font-bold flex items-center justify-center gap-1 shadow-md">
+                            <span class="material-symbols-outlined text-xs">autorenew</span>
+                            <span><?= (int)($prod['autoship_discount'] ?: 15) ?>٪ تخفیف با تحویل خودکار</span>
+                        </div>
+                        <?php endif; ?>
+                    </div>
+
+                    <!-- Category & Brand -->
+                    <div class="flex items-center justify-between text-[11px] text-slate-400 mb-1">
+                        <span class="font-bold text-indigo-600"><?= htmlspecialchars($prod['category'] ?? 'پت‌شاپ') ?></span>
+                        <?php if (!empty($prod['brand'])): ?>
+                        <span class="bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md font-bold text-[10px]"><?= htmlspecialchars($prod['brand']) ?></span>
+                        <?php endif; ?>
+                    </div>
+
+                    <!-- Product Title -->
+                    <a href="product_details.php?id=<?= (int)$prod['id'] ?>&type=product" class="font-black text-slate-900 text-xs sm:text-sm line-clamp-2 hover:text-primary transition-colors leading-snug mb-2">
+                        <?= htmlspecialchars($prod['name']) ?>
+                    </a>
+
+                    <!-- Rating and Reviews -->
+                    <div class="flex items-center gap-1.5 text-xs text-amber-500 font-bold mb-3">
+                        <span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">star</span>
+                        <span><?= number_format($prod['rating_cache'] ?: 4.8, 1) ?></span>
+                        <span class="text-[10px] text-slate-400 font-normal">(<?= (int)($prod['review_count_cache'] ?: 18) ?> نظر)</span>
+                    </div>
+
+                    <!-- Price & Actions -->
+                    <div class="mt-auto pt-3 border-t border-slate-100">
+                        <div class="flex items-baseline justify-between mb-3">
+                            <span class="text-[10px] text-slate-400 font-medium">قیمت:</span>
+                            <div class="text-right">
+                                <?php if ($hasDiscount): ?>
+                                <div class="text-[10px] text-slate-400 line-through"><?= number_format($prod['price']) ?> تومان</div>
+                                <div class="text-xs sm:text-sm font-black text-primary font-mono"><?= number_format($prod['discount_price']) ?> <span class="text-[9px] font-normal text-slate-500">تومان</span></div>
+                                <?php else: ?>
+                                <div class="text-xs sm:text-sm font-black text-primary font-mono"><?= number_format($prod['price']) ?> <span class="text-[9px] font-normal text-slate-500">تومان</span></div>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 gap-2">
+                            <button type="button" onclick="addToCart(this, <?= (int)$prod['id'] ?>, 'standard')" class="w-full bg-primary hover:bg-primary-container text-white py-2.5 rounded-xl text-xs font-bold transition-all shadow-sm flex items-center justify-center gap-1.5">
+                                <span class="material-symbols-outlined text-sm">add_shopping_cart</span>
+                                <span>افزودن به سبد خرید</span>
+                            </button>
+                        </div>
+                    </div>
+
+                </div>
+                <?php 
+                $rank++;
+                endforeach; 
+                ?>
+            </div>
+        </section>
+        <?php endif; ?>
+
+        <!-- ══════════════════════════════════════════════════════════════════════════ -->
+        <!-- NEW SECTION: SMART AUTOSHIP & ROUTINE CARE (Chewy Benchmark)              -->
+        <!-- ══════════════════════════════════════════════════════════════════════════ -->
+        <section class="smart-autoship-section my-14" id="autoshipFeatureSection">
+            <div class="bg-gradient-to-br from-[#002d72] via-[#001f4d] to-[#081226] rounded-[2.5rem] p-6 sm:p-10 lg:p-14 text-white shadow-2xl relative overflow-hidden border border-blue-900/50">
+                <!-- Glowing Ambient Light Spheres -->
+                <div class="absolute -top-32 -left-32 w-80 h-80 bg-orange-500/20 rounded-full blur-3xl pointer-events-none"></div>
+                <div class="absolute -bottom-32 -right-32 w-80 h-80 bg-blue-500/20 rounded-full blur-3xl pointer-events-none"></div>
+
+                <div class="relative z-10 space-y-10">
+                    
+                    <!-- Header -->
+                    <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+                        <div class="space-y-3 max-w-2xl">
+                            <div class="inline-flex items-center gap-2 px-3.5 py-1.5 bg-orange-500/20 text-orange-400 border border-orange-500/30 rounded-full text-xs font-black shadow-sm">
+                                <span class="material-symbols-outlined text-sm animate-spin" style="animation-duration: 8s;">autorenew</span>
+                                <span>سرویس تحویل خودکار دوره‌ای (Smart Autoship)</span>
+                            </div>
+                            <h2 class="text-2xl sm:text-4xl font-black tracking-tight text-white leading-tight">
+                                دیگر نگران تمام شدن غذای پت نباشید؛ همیشه سر وقت تحویل بگیرید
+                            </h2>
+                            <p class="text-xs sm:text-sm text-slate-300 font-light leading-relaxed">
+                                بیش از ۸۰٪ کاربران آسنا غذای خشک، کنسرو، خاک و مکمل‌های پت خود را به صورت خودکار دریافت می‌کنند. تا <strong>۱۵٪ تخفیف همیشگی</strong>، <strong>ارسال رایگان درب منزل</strong> و امکان لغو یا تغییر زمان با یک کلیک بدون هیچ جریمه‌ای.
+                            </p>
+                        </div>
+                        <div class="flex flex-col sm:flex-row items-center gap-3 shrink-0">
+                            <a href="subscriptions.php" class="w-full sm:w-auto bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white px-7 py-3.5 rounded-2xl text-xs sm:text-sm font-black shadow-lg hover:shadow-orange-500/25 transition-all flex items-center justify-center gap-2">
+                                <span class="material-symbols-outlined text-base">rocket_launch</span>
+                                <span>ساخت پکیج اشتراک اختصاصی</span>
+                            </a>
+                            <a href="#suggested-plans" class="w-full sm:w-auto bg-white/10 hover:bg-white/20 text-white border border-white/20 px-5 py-3.5 rounded-2xl text-xs font-bold transition-all text-center">
+                                مشاهده پلن‌های آماده
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- 3 Visual Workflow Cards -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+                        <div class="bg-white/5 backdrop-blur-md rounded-3xl p-6 border border-white/10 flex flex-col space-y-3 hover:bg-white/10 transition-colors">
+                            <div class="w-12 h-12 rounded-2xl bg-orange-500 text-white flex items-center justify-center font-black text-lg shadow-lg">
+                                ۱
+                            </div>
+                            <h3 class="text-base font-black text-white">انتخاب محصول و زمان‌بندی</h3>
+                            <p class="text-xs text-slate-300 leading-relaxed">
+                                برند و کالای مورد نیاز پت خود را مشخص کرده و دوره تحویل را بر اساس مصرف (هر ۲ هفته، ماهانه یا ۲ ماهه) تعیین فرمایید.
+                            </p>
+                        </div>
+
+                        <div class="bg-white/5 backdrop-blur-md rounded-3xl p-6 border border-white/10 flex flex-col space-y-3 hover:bg-white/10 transition-colors">
+                            <div class="w-12 h-12 rounded-2xl bg-teal-500 text-white flex items-center justify-center font-black text-lg shadow-lg">
+                                ۲
+                            </div>
+                            <h3 class="text-base font-black text-white">۱۵٪ تخفیف دائمی و ارسال رایگان</h3>
+                            <p class="text-xs text-slate-300 leading-relaxed">
+                                تمام فاکتورهای اشتراک خودکار شما مشمول تخفیف ویژه دائمی شده و بدون هزینه پیک مستقیماً به درب واحد شما تحویل داده می‌شود.
+                            </p>
+                        </div>
+
+                        <div class="bg-white/5 backdrop-blur-md rounded-3xl p-6 border border-white/10 flex flex-col space-y-3 hover:bg-white/10 transition-colors">
+                            <div class="w-12 h-12 rounded-2xl bg-indigo-500 text-white flex items-center justify-center font-black text-lg shadow-lg">
+                                ۳
+                            </div>
+                            <h3 class="text-base font-black text-white">مدیریت ۱۰۰٪ منعطف و بدون قید</h3>
+                            <p class="text-xs text-slate-300 leading-relaxed">
+                                به مسافرت می‌روید؟ فقط با یک کلیک در پنل کاربری، تاریخ تحویل را تغییر دهید، بسته‌ها را تعلیق یا در صورت تمایل لغو کنید.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Interactive Autoship Savings Calculator Simulator -->
+                    <div class="bg-white rounded-3xl p-6 sm:p-8 text-slate-800 shadow-xl border border-slate-100">
+                        <div class="flex flex-col lg:flex-row items-center justify-between gap-6 pb-6 border-b border-slate-100">
+                            <div>
+                                <h3 class="text-base sm:text-lg font-black text-slate-900 flex items-center gap-2">
+                                    <span class="material-symbols-outlined text-orange-500">calculate</span>
+                                    <span>محاسبه‌گر هوشمند میزان صرفه‌جویی اشتراک خودکار</span>
+                                </h3>
+                                <p class="text-xs text-slate-500 mt-1">
+                                    پت خود را انتخاب کنید تا ببینید با اشتراک آسنا چه مقدار در هزینه‌های سالانه صرفه‌جویی می‌کنید:
+                                </p>
+                            </div>
+
+                            <!-- Pet Selector Chips -->
+                            <div class="flex items-center gap-2 bg-slate-100 p-1.5 rounded-2xl self-stretch sm:self-auto justify-center">
+                                <button type="button" onclick="updateAutoshipSim('cat', this)" class="autoship-sim-btn active px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 bg-primary text-white shadow-sm">
+                                    <span>🐈</span>
+                                    <span>گربه خانگی</span>
+                                </button>
+                                <button type="button" onclick="updateAutoshipSim('small_dog', this)" class="autoship-sim-btn px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 text-slate-600 hover:text-primary">
+                                    <span>🐕</span>
+                                    <span>سگ کوچک (&lt;۱۰kg)</span>
+                                </button>
+                                <button type="button" onclick="updateAutoshipSim('large_dog', this)" class="autoship-sim-btn px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 text-slate-600 hover:text-primary">
+                                    <span>🦮</span>
+                                    <span>سگ بزرگ (&gt;۱۰kg)</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Calculator Results Grid -->
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-6 text-center">
+                            <div class="bg-slate-50 rounded-2xl p-4 border border-slate-100">
+                                <div class="text-[11px] text-slate-400 font-bold mb-1">هزینه معمول خرید تکی ماهانه</div>
+                                <div class="text-lg sm:text-xl font-black text-slate-800 font-mono" id="simRegularPrice">۱,۸۵۰,۰۰۰ تومان</div>
+                                <div class="text-[10px] text-slate-400 mt-1" id="simBasketDetails">غذای خشک + ۲ کنسرو + خاک ۱۰L</div>
+                            </div>
+
+                            <div class="bg-orange-50 rounded-2xl p-4 border border-orange-200">
+                                <div class="text-[11px] text-orange-700 font-bold mb-1">با تحویل خودکار آسنا (Autoship)</div>
+                                <div class="text-lg sm:text-xl font-black text-orange-600 font-mono" id="simAutoshipPrice">۱,۵۷۰,۰۰۰ تومان</div>
+                                <div class="text-[10px] text-orange-600 mt-1">۱۵٪ تخفیف همیشگی + ارسال کاملاً رایگان</div>
+                            </div>
+
+                            <div class="bg-emerald-50 rounded-2xl p-4 border border-emerald-200">
+                                <div class="text-[11px] text-emerald-800 font-bold mb-1">میزان سود و صرفه‌جویی سالانه شما</div>
+                                <div class="text-xl sm:text-2xl font-black text-emerald-700 font-mono" id="simYearlySavings">۳,۳۶۰,۰۰۰ تومان</div>
+                                <div class="text-[10px] text-emerald-700 font-bold mt-1">معادل ۲ ماه خرید رایگان برای پت شما!</div>
+                            </div>
+                        </div>
+
+                        <div class="mt-6 text-center">
+                            <a href="subscriptions.php#custom-box-builder" class="inline-flex items-center gap-2 bg-orange-600 hover:bg-orange-700 text-white px-8 py-3.5 rounded-2xl text-xs sm:text-sm font-black shadow-lg hover:shadow-xl transition-all">
+                                <span class="material-symbols-outlined text-sm">inventory_2</span>
+                                <span>تنظیم سبد اشتراک خودکار برای این پت</span>
+                            </a>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+
+        <!-- ══════════════════════════════════════════════════════════════════════════ -->
+        <!-- NEW SECTION: VISUAL SHOP CATEGORIES NAVIGATOR                              -->
+        <!-- ══════════════════════════════════════════════════════════════════════════ -->
+        <section class="visual-categories-section space-y-6 my-12" id="visualShopCategories">
+            <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4 px-2">
+                <div class="space-y-2">
+                    <div class="inline-flex items-center gap-2 px-3.5 py-1 bg-indigo-50 text-indigo-800 border border-indigo-200/70 rounded-full text-xs font-black">
+                        <span class="material-symbols-outlined text-sm text-indigo-600">category</span>
+                        <span>دسته‌بندی‌های مصور ملزومات حیوانات خانگی</span>
+                    </div>
+                    <h2 class="text-2xl sm:text-3xl lg:text-4xl font-black text-primary tracking-tight">
+                        خرید آسان بر اساس نیاز و سلامت پت
+                    </h2>
+                    <p class="text-xs sm:text-sm text-on-surface-variant font-medium max-w-2xl">
+                        تفکیک دقیق و استاندارد محصولات غذایی، درمانی، بهداشتی و سرگرمی بر اساس تاییدیه کلینیکال و استانداردهای جهانی.
+                    </p>
+                </div>
+                <a href="shop.php" class="text-xs sm:text-sm font-bold text-primary hover:text-secondary-container transition-colors flex items-center gap-1 self-start sm:self-auto">
+                    <span>مشاهده تمام دسته‌ها</span>
+                    <span class="material-symbols-outlined text-sm">arrow_left_alt</span>
+                </a>
+            </div>
+
+            <!-- 8 Visual Tiles Grid -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3 sm:gap-4">
+                <a href="shop.php?q=غذای خشک" class="category-tile-modern p-4 text-center flex flex-col items-center gap-2.5 group">
+                    <div class="w-14 h-14 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center text-3xl group-hover:scale-110 group-hover:bg-amber-500 group-hover:text-white transition-all shadow-inner">
+                        🥣
+                    </div>
+                    <span class="text-xs font-black text-slate-800 group-hover:text-primary transition-colors">غذای خشک</span>
+                    <span class="text-[10px] text-slate-400">تخصصی و درمانی</span>
+                </a>
+
+                <a href="shop.php?q=کنسرو" class="category-tile-modern p-4 text-center flex flex-col items-center gap-2.5 group">
+                    <div class="w-14 h-14 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center text-3xl group-hover:scale-110 group-hover:bg-rose-500 group-hover:text-white transition-all shadow-inner">
+                        🥫
+                    </div>
+                    <span class="text-xs font-black text-slate-800 group-hover:text-primary transition-colors">کنسرو و پوچ</span>
+                    <span class="text-[10px] text-slate-400">سوپ و غذای تر</span>
+                </a>
+
+                <a href="shop.php?q=تشویقی" class="category-tile-modern p-4 text-center flex flex-col items-center gap-2.5 group">
+                    <div class="w-14 h-14 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-3xl group-hover:scale-110 group-hover:bg-emerald-500 group-hover:text-white transition-all shadow-inner">
+                        🦴
+                    </div>
+                    <span class="text-xs font-black text-slate-800 group-hover:text-primary transition-colors">تشویقی و دنتال</span>
+                    <span class="text-[10px] text-slate-400">سلامت دندان و لثه</span>
+                </a>
+
+                <a href="shop.php?category=مکمل دارویی" class="category-tile-modern p-4 text-center flex flex-col items-center gap-2.5 group">
+                    <div class="w-14 h-14 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center text-3xl group-hover:scale-110 group-hover:bg-blue-500 group-hover:text-white transition-all shadow-inner">
+                        💊
+                    </div>
+                    <span class="text-xs font-black text-slate-800 group-hover:text-primary transition-colors">مکمل و ویتامین</span>
+                    <span class="text-[10px] text-slate-400">پوست، مو و مفاصل</span>
+                </a>
+
+                <a href="shop.php?q=خاک" class="category-tile-modern p-4 text-center flex flex-col items-center gap-2.5 group">
+                    <div class="w-14 h-14 rounded-2xl bg-purple-50 text-purple-600 flex items-center justify-center text-3xl group-hover:scale-110 group-hover:bg-purple-500 group-hover:text-white transition-all shadow-inner">
+                        🚽
+                    </div>
+                    <span class="text-xs font-black text-slate-800 group-hover:text-primary transition-colors">خاک و بهداشت</span>
+                    <span class="text-[10px] text-slate-400">بنتونیت و کربن‌دار</span>
+                </a>
+
+                <a href="shop.php?category=اسباب‌بازی" class="category-tile-modern p-4 text-center flex flex-col items-center gap-2.5 group">
+                    <div class="w-14 h-14 rounded-2xl bg-orange-50 text-orange-600 flex items-center justify-center text-3xl group-hover:scale-110 group-hover:bg-orange-500 group-hover:text-white transition-all shadow-inner">
+                        🎾
+                    </div>
+                    <span class="text-xs font-black text-slate-800 group-hover:text-primary transition-colors">اسباب‌بازی</span>
+                    <span class="text-[10px] text-slate-400">اسکرچر و درخت</span>
+                </a>
+
+                <a href="shop.php?category=لوازم بهداشتی" class="category-tile-modern p-4 text-center flex flex-col items-center gap-2.5 group">
+                    <div class="w-14 h-14 rounded-2xl bg-teal-50 text-teal-600 flex items-center justify-center text-3xl group-hover:scale-110 group-hover:bg-teal-500 group-hover:text-white transition-all shadow-inner">
+                        🧴
+                    </div>
+                    <span class="text-xs font-black text-slate-800 group-hover:text-primary transition-colors">شامپو و برس</span>
+                    <span class="text-[10px] text-slate-400">ضد ریزش و کک</span>
+                </a>
+
+                <a href="shop.php?q=جای خواب" class="category-tile-modern p-4 text-center flex flex-col items-center gap-2.5 group">
+                    <div class="w-14 h-14 rounded-2xl bg-slate-100 text-slate-600 flex items-center justify-center text-3xl group-hover:scale-110 group-hover:bg-primary group-hover:text-white transition-all shadow-inner">
+                        🛏️
+                    </div>
+                    <span class="text-xs font-black text-slate-800 group-hover:text-primary transition-colors">جای خواب و باکس</span>
+                    <span class="text-[10px] text-slate-400">تجهیزات نگهداری</span>
+                </a>
+            </div>
+        </section>
+
+        <!-- ══════════════════════════════════════════════════════════════════════════ -->
+        <!-- NEW SECTION: VALUE COMBO BOXES & ROUTINE CARE BUNDLES                      -->
+        <!-- ══════════════════════════════════════════════════════════════════════════ -->
+        <section class="combo-boxes-section space-y-6 my-14" id="comboBundlesSection">
+            <div class="flex flex-col md:flex-row md:items-end justify-between gap-4 px-2">
+                <div class="space-y-2">
+                    <div class="inline-flex items-center gap-2 px-3.5 py-1 bg-rose-50 text-rose-800 border border-rose-200/70 rounded-full text-xs font-black">
+                        <span class="material-symbols-outlined text-sm text-rose-500">inventory_2</span>
+                        <span>پکیج‌های اقتصادی و کمبو باکس‌های ماهانه آسنا</span>
+                    </div>
+                    <h2 class="text-2xl sm:text-3xl lg:text-4xl font-black text-primary tracking-tight">
+                        باکس‌های سلامت و تغذیه با ۲۰٪ صرفه‌جویی
+                    </h2>
+                    <p class="text-xs sm:text-sm text-on-surface-variant font-medium max-w-2xl">
+                        ترکیب هوشمندانه ملزومات ضروری یک ماه بر اساس سن و نژاد؛ دستچین شده توسط دامپزشکان متخصص آسنا با قیمتی بسیار به صرفه‌تر از خرید تکی.
+                    </p>
+                </div>
+                <a href="subscriptions.php" class="bg-primary hover:bg-primary-container text-white px-5 py-2.5 rounded-2xl text-xs sm:text-sm font-bold transition-all shadow-md flex items-center gap-1.5 self-start md:self-auto shrink-0">
+                    <span>ساخت باکس شخصی</span>
+                    <span class="material-symbols-outlined text-sm">tune</span>
+                </a>
+            </div>
+
+            <!-- 3 Combo Box Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
+                
+                <!-- Combo Box 1: Cat Starter Deluxe -->
+                <div class="combo-box-card p-6 sm:p-7 flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center justify-between mb-4">
+                            <span class="bg-rose-50 text-rose-700 font-extrabold text-[11px] px-3 py-1 rounded-full border border-rose-200 flex items-center gap-1">
+                                <span>🐈</span>
+                                <span>ویژه گربه‌های خانگی</span>
+                            </span>
+                            <span class="bg-rose-500 text-white font-black text-xs px-2.5 py-0.5 rounded-lg shadow-sm">۲۳٪ تخفیف</span>
+                        </div>
+
+                        <h3 class="text-lg font-black text-slate-900 mb-2">باکس جامع سلامت و نشاط گربه</h3>
+                        <p class="text-xs text-slate-500 mb-5 leading-relaxed">
+                            پکیج کامل غذایی و بهداشتی یک‌ماهه برای گربه‌های عقیم شده یا خانگی با مواد درجه یک.
+                        </p>
+
+                        <!-- Items Included -->
+                        <div class="space-y-2.5 bg-slate-50 rounded-2xl p-4 border border-slate-100 text-xs mb-6">
+                            <div class="flex items-center gap-2 text-slate-700">
+                                <span class="material-symbols-outlined text-emerald-600 text-sm">check_circle</span>
+                                <span>غذای خشک رفلکس پلاس عقیم شده (۱.۵ کیلوگرم)</span>
+                            </div>
+                            <div class="flex items-center gap-2 text-slate-700">
+                                <span class="material-symbols-outlined text-emerald-600 text-sm">check_circle</span>
+                                <span>۲ عدد کنسرو مرغ سوپرپرمیوم گورمت گلد</span>
+                            </div>
+                            <div class="flex items-center gap-2 text-slate-700">
+                                <span class="material-symbols-outlined text-emerald-600 text-sm">check_circle</span>
+                                <span>خاک بستر سوپر کلمپینگ پتوپیا (۱۰ کیلوگرم)</span>
+                            </div>
+                            <div class="flex items-center gap-2 text-slate-700">
+                                <span class="material-symbols-outlined text-emerald-600 text-sm">check_circle</span>
+                                <span>خمیر مالت ضد گلوله مو (Hairball) تریکسی</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="pt-4 border-t border-slate-100">
+                        <div class="flex items-baseline justify-between mb-4">
+                            <span class="text-xs text-slate-400">قیمت خرید جداگانه:</span>
+                            <div class="text-right">
+                                <span class="text-xs text-slate-400 line-through">۱,۲۸۰,۰۰۰ تومان</span>
+                                <div class="text-lg font-black text-rose-600 font-mono">۹۹۰,۰۰۰ <span class="text-xs font-normal text-slate-500">تومان</span></div>
+                            </div>
+                        </div>
+
+                        <button type="button" onclick="addToCart(this, 9, 'standard')" class="w-full bg-rose-600 hover:bg-rose-700 text-white py-3 rounded-xl text-xs font-bold transition-all shadow-md flex items-center justify-center gap-1.5">
+                            <span class="material-symbols-outlined text-sm">add_shopping_cart</span>
+                            <span>سفارش این کمبو باکس با تخفیف</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Combo Box 2: Dog Vitality & Shine -->
+                <div class="combo-box-card p-6 sm:p-7 flex flex-col justify-between border-2 border-primary/40 shadow-lg relative">
+                    <div class="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-primary text-white text-[10px] font-black px-4 py-1 rounded-full shadow-md">
+                        🔥 پرفروش‌ترین پکیج ماه
+                    </div>
+
+                    <div>
+                        <div class="flex items-center justify-between mb-4 mt-1">
+                            <span class="bg-blue-50 text-blue-700 font-extrabold text-[11px] px-3 py-1 rounded-full border border-blue-200 flex items-center gap-1">
+                                <span>🐕</span>
+                                <span>ویژه سگ‌های نژاد کوچک و متوسط</span>
+                            </span>
+                            <span class="bg-primary text-white font-black text-xs px-2.5 py-0.5 rounded-lg shadow-sm">۱۹٪ تخفیف</span>
+                        </div>
+
+                        <h3 class="text-lg font-black text-slate-900 mb-2">باکس شادابی و درخشش سگ</h3>
+                        <p class="text-xs text-slate-500 mb-5 leading-relaxed">
+                            تغذیه پرمیوم، مولتی‌ویتامین و اسباب‌بازی دندانی برای افزایش انرژی و جلوگیری از ریزش مو.
+                        </p>
+
+                        <!-- Items Included -->
+                        <div class="space-y-2.5 bg-slate-50 rounded-2xl p-4 border border-slate-100 text-xs mb-6">
+                            <div class="flex items-center gap-2 text-slate-700">
+                                <span class="material-symbols-outlined text-emerald-600 text-sm">check_circle</span>
+                                <span>غذای خشک رویال کنین مینی ادالت (۲ کیلوگرم)</span>
+                            </div>
+                            <div class="flex items-center gap-2 text-slate-700">
+                                <span class="material-symbols-outlined text-emerald-600 text-sm">check_circle</span>
+                                <span>قطره مولتی‌ویتامین و مواد معدنی شایر</span>
+                            </div>
+                            <div class="flex items-center gap-2 text-slate-700">
+                                <span class="material-symbols-outlined text-emerald-600 text-sm">check_circle</span>
+                                <span>توپ دندانی طناب‌دار ضد جرم و پلاک دندان</span>
+                            </div>
+                            <div class="flex items-center gap-2 text-slate-700">
+                                <span class="material-symbols-outlined text-emerald-600 text-sm">check_circle</span>
+                                <span>شامپو تقویتی ضد ریزش مو و لطافت پوست تریکسی</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="pt-4 border-t border-slate-100">
+                        <div class="flex items-baseline justify-between mb-4">
+                            <span class="text-xs text-slate-400">قیمت خرید جداگانه:</span>
+                            <div class="text-right">
+                                <span class="text-xs text-slate-400 line-through">۳,۹۸۰,۰۰۰ تومان</span>
+                                <div class="text-lg font-black text-primary font-mono">۳,۲۵۰,۰۰۰ <span class="text-xs font-normal text-slate-500">تومان</span></div>
+                            </div>
+                        </div>
+
+                        <button type="button" onclick="addToCart(this, 1, 'standard')" class="w-full bg-primary hover:bg-primary-container text-white py-3 rounded-xl text-xs font-bold transition-all shadow-md flex items-center justify-center gap-1.5">
+                            <span class="material-symbols-outlined text-sm">add_shopping_cart</span>
+                            <span>سفارش این کمبو باکس با تخفیف</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Combo Box 3: Joint & Mobility Care -->
+                <div class="combo-box-card p-6 sm:p-7 flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center justify-between mb-4">
+                            <span class="bg-teal-50 text-teal-700 font-extrabold text-[11px] px-3 py-1 rounded-full border border-teal-200 flex items-center gap-1">
+                                <span>💊</span>
+                                <span>ویژه مفاصل و ایمنی (سگ و گربه)</span>
+                            </span>
+                            <span class="bg-teal-600 text-white font-black text-xs px-2.5 py-0.5 rounded-lg shadow-sm">۲۱٪ تخفیف</span>
+                        </div>
+
+                        <h3 class="text-lg font-black text-slate-900 mb-2">باکس مراقبت درمانی و تقویت مفاصل</h3>
+                        <p class="text-xs text-slate-500 mb-5 leading-relaxed">
+                            فرموله شده برای حیوانات با سن بالای ۵ سال، مستعد آرتروز یا بعد از دوره‌های جراحی.
+                        </p>
+
+                        <!-- Items Included -->
+                        <div class="space-y-2.5 bg-slate-50 rounded-2xl p-4 border border-slate-100 text-xs mb-6">
+                            <div class="flex items-center gap-2 text-slate-700">
+                                <span class="material-symbols-outlined text-emerald-600 text-sm">check_circle</span>
+                                <span>قرص گلوکوزامین و کندرویتین تخصصی مفاصل</span>
+                            </div>
+                            <div class="flex items-center gap-2 text-slate-700">
+                                <span class="material-symbols-outlined text-emerald-600 text-sm">check_circle</span>
+                                <span>قطره پروبیوتیک تنظیم فلور میکروبی روده</span>
+                            </div>
+                            <div class="flex items-center gap-2 text-slate-700">
+                                <span class="material-symbols-outlined text-emerald-600 text-sm">check_circle</span>
+                                <span>روغن سالمون غنی شده با امگا ۳ و ۶</span>
+                            </div>
+                            <div class="flex items-center gap-2 text-slate-700">
+                                <span class="material-symbols-outlined text-emerald-600 text-sm">check_circle</span>
+                                <span>تشویقی ارتوپدی بدون نمک و شکر</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="pt-4 border-t border-slate-100">
+                        <div class="flex items-baseline justify-between mb-4">
+                            <span class="text-xs text-slate-400">قیمت خرید جداگانه:</span>
+                            <div class="text-right">
+                                <span class="text-xs text-slate-400 line-through">۱,۷۵۰,۰۰۰ تومان</span>
+                                <div class="text-lg font-black text-teal-700 font-mono">۱,۳۸۰,۰۰۰ <span class="text-xs font-normal text-slate-500">تومان</span></div>
+                            </div>
+                        </div>
+
+                        <button type="button" onclick="addToCart(this, 6, 'standard')" class="w-full bg-teal-600 hover:bg-teal-700 text-white py-3 rounded-xl text-xs font-bold transition-all shadow-md flex items-center justify-center gap-1.5">
+                            <span class="material-symbols-outlined text-sm">add_shopping_cart</span>
+                            <span>سفارش این کمبو باکس با تخفیف</span>
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+        </section>
 
         <!-- Cycle Section - Rail Density (Functional & Clickable) -->
         <section class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
@@ -981,95 +1571,364 @@ $top_donors = $donor_stmt->fetchAll(PDO::FETCH_ASSOC);
                 </div>
             </div>
         </section>
-        <!-- Subscription Plans -->
-        <section class="space-y-6">
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8 max-w-5xl mx-auto">
-                <!-- 3-Month Plan -->
-                <div
-                    class="bg-primary-container rounded-[2rem] md:rounded-[2.5rem] p-6 md:p-10 text-white flex flex-col space-y-6 md:space-y-10 shadow-xl hover:-translate-y-2 transition-transform">
-                    <div class="flex justify-between items-start">
-                        <div class="bg-white/10 backdrop-blur-md px-5 py-2 rounded-full text-xs font-bold">۳ ماهه</div>
-                        <div class="w-10 h-10 rounded-full border-2 border-white/20 flex items-center justify-center">
-                            <div class="w-4 h-4 rounded-full bg-white/10"></div>
+        <!-- ══════════════════════════════════════════════════════════════════════════ -->
+        <!-- NEW FEATURE: INTERACTIVE PET CALORIE & NUTRITION CALCULATOR               -->
+        <!-- ══════════════════════════════════════════════════════════════════════════ -->
+        <section class="pet-calorie-calculator-section my-16" id="petNutritionCalculator">
+            <div class="bg-gradient-to-br from-slate-900 via-primary-container to-[#001d4a] rounded-[2.5rem] sm:rounded-[3rem] p-6 sm:p-10 lg:p-14 text-white shadow-2xl relative overflow-hidden border border-white/10">
+                <!-- Background Decorative Glows -->
+                <div class="absolute -top-24 -left-24 w-96 h-96 bg-emerald-500/15 rounded-full blur-3xl pointer-events-none"></div>
+                <div class="absolute -bottom-24 -right-24 w-96 h-96 bg-secondary-container/20 rounded-full blur-3xl pointer-events-none"></div>
+
+                <!-- Section Header -->
+                <div class="flex flex-col lg:flex-row lg:items-end justify-between gap-6 mb-10 relative z-10 border-b border-white/10 pb-8">
+                    <div class="space-y-3 max-w-2xl">
+                        <div class="inline-flex items-center gap-2 px-4 py-1.5 bg-emerald-400/15 text-emerald-300 border border-emerald-400/30 rounded-full text-xs font-black backdrop-blur-md">
+                            <span class="material-symbols-outlined text-sm animate-pulse">calculate</span>
+                            <span>محاسبه‌گر تخصصی جیره و رژیم غذایی</span>
                         </div>
+                        <h2 class="text-2xl sm:text-3xl lg:text-4xl font-black leading-tight">
+                            محاسبه‌گر هوشمند کالری و مقدار غذای روزانه پت
+                        </h2>
+                        <p class="text-xs sm:text-sm text-white/80 font-light leading-relaxed">
+                            بر اساس فرمول‌های معتبر دامپزشکی بین‌المللی (FEDIAF & WSAVA)؛ مشخصات پت خود را مشخص کنید تا نیاز انرژی روزانه (MER)، گرم غذای خشک دقیق و حجم آب مصرفی را در لحظه دریافت کنید.
+                        </p>
                     </div>
-                    <div class="space-y-6">
-                        <h3 class="text-2xl font-bold">اشتراک پایه</h3>
-                        <ul class="space-y-4 text-white/70 text-sm">
-                            <li class="flex items-center gap-3"><span
-                                    class="material-symbols-outlined text-secondary-container text-lg">check_circle</span>۱۵٪
-                                تخفیف دائمی</li>
-                            <li class="flex items-center gap-3"><span
-                                    class="material-symbols-outlined text-secondary-container text-lg">check_circle</span>ارسال
-                                رایگان</li>
-                            <li class="flex items-center gap-3"><span
-                                    class="material-symbols-outlined text-secondary-container text-lg">check_circle</span>پشتیبانی
-                                اولویت‌دار</li>
-                        </ul>
+                    <div class="flex items-center gap-3 bg-white/10 backdrop-blur-md px-5 py-3 rounded-2xl border border-white/15 self-start lg:self-auto text-xs font-bold text-white/90 shadow-sm">
+                        <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping"></span>
+                        <span>محاسبه فوری بر اساس استاندارد جهانی دامپزشکی</span>
                     </div>
-                    <a href="subscriptions.php"
-                        class="block text-center w-full bg-white text-primary-container py-4 rounded-2xl font-bold hover:bg-secondary-container hover:text-white transition-colors mt-auto">انتخاب
-                        اشتراک</a>
                 </div>
-                <!-- 6-Month Plan -->
-                <div
-                    class="bg-primary-container rounded-[2rem] md:rounded-[2.5rem] p-6 md:p-10 text-white flex flex-col space-y-6 md:space-y-10 shadow-2xl border-4 border-secondary-container relative transform scale-100 md:scale-105 z-10 mt-4 md:mt-0">
-                    <div
-                        class="absolute -top-5 left-1/2 -translate-x-1/2 bg-secondary-container text-white px-8 py-2 rounded-full text-xs font-bold shadow-lg">
-                        بهترین ارزش</div>
-                    <div class="flex justify-between items-start">
-                        <div class="bg-white/10 backdrop-blur-md px-5 py-2 rounded-full text-xs font-bold">۶ ماهه</div>
-                        <div class="w-12 h-12 rounded-full border-2 border-white flex items-center justify-center">
-                            <div class="w-6 h-6 rounded-full bg-white"></div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 relative z-10">
+                    
+                    <!-- Left Column: Interactive Inputs Form (7 cols) -->
+                    <div class="lg:col-span-7 space-y-6">
+                        
+                        <!-- 1. Pet Species -->
+                        <div class="space-y-2.5">
+                            <label class="text-xs sm:text-sm font-bold text-white/90 flex items-center gap-2">
+                                <span class="w-6 h-6 rounded-lg bg-white/15 flex items-center justify-center text-xs">۱</span>
+                                انتخاب گونه پت:
+                            </label>
+                            <div class="grid grid-cols-2 gap-3">
+                                <button type="button" onclick="setCalcSpecies('dog')" id="calcBtnDog" class="calc-species-btn py-3.5 px-4 rounded-2xl font-black text-sm flex items-center justify-center gap-2.5 border-2 transition-all bg-emerald-500 text-white border-emerald-400 shadow-lg shadow-emerald-500/25">
+                                    <span class="text-xl">🐕</span>
+                                    <span>سگ (Canine)</span>
+                                </button>
+                                <button type="button" onclick="setCalcSpecies('cat')" id="calcBtnCat" class="calc-species-btn py-3.5 px-4 rounded-2xl font-black text-sm flex items-center justify-center gap-2.5 border-2 transition-all bg-white/10 text-white/80 border-white/15 hover:bg-white/15">
+                                    <span class="text-xl">🐈</span>
+                                    <span>گربه (Feline)</span>
+                                </button>
+                            </div>
                         </div>
-                    </div>
-                    <div class="space-y-6">
-                        <h3 class="text-3xl font-bold">اشتراک ویژه</h3>
-                        <ul class="space-y-4 text-white/90 text-sm">
-                            <li class="flex items-center gap-3"><span
-                                    class="material-symbols-outlined text-secondary-container text-xl">check_circle</span>تمامی
-                                مزایای پایه</li>
-                            <li class="flex items-center gap-3"><span
-                                    class="material-symbols-outlined text-secondary-container text-xl">check_circle</span>تشویقی‌های
-                                اختصاصی ماهانه</li>
-                            <li class="flex items-center gap-3"><span
-                                    class="material-symbols-outlined text-secondary-container text-xl">check_circle</span>مشاوره
-                                رایگان تغذیه</li>
-                        </ul>
-                    </div>
-                    <a href="subscriptions.php"
-                        class="block text-center w-full bg-secondary-container text-white py-5 rounded-2xl font-bold shadow-lg hover:shadow-2xl transition-all mt-auto">انتخاب
-                        اشتراک ویژه</a>
-                </div>
-                <!-- 12-Month Plan -->
-                <div
-                    class="bg-primary-container rounded-[2rem] md:rounded-[2.5rem] p-6 md:p-10 text-white flex flex-col space-y-6 md:space-y-10 shadow-xl hover:-translate-y-2 transition-transform">
-                    <div class="flex justify-between items-start">
-                        <div class="bg-white/10 backdrop-blur-md px-5 py-2 rounded-full text-xs font-bold">۱۲ ماهه</div>
-                        <div class="w-10 h-10 rounded-full border-2 border-white/20 flex items-center justify-center">
-                            <div class="w-4 h-4 rounded-full bg-white/10"></div>
+
+                        <!-- 2. Weight Slider -->
+                        <div class="space-y-2.5 bg-white/5 p-5 rounded-2xl border border-white/10">
+                            <div class="flex justify-between items-center">
+                                <label class="text-xs sm:text-sm font-bold text-white/90 flex items-center gap-2">
+                                    <span class="w-6 h-6 rounded-lg bg-white/15 flex items-center justify-center text-xs">۲</span>
+                                    وزن دقیق پت:
+                                </label>
+                                <div class="flex items-center gap-1.5 bg-white/15 px-3 py-1 rounded-xl">
+                                    <span id="calcWeightDisplay" class="font-mono text-base sm:text-lg font-black text-emerald-300">8.5</span>
+                                    <span class="text-xs text-white/70">کیلوگرم</span>
+                                </div>
+                            </div>
+                            <input type="range" id="calcWeightSlider" min="0.5" max="60" step="0.5" value="8.5" oninput="updateWeightFromSlider(this.value)" class="w-full accent-emerald-400 cursor-pointer h-2 bg-white/20 rounded-lg">
+                            <div class="flex justify-between text-[11px] text-white/50 font-mono">
+                                <span>۰.۵ کیلو (خیلی کوچک)</span>
+                                <span>۱۵ کیلو</span>
+                                <span>۳۰ کیلو</span>
+                                <span>۶۰+ کیلو (غول‌پیکر)</span>
+                            </div>
                         </div>
+
+                        <!-- 3. Age / Life Stage -->
+                        <div class="space-y-2.5">
+                            <label class="text-xs sm:text-sm font-bold text-white/90 flex items-center gap-2">
+                                <span class="w-6 h-6 rounded-lg bg-white/15 flex items-center justify-center text-xs">۳</span>
+                                مرحله زندگی و سن:
+                            </label>
+                            <div class="grid grid-cols-3 gap-2.5">
+                                <button type="button" onclick="setCalcStage('puppy')" id="stageBtnPuppy" class="calc-stage-btn p-3 rounded-xl border border-white/15 bg-white/10 hover:bg-white/15 text-xs font-bold text-center transition-all">
+                                    <div class="text-sm mb-0.5">🍼</div>
+                                    <div class="font-black" id="labelPuppy">توله / رشد</div>
+                                    <div class="text-[10px] text-white/60">زیر ۱ سال</div>
+                                </button>
+                                <button type="button" onclick="setCalcStage('adult')" id="stageBtnAdult" class="calc-stage-btn p-3 rounded-xl border-2 border-emerald-400 bg-emerald-500/20 text-emerald-200 text-xs font-bold text-center transition-all shadow-md">
+                                    <div class="text-sm mb-0.5">⭐</div>
+                                    <div class="font-black">بالغ</div>
+                                    <div class="text-[10px] text-white/60">۱ تا ۷ سال</div>
+                                </button>
+                                <button type="button" onclick="setCalcStage('senior')" id="stageBtnSenior" class="calc-stage-btn p-3 rounded-xl border border-white/15 bg-white/10 hover:bg-white/15 text-xs font-bold text-center transition-all">
+                                    <div class="text-sm mb-0.5">👑</div>
+                                    <div class="font-black">مسن / ارشد</div>
+                                    <div class="text-[10px] text-white/60">بالای ۷ سال</div>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- 4. Physiological Status & Activity -->
+                        <div class="space-y-2.5">
+                            <label class="text-xs sm:text-sm font-bold text-white/90 flex items-center gap-2">
+                                <span class="w-6 h-6 rounded-lg bg-white/15 flex items-center justify-center text-xs">۴</span>
+                                وضعیت فعالیت و تحرک روزانه:
+                            </label>
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                                <button type="button" onclick="setCalcActivity('neutered')" id="actBtnNeutered" class="calc-act-btn p-3 rounded-xl border-2 border-emerald-400 bg-emerald-500/20 text-emerald-200 text-xs font-bold text-right transition-all flex items-center gap-2.5">
+                                    <span class="material-symbols-outlined text-base">check_circle</span>
+                                    <div>
+                                        <div class="font-black">عقیم‌شده / معمول</div>
+                                        <div class="text-[10px] text-white/60">تحرک متوسط آپارتمانی</div>
+                                    </div>
+                                </button>
+                                <button type="button" onclick="setCalcActivity('active')" id="actBtnActive" class="calc-act-btn p-3 rounded-xl border border-white/15 bg-white/10 hover:bg-white/15 text-white/80 text-xs font-bold text-right transition-all flex items-center gap-2.5">
+                                    <span class="material-symbols-outlined text-base opacity-70">directions_run</span>
+                                    <div>
+                                        <div class="font-black">بسیار پرتحرک</div>
+                                        <div class="text-[10px] text-white/60">ورزشی، حیاطی یا بازی مداوم</div>
+                                    </div>
+                                </button>
+                                <button type="button" onclick="setCalcActivity('diet')" id="actBtnDiet" class="calc-act-btn p-3 rounded-xl border border-white/15 bg-white/10 hover:bg-white/15 text-white/80 text-xs font-bold text-right transition-all flex items-center gap-2.5">
+                                    <span class="material-symbols-outlined text-base opacity-70">scale</span>
+                                    <div>
+                                        <div class="font-black">نیازمند کاهش وزن</div>
+                                        <div class="text-[10px] text-white/60">اضافه وزن / رژیم درمانی</div>
+                                    </div>
+                                </button>
+                            </div>
+                        </div>
+
                     </div>
-                    <div class="space-y-6">
-                        <h3 class="text-2xl font-bold">اشتراک طلایی</h3>
-                        <ul class="space-y-4 text-white/70 text-sm">
-                            <li class="flex items-center gap-3"><span
-                                    class="material-symbols-outlined text-secondary-container text-lg">check_circle</span>تمامی
-                                مزایای ویژه</li>
-                            <li class="flex items-center gap-3"><span
-                                    class="material-symbols-outlined text-secondary-container text-lg">check_circle</span>باکس
-                                هدیه پرمیوم سالانه</li>
-                            <li class="flex items-center gap-3"><span
-                                    class="material-symbols-outlined text-secondary-container text-lg">check_circle</span>چک‌آپ
-                                رایگان در منزل</li>
-                        </ul>
+
+                    <!-- Right Column: Live Results Dashboard Card (5 cols) -->
+                    <div class="lg:col-span-5 flex flex-col justify-between bg-white/10 backdrop-blur-2xl rounded-[2rem] p-6 sm:p-8 border border-white/20 shadow-2xl relative">
+                        <div class="space-y-6">
+                            
+                            <div class="flex items-center justify-between border-b border-white/10 pb-4">
+                                <div class="flex items-center gap-2">
+                                    <span class="text-2xl" id="resPetEmoji">🐕</span>
+                                    <div>
+                                        <h3 class="text-sm font-black text-white" id="resPetTitle">برنامه غذایی سگ بالغ (۸.۵ کیلوگرم)</h3>
+                                        <p class="text-[11px] text-emerald-300 font-bold" id="resPetSubtitle">عقیم‌شده با تحرک متوسط</p>
+                                    </div>
+                                </div>
+                                <span class="bg-emerald-500/20 text-emerald-300 text-[10px] font-mono px-2.5 py-1 rounded-full border border-emerald-400/30">
+                                    توصیه FEDIAF
+                                </span>
+                            </div>
+
+                            <!-- 3 Main Metric Widgets -->
+                            <div class="grid grid-cols-2 gap-3.5">
+                                
+                                <div class="bg-white/10 p-4 rounded-2xl border border-white/10">
+                                    <div class="text-[11px] text-white/70 font-medium mb-1">کالری روزانه (MER):</div>
+                                    <div class="text-xl sm:text-2xl font-black font-mono text-amber-300" id="resCalories">
+                                        ۵۴۰ <span class="text-xs font-normal text-white/80 font-sans">کیلوکالری</span>
+                                    </div>
+                                    <div class="text-[10px] text-white/50 mt-1">انرژی متابولیک پایه روزانه</div>
+                                </div>
+
+                                <div class="bg-emerald-500/20 p-4 rounded-2xl border border-emerald-400/30">
+                                    <div class="text-[11px] text-emerald-200 font-bold mb-1">غذای خشک روزانه:</div>
+                                    <div class="text-xl sm:text-2xl font-black font-mono text-emerald-300" id="resKibbleGrams">
+                                        ۱۴۵ <span class="text-xs font-normal text-white/80 font-sans">گرم در روز</span>
+                                    </div>
+                                    <div class="text-[10px] text-emerald-200/70 mt-1" id="resMealPortion">۲ وعده ۷۲ گرمی</div>
+                                </div>
+
+                                <div class="bg-white/10 p-4 rounded-2xl border border-white/10">
+                                    <div class="text-[11px] text-white/70 font-medium mb-1">آب تازه روزانه:</div>
+                                    <div class="text-xl sm:text-2xl font-black font-mono text-sky-300" id="resWaterMl">
+                                        ۵۱۰ <span class="text-xs font-normal text-white/80 font-sans">میلی‌لیتر</span>
+                                    </div>
+                                    <div class="text-[10px] text-white/50 mt-1">حداقل آب شرب تصفیه‌شده</div>
+                                </div>
+
+                                <div class="bg-white/10 p-4 rounded-2xl border border-white/10">
+                                    <div class="text-[11px] text-white/70 font-medium mb-1">صرفه‌جویی اشتراک:</div>
+                                    <div class="text-xl sm:text-2xl font-black font-mono text-rose-300">
+                                        ۲۰٪ <span class="text-xs font-normal text-white/80 font-sans">تخفیف دائمی</span>
+                                    </div>
+                                    <div class="text-[10px] text-white/50 mt-1">با سرویس تحویل خودکار</div>
+                                </div>
+
+                            </div>
+
+                            <!-- Recommended Kibble Match Box -->
+                            <div class="bg-gradient-to-r from-emerald-900/40 to-primary/40 p-4 rounded-2xl border border-emerald-400/30 flex items-center gap-3">
+                                <div class="w-12 h-12 rounded-xl bg-white/10 flex items-center justify-center text-2xl shrink-0">
+                                    🥘
+                                </div>
+                                <div class="flex-1">
+                                    <div class="text-xs font-black text-white" id="resRecommendedFood">غذای خشک رویال کنین مینی ادالت (ویژه نژاد کوچک)</div>
+                                    <div class="text-[10px] text-white/70 mt-0.5">غنی از پروتئین هیدرولیزه‌شده و امگا ۳ برای مفاصل</div>
+                                </div>
+                            </div>
+
+                        </div>
+
+                        <!-- CTA Actions -->
+                        <div class="pt-6 mt-6 border-t border-white/10 flex flex-col sm:flex-row gap-3">
+                            <a href="shop.php" id="calcCtaShop" class="flex-1 bg-emerald-400 hover:bg-emerald-300 text-slate-900 py-3.5 px-4 rounded-xl font-black text-xs sm:text-sm text-center shadow-lg shadow-emerald-400/20 transition-all flex items-center justify-center gap-2">
+                                <span class="material-symbols-outlined text-lg">shopping_cart</span>
+                                <span>سفارش غذای متناسب با پت</span>
+                            </a>
+                            <a href="subscriptions.php" class="bg-white/15 hover:bg-white/25 text-white py-3.5 px-4 rounded-xl font-bold text-xs sm:text-sm text-center transition-all flex items-center justify-center gap-1.5 border border-white/20">
+                                <span class="material-symbols-outlined text-lg">autorenew</span>
+                                <span>اشتراک ماهانه</span>
+                            </a>
+                        </div>
+
                     </div>
-                    <a href="subscriptions.php"
-                        class="w-full block text-center bg-white text-primary-container py-4 rounded-2xl font-bold hover:bg-secondary-container hover:text-white transition-colors mt-auto">انتخاب
-                        اشتراک</a>
+
                 </div>
             </div>
         </section>
+
+        <!-- Interactive Calculator JavaScript Engine -->
+        <script>
+        (function() {
+            let calcState = {
+                species: 'dog',
+                weight: 8.5,
+                stage: 'adult',
+                activity: 'neutered'
+            };
+
+            window.setCalcSpecies = function(species) {
+                calcState.species = species;
+                
+                const btnDog = document.getElementById('calcBtnDog');
+                const btnCat = document.getElementById('calcBtnCat');
+                const labelPuppy = document.getElementById('labelPuppy');
+
+                if (species === 'dog') {
+                    btnDog.className = 'calc-species-btn py-3.5 px-4 rounded-2xl font-black text-sm flex items-center justify-center gap-2.5 border-2 transition-all bg-emerald-500 text-white border-emerald-400 shadow-lg shadow-emerald-500/25';
+                    btnCat.className = 'calc-species-btn py-3.5 px-4 rounded-2xl font-black text-sm flex items-center justify-center gap-2.5 border-2 transition-all bg-white/10 text-white/80 border-white/15 hover:bg-white/15';
+                    labelPuppy.textContent = 'توله سگ (زیر ۱ سال)';
+                    if (calcState.weight > 60) calcState.weight = 60;
+                } else {
+                    btnCat.className = 'calc-species-btn py-3.5 px-4 rounded-2xl font-black text-sm flex items-center justify-center gap-2.5 border-2 transition-all bg-emerald-500 text-white border-emerald-400 shadow-lg shadow-emerald-500/25';
+                    btnDog.className = 'calc-species-btn py-3.5 px-4 rounded-2xl font-black text-sm flex items-center justify-center gap-2.5 border-2 transition-all bg-white/10 text-white/80 border-white/15 hover:bg-white/15';
+                    labelPuppy.textContent = 'بچه گربه (زیر ۱ سال)';
+                    // If weight is above 12kg for cat, adjust slider
+                    if (calcState.weight > 12) {
+                        calcState.weight = 4.5;
+                        document.getElementById('calcWeightSlider').value = 4.5;
+                    }
+                }
+                recalculateNutrition();
+            };
+
+            window.updateWeightFromSlider = function(val) {
+                calcState.weight = parseFloat(val);
+                document.getElementById('calcWeightDisplay').textContent = calcState.weight.toFixed(1);
+                recalculateNutrition();
+            };
+
+            window.setCalcStage = function(stage) {
+                calcState.stage = stage;
+                ['puppy', 'adult', 'senior'].forEach(s => {
+                    const btn = document.getElementById('stageBtn' + s.charAt(0).toUpperCase() + s.slice(1));
+                    if (s === stage) {
+                        btn.className = 'calc-stage-btn p-3 rounded-xl border-2 border-emerald-400 bg-emerald-500/20 text-emerald-200 text-xs font-bold text-center transition-all shadow-md';
+                    } else {
+                        btn.className = 'calc-stage-btn p-3 rounded-xl border border-white/15 bg-white/10 hover:bg-white/15 text-xs font-bold text-center transition-all text-white/80';
+                    }
+                });
+                recalculateNutrition();
+            };
+
+            window.setCalcActivity = function(act) {
+                calcState.activity = act;
+                ['neutered', 'active', 'diet'].forEach(a => {
+                    const btn = document.getElementById('actBtn' + a.charAt(0).toUpperCase() + a.slice(1));
+                    if (a === act) {
+                        btn.className = 'calc-act-btn p-3 rounded-xl border-2 border-emerald-400 bg-emerald-500/20 text-emerald-200 text-xs font-bold text-right transition-all flex items-center gap-2.5 shadow-md';
+                    } else {
+                        btn.className = 'calc-act-btn p-3 rounded-xl border border-white/15 bg-white/10 hover:bg-white/15 text-white/80 text-xs font-bold text-right transition-all flex items-center gap-2.5';
+                    }
+                });
+                recalculateNutrition();
+            };
+
+            function recalculateNutrition() {
+                const W = calcState.weight;
+                // RER = 70 * (Weight ^ 0.75) (Standard WSAVA/FEDIAF Formula)
+                const rer = 70 * Math.pow(W, 0.75);
+
+                let factor = 1.6;
+                if (calcState.species === 'dog') {
+                    if (calcState.stage === 'puppy') factor = 2.8;
+                    else if (calcState.stage === 'senior') factor = 1.2;
+                    else {
+                        if (calcState.activity === 'neutered') factor = 1.6;
+                        else if (calcState.activity === 'active') factor = 2.0;
+                        else if (calcState.activity === 'diet') factor = 1.1;
+                    }
+                } else {
+                    // Cat
+                    if (calcState.stage === 'puppy') factor = 2.5;
+                    else if (calcState.stage === 'senior') factor = 1.0;
+                    else {
+                        if (calcState.activity === 'neutered') factor = 1.2;
+                        else if (calcState.activity === 'active') factor = 1.4;
+                        else if (calcState.activity === 'diet') factor = 0.95;
+                    }
+                }
+
+                const mer = Math.round(rer * factor);
+                // Average premium dry kibble contains 3.75 kcal per gram
+                const kibbleGrams = Math.round(mer / 3.75);
+
+                // Water requirement (ml) ~ 55-65ml/kg for dogs, 45-55ml/kg for cats
+                const waterMl = Math.round(W * (calcState.species === 'dog' ? 60 : 50));
+
+                // Portions
+                const meals = calcState.stage === 'puppy' ? 3 : 2;
+                const portionGrams = Math.round(kibbleGrams / meals);
+
+                // Update UI elements
+                document.getElementById('resCalories').innerHTML = mer.toLocaleString('fa-IR') + ' <span class="text-xs font-normal text-white/80 font-sans">کیلوکالری</span>';
+                document.getElementById('resKibbleGrams').innerHTML = kibbleGrams.toLocaleString('fa-IR') + ' <span class="text-xs font-normal text-white/80 font-sans">گرم در روز</span>';
+                document.getElementById('resWaterMl').innerHTML = waterMl.toLocaleString('fa-IR') + ' <span class="text-xs font-normal text-white/80 font-sans">میلی‌لیتر</span>';
+                document.getElementById('resMealPortion').textContent = meals + ' وعده ' + portionGrams.toLocaleString('fa-IR') + ' گرمی';
+
+                // Titles & Recommendations
+                const petLabel = calcState.species === 'dog' ? 'سگ' : 'گربه';
+                const stageLabel = calcState.stage === 'puppy' ? (calcState.species === 'dog' ? 'توله سگ' : 'بچه‌گربه') : (calcState.stage === 'senior' ? 'ارشد / مسن' : 'بالغ');
+                document.getElementById('resPetEmoji').textContent = calcState.species === 'dog' ? '🐕' : '🐈';
+                document.getElementById('resPetTitle').textContent = `برنامه غذایی ${petLabel} ${stageLabel} (${W.toFixed(1)} کیلوگرم)`;
+
+                const actDesc = calcState.activity === 'neutered' ? 'عقیم‌شده با تحرک متوسط' : (calcState.activity === 'active' ? 'پرتحرک و فعال' : 'نیازمند کاهش وزن و رژیمی');
+                document.getElementById('resPetSubtitle').textContent = actDesc;
+
+                // Recommended Product Text
+                let foodName = '';
+                if (calcState.species === 'dog') {
+                    if (calcState.stage === 'puppy') foodName = 'غذای خشک رویال کنین مینی پاپی (توله‌های در حال رشد)';
+                    else if (calcState.activity === 'diet') foodName = 'غذای خشک رژیمی هیلز پرفکت ویت (مدیریت وزن سگ)';
+                    else foodName = 'غذای خشک رویال کنین مینی ادالت (ویژه سگ‌های نژاد کوچک)';
+                } else {
+                    if (calcState.stage === 'puppy') foodName = 'غذای خشک رویال کنین کیتن (بچه‌گربه‌های ۲ تا ۱۲ ماه)';
+                    else if (calcState.activity === 'neutered') foodName = 'غذای خشک استرلایزد رفلکس پلاس گربه عقیم‌شده';
+                    else foodName = 'غذای خشک رفلکس پلاس ادالت مرغ و برنج گربه';
+                }
+                document.getElementById('resRecommendedFood').textContent = foodName;
+
+                // CTA Link
+                const shopCta = document.getElementById('calcCtaShop');
+                if (shopCta) {
+                    shopCta.href = `shop.php?category=${calcState.species === 'dog' ? 'dog-food' : 'cat-food'}`;
+                }
+            }
+
+            // Initial calculation on load
+            recalculateNutrition();
+        })();
+        </script>
         <!-- AI Clinical Assistant & Support -->
         <section class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center" id="support-section">
             <div class="lg:col-span-4 space-y-8 p-10 workstation-module rounded-[2.5rem] h-full flex flex-col justify-center border-none relative overflow-hidden">
@@ -1513,6 +2372,280 @@ $top_donors = $donor_stmt->fetchAll(PDO::FETCH_ASSOC);
                 </div>
             </div>
         </section>
+
+        <!-- ══════════════════════════════════════════════════════════════════════════ -->
+        <!-- NEW SECTION: CUSTOMER REVIEWS & VERIFIED SOCIAL PROOF WALL                -->
+        <!-- ══════════════════════════════════════════════════════════════════════════ -->
+        <section class="customer-reviews-section space-y-6 my-16" id="customerReviewsSection">
+            <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4 px-2">
+                <div class="space-y-2">
+                    <div class="inline-flex items-center gap-2 px-3.5 py-1 bg-emerald-50 text-emerald-800 border border-emerald-200/70 rounded-full text-xs font-black">
+                        <span class="material-symbols-outlined text-sm text-emerald-600" style="font-variation-settings: 'FILL' 1;">rate_review</span>
+                        <span>تجربه و صدای سرپرستان پت</span>
+                    </div>
+                    <h2 class="text-2xl sm:text-3xl lg:text-4xl font-black text-primary tracking-tight">
+                        رضایت بیش از ۲۵,۰۰۰ سرپرست پت در سراسر کشور
+                    </h2>
+                    <p class="text-xs sm:text-sm text-on-surface-variant font-medium max-w-2xl">
+                        نظرات واقعی خریداران محصولات، کاربران اشتراک دوره‌ای تحویل خودکار و مراجعین کلینیک‌ها و بیمارستان‌های همکار آسنا.
+                    </p>
+                </div>
+                <div class="flex items-center gap-2 bg-emerald-50 px-4 py-2 rounded-2xl border border-emerald-200 self-start sm:self-auto text-emerald-800 text-xs font-black">
+                    <span class="text-base font-mono font-black">۹۸.۶٪</span>
+                    <span>شاخص رضایت عمومی</span>
+                </div>
+            </div>
+
+            <!-- 4 Testimonial Cards Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+                
+                <div class="testimonial-card-modern p-6 flex flex-col justify-between">
+                    <div>
+                        <!-- Header / Pet Avatar -->
+                        <div class="flex items-center justify-between gap-3 mb-4">
+                            <div class="flex items-center gap-3">
+                                <div class="w-12 h-12 rounded-2xl bg-orange-100 flex items-center justify-center text-2xl shadow-inner">
+                                    🐱
+                                </div>
+                                <div>
+                                    <div class="text-xs font-black text-slate-900">لوسی (گربه پرشین)</div>
+                                    <div class="text-[10px] text-slate-400">سرپرست: مریم رضایی</div>
+                                </div>
+                            </div>
+                            <span class="inline-flex items-center gap-0.5 bg-emerald-50 text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded-md border border-emerald-200">
+                                <span class="material-symbols-outlined text-xs">verified</span>
+                                <span>خریدار تایید شده</span>
+                            </span>
+                        </div>
+
+                        <!-- Rating Stars -->
+                        <div class="flex items-center gap-1 text-amber-500 text-xs mb-3">
+                            <span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">star</span>
+                            <span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">star</span>
+                            <span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">star</span>
+                            <span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">star</span>
+                            <span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">star</span>
+                        </div>
+
+                        <p class="text-xs text-slate-600 leading-relaxed">
+                            «من اشتراک ماهانه غذای رفلکس و خاک پتوپیا رو فعال کردم. هر ماه سر تاریخ مقرر بدون اینکه حتی یادم باشه میرسه دستم و ۱۵٪ تخفیف اشتراک هم واقعاً عالیه.»
+                        </p>
+                    </div>
+
+                    <div class="pt-4 mt-4 border-t border-slate-100 flex items-center justify-between text-[10px] text-slate-400">
+                        <span>خریداری شده: کمبو باکس سلامت گربه</span>
+                        <span class="font-mono">۱۴۰۳/۰۶/۱۰</span>
+                    </div>
+                </div>
+
+                <div class="testimonial-card-modern p-6 flex flex-col justify-between">
+                    <div>
+                        <!-- Header / Pet Avatar -->
+                        <div class="flex items-center justify-between gap-3 mb-4">
+                            <div class="flex items-center gap-3">
+                                <div class="w-12 h-12 rounded-2xl bg-blue-100 flex items-center justify-center text-2xl shadow-inner">
+                                    🐶
+                                </div>
+                                <div>
+                                    <div class="text-xs font-black text-slate-900">تدی (پامرانین)</div>
+                                    <div class="text-[10px] text-slate-400">سرپرست: امیرحسین کریمی</div>
+                                </div>
+                            </div>
+                            <span class="inline-flex items-center gap-0.5 bg-emerald-50 text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded-md border border-emerald-200">
+                                <span class="material-symbols-outlined text-xs">verified</span>
+                                <span>خریدار تایید شده</span>
+                            </span>
+                        </div>
+
+                        <!-- Rating Stars -->
+                        <div class="flex items-center gap-1 text-amber-500 text-xs mb-3">
+                            <span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">star</span>
+                            <span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">star</span>
+                            <span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">star</span>
+                            <span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">star</span>
+                            <span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">star</span>
+                        </div>
+
+                        <p class="text-xs text-slate-600 leading-relaxed">
+                            «غذای رویال کنین مینی ادالت رو از آسنا سفارش دادم. اصالت بارکد کاملاً معتبر بود و تاریخ انقضایش تا ۲۰۲۷ بود. بسته‌بندی عالی و پیک هم بسیار محترم بود.»
+                        </p>
+                    </div>
+
+                    <div class="pt-4 mt-4 border-t border-slate-100 flex items-center justify-between text-[10px] text-slate-400">
+                        <span>خریداری شده: رویال کنین مینی ادالت</span>
+                        <span class="font-mono">۱۴۰۳/۰۶/۰۷</span>
+                    </div>
+                </div>
+
+                <div class="testimonial-card-modern p-6 flex flex-col justify-between">
+                    <div>
+                        <!-- Header / Pet Avatar -->
+                        <div class="flex items-center justify-between gap-3 mb-4">
+                            <div class="flex items-center gap-3">
+                                <div class="w-12 h-12 rounded-2xl bg-teal-100 flex items-center justify-center text-2xl shadow-inner">
+                                    🦮
+                                </div>
+                                <div>
+                                    <div class="text-xs font-black text-slate-900">میلو (گلدن رتریور)</div>
+                                    <div class="text-[10px] text-slate-400">سرپرست: دکتر نیلوفر بهرامی</div>
+                                </div>
+                            </div>
+                            <span class="inline-flex items-center gap-0.5 bg-emerald-50 text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded-md border border-emerald-200">
+                                <span class="material-symbols-outlined text-xs">verified</span>
+                                <span>کاربر طلایی</span>
+                            </span>
+                        </div>
+
+                        <!-- Rating Stars -->
+                        <div class="flex items-center gap-1 text-amber-500 text-xs mb-3">
+                            <span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">star</span>
+                            <span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">star</span>
+                            <span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">star</span>
+                            <span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">star</span>
+                            <span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">star</span>
+                        </div>
+
+                        <p class="text-xs text-slate-600 leading-relaxed">
+                            «برای جراحی دیسک میلو نیاز به مکمل مفاصل و رزرو نوبت با جراح متخصص داشتیم. هم نوبت‌دهی آنلاین عالی عمل کرد هم داروها با زنجیره یخ ارسال شدند.»
+                        </p>
+                    </div>
+
+                    <div class="pt-4 mt-4 border-t border-slate-100 flex items-center justify-between text-[10px] text-slate-400">
+                        <span>خریداری شده: مکمل گلوکوزامین و رزرو کلینیک</span>
+                        <span class="font-mono">۱۴۰۳/۰۶/۰۲</span>
+                    </div>
+                </div>
+
+                <div class="testimonial-card-modern p-6 flex flex-col justify-between">
+                    <div>
+                        <!-- Header / Pet Avatar -->
+                        <div class="flex items-center justify-between gap-3 mb-4">
+                            <div class="flex items-center gap-3">
+                                <div class="w-12 h-12 rounded-2xl bg-purple-100 flex items-center justify-center text-2xl shadow-inner">
+                                    🐈‍⬛
+                                </div>
+                                <div>
+                                    <div class="text-xs font-black text-slate-900">سزار (بریتیش شورت‌هیر)</div>
+                                    <div class="text-[10px] text-slate-400">سرپرست: سینا رستمی</div>
+                                </div>
+                            </div>
+                            <span class="inline-flex items-center gap-0.5 bg-emerald-50 text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded-md border border-emerald-200">
+                                <span class="material-symbols-outlined text-xs">verified</span>
+                                <span>خریدار تایید شده</span>
+                            </span>
+                        </div>
+
+                        <!-- Rating Stars -->
+                        <div class="flex items-center gap-1 text-amber-500 text-xs mb-3">
+                            <span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">star</span>
+                            <span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">star</span>
+                            <span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">star</span>
+                            <span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">star</span>
+                            <span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">star</span>
+                        </div>
+
+                        <p class="text-xs text-slate-600 leading-relaxed">
+                            «پشتیبانی آنلاین با لئو (هوش مصنوعی) در نصف شب کمکم کرد دوز مناسب داروی ضد کک رو حساب کنم و فرداش دارو رو دم در تحویل گرفتم. واقعاً فوق‌العاده است.»
+                        </p>
+                    </div>
+
+                    <div class="pt-4 mt-4 border-t border-slate-100 flex items-center justify-between text-[10px] text-slate-400">
+                        <span>خریداری شده: شامپو و قطره تریکسی</span>
+                        <span class="font-mono">۱۴۰۳/۰۵/۲۸</span>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- ══════════════════════════════════════════════════════════════════════════ -->
+        <!-- NEW SECTION: BRAND PARTNERS & 4 GOLDEN GUARANTEES                          -->
+        <!-- ══════════════════════════════════════════════════════════════════════════ -->
+        <section class="brand-guarantees-section space-y-10 my-16" id="brandPartnersSection">
+            
+            <!-- 4 Golden Guarantees Bar -->
+            <div class="bg-gradient-to-r from-primary via-primary-container to-[#001a48] text-white rounded-[2.5rem] p-6 sm:p-8 shadow-xl">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                    
+                    <div class="flex items-center gap-4">
+                        <div class="w-14 h-14 rounded-2xl bg-white/10 flex items-center justify-center text-amber-400 shrink-0 border border-white/10">
+                            <span class="material-symbols-outlined text-3xl">verified_user</span>
+                        </div>
+                        <div>
+                            <div class="font-black text-sm text-white">ضمانت ۱۰۰٪ اصالت فیزیکی</div>
+                            <div class="text-[11px] text-white/70 mt-0.5">تضمین تاریخ انقضا و بارکد بین‌المللی</div>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-4">
+                        <div class="w-14 h-14 rounded-2xl bg-white/10 flex items-center justify-center text-teal-400 shrink-0 border border-white/10">
+                            <span class="material-symbols-outlined text-3xl">rocket_launch</span>
+                        </div>
+                        <div>
+                            <div class="font-black text-sm text-white">ارسال اکسپرس و زنجیره سرد</div>
+                            <div class="text-[11px] text-white/70 mt-0.5">زیر ۲ ساعت در تهران و ۲۴ ساعته کشور</div>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-4">
+                        <div class="w-14 h-14 rounded-2xl bg-white/10 flex items-center justify-center text-sky-400 shrink-0 border border-white/10">
+                            <span class="material-symbols-outlined text-3xl">medical_information</span>
+                        </div>
+                        <div>
+                            <div class="font-black text-sm text-white">مشاوره رایگان دامپزشکی</div>
+                            <div class="text-[11px] text-white/70 mt-0.5">بررسی آنلاین تداخل و تغذیه قبل از خرید</div>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-4">
+                        <div class="w-14 h-14 rounded-2xl bg-white/10 flex items-center justify-center text-rose-400 shrink-0 border border-white/10">
+                            <span class="material-symbols-outlined text-3xl">assignment_return</span>
+                        </div>
+                        <div>
+                            <div class="font-black text-sm text-white">۷ روز ضمانت تعویض و بازگشت</div>
+                            <div class="text-[11px] text-white/70 mt-0.5">در صورت عدم رضایت یا عدم تطابق کالا</div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- Official Brands Bar -->
+            <div class="space-y-4">
+                <div class="flex items-center justify-between px-2">
+                    <span class="text-xs font-black text-slate-400 uppercase tracking-wider">برندهای رسمی و بین‌المللی طرف قرارداد مستقیم آسنا</span>
+                    <span class="text-[11px] text-primary font-bold">بیش از ۵۰ تامین‌کننده معتبر</span>
+                </div>
+
+                <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
+                    <div class="brand-badge-partner">
+                        <span class="font-black text-xs text-slate-700 tracking-tight">ROYAL CANIN</span>
+                    </div>
+                    <div class="brand-badge-partner">
+                        <span class="font-black text-xs text-slate-700 tracking-tight">JOSERA</span>
+                    </div>
+                    <div class="brand-badge-partner">
+                        <span class="font-black text-xs text-slate-700 tracking-tight">REFLEX PLUS</span>
+                    </div>
+                    <div class="brand-badge-partner">
+                        <span class="font-black text-xs text-slate-700 tracking-tight">BRIT CARE</span>
+                    </div>
+                    <div class="brand-badge-partner">
+                        <span class="font-black text-xs text-slate-700 tracking-tight">SHAYER PET</span>
+                    </div>
+                    <div class="brand-badge-partner">
+                        <span class="font-black text-xs text-slate-700 tracking-tight">NUTRI PET</span>
+                    </div>
+                    <div class="brand-badge-partner">
+                        <span class="font-black text-xs text-slate-700 tracking-tight">TRIXIE</span>
+                    </div>
+                    <div class="brand-badge-partner">
+                        <span class="font-black text-xs text-slate-700 tracking-tight">BEAPHAR</span>
+                    </div>
+                </div>
+            </div>
+
+        </section>
     </main>
 
 <!-- Interaction Layer -->
@@ -1524,15 +2657,59 @@ $top_donors = $donor_stmt->fetchAll(PDO::FETCH_ASSOC);
                 class="absolute left-14 md:left-20 bg-primary text-white px-4 py-2 rounded-xl text-xs font-bold opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap shadow-xl">پشتیبانی
                 آنلاین</span>
         </a>
-        <a href="https://maps.google.com/?q=Tehran" target="_blank"
-            class="w-12 h-12 md:w-16 md:h-16 bg-secondary-container text-white rounded-2xl shadow-2xl flex items-center justify-center hover:scale-110 transition-all group relative">
-            <span class="material-symbols-outlined text-xl md:text-3xl">location_on</span>
-            <span
-                class="absolute left-14 md:left-20 bg-white text-primary border border-outline-variant px-4 py-2 rounded-xl text-xs font-bold opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap shadow-xl">مسیریابی کلینیک</span>
-        </a>
     </div>
 
 <script>
+// --- Landing Page: Best Sellers Filter Controller ---
+function filterBestSellers(group, btn) {
+    document.querySelectorAll('.bestseller-tab-btn').forEach(b => {
+        b.className = "bestseller-tab-btn bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2 rounded-2xl text-xs font-bold transition-all shrink-0 flex items-center gap-1.5";
+    });
+    btn.className = "bestseller-tab-btn active bg-primary text-white px-4 py-2 rounded-2xl text-xs font-bold transition-all shrink-0 flex items-center gap-1.5 shadow-sm";
+
+    const cards = document.querySelectorAll('.bestseller-card');
+    cards.forEach(card => {
+        const cardGroup = card.getAttribute('data-group');
+        if (group === 'all' || cardGroup === group) {
+            card.classList.remove('hidden');
+        } else {
+            card.classList.add('hidden');
+        }
+    });
+}
+
+// --- Landing Page: Autoship Savings Simulator ---
+function updateAutoshipSim(petType, btn) {
+    document.querySelectorAll('.autoship-sim-btn').forEach(b => {
+        b.className = "autoship-sim-btn px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 text-slate-600 hover:text-primary";
+    });
+    btn.className = "autoship-sim-btn active px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 bg-primary text-white shadow-sm";
+
+    const regElem = document.getElementById('simRegularPrice');
+    const autoElem = document.getElementById('simAutoshipPrice');
+    const saveElem = document.getElementById('simYearlySavings');
+    const detailsElem = document.getElementById('simBasketDetails');
+
+    if (!regElem || !autoElem || !saveElem) return;
+
+    if (petType === 'cat') {
+        regElem.textContent = '۱,۸۵۰,۰۰۰ تومان';
+        autoElem.textContent = '۱,۵۷۰,۰۰۰ تومان';
+        saveElem.textContent = '۳,۳۶۰,۰۰۰ تومان';
+        if (detailsElem) detailsElem.textContent = 'غذای خشک + ۲ کنسرو + خاک ۱۰L';
+    } else if (petType === 'small_dog') {
+        regElem.textContent = '۲,۲۰۰,۰۰۰ تومان';
+        autoElem.textContent = '۱,۸۷۰,۰۰۰ تومان';
+        saveElem.textContent = '۳,۹۶۰,۰۰۰ تومان';
+        if (detailsElem) detailsElem.textContent = 'غذای مینی ادالت + تشویقی دنتال + پد بهداشتی';
+    } else if (petType === 'large_dog') {
+        regElem.textContent = '۳,۶۰۰,۰۰۰ تومان';
+        autoElem.textContent = '۳,۰۶۰,۰۰۰ تومان';
+        saveElem.textContent = '۶,۴۸۰,۰۰۰ تومان';
+        if (detailsElem) detailsElem.textContent = 'غذای ماکسی ادالت + مکمل گلوکوزامین مفاصل';
+    }
+}
+
 // --- Chat System Logic ---
 let chatMode = 'ai';
 let currentTicketId = null;
@@ -1789,36 +2966,8 @@ function addToCart(btn, productId, type = 'standard') {
     });
 }
 
-function toggleWishlist(btn, productId) {
-    if(event) event.preventDefault();
-    
-    fetch('actions/wishlist_action.php', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: 'product_id=' + productId
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.status === 'success') {
-            const icon = btn.querySelector('.material-symbols-outlined');
-            if (data.action === 'added') {
-                icon.style.fontVariationSettings = "'FILL' 1";
-                icon.style.color = '#dc2626'; 
-            } else {
-                icon.style.fontVariationSettings = "'FILL' 0";
-                icon.style.color = 'inherit';
-            }
-        } else {
-            alert(data.message || 'خطایی رخ داد.');
-            if (data.message === 'ابتدا وارد حساب کاربری شوید.') {
-                window.location.href = 'login.php';
-            }
-        }
-    })
-    .catch(error => console.error('Error:', error));
-}
+// Wishlist interactions are handled universally by assets/js/wishlist-manager.js
+// (Optimistic zero-latency UI + Particle burst + Floating toast)
 
 // --- Slider Logic ---
 <?php

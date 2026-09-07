@@ -7,14 +7,63 @@ require_once dirname(__DIR__, 2) . '/includes/functions.php';
 // Route Guard: Organization managers and administrators
 $currentUser = AuthGuard::requireRole(['organization', 'admin'], $pdo);
 
-// Find organization managed by this user
+// Find organization managed by this user (check owner first)
 $orgStmt = $pdo->prepare("SELECT * FROM organizations WHERE user_id = ? OR manager_name = ? OR email = ? LIMIT 1");
 $orgStmt->execute([$currentUser['id'], $currentUser['name'], $currentUser['email'] ?? '']);
 $currentOrg = $orgStmt->fetch(PDO::FETCH_ASSOC);
 
+$currentAdminRole = 'owner';
+$currentAdminTitle = 'مدیر ارشد و موسس مرکز';
+$currentAdminPermissions = ['all'];
+
+if ($currentOrg) {
+    // Ensure primary owner exists in organization_admins table
+    if (!empty($currentOrg['user_id'])) {
+        try {
+            $insOwner = $pdo->prepare("
+                INSERT IGNORE INTO organization_admins (organization_id, user_id, admin_role, title, permissions_json, status, created_by, created_at)
+                VALUES (?, ?, 'owner', 'مدیر ارشد و موسس', '[\"all\"]', 'active', ?, NOW())
+            ");
+            $insOwner->execute([$currentOrg['id'], $currentOrg['user_id'], $currentOrg['user_id']]);
+        } catch (Throwable $e) {
+            // Ignore if already exists or constraint
+        }
+    }
+    
+    // Check if customized admin role exists
+    $checkAdmin = $pdo->prepare("SELECT * FROM organization_admins WHERE organization_id = ? AND user_id = ? LIMIT 1");
+    $checkAdmin->execute([$currentOrg['id'], $currentUser['id']]);
+    $adminRow = $checkAdmin->fetch(PDO::FETCH_ASSOC);
+    if ($adminRow) {
+        $currentAdminRole = $adminRow['admin_role'];
+        $currentAdminTitle = $adminRow['title'] ?: ($adminRow['admin_role'] === 'owner' ? 'مدیر ارشد و موسس' : 'مدیر مرکز');
+        $currentAdminPermissions = !empty($adminRow['permissions_json']) ? json_decode($adminRow['permissions_json'], true) : ['all'];
+    }
+} else {
+    // Check if user is an active sub-admin in organization_admins
+    $subAdminStmt = $pdo->prepare("
+        SELECT o.*, oa.admin_role, oa.title as staff_title, oa.permissions_json, oa.status as staff_status
+        FROM organization_admins oa
+        JOIN organizations o ON o.id = oa.organization_id
+        WHERE oa.user_id = ? AND oa.status = 'active'
+        LIMIT 1
+    ");
+    $subAdminStmt->execute([$currentUser['id']]);
+    $subAdminRow = $subAdminStmt->fetch(PDO::FETCH_ASSOC);
+    if ($subAdminRow) {
+        $currentOrg = $subAdminRow;
+        $currentAdminRole = $subAdminRow['admin_role'];
+        $currentAdminTitle = $subAdminRow['staff_title'] ?: 'مدیر همکار مرکز';
+        $currentAdminPermissions = !empty($subAdminRow['permissions_json']) ? json_decode($subAdminRow['permissions_json'], true) : [];
+    }
+}
+
 // If admin or newly assigned without linked row, default to first organization
 if (!$currentOrg && $currentUser['role'] === 'admin') {
     $currentOrg = $pdo->query("SELECT * FROM organizations LIMIT 1")->fetch(PDO::FETCH_ASSOC);
+    $currentAdminRole = 'super_admin';
+    $currentAdminTitle = 'مدیر کل سامانه (Super Admin)';
+    $currentAdminPermissions = ['all'];
 }
 
 if (!$currentOrg) {
@@ -27,6 +76,22 @@ if (!$currentOrg) {
     $ins->execute([$currentUser['id'], $currentUser['name'], $slug, $currentUser['name'], $currentUser['phone'] ?? '']);
     $newId = (int)$pdo->lastInsertId();
     $currentOrg = $pdo->query("SELECT * FROM organizations WHERE id = $newId")->fetch(PDO::FETCH_ASSOC);
+
+    try {
+        $pdo->prepare("
+            INSERT IGNORE INTO organization_admins (organization_id, user_id, admin_role, title, permissions_json, status, created_by, created_at)
+            VALUES (?, ?, 'owner', 'مدیر ارشد و موسس', '[\"all\"]', 'active', ?, NOW())
+        ")->execute([$newId, $currentUser['id'], $currentUser['id']]);
+    } catch (Throwable $e) {}
+}
+
+if (!function_exists('hasOrgPermission')) {
+    function hasOrgPermission(string $perm, array $permissions): bool {
+        if (in_array('all', $permissions, true)) {
+            return true;
+        }
+        return in_array($perm, $permissions, true);
+    }
 }
 
 $orgName = $currentOrg['name'] ?? 'مرکز درمانی';
@@ -125,6 +190,7 @@ $currentFile = basename($_SERVER['PHP_SELF']);
             'subscriptions.php'=> ['icon' => 'event_repeat', 'title' => 'اشتراک‌ها و Autoship کلینیک'],
             'inventory.php'    => ['icon' => 'medication', 'title' => 'داروخانه و موجودی کالا'],
             'wallet.php'       => ['icon' => 'account_balance_wallet', 'title' => 'مدیریت مالی و تسویه (پایا)'],
+            'admins.php'       => ['icon' => 'manage_accounts', 'title' => 'مدیران و دسترسی‌های مرکز'],
         ];
 
         foreach ($navItems as $file => $item):
@@ -186,7 +252,7 @@ $currentFile = basename($_SERVER['PHP_SELF']);
             <div class="flex items-center gap-3 pl-2">
                 <div class="text-left">
                     <p class="text-xs font-bold text-on-surface leading-tight"><?= htmlspecialchars($currentUser['name']) ?></p>
-                    <p class="text-[11px] text-on-surface-variant">مدیر مرکز درمانی</p>
+                    <p class="text-[11px] text-on-surface-variant font-medium"><?= htmlspecialchars($currentAdminTitle) ?></p>
                 </div>
                 <div class="w-10 h-10 rounded-full border-2 border-primary-container overflow-hidden bg-primary-container text-white flex items-center justify-center font-black text-sm">
                     <?= mb_substr($currentUser['name'], 0, 1) ?>

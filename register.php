@@ -295,7 +295,9 @@ if (isset($_SESSION['reg_flow']) && $step === 1) {
         <?php endif; ?>
 
         <!-- STEP 1: ROLE SELECTION -->
-        <?php if ($step === 1): ?>
+        <?php if ($step === 1): 
+            $initialRole = $_GET['role'] ?? ($_SESSION['reg_flow']['role'] ?? 'customer');
+        ?>
             <div class="bg-white rounded-3xl p-6 sm:p-10 shadow-sm border border-slate-200/80">
                 <div class="text-center max-w-xl mx-auto mb-8">
                     <h1 class="text-2xl sm:text-3xl font-black text-slate-900 mb-2">نقش خود را در سامانه انتخاب کنید</h1>
@@ -304,8 +306,8 @@ if (isset($_SESSION['reg_flow']) && $step === 1) {
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <!-- Option 1: Customer -->
-                    <label class="role-card flex items-start gap-4 p-5 rounded-2xl border-2 border-sky-500 bg-sky-50/40 cursor-pointer transition-all" onclick="selectRole('customer')">
-                        <input type="radio" name="selected_role" value="customer" class="mt-1 w-5 h-5 text-sky-600 focus:ring-sky-500" checked>
+                    <label class="role-card flex items-start gap-4 p-5 rounded-2xl border-2 <?= $initialRole === 'customer' ? 'border-sky-500 bg-sky-50/40' : 'border-slate-200 bg-slate-50/50' ?> cursor-pointer transition-all" onclick="selectRole('customer')">
+                        <input type="radio" name="selected_role" value="customer" class="mt-1 w-5 h-5 text-sky-600 focus:ring-sky-500" <?= $initialRole === 'customer' ? 'checked' : '' ?>>
                         <div class="flex-1">
                             <div class="flex items-center gap-2 mb-1">
                                 <span class="material-symbols-outlined text-sky-600">pets</span>
@@ -343,15 +345,15 @@ if (isset($_SESSION['reg_flow']) && $step === 1) {
                     </label>
 
                     <!-- Option 4: Organization -->
-                    <label class="role-card flex items-start gap-4 p-5 rounded-2xl border-2 border-slate-200 hover:border-rose-500 cursor-pointer bg-slate-50/50 hover:bg-rose-50/30 transition-all" onclick="selectRole('organization')">
-                        <input type="radio" name="selected_role" value="organization" class="mt-1 w-5 h-5 text-rose-600 focus:ring-rose-500">
+                    <label class="role-card flex items-start gap-4 p-5 rounded-2xl border-2 <?= $initialRole === 'organization' ? 'border-rose-500 bg-rose-50/40' : 'border-slate-200 bg-slate-50/50' ?> hover:border-rose-500 cursor-pointer hover:bg-rose-50/30 transition-all" onclick="selectRole('organization')">
+                        <input type="radio" name="selected_role" value="organization" class="mt-1 w-5 h-5 text-rose-600 focus:ring-rose-500" <?= $initialRole === 'organization' ? 'checked' : '' ?>>
                         <div class="flex-1">
                             <div class="flex items-center gap-2 mb-1">
                                 <span class="material-symbols-outlined text-rose-600">local_hospital</span>
-                                <span class="font-black text-slate-900">بیمارستان و کلینیک</span>
+                                <span class="font-black text-slate-900">مراکز درمانی، داروخانه‌ها و پناهگاه‌ها</span>
                                 <span class="text-[11px] bg-rose-100 text-rose-700 px-2 py-0.5 rounded-full font-bold">حقوقی / درمانی</span>
                             </div>
-                            <p class="text-xs text-slate-500 leading-relaxed">پروفایل جامع درمانی، مدیریت کادر پزشکان، خدمات شبانه‌روزی، داروخانه داخلی و رزرو تخت.</p>
+                            <p class="text-xs text-slate-500 leading-relaxed">بیمارستان‌ها، کلینیک‌ها، مراکز اورژانس شبانه‌روزی، داروخانه‌های تخصصی، پناهگاه‌ها و آزمایشگاه‌ها.</p>
                         </div>
                     </label>
 
@@ -501,15 +503,24 @@ if (isset($_SESSION['reg_flow']) && $step === 1) {
                                     <input type="text" name="organization_name" required placeholder="مثال: بیمارستان تخصصی دامپزشکی پارس" class="w-full h-12 px-4 rounded-xl border border-slate-300 focus:border-rose-500 text-sm">
                                 </div>
                                 <div>
-                                    <label class="block text-xs font-bold text-slate-700 mb-1.5">نوع مرکز درمانی *</label>
-                                    <select name="organization_type" class="w-full h-12 px-4 rounded-xl border border-slate-300 focus:border-rose-500 text-sm bg-white">
-                                        <option value="hospital">بیمارستان دامپزشکی فوق‌تخصصی</option>
-                                        <option value="clinic">کلینیک تخصصی و جراحی</option>
-                                        <option value="polyclinic">پلی‌کلینیک درمانی</option>
-                                        <option value="emergency_center">مرکز اورژانس شبانه‌روزی ۲۴ ساعته</option>
-                                        <option value="diagnostic_lab">آزمایشگاه و تصویربرداری تشخیصی</option>
-                                        <option value="shelter">پناهگاه و نقاهتگاه حمایتی</option>
+                                    <label class="block text-xs font-bold text-slate-700 mb-1.5">رسته حقوقی و تخصصی مرکز *</label>
+                                    <select name="organization_type" required class="w-full h-12 px-4 rounded-xl border border-slate-300 focus:border-rose-500 text-sm bg-white font-bold">
+                                        <option value="hospital">🏥 بیمارستان فوق‌تخصصی دامپزشکی</option>
+                                        <option value="clinic" selected>🩺 کلینیک تخصصی و جراحی</option>
+                                        <option value="pharmacy">💊 داروخانه مرجع دامپزشکی</option>
+                                        <option value="shelter_charity">🐾 پناهگاه و خیریه حمایتی حیوانات</option>
+                                        <option value="emergency_center">🚨 مرکز اورژانس شبانه‌روزی ۲۴ ساعته</option>
+                                        <option value="diagnostic_lab">🔬 آزمایشگاه و تصویربرداری تشخیصی</option>
                                     </select>
+                                </div>
+                            </div>
+
+                            <!-- Organization Type Lock Notice -->
+                            <div class="p-3.5 rounded-2xl bg-amber-50/90 border border-amber-200 text-amber-900 text-xs flex items-start gap-2.5">
+                                <span class="material-symbols-outlined text-amber-600 text-lg shrink-0 mt-0.5">lock</span>
+                                <div class="leading-relaxed">
+                                    <span class="font-black block mb-0.5">قانون عدم تغییر مستقیم رسته پس از احراز:</span>
+                                    رسته انتخابی مرکز بر اساس پروانه بهره‌برداری شما بررسی و در پنل مدیریت قفل خواهد شد. تغییر بعدی آن در پنل غیرقابل تغییر مستقیم بوده و صرفاً منوط به ارسال تیکت رسمی به مدیریت کلان و تایید کارشناسان ارشد خواهد بود.
                                 </div>
                             </div>
 

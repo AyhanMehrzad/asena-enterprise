@@ -238,7 +238,7 @@ $autoship_price = round($base_price * (100 - $autoship_discount) / 100);
 
                 <!-- Description -->
                 <div class="mb-8 text-sm lg:text-base text-on-surface-variant leading-relaxed bg-surface-container-lowest p-4 rounded-2xl border border-outline-variant/20">
-                    <?php echo nl2br(htmlspecialchars($product['description'] ?? 'توضیحات و دستور مصرف دارویی برای این محصول ثبت شده است.')); ?>
+                    <?php echo nl2br(htmlspecialchars(!empty(trim($product['description'] ?? '')) ? $product['description'] : 'توضیحات و مشخصات فنی این کالا توسط دامپزشکان و کارشناسان آسنا تایید شده است. برای کسب اطلاعات بیشتر می‌توانید با بخش مشاوره تماس حاصل فرمایید.')); ?>
                 </div>
 
                 <!-- Autoship Option Selector Box (Page 6) -->
@@ -295,13 +295,25 @@ $autoship_price = round($base_price * (100 - $autoship_discount) / 100);
                     <?php endif; ?>
                 </div>
             </div>
+        </div>
     </div>
 
     <?php
     // Amazon.com Benchmark: Frequently Bought Together
     require_once __DIR__ . '/includes/RecommendationService.php';
     $recService = new RecommendationService($pdo);
-    $bundle = $recService->getFrequentlyBoughtTogether($product_id);
+    $fbtItems = $recService->getFrequentlyBoughtTogether($product_id);
+    $bundle = null;
+    if (!empty($fbtItems)) {
+        $complement = $fbtItems[0];
+        $bundleCalc = RecommendationService::calculateBundle($product, [$complement], 5.0);
+        $bundle = [
+            'complement_product' => $complement,
+            'regular_total'      => $bundleCalc['regular_total'],
+            'discounted_total'   => $bundleCalc['bundle_total'],
+            'savings'            => $bundleCalc['savings'],
+        ];
+    }
 
     // Alibaba.com Benchmark: Wholesale Pricing Tiers
     $wholesaleTiers = App::wholesale()->getPriceTiers($product_id);

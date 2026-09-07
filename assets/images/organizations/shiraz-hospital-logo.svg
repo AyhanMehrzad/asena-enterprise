@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="100%" height="100%">
+  <defs>
+    <linearGradient id="shirazBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1e1b4b"/>
+      <stop offset="100%" stop-color="#0f172a"/>
+    </linearGradient>
+    <linearGradient id="shirazGold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f59e0b"/>
+      <stop offset="100%" stop-color="#d97706"/>
+    </linearGradient>
+  </defs>
+  <rect width="200" height="200" rx="40" fill="url(#shirazBg)"/>
+  
+  <!-- Royal Hospital Shield Crest -->
+  <path d="M100 32 C148 32 164 52 164 96 C164 142 124 168 100 176 C76 168 36 142 36 96 C36 52 52 32 100 32 Z" fill="none" stroke="url(#shirazGold)" stroke-width="4"/>
+  
+  <!-- Shiraz Cypress Tree / Veterinary Medical Cross -->
+  <path d="M88 65 H112 V85 H132 V105 H112 V125 H88 V105 H68 V85 H88 Z" fill="#38bdf8" opacity="0.3"/>
+  <polygon points="100,50 115,80 106,80 118,105 106,105 120,132 80,132 94,105 82,105 94,80 85,80" fill="url(#shirazGold)"/>
+  <rect x="96" y="132" width="8" height="18" fill="#d97706"/>
+
+  <circle cx="100" cy="160" r="5" fill="#38bdf8"/>
+</svg>

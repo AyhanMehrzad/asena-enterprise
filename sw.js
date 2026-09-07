@@ -3,20 +3,21 @@
  * Version: 1.0.0
  */
 
-const CACHE_NAME = 'asena-enterprise-v1.0.0';
+const CACHE_NAME = 'asena-enterprise-v1.0.1';
 const STATIC_ASSETS = [
-    '/',
-    '/index.php',
-    '/offline.html',
-    '/assets/css/style.css',
-    '/assets/css/vazirmatn.css',
-    '/assets/css/geist.css',
-    '/assets/css/material-symbols.css',
-    '/assets/css/enterprise-ui.css',
-    '/assets/images/logo.png',
-    '/favicon.ico',
-    '/site.webmanifest'
+    './',
+    './index.php',
+    './offline.html',
+    './assets/css/style.css',
+    './assets/css/vazirmatn.css',
+    './assets/css/geist.css',
+    './assets/css/material-symbols.css',
+    './assets/css/enterprise-ui.css',
+    './assets/images/logo.png',
+    './favicon.ico',
+    './site.webmanifest'
 ];
+
 
 // 1. Install Event - Pre-cache critical application shell
 self.addEventListener('install', (event) => {

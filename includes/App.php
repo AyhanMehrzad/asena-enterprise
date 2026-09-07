@@ -25,6 +25,7 @@ require_once __DIR__ . '/IranPostService.php';
 require_once __DIR__ . '/MarketplaceEscrowService.php';
 require_once __DIR__ . '/TrafficMonitoringService.php';
 require_once __DIR__ . '/PostexShippingService.php';
+require_once __DIR__ . '/LeaderboardService.php';
 
 class App {
     private static ?PDO $db = null;
@@ -45,6 +46,7 @@ class App {
     private static ?MarketplaceEscrowService $escrow = null;
     private static ?TrafficMonitoringService $traffic = null;
     private static ?PostexShippingService $postex = null;
+    private static ?LeaderboardService $leaderboard = null;
 
 
 
@@ -172,6 +174,13 @@ class App {
             self::$postex = new PostexShippingService(self::db());
         }
         return self::$postex;
+    }
+
+    public static function leaderboard(): LeaderboardService {
+        if (self::$leaderboard === null) {
+            self::$leaderboard = new LeaderboardService(self::db());
+        }
+        return self::$leaderboard;
     }
 
     /**

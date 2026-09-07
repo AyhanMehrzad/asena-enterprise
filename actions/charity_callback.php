@@ -41,10 +41,18 @@ if ($verify['success']) {
     $stmt = $pdo->prepare("INSERT INTO donations (user_id, donor_name, campaign_id, amount, status, payment_reference) VALUES (?, ?, ?, ?, 'successful', ?)");
     $stmt->execute([$donation['user_id'], $donation['donor_name'], $donation['campaign_id'], $donation['amount'], $ref_id]);
     
-    // Update campaign
+    // Update campaign with verified total
     if ($donation['campaign_id']) {
-        $stmt = $pdo->prepare("UPDATE campaigns SET current_amount = current_amount + ? WHERE id = ?");
-        $stmt->execute([$donation['amount'], $donation['campaign_id']]);
+        $stmt = $pdo->prepare("
+            UPDATE campaigns 
+            SET current_amount = (
+                SELECT COALESCE(SUM(amount), 0) 
+                FROM donations 
+                WHERE campaign_id = ? AND status = 'successful'
+            ) 
+            WHERE id = ?
+        ");
+        $stmt->execute([$donation['campaign_id'], $donation['campaign_id']]);
     }
     
     // Send SMS Thank You

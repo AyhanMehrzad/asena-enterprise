@@ -7,7 +7,7 @@ $message = '';
 $messageType = '';
 
 // Handle Link or Update Staff
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
+if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POST['action'])) {
     csrf_verify();
     $action = $_POST['action'];
 

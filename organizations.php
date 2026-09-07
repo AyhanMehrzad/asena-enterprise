@@ -24,6 +24,7 @@ $filters = [
 $organizations = $orgService->getOrganizations($filters);
 $activeCities  = $orgService->getActiveCities();
 $stats         = $orgService->getStats();
+$top5OrgIds    = App::leaderboard()->getTop5OrganizationIds();
 
 // Page SEO Metadata
 $page_title = 'مراکز درمانی، بیمارستان‌ها و کلینیک‌های دامپزشکی | ASENA';
@@ -240,8 +241,11 @@ require_once __DIR__ . '/includes/header.php';
                     <!-- Top Card Body -->
                     <div>
                         <!-- Header Banner & Badges -->
-                        <div class="h-36 bg-gradient-to-br from-slate-800 via-sky-950 to-indigo-950 relative p-4 flex items-start justify-between overflow-hidden">
-                            <div class="absolute inset-0 opacity-20 bg-[radial-gradient(#38bdf8_1px,transparent_1px)] [background-size:16px_16px]"></div>
+                        <div class="h-36 relative p-4 flex items-start justify-between">
+                            <!-- Background with overflow-hidden for rounded top corners -->
+                            <div class="absolute inset-0 rounded-t-3xl overflow-hidden bg-gradient-to-br from-slate-800 via-sky-950 to-indigo-950 bg-cover bg-center" style="<?= !empty($org['banner_url']) ? "background-image: url('" . htmlspecialchars($org['banner_url']) . "');" : '' ?>">
+                                <div class="absolute inset-0 opacity-20 bg-[radial-gradient(#38bdf8_1px,transparent_1px)] [background-size:16px_16px] <?= !empty($org['banner_url']) ? 'bg-black/40' : '' ?>"></div>
+                            </div>
                             
                             <!-- Badges Left/Right -->
                             <div class="relative z-10 flex flex-wrap items-center gap-1.5">
@@ -251,6 +255,12 @@ require_once __DIR__ . '/includes/header.php';
                                 <?php if (!empty($org['license_number'])): ?>
                                     <span class="px-2 py-0.5 rounded-full text-[9px] font-bold bg-sky-500/30 text-sky-200 border border-sky-400/30">
                                         پروانه رسمی
+                                    </span>
+                                <?php endif; ?>
+                                <?php if (in_array((int)$org['id'], $top5OrgIds, true)): ?>
+                                    <span class="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-gradient-to-r from-amber-400 to-yellow-300 text-slate-950 border border-amber-300 shadow-md flex items-center gap-1 animate-pulse" title="جزو ۵ مرکز برتر کشور بر اساس رضایت مراجعین">
+                                        <span class="material-symbols-outlined text-xs">military_tech</span>
+                                        <span>۵ مرکز برتر</span>
                                     </span>
                                 <?php endif; ?>
                             </div>
@@ -273,10 +283,10 @@ require_once __DIR__ . '/includes/header.php';
                                 <?php endif; ?>
                             </div>
 
-                            <!-- Logo Overlay -->
-                            <div class="absolute -bottom-6 right-6 w-16 h-16 rounded-2xl bg-white shadow-lg border-2 border-white flex items-center justify-center overflow-hidden z-20 group-hover:scale-105 transition-transform">
+                            <!-- Logo Overlay (Floating OVER both banner and white card body) -->
+                            <div class="absolute -bottom-7 right-6 w-16 h-16 rounded-2xl bg-white shadow-xl border-2 border-white flex items-center justify-center overflow-hidden z-30 group-hover:scale-105 transition-transform p-1.5">
                                 <?php if (!empty($org['logo_url'])): ?>
-                                    <img src="<?= htmlspecialchars($org['logo_url']) ?>" alt="<?= htmlspecialchars($org['name']) ?>" class="w-full h-full object-cover">
+                                    <img src="<?= htmlspecialchars($org['logo_url']) ?>" alt="<?= htmlspecialchars($org['name']) ?>" class="w-full h-full object-contain">
                                 <?php else: ?>
                                     <span class="material-symbols-outlined text-3xl text-sky-600">local_hospital</span>
                                 <?php endif; ?>
@@ -284,7 +294,7 @@ require_once __DIR__ . '/includes/header.php';
                         </div>
 
                         <!-- Card Content -->
-                        <div class="p-6 pt-9 space-y-4">
+                        <div class="p-6 pt-10 space-y-4 relative z-10">
                             <div>
                                 <div class="flex items-start justify-between gap-2">
                                     <h2 class="text-base font-black text-slate-900 group-hover:text-sky-600 transition-colors line-clamp-1">
