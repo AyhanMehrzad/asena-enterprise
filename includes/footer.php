@@ -85,16 +85,27 @@
         fetch('actions/autoship_worker.php', { method: 'POST' }).catch(() => {});
     </script>
 
-    <!-- Mobile Bottom Navigation Bar (PWA UX) -->
-    <nav class="mobile-bottom-nav">
+    <!-- Digikala-Style Mobile Bottom Navigation Bar -->
+    <nav class="mobile-bottom-nav" id="mobileBottomNavBar" role="navigation" aria-label="ناوبری اصلی موبایل">
+        <!-- 1. Home -->
         <a href="index.php" class="bottom-nav-link <?php echo ($current_page === 'index.php') ? 'active' : ''; ?>">
             <span class="material-symbols-outlined">home</span>
             <span>خانه</span>
         </a>
-        <a href="shop.php" class="bottom-nav-link <?php echo ($current_page === 'shop.php' || $current_page === 'pharmacy.php') ? 'active' : ''; ?>">
-            <span class="material-symbols-outlined">storefront</span>
-            <span>فروشگاه</span>
+
+        <!-- 2. Categories (Triggers Bottom Sheet Drawer) -->
+        <a href="javascript:void(0)" onclick="openMobileCategoriesSheet()" class="bottom-nav-link <?php echo in_array($current_page, ['shop.php', 'pharmacy.php', 'organizations.php']) ? 'active' : ''; ?>">
+            <span class="material-symbols-outlined">grid_view</span>
+            <span>دسته‌بندی‌ها</span>
         </a>
+
+        <!-- 3. Fast Booking (With Special Accent) -->
+        <a href="booking.php" onclick="if(document.getElementById('timeReservationSection')){document.getElementById('timeReservationSection').scrollIntoView({behavior:'smooth', block:'start'});return false;}" class="bottom-nav-link <?php echo ($current_page === 'booking.php') ? 'active' : ''; ?>">
+            <span class="material-symbols-outlined">calendar_month</span>
+            <span>نوبت‌دهی</span>
+        </a>
+
+        <!-- 4. Cart with Dynamic Badge -->
         <a href="cart.php" class="bottom-nav-link <?php echo ($current_page === 'cart.php') ? 'active' : ''; ?>">
             <span class="material-symbols-outlined">shopping_cart</span>
             <?php if (!empty($cart_count) && $cart_count > 0): ?>
@@ -102,15 +113,149 @@
             <?php endif; ?>
             <span>سبد خرید</span>
         </a>
-        <a href="profile.php#pets" class="bottom-nav-link">
-            <span class="material-symbols-outlined">pets</span>
-            <span>پت پاسپورت</span>
-        </a>
-        <a href="profile.php" class="bottom-nav-link <?php echo ($current_page === 'profile.php' || $current_page === 'login.php') ? 'active' : ''; ?>">
-            <span class="material-symbols-outlined">account_circle</span>
-            <span>حساب من</span>
-        </a>
     </nav>
+
+    <!-- Digikala-Style Mobile Categories Bottom Sheet & Backdrop -->
+    <div id="mobileCategoriesBackdrop" class="mobile-sheet-backdrop" onclick="closeMobileCategoriesSheet()"></div>
+    <div id="mobileCategoriesSheet" class="mobile-bottom-sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
+        <!-- Drag Handle -->
+        <div class="sheet-drag-handle"></div>
+
+        <!-- Sheet Header -->
+        <div class="flex items-center justify-between px-6 py-3 border-b border-slate-100">
+            <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined text-primary text-2xl">category</span>
+                <h3 id="sheetTitle" class="text-sm font-black text-slate-800">دسته‌بندی خدمات و محصولات آسنا</h3>
+            </div>
+            <button type="button" onclick="closeMobileCategoriesSheet()" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center transition-colors">
+                <span class="material-symbols-outlined text-lg">close</span>
+            </button>
+        </div>
+
+        <!-- Category Grid Container (Scrollable) -->
+        <div class="p-5 overflow-y-auto custom-scrollbar flex-1 space-y-4 max-h-[65vh]">
+            <div class="grid grid-cols-2 gap-3">
+                <!-- 1. Pet Shop -->
+                <a href="shop.php" onclick="closeMobileCategoriesSheet()" class="p-3.5 rounded-2xl bg-gradient-to-br from-amber-50 to-orange-50/60 border border-amber-200/60 hover:shadow-md transition-all flex flex-col gap-2 group">
+                    <div class="w-10 h-10 rounded-xl bg-amber-500 text-white flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform">
+                        <span class="material-symbols-outlined text-2xl">pets</span>
+                    </div>
+                    <div>
+                        <div class="text-xs font-black text-slate-900 group-hover:text-amber-700 transition-colors">پت‌شاپ و تغذیه</div>
+                        <div class="text-[10px] text-slate-500 line-clamp-1 mt-0.5">غذای خشک، کنسرو، اسباب‌بازی و خاک</div>
+                    </div>
+                </a>
+
+                <!-- 2. Pharmacy -->
+                <a href="pharmacy.php" onclick="closeMobileCategoriesSheet()" class="p-3.5 rounded-2xl bg-gradient-to-br from-blue-50 to-indigo-50/60 border border-blue-200/60 hover:shadow-md transition-all flex flex-col gap-2 group">
+                    <div class="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform">
+                        <span class="material-symbols-outlined text-2xl">medication</span>
+                    </div>
+                    <div>
+                        <div class="text-xs font-black text-slate-900 group-hover:text-blue-700 transition-colors">داروخانه دامپزشکی</div>
+                        <div class="text-[10px] text-slate-500 line-clamp-1 mt-0.5">واکسن، مکمل، ضد انگل و زنجیره سرد</div>
+                    </div>
+                </a>
+
+                <!-- 3. Vet Appointments -->
+                <a href="booking.php" onclick="closeMobileCategoriesSheet()" class="p-3.5 rounded-2xl bg-gradient-to-br from-teal-50 to-emerald-50/60 border border-teal-200/60 hover:shadow-md transition-all flex flex-col gap-2 group">
+                    <div class="w-10 h-10 rounded-xl bg-teal-600 text-white flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform">
+                        <span class="material-symbols-outlined text-2xl">calendar_month</span>
+                    </div>
+                    <div>
+                        <div class="text-xs font-black text-slate-900 group-hover:text-teal-700 transition-colors">نوبت‌دهی پزشکان</div>
+                        <div class="text-[10px] text-slate-500 line-clamp-1 mt-0.5">جراحی، داخلی، سونوگرافی و ویزیت</div>
+                    </div>
+                </a>
+
+                <!-- 4. Hospitals & 24/7 -->
+                <a href="organizations.php" onclick="closeMobileCategoriesSheet()" class="p-3.5 rounded-2xl bg-gradient-to-br from-rose-50 to-red-50/60 border border-rose-200/60 hover:shadow-md transition-all flex flex-col gap-2 group">
+                    <div class="w-10 h-10 rounded-xl bg-rose-600 text-white flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform">
+                        <span class="material-symbols-outlined text-2xl">local_hospital</span>
+                    </div>
+                    <div>
+                        <div class="text-xs font-black text-slate-900 group-hover:text-rose-700 transition-colors">بیمارستان‌های ۲۴ ساعته</div>
+                        <div class="text-[10px] text-slate-500 line-clamp-1 mt-0.5">مراکز اورژانس شبانه‌روزی و ICU</div>
+                    </div>
+                </a>
+
+                <!-- 5. Grooming & Spa -->
+                <a href="booking.php?service=grooming" onclick="closeMobileCategoriesSheet()" class="p-3.5 rounded-2xl bg-gradient-to-br from-pink-50 to-purple-50/60 border border-pink-200/60 hover:shadow-md transition-all flex flex-col gap-2 group">
+                    <div class="w-10 h-10 rounded-xl bg-pink-600 text-white flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform">
+                        <span class="material-symbols-outlined text-2xl">content_cut</span>
+                    </div>
+                    <div>
+                        <div class="text-xs font-black text-slate-900 group-hover:text-pink-700 transition-colors">گرومینگ و آرایش پت</div>
+                        <div class="text-[10px] text-slate-500 line-clamp-1 mt-0.5">اصلاح مو، شستشو، اسپا و پدیکور</div>
+                    </div>
+                </a>
+
+                <!-- 6. Autoship -->
+                <a href="subscriptions.php" onclick="closeMobileCategoriesSheet()" class="p-3.5 rounded-2xl bg-gradient-to-br from-orange-50 to-amber-50/60 border border-orange-200/60 hover:shadow-md transition-all flex flex-col gap-2 group">
+                    <div class="w-10 h-10 rounded-xl bg-orange-500 text-white flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform">
+                        <span class="material-symbols-outlined text-2xl">autorenew</span>
+                    </div>
+                    <div>
+                        <div class="text-xs font-black text-slate-900 group-hover:text-orange-700 transition-colors">تحویل خودکار Autoship</div>
+                        <div class="text-[10px] text-slate-500 line-clamp-1 mt-0.5">ارسال ماهانه غذا با ۱۵٪ تخفیف دائمی</div>
+                    </div>
+                </a>
+
+                <!-- 7. Knowledge Base -->
+                <a href="knowledge_base.php" onclick="closeMobileCategoriesSheet()" class="p-3.5 rounded-2xl bg-gradient-to-br from-sky-50 to-blue-50/60 border border-sky-200/60 hover:shadow-md transition-all flex flex-col gap-2 group">
+                    <div class="w-10 h-10 rounded-xl bg-sky-600 text-white flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform">
+                        <span class="material-symbols-outlined text-2xl">auto_stories</span>
+                    </div>
+                    <div>
+                        <div class="text-xs font-black text-slate-900 group-hover:text-sky-700 transition-colors">دانشنامه و مقالات</div>
+                        <div class="text-[10px] text-slate-500 line-clamp-1 mt-0.5">جدول واکسن و راهنمای نگهداری پت</div>
+                    </div>
+                </a>
+
+                <!-- 8. Pet Charity -->
+                <a href="charity.php" onclick="closeMobileCategoriesSheet()" class="p-3.5 rounded-2xl bg-gradient-to-br from-emerald-50 to-teal-50/60 border border-emerald-200/60 hover:shadow-md transition-all flex flex-col gap-2 group">
+                    <div class="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform">
+                        <span class="material-symbols-outlined text-2xl">volunteer_activism</span>
+                    </div>
+                    <div>
+                        <div class="text-xs font-black text-slate-900 group-hover:text-emerald-700 transition-colors">خیریه و امداد حیوانات</div>
+                        <div class="text-[10px] text-slate-500 line-clamp-1 mt-0.5">پویش درمان حیوانات بی‌پناه</div>
+                    </div>
+                </a>
+            </div>
+
+            <!-- Fast View All Link -->
+            <div class="pt-2">
+                <a href="shop.php" onclick="closeMobileCategoriesSheet()" class="w-full bg-primary text-white py-3 px-4 rounded-xl text-xs font-black flex items-center justify-center gap-2 shadow-md hover:bg-primary-container transition-all">
+                    <span>مشاهده کل کاتالوگ فروشگاه آسنا</span>
+                    <span class="material-symbols-outlined text-sm">arrow_back</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mobile Bottom Sheet Controllers -->
+    <script>
+    function openMobileCategoriesSheet() {
+        const backdrop = document.getElementById('mobileCategoriesBackdrop');
+        const sheet = document.getElementById('mobileCategoriesSheet');
+        if (backdrop && sheet) {
+            backdrop.classList.add('active');
+            sheet.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+    }
+
+    function closeMobileCategoriesSheet() {
+        const backdrop = document.getElementById('mobileCategoriesBackdrop');
+        const sheet = document.getElementById('mobileCategoriesSheet');
+        if (backdrop && sheet) {
+            backdrop.classList.remove('active');
+            sheet.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+    }
+    </script>
 
     <!-- Floating PWA Install Prompt Banner -->
     <div id="pwaInstallBanner" class="pwa-install-banner">

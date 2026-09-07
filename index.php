@@ -16,21 +16,79 @@ if (Feature::has('petshop_catalog')) {
     } catch (Exception $e) {}
 }
 
+// Fetch top rated doctors based on rating & reviews
+$top_doctors = [];
+if (Feature::has('clinic_booking')) {
+    try {
+        $doc_stmt = $pdo->prepare("
+            SELECT d.id, d.name, d.specialty, d.provider_type, d.rating, d.review_count,
+                   d.image_url, d.price, d.clinic_name, d.is_emergency, d.bio, d.tags,
+                   d.schedule_info, d.services_json, d.organization_id,
+                   o.name as org_name, o.city as org_city, o.slug as org_slug, o.is_24_7 as org_is_24_7,
+                   u.vet_council_number
+            FROM doctors d
+            LEFT JOIN organizations o ON d.organization_id = o.id
+            LEFT JOIN users u ON d.user_id = u.id
+            ORDER BY d.rating DESC, d.review_count DESC
+            LIMIT 8
+        ");
+        $doc_stmt->execute();
+        $top_doctors = $doc_stmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (Exception $e) {}
+}
+
 // Fetch featured 24/7 emergency medical centers & clinics
 $featured_organizations = [];
 if (Feature::has('clinic_booking')) {
     try {
         $org_stmt = $pdo->prepare("
-            SELECT id, name, slug, type, city, address, phone, emergency_phone, rating, review_count, is_24_7, facilities, logo_url, banner_url 
+            SELECT id, name, slug, type, city, address, phone, emergency_phone, rating, review_count, is_24_7, facilities, logo_url, banner_url, description
             FROM organizations 
             WHERE status = 'approved' 
-            ORDER BY is_24_7 DESC, rating DESC 
-            LIMIT 3
+            ORDER BY is_24_7 DESC, rating DESC, review_count DESC
+            LIMIT 6
         ");
         $org_stmt->execute();
         $featured_organizations = $org_stmt->fetchAll(PDO::FETCH_ASSOC);
     } catch (Exception $e) {}
 }
+
+// Compute upcoming 7 days for the fast online time reservation widget
+$reservation_days = [];
+for ($i = 0; $i < 7; $i++) {
+    $ts = strtotime("+$i day");
+    $gDate = date('Y-m-d', $ts);
+    $dayOfWeekEn = strtolower(date('D', $ts));
+    $dayName = function_exists('jdate') ? jdate('l', $ts) : date('l', $ts);
+    $dayNumber = function_exists('jdate') ? jdate('j F', $ts) : date('d M', $ts);
+    $shamsiPrefix = ($i === 0) ? 'امروز' : (($i === 1) ? 'فردا' : '');
+    $reservation_days[] = [
+        'gDate' => $gDate,
+        'dayKey' => $dayOfWeekEn,
+        'dayName' => $dayName,
+        'dayNumber' => $dayNumber,
+        'label' => $shamsiPrefix ? "$shamsiPrefix ($dayName)" : $dayName,
+        'isToday' => ($i === 0)
+    ];
+}
+
+// Fetch booked slots for the next 7 days
+$booked_slots = [];
+if (Feature::has('clinic_booking')) {
+    try {
+        $bStmt = $pdo->query("SELECT doctor_id, appointment_date, appointment_time FROM appointments WHERE appointment_date >= CURDATE() AND appointment_date <= DATE_ADD(CURDATE(), INTERVAL 7 DAY) AND status != 'cancelled'");
+        while ($row = $bStmt->fetch(PDO::FETCH_ASSOC)) {
+            $docId = $row['doctor_id'];
+            $d = $row['appointment_date'];
+            $t = substr($row['appointment_time'], 0, 5);
+            if (!isset($booked_slots[$docId])) $booked_slots[$docId] = [];
+            if (!isset($booked_slots[$docId][$d])) $booked_slots[$docId][$d] = [];
+            $booked_slots[$docId][$d][] = $t;
+        }
+    } catch (Exception $e) {}
+}
+$booked_slots_json = json_encode($booked_slots, JSON_UNESCAPED_UNICODE);
+$doctors_json = json_encode($top_doctors, JSON_UNESCAPED_UNICODE);
 
 // Live Platform Counters
 $count_orgs = 12;
@@ -127,37 +185,8 @@ $top_donors = $donor_stmt->fetchAll(PDO::FETCH_ASSOC);
             </div>
         </section>
         
-        <!-- Hero Unified Live Search Bar (Shared & Synced with Header Component) -->
-        <div class="relative -mt-10 lg:-mt-14 z-40 max-w-4xl mx-auto px-4 w-full">
-            <div class="bg-white/95 backdrop-blur-xl p-4 sm:p-6 rounded-3xl shadow-2xl border border-slate-100 flex flex-col gap-3.5">
-                <form action="shop.php" method="GET" class="relative flex items-center bg-slate-50 hover:bg-slate-100/80 focus-within:bg-white focus-within:ring-2 focus-within:ring-primary/20 border border-slate-200/80 rounded-2xl transition-all px-4 py-2.5">
-                    <span class="material-symbols-outlined text-2xl text-primary shrink-0 ml-3">search</span>
-                    <input id="heroSearchInput" name="q" class="w-full bg-transparent border-none outline-none text-sm sm:text-base text-slate-800 placeholder-slate-400 font-medium" placeholder="جستجوی سریع داروهای کمیاب، غذای سگ و گربه، کلینیک‌ها و پزشکان..." autocomplete="off">
-                    <span id="heroSearchSpinner" class="material-symbols-outlined text-sm animate-spin hidden text-slate-400 mr-2">sync</span>
-                    <button type="submit" class="bg-primary hover:bg-primary-container text-white px-5 sm:px-7 py-2.5 rounded-xl text-xs sm:text-sm font-bold shadow-md hover:shadow-lg transition-all shrink-0 flex items-center gap-1.5 mr-2">
-                        <span>جستجو</span>
-                        <span class="material-symbols-outlined text-sm hidden sm:inline">arrow_back</span>
-                    </button>
-                </form>
-                <!-- Hero Instant Autocomplete Dropdown -->
-                <div id="heroSearchResults" class="hidden bg-white rounded-2xl shadow-2xl border border-slate-100 overflow-hidden text-slate-800 text-right"></div>
-
-                <!-- Trending Search Chips -->
-                <div class="flex items-center gap-2 flex-wrap text-xs text-slate-500 pt-1">
-                    <span class="font-bold text-slate-700 flex items-center gap-1">
-                        <span class="material-symbols-outlined text-sm text-secondary-container">trending_up</span> محبوب‌ترین جستجوها:
-                    </span>
-                    <a href="shop.php?q=غذای خشک" class="bg-slate-100 hover:bg-primary/10 hover:text-primary px-3 py-1 rounded-full transition-colors font-medium">غذای خشک رویال</a>
-                    <a href="pharmacy.php?tag=vaccines" class="bg-slate-100 hover:bg-indigo-50 hover:text-indigo-700 px-3 py-1 rounded-full transition-colors font-medium">واکسن هاری</a>
-                    <a href="organizations.php?type=hospital" class="bg-slate-100 hover:bg-teal-50 hover:text-teal-700 px-3 py-1 rounded-full transition-colors font-medium">بیمارستان شبانه‌روزی</a>
-                    <a href="subscriptions.php" class="bg-slate-100 hover:bg-orange-50 hover:text-secondary-container px-3 py-1 rounded-full transition-colors font-medium">سفارش خودکار Autoship</a>
-                    <a href="pharmacy.php?animal=cat" class="bg-slate-100 hover:bg-indigo-50 hover:text-indigo-700 px-3 py-1 rounded-full transition-colors font-medium">داروی گربه</a>
-                </div>
-            </div>
-        </div>
-
         <!-- Live Platform Metrics & Trust Counters -->
-        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-5 max-w-5xl mx-auto px-4 -mt-12 lg:-mt-14 mb-4">
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-5 max-w-5xl mx-auto px-4 mt-6 mb-4">
             <div class="bg-white rounded-3xl p-4 sm:p-5 border border-slate-100 shadow-sm hover:shadow-md transition-all flex items-center gap-3.5">
                 <div class="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
                     <span class="material-symbols-outlined text-2xl">verified_user</span>
@@ -381,20 +410,167 @@ $top_donors = $donor_stmt->fetchAll(PDO::FETCH_ASSOC);
         </script>
         <?php endif; ?>
         
-        <!-- Featured 24/7 Emergency Medical Centers & Clinics Showcase -->
+
+        <!-- 1. BEST DOCTORS & SPECIALISTS SHOWCASE (Based on Real User Ratings)       -->
+        <!-- ══════════════════════════════════════════════════════════════════════════ -->
+        <?php if (!empty($top_doctors)): ?>
+        <section class="best-doctors-showcase space-y-6 my-10" id="bestDoctorsSection">
+            <div class="flex flex-col md:flex-row md:items-end justify-between gap-4 px-2">
+                <div class="space-y-2">
+                    <div class="inline-flex items-center gap-2 px-3.5 py-1 bg-amber-50 text-amber-800 border border-amber-200/70 rounded-full text-xs font-black">
+                        <span class="material-symbols-outlined text-sm text-amber-500" style="font-variation-settings: 'FILL' 1;">star</span>
+                        <span>برترین پزشکان و متخصصان مورد اعتماد کاربران</span>
+                    </div>
+                    <h2 class="text-2xl sm:text-3xl lg:text-4xl font-black text-primary tracking-tight">
+                        پزشکان و جراحان برتر دامپزشکی کشور
+                    </h2>
+                    <p class="text-xs sm:text-sm text-on-surface-variant font-medium max-w-2xl">
+                        انتخاب شده بر اساس بالاترین امتیاز و رضایت بیش از ۲۵,۰۰۰ سرپرست پت؛ دارای بورد تخصصی جراحی، داخلی، دندانپزشکی، پرندگان و اورژانس شبانه‌روزی.
+                    </p>
+                </div>
+                <div class="flex items-center gap-2 self-start md:self-auto">
+                    <a href="booking.php" class="bg-primary hover:bg-primary-container text-white px-5 py-2.5 rounded-2xl text-xs sm:text-sm font-bold transition-all shadow-md flex items-center gap-1.5 shrink-0">
+                        <span>مشاهده همه پزشکان</span>
+                        <span class="material-symbols-outlined text-sm">arrow_left_alt</span>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Doctor Category Filter Pills -->
+            <div class="flex items-center gap-2 overflow-x-auto pb-2 px-2 custom-scrollbar" id="doctorFilterPills">
+                <button type="button" onclick="filterLandingDoctors('all', this)" class="landing-doc-filter active bg-primary text-white px-4 py-2 rounded-2xl text-xs font-bold transition-all shrink-0 flex items-center gap-1.5 shadow-sm">
+                    <span class="material-symbols-outlined text-sm">verified</span>
+                    <span>همه متخصصین</span>
+                </button>
+                <button type="button" onclick="filterLandingDoctors('surgery', this)" class="landing-doc-filter bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2 rounded-2xl text-xs font-bold transition-all shrink-0 flex items-center gap-1.5">
+                    <span class="material-symbols-outlined text-sm text-indigo-600">medical_services</span>
+                    <span>جراحی و ارتوپدی</span>
+                </button>
+                <button type="button" onclick="filterLandingDoctors('internal', this)" class="landing-doc-filter bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2 rounded-2xl text-xs font-bold transition-all shrink-0 flex items-center gap-1.5">
+                    <span class="material-symbols-outlined text-sm text-teal-600">health_and_safety</span>
+                    <span>بیماری‌های داخلی و سونوگرافی</span>
+                </button>
+                <button type="button" onclick="filterLandingDoctors('emergency', this)" class="landing-doc-filter bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2 rounded-2xl text-xs font-bold transition-all shrink-0 flex items-center gap-1.5">
+                    <span class="material-symbols-outlined text-sm text-rose-600">emergency</span>
+                    <span>اورژانس و ICU شبانه‌روزی</span>
+                </button>
+                <button type="button" onclick="filterLandingDoctors('dental', this)" class="landing-doc-filter bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2 rounded-2xl text-xs font-bold transition-all shrink-0 flex items-center gap-1.5">
+                    <span class="material-symbols-outlined text-sm text-sky-600">dentistry</span>
+                    <span>دندانپزشکی تخصصی</span>
+                </button>
+                <button type="button" onclick="filterLandingDoctors('exotic', this)" class="landing-doc-filter bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2 rounded-2xl text-xs font-bold transition-all shrink-0 flex items-center gap-1.5">
+                    <span class="material-symbols-outlined text-sm text-emerald-600">flutter_dash</span>
+                    <span>پرندگان و اگزوتیک</span>
+                </button>
+                <button type="button" onclick="filterLandingDoctors('groomer', this)" class="landing-doc-filter bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2 rounded-2xl text-xs font-bold transition-all shrink-0 flex items-center gap-1.5">
+                    <span class="material-symbols-outlined text-sm text-pink-600">content_cut</span>
+                    <span>گرومینگ و استایل</span>
+                </button>
+            </div>
+
+            <!-- Doctors High-Density Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5" id="landingDoctorsGrid">
+                <?php foreach ($top_doctors as $doc): 
+                    $docSpecialty = mb_strtolower($doc['specialty'], 'UTF-8');
+                    $docCat = 'other';
+                    if (strpos($docSpecialty, 'جراح') !== false || strpos($docSpecialty, 'ارتوپد') !== false) $docCat = 'surgery';
+                    elseif (strpos($docSpecialty, 'داخلی') !== false || strpos($docSpecialty, 'سونوگرافی') !== false) $docCat = 'internal';
+                    elseif ($doc['is_emergency'] || strpos($docSpecialty, 'اورژانس') !== false || strpos($docSpecialty, 'icu') !== false) $docCat = 'emergency';
+                    elseif (strpos($docSpecialty, 'دندان') !== false) $docCat = 'dental';
+                    elseif (strpos($docSpecialty, 'پرند') !== false || strpos($docSpecialty, 'اگزوتیک') !== false) $docCat = 'exotic';
+                    elseif ($doc['provider_type'] === 'groomer' || strpos($docSpecialty, 'گرومر') !== false || strpos($docSpecialty, 'آرایشگر') !== false) $docCat = 'groomer';
+                ?>
+                <div class="landing-doc-card bg-white rounded-3xl p-5 border border-slate-100 hover:border-primary/40 shadow-sm hover:shadow-2xl transition-all duration-300 flex flex-col group relative overflow-hidden" data-category="<?= $docCat ?>">
+                    <!-- Top Seal & Rating -->
+                    <div class="flex items-center justify-between gap-2 mb-4">
+                        <span class="inline-flex items-center gap-1 bg-emerald-50 text-emerald-800 text-[10px] font-black px-2.5 py-1 rounded-full border border-emerald-200/60">
+                            <span class="material-symbols-outlined text-xs text-emerald-600">verified</span>
+                            <span>پزشک تأیید شده</span>
+                        </span>
+
+                        <div class="flex items-center gap-1 text-amber-500 text-xs font-black bg-amber-50 px-2.5 py-1 rounded-xl border border-amber-200/50">
+                            <span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">star</span>
+                            <span><?= number_format($doc['rating'], 1) ?></span>
+                            <span class="text-[10px] text-slate-400 font-normal">(<?= (int)$doc['review_count'] ?>)</span>
+                        </div>
+                    </div>
+
+                    <!-- Doctor Avatar & Identity -->
+                    <div class="flex items-center gap-3.5 mb-3.5">
+                        <div class="relative w-16 h-16 rounded-2xl bg-indigo-50 border-2 border-indigo-100 overflow-hidden shrink-0 flex items-center justify-center text-indigo-600 group-hover:scale-105 transition-transform shadow-inner">
+                            <?php if (!empty($doc['image_url'])): ?>
+                                <img src="<?= htmlspecialchars($doc['image_url']) ?>" alt="<?= htmlspecialchars($doc['name']) ?>" class="w-full h-full object-cover">
+                            <?php else: ?>
+                                <span class="material-symbols-outlined text-3xl">stethoscope</span>
+                            <?php endif; ?>
+                            <span class="absolute bottom-1 right-1 w-3 h-3 rounded-full bg-emerald-500 border-2 border-white"></span>
+                        </div>
+                        <div class="overflow-hidden">
+                            <h3 class="font-black text-slate-900 text-base group-hover:text-primary transition-colors truncate">
+                                <?= htmlspecialchars($doc['name']) ?>
+                            </h3>
+                            <div class="text-[11px] font-bold text-indigo-600 line-clamp-1 mt-0.5">
+                                <?= htmlspecialchars($doc['specialty']) ?>
+                            </div>
+                            <div class="flex items-center gap-1 text-[10px] text-slate-400 mt-1 truncate">
+                                <span class="material-symbols-outlined text-xs text-slate-400">local_hospital</span>
+                                <span class="truncate"><?= htmlspecialchars($doc['clinic_name'] ?: ($doc['org_name'] ?: 'بیمارستان همکار آسنا')) ?></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Bio Snippet -->
+                    <?php if (!empty($doc['bio'])): ?>
+                    <p class="text-[11px] text-slate-500 line-clamp-2 leading-relaxed mb-3 bg-slate-50/70 p-2.5 rounded-xl border border-slate-100">
+                        <?= htmlspecialchars($doc['bio']) ?>
+                    </p>
+                    <?php endif; ?>
+
+                    <!-- Price & Consultation Fee -->
+                    <div class="flex items-center justify-between pt-2 mb-4 border-t border-slate-100">
+                        <span class="text-[11px] text-slate-400 font-medium">تعرفه ویزیت حضوری:</span>
+                        <div class="text-xs font-black text-primary font-mono">
+                            <?= number_format($doc['price']) ?> <span class="text-[9px] font-normal text-slate-500">تومان</span>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="mt-auto grid grid-cols-2 gap-2 pt-2">
+                        <button type="button" onclick="quickSelectDoctorForBooking(<?= (int)$doc['id'] ?>)" class="bg-primary hover:bg-primary-container text-white py-2.5 px-3 rounded-xl text-xs font-bold text-center transition-all shadow-sm flex items-center justify-center gap-1">
+                            <span class="material-symbols-outlined text-xs">calendar_month</span>
+                            <span>رزرو سریع نوبت</span>
+                        </button>
+                        <a href="doctor_profile.php?id=<?= (int)$doc['id'] ?>" class="bg-slate-100 hover:bg-slate-200 text-slate-700 py-2.5 px-3 rounded-xl text-xs font-bold text-center transition-colors flex items-center justify-center gap-1">
+                            <span class="material-symbols-outlined text-xs">account_circle</span>
+                            <span>پروفایل و سوابق</span>
+                        </a>
+                    </div>
+                </div>
+                <?php endforeach; ?>
+            </div>
+        </section>
+        <?php endif; ?>
+
+        <!-- ══════════════════════════════════════════════════════════════════════════ -->
+        <!-- 2. BEST ORGANIZATIONS & HOSPITALS SHOWCASE                                 -->
+        <!-- ══════════════════════════════════════════════════════════════════════════ -->
         <?php if (!empty($featured_organizations)): ?>
-        <section class="medical-centers-showcase space-y-6 my-6">
-            <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4 px-2">
-                <div class="space-y-1.5">
-                    <div class="inline-flex items-center gap-2 px-3.5 py-1 bg-teal-50 text-teal-700 border border-teal-200/60 rounded-full text-xs font-bold">
+        <section class="medical-centers-showcase space-y-6 my-10" id="bestOrganizationsSection">
+            <div class="flex flex-col md:flex-row md:items-end justify-between gap-4 px-2">
+                <div class="space-y-2">
+                    <div class="inline-flex items-center gap-2 px-3.5 py-1 bg-teal-50 text-teal-800 border border-teal-200/70 rounded-full text-xs font-black">
                         <span class="w-2 h-2 rounded-full bg-teal-500 animate-ping"></span>
                         <span class="material-symbols-outlined text-sm">local_hospital</span>
-                        شبکه کلینیک‌ها و بیمارستان‌های شبانه‌روزی
+                        <span>شبکه بیمارستان‌های شبانه‌روزی و کلینیک‌های طرف قرارداد</span>
                     </div>
-                    <h2 class="text-2xl sm:text-3xl font-black text-primary tracking-tight">مراکز درمانی و اورژانس ۲۴ ساعته همکار</h2>
-                    <p class="text-xs sm:text-sm text-on-surface-variant font-medium">پوشش سراسری بهترین بیمارستان‌های دامپزشکی کشور با امکان رزرو آنلاین و نوبت اورژانسی</p>
+                    <h2 class="text-2xl sm:text-3xl lg:text-4xl font-black text-primary tracking-tight">
+                        برترین مراکز درمانی و اورژانس ۲۴ ساعته
+                    </h2>
+                    <p class="text-xs sm:text-sm text-on-surface-variant font-medium max-w-2xl">
+                        مجهز به جدیدترین دستگاه‌های رادیولوژی دیجیتال، سونوگرافی داپلر، آزمایشگاه خون و آی‌سی‌یو فوق تخصصی با امکان رزرو مستقیم.
+                    </p>
                 </div>
-                <a href="organizations.php" class="bg-primary/5 text-primary hover:bg-primary hover:text-white px-5 py-2.5 rounded-2xl text-xs sm:text-sm font-bold transition-all shadow-sm flex items-center gap-1.5 self-start sm:self-auto shrink-0">
+                <a href="organizations.php" class="bg-primary/5 text-primary hover:bg-primary hover:text-white px-5 py-2.5 rounded-2xl text-xs sm:text-sm font-bold transition-all shadow-sm flex items-center gap-1.5 self-start md:self-auto shrink-0">
                     <span>مشاهده تمام مراکز درمانی</span>
                     <span class="material-symbols-outlined text-sm">arrow_left_alt</span>
                 </a>
@@ -402,61 +578,67 @@ $top_donors = $donor_stmt->fetchAll(PDO::FETCH_ASSOC);
 
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <?php foreach ($featured_organizations as $org): ?>
-                <div class="bg-white rounded-3xl p-5 border border-outline-variant/20 hover:border-teal-500/40 shadow-sm hover:shadow-2xl transition-all duration-300 flex flex-col group relative overflow-hidden">
+                <div class="bg-white rounded-3xl p-6 border border-slate-100 hover:border-teal-500/40 shadow-sm hover:shadow-2xl transition-all duration-300 flex flex-col group relative overflow-hidden">
                     <!-- Top Status Badges -->
                     <div class="flex items-center justify-between gap-2 mb-4">
                         <?php if ($org['is_24_7']): ?>
-                            <span class="bg-emerald-50 text-emerald-700 border border-emerald-200/80 text-[11px] font-black px-2.5 py-1 rounded-full flex items-center gap-1">
-                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                                شبانه‌روزی ۲۴/۷
+                            <span class="bg-emerald-50 text-emerald-700 border border-emerald-200/80 text-[11px] font-black px-3 py-1 rounded-full flex items-center gap-1.5 shadow-sm">
+                                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                                <span>شبانه‌روزی ۲۴/۷</span>
                             </span>
                         <?php else: ?>
-                            <span class="bg-slate-100 text-slate-700 text-[11px] font-bold px-2.5 py-1 rounded-full">
+                            <span class="bg-slate-100 text-slate-700 text-[11px] font-bold px-3 py-1 rounded-full">
                                 کلینیک تخصصی
                             </span>
                         <?php endif; ?>
 
-                        <div class="flex items-center gap-1 text-amber-500 text-xs font-bold bg-amber-50 px-2 py-0.5 rounded-lg">
+                        <div class="flex items-center gap-1 text-amber-500 text-xs font-black bg-amber-50 px-2.5 py-1 rounded-xl border border-amber-200/50">
                             <span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">star</span>
                             <span><?= number_format($org['rating'], 1) ?></span>
-                            <span class="text-[10px] text-slate-400">(<?= (int)$org['review_count'] ?>)</span>
+                            <span class="text-[10px] text-slate-400 font-normal">(<?= (int)$org['review_count'] ?> نظر)</span>
                         </div>
                     </div>
 
                     <!-- Organization Info -->
-                    <div class="flex items-start gap-3.5 mb-4">
-                        <div class="w-14 h-14 rounded-2xl bg-teal-50 text-teal-700 flex items-center justify-center shrink-0 border border-teal-100 overflow-hidden group-hover:scale-105 transition-transform">
+                    <div class="flex items-start gap-4 mb-4">
+                        <div class="w-16 h-16 rounded-2xl bg-teal-50 text-teal-700 flex items-center justify-center shrink-0 border border-teal-100 overflow-hidden group-hover:scale-105 transition-transform shadow-inner">
                             <img src="<?= htmlspecialchars($org['logo_url'] ?: 'assets/images/logo.png') ?>" alt="" class="w-full h-full object-cover">
                         </div>
-                        <div>
-                            <h3 class="font-black text-slate-800 text-base group-hover:text-primary transition-colors line-clamp-1">
+                        <div class="overflow-hidden">
+                            <h3 class="font-black text-slate-900 text-base group-hover:text-primary transition-colors line-clamp-1">
                                 <?= htmlspecialchars($org['name']) ?>
                             </h3>
-                            <div class="flex items-center gap-1 text-[11px] text-slate-400 mt-1">
+                            <div class="flex items-center gap-1 text-[11px] text-slate-500 mt-1">
                                 <span class="material-symbols-outlined text-xs text-slate-400">location_on</span>
-                                <span class="font-bold text-slate-600"><?= htmlspecialchars($org['city']) ?></span> — <span class="truncate max-w-[180px]"><?= htmlspecialchars($org['address']) ?></span>
+                                <span class="font-bold text-slate-700"><?= htmlspecialchars($org['city']) ?></span> — <span class="truncate max-w-[200px]"><?= htmlspecialchars($org['address']) ?></span>
                             </div>
+                            <?php if(!empty($org['phone'])): ?>
+                            <div class="text-[10px] text-slate-400 mt-1 font-mono flex items-center gap-1">
+                                <span class="material-symbols-outlined text-[13px] text-emerald-600">call</span>
+                                <span><?= htmlspecialchars($org['phone']) ?></span>
+                            </div>
+                            <?php endif; ?>
                         </div>
                     </div>
 
                     <!-- Facilities Chips -->
                     <?php if (!empty($org['facilities'])): 
-                        $facList = array_slice(explode(',', $org['facilities']), 0, 3);
+                        $facList = array_slice(explode(',', $org['facilities']), 0, 4);
                     ?>
-                    <div class="flex items-center gap-1.5 flex-wrap my-2">
+                    <div class="flex items-center gap-1.5 flex-wrap my-3">
                         <?php foreach ($facList as $fac): ?>
-                            <span class="bg-slate-50 text-slate-600 text-[10px] font-medium px-2 py-0.5 rounded-md border border-slate-100"><?= htmlspecialchars(trim($fac)) ?></span>
+                            <span class="bg-slate-50 text-slate-600 text-[10px] font-medium px-2.5 py-1 rounded-lg border border-slate-100"><?= htmlspecialchars(trim($fac)) ?></span>
                         <?php endforeach; ?>
                     </div>
                     <?php endif; ?>
 
                     <!-- Action Buttons -->
                     <div class="mt-auto pt-4 border-t border-slate-100 flex items-center gap-2">
-                        <a href="booking.php?org=<?= (int)$org['id'] ?>" class="flex-1 bg-primary hover:bg-primary-container text-white py-2.5 rounded-xl text-xs font-bold text-center transition-all shadow-sm flex items-center justify-center gap-1">
+                        <button type="button" onclick="quickSelectOrgForBooking(<?= (int)$org['id'] ?>)" class="flex-1 bg-teal-600 hover:bg-teal-700 text-white py-2.5 rounded-xl text-xs font-bold text-center transition-all shadow-sm flex items-center justify-center gap-1">
                             <span class="material-symbols-outlined text-sm">calendar_month</span>
-                            <span>رزرو نوبت پزشک</span>
-                        </a>
-                        <a href="organization_profile.php?slug=<?= urlencode($org['slug'] ?: $org['id']) ?>" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-2.5 rounded-xl text-xs font-bold transition-colors flex items-center justify-center gap-1" title="مشاهده مشخصات و تجهیزات">
+                            <span>رزرو نوبت در این مرکز</span>
+                        </button>
+                        <a href="organization_profile.php?slug=<?= urlencode($org['slug'] ?: $org['id']) ?>" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-2.5 rounded-xl text-xs font-bold transition-colors flex items-center justify-center gap-1" title="مشاهده تجهیزات و پزشکان این مرکز">
                             <span class="material-symbols-outlined text-sm">visibility</span>
                         </a>
                     </div>
@@ -465,6 +647,224 @@ $top_donors = $donor_stmt->fetchAll(PDO::FETCH_ASSOC);
             </div>
         </section>
         <?php endif; ?>
+
+        <!-- ══════════════════════════════════════════════════════════════════════════ -->
+        <!-- 3. INTERACTIVE TIME RESERVATION SECTION (Fast Online Booking on Landing)   -->
+        <!-- ══════════════════════════════════════════════════════════════════════════ -->
+        <section class="time-reservation-section my-12" id="timeReservationSection">
+            <div class="bg-gradient-to-br from-[#0f172a] via-[#1e293b] to-[#0f172a] rounded-[2.5rem] p-6 sm:p-10 lg:p-12 text-white shadow-2xl relative overflow-hidden border border-slate-800">
+                <!-- Ambient Background Glow Orbs -->
+                <div class="absolute -top-40 -left-40 w-96 h-96 bg-indigo-500/20 rounded-full blur-3xl pointer-events-none"></div>
+                <div class="absolute -bottom-40 -right-40 w-96 h-96 bg-teal-500/20 rounded-full blur-3xl pointer-events-none"></div>
+
+                <div class="relative z-10 max-w-5xl mx-auto space-y-8">
+                    
+                    <!-- Section Header -->
+                    <div class="text-center space-y-3">
+                        <div class="inline-flex items-center gap-2 px-4 py-1.5 bg-white/10 backdrop-blur-md rounded-full text-xs font-extrabold text-emerald-400 border border-white/10">
+                            <span class="material-symbols-outlined text-sm animate-pulse">event_available</span>
+                            <span>رزرو آنی نوبت ویزیت و گرومینگ با تاییدیه پیامکی</span>
+                        </div>
+                        <h2 class="text-2xl sm:text-4xl font-black tracking-tight text-white">
+                            سامانه آنلاین نوبت‌دهی و انتخاب زمان حضور
+                        </h2>
+                        <p class="text-xs sm:text-sm text-slate-300 max-w-xl mx-auto leading-relaxed">
+                            پزشک یا خدمات مورد نظر را انتخاب نموده، تاریخ و ساعت دلخواه را تعیین و نوبت خود را ظرف چند ثانیه بدون معطلی نهایی کنید.
+                        </p>
+                    </div>
+
+                    <!-- Multi-Step Interactive Booking Card -->
+                    <div class="bg-white rounded-3xl p-6 sm:p-8 text-slate-800 shadow-xl border border-slate-100">
+                        <form id="landingBookingForm" onsubmit="handleLandingBookingSubmit(event)">
+                            <div class="space-y-8">
+                                
+                                <!-- STEP 1: Select Service / Specialty -->
+                                <div>
+                                    <label class="block text-xs font-black text-slate-700 uppercase tracking-wider mb-3 flex items-center gap-2">
+                                        <span class="w-6 h-6 rounded-full bg-primary text-white flex items-center justify-center text-xs">۱</span>
+                                        <span>انتخاب نوع خدمت یا تخصص</span>
+                                    </label>
+                                    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5" id="serviceSelectionGrid">
+                                        <button type="button" onclick="selectLandingService('consultation', this)" class="landing-service-btn active p-3 rounded-2xl border-2 border-primary bg-primary/5 text-primary flex flex-col items-center gap-1.5 text-center transition-all">
+                                            <span class="material-symbols-outlined text-2xl text-primary">health_and_safety</span>
+                                            <span class="text-xs font-bold">معاینه و واکسیناسیون</span>
+                                        </button>
+                                        <button type="button" onclick="selectLandingService('internal', this)" class="landing-service-btn p-3 rounded-2xl border-2 border-slate-100 bg-slate-50 hover:bg-slate-100 text-slate-700 flex flex-col items-center gap-1.5 text-center transition-all">
+                                            <span class="material-symbols-outlined text-2xl text-teal-600">monitor_heart</span>
+                                            <span class="text-xs font-bold">ویزیت داخلی و سونوگرافی</span>
+                                        </button>
+                                        <button type="button" onclick="selectLandingService('surgery', this)" class="landing-service-btn p-3 rounded-2xl border-2 border-slate-100 bg-slate-50 hover:bg-slate-100 text-slate-700 flex flex-col items-center gap-1.5 text-center transition-all">
+                                            <span class="material-symbols-outlined text-2xl text-indigo-600">medical_services</span>
+                                            <span class="text-xs font-bold">جراحی و ارتوپدی</span>
+                                        </button>
+                                        <button type="button" onclick="selectLandingService('emergency', this)" class="landing-service-btn p-3 rounded-2xl border-2 border-slate-100 bg-slate-50 hover:bg-slate-100 text-slate-700 flex flex-col items-center gap-1.5 text-center transition-all">
+                                            <span class="material-symbols-outlined text-2xl text-rose-600">emergency</span>
+                                            <span class="text-xs font-bold">اورژانس ۲۴ ساعته</span>
+                                        </button>
+                                        <button type="button" onclick="selectLandingService('dental', this)" class="landing-service-btn p-3 rounded-2xl border-2 border-slate-100 bg-slate-50 hover:bg-slate-100 text-slate-700 flex flex-col items-center gap-1.5 text-center transition-all">
+                                            <span class="material-symbols-outlined text-2xl text-sky-600">dentistry</span>
+                                            <span class="text-xs font-bold">دندانپزشکی و جرم‌گیری</span>
+                                        </button>
+                                        <button type="button" onclick="selectLandingService('grooming', this)" class="landing-service-btn p-3 rounded-2xl border-2 border-slate-100 bg-slate-50 hover:bg-slate-100 text-slate-700 flex flex-col items-center gap-1.5 text-center transition-all">
+                                            <span class="material-symbols-outlined text-2xl text-pink-600">content_cut</span>
+                                            <span class="text-xs font-bold">گرومینگ و اصلاح مو</span>
+                                        </button>
+                                    </div>
+                                    <input type="hidden" name="service_type" id="inputLandingServiceType" value="consultation">
+                                </div>
+
+                                <!-- STEP 2: Doctor Selection Grid -->
+                                <div>
+                                    <label class="block text-xs font-black text-slate-700 uppercase tracking-wider mb-3 flex items-center justify-between">
+                                        <div class="flex items-center gap-2">
+                                            <span class="w-6 h-6 rounded-full bg-primary text-white flex items-center justify-center text-xs">۲</span>
+                                            <span>انتخاب پزشک متخصص یا گرومر</span>
+                                        </div>
+                                        <span class="text-[11px] font-normal text-slate-400">یک متخصص را انتخاب کنید</span>
+                                    </label>
+                                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3" id="reservationDoctorPicker">
+                                        <?php foreach ($top_doctors as $idx => $d): ?>
+                                        <div onclick="selectReservationDoctor(<?= (int)$d['id'] ?>)" class="reservation-doc-opt <?= $idx === 0 ? 'selected ring-2 ring-primary border-primary bg-primary/5' : 'border-slate-200 bg-white hover:border-slate-300' ?> border rounded-2xl p-3.5 flex items-center gap-3 cursor-pointer transition-all relative" data-id="<?= (int)$d['id'] ?>">
+                                            <img src="<?= htmlspecialchars($d['image_url'] ?: 'assets/images/logo.png') ?>" alt="" class="w-12 h-12 rounded-xl object-cover border border-slate-200 shrink-0 bg-slate-100">
+                                            <div class="overflow-hidden flex-1">
+                                                <div class="text-xs font-black text-slate-900 truncate"><?= htmlspecialchars($d['name']) ?></div>
+                                                <div class="text-[10px] text-slate-500 truncate"><?= htmlspecialchars($d['specialty']) ?></div>
+                                                <div class="text-[10px] font-bold text-primary mt-0.5 font-mono"><?= number_format($d['price']) ?> تومان</div>
+                                            </div>
+                                            <div class="flex items-center gap-0.5 text-amber-500 text-[10px] font-bold shrink-0 bg-amber-50 px-1.5 py-0.5 rounded-md">
+                                                <span class="material-symbols-outlined text-xs" style="font-variation-settings: 'FILL' 1;">star</span>
+                                                <span><?= $d['rating'] ?></span>
+                                            </div>
+                                        </div>
+                                        <?php endforeach; ?>
+                                    </div>
+                                    <input type="hidden" name="doctor_id" id="inputLandingDoctorId" value="<?= !empty($top_doctors[0]['id']) ? (int)$top_doctors[0]['id'] : 31 ?>">
+                                </div>
+
+                                <!-- STEP 3: Persian Calendar Days & Available Time Slots -->
+                                <div class="space-y-4">
+                                    <label class="block text-xs font-black text-slate-700 uppercase tracking-wider flex items-center gap-2">
+                                        <span class="w-6 h-6 rounded-full bg-primary text-white flex items-center justify-center text-xs">۳</span>
+                                        <span>انتخاب روز و ساعت ویزیت</span>
+                                    </label>
+
+                                    <!-- 7-Day Shamsi Calendar Cards -->
+                                    <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2.5" id="reservationDayChips">
+                                        <?php foreach ($reservation_days as $dIdx => $day): ?>
+                                        <button type="button" onclick="selectReservationDate('<?= $day['gDate'] ?>', '<?= $day['dayKey'] ?>', this)" class="landing-day-btn <?= $dIdx === 0 ? 'active bg-primary text-white shadow-md' : 'bg-slate-50 hover:bg-slate-100 text-slate-700' ?> p-3 rounded-2xl border border-slate-200/80 flex flex-col items-center justify-center gap-1 transition-all">
+                                            <span class="text-[11px] font-bold opacity-80"><?= htmlspecialchars($day['label']) ?></span>
+                                            <span class="text-sm font-black"><?= htmlspecialchars($day['dayNumber']) ?></span>
+                                        </button>
+                                        <?php endforeach; ?>
+                                    </div>
+                                    <input type="hidden" name="appointment_date" id="inputLandingDate" value="<?= $reservation_days[0]['gDate'] ?? date('Y-m-d') ?>">
+                                    <input type="hidden" name="appointment_time" id="inputLandingTime" value="">
+
+                                    <!-- Time Slots Grid -->
+                                    <div class="bg-slate-50 rounded-2xl p-4 border border-slate-100 space-y-3">
+                                        <div class="flex items-center justify-between text-xs text-slate-500 font-bold">
+                                            <span class="flex items-center gap-1"><span class="material-symbols-outlined text-sm text-indigo-600">schedule</span> ساعت‌های حضور پزشک در این روز:</span>
+                                            <span id="selectedDayLabel" class="text-primary font-black"><?= $reservation_days[0]['label'] ?></span>
+                                        </div>
+                                        <div id="landingTimeSlotsContainer" class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2">
+                                            <!-- Dynamically generated by JS -->
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- STEP 4: Pet Information & Owner Contact -->
+                                <div>
+                                    <label class="block text-xs font-black text-slate-700 uppercase tracking-wider mb-3 flex items-center gap-2">
+                                        <span class="w-6 h-6 rounded-full bg-primary text-white flex items-center justify-center text-xs">۴</span>
+                                        <span>اطلاعات بیمار و شماره همراه سرپرست</span>
+                                    </label>
+                                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+                                        <div>
+                                            <label class="block text-[11px] font-bold text-slate-500 mb-1">نوع حیوان خانگی</label>
+                                            <select name="pet_type" id="landingPetType" required class="w-full h-11 px-3 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:border-primary focus:ring-1 focus:ring-primary outline-none">
+                                                <option value="سگ">سگ (Dog)</option>
+                                                <option value="گربه" selected>گربه (Cat)</option>
+                                                <option value="پرنده">پرنده زینتی (Bird)</option>
+                                                <option value="خرگوش">خرگوش / جونده (Rabbit)</option>
+                                                <option value="سایر">سایر حیوانات خانگی</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label class="block text-[11px] font-bold text-slate-500 mb-1">نام پت (اختیاری)</label>
+                                            <input type="text" name="pet_name" id="landingPetName" placeholder="مثلاً: لوسی، تدی، ملوس" class="w-full h-11 px-3 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:border-primary focus:ring-1 focus:ring-primary outline-none">
+                                        </div>
+                                        <div>
+                                            <label class="block text-[11px] font-bold text-slate-500 mb-1">نام سرپرست</label>
+                                            <input type="text" name="owner_name" id="landingOwnerName" placeholder="نام و نام خانوادگی شما" value="<?= htmlspecialchars($_SESSION['user_name'] ?? '') ?>" required class="w-full h-11 px-3 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:border-primary focus:ring-1 focus:ring-primary outline-none">
+                                        </div>
+                                        <div>
+                                            <label class="block text-[11px] font-bold text-slate-500 mb-1">شماره موبایل (جهت دریافت پیامک)</label>
+                                            <input type="tel" name="owner_phone" id="landingOwnerPhone" placeholder="۰۹۱۲۳۴۵۶۷۸۹" value="<?= htmlspecialchars($_SESSION['user_phone'] ?? '') ?>" required dir="ltr" class="w-full h-11 px-3 bg-white border border-slate-200 rounded-xl text-xs font-mono font-bold text-slate-800 focus:border-primary focus:ring-1 focus:ring-primary outline-none">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Submit Section -->
+                                <div class="pt-4 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4">
+                                    <div class="flex items-center gap-2 text-xs text-slate-500">
+                                        <span class="material-symbols-outlined text-emerald-600 text-lg">sms</span>
+                                        <span>پس از ثبت، مشخصات نوبت و آدرس به صورت پیامک فوری برای شما ارسال می‌شود.</span>
+                                    </div>
+                                    <button type="submit" id="landingBookingSubmitBtn" class="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 text-white px-8 py-4 rounded-2xl text-sm font-black shadow-xl hover:shadow-2xl transition-all flex items-center justify-center gap-2">
+                                        <span class="material-symbols-outlined text-lg">check_circle</span>
+                                        <span>تأیید و دریافت کد رهگیری نوبت</span>
+                                    </button>
+                                </div>
+
+                            </div>
+                        </form>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+
+        <!-- Booking Success Confirmation Modal -->
+        <div id="bookingSuccessModal" class="fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
+            <div class="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 text-slate-800 shadow-2xl border border-slate-100 text-center space-y-6 animate-scale-up">
+                <div class="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto shadow-inner">
+                    <span class="material-symbols-outlined text-5xl">task_alt</span>
+                </div>
+                <div>
+                    <h3 class="text-xl sm:text-2xl font-black text-slate-900">نوبت شما با موفقیت رزرو گردید!</h3>
+                    <p class="text-xs text-slate-500 mt-1">پیامک حاوی جزئیات نوبت و کد رهگیری به شماره شما ارسال شد.</p>
+                </div>
+                <div class="bg-slate-50 rounded-2xl p-4 border border-slate-100 text-right space-y-2.5 text-xs">
+                    <div class="flex justify-between items-center py-1 border-b border-slate-200/60">
+                        <span class="text-slate-400">کد رهگیری سامانه:</span>
+                        <span id="modalTrackingCode" class="font-mono font-black text-primary text-sm tracking-wider">ASN-00000</span>
+                    </div>
+                    <div class="flex justify-between items-center py-1 border-b border-slate-200/60">
+                        <span class="text-slate-400">پزشک معالج:</span>
+                        <span id="modalDoctorName" class="font-bold text-slate-800">---</span>
+                    </div>
+                    <div class="flex justify-between items-center py-1 border-b border-slate-200/60">
+                        <span class="text-slate-400">مرکز درمانی:</span>
+                        <span id="modalClinicName" class="font-bold text-slate-800">---</span>
+                    </div>
+                    <div class="flex justify-between items-center py-1 border-b border-slate-200/60">
+                        <span class="text-slate-400">تاریخ و زمان ویزیت:</span>
+                        <span id="modalDateTime" class="font-bold text-emerald-700 font-sans">---</span>
+                    </div>
+                    <div class="flex justify-between items-center py-1">
+                        <span class="text-slate-400">تعرفه ویزیت:</span>
+                        <span id="modalFee" class="font-black text-slate-900 font-mono">---</span>
+                    </div>
+                </div>
+                <div class="flex gap-3">
+                    <button type="button" onclick="document.getElementById('bookingSuccessModal').classList.add('hidden')" class="flex-1 bg-primary text-white py-3 rounded-xl text-xs font-bold shadow-md hover:bg-primary-container transition-colors">
+                        متوجه شدم و بستن
+                    </button>
+                    <a href="profile.php" class="px-4 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-colors">
+                        مشاهده در پنل کاربری
+                    </a>
+                </div>
+        </div>
 
         <!-- Cycle Section - Rail Density (Functional & Clickable) -->
         <section class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
@@ -1555,9 +1955,260 @@ function resetInterval() {
         });
     }
 
+    // ── Interactive Landing Page Reservation & Doctor Filtering Controller ───
+    const doctorsData = <?= !empty($doctors_json) ? $doctors_json : '[]' ?>;
+    const bookedSlotsData = <?= !empty($booked_slots_json) ? $booked_slots_json : '{}' ?>;
+    
+    let selectedDoctorId = <?= !empty($top_doctors[0]['id']) ? (int)$top_doctors[0]['id'] : 31 ?>;
+    let selectedDate = '<?= $reservation_days[0]['gDate'] ?? date('Y-m-d') ?>';
+    let selectedDayKey = '<?= $reservation_days[0]['dayKey'] ?? 'sat' ?>';
+    let selectedTime = '';
+
+    // Filter Doctors on Landing Page by Specialty Category
+    function filterLandingDoctors(cat, btn) {
+        document.querySelectorAll('.landing-doc-filter').forEach(b => {
+            b.className = "landing-doc-filter bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2 rounded-2xl text-xs font-bold transition-all shrink-0 flex items-center gap-1.5";
+        });
+        btn.className = "landing-doc-filter active bg-primary text-white px-4 py-2 rounded-2xl text-xs font-bold transition-all shrink-0 flex items-center gap-1.5 shadow-sm";
+
+        const cards = document.querySelectorAll('.landing-doc-card');
+        cards.forEach(card => {
+            const cardCat = card.getAttribute('data-category');
+            if (cat === 'all' || cardCat === cat) {
+                card.classList.remove('hidden');
+            } else {
+                card.classList.add('hidden');
+            }
+        });
+    }
+
+    // Quick Select Doctor and Smooth Scroll to Reservation Widget
+    window.quickSelectDoctorForBooking = function(docId) {
+        selectReservationDoctor(docId);
+        const section = document.getElementById('timeReservationSection');
+        if (section) {
+            section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    };
+
+    // Quick Select Organization and Smooth Scroll
+    window.quickSelectOrgForBooking = function(orgId) {
+        const found = doctorsData.find(d => parseInt(d.organization_id, 10) === parseInt(orgId, 10));
+        if (found) {
+            quickSelectDoctorForBooking(found.id);
+        } else {
+            const section = document.getElementById('timeReservationSection');
+            if (section) section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    };
+
+    // Step 1: Service Selection
+    function selectLandingService(type, btn) {
+        document.querySelectorAll('.landing-service-btn').forEach(b => {
+            b.className = "landing-service-btn p-3 rounded-2xl border-2 border-slate-100 bg-slate-50 hover:bg-slate-100 text-slate-700 flex flex-col items-center gap-1.5 text-center transition-all";
+            const icon = b.querySelector('.material-symbols-outlined');
+            if (icon) icon.className = "material-symbols-outlined text-2xl text-slate-500";
+        });
+        btn.className = "landing-service-btn active p-3 rounded-2xl border-2 border-primary bg-primary/5 text-primary flex flex-col items-center gap-1.5 text-center transition-all";
+        const activeIcon = btn.querySelector('.material-symbols-outlined');
+        if (activeIcon) activeIcon.className = "material-symbols-outlined text-2xl text-primary";
+
+        document.getElementById('inputLandingServiceType').value = type;
+
+        // Auto-filter matching doctor if applicable
+        if (type === 'surgery') filterLandingDoctors('surgery', document.querySelector('.landing-doc-filter[onclick*="surgery"]'));
+        else if (type === 'internal') filterLandingDoctors('internal', document.querySelector('.landing-doc-filter[onclick*="internal"]'));
+        else if (type === 'grooming') filterLandingDoctors('groomer', document.querySelector('.landing-doc-filter[onclick*="groomer"]'));
+    }
+
+    // Step 2: Doctor Selection
+    function selectReservationDoctor(docId) {
+        selectedDoctorId = parseInt(docId, 10);
+        document.getElementById('inputLandingDoctorId').value = selectedDoctorId;
+
+        document.querySelectorAll('.reservation-doc-opt').forEach(opt => {
+            const optId = parseInt(opt.getAttribute('data-id'), 10);
+            if (optId === selectedDoctorId) {
+                opt.className = "reservation-doc-opt selected ring-2 ring-primary border-primary bg-primary/5 border rounded-2xl p-3.5 flex items-center gap-3 cursor-pointer transition-all relative";
+            } else {
+                opt.className = "reservation-doc-opt border-slate-200 bg-white hover:border-slate-300 border rounded-2xl p-3.5 flex items-center gap-3 cursor-pointer transition-all relative";
+            }
+        });
+
+        renderLandingTimeSlots();
+    }
+
+    // Step 3: Date Selection
+    function selectReservationDate(gDate, dayKey, btn) {
+        selectedDate = gDate;
+        selectedDayKey = dayKey;
+        document.getElementById('inputLandingDate').value = selectedDate;
+
+        document.querySelectorAll('.landing-day-btn').forEach(b => {
+            b.className = "landing-day-btn bg-slate-50 hover:bg-slate-100 text-slate-700 p-3 rounded-2xl border border-slate-200/80 flex flex-col items-center justify-center gap-1 transition-all";
+        });
+        btn.className = "landing-day-btn active bg-primary text-white shadow-md p-3 rounded-2xl border border-primary flex flex-col items-center justify-center gap-1 transition-all";
+
+        const label = btn.querySelector('span:first-child')?.textContent || '';
+        document.getElementById('selectedDayLabel').textContent = label;
+
+        renderLandingTimeSlots();
+    }
+
+    // Render Time Slots
+    function renderLandingTimeSlots() {
+        const container = document.getElementById('landingTimeSlotsContainer');
+        if (!container) return;
+        container.innerHTML = '';
+        selectedTime = '';
+        document.getElementById('inputLandingTime').value = '';
+
+        const currentDoctor = doctorsData.find(d => parseInt(d.id, 10) === selectedDoctorId);
+        if (!currentDoctor) {
+            container.innerHTML = '<div class="col-span-full py-4 text-center text-xs text-slate-400">پزشک مورد نظر یافت نشد.</div>';
+            return;
+        }
+
+        let schedule = {};
+        try {
+            schedule = typeof currentDoctor.schedule_info === 'string' ? JSON.parse(currentDoctor.schedule_info) : (currentDoctor.schedule_info || {});
+        } catch(e) {
+            schedule = {};
+        }
+
+        const daySched = schedule[selectedDayKey];
+        if (!daySched || (!daySched.m_active && !daySched.a_active)) {
+            container.innerHTML = `
+                <div class="col-span-full py-6 text-center text-xs text-slate-500 bg-white rounded-xl border border-slate-200">
+                    <span class="material-symbols-outlined text-2xl text-slate-400 block mb-1">event_busy</span>
+                    این پزشک در روز انتخابی شیفت حضور ندارد. لطفاً روز دیگری از تقویم بالا را انتخاب فرمایید.
+                </div>
+            `;
+            return;
+        }
+
+        // Helper to generate slots
+        function generateSlots(startTime, endTime) {
+            const slots = [];
+            let [startH, startM] = startTime.split(':').map(Number);
+            let [endH, endM] = endTime.split(':').map(Number);
+            let cur = startH * 60 + startM;
+            let end = endH * 60 + endM;
+
+            while (cur < end) {
+                let h = Math.floor(cur / 60).toString().padStart(2, '0');
+                let m = (cur % 60).toString().padStart(2, '0');
+                slots.push(`${h}:${m}`);
+                cur += 45; // 45-min appointments
+            }
+            return slots;
+        }
+
+        let availableSlots = [];
+        if (daySched.m_active !== false && daySched.m_start && daySched.m_end) {
+            availableSlots = availableSlots.concat(generateSlots(daySched.m_start, daySched.m_end));
+        }
+        if (daySched.a_active !== false && daySched.a_start && daySched.a_end) {
+            availableSlots = availableSlots.concat(generateSlots(daySched.a_start, daySched.a_end));
+        }
+
+        if (availableSlots.length === 0) {
+            availableSlots = ['09:00', '10:00', '11:00', '12:00', '16:00', '17:00', '18:00', '19:00', '20:00'];
+        }
+
+        const doctorBookedToday = (bookedSlotsData[selectedDoctorId] && bookedSlotsData[selectedDoctorId][selectedDate]) 
+            ? bookedSlotsData[selectedDoctorId][selectedDate] 
+            : [];
+
+        availableSlots.forEach((slot, idx) => {
+            const isBooked = doctorBookedToday.includes(slot);
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            if (isBooked) {
+                btn.className = "py-2 px-2 rounded-xl bg-slate-100 text-slate-400 border border-slate-200 text-xs font-mono font-bold cursor-not-allowed text-center opacity-60 flex flex-col items-center justify-center gap-0.5";
+                btn.disabled = true;
+                btn.innerHTML = `<span>${slot}</span><span class="text-[9px] text-rose-500 font-sans">تکمیل</span>`;
+            } else {
+                btn.className = "landing-slot-btn py-2.5 px-2 rounded-xl bg-white border border-slate-200 hover:border-primary text-slate-800 text-xs font-mono font-bold transition-all text-center flex items-center justify-center shadow-sm hover:shadow";
+                btn.textContent = slot;
+                btn.onclick = function() {
+                    document.querySelectorAll('.landing-slot-btn').forEach(b => {
+                        b.className = "landing-slot-btn py-2.5 px-2 rounded-xl bg-white border border-slate-200 hover:border-primary text-slate-800 text-xs font-mono font-bold transition-all text-center flex items-center justify-center shadow-sm hover:shadow";
+                    });
+                    this.className = "landing-slot-btn py-2.5 px-2 rounded-xl bg-primary text-white border-primary shadow-md font-mono font-bold transition-all text-center flex items-center justify-center ring-2 ring-primary/30";
+                    selectedTime = slot;
+                    document.getElementById('inputLandingTime').value = selectedTime;
+                };
+
+                // Default pick first available slot
+                if (!selectedTime && idx === 0) {
+                    btn.click();
+                }
+            }
+            container.appendChild(btn);
+        });
+    }
+
+    // Step 4: Fast Booking Form Submission via AJAX
+    async function handleLandingBookingSubmit(e) {
+        e.preventDefault();
+        const form = document.getElementById('landingBookingForm');
+        const submitBtn = document.getElementById('landingBookingSubmitBtn');
+        const timeVal = document.getElementById('inputLandingTime').value;
+
+        if (!timeVal) {
+            alert('لطفاً ابتدا یکی از ساعت‌های مجاز را انتخاب نمایید.');
+            return;
+        }
+
+        const phoneVal = document.getElementById('landingOwnerPhone').value.trim();
+        if (!/^09\d{9}$/.test(phoneVal)) {
+            alert('لطفاً یک شماره موبایل معتبر ۱۱ رقمی (مثلاً ۰۹۱۲۳۴۵۶۷۸۹) وارد فرمایید.');
+            return;
+        }
+
+        const originalBtnHtml = submitBtn.innerHTML;
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span class="material-symbols-outlined text-lg animate-spin">sync</span><span>در حال ثبت نوبت و ارسال پیامک...</span>';
+
+        try {
+            const formData = new FormData(form);
+            const response = await fetch('actions/process_landing_booking.php', {
+                method: 'POST',
+                body: formData
+            });
+            const data = await response.json();
+
+            if (data.status === 'success') {
+                const appt = data.appointment;
+                document.getElementById('modalTrackingCode').textContent = appt.tracking_code;
+                document.getElementById('modalDoctorName').textContent = appt.doctor_name + ' (' + appt.specialty + ')';
+                document.getElementById('modalClinicName').textContent = appt.clinic_name;
+                document.getElementById('modalDateTime').textContent = appt.date_shamsi + ' — ساعت ' + appt.time;
+                document.getElementById('modalFee').textContent = appt.fee_formatted;
+
+                // Mark slot as booked locally
+                if (!bookedSlotsData[selectedDoctorId]) bookedSlotsData[selectedDoctorId] = {};
+                if (!bookedSlotsData[selectedDoctorId][selectedDate]) bookedSlotsData[selectedDoctorId][selectedDate] = [];
+                bookedSlotsData[selectedDoctorId][selectedDate].push(appt.time);
+
+                document.getElementById('bookingSuccessModal').classList.remove('hidden');
+                renderLandingTimeSlots();
+            } else {
+                alert(data.message || 'خطا در ثبت نوبت.');
+            }
+        } catch(err) {
+            alert('خطای ارتباط با سرور. لطفاً اتصال اینترنت خود را بررسی نمایید.');
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalBtnHtml;
+        }
+    }
+
     document.addEventListener('DOMContentLoaded', () => {
-        if (typeof initLiveSearch === 'function') {
-            initLiveSearch('heroSearchInput', 'heroSearchResults', 'heroSearchSpinner');
+        // Initialize First Available Doctor Time Slots
+        if (typeof renderLandingTimeSlots === 'function') {
+            renderLandingTimeSlots();
         }
     });
 </script>

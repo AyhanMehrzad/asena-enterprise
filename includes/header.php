@@ -218,14 +218,15 @@ if (function_exists('get_curated_recommendations')) {
 <?php endif; ?>
 
     <!-- Header Section -->
-    <header class="bg-primary shadow-md sticky top-0 z-50 transition-all rounded-3xl mb-8 w-[96%] max-w-[1600px] mx-auto mt-4 lg:mt-6">
-        <div class="flex justify-between items-center w-full px-4 lg:px-8 py-3 lg:py-4 flex-row">
+    <header class="bg-primary shadow-md sticky top-0 z-50 transition-all w-full lg:w-[96%] max-w-[1600px] mx-auto rounded-b-2xl lg:rounded-3xl mb-4 lg:mb-8 mt-0 lg:mt-6 px-3 lg:px-8 py-2.5 lg:py-4">
+        <!-- Main Bar Row -->
+        <div class="flex justify-between items-center w-full flex-row">
             
-            <!-- Right side: Links and Search (Desktop) / Hamburger (Mobile) -->
-            <div class="flex items-center gap-4 lg:gap-8 flex-1">
-                <!-- Mobile Hamburger Button -->
-                <button type="button" onclick="toggleMobileMenu()" class="lg:hidden text-white p-2 hover:bg-white/10 rounded-full transition-colors flex items-center justify-center">
-                    <span class="material-symbols-outlined text-2xl">menu</span>
+            <!-- Right side: Links and Search (Desktop) / Drawer (Mobile) -->
+            <div class="flex items-center gap-2.5 lg:gap-8 flex-1">
+                <!-- Mobile Drawer Toggle Button -->
+                <button type="button" onclick="openMobileCategoriesSheet()" class="lg:hidden text-white p-1.5 hover:bg-white/10 rounded-xl transition-colors flex items-center justify-center" title="دسته‌بندی‌ها و خدمات">
+                    <span class="material-symbols-outlined text-2xl">grid_view</span>
                 </button>
 
                 <!-- Desktop Links (Streamlined) -->
@@ -313,7 +314,7 @@ if (function_exists('get_curated_recommendations')) {
             </div>
 
             <!-- Left side: Icons, Roles, Points, and Logo -->
-            <div class="flex items-center gap-3 lg:gap-5 shrink-0">
+            <div class="flex items-center gap-2 lg:gap-5 shrink-0">
                 <div class="hidden lg:flex items-center gap-2.5">
                     <?php if(isset($_SESSION['user_id'])): ?>
                         <?php if(isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'admin'): ?>
@@ -351,21 +352,32 @@ if (function_exists('get_curated_recommendations')) {
                 </div>
                 
                 <div class="flex items-center gap-1 lg:gap-2">
-                    <a href="<?php echo isset($_SESSION['user_id']) ? 'profile.php' : 'login.php'; ?>" class="material-symbols-outlined text-white p-2 hover:bg-white/10 rounded-full transition-colors hidden sm:flex" title="حساب کاربری">person</a>
+                    <a href="<?php echo isset($_SESSION['user_id']) ? 'profile.php' : 'login.php'; ?>" class="material-symbols-outlined text-white p-1.5 lg:p-2 hover:bg-white/10 rounded-full transition-colors flex text-xl lg:text-2xl" title="حساب کاربری">person</a>
                     
-                    <a href="cart.php" class="relative material-symbols-outlined text-white p-2 hover:bg-white/10 rounded-full transition-colors flex" title="سبد خرید">
+                    <a href="cart.php" class="relative material-symbols-outlined text-white p-1.5 lg:p-2 hover:bg-white/10 rounded-full transition-colors flex text-xl lg:text-2xl" title="سبد خرید">
                         shopping_cart
                         <?php if($cart_count > 0): ?>
-                            <span class="absolute top-0 right-0 bg-secondary-container text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-bold"><?php echo $cart_count; ?></span>
+                            <span class="absolute top-0 right-0 bg-secondary-container text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-bold shadow"><?php echo $cart_count; ?></span>
                         <?php endif; ?>
                     </a>
                 </div>
                 
-                <a href="index.php" class="flex items-center gap-2.5 group" dir="ltr" title="صفحه اصلی آسنا">
-                    <img src="assets/images/logo.png" alt="لوگوی آسنا" class="w-8 h-8 lg:w-9 lg:h-9 object-contain drop-shadow group-hover:scale-105 transition-transform duration-200">
-                    <h1 class="text-xl lg:text-2xl font-bold text-white tracking-tight group-hover:text-secondary-container transition-colors">ASENA</h1>
+                <a href="index.php" class="flex items-center gap-2 group" dir="ltr" title="صفحه اصلی آسنا">
+                    <img src="assets/images/logo.png" alt="لوگوی آسنا" class="w-7 h-7 lg:w-9 lg:h-9 object-contain drop-shadow group-hover:scale-105 transition-transform duration-200">
+                    <h1 class="text-lg lg:text-2xl font-black text-white tracking-tight group-hover:text-secondary-container transition-colors">ASENA</h1>
                 </a>
             </div>
+        </div>
+
+        <!-- Row 2 (Mobile Only): Digikala App Style Omnibox Search Bar -->
+        <div class="block lg:hidden relative w-full mt-2.5" id="mobileHeaderSearchWrapper">
+            <form action="shop.php" method="GET" class="relative flex items-center bg-white/15 hover:bg-white/20 focus-within:bg-white focus-within:text-slate-800 border border-white/20 focus-within:border-white rounded-2xl transition-all px-3 py-2 text-white" id="mobileHeaderSearchForm">
+                <span class="material-symbols-outlined text-xl text-white/80 shrink-0 ml-2 focus-within:text-primary">search</span>
+                <input id="mobileHeaderSearchInput" name="q" value="<?php echo htmlspecialchars($_GET['q'] ?? ''); ?>" class="w-full bg-transparent border-none outline-none text-xs sm:text-sm placeholder-white/75 focus:placeholder-slate-400 focus:text-slate-800 font-medium" placeholder="جستجو در آسنا (دارو، کالا، پزشک، کلینیک)..." autocomplete="off">
+                <span id="mobileHeaderSearchSpinner" class="material-symbols-outlined text-sm animate-spin hidden text-white/70 mr-1">sync</span>
+            </form>
+            <!-- Mobile Live Search Autocomplete Dropdown -->
+            <div id="mobileHeaderSearchResults" class="absolute right-0 left-0 top-full mt-2 bg-white rounded-2xl shadow-2xl border border-slate-100 overflow-hidden hidden z-50 text-slate-800 text-right"></div>
         </div>
     </header>
 
@@ -497,6 +509,7 @@ if (function_exists('get_curated_recommendations')) {
         }
 
         // Universal Live Search Autocomplete Controller
+        // Universal Live Search Autocomplete Controller (Digikala Benchmark)
         function initLiveSearch(inputId, resultsId, spinnerId) {
             const input = document.getElementById(inputId);
             const resultsBox = document.getElementById(resultsId);
@@ -504,10 +517,20 @@ if (function_exists('get_curated_recommendations')) {
             if (!input || !resultsBox) return;
 
             let debounceTimer = null;
+            let currentSelectedIndex = -1;
+
+            function highlightText(text, q) {
+                if (!q || !text) return text;
+                const terms = q.trim().split(/\s+/).filter(t => t.length > 1);
+                if (terms.length === 0) return text;
+                let pattern = '(' + terms.map(t => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|') + ')';
+                return text.replace(new RegExp(pattern, 'gi'), '<mark class="bg-amber-100 text-amber-900 font-bold px-0.5 rounded">$1</mark>');
+            }
 
             input.addEventListener('input', function() {
                 const query = this.value.trim();
                 clearTimeout(debounceTimer);
+                currentSelectedIndex = -1;
 
                 if (query.length < 2) {
                     resultsBox.classList.add('hidden');
@@ -524,14 +547,48 @@ if (function_exists('get_curated_recommendations')) {
                         .then(data => {
                             if (spinner) spinner.classList.add('hidden');
                             if (data.status === 'success') {
-                                renderLiveSearchResults(data, resultsBox, query);
+                                renderLiveSearchResults(data, resultsBox, query, highlightText);
                             }
                         })
                         .catch(() => {
                             if (spinner) spinner.classList.add('hidden');
                         });
-                }, 220);
+                }, 200);
             });
+
+            // Keyboard Navigation (Arrow Up / Down / Enter / Escape)
+            input.addEventListener('keydown', function(e) {
+                const items = resultsBox.querySelectorAll('.live-search-item');
+                if (!items.length || resultsBox.classList.contains('hidden')) return;
+
+                if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    currentSelectedIndex = (currentSelectedIndex + 1) % items.length;
+                    updateItemHighlight(items);
+                } else if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    currentSelectedIndex = (currentSelectedIndex - 1 + items.length) % items.length;
+                    updateItemHighlight(items);
+                } else if (e.key === 'Enter') {
+                    if (currentSelectedIndex >= 0 && currentSelectedIndex < items.length) {
+                        e.preventDefault();
+                        items[currentSelectedIndex].click();
+                    }
+                } else if (e.key === 'Escape') {
+                    resultsBox.classList.add('hidden');
+                }
+            });
+
+            function updateItemHighlight(items) {
+                items.forEach((item, idx) => {
+                    if (idx === currentSelectedIndex) {
+                        item.classList.add('bg-slate-100', 'ring-1', 'ring-primary/20');
+                        item.scrollIntoView({ block: 'nearest' });
+                    } else {
+                        item.classList.remove('bg-slate-100', 'ring-1', 'ring-primary/20');
+                    }
+                });
+            }
 
             // Close on click outside
             document.addEventListener('click', function(e) {
@@ -547,34 +604,69 @@ if (function_exists('get_curated_recommendations')) {
             });
         }
 
-        function renderLiveSearchResults(data, container, query) {
-            if (data.total === 0) {
+        function renderLiveSearchResults(data, container, query, highlightFn) {
+            const h = highlightFn || ((t) => t);
+            if (data.total === 0 && (!data.categories || data.categories.length === 0)) {
                 container.innerHTML = `
-                    <div class="p-6 text-center text-slate-500 text-xs">
-                        <span class="material-symbols-outlined text-3xl text-slate-400 mb-1 block">search_off</span>
-                        موردی برای <b>"${query}"</b> یافت نشد. اینتر بزنید تا در کل فروشگاه جستجو شود.
+                    <div class="p-8 text-center text-slate-500 text-xs">
+                        <span class="material-symbols-outlined text-4xl text-slate-300 mb-2 block animate-pulse">search_off</span>
+                        <div class="font-bold text-slate-700 text-sm mb-1">نتیجه‌ای برای «${query}» یافت نشد</div>
+                        <p class="text-[11px] text-slate-400">املا کلمات را بررسی کنید یا عبارت دیگری را جستجو فرمایید.</p>
+                        <a href="shop.php?q=${encodeURIComponent(query)}" class="inline-block mt-4 text-xs font-bold text-primary hover:underline">
+                            جستجو در کل دسته‌بندی‌ها و پت‌شاپ &larr;
+                        </a>
                     </div>
                 `;
                 container.classList.remove('hidden');
                 return;
             }
 
-            let html = '<div class="p-2 divide-y divide-slate-100 max-h-[420px] overflow-y-auto custom-scrollbar">';
+            let html = '<div class="p-2 divide-y divide-slate-100 max-h-[520px] overflow-y-auto custom-scrollbar">';
 
-            // Products
-            if (data.results.products && data.results.products.length > 0) {
-                html += '<div class="py-2"><div class="px-3 py-1 text-[11px] font-extrabold text-primary flex items-center gap-1"><span class="material-symbols-outlined text-sm text-secondary-container">storefront</span> پت‌شاپ و ملزومات</div>';
-                data.results.products.forEach(p => {
+            // 1. Digikala-Style Category Intent Suggestions
+            if (data.categories && data.categories.length > 0) {
+                html += '<div class="pb-2 pt-1">';
+                html += '<div class="px-3 py-1 text-[11px] font-extrabold text-slate-500 flex items-center gap-1.5"><span class="material-symbols-outlined text-sm text-primary">category</span> دسته‌بندی‌های مرتبط</div>';
+                data.categories.forEach(cat => {
                     html += `
-                        <a href="${p.url}" class="flex items-center justify-between gap-3 p-2 rounded-xl hover:bg-slate-50 transition-colors group">
-                            <div class="flex items-center gap-2.5 overflow-hidden">
-                                <img src="${p.image}" class="w-10 h-10 rounded-lg object-cover bg-slate-100 shrink-0 border border-slate-200" alt="">
+                        <a href="${cat.url}" class="live-search-item flex items-center justify-between gap-2 px-3 py-2 rounded-xl hover:bg-slate-50 transition-colors group cursor-pointer text-right">
+                            <div class="flex items-center gap-2 overflow-hidden">
+                                <span class="material-symbols-outlined text-base text-secondary-container group-hover:scale-110 transition-transform">${cat.icon || 'search'}</span>
                                 <div class="truncate">
-                                    <div class="text-xs font-bold text-slate-800 group-hover:text-primary transition-colors truncate">${p.title}</div>
-                                    <div class="text-[10px] text-slate-400">${p.category}</div>
+                                    <div class="text-xs font-bold text-slate-800 group-hover:text-primary transition-colors">
+                                        جستجوی <span class="text-primary font-black font-sans">«${query}»</span> ${cat.subtitle}
+                                    </div>
+                                </div>
+                            </div>
+                            <span class="material-symbols-outlined text-xs text-slate-400 group-hover:text-primary transition-colors shrink-0">chevron_left</span>
+                        </a>
+                    `;
+                });
+                html += '</div>';
+            }
+
+            // 2. Pet Shop Products
+            if (data.results.products && data.results.products.length > 0) {
+                html += '<div class="py-2.5"><div class="px-3 py-1 text-[11px] font-extrabold text-primary flex items-center gap-1"><span class="material-symbols-outlined text-sm text-secondary-container">storefront</span> پت‌شاپ و تغذیه</div>';
+                data.results.products.forEach(p => {
+                    const discountBadge = p.discount_percent > 0 ? `<span class="bg-rose-50 text-rose-600 border border-rose-200 text-[10px] font-black px-1.5 py-0.5 rounded-md mr-1.5">${p.discount_percent}٪ تخفیف</span>` : '';
+                    const oldPriceHtml = p.old_price ? `<div class="text-[10px] text-slate-400 line-through">${p.old_price.toLocaleString('fa-IR')}</div>` : '';
+                    html += `
+                        <a href="${p.url}" class="live-search-item flex items-center justify-between gap-3 p-2 rounded-xl hover:bg-slate-50 transition-colors group cursor-pointer">
+                            <div class="flex items-center gap-3 overflow-hidden">
+                                <img src="${p.image}" class="w-11 h-11 rounded-xl object-cover bg-slate-100 shrink-0 border border-slate-200 group-hover:border-primary/40 transition-colors" alt="">
+                                <div class="truncate">
+                                    <div class="text-xs font-bold text-slate-800 group-hover:text-primary transition-colors truncate">${h(p.title, query)}</div>
+                                    <div class="text-[10px] text-slate-400 flex items-center gap-1.5 mt-0.5">
+                                        <span>برند: <b>${p.brand}</b></span>
+                                        <span>•</span>
+                                        <span>${p.category}</span>
+                                        ${discountBadge}
+                                    </div>
                                 </div>
                             </div>
                             <div class="text-left shrink-0">
+                                ${oldPriceHtml}
                                 <div class="text-xs font-extrabold text-primary">${p.price.toLocaleString('fa-IR')} <span class="text-[9px] font-normal text-slate-500">تومان</span></div>
                             </div>
                         </a>
@@ -583,18 +675,21 @@ if (function_exists('get_curated_recommendations')) {
                 html += '</div>';
             }
 
-            // Pharmacy
+            // 3. Pharmacy Medicines
             if (data.results.pharmacy && data.results.pharmacy.length > 0) {
-                html += '<div class="py-2"><div class="px-3 py-1 text-[11px] font-extrabold text-indigo-700 flex items-center gap-1"><span class="material-symbols-outlined text-sm text-indigo-600">medication</span> داروخانه تخصصی دامپزشکی</div>';
+                html += '<div class="py-2.5"><div class="px-3 py-1 text-[11px] font-extrabold text-indigo-700 flex items-center gap-1"><span class="material-symbols-outlined text-sm text-indigo-600">medication</span> داروخانه تخصصی دامپزشکی</div>';
                 data.results.pharmacy.forEach(m => {
-                    const rxBadge = m.requires_prescription ? '<span class="bg-rose-100 text-rose-700 text-[9px] px-1.5 py-0.5 rounded font-bold mr-1">نسخه</span>' : '';
+                    const rxBadge = m.requires_prescription ? '<span class="bg-rose-100 text-rose-700 text-[9px] px-1.5 py-0.5 rounded font-bold mr-1">نیازمند نسخه</span>' : '';
+                    const coldBadge = m.is_cold_chain ? '<span class="bg-sky-100 text-sky-700 text-[9px] px-1.5 py-0.5 rounded font-bold mr-1">زنجیره سرد</span>' : '';
                     html += `
-                        <a href="${m.url}" class="flex items-center justify-between gap-3 p-2 rounded-xl hover:bg-indigo-50/40 transition-colors group">
-                            <div class="flex items-center gap-2.5 overflow-hidden">
-                                <img src="${m.image}" class="w-10 h-10 rounded-lg object-cover bg-slate-100 shrink-0 border border-slate-200" alt="">
+                        <a href="${m.url}" class="live-search-item flex items-center justify-between gap-3 p-2 rounded-xl hover:bg-indigo-50/40 transition-colors group cursor-pointer">
+                            <div class="flex items-center gap-3 overflow-hidden">
+                                <img src="${m.image}" class="w-11 h-11 rounded-xl object-cover bg-slate-100 shrink-0 border border-slate-200 group-hover:border-indigo-300" alt="">
                                 <div class="truncate">
-                                    <div class="text-xs font-bold text-slate-800 group-hover:text-indigo-700 transition-colors truncate">${m.title} ${rxBadge}</div>
-                                    <div class="text-[10px] text-slate-400">${m.category}</div>
+                                    <div class="text-xs font-bold text-slate-800 group-hover:text-indigo-700 transition-colors truncate">
+                                        ${h(m.title, query)} ${rxBadge} ${coldBadge}
+                                    </div>
+                                    <div class="text-[10px] text-slate-400 mt-0.5">${m.category}</div>
                                 </div>
                             </div>
                             <div class="text-left shrink-0">
@@ -606,21 +701,53 @@ if (function_exists('get_curated_recommendations')) {
                 html += '</div>';
             }
 
-            // Organizations
-            if (data.results.organizations && data.results.organizations.length > 0) {
-                html += '<div class="py-2"><div class="px-3 py-1 text-[11px] font-extrabold text-teal-700 flex items-center gap-1"><span class="material-symbols-outlined text-sm text-teal-600">domain</span> کلینیک‌ها و بیمارستان‌ها</div>';
-                data.results.organizations.forEach(o => {
-                    const badge247 = o.is_24_7 ? '<span class="bg-emerald-100 text-emerald-800 text-[9px] px-1.5 py-0.5 rounded-full font-black mr-1">۲۴/۷</span>' : '';
+            // 4. Best Doctors & Specialists (Direct Booking Bridge)
+            if (data.results.doctors && data.results.doctors.length > 0) {
+                html += '<div class="py-2.5"><div class="px-3 py-1 text-[11px] font-extrabold text-emerald-700 flex items-center gap-1"><span class="material-symbols-outlined text-sm text-emerald-600">stethoscope</span> پزشکان و جراحان متخصص</div>';
+                data.results.doctors.forEach(d => {
+                    const ratingHtml = `<span class="flex items-center gap-0.5 text-amber-500 text-[10px] font-bold"><span class="material-symbols-outlined text-[13px]" style="font-variation-settings: 'FILL' 1;">star</span>${d.rating}</span>`;
                     html += `
-                        <a href="${o.url}" class="flex items-center justify-between gap-3 p-2 rounded-xl hover:bg-teal-50/40 transition-colors group">
-                            <div class="flex items-center gap-2.5 overflow-hidden">
-                                <img src="${o.image}" class="w-10 h-10 rounded-lg object-cover bg-slate-100 shrink-0 border border-slate-200" alt="">
+                        <div class="live-search-item flex items-center justify-between gap-3 p-2 rounded-xl hover:bg-emerald-50/40 transition-colors group">
+                            <a href="${d.profile_url}" class="flex items-center gap-3 overflow-hidden flex-1 cursor-pointer">
+                                <img src="${d.image}" class="w-11 h-11 rounded-full object-cover bg-emerald-100 shrink-0 border-2 border-emerald-200" alt="">
                                 <div class="truncate">
-                                    <div class="text-xs font-bold text-slate-800 group-hover:text-teal-700 transition-colors truncate">${o.title} ${badge247}</div>
-                                    <div class="text-[10px] text-slate-400">${o.city}</div>
+                                    <div class="text-xs font-bold text-slate-800 group-hover:text-emerald-700 transition-colors flex items-center gap-1.5 truncate">
+                                        <span>${h(d.name, query)}</span>
+                                        ${ratingHtml}
+                                    </div>
+                                    <div class="text-[10px] text-slate-500 truncate max-w-[220px] mt-0.5">${h(d.specialty, query)}</div>
+                                    <div class="text-[9px] text-slate-400 truncate">${d.clinic_name}</div>
+                                </div>
+                            </a>
+                            <div class="text-left shrink-0">
+                                <a href="${d.booking_url}" onclick="if(window.quickSelectDoctorForBooking){ window.quickSelectDoctorForBooking(${d.id}); return false; }" class="text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 px-3 py-1.5 rounded-xl transition-all shadow-sm flex items-center gap-1">
+                                    <span class="material-symbols-outlined text-xs">calendar_month</span>
+                                    <span>رزرو نوبت</span>
+                                </a>
+                            </div>
+                        </div>
+                    `;
+                });
+                html += '</div>';
+            }
+
+            // 5. Clinics & Hospitals (Organizations)
+            if (data.results.organizations && data.results.organizations.length > 0) {
+                html += '<div class="py-2.5"><div class="px-3 py-1 text-[11px] font-extrabold text-teal-700 flex items-center gap-1"><span class="material-symbols-outlined text-sm text-teal-600">domain</span> مراکز درمانی و بیمارستان‌ها</div>';
+                data.results.organizations.forEach(o => {
+                    const badge247 = o.is_24_7 ? '<span class="bg-emerald-100 text-emerald-800 text-[9px] px-1.5 py-0.5 rounded-full font-black mr-1">شبانه‌روزی ۲۴/۷</span>' : '';
+                    html += `
+                        <a href="${o.profile_url}" class="live-search-item flex items-center justify-between gap-3 p-2 rounded-xl hover:bg-teal-50/40 transition-colors group cursor-pointer">
+                            <div class="flex items-center gap-3 overflow-hidden">
+                                <img src="${o.image}" class="w-11 h-11 rounded-xl object-cover bg-teal-50 shrink-0 border border-teal-200" alt="">
+                                <div class="truncate">
+                                    <div class="text-xs font-bold text-slate-800 group-hover:text-teal-700 transition-colors truncate">
+                                        ${h(o.name, query)} ${badge247}
+                                    </div>
+                                    <div class="text-[10px] text-slate-400 mt-0.5">${o.city} — ${o.address}</div>
                                 </div>
                             </div>
-                            <div class="text-left shrink-0 flex items-center gap-1 text-amber-500 text-xs font-bold">
+                            <div class="text-left shrink-0 flex items-center gap-1 text-amber-500 text-xs font-bold bg-amber-50 px-2 py-1 rounded-lg">
                                 <span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">star</span>
                                 <span>${o.rating}</span>
                             </div>
@@ -630,33 +757,14 @@ if (function_exists('get_curated_recommendations')) {
                 html += '</div>';
             }
 
-            // Doctors
-            if (data.results.doctors && data.results.doctors.length > 0) {
-                html += '<div class="py-2"><div class="px-3 py-1 text-[11px] font-extrabold text-emerald-700 flex items-center gap-1"><span class="material-symbols-outlined text-sm text-emerald-600">stethoscope</span> پزشکان متخصص</div>';
-                data.results.doctors.forEach(d => {
-                    html += `
-                        <a href="${d.url}" class="flex items-center justify-between gap-3 p-2 rounded-xl hover:bg-emerald-50/40 transition-colors group">
-                            <div class="flex items-center gap-2.5 overflow-hidden">
-                                <img src="${d.image}" class="w-10 h-10 rounded-lg object-cover bg-slate-100 shrink-0 border border-slate-200" alt="">
-                                <div class="truncate">
-                                    <div class="text-xs font-bold text-slate-800 group-hover:text-emerald-700 transition-colors truncate">${d.title}</div>
-                                    <div class="text-[10px] text-slate-400 truncate max-w-[180px]">${d.specialty}</div>
-                                </div>
-                            </div>
-                            <div class="text-left shrink-0 text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-lg">
-                                رزرو نوبت
-                            </div>
-                        </a>
-                    `;
-                });
-                html += '</div>';
-            }
-
             html += `
                 </div>
-                <div class="p-2.5 bg-slate-50 border-t border-slate-100 text-center">
-                    <a href="shop.php?q=${encodeURIComponent(query)}" class="text-xs font-bold text-primary hover:text-secondary-container transition-colors flex items-center justify-center gap-1">
-                        <span>مشاهده کلیه نتایج جستجو برای "${query}"</span>
+                <div class="p-3 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
+                    <span class="text-[11px] text-slate-500 font-medium">
+                        تعداد کل نتایج: <b class="text-primary font-bold">${data.total}</b> مورد
+                    </span>
+                    <a href="shop.php?q=${encodeURIComponent(query)}" class="text-xs font-extrabold text-primary hover:text-secondary-container transition-colors flex items-center gap-1">
+                        <span>مشاهده کلیه نتایج جستجو</span>
                         <span class="material-symbols-outlined text-sm">arrow_back</span>
                     </a>
                 </div>
@@ -668,5 +776,6 @@ if (function_exists('get_curated_recommendations')) {
 
         document.addEventListener('DOMContentLoaded', () => {
             initLiveSearch('headerSearchInput', 'headerSearchResults', 'headerSearchSpinner');
+            initLiveSearch('mobileHeaderSearchInput', 'mobileHeaderSearchResults', 'mobileHeaderSearchSpinner');
         });
     </script>

@@ -22,6 +22,7 @@ $adminName = $adminCheck['name'] ?? 'مدیر سیستم';
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
     <title>پنل مدیریت آسنا - ASENA Admin</title>
     <link rel="stylesheet" href="../assets/css/style.css">
+    <link rel="stylesheet" href="../assets/css/enterprise-ui.css">
     <link href="../assets/css/material-symbols.css" rel="stylesheet"/>
     <link href="../assets/css/geist.css" rel="stylesheet"/>
     <script src="../assets/js/tailwindcss-cdn.js"></script>

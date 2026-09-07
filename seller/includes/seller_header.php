@@ -34,6 +34,7 @@ $activeTab = $_GET['tab'] ?? 'orders';
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
     <title>پنل فروشندگان و پت‌شاپ - ASENA Seller</title>
     <link rel="stylesheet" href="../assets/css/style.css">
+    <link rel="stylesheet" href="../assets/css/enterprise-ui.css">
     <link href="../assets/css/material-symbols.css" rel="stylesheet"/>
     <link href="../assets/css/geist.css" rel="stylesheet"/>
     <script src="../assets/js/tailwindcss-cdn.js"></script>
@@ -172,7 +173,7 @@ $activeTab = $_GET['tab'] ?? 'orders';
                 <span class="material-symbols-outlined text-base">add_circle</span>
                 <span>+ افزودن کالا</span>
             </button>
-            <a href="../shop.php" target="_blank" class="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-blue-50 text-primary border border-blue-200 hover:bg-primary hover:text-white transition-all text-xs font-bold">
+            <a href="../shop.php" target="_blank" class="hidden sm:flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-blue-50 text-primary border border-blue-200 hover:bg-primary hover:text-white transition-all text-xs font-bold">
                 <span class="material-symbols-outlined text-base">storefront</span>
                 <span>مشاهده در سایت</span>
             </a>
@@ -188,3 +189,27 @@ $activeTab = $_GET['tab'] ?? 'orders';
             </div>
         </div>
     </header>
+
+    <!-- Mobile Quick Tab Bar for Sellers (Digikala Seller App Standard) -->
+    <div class="lg:hidden flex items-center gap-2 overflow-x-auto px-4 py-2.5 bg-white border-b border-outline-variant/20 custom-scrollbar sticky top-16 z-30 shadow-xs">
+        <button type="button" id="seller-mobile-btn-orders" onclick="switchSellerTab('orders-tab')" class="seller-mobile-tab px-3.5 py-2 rounded-xl bg-secondary-container text-white text-xs font-bold shrink-0 flex items-center gap-1.5 shadow-sm">
+            <span class="material-symbols-outlined text-sm">local_shipping</span>
+            <span>سفارشات</span>
+        </button>
+        <button type="button" id="seller-mobile-btn-products" onclick="switchSellerTab('products-tab')" class="seller-mobile-tab px-3.5 py-2 rounded-xl bg-white border border-slate-200 text-slate-700 text-xs font-bold shrink-0 flex items-center gap-1.5">
+            <span class="material-symbols-outlined text-sm text-teal-600">inventory_2</span>
+            <span>محصولات</span>
+        </button>
+        <button type="button" id="seller-mobile-btn-wallet" onclick="switchSellerTab('wallet-tab')" class="seller-mobile-tab px-3.5 py-2 rounded-xl bg-white border border-slate-200 text-slate-700 text-xs font-bold shrink-0 flex items-center gap-1.5">
+            <span class="material-symbols-outlined text-sm text-emerald-600">account_balance_wallet</span>
+            <span>تسویه پایا</span>
+        </button>
+        <button type="button" id="seller-mobile-btn-shipping" onclick="switchSellerTab('shipping-tab')" class="seller-mobile-tab px-3.5 py-2 rounded-xl bg-white border border-slate-200 text-slate-700 text-xs font-bold shrink-0 flex items-center gap-1.5">
+            <span class="material-symbols-outlined text-sm text-indigo-600">markunread_mailbox</span>
+            <span>رهگیری مرسولات</span>
+        </button>
+        <button type="button" id="seller-mobile-btn-settings" onclick="switchSellerTab('settings-tab')" class="seller-mobile-tab px-3.5 py-2 rounded-xl bg-white border border-slate-200 text-slate-700 text-xs font-bold shrink-0 flex items-center gap-1.5">
+            <span class="material-symbols-outlined text-sm text-amber-600">store</span>
+            <span>تنظیمات</span>
+        </button>
+    </div>

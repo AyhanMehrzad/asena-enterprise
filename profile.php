@@ -391,19 +391,73 @@ $nextPayoutFormatted = $fmtDateText->format($nextThursday) . ' ساعت ۲۲:۰�
 <div class="max-w-[1200px] mx-auto space-y-6 md:space-y-8">
 
 <!-- Mobile Header Toggle -->
-<div class="lg:hidden flex justify-between items-center bg-surface-container-lowest p-4 rounded-2xl border border-outline-variant shadow-sm mb-4">
+<div class="lg:hidden flex justify-between items-center bg-surface-container-lowest p-4 rounded-2xl border border-outline-variant shadow-sm mb-3">
     <div class="flex items-center gap-3">
         <div class="w-10 h-10 rounded-full bg-primary-container text-white flex items-center justify-center font-bold text-lg">
             <?php echo mb_substr(htmlspecialchars($user['name'] ?? 'ک'), 0, 1, 'UTF-8'); ?>
         </div>
         <div>
-            <h1 class="font-bold text-primary text-sm">پنل کاربری شما</h1>
-            <p class="text-[11px] text-on-surface-variant">مشاهده و مدیریت اطلاعات</p>
+            <h1 class="font-bold text-primary text-sm"><?= $isSeller ? 'پیشخوان فروشندگان' : 'پنل کاربری شما' ?></h1>
+            <p class="text-[11px] text-on-surface-variant"><?= htmlspecialchars($user['name'] ?: 'کاربر گرامی') ?></p>
         </div>
     </div>
     <button onclick="toggleProfileSidebar()" class="w-10 h-10 flex items-center justify-center rounded-xl bg-primary/10 text-primary hover:bg-primary hover:text-white transition-colors">
         <span class="material-symbols-outlined">menu_open</span>
     </button>
+</div>
+
+<!-- Mobile Quick Navigation Carousel / Scrollable Tab Bar (Digikala Standard) -->
+<div class="lg:hidden flex items-center gap-2 overflow-x-auto pb-2 -mx-1 px-1 custom-scrollbar text-xs font-bold shrink-0 mb-4 sticky top-16 z-30 bg-surface/90 backdrop-blur-md py-1.5">
+    <?php if ($isSeller): ?>
+        <a href="profile.php?view=seller" class="px-3.5 py-2 rounded-xl bg-primary text-white shadow-sm shrink-0 flex items-center gap-1.5">
+            <span class="material-symbols-outlined text-sm">analytics</span>
+            <span>پیشخوان فروش</span>
+        </a>
+        <a href="#seller-orders-section" class="px-3.5 py-2 rounded-xl bg-white border border-slate-200 text-slate-700 hover:border-primary shrink-0 flex items-center gap-1.5">
+            <span class="material-symbols-outlined text-sm text-indigo-600">local_shipping</span>
+            <span>سفارشات</span>
+            <?php if ($sellerPendingCount > 0): ?>
+                <span class="px-1.5 py-0.2 rounded-full text-[10px] bg-amber-100 text-amber-800"><?= $sellerPendingCount ?></span>
+            <?php endif; ?>
+        </a>
+        <a href="#seller-products-section" class="px-3.5 py-2 rounded-xl bg-white border border-slate-200 text-slate-700 hover:border-primary shrink-0 flex items-center gap-1.5">
+            <span class="material-symbols-outlined text-sm text-teal-600">inventory_2</span>
+            <span>محصولات</span>
+        </a>
+        <a href="#wallet-section" class="px-3.5 py-2 rounded-xl bg-white border border-slate-200 text-slate-700 hover:border-primary shrink-0 flex items-center gap-1.5">
+            <span class="material-symbols-outlined text-sm text-emerald-600">account_balance_wallet</span>
+            <span>تسویه پایا</span>
+        </a>
+    <?php else: ?>
+        <a href="profile.php" class="px-3.5 py-2 rounded-xl bg-primary text-white shadow-sm shrink-0 flex items-center gap-1.5">
+            <span class="material-symbols-outlined text-sm">dashboard</span>
+            <span>پیشخوان</span>
+        </a>
+        <a href="#appointments-section" class="px-3.5 py-2 rounded-xl bg-white border border-slate-200 text-slate-700 hover:border-primary shrink-0 flex items-center gap-1.5">
+            <span class="material-symbols-outlined text-sm text-teal-600">calendar_month</span>
+            <span>نوبت‌های من</span>
+        </a>
+        <a href="#orders-section" class="px-3.5 py-2 rounded-xl bg-white border border-slate-200 text-slate-700 hover:border-primary shrink-0 flex items-center gap-1.5">
+            <span class="material-symbols-outlined text-sm text-indigo-600">local_shipping</span>
+            <span>سفارشات</span>
+        </a>
+        <a href="#wallet-section" class="px-3.5 py-2 rounded-xl bg-white border border-slate-200 text-slate-700 hover:border-primary shrink-0 flex items-center gap-1.5">
+            <span class="material-symbols-outlined text-sm text-emerald-600">account_balance_wallet</span>
+            <span>کیف پول</span>
+        </a>
+        <a href="#pets-section" class="px-3.5 py-2 rounded-xl bg-white border border-slate-200 text-slate-700 hover:border-primary shrink-0 flex items-center gap-1.5">
+            <span class="material-symbols-outlined text-sm text-amber-600">pets</span>
+            <span>پت پاسپورت</span>
+        </a>
+        <a href="#subscriptions-section" class="px-3.5 py-2 rounded-xl bg-white border border-slate-200 text-slate-700 hover:border-primary shrink-0 flex items-center gap-1.5">
+            <span class="material-symbols-outlined text-sm text-orange-600">autorenew</span>
+            <span>اشتراک‌ها</span>
+        </a>
+        <a href="profile_settings.php" class="px-3.5 py-2 rounded-xl bg-white border border-slate-200 text-slate-700 hover:border-primary shrink-0 flex items-center gap-1.5">
+            <span class="material-symbols-outlined text-sm text-slate-500">settings</span>
+            <span>تنظیمات</span>
+        </a>
+    <?php endif; ?>
 </div>
 <?php if ($success): ?>
     <div class="bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 text-white p-6 sm:p-8 rounded-3xl shadow-xl shadow-emerald-700/20 relative overflow-hidden animate-fade-in border border-white/20 mb-8">
@@ -2558,5 +2612,4 @@ function updateShebaPreview(input) {
         panel.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
 </script>
-
-</body></html>
+<?php require_once 'includes/footer.php'; ?>
