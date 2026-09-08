@@ -2239,7 +2239,7 @@ function updateShebaPreview(input) {
         <div class="group border border-outline-variant p-5 rounded-2xl flex flex-col gap-4 hover:border-primary-container hover:shadow-xl transition-all duration-300">
         <div class="flex gap-4">
         <div class="relative">
-        <img alt="<?php echo htmlspecialchars($apt['doctor_name']); ?>" class="w-16 h-16 rounded-xl object-cover" src="<?php echo htmlspecialchars($apt['doctor_image'] ?? 'https://via.placeholder.com/150'); ?>"/>
+        <img alt="<?php echo htmlspecialchars($apt['doctor_name']); ?>" class="w-16 h-16 rounded-xl object-cover" src="<?php echo htmlspecialchars($apt['doctor_image'] ?? 'assets/images/placeholders/placeholder-doctor.svg'); ?>"/>
         <span class="absolute -bottom-1 -right-1 w-5 h-5 bg-status-active border-2 border-white rounded-full"></span>
         </div>
         <div class="flex-1">

@@ -186,28 +186,70 @@
         </div>
     `;
 
-    // Insert as earliest element in body
-    if (document.body) {
-        document.body.prepend(loaderDiv);
-    } else {
-        document.addEventListener('DOMContentLoaded', () => document.body.prepend(loaderDiv));
-    }
+    // Enforce initial veil state on body
+    const mountTime = Date.now();
+    const MIN_ANIMATION_MS = 900;
+    let pageReady = false;
+    let dismissed = false;
 
-    // Dismiss seamlessly when page is ready
-    function dismissLoader() {
-        const loader = document.getElementById('asena-paw-loader');
-        if (loader && !loader.classList.contains('loader-hidden')) {
-            loader.classList.add('loader-hidden');
-            setTimeout(() => loader.remove(), 400);
+    function applyVeil() {
+        if (document.body) {
+            document.body.classList.add('asena-loading');
+            if (!document.getElementById('asena-paw-loader')) {
+                document.body.prepend(loaderDiv);
+            }
         }
     }
 
-    if (document.readyState === 'complete') {
-        setTimeout(dismissLoader, 350);
-    } else {
-        window.addEventListener('load', () => setTimeout(dismissLoader, 350));
+    applyVeil();
+    if (!document.body) {
+        document.addEventListener('DOMContentLoaded', applyVeil);
     }
 
-    // Safety fallback timer so it never blocks the user
-    setTimeout(dismissLoader, 1200);
+    // Dismiss seamlessly when BOTH animation duration & page load are satisfied
+    function tryDismiss() {
+        if (dismissed) return;
+        const elapsed = Date.now() - mountTime;
+        if (elapsed < MIN_ANIMATION_MS) {
+            setTimeout(tryDismiss, MIN_ANIMATION_MS - elapsed);
+            return;
+        }
+
+        dismissed = true;
+        const loader = document.getElementById('asena-paw-loader');
+        if (document.body) {
+            document.body.classList.remove('asena-loading');
+            document.body.classList.add('asena-loaded');
+        }
+
+        if (loader && !loader.classList.contains('loader-hidden')) {
+            loader.classList.add('loader-hidden');
+            setTimeout(() => {
+                try { loader.remove(); } catch (e) {}
+            }, 450);
+        }
+    }
+
+    function onPageReady() {
+        pageReady = true;
+        tryDismiss();
+    }
+
+    if (document.readyState === 'complete') {
+        onPageReady();
+    } else {
+        window.addEventListener('load', onPageReady);
+        // Fallback for DOM ready if load event delayed by non-critical network requests
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(onPageReady, 400);
+        });
+    }
+
+    // Hard safety fallback timer so it never blocks the user under any circumstance
+    setTimeout(() => {
+        if (!dismissed) {
+            pageReady = true;
+            tryDismiss();
+        }
+    }, 1800);
 })();

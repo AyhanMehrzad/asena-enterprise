@@ -17,7 +17,7 @@
     margin: 0 !important;
     padding: 16px !important;
     box-sizing: border-box !important;
-    transition: opacity 0.35s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.35s !important;
+    transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.4s, transform 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important;
     user-select: none !important;
     -webkit-user-select: none !important;
     overflow: hidden !important;
@@ -27,7 +27,21 @@
 #asena-paw-loader.loader-hidden {
     opacity: 0 !important;
     visibility: hidden !important;
+    transform: scale(1.02) !important;
     pointer-events: none !important;
+}
+
+/* Veiled website transition - Guarantees website only appears after animation */
+body.asena-loading {
+    overflow: hidden !important;
+}
+body.asena-loading > *:not(#asena-paw-loader) {
+    opacity: 0 !important;
+    transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+body.asena-loaded > *:not(#asena-paw-loader) {
+    opacity: 1 !important;
+    transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
 
 .paw-loader-card {

@@ -90,6 +90,10 @@ $effective_og_image = isset($og_image) ? (strpos($og_image, 'http') === 0 ? $og_
     <meta name="geo.region" content="IR">
     <meta name="geo.placename" content="Iran">
 
+    <!-- ASENA Instant Full-Screen Loader & Veiled Screen (Zero FOUC) -->
+    <link rel="stylesheet" href="assets/css/paw-loader.css">
+    <script src="assets/js/paw-loader.js"></script>
+
     <!-- Google Search Favicon Guidelines Compliant Suite (48px Multiples & Full Browser Support) -->
     <link rel="shortcut icon" href="/favicon.ico">
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
@@ -168,8 +172,8 @@ $effective_og_image = isset($og_image) ? (strpos($og_image, 'http') === 0 ? $og_
     <script src="assets/js/tailwind-config.js?v=<?php echo time(); ?>"></script>
     <link rel="stylesheet" href="assets/css/style.css?v=<?php echo time(); ?>">
     <link rel="stylesheet" href="assets/css/enterprise-ui.css?v=<?php echo time(); ?>">
-    <link rel="stylesheet" href="assets/css/paw-loader.css">
-    <script src="assets/js/paw-loader.js" defer></script>
+    <!-- Universal Lazy Loading Engine -->
+    <script src="assets/js/lazy-loader.js" defer></script>
     <!-- PWA Service Worker Registration -->
     <script>
     if ('serviceWorker' in navigator) {

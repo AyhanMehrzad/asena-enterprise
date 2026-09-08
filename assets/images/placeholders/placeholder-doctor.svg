@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="100%" height="100%">
+  <defs>
+    <linearGradient id="docGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#002d72"/>
+      <stop offset="100%" stop-color="#001a48"/>
+    </linearGradient>
+  </defs>
+  <rect width="400" height="400" rx="40" fill="url(#docGrad)"/>
+  <circle cx="200" cy="160" r="65" fill="#f8fafc" opacity="0.95"/>
+  <path d="M100,340 C100,260 145,245 200,245 C255,245 300,260 300,340 Z" fill="#f8fafc" opacity="0.95"/>
+  <!-- Stethoscope / Medical Cross badge -->
+  <circle cx="270" cy="270" r="28" fill="#ea580c"/>
+  <path d="M270,256 L270,284 M256,270 L284,270" stroke="#ffffff" stroke-width="6" stroke-linecap="round"/>
+</svg>

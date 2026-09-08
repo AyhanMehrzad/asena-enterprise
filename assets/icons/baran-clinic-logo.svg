@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="100%" height="100%">
+  <defs>
+    <linearGradient id="baranBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#082f49"/>
+      <stop offset="100%" stop-color="#0c4a6e"/>
+    </linearGradient>
+    <linearGradient id="dropGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8"/>
+      <stop offset="100%" stop-color="#0284c7"/>
+    </linearGradient>
+  </defs>
+  <rect width="200" height="200" rx="40" fill="url(#baranBg)"/>
+
+  <!-- Water Droplet (Baran) Contour with Veterinary Cross inside -->
+  <path d="M100 38 C100 38 152 100 152 128 C152 156 128 174 100 174 C72 174 48 156 48 128 C48 100 100 38 100 38 Z" fill="none" stroke="url(#dropGrad)" stroke-width="5" stroke-linejoin="round"/>
+  
+  <!-- Clinical White Cross Inside Drop -->
+  <path d="M92 90 H108 V108 H126 V124 H108 V142 H92 V124 H74 V108 H92 Z" fill="#ffffff"/>
+  
+  <!-- Kitten / Puppy Paw within cross -->
+  <circle cx="100" cy="116" r="4" fill="#0284c7"/>
+  <circle cx="93" cy="108" r="2.5" fill="#0284c7"/>
+  <circle cx="107" cy="108" r="2.5" fill="#0284c7"/>
+  <circle cx="89" cy="115" r="2" fill="#0284c7"/>
+  <circle cx="111" cy="115" r="2" fill="#0284c7"/>
+</svg>

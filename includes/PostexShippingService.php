@@ -182,7 +182,7 @@ class PostexShippingService
                 'price_toman' => $simulatedToman,
                 'formatted_price' => number_format($simulatedToman) . ' تومان',
                 'sla_days' => '۲ الی ۳ روز کاری',
-                'logo' => 'https://static.postex.ir/images/couriers/logos/small/IR_POST.png'
+                'logo' => 'assets/images/shipping/ir_post.png'
             ];
         }
 

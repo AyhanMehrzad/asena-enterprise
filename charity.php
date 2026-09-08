@@ -117,7 +117,7 @@ $recentDonations = $stmt->fetchAll(PDO::FETCH_ASSOC);
                         $percent = $goalAmount > 0 ? min(100, round(($currentAmount / $goalAmount) * 100)) : 0;
                     ?>
                     <div class="swiper-slide relative h-full group" data-campaign-id="<?php echo $camp['id']; ?>">
-                        <div class="absolute inset-0 bg-cover bg-center transition-transform duration-[10s] group-hover:scale-110" style="background-image: url('<?php echo htmlspecialchars($camp['image_url'] ?: 'https://placehold.co/1200x600?text=Campaign'); ?>')"></div>
+                        <div class="absolute inset-0 bg-cover bg-center transition-transform duration-[10s] group-hover:scale-110" style="background-image: url('<?php echo htmlspecialchars($camp['image_url'] ?: 'assets/images/placeholders/placeholder-campaign.svg'); ?>')"></div>
                         <div class="absolute inset-0 bg-gradient-to-t from-slate-950/95 via-slate-900/60 to-slate-950/20"></div>
                         
                         <div class="absolute inset-0 p-5 sm:p-8 md:p-12 lg:p-16 flex flex-col justify-end text-white">

@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="100%" height="100%">
+  <defs>
+    <linearGradient id="caspianBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#042f2e"/>
+      <stop offset="100%" stop-color="#134e4a"/>
+    </linearGradient>
+    <linearGradient id="feather" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0284c7"/>
+      <stop offset="50%" stop-color="#f59e0b"/>
+      <stop offset="100%" stop-color="#ef4444"/>
+    </linearGradient>
+  </defs>
+  <rect width="200" height="200" rx="40" fill="url(#caspianBg)"/>
+  <circle cx="100" cy="100" r="86" fill="none" stroke="#2dd4bf" stroke-width="2.5"/>
+
+  <!-- Parrot / Exotic Macaw Profile -->
+  <path d="M75 145 C75 90 92 50 120 50 C138 50 148 64 148 80 C148 100 134 114 122 118 L138 122 C126 132 112 140 92 144 Z" fill="url(#feather)"/>
+  <!-- Beak -->
+  <path d="M122 75 C146 75 158 92 152 112 C146 112 136 100 126 95 Z" fill="#fcd34d"/>
+  <!-- Eye -->
+  <circle cx="112" cy="74" r="6" fill="#ffffff"/>
+  <circle cx="113" cy="74" r="3" fill="#0f172a"/>
+
+  <!-- Medical Stethoscope looping around -->
+  <path d="M56 120 C56 156 80 168 100 168 C120 168 144 156 144 120" fill="none" stroke="#2dd4bf" stroke-width="4" stroke-linecap="round"/>
+  <circle cx="56" cy="116" r="6" fill="#fcd34d"/>
+  <circle cx="144" cy="116" r="6" fill="#fcd34d"/>
+</svg>

@@ -2088,7 +2088,7 @@ $top_donors = $donor_stmt->fetchAll(PDO::FETCH_ASSOC);
                                 $percent = $camp['goal_amount'] > 0 ? min(100, round(($camp['current_amount'] / $camp['goal_amount']) * 100)) : 0;
                             ?>
                             <div class="swiper-slide">
-                                <div class="h-64 md:h-80 bg-cover bg-center" style="background-image: url('<?php echo htmlspecialchars($camp['image_url'] ?: 'https://placehold.co/800x600?text=Campaign'); ?>');"></div>
+                                <div class="h-64 md:h-80 bg-cover bg-center" style="background-image: url('<?php echo htmlspecialchars($camp['image_url'] ?: 'assets/images/placeholders/placeholder-campaign.svg'); ?>');"></div>
                                 <div class="p-10 space-y-8 bg-white text-right">
                                     <div class="flex justify-between items-center">
                                         <h3 class="text-2xl font-bold text-primary line-clamp-1"><?php echo htmlspecialchars($camp['title']); ?></h3>

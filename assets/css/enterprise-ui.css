@@ -687,5 +687,20 @@ body, button, input, select, textarea {
     }
 }
 
+/* Universal Lazy Loading Smooth Transitions */
+img.lazy-img-init {
+    opacity: 0;
+    transition: opacity 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    will-change: opacity;
+}
+img.lazy-img-loaded {
+    opacity: 1;
+}
+[data-bg] {
+    background-color: #f1f5f9;
+    transition: background-image 0.4s ease-in-out;
+}
+
+
 
 
