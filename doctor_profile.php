@@ -42,7 +42,7 @@ $orgStmt->execute([$doctorId]);
 $affiliatedOrgs = $orgStmt->fetchAll(PDO::FETCH_ASSOC);
 
 // SEO Metadata
-$page_title = 'دکتر ' . htmlspecialchars($doctor['name']) . ' - ' . htmlspecialchars($doctor['specialty']) . ' | ASENA';
+$page_title = 'پزشک';
 $page_desc = 'پروفایل رسمی، شماره نظام دامپزشکی، بیمارستان‌های همکار و رزرو آنلاین نوبت دکتر ' . htmlspecialchars($doctor['name']);
 
 require_once __DIR__ . '/includes/header.php';

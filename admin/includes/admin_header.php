@@ -20,7 +20,7 @@ $adminName = $adminCheck['name'] ?? 'مدیر سیستم';
 <head>
     <meta charset="utf-8"/>
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-    <title>پنل مدیریت آسنا - ASENA Admin</title>
+    <title>مدیریت</title>
     <link rel="stylesheet" href="../assets/css/style.css">
     <link rel="stylesheet" href="../assets/css/enterprise-ui.css">
     <link href="../assets/css/material-symbols.css" rel="stylesheet"/>

@@ -52,7 +52,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>ASENA | فراموشی رمز عبور</title>
+<title>بازیابی</title>
 <script src="assets/js/tailwindcss-cdn.js"></script>
 <link href="assets/css/material-symbols.css" rel="stylesheet"/>
 <link href="assets/css/geist.css" rel="stylesheet"/>

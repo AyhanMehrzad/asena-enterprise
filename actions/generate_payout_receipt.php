@@ -73,7 +73,7 @@ $qrApiUrl = "https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=" . u
 <html lang="fa" dir="rtl">
 <head>
     <meta charset="utf-8">
-    <title>رسید رسمی حواله پایا - <?= htmlspecialchars($batchCode) ?></title>
+    <title>رسید</title>
     <style>
         * { box-sizing: border-box; font-family: Tahoma, 'Vazirmatn', sans-serif; }
         body { background: #f0f2f5; margin: 0; padding: 20px; color: #111; font-size: 12px; }

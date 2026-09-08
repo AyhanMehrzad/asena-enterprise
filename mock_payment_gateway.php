@@ -19,7 +19,7 @@ $currentDate = $fmt->format(time());
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>درگاه پرداخت اینترنتی شاپرک — آسنا</title>
+    <title>پرداخت</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="assets/css/vazirmatn.css">
     <link rel="stylesheet" href="assets/css/material-symbols.css">

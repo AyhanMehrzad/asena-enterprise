@@ -160,7 +160,7 @@ class AuthGuard {
 <html dir="rtl" lang="fa">
 <head>
     <meta charset="utf-8">
-    <title>عدم دسترسی | ASENA</title>
+    <title>دسترسی</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
         body { font-family: system-ui, -apple-system, sans-serif; background-color: #0f172a; color: #f8fafc; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; padding: 20px; }

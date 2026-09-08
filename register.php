@@ -189,7 +189,7 @@ if (isset($_SESSION['reg_flow']) && $step === 1) {
 <head>
     <meta charset="utf-8"/>
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-    <title>ثبت‌نام تخصصی چندنقشی | شبکه جامع دامپزشکی ASENA</title>
+    <title>ثبت‌نام</title>
     <script src="assets/js/tailwindcss-cdn.js"></script>
     <link href="assets/css/material-symbols.css" rel="stylesheet"/>
     <link href="assets/css/geist.css" rel="stylesheet"/>

@@ -27,7 +27,7 @@ $stats         = $orgService->getStats();
 $top5OrgIds    = App::leaderboard()->getTop5OrganizationIds();
 
 // Page SEO Metadata
-$page_title = 'مراکز درمانی، بیمارستان‌ها و کلینیک‌های دامپزشکی | ASENA';
+$page_title = 'مراکز';
 $page_desc = 'دایرکتوری جامع مراکز درمانی و بیمارستان‌های تخصصی دامپزشکی کشور با امکان رزرو آنلاین نوبت با پزشکان همکار و خدمات اورژانس ۲۴ ساعته.';
 
 require_once __DIR__ . '/includes/header.php';

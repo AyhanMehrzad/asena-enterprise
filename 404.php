@@ -6,7 +6,7 @@ http_response_code(404);
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>آسنا | صفحه مورد نظر پیدا نشد (خطای ۴۰۴)</title>
+    <title>یافت‌نشد</title>
     <meta name="robots" content="noindex, follow">
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
     <link rel="stylesheet" href="/assets/css/vazirmatn.css">

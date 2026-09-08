@@ -483,7 +483,7 @@ class TrafficMonitoringService {
 <html dir="rtl" lang="fa">
 <head>
     <meta charset="utf-8">
-    <title>محدودیت موقت دسترسی | ASENA Cloudflare Shield</title>
+    <title>محدودیت</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
         body { font-family: system-ui, -apple-system, sans-serif; background-color: #0b0f19; color: #f8fafc; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; padding: 20px; }

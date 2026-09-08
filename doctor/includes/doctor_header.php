@@ -35,7 +35,7 @@ if (!$doctorProfile) {
 <head>
     <meta charset="utf-8"/>
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-    <title>پنل پزشکان آسنا - ASENA Doctor</title>
+    <title>پزشکان</title>
     <link rel="stylesheet" href="../assets/css/style.css">
     <link href="../assets/css/material-symbols.css" rel="stylesheet"/>
     <link href="../assets/css/geist.css" rel="stylesheet"/>

@@ -16,16 +16,8 @@ $tag_seo_map = [
 $selected_animal_param = isset($_GET['animal']) ? trim($_GET['animal']) : '';
 $selected_tag_param = isset($_GET['tag']) ? trim($_GET['tag']) : '';
 
-$page_title = "داروخانه آنلاین حیوانات و دامپزشکی آسنا | خرید دارو، واکسن و مکمل‌های تخصصی";
-$page_description = "داروخانه آنلاین دامپزشکی آسنا؛ مرجع خرید آنلاین دارو، واکسن، مکمل و ضد انگل سگ، گربه، اسب، دام و طیور با تاییدیه دکتر داروساز و ارسال سریع با زنجیره سرد.";
-
-if ($selected_animal_param && isset($animal_seo_map[$selected_animal_param])) {
-    $page_title = "داروخانه تخصصی " . $animal_seo_map[$selected_animal_param] . " | خرید داروها، واکسن و مکمل‌های " . $animal_seo_map[$selected_animal_param] . " - آسنا";
-    $page_description = "خرید آنلاین انواع دارو، مکمل درمانی، واکسن و ویتامین‌های مخصوص " . $animal_seo_map[$selected_animal_param] . " با ضمانت اصالت و تاییدیه دامپزشکی در داروخانه آنلاین آسنا.";
-} elseif ($selected_tag_param && isset($tag_seo_map[$selected_tag_param])) {
-    $page_title = "خرید آنلاین " . $tag_seo_map[$selected_tag_param] . " حیوانات | داروخانه دامپزشکی آسنا";
-    $page_description = "لیست بهترین " . $tag_seo_map[$selected_tag_param] . " برای سگ، گربه، اسب و دام با قیمت مناسب، تحویل دوره‌ای Autoship و ارسال مطمئن.";
-}
+$page_title = "داروخانه";
+$page_description = "داروخانه آنلاین دامپزشکی آسنا؛ مرجع خرید آنلاین دارو، واکسن و مکمل‌های تخصصی.";
 
 require_once 'includes/db.php';
 if (!Feature::has('pharmacy_catalog')) {

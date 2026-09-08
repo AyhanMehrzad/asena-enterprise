@@ -50,7 +50,7 @@ $typePersian = match($org['type']) {
 $facilitiesList = !empty($org['facilities']) ? array_map('trim', explode(',', $org['facilities'])) : [];
 
 // SEO Metadata
-$page_title = htmlspecialchars($org['name']) . ' | کادر پزشکان و نوبت‌دهی - ASENA';
+$page_title = 'مرکز';
 $page_desc = 'اطلاعات کامل، کادر پزشکان متخصص، داروخانه داخلی و رزرو آنلاین نوبت در ' . htmlspecialchars($org['name']);
 
 require_once __DIR__ . '/includes/header.php';

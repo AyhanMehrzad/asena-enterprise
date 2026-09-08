@@ -866,7 +866,7 @@ $host = $_SERVER['HTTP_HOST'] ?? 'asena.company';
 $base_url = "$proto://$host";
 
 if ($article) {
-    $page_title = $article['title'] . ' | پایگاه دانش آسنا';
+    $page_title = 'دانشنامه';
     $page_description = $article['short_desc'];
     $canonical_url = "$base_url/standard/knowledge_base.php?article=" . $article['slug'];
     $og_image = "$base_url/assets/images/og-asena.png";
@@ -926,7 +926,7 @@ if ($article) {
     ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
 
 } else {
-    $page_title = 'پایگاه دانش، مقالات تخصصی دامپزشکی و راهنمای سامانه | آسنا';
+    $page_title = 'دانشنامه';
     $page_description = 'مرجع معتبر مقالات پزشکی دامپزشکی، واکسیناسیون، تغذیه سگ و گربه، و راهنمای جامع خدمات نوبت‌دهی آنلاین، پت‌شاپ و داروخانه دامی آسنا.';
     $canonical_url = "$base_url/standard/knowledge_base.php";
     $og_image = "$base_url/assets/images/og-asena.png";

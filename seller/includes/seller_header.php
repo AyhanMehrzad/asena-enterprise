@@ -32,7 +32,7 @@ $activeTab = $_GET['tab'] ?? 'orders';
 <head>
     <meta charset="utf-8"/>
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-    <title>پنل فروشندگان و پت‌شاپ - ASENA Seller</title>
+    <title>فروشندگان</title>
     <link rel="stylesheet" href="../assets/css/style.css">
     <link rel="stylesheet" href="../assets/css/enterprise-ui.css">
     <link href="../assets/css/material-symbols.css" rel="stylesheet"/>

@@ -99,7 +99,7 @@ $init_status = $post['status'] ?? 'published';
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ویرایشگر پیشرفته مقالات و وبلاگ - ASENA Blog Studio</title>
+    <title>ویرایشگر</title>
     <link rel="stylesheet" href="assets/css/style.css">
     <link href="assets/css/material-symbols.css" rel="stylesheet">
     <link href="assets/css/vazirmatn.css" rel="stylesheet">
