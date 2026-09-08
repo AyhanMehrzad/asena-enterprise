@@ -19,7 +19,7 @@ function csrf_field(): string {
 }
 
 function csrf_verify(): void {
-    $submitted = trim($_POST['csrf_token'] ?? '');
+    $submitted = trim($_POST['csrf_token'] ?? $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '');
     $expected  = $_SESSION['csrf_token'] ?? '';
     if (!$expected || !hash_equals($expected, $submitted)) {
         http_response_code(403);

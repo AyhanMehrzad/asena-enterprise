@@ -21,6 +21,17 @@ Allow: /*.jpeg$
 Allow: /*.webp$
 Allow: /*.svg$
 Allow: /*.woff2$
+Allow: /favicon.ico
+Allow: /apple-touch-icon.png
+Allow: /site.webmanifest
+
+# Dedicated Rules for Googlebot-Image (Favicon & SERP Logo Indexer)
+User-agent: Googlebot-Image
+Allow: /
+Allow: /favicon.ico
+Allow: /apple-touch-icon.png
+Allow: /assets/images/favicon*
+Allow: /assets/images/
 
 # Dedicated Rules for Generative AI Search Engines (GEO)
 User-agent: GPTBot

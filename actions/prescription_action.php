@@ -4,6 +4,7 @@
  * Chewy-Style Digital Prescription Verification
  */
 require_once __DIR__ . '/../includes/db.php';
+require_once __DIR__ . '/../includes/functions.php';
 
 header('Content-Type: application/json; charset=utf-8');
 
@@ -12,6 +13,8 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     echo json_encode(['success' => false, 'message' => 'متد درخواست نامعتبر است.']);
     exit;
 }
+
+csrf_verify();
 
 if (empty($_SESSION['user_id'])) {
     http_response_code(401);
@@ -26,25 +29,36 @@ $vetPhone = trim($_POST['vet_phone'] ?? '');
 $vetLicense = trim($_POST['vet_license_number'] ?? '');
 $petId = !empty($_POST['pet_id']) ? (int)$_POST['pet_id'] : null;
 
-// Validate upload
-if (empty($_FILES['rx_file']) || $_FILES['rx_file']['error'] !== UPLOAD_ERR_OK) {
+// IDOR Prevention: Verify pet belongs to current user
+if ($petId) {
+    $petChk = $pdo->prepare("SELECT id FROM user_pets WHERE id = ? AND user_id = ?");
+    $petChk->execute([$petId, $userId]);
+    if (!$petChk->fetchColumn()) {
+        $petId = null;
+    }
+}
+
+// Validate upload using secure MIME inspection
+if (empty($_FILES['rx_file'])) {
     echo json_encode(['success' => false, 'message' => 'لطفاً تصویر یا فایل معتبر نسخه را انتخاب نمایید.']);
     exit;
 }
 
-$file = $_FILES['rx_file'];
-$maxSize = 10 * 1024 * 1024; // 10 MB
-if ($file['size'] > $maxSize) {
-    echo json_encode(['success' => false, 'message' => 'حجم فایل نسخه نباید بیشتر از ۱۰ مگابایت باشد.']);
+$allowedMimes = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
+$validation = validate_upload($_FILES['rx_file'], $allowedMimes, 10 * 1024 * 1024);
+
+if (!$validation['ok']) {
+    echo json_encode(['success' => false, 'message' => $validation['error']]);
     exit;
 }
 
-$allowedExtensions = ['jpg', 'jpeg', 'png', 'webp', 'pdf'];
-$ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
-if (!in_array($ext, $allowedExtensions)) {
-    echo json_encode(['success' => false, 'message' => 'فرمت فایل مجاز نمی‌باشد (تنها JPG, PNG, WEBP, PDF).']);
-    exit;
-}
+$ext = match($validation['mime']) {
+    'image/jpeg'      => 'jpg',
+    'image/png'       => 'png',
+    'image/webp'      => 'webp',
+    'application/pdf' => 'pdf',
+    default           => 'bin'
+};
 
 // Ensure destination directory
 $uploadDir = __DIR__ . '/../uploads/prescriptions';
@@ -52,11 +66,11 @@ if (!is_dir($uploadDir)) {
     mkdir($uploadDir, 0755, true);
 }
 
-// Generate unique hashed filename
-$fileName = 'rx_' . date('Ymd_His') . '_' . bin2hex(random_bytes(6)) . '.' . $ext;
+// Generate unique cryptographically secure filename
+$fileName = 'rx_' . date('Ymd_His') . '_' . bin2hex(random_bytes(8)) . '.' . $ext;
 $destPath = $uploadDir . '/' . $fileName;
 
-if (!move_uploaded_file($file['tmp_name'], $destPath)) {
+if (!move_uploaded_file($_FILES['rx_file']['tmp_name'], $destPath)) {
     echo json_encode(['success' => false, 'message' => 'خطا در ذخیره‌سازی فایل نسخه بر روی سرور.']);
     exit;
 }

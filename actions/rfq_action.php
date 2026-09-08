@@ -3,6 +3,7 @@
  * ASENA Enterprise - B2B RFQ (Request for Quotation) Action Handler
  */
 require_once __DIR__ . '/../includes/db.php';
+require_once __DIR__ . '/../includes/functions.php';
 require_once __DIR__ . '/../includes/WholesaleService.php';
 
 header('Content-Type: application/json; charset=utf-8');
@@ -12,6 +13,8 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     echo json_encode(['success' => false, 'message' => 'متد نامعتبر است.']);
     exit;
 }
+
+csrf_verify();
 
 if (empty($_SESSION['user_id'])) {
     http_response_code(401);

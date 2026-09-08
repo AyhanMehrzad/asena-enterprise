@@ -13,6 +13,8 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit;
 }
 
+csrf_verify();
+
 $amount = (int)($_POST['amount'] ?? 0);
 $campaign_id = !empty($_POST['campaign_id']) ? (int)$_POST['campaign_id'] : null;
 $is_anonymous = isset($_POST['is_anonymous']) && ($_POST['is_anonymous'] === '1' || $_POST['is_anonymous'] === 'true' || $_POST['is_anonymous'] === 'on');

@@ -36,8 +36,8 @@ $current_page = basename($_SERVER['PHP_SELF']);
 // Smart SEO title & description fallbacks based on active page
 $seo_defaults = [
     'index.php' => [
-        'title' => 'پلتفرم کلینیک دامپزشکی و پت‌شاپ آنلاین آسنا | نوبت‌دهی و خرید ملزومات پت',
-        'desc'  => 'کلینیک دامپزشکی و پت‌شاپ تخصصی آسنا؛ نوبت‌دهی آنلاین ویزیت پزشک، خرید غذای خشک و مکمل‌های سگ و گربه، و تحویل خودکار دوره‌ای با بهترین قیمت.'
+        'title' => 'آسنا (ASENA) | کلینیک دامپزشکی، پت‌شاپ و داروخانه آنلاین',
+        'desc'  => 'سامانه جامع خدمات حیوانات خانگی آسنا؛ نوبت‌دهی آنلاین کلینیک دامپزشکی، پت‌شاپ تخصصی سگ و گربه و تحویل دوره‌ای خودکار (Autoship).'
     ],
     'shop.php' => [
         'title' => 'پت‌شاپ آنلاین آسنا | خرید غذای خشک، کنسرو، مکمل و ملزومات سگ و گربه',
@@ -89,17 +89,19 @@ $effective_og_image = isset($og_image) ? (strpos($og_image, 'http') === 0 ? $og_
     <meta name="geo.region" content="IR">
     <meta name="geo.placename" content="Iran">
 
-    <!-- Safari / Apple & PWA Mobile App Support -->
-    <link rel="icon" type="image/svg+xml" href="assets/images/favicon.svg?v=2">
-    <link rel="icon" type="image/png" sizes="32x32" href="assets/images/favicon-32x32.png?v=2">
-    <link rel="icon" type="image/png" sizes="64x64" href="assets/images/favicon-64x64.png?v=2">
-    <link rel="icon" type="image/png" sizes="192x192" href="assets/images/favicon-192x192.png?v=2">
-    <link rel="icon" type="image/png" sizes="512x512" href="assets/images/favicon-512x512.png?v=2">
-    <link rel="shortcut icon" href="assets/images/favicon.ico?v=2">
-    <link rel="icon" type="image/x-icon" href="assets/images/favicon.ico?v=2">
-    <link rel="apple-touch-icon" sizes="180x180" href="assets/images/apple-touch-icon.png?v=2">
-    <link rel="apple-touch-icon-precomposed" sizes="180x180" href="assets/images/apple-touch-icon.png?v=2">
-    <link rel="manifest" href="site.webmanifest?v=2">
+    <!-- Google Search Favicon Guidelines Compliant Suite (48px Multiples & Full Browser Support) -->
+    <link rel="shortcut icon" href="/favicon.ico">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="icon" type="image/svg+xml" href="/assets/images/favicon.svg">
+    <link rel="icon" type="image/png" sizes="48x48" href="/assets/images/favicon-48x48.png">
+    <link rel="icon" type="image/png" sizes="96x96" href="/assets/images/favicon-96x96.png">
+    <link rel="icon" type="image/png" sizes="144x144" href="/assets/images/favicon-144x144.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="/assets/images/favicon-192x192.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="/assets/images/favicon-512x512.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/images/favicon-32x32.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <link rel="apple-touch-icon-precomposed" sizes="180x180" href="/apple-touch-icon.png">
+    <link rel="manifest" href="/site.webmanifest">
     <meta name="theme-color" content="#002d72">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">

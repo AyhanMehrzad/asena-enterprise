@@ -65,8 +65,33 @@ if ($action === 'init') {
 }
 
 if ($action === 'fetch') {
-    $ticket_id = $_POST['ticket_id'] ?? 0;
-    $last_id = $_POST['last_id'] ?? 0;
+    $ticket_id = (int)($_POST['ticket_id'] ?? 0);
+    $last_id = (int)($_POST['last_id'] ?? 0);
+    
+    // IDOR Protection: Verify ticket belongs to user or user is admin
+    $chkStmt = $pdo->prepare("SELECT user_id FROM tickets WHERE id = ?");
+    $chkStmt->execute([$ticket_id]);
+    $ticket_owner = $chkStmt->fetchColumn();
+    
+    if (!$ticket_owner) {
+        echo json_encode(['status' => 'error', 'message' => 'Ticket not found']);
+        exit;
+    }
+    
+    $isAdmin = (isset($_SESSION['role']) && in_array($_SESSION['role'], ['admin', 'superadmin']));
+    if (!$isAdmin) {
+        $uStmt = $pdo->prepare("SELECT role FROM users WHERE id = ?");
+        $uStmt->execute([$user_id]);
+        $uRole = $uStmt->fetchColumn();
+        if (in_array($uRole, ['admin', 'superadmin'])) {
+            $isAdmin = true;
+        }
+    }
+    
+    if ($ticket_owner != $user_id && !$isAdmin) {
+        echo json_encode(['status' => 'error', 'message' => 'Unauthorized']);
+        exit;
+    }
     
     $stmt = $pdo->prepare("SELECT id, sender_type, message, image_url, created_at FROM ticket_messages WHERE ticket_id = ? AND id > ? ORDER BY id ASC");
     $stmt->execute([$ticket_id, $last_id]);

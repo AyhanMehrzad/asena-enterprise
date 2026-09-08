@@ -11,6 +11,7 @@
  */
 
 require_once __DIR__ . '/includes/db.php';
+require_once __DIR__ . '/includes/functions.php';
 require_once __DIR__ . '/includes/blog_service.php';
 
 // Authentication Check: Admin or Doctor
@@ -44,6 +45,7 @@ $message = '';
 $error = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'save_blog') {
+    csrf_verify();
     $title = trim($_POST['title'] ?? '');
     $slug = trim($_POST['slug'] ?? '');
     $short_desc = trim($_POST['short_desc'] ?? '');
@@ -151,6 +153,7 @@ $init_status = $post['status'] ?? 'published';
 </div>
 
 <form id="blog-form" method="POST" action="">
+    <?= csrf_field() ?>
     <input type="hidden" name="action" value="save_blog">
     <input type="hidden" id="input-title" name="title" value="<?= htmlspecialchars($init_title) ?>">
     <input type="hidden" id="input-slug" name="slug" value="<?= htmlspecialchars($init_slug) ?>">

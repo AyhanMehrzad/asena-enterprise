@@ -619,7 +619,7 @@ if (isset($_SESSION['reg_flow']) && $step === 1) {
                     درخواست با موفقیت در سامانه ثبت شد
                 </span>
 
-                <h1 class="text-2xl sm:text-3xl font-black text-slate-900 mb-3">مدارک شما در دست بررسی کارشناسان است</h1>
+                <h2 class="text-2xl sm:text-3xl font-black text-slate-900 mb-3">مدارک شما در دست بررسی کارشناسان است</h2>
                 
                 <p class="text-slate-600 text-sm leading-relaxed mb-8">
                     کارشناسان ارشد نظارت و ممیزی سامانه جامع ASENA مدارک ارسالی شما را بررسی خواهند کرد. به محض تایید صلاحیت و فعال‌سازی نقش تخصصی شما، پیامک حاوی تاییدیه و لینک ورود به پنل اختصاصی برای شما ارسال خواهد شد.

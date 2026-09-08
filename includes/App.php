@@ -26,6 +26,7 @@ require_once __DIR__ . '/MarketplaceEscrowService.php';
 require_once __DIR__ . '/TrafficMonitoringService.php';
 require_once __DIR__ . '/PostexShippingService.php';
 require_once __DIR__ . '/LeaderboardService.php';
+require_once __DIR__ . '/DataSecurityService.php';
 
 class App {
     private static ?PDO $db = null;
@@ -47,6 +48,7 @@ class App {
     private static ?TrafficMonitoringService $traffic = null;
     private static ?PostexShippingService $postex = null;
     private static ?LeaderboardService $leaderboard = null;
+    private static ?DataSecurityService $crypto = null;
 
 
 
@@ -181,6 +183,13 @@ class App {
             self::$leaderboard = new LeaderboardService(self::db());
         }
         return self::$leaderboard;
+    }
+
+    public static function crypto(): DataSecurityService {
+        if (self::$crypto === null) {
+            self::$crypto = DataSecurityService::getInstance();
+        }
+        return self::$crypto;
     }
 
     /**

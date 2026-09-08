@@ -1,36 +1,93 @@
 <?php
 /**
  * Dynamic XML Sitemap Generator for ASENA Platform
- * Automatically outputs valid sitemaps.org XML for Google Search Console & Bing Webmaster.
+ * Automatically outputs valid sitemaps.org XML for Google Search Console, Bing Webmaster & Yandex.
  */
 
-// Resolve base site URL and connect to DB cleanly without sessions
-require_once __DIR__ . '/includes/Env.php';
-$site_url = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http') . '://' . ($_SERVER['HTTP_HOST'] ?? 'asena.company');
-
-$products = [];
-try {
-    $dbHost = defined('DB_HOST') ? DB_HOST : (getenv('DB_HOST') ?: '127.0.0.1');
-    $dbName = defined('DB_NAME') ? DB_NAME : (getenv('DB_NAME') ?: 'asena_premium');
-    $dbUser = defined('DB_USER') ? DB_USER : (getenv('DB_USER') ?: 'root');
-    $dbPass = defined('DB_PASS') ? DB_PASS : (getenv('DB_PASS') ?: '');
-    $pdo = new PDO("mysql:host=$dbHost;dbname=$dbName;charset=utf8mb4", $dbUser, $dbPass, [
-        PDO::ATTR_ERRMODE => PDO::ERRMODE_SILENT,
-        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-        PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8mb4"
-    ]);
-    $stmt = $pdo->query("SELECT id, name, category, image_url, created_at FROM products WHERE stock > 0 ORDER BY id DESC LIMIT 1000");
-    if ($stmt) {
-        $products = $stmt->fetchAll();
-    }
-} catch (Exception $e) {
-    // Graceful fallback
-}
-
-// Set proper XML headers
 if (!headers_sent()) {
     header('Content-Type: application/xml; charset=utf-8');
     header('X-Robots-Tag: noindex, follow');
+}
+
+$staticSitemap = __DIR__ . '/sitemap.xml';
+if (file_exists($staticSitemap) && (time() - filemtime($staticSitemap) < 86400)) {
+    readfile($staticSitemap);
+    exit;
+}
+
+// Fallback dynamic regeneration
+$siteUrl = 'https://asena.company';
+$today = date('Y-m-d');
+
+$pdo = null;
+$tryDbs = ['petshop_db', 'asena_premium', 'asencomp_asena_db'];
+foreach ($tryDbs as $db) {
+    try {
+        $pdo = new PDO("mysql:host=127.0.0.1;dbname={$db};charset=utf8mb4", 'root', '', [
+            PDO::ATTR_ERRMODE => PDO::ERRMODE_SILENT,
+            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+        ]);
+        break;
+    } catch (Exception $e) {}
+}
+
+$urls = [];
+function sitemapAdd(&$urls, $loc, $priority = '0.8', $changefreq = 'weekly', $lastmod = null) {
+    global $today;
+    $urls[$loc] = [
+        'loc' => $loc,
+        'lastmod' => $lastmod ?: $today,
+        'changefreq' => $changefreq,
+        'priority' => $priority
+    ];
+}
+
+// Core hubs
+sitemapAdd($urls, "{$siteUrl}/", '1.0', 'daily');
+sitemapAdd($urls, "{$siteUrl}/standard/", '0.9', 'daily');
+sitemapAdd($urls, "{$siteUrl}/pharmacy-standard/", '0.9', 'daily');
+sitemapAdd($urls, "{$siteUrl}/premium/", '0.85', 'weekly');
+sitemapAdd($urls, "{$siteUrl}/pharmacy-premium/", '0.85', 'weekly');
+sitemapAdd($urls, "{$siteUrl}/basic/", '0.75', 'weekly');
+sitemapAdd($urls, "{$siteUrl}/pharmacy-basic/", '0.75', 'weekly');
+
+// Services
+sitemapAdd($urls, "{$siteUrl}/standard/shop.php", '0.95', 'daily');
+sitemapAdd($urls, "{$siteUrl}/standard/booking.php", '0.95', 'daily');
+sitemapAdd($urls, "{$siteUrl}/standard/subscriptions.php", '0.85', 'weekly');
+sitemapAdd($urls, "{$siteUrl}/standard/charity.php", '0.8', 'weekly');
+sitemapAdd($urls, "{$siteUrl}/standard/knowledge_base.php", '0.9', 'daily');
+sitemapAdd($urls, "{$siteUrl}/pharmacy-standard/shop.php", '0.95', 'daily');
+sitemapAdd($urls, "{$siteUrl}/pharmacy-standard/booking.php", '0.85', 'daily');
+
+// Categories
+foreach (['dog', 'cat', 'bird', 'smallpet', 'horse', 'cow'] as $a) {
+    sitemapAdd($urls, "{$siteUrl}/standard/shop.php?animal={$a}", '0.8', 'weekly');
+    sitemapAdd($urls, "{$siteUrl}/pharmacy-standard/shop.php?animal={$a}", '0.8', 'weekly');
+}
+sitemapAdd($urls, "{$siteUrl}/pharmacy-standard/shop.php?tag=" . urlencode('دارو'), '0.85', 'weekly');
+sitemapAdd($urls, "{$siteUrl}/pharmacy-standard/shop.php?tag=" . urlencode('مکمل'), '0.85', 'weekly');
+
+if ($pdo) {
+    try {
+        $stmt = $pdo->query("SELECT id, created_at FROM products WHERE stock > 0 ORDER BY id DESC LIMIT 500");
+        if ($stmt) {
+            while ($row = $stmt->fetch()) {
+                sitemapAdd($urls, "{$siteUrl}/standard/product_details.php?id={$row['id']}", '0.8', 'weekly', substr($row['created_at'] ?? $today, 0, 10));
+            }
+        }
+    } catch (Exception $e) {}
+
+    try {
+        $stmt = $pdo->query("SELECT id, slug, created_at FROM organizations WHERE status = 'approved'");
+        if ($stmt) {
+            sitemapAdd($urls, "{$siteUrl}/organizations.php", '0.85', 'daily');
+            while ($row = $stmt->fetch()) {
+                $slug = !empty($row['slug']) ? $row['slug'] : $row['id'];
+                sitemapAdd($urls, "{$siteUrl}/organization_profile.php?slug={$slug}", '0.85', 'weekly');
+            }
+        }
+    } catch (Exception $e) {}
 }
 
 echo '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
@@ -39,148 +96,13 @@ echo '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
         xmlns:image="http://www.google.com/schemas/sitemap-image/1.1"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9
-                            http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd
-                            http://www.google.com/schemas/sitemap-image/1.1
-                            http://www.google.com/schemas/sitemap-image/1.1/sitemap-image.xsd">
-
-    <!-- 1. Main Portal Landing Page (Highest Priority) -->
+                            http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd">
+<?php foreach ($urls as $u): ?>
     <url>
-        <loc><?= htmlspecialchars($site_url . '/') ?></loc>
-        <lastmod><?= date('Y-m-d') ?></lastmod>
-        <changefreq>daily</changefreq>
-        <priority>1.0</priority>
+        <loc><?= htmlspecialchars($u['loc'], ENT_XML1, 'UTF-8') ?></loc>
+        <lastmod><?= $u['lastmod'] ?></lastmod>
+        <changefreq><?= $u['changefreq'] ?></changefreq>
+        <priority><?= $u['priority'] ?></priority>
     </url>
-
-    <!-- 2. Core Module Hubs -->
-    <url>
-        <loc><?= htmlspecialchars($site_url . '/standard/') ?></loc>
-        <lastmod><?= date('Y-m-d') ?></lastmod>
-        <changefreq>daily</changefreq>
-        <priority>0.9</priority>
-    </url>
-    <url>
-        <loc><?= htmlspecialchars($site_url . '/pharmacy-standard/') ?></loc>
-        <lastmod><?= date('Y-m-d') ?></lastmod>
-        <changefreq>daily</changefreq>
-        <priority>0.9</priority>
-    </url>
-    <url>
-        <loc><?= htmlspecialchars($site_url . '/premium/') ?></loc>
-        <lastmod><?= date('Y-m-d') ?></lastmod>
-        <changefreq>weekly</changefreq>
-        <priority>0.8</priority>
-    </url>
-    <url>
-        <loc><?= htmlspecialchars($site_url . '/pharmacy-premium/') ?></loc>
-        <lastmod><?= date('Y-m-d') ?></lastmod>
-        <changefreq>weekly</changefreq>
-        <priority>0.8</priority>
-    </url>
-
-    <!-- 3. Core Services & Commerce Pages -->
-    <url>
-        <loc><?= htmlspecialchars($site_url . '/standard/shop.php') ?></loc>
-        <lastmod><?= date('Y-m-d') ?></lastmod>
-        <changefreq>daily</changefreq>
-        <priority>0.9</priority>
-    </url>
-    <url>
-        <loc><?= htmlspecialchars($site_url . '/standard/booking.php') ?></loc>
-        <lastmod><?= date('Y-m-d') ?></lastmod>
-        <changefreq>daily</changefreq>
-        <priority>0.9</priority>
-    </url>
-    <url>
-        <loc><?= htmlspecialchars($site_url . '/standard/subscriptions.php') ?></loc>
-        <lastmod><?= date('Y-m-d') ?></lastmod>
-        <changefreq>weekly</changefreq>
-        <priority>0.8</priority>
-    </url>
-    <url>
-        <loc><?= htmlspecialchars($site_url . '/standard/charity.php') ?></loc>
-        <lastmod><?= date('Y-m-d') ?></lastmod>
-        <changefreq>weekly</changefreq>
-        <priority>0.8</priority>
-    </url>
-    <url>
-        <loc><?= htmlspecialchars($site_url . '/pharmacy-standard/shop.php') ?></loc>
-        <lastmod><?= date('Y-m-d') ?></lastmod>
-        <changefreq>daily</changefreq>
-        <priority>0.9</priority>
-    </url>
-    <url>
-        <loc><?= htmlspecialchars($site_url . '/pharmacy-standard/booking.php') ?></loc>
-        <lastmod><?= date('Y-m-d') ?></lastmod>
-        <changefreq>daily</changefreq>
-        <priority>0.8</priority>
-    </url>
-
-    <!-- 4. Knowledge Base Hub & High-Ranking Medical/Service Articles -->
-    <url>
-        <loc><?= htmlspecialchars($site_url . '/standard/knowledge_base.php') ?></loc>
-        <lastmod><?= date('Y-m-d') ?></lastmod>
-        <changefreq>daily</changefreq>
-        <priority>0.9</priority>
-    </url>
-    <?php
-    $kb_slugs = [
-        'vaccination-schedule-dogs-cats' => '0.85',
-        'pet-poisoning-emergency-guide' => '0.85',
-        'human-vs-veterinary-medications' => '0.85',
-        'best-dry-food-selection-guide' => '0.85',
-        'how-autoship-works-guide' => '0.85',
-        'how-to-book-vet-appointment' => '0.8',
-        'pharmacy-prescription-verification-guide' => '0.8',
-        'charity-stray-pet-healthcare-guide' => '0.8'
-    ];
-    foreach ($kb_slugs as $slug => $prio):
-    ?>
-    <url>
-        <loc><?= htmlspecialchars($site_url . '/standard/knowledge_base.php?article=' . $slug) ?></loc>
-        <lastmod><?= date('Y-m-d') ?></lastmod>
-        <changefreq>weekly</changefreq>
-        <priority><?= $prio ?></priority>
-    </url>
-    <?php endforeach; ?>
-
-    <!-- 4. High-Intent Pet Categories -->
-    <?php
-    $pet_categories = [
-        'animal=dog'      => ['title' => 'غذای و لوازم سگ', 'priority' => '0.8'],
-        'animal=cat'      => ['title' => 'غذای و لوازم گربه', 'priority' => '0.8'],
-        'animal=bird'     => ['title' => 'لوازم و دان پرندگان', 'priority' => '0.7'],
-        'animal=smallpet' => ['title' => 'ملزومات جوندگان و حیوانات کوچک', 'priority' => '0.7'],
-        'animal=horse'    => ['title' => 'مکمل و ملزومات اسب', 'priority' => '0.7'],
-        'animal=cow'      => ['title' => 'دارو و مکمل دام', 'priority' => '0.7']
-    ];
-    foreach ($pet_categories as $query => $info):
-    ?>
-    <url>
-        <loc><?= htmlspecialchars($site_url . '/standard/shop.php?' . $query) ?></loc>
-        <lastmod><?= date('Y-m-d') ?></lastmod>
-        <changefreq>weekly</changefreq>
-        <priority><?= $info['priority'] ?></priority>
-    </url>
-    <?php endforeach; ?>
-
-    <!-- 5. Dynamic Products from Database -->
-    <?php
-    foreach ($products as $product):
-        $prod_url = $site_url . '/standard/product_details.php?id=' . (int)$product['id'];
-        $prod_date = !empty($product['created_at']) ? date('Y-m-d', strtotime($product['created_at'])) : date('Y-m-d');
-        $prod_img = !empty($product['image_url']) ? (strpos($product['image_url'], 'http') === 0 ? $product['image_url'] : $site_url . '/standard/' . ltrim($product['image_url'], '/')) : '';
-    ?>
-    <url>
-        <loc><?= htmlspecialchars($prod_url) ?></loc>
-        <lastmod><?= $prod_date ?></lastmod>
-        <changefreq>weekly</changefreq>
-        <priority>0.7</priority>
-        <?php if (!empty($prod_img)): ?>
-        <image:image>
-            <image:loc><?= htmlspecialchars($prod_img) ?></image:loc>
-            <image:title><?= htmlspecialchars($product['name'] ?? 'محصول پت شاپ آسنا') ?></image:title>
-        </image:image>
-        <?php endif; ?>
-    </url>
-    <?php endforeach; ?>
+<?php endforeach; ?>
 </urlset>

@@ -15,7 +15,22 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POST['action'])) {
         $trackingCode = trim($_POST['post_tracking_code'] ?? '');
         $carrier = trim($_POST['carrier_name'] ?? 'شرکت ملی پست / پستکس');
 
-        if ($orderId > 0 && !empty($trackingCode)) {
+        // Multi-tenant authorization check
+        $authorized = ($currentUser['role'] === 'admin');
+        if (!$authorized && $orderId > 0) {
+            $chk = $pdo->prepare("
+                SELECT 1 FROM order_items oi
+                WHERE oi.order_id = ? AND (oi.seller_id = ? OR oi.seller_id = ?)
+                LIMIT 1
+            ");
+            $chk->execute([$orderId, (int)($currentOrg['user_id'] ?? 0), (int)$currentUser['id']]);
+            $authorized = (bool)$chk->fetchColumn();
+        }
+
+        if (!$authorized) {
+            $message = 'شما مجوز مدیریت یا ارسال این سفارش را ندارید.';
+            $messageType = 'error';
+        } elseif ($orderId > 0 && !empty($trackingCode)) {
             $up = $pdo->prepare("
                 UPDATE orders 
                 SET status = 'shipped', post_tracking_code = ?, carrier_name = ?
@@ -40,7 +55,22 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POST['action'])) {
         $newStatus = trim($_POST['status'] ?? '');
         $allowed = ['processing', 'shipped', 'delivered', 'cancelled'];
 
-        if ($orderId > 0 && in_array($newStatus, $allowed)) {
+        // Multi-tenant authorization check
+        $authorized = ($currentUser['role'] === 'admin');
+        if (!$authorized && $orderId > 0) {
+            $chk = $pdo->prepare("
+                SELECT 1 FROM order_items oi
+                WHERE oi.order_id = ? AND (oi.seller_id = ? OR oi.seller_id = ?)
+                LIMIT 1
+            ");
+            $chk->execute([$orderId, (int)($currentOrg['user_id'] ?? 0), (int)$currentUser['id']]);
+            $authorized = (bool)$chk->fetchColumn();
+        }
+
+        if (!$authorized) {
+            $message = 'شما مجوز ویرایش وضعیت این سفارش را ندارید.';
+            $messageType = 'error';
+        } elseif ($orderId > 0 && in_array($newStatus, $allowed)) {
             $up = $pdo->prepare("UPDATE orders SET status = ? WHERE id = ?");
             if ($up->execute([$newStatus, $orderId])) {
                 if ($newStatus === 'delivered') {
@@ -66,6 +96,13 @@ if ($filter === 'pending') {
     $whereClauses[] = "o.status = 'delivered'";
 }
 
+// Organization Multi-Tenant Restriction (Non-admin managers only see their organization's orders)
+if ($currentUser['role'] !== 'admin') {
+    $whereClauses[] = "(EXISTS (SELECT 1 FROM order_items oi WHERE oi.order_id = o.id AND (oi.seller_id = :org_user OR oi.seller_id = :curr_user)))";
+    $params[':org_user'] = (int)($currentOrg['user_id'] ?? 0);
+    $params[':curr_user'] = (int)$currentUser['id'];
+}
+
 $whereSql = implode(' AND ', $whereClauses);
 
 // Fetch orders
@@ -77,7 +114,8 @@ $ordersQuery = "
     ORDER BY o.id DESC
     LIMIT 50
 ";
-$stmt = $pdo->query($ordersQuery);
+$stmt = $pdo->prepare($ordersQuery);
+$stmt->execute($params);
 $orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Attach items to each order

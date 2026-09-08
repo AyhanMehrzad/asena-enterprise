@@ -10,6 +10,13 @@ if (!isset($_SESSION['user_id'])) {
 $user_id = $_SESSION['user_id'];
 $action = $_POST['action'] ?? '';
 
+$userRole = $_SESSION['role'] ?? '';
+if (empty($userRole)) {
+    $uStmt = $pdo->prepare("SELECT role FROM users WHERE id = ?");
+    $uStmt->execute([$user_id]);
+    $userRole = (string)($uStmt->fetchColumn() ?: '');
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     csrf_verify();
     if ($action === 'add_pet') {
@@ -32,6 +39,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif ($action === 'upload_document') {
         $pet_id = (int)($_POST['pet_id'] ?? 0);
         $title  = trim($_POST['doc_title'] ?? '');
+
+        // IDOR Prevention: Verify pet belongs to current user
+        $petCheck = $pdo->prepare("SELECT id FROM user_pets WHERE id = ? AND user_id = ?");
+        $petCheck->execute([$pet_id, $user_id]);
+        if (!$petCheck->fetchColumn()) {
+            $_SESSION['profile_error'] = 'حیوان خانگی یافت نشد یا دسترسی مجاز نیست.';
+            header("Location: ../profile.php");
+            exit;
+        }
 
         $allowed_mimes = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
 
@@ -169,6 +185,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $trackingCode = trim($_POST['post_tracking_code'] ?? '');
         $carrier = trim($_POST['carrier_name'] ?? 'شرکت ملی پست / سامانه پستکس');
 
+        // IDOR Prevention: Verify order contains items from this seller or user is admin
+        $chkOrder = $pdo->prepare("
+            SELECT 1 FROM order_items oi
+            LEFT JOIN products p ON oi.product_id = p.id
+            WHERE oi.order_id = ? AND (p.seller_id = ? OR oi.seller_id = ? OR ? = 'admin')
+            LIMIT 1
+        ");
+        $chkOrder->execute([$orderId, $user_id, $user_id, $userRole]);
+        if (!$chkOrder->fetchColumn()) {
+            $_SESSION['profile_error'] = "شما اجازه مدیریت یا تغییر وضعیت این سفارش را ندارید.";
+            header("Location: ../profile.php?tab=seller");
+            exit;
+        }
+
         if ($orderId > 0 && !empty($trackingCode)) {
             $up = $pdo->prepare("
                 UPDATE orders 
@@ -213,18 +243,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stock = (int)($_POST['stock'] ?? 0);
 
         if ($prodId > 0 && $price > 0) {
-            $up = $pdo->prepare("UPDATE products SET price = ?, stock = ? WHERE id = ?");
-            if ($up->execute([$price, $stock, $prodId])) {
+            $up = $pdo->prepare("UPDATE products SET price = ?, stock = ? WHERE id = ? AND (seller_id = ? OR ? = 'admin')");
+            if ($up->execute([$price, $stock, $prodId, $user_id, $userRole])) {
                 $_SESSION['profile_success'] = "قیمت و موجودی کالا به‌روزرسانی شد.";
             } else {
-                $_SESSION['profile_error'] = "خطا در بروزرسانی محصول.";
+                $_SESSION['profile_error'] = "خطا در بروزرسانی محصول یا عدم دسترسی.";
             }
         }
     } elseif ($action === 'seller_delete_product') {
         $prodId = (int)($_POST['product_id'] ?? 0);
         if ($prodId > 0) {
             $del = $pdo->prepare("DELETE FROM products WHERE id = ? AND (seller_id = ? OR ? = 'admin')");
-            if ($del->execute([$prodId, $user_id, $user['role'] ?? ''])) {
+            if ($del->execute([$prodId, $user_id, $userRole])) {
                 $_SESSION['profile_success'] = "کالا با موفقیت از کاتالوگ شما حذف شد.";
             } else {
                 $_SESSION['profile_error'] = "خطا در حذف کالا.";

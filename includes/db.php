@@ -19,24 +19,23 @@ $dbname = defined('DB_NAME') ? DB_NAME : 'asena_premium';
 $user = defined('DB_USER') ? DB_USER : 'root';
 $pass = defined('DB_PASS') ? DB_PASS : '';
 
+$pdoOptions = [
+    PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+    PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+    PDO::ATTR_EMULATE_PREPARES => false, // Native prepared statements prevent SQLi emulation bypasses
+    PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8mb4"
+];
+
 try {
     // Connect directly to the database with utf8mb4 charset (standard for cPanel & local)
-    $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8mb4", $user, $pass, [
-        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-        PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8mb4"
-    ]);
+    $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8mb4", $user, $pass, $pdoOptions);
 } catch(PDOException $e) {
     // Try local default credentials if connection failed on localhost
     $connected = false;
     if ($host === '127.0.0.1' || $host === 'localhost') {
         foreach (array_unique([$dbname, 'asena_premium', 'petshop_db']) as $tryDb) {
             try {
-                $pdo = new PDO("mysql:host=127.0.0.1;dbname=$tryDb;charset=utf8mb4", 'root', '', [
-                    PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-                    PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-                    PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8mb4"
-                ]);
+                $pdo = new PDO("mysql:host=127.0.0.1;dbname=$tryDb;charset=utf8mb4", 'root', '', $pdoOptions);
                 $connected = true;
                 break;
             } catch (PDOException $eLocal) {}
@@ -45,8 +44,10 @@ try {
     if (!$connected) {
         // If database doesn't exist on local development, try to create it
         try {
-            $pdo = new PDO("mysql:host=$host", $user, $pass);
-            $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+            $pdo = new PDO("mysql:host=$host", $user, $pass, [
+                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+                PDO::ATTR_EMULATE_PREPARES => false
+            ]);
             $pdo->exec("CREATE DATABASE IF NOT EXISTS `$dbname` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
             $pdo->exec("USE `$dbname`");
             $sqlFile = __DIR__ . '/../petshop_db.sql';
@@ -57,7 +58,8 @@ try {
                 }
             }
         } catch(PDOException $e2) {
-            die("خطا در اتصال به دیتابیس: لطفاً اطلاعات دیتابیس در فایل config.php را بررسی کنید. (" . $e->getMessage() . ")");
+            error_log('[Database Connection Error] ' . $e->getMessage() . ' | ' . $e2->getMessage());
+            die("خطا در برقراری ارتباط با پایگاه‌داده. لطفاً تنظیمات پیکربندی سیستم را بررسی فرمایید.");
         }
     }
 }
