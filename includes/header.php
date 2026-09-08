@@ -36,7 +36,7 @@ $current_page = basename($_SERVER['PHP_SELF']);
 // Smart SEO title & description fallbacks based on active page
 $seo_defaults = [
     'index.php' => [
-        'title' => 'آسنا (ASENA) | کلینیک دامپزشکی، پت‌شاپ و داروخانه آنلاین',
+        'title' => 'آسنا | ASENA',
         'desc'  => 'سامانه جامع خدمات حیوانات خانگی آسنا؛ نوبت‌دهی آنلاین کلینیک دامپزشکی، پت‌شاپ تخصصی سگ و گربه و تحویل دوره‌ای خودکار (Autoship).'
     ],
     'shop.php' => [
@@ -62,7 +62,7 @@ $seo_defaults = [
 ];
 
 $default_seo = $seo_defaults[$current_page] ?? [
-    'title' => 'کلینیک دامپزشکی و پت‌شاپ آنلاین آسنا',
+    'title' => 'آسنا | ASENA',
     'desc'  => 'مرجع تخصصی خدمات دامپزشکی، نوبت‌دهی آنلاین و خرید ملزومات پت با تحویل دوره‌ای'
 ];
 
