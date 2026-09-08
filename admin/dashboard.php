@@ -201,9 +201,7 @@
 <p class="font-label-lg text-label-lg text-on-surface leading-tight">دکتر سپهر نیک‌پور</p>
 <p class="font-label-sm text-label-sm text-on-surface-variant">مدیر کل کلینیک</p>
 </div>
-<div class="w-10 h-10 rounded-full border-2 border-primary-container overflow-hidden">
-<img class="w-full h-full object-cover" data-alt="A professional headshot of a Middle Eastern male veterinarian in a white clinical coat, smiling warmly in a bright, modern veterinary office with blurred medical equipment in the background. High-key lighting, professional corporate photography style, premium clean aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAR2jNwOVYMhj9XcV1UR7z0nV_tMr3K8jO4c7vlhKllBRRU5lcutpHFHJzgyBHDDG8lSWV7M3e-53Z3k0nYy9YW4qUQvqrQIdFxH5ckllzs2oz0g43wq0cesY1MbqjD4KaenhKjAbr11Hrfs8V2tY6HSDbu-uJVPj0EjIw9BeQuWv_aJyON5G01A3iiQH5wPjShaZnB001JqdGVFZ84i0TllWUkvKuTDbfk0Qu7Cg6K8jT18lYEjyB7"/>
-</div>
+<img class="w-full h-full object-cover" alt="دکتر سپهر نیک‌پور - مدیر کلینیک دامپزشکی آسنا" src="../assets/images/products/vet-sepehr-nikpour.jpg"/>
 </div>
 </div>
 </header>
@@ -364,7 +362,7 @@
 <div class="space-y-4">
 <div class="flex items-center gap-4 group">
 <div class="w-12 h-12 rounded bg-surface-container overflow-hidden">
-<img class="w-full h-full object-cover" data-alt="High-quality professional studio photography of a premium pet food bag for cats, modern minimal packaging design with royal blue and silver accents, clear pet brand logo, clean studio lighting on a soft gray background." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAvTjCmjxO1Mg_F95XVn2QtQ7vWv_z6g6xUlbrI0A03vttC9UJZHNHfwNWH9L0ztUqkxxhQCAXcR9HuhaSgAKxAg5_Sqy8GCFfI6oAlsAh-vd3EI2buiEGEwu1Ul7-RCTCgN2RoEcAzpNBVOnjf49FTvgVFVc2EK2i1pzKYUikL4NIWbix6DGA857bdEw1VsvHMxBRWoelE0hy1d1OKJTFyJymWel3OftQ9ynHJ3XUBuvU2FNLwFnqo"/>
+<img class="w-full h-full object-cover" alt="غذای خشک گربه رویال کنین" src="../assets/images/products/royal-canin-cat-bag.jpg"/>
 </div>
 <div class="flex-1">
 <p class="font-label-lg text-primary">غذای خشک گربه Royal</p>
@@ -376,7 +374,7 @@
 </div>
 <div class="flex items-center gap-4 group">
 <div class="w-12 h-12 rounded bg-surface-container overflow-hidden">
-<img class="w-full h-full object-cover" data-alt="High-quality professional studio photography of a dog supplement bottle with orange and white labeling, health-focused branding, clean professional studio lighting, isolated on a light surface." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDuCsWWroIEb215TuwzB2WtfPdyOtwqsnoE6_j7RvaZJ-JzTiMWUyN91ch6FH35QbLiJl8-EJ05jvLrWFsNu52z9-f4f6fhbhmumyfg-tODxnvR_oikXzY6AHujtW07OJcFTwqvAk9F9wYvkOhFwmh5Bt7opy23JpXJ5oa6RqVgjolifAmaNUhDQtSCKOlhuyQmV0C5cDbSUCMYEuuP6-j7SyuGnvvwHyc75MpsutRYSlkcpCU3ku8x"/>
+<img class="w-full h-full object-cover" alt="مکمل کلسیم سگ ویتو" src="../assets/images/products/veto-dog-calcium.jpg"/>
 </div>
 <div class="flex-1">
 <p class="font-label-lg text-primary">مکمل کلسیم سگ Veto</p>
@@ -407,7 +405,7 @@
 <div class="lg:col-span-1 space-y-6">
 <div class="bg-white rounded-xl stat-card-shadow border border-outline-variant/30 overflow-hidden">
 <div class="h-48 relative">
-<img class="w-full h-full object-cover" data-alt="Heartwarming photo of a group of street cats huddled together in a cozy, well-built wooden winter shelter with warm straw inside. Soft winter sunlight, snowy background outside the shelter, warm and protective atmosphere, professional photography, high contrast." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDfJOGd0yJtl9EQSGdSCSg0zLjDbJ4ITtJ-jyGn0avNahqcnrw90whBqo72uukyWy-Qwql1DUBTEvJn0Bfosi7MFtmzH35FK3mQSN0Jps4EjHwuL1HawY7LaJaI6m79S_jAYqTIGjg580W3YWxqHwrY0gNMWd-8iNZT-U5oPdTlSXDUj-UmHWJP0CsKFQCXvRqZyoz3N6dPce0EzbCxVGc3V-05zkWFNf9TvfLvfho_JPiiLeDQwzcc"/>
+<img class="w-full h-full object-cover" alt="پویش سرپناه زمستانی حیوانات خیابانی" src="../assets/images/products/dog-dry-food-premium.jpg"/>
 <div class="absolute inset-0 bg-gradient-to-t from-primary/80 to-transparent"></div>
 <div class="absolute bottom-4 right-4 left-4">
 <span class="bg-secondary-container text-white text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider">کمپین ویژه</span>

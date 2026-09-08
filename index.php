@@ -621,7 +621,7 @@ $top_donors = $donor_stmt->fetchAll(PDO::FETCH_ASSOC);
                     <!-- Organization Info -->
                     <div class="flex items-start gap-4 mb-4">
                         <div class="w-16 h-16 rounded-2xl bg-white text-teal-700 flex items-center justify-center shrink-0 border border-slate-200 overflow-hidden group-hover:scale-105 transition-transform shadow-sm p-1.5">
-                            <img src="<?= htmlspecialchars($org['logo_url'] ?: 'assets/images/logo.png') ?>" alt="" class="w-full h-full object-contain">
+                            <img src="<?= htmlspecialchars($org['logo_url'] ?: 'assets/images/logo.png') ?>" alt="<?= htmlspecialchars($org['name'] ?? 'کلینیک دامپزشکی آسنا') ?>" class="w-full h-full object-contain">
                         </div>
                         <div class="overflow-hidden">
                             <h3 class="font-black text-slate-900 text-base group-hover:text-primary transition-colors line-clamp-1">
@@ -744,7 +744,7 @@ $top_donors = $donor_stmt->fetchAll(PDO::FETCH_ASSOC);
                                     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3" id="reservationDoctorPicker">
                                         <?php foreach ($top_doctors as $idx => $d): ?>
                                         <div onclick="selectReservationDoctor(<?= (int)$d['id'] ?>)" class="reservation-doc-opt <?= $idx === 0 ? 'selected ring-2 ring-primary border-primary bg-primary/5' : 'border-slate-200 bg-white hover:border-slate-300' ?> border rounded-2xl p-3.5 flex items-center gap-3 cursor-pointer transition-all relative" data-id="<?= (int)$d['id'] ?>">
-                                            <img src="<?= htmlspecialchars($d['image_url'] ?: 'assets/images/logo.png') ?>" alt="" class="w-12 h-12 rounded-xl object-cover border border-slate-200 shrink-0 bg-slate-100">
+                                            <img src="<?= htmlspecialchars($d['image_url'] ?: 'assets/images/logo.png') ?>" alt="<?= htmlspecialchars($d['name'] ?? 'دامپزشک متخصص') ?>" class="w-12 h-12 rounded-xl object-cover border border-slate-200 shrink-0 bg-slate-100">
                                             <div class="overflow-hidden flex-1">
                                                 <div class="text-xs font-black text-slate-900 truncate"><?= htmlspecialchars($d['name']) ?></div>
                                                 <div class="text-[10px] text-slate-500 truncate"><?= htmlspecialchars($d['specialty']) ?></div>
@@ -2014,7 +2014,7 @@ $top_donors = $donor_stmt->fetchAll(PDO::FETCH_ASSOC);
                 <!-- Image Preview Overlay -->
                 <div id="image-preview-container" class="hidden px-6 py-4 bg-surface-container border-t border-outline-variant/20 flex items-center justify-between">
                     <div class="flex items-center gap-4">
-                        <img id="image-preview" src="" class="w-16 h-16 object-cover rounded-lg shadow-sm border border-outline-variant/30">
+                        <img id="image-preview" src="" class="w-16 h-16 object-cover rounded-lg shadow-sm border border-outline-variant/30" alt="پیش‌نمایش تصویر انتخابی">
                         <div class="text-xs font-bold text-primary">تصویر ضمیمه شد</div>
                     </div>
                     <button type="button" onclick="clearImage()" class="w-8 h-8 bg-error/10 text-error rounded-full flex items-center justify-center hover:bg-error hover:text-white transition-colors">
@@ -2874,7 +2874,7 @@ function sendChatMessage(e) {
     const container = document.getElementById('chat-messages');
     let imgHtml = '';
     if (imageInput.files.length > 0) {
-        imgHtml = `<img loading="lazy" src="${document.getElementById('image-preview').src}" class="rounded-xl mb-3 max-w-[200px] opacity-70">`;
+        imgHtml = `<img loading="lazy" src="${document.getElementById('image-preview').src}" class="rounded-xl mb-3 max-w-[200px] opacity-70" alt="تصویر ارسالی کاربر">`;
     }
     
     const time = new Date().toLocaleTimeString('fa-IR', { hour: '2-digit', minute: '2-digit' });

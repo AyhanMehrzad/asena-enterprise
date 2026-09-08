@@ -316,7 +316,7 @@ if (empty($wishlist_products)) {
                                 <?php foreach ($cart_upsells as $up): ?>
                                 <div class="bg-white p-3.5 rounded-2xl border border-outline-variant/30 hover:border-secondary-container transition-all flex items-center justify-between gap-3 shadow-sm">
                                     <div class="flex items-center gap-3 overflow-hidden">
-                                        <img loading="lazy" src="<?= htmlspecialchars($up['product_image_url'] ?: 'assets/images/toy-mouse.jpg') ?>" class="w-12 h-12 rounded-xl object-cover shrink-0 bg-surface-container-low" alt="Item">
+                                        <img loading="lazy" src="<?= htmlspecialchars($up['product_image_url'] ?: 'assets/images/toy-mouse.jpg') ?>" class="w-12 h-12 rounded-xl object-cover shrink-0 bg-surface-container-low" alt="<?= htmlspecialchars($up['custom_title'] ?: $up['product_name']) ?>">
                                         <div class="space-y-0.5 overflow-hidden">
                                             <?php if (!empty($up['custom_badge'])): ?>
                                                 <span class="text-[10px] font-black text-secondary-container bg-secondary-container/10 px-2 py-0.5 rounded-full inline-block"><?= htmlspecialchars($up['custom_badge']) ?></span>
