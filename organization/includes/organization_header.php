@@ -153,6 +153,7 @@ $currentFile = basename($_SERVER['PHP_SELF']);
         body { font-family: 'Geist', sans-serif; }
         .stat-card-shadow { box-shadow: 0px 4px 12px rgba(0, 45, 114, 0.08); }
     </style>
+    <script src="../assets/js/bidi-direction.js?v=<?php echo time(); ?>" defer></script>
 </head>
 <body class="bg-surface text-on-surface selection:bg-secondary-container/30">
 
@@ -192,6 +193,7 @@ $currentFile = basename($_SERVER['PHP_SELF']);
         $navItems = [
             'index.php'        => ['icon' => 'dashboard', 'title' => 'پیشخوان و مشخصات مرکز'],
             'appointments.php' => ['icon' => 'calendar_month', 'title' => 'نوبت‌دهی و مراجعین کلینیک'],
+            'tickets.php'      => ['icon' => 'support_agent', 'title' => 'تیکت و پشتیبانی (مراجعین / مدیریت)'],
             'doctors.php'      => ['icon' => 'groups', 'title' => 'پزشکان، داروسازان و گرومرها'],
             'shifts.php'       => ['icon' => 'schedule', 'title' => 'مدیریت زمان و تقویم شیفت‌ها'],
             'orders.php'       => ['icon' => 'local_shipping', 'title' => 'سفارشات محصولات مرکز'],

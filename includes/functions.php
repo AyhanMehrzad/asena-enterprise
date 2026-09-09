@@ -310,3 +310,14 @@ function svg_icon(string $name, string $classes = '', string $size = '24'): stri
     $safeSize = is_numeric($size) ? $size : '24';
     return '<svg class="asena-svg-icon ' . $safeClasses . '" aria-hidden="true" focusable="false" width="' . $safeSize . '" height="' . $safeSize . '"><use href="/assets/icons/ui/sprite.svg#icon-' . $safeName . '"></use></svg>';
 }
+
+/**
+ * Convert Persian and Arabic digits to English ASCII digits
+ */
+function to_english_digits($input): string {
+    $fa = ['۰','۱','۲','۳','۴','۵','۶','۷','۸','۹'];
+    $ar = ['٠','١','٢','٣','٤','٥','٦','٧','٨','٩'];
+    $en = ['0','1','2','3','4','5','6','7','8','9'];
+    $str = str_replace($fa, $en, (string)$input);
+    return str_replace($ar, $en, $str);
+}

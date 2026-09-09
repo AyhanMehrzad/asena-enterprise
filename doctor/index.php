@@ -7,6 +7,16 @@ $doctorId = (int)($doctorProfile['id'] ?? 0);
 $success = '';
 $error = '';
 
+// ── AJAX: EMR Patient Search ─────────────────────────────────────────────────
+if (isset($_GET['action']) && $_GET['action'] === 'emr_search' && !empty($_SERVER['HTTP_X_REQUESTED_WITH'])) {
+    require_once '../includes/App.php';
+    $q = trim($_GET['q'] ?? '');
+    $results = $q ? App::bpms()->searchDoctorPatients($doctorId, $q) : [];
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode(['results' => $results], JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
 // Auto-ensure clinical & reschedule columns exist in appointments
 try {
     $pdo->exec("ALTER TABLE appointments ADD COLUMN IF NOT EXISTS doctor_diagnosis TEXT NULL");
@@ -327,6 +337,52 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             $error = "اطلاعات بیمار ناقص است یا فایلی انتخاب نشده است.";
         }
     }
+    elseif ($action === 'submit_bpms_prescription') {
+        require_once '../includes/App.php';
+        $bpms = App::bpms();
+        $items = [];
+        $drugNames    = $_POST['drug_name']     ?? [];
+        $drugDoses    = $_POST['drug_dose']     ?? [];
+        $drugQtys     = $_POST['drug_qty']      ?? [];
+        $drugInstrs   = $_POST['drug_instr']    ?? [];
+        foreach ($drugNames as $i => $dname) {
+            $dname = trim($dname);
+            if ($dname === '') continue;
+            $items[] = [
+                'name'         => $dname,
+                'dose'         => trim($drugDoses[$i] ?? ''),
+                'qty'          => (int)($drugQtys[$i] ?? 1),
+                'instructions' => trim($drugInstrs[$i] ?? ''),
+            ];
+        }
+
+        $userId   = (int)($_POST['bpms_user_id'] ?? 0);
+        $petId    = (int)($_POST['bpms_pet_id'] ?? 0);
+        $orgId    = !empty($_POST['bpms_org_id']) ? (int)$_POST['bpms_org_id'] : null;
+        $pharmUid = !empty($_POST['bpms_pharmacy_user_id']) ? (int)$_POST['bpms_pharmacy_user_id'] : null;
+        $diagnosis          = trim($_POST['bpms_diagnosis'] ?? '');
+        $examinationReport  = trim($_POST['bpms_examination_report'] ?? '');
+
+        if ($userId && $diagnosis && !empty($items)) {
+            $rxId = $bpms->doctorSubmitPrescription([
+                'user_id'              => $userId,
+                'doctor_id'            => $doctorId,
+                'pet_id'               => $petId,
+                'organization_id'      => $orgId,
+                'pharmacy_user_id'     => $pharmUid,
+                'diagnosis'            => $diagnosis,
+                'doctor_examination_report' => $examinationReport,
+                'items'                => $items,
+                'vet_name'             => $doctorProfile['name']   ?? '',
+                'vet_phone'            => $doctorProfile['phone']   ?? '',
+                'vet_license_number'   => $doctorProfile['license_number'] ?? '',
+                'clinic_name'          => $doctorProfile['clinic_name']    ?? $doctorProfile['specialty'] ?? '',
+            ]);
+            $success = "✅ نسخه الکترونیک BPMS با شناسه #{$rxId} صادر و به سه طرف (سرپرست، داروخانه، کلینیک) برودکست شد.";
+        } else {
+            $error = "لطفاً اطلاعات بیمار، تشخیص و حداقل یک قلم دارو را وارد نمایید.";
+        }
+    }
 }
 
 // Income Calculation (Completed/Approved)
@@ -462,6 +518,24 @@ if (empty($myServices)) {
         ['id' => '4', 'name' => 'مشاوره و جراحی‌های تخصصی', 'duration' => '45 دقیقه'],
     ];
 }
+
+// ── BPMS & EMR Data ──────────────────────────────────────────────────────────
+require_once '../includes/App.php';
+$bpms = App::bpms();
+
+// Doctor's issued prescriptions (BPMS tracking board)
+$myPrescriptions = $bpms->getPrescriptionsForDoctor($doctorId, 60);
+
+// Patient search (called via AJAX but pre-seed empty)
+$emrSearchResults = [];
+
+// Pharmacies (for dropdown when issuing prescription)
+$pharmacyUsersStmt = $pdo->query("SELECT u.id, u.name, ps.name as store_name, ps.license_number FROM users u JOIN pharmacy_stores ps ON ps.user_id = u.id WHERE u.role = 'pharmacy' AND ps.status = 'active' ORDER BY ps.name ASC LIMIT 50");
+$pharmacyUsers = $pharmacyUsersStmt ? $pharmacyUsersStmt->fetchAll(PDO::FETCH_ASSOC) : [];
+
+// Organizations for dropdown
+$orgsStmt = $pdo->query("SELECT id, name, city FROM organizations WHERE is_verified = 1 ORDER BY name ASC LIMIT 100");
+$orgsList = $orgsStmt ? $orgsStmt->fetchAll(PDO::FETCH_ASSOC) : [];
 ?>
 
 <div class="p-4 md:p-8 max-w-[1440px] mx-auto space-y-6 md:space-y-8">
@@ -1417,6 +1491,187 @@ if (empty($myServices)) {
 
         </div>
     </div>
+
+    <!-- ═══════════════════════════════════════════════════════
+         TAB: EMR PATIENT REGISTRY
+    ═══════════════════════════════════════════════════════ -->
+    <div id="emr-tab" class="tab-content hidden space-y-6">
+        <div class="bg-white p-6 md:p-8 rounded-3xl stat-card-shadow border border-outline-variant/30">
+            <div class="flex items-center gap-3 mb-6 pb-4 border-b border-outline-variant/20">
+                <div class="w-10 h-10 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center">
+                    <span class="material-symbols-outlined">manage_accounts</span>
+                </div>
+                <div>
+                    <h3 class="text-lg font-black text-primary">رجیستری بیماران و EMR</h3>
+                    <p class="text-xs text-on-surface-variant">جستجو و مشاهده پرونده پت‌های ویزیت‌شده، آپلود اسناد بالینی</p>
+                </div>
+            </div>
+
+            <!-- Search Box -->
+            <div class="flex gap-3 mb-6">
+                <input type="text" id="emr-search-input" placeholder="نام بیمار، شماره همراه، نام پت، نژاد، میکروچیپ..." class="flex-1 p-3 rounded-xl border border-outline-variant bg-surface-container-lowest text-sm outline-none focus:ring-2 focus:ring-primary">
+                <button onclick="emrSearch()" class="px-5 py-2.5 bg-primary hover:opacity-90 text-white font-bold rounded-xl text-sm flex items-center gap-2 transition-all shadow-md">
+                    <span class="material-symbols-outlined text-base">search</span>
+                    <span>جستجو</span>
+                </button>
+            </div>
+
+            <!-- Results -->
+            <div id="emr-results" class="space-y-3">
+                <p class="text-xs text-on-surface-variant text-center py-8">🔍 نام بیمار یا پت را جستجو کنید تا پرونده بالینی نمایش داده شود.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════
+         TAB: BPMS PRESCRIPTION WORKFLOW
+    ═══════════════════════════════════════════════════════ -->
+    <div id="bpms-tab" class="tab-content hidden space-y-6">
+
+        <!-- Issue New Prescription -->
+        <div class="bg-white p-6 md:p-8 rounded-3xl stat-card-shadow border border-outline-variant/30">
+            <div class="flex items-center gap-3 mb-6 pb-4 border-b border-outline-variant/20">
+                <div class="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
+                    <span class="material-symbols-outlined">post_add</span>
+                </div>
+                <div>
+                    <h3 class="text-lg font-black text-primary">صدور نسخه الکترونیک BPMS</h3>
+                    <p class="text-xs text-on-surface-variant">پس از صدور، نسخه برودکست می‌شود. داروخانه باید آن را تأیید کند تا کلینیک بتواند ارسال کند.</p>
+                </div>
+                <div class="mr-auto hidden md:flex items-center gap-2 px-3 py-1.5 bg-indigo-50 text-indigo-700 rounded-xl text-xs font-bold border border-indigo-200">
+                    <span class="material-symbols-outlined text-base">account_tree</span>
+                    <span>Doctor → Pharmacist → Org</span>
+                </div>
+            </div>
+
+            <form method="POST" class="space-y-5">
+                <?= csrf_field() ?>
+                <input type="hidden" name="action" value="submit_bpms_prescription">
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1.5">🧑 شناسه عددی بیمار (user_id)</label>
+                        <input type="number" name="bpms_user_id" id="bpms_user_id" min="1" required placeholder="مثال: 42" class="w-full p-3 rounded-xl border border-outline-variant text-sm bg-surface-container-lowest outline-none focus:ring-2 focus:ring-indigo-500" dir="ltr">
+                        <p class="text-[10px] text-slate-400 mt-1">از رجیستری بیماران ID را کپی کنید.</p>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1.5">🐾 شناسه پت (pet_id)</label>
+                        <input type="number" name="bpms_pet_id" id="bpms_pet_id" min="0" placeholder="اختیاری" class="w-full p-3 rounded-xl border border-outline-variant text-sm bg-surface-container-lowest outline-none focus:ring-2 focus:ring-indigo-500" dir="ltr">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1.5">💊 داروخانه مقصد</label>
+                        <select name="bpms_pharmacy_user_id" class="w-full p-3 rounded-xl border border-outline-variant text-sm bg-surface-container-lowest outline-none focus:ring-2 focus:ring-indigo-500">
+                            <option value="">-- داروخانه‌ای انتخاب نشده --</option>
+                            <?php foreach ($pharmacyUsers as $pharm): ?>
+                            <option value="<?= $pharm['id'] ?>"><?= htmlspecialchars($pharm['store_name'] ?: $pharm['name']) ?> (<?= htmlspecialchars($pharm['license_number'] ?? '') ?>)</option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1.5">🏥 کلینیک ارسال‌کننده</label>
+                        <select name="bpms_org_id" class="w-full p-3 rounded-xl border border-outline-variant text-sm bg-surface-container-lowest outline-none focus:ring-2 focus:ring-indigo-500">
+                            <option value="">-- کلینیک انتخاب نشده --</option>
+                            <?php foreach ($orgsList as $org): ?>
+                            <option value="<?= $org['id'] ?>"><?= htmlspecialchars($org['name']) ?> <?= $org['city'] ? '(' . htmlspecialchars($org['city']) . ')' : '' ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1.5">🩺 تشخیص بالینی (Diagnosis)</label>
+                        <input type="text" name="bpms_diagnosis" required placeholder="مثال: عفونت باکتریایی پوستی - Staph Aureus" class="w-full p-3 rounded-xl border border-outline-variant text-sm bg-surface-container-lowest outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1.5">📋 گزارش معاینه بالینی (Examination Report)</label>
+                    <textarea name="bpms_examination_report" rows="3" placeholder="یافته‌های بالینی، آزمایشات، عکس‌های رادیولوژی، وضعیت عمومی بیمار..." class="w-full p-3 rounded-xl border border-outline-variant text-sm bg-surface-container-lowest outline-none focus:ring-2 focus:ring-indigo-500 resize-none"></textarea>
+                </div>
+
+                <!-- Drug Rows -->
+                <div>
+                    <div class="flex items-center justify-between mb-2">
+                        <label class="text-xs font-black text-slate-700">💊 اقلام دارویی نسخه</label>
+                        <button type="button" onclick="addDrugRow()" class="text-xs text-indigo-600 hover:text-indigo-800 font-bold flex items-center gap-1 transition-colors">
+                            <span class="material-symbols-outlined text-base">add_circle</span> افزودن قلم دارویی
+                        </button>
+                    </div>
+                    <div id="drug-rows-container" class="space-y-2">
+                        <div class="drug-row grid grid-cols-12 gap-2 p-3 bg-indigo-50/60 rounded-xl border border-indigo-100">
+                            <div class="col-span-4"><input type="text" name="drug_name[]" placeholder="نام دارو (مثال: آموکسی‌سیلین)" class="w-full p-2 rounded-lg border border-slate-200 text-xs bg-white outline-none focus:ring-2 focus:ring-indigo-400" required></div>
+                            <div class="col-span-2"><input type="text" name="drug_dose[]" placeholder="دوز (مثال: 500mg)" class="w-full p-2 rounded-lg border border-slate-200 text-xs bg-white outline-none focus:ring-2 focus:ring-indigo-400" dir="ltr"></div>
+                            <div class="col-span-1"><input type="number" name="drug_qty[]" placeholder="تعداد" min="1" value="1" class="w-full p-2 rounded-lg border border-slate-200 text-xs bg-white outline-none focus:ring-2 focus:ring-indigo-400" dir="ltr"></div>
+                            <div class="col-span-4"><input type="text" name="drug_instr[]" placeholder="دستور مصرف (مثال: روزی ۳ بار بعد از غذا)" class="w-full p-2 rounded-lg border border-slate-200 text-xs bg-white outline-none focus:ring-2 focus:ring-indigo-400"></div>
+                            <div class="col-span-1 flex items-center justify-center"><button type="button" onclick="this.closest('.drug-row').remove()" class="w-7 h-7 rounded-lg bg-rose-50 text-rose-400 hover:bg-rose-100 flex items-center justify-center transition-colors"><span class="material-symbols-outlined text-sm">close</span></button></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="pt-2">
+                    <button type="submit" class="w-full py-3.5 bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 text-white font-black rounded-2xl text-sm flex items-center justify-center gap-2 shadow-lg transition-all">
+                        <span class="material-symbols-outlined">medication</span>
+                        <span>صدور نسخه الکترونیک و برودکست به داروخانه + کلینیک + سرپرست</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- BPMS Tracking Board -->
+        <div class="bg-white p-6 md:p-8 rounded-3xl stat-card-shadow border border-outline-variant/30">
+            <div class="flex items-center justify-between mb-4 pb-3 border-b border-outline-variant/20">
+                <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                        <span class="material-symbols-outlined text-xl">track_changes</span>
+                    </div>
+                    <h3 class="text-base font-black text-primary">تابلوی پیگیری نسخه‌های BPMS</h3>
+                </div>
+                <span class="text-xs text-on-surface-variant bg-slate-100 rounded-full px-3 py-1"><?= count($myPrescriptions) ?> نسخه</span>
+            </div>
+
+            <?php if (empty($myPrescriptions)): ?>
+            <p class="text-xs text-on-surface-variant text-center py-10">هنوز هیچ نسخه‌ای صادر نشده است. اولین نسخه BPMS خود را از فرم بالا صادر کنید.</p>
+            <?php else: ?>
+            <div class="overflow-x-auto">
+            <table class="w-full text-xs">
+                <thead>
+                    <tr class="bg-slate-50 text-on-surface-variant">
+                        <th class="p-2.5 text-right rounded-r-xl">#</th>
+                        <th class="p-2.5 text-right">بیمار / پت</th>
+                        <th class="p-2.5 text-right">تشخیص</th>
+                        <th class="p-2.5 text-right">وضعیت BPMS</th>
+                        <th class="p-2.5 text-right">داروساز</th>
+                        <th class="p-2.5 text-right">کلینیک</th>
+                        <th class="p-2.5 text-right rounded-l-xl">تاریخ صدور</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    <?php foreach ($myPrescriptions as $rx): ?>
+                    <tr class="hover:bg-slate-50/70 transition-colors">
+                        <td class="p-2.5 font-mono font-bold text-slate-500">#<?= $rx['id'] ?></td>
+                        <td class="p-2.5">
+                            <p class="font-bold text-slate-800"><?= htmlspecialchars($rx['user_name'] ?? '—') ?></p>
+                            <?php if ($rx['pet_name']): ?><p class="text-[10px] text-indigo-600">🐾 <?= htmlspecialchars($rx['pet_name']) ?> (<?= htmlspecialchars($rx['species'] ?? '') ?>)</p><?php endif; ?>
+                        </td>
+                        <td class="p-2.5 max-w-[150px] truncate" title="<?= htmlspecialchars($rx['diagnosis'] ?? '') ?>"><?= htmlspecialchars(mb_substr($rx['diagnosis'] ?? '', 0, 40)) ?>…</td>
+                        <td class="p-2.5">
+                            <span class="px-2 py-1 rounded-full text-[10px] font-bold border <?= BpmsService::getStateBadgeClass($rx['bpms_state']) ?>">
+                                <?= BpmsService::getStateLabelFa($rx['bpms_state']) ?>
+                            </span>
+                        </td>
+                        <td class="p-2.5 text-slate-500"><?= $rx['pharmacist_decision'] === 'approved' ? '✅ تأیید' : ($rx['pharmacist_decision'] === 'rejected' ? '❌ رد' : '⏳ در انتظار') ?></td>
+                        <td class="p-2.5 text-slate-500"><?= htmlspecialchars($rx['org_name'] ?? '—') ?></td>
+                        <td class="p-2.5 text-slate-400" dir="ltr"><?= substr($rx['created_at'] ?? '', 0, 10) ?></td>
+                    </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+            </div>
+            <?php endif; ?>
+        </div>
+    </div>
+
 </div>
 
 <script>
@@ -1431,6 +1686,8 @@ const sectionMeta = {
     'services-tab': { title: 'خدمات، علت‌ها و تگ‌های تخصصی', desc: 'تعیین خدمات ویزیت، مدت زمان تقریبی و تعرفه پذیرش', icon: 'loyalty' },
     'reviews-tab':  { title: 'نظرات و بازخورد مراجعین', desc: 'مشاهده دیدگاه‌ها، امتیازات و تجربیات صاحبان پت', icon: 'reviews' },
     'history-tab':  { title: 'آرشیو مراجعات و پرونده‌ها', desc: 'سابقه مراجعات قبلی، تشخیص‌ها، نسخه‌ها و اسناد بالینی', icon: 'history' },
+    'emr-tab':      { title: 'رجیستری بیماران و EMR', desc: 'جستجو در بیماران ویزیت‌شده، کپی user_id برای صدور نسخه', icon: 'manage_accounts' },
+    'bpms-tab':     { title: 'نسخه‌نویسی و گردش کار BPMS', desc: 'صدور نسخه الکترونیک و برودکست به داروخانه + کلینیک', icon: 'medication' },
     'profile-tab':  { title: 'اطلاعات تماس و شماره پیامک نوبت‌ها', desc: 'تنظیمات نام نمایشی، تخصص و شماره همراه دریافت اعلان پیامکی نوبت جدید', icon: 'contact_phone' }
 };
 
@@ -1650,6 +1907,77 @@ function escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = text || '';
     return div.innerHTML;
+}
+
+// ── EMR Patient Registry Search ──────────────────────────────────────────────
+async function emrSearch() {
+    const q = document.getElementById('emr-search-input').value.trim();
+    if (!q) return;
+    const resultsEl = document.getElementById('emr-results');
+    resultsEl.innerHTML = '<p class="text-xs text-slate-400 text-center py-6 animate-pulse">⏳ در حال جستجو...</p>';
+
+    try {
+        const res = await fetch(`index.php?action=emr_search&q=${encodeURIComponent(q)}`, {
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        });
+        const data = await res.json();
+        if (!data || !data.results || data.results.length === 0) {
+            resultsEl.innerHTML = '<p class="text-xs text-on-surface-variant text-center py-8">❌ هیچ بیماری با این مشخصات یافت نشد.</p>';
+            return;
+        }
+        let html = '<div class="grid grid-cols-1 md:grid-cols-2 gap-3">';
+        data.results.forEach(p => {
+            html += `
+            <div class="p-4 rounded-2xl border border-slate-200 bg-slate-50 hover:shadow-md transition-shadow">
+                <div class="flex items-start justify-between gap-2 mb-2">
+                    <div>
+                        <p class="font-black text-sm text-slate-800">${escapeHtml(p.user_name)}</p>
+                        <p class="text-xs text-slate-400" dir="ltr">${escapeHtml(p.phone || '')}</p>
+                    </div>
+                    <button onclick="document.getElementById('bpms_user_id').value=${p.user_id}; if(p.pet_id) document.getElementById('bpms_pet_id').value=${p.pet_id||''}; switchTab('bpms-tab');" 
+                            class="shrink-0 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-[10px] font-bold transition-colors flex items-center gap-1">
+                        <span class="material-symbols-outlined text-sm">medication</span>
+                        صدور نسخه
+                    </button>
+                </div>
+                ${p.pet_name ? `<div class="flex items-center gap-2 p-2 bg-teal-50 rounded-xl border border-teal-100">
+                    <span class="text-teal-600 material-symbols-outlined text-sm" style="font-variation-settings:'FILL' 1">pets</span>
+                    <div>
+                        <p class="text-xs font-bold text-teal-800">${escapeHtml(p.pet_name)} (${escapeHtml(p.species||'')} - ${escapeHtml(p.breed||'')})</p>
+                        ${p.allergies ? `<p class="text-[10px] text-rose-600">⚠️ آلرژی: ${escapeHtml(p.allergies)}</p>` : ''}
+                        ${p.chronic_conditions ? `<p class="text-[10px] text-amber-600">💊 بیماری مزمن: ${escapeHtml(p.chronic_conditions)}</p>` : ''}
+                    </div>
+                </div>` : ''}
+                <p class="text-[10px] text-slate-400 mt-2">user_id: <span class="font-mono font-bold text-primary">${p.user_id}</span>${p.pet_id ? ` | pet_id: <span class="font-mono font-bold text-indigo-600">${p.pet_id}</span>` : ''}</p>
+            </div>`;
+        });
+        html += '</div>';
+        resultsEl.innerHTML = html;
+    } catch(e) {
+        resultsEl.innerHTML = '<p class="text-xs text-rose-500 text-center py-6">⚠️ خطا در اتصال به سرور. صفحه را رفرش کنید.</p>';
+    }
+}
+
+// Support Enter key on EMR search
+document.addEventListener('DOMContentLoaded', () => {
+    const inp = document.getElementById('emr-search-input');
+    if (inp) inp.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); emrSearch(); } });
+});
+
+// ── BPMS Drug Row Builder ─────────────────────────────────────────────────────
+function addDrugRow() {
+    const container = document.getElementById('drug-rows-container');
+    const div = document.createElement('div');
+    div.className = 'drug-row grid grid-cols-12 gap-2 p-3 bg-indigo-50/60 rounded-xl border border-indigo-100';
+    div.innerHTML = `
+        <div class="col-span-4"><input type="text" name="drug_name[]" placeholder="نام دارو" class="w-full p-2 rounded-lg border border-slate-200 text-xs bg-white outline-none focus:ring-2 focus:ring-indigo-400" required></div>
+        <div class="col-span-2"><input type="text" name="drug_dose[]" placeholder="دوز (500mg)" class="w-full p-2 rounded-lg border border-slate-200 text-xs bg-white outline-none focus:ring-2 focus:ring-indigo-400" dir="ltr"></div>
+        <div class="col-span-1"><input type="number" name="drug_qty[]" placeholder="تعداد" min="1" value="1" class="w-full p-2 rounded-lg border border-slate-200 text-xs bg-white outline-none focus:ring-2 focus:ring-indigo-400" dir="ltr"></div>
+        <div class="col-span-4"><input type="text" name="drug_instr[]" placeholder="دستور مصرف" class="w-full p-2 rounded-lg border border-slate-200 text-xs bg-white outline-none focus:ring-2 focus:ring-indigo-400"></div>
+        <div class="col-span-1 flex items-center justify-center"><button type="button" onclick="this.closest('.drug-row').remove()" class="w-7 h-7 rounded-lg bg-rose-50 text-rose-400 hover:bg-rose-100 flex items-center justify-center transition-colors"><span class="material-symbols-outlined text-sm">close</span></button></div>
+    `;
+    container.appendChild(div);
+    div.querySelector('input[name="drug_name[]"]').focus();
 }
 </script>
 

@@ -1936,26 +1936,45 @@ $top_donors = $donor_stmt->fetchAll(PDO::FETCH_ASSOC);
                     <span class="material-symbols-outlined text-[300px]">cruelty_free</span>
                 </div>
                 <div class="inline-flex items-center gap-3 px-4 py-2 bg-primary-container/10 text-primary-container rounded-lg font-bold text-xs uppercase tracking-wider w-fit z-10">
-                    <span class="material-symbols-outlined text-sm">psychology</span>
-                    دستیار هوشمند دارویی
+                    <span class="material-symbols-outlined text-sm">support_agent</span>
+                    پشتیبانی و دستیار هوشمند آسنا
                 </div>
-                <h2 class="text-4xl font-bold text-primary leading-tight z-10">
-                    دستیار دارویی هوش مصنوعی یا<br />داروساز کشیک؟
+                <h2 class="text-3xl lg:text-4xl font-black text-primary leading-tight z-10">
+                    دستیار هوش مصنوعی یا<br />پشتیبانی مدیریت آسنا؟
                 </h2>
-                <p class="text-lg text-on-surface-variant font-light leading-relaxed z-10">
-                    برای بررسی سریع تداخلات دارویی، راهنمای مصرف و دوز مجاز، با <b>لئو</b> مشورت کنید؛ یا برای تایید نسخه با <b>دکتر داروساز</b> گفتگو نمایید.
+                <p class="text-base lg:text-lg text-on-surface-variant font-light leading-relaxed z-10">
+                    برای بررسی سریع سوالات و راهنمایی سلامت با <b>لئو</b> مشورت کنید؛ جهت پیگیری اداری و سامانه‌ای با <b>مدیریت آسنا</b> ارتباط برقرار نمایید، و برای پرسش‌های بالینی و پذیرش، <b>مرکز درمانی</b> خود را انتخاب کنید.
                 </p>
-                <div class="space-y-4 z-10 pt-4">
-                    <div class="bg-surface-container rounded-2xl p-2 flex items-center justify-between shadow-sm relative">
-                        <div class="absolute inset-0 rounded-2xl bg-gradient-to-r from-primary-container/10 to-transparent pointer-events-none transition-all" id="mode-bg"></div>
-                        <button onclick="setChatMode('ai')" id="btn-mode-ai" class="flex-1 flex items-center justify-center gap-2 py-4 rounded-xl text-sm font-bold bg-primary-container text-white shadow-md transition-all">
-                            <span class="material-symbols-outlined">smart_toy</span>
-                            لئو (هوش مصنوعی)
+                <div class="space-y-3 z-10 pt-2">
+                    <div class="bg-surface-container rounded-2xl p-1.5 flex items-center justify-between shadow-sm relative gap-1">
+                        <button onclick="setChatMode('ai')" id="btn-mode-ai" class="flex-1 flex items-center justify-center gap-1.5 py-3 px-2 rounded-xl text-xs font-black bg-primary-container text-white shadow-md transition-all">
+                            <span class="material-symbols-outlined text-base">smart_toy</span>
+                            <span>لئو (AI)</span>
                         </button>
-                        <button onclick="setChatMode('admin')" id="btn-mode-admin" class="flex-1 flex items-center justify-center gap-2 py-4 rounded-xl text-sm font-bold text-on-surface-variant hover:text-primary transition-all">
-                            <span class="material-symbols-outlined">medication</span>
-                            دکتر داروساز
+                        <button onclick="setChatMode('admin')" id="btn-mode-admin" class="flex-1 flex items-center justify-center gap-1.5 py-3 px-2 rounded-xl text-xs font-black text-on-surface-variant hover:text-primary transition-all">
+                            <span class="material-symbols-outlined text-base">support_agent</span>
+                            <span>مدیریت آسنا</span>
                         </button>
+                        <button onclick="setChatMode('organization')" id="btn-mode-org" class="flex-1 flex items-center justify-center gap-1.5 py-3 px-2 rounded-xl text-xs font-black text-on-surface-variant hover:text-primary transition-all">
+                            <span class="material-symbols-outlined text-base">apartment</span>
+                            <span>مرکز درمانی</span>
+                        </button>
+                    </div>
+
+                    <!-- Organization Selector for Clinic Communication -->
+                    <div id="org-selector-container" class="hidden bg-white/80 backdrop-blur-sm p-3 rounded-2xl border border-outline-variant/30 space-y-1.5 shadow-sm">
+                        <label class="block text-[11px] font-black text-primary flex items-center gap-1">
+                            <span class="material-symbols-outlined text-sm text-secondary-container">local_hospital</span>
+                            <span>انتخاب مرکز درمانی طرف گفتگو:</span>
+                        </label>
+                        <select id="chat-org-select" onchange="changeChatOrganization(this.value)" class="w-full bg-surface-container-low border border-outline-variant/30 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-primary cursor-pointer">
+                            <?php
+                            $activeClinics = $pdo->query("SELECT id, name, city FROM organizations WHERE status = 'approved' ORDER BY name ASC LIMIT 30")->fetchAll(PDO::FETCH_ASSOC);
+                            foreach($activeClinics as $ac): ?>
+                                <option value="<?= (int)$ac['id'] ?>"><?= htmlspecialchars($ac['name']) ?> (<?= htmlspecialchars($ac['city']) ?>)</option>
+                            <?php endforeach; ?>
+                        </select>
+                        <p class="text-[10px] text-slate-500">مکاتبه مستقیماً در تیکت اختصاصی این مرکز درمانی ثبت می‌شود (بدون دسترسی مستقیم به پزشک).</p>
                     </div>
                 </div>
             </div>
@@ -2722,21 +2741,33 @@ function setChatMode(mode) {
     // Update UI Buttons
     const btnAi = document.getElementById('btn-mode-ai');
     const btnAdmin = document.getElementById('btn-mode-admin');
+    const btnOrg = document.getElementById('btn-mode-org');
+    const orgSelector = document.getElementById('org-selector-container');
     
+    const activeClass = 'flex-1 flex items-center justify-center gap-1.5 py-3 px-2 rounded-xl text-xs font-black bg-primary-container text-white shadow-md transition-all';
+    const inactiveClass = 'flex-1 flex items-center justify-center gap-1.5 py-3 px-2 rounded-xl text-xs font-black text-on-surface-variant hover:text-primary transition-all';
+
+    if (btnAi) btnAi.className = (mode === 'ai') ? activeClass : inactiveClass;
+    if (btnAdmin) btnAdmin.className = (mode === 'admin') ? activeClass : inactiveClass;
+    if (btnOrg) btnOrg.className = (mode === 'organization') ? activeClass : inactiveClass;
+
     if (mode === 'ai') {
-        btnAi.className = 'flex-1 flex items-center justify-center gap-2 py-4 rounded-xl text-sm font-bold bg-primary-container text-white shadow-md transition-all';
-        btnAdmin.className = 'flex-1 flex items-center justify-center gap-2 py-4 rounded-xl text-sm font-bold text-on-surface-variant hover:text-primary transition-all';
-        
+        if (orgSelector) orgSelector.classList.add('hidden');
         document.getElementById('chat-title').innerText = 'لئو (Leo)';
         document.getElementById('chat-avatar').innerHTML = '<span class="material-symbols-outlined text-3xl">cruelty_free</span>';
         document.querySelector('#chat-typing span').innerText = 'لئو در حال تایپ است...';
+    } else if (mode === 'organization') {
+        if (orgSelector) orgSelector.classList.remove('hidden');
+        const orgSelect = document.getElementById('chat-org-select');
+        const selectedOrgName = orgSelect ? orgSelect.options[orgSelect.selectedIndex]?.text : 'مرکز درمانی';
+        document.getElementById('chat-title').innerText = selectedOrgName;
+        document.getElementById('chat-avatar').innerHTML = '<span class="material-symbols-outlined text-3xl">apartment</span>';
+        document.querySelector('#chat-typing span').innerText = 'پذیرش مرکز درمانی در حال پاسخگویی...';
     } else {
-        btnAdmin.className = 'flex-1 flex items-center justify-center gap-2 py-4 rounded-xl text-sm font-bold bg-primary-container text-white shadow-md transition-all';
-        btnAi.className = 'flex-1 flex items-center justify-center gap-2 py-4 rounded-xl text-sm font-bold text-on-surface-variant hover:text-primary transition-all';
-        
-        document.getElementById('chat-title').innerText = 'پشتیبانی (Admin)';
+        if (orgSelector) orgSelector.classList.add('hidden');
+        document.getElementById('chat-title').innerText = 'پشتیبانی مدیریت آسنا';
         document.getElementById('chat-avatar').innerHTML = '<span class="material-symbols-outlined text-3xl">support_agent</span>';
-        document.querySelector('#chat-typing span').innerText = 'پشتیبان در حال پاسخگویی است...';
+        document.querySelector('#chat-typing span').innerText = 'کارشناس مدیریت آسنا در حال پاسخگویی است...';
     }
     
     // Reset Chat State
@@ -2749,12 +2780,26 @@ function setChatMode(mode) {
     initChat();
 }
 
+function changeChatOrganization(orgId) {
+    const orgSelect = document.getElementById('chat-org-select');
+    const selectedOrgName = orgSelect ? orgSelect.options[orgSelect.selectedIndex]?.text : 'مرکز درمانی';
+    document.getElementById('chat-title').innerText = selectedOrgName;
+    lastMessageId = 0;
+    const msgContainer = document.getElementById('chat-messages');
+    msgContainer.innerHTML = '<div class="flex justify-center mb-8"><div class="bg-surface-container px-4 py-1 rounded-full text-[10px] text-on-surface-variant font-bold shadow-sm">امروز</div></div>';
+    initChat();
+}
+
 function initChat() {
     if (chatPollingInterval) clearInterval(chatPollingInterval);
     
     const fd = new FormData();
     fd.append('action', 'init');
     fd.append('mode', chatMode);
+    if (chatMode === 'organization') {
+        const orgSelect = document.getElementById('chat-org-select');
+        fd.append('organization_id', orgSelect ? orgSelect.value : '');
+    }
     
     fetch('actions/chat_action.php', { method: 'POST', body: fd })
         .then(res => res.json())
@@ -2798,7 +2843,10 @@ function renderMessages(messages) {
     
     messages.forEach(msg => {
         const isUser = msg.sender_type === 'user';
-        const avatar = msg.sender_type === 'ai' ? 'cruelty_free' : 'support_agent';
+        let avatar = 'support_agent';
+        if (msg.sender_type === 'ai') avatar = 'cruelty_free';
+        else if (chatMode === 'organization') avatar = 'apartment';
+
         const safeMessage = escapeHtml(msg.message).replace(/\n/g, '<br>');
         
         let imgHtml = '';
@@ -2814,7 +2862,7 @@ function renderMessages(messages) {
                 <div class="flex gap-4 max-w-[85%] flex-row-reverse ml-auto group">
                     <div class="bg-primary text-white px-5 py-4 rounded-3xl rounded-tl-sm shadow-md text-sm leading-relaxed">
                         ${imgHtml}
-                        <div>${safeMessage}</div>
+                        <div dir="auto" class="chat-message-text" style="unicode-bidi: plaintext; text-align: start;">${safeMessage}</div>
                         <div class="text-[9px] text-white/70 mt-2 text-left w-full block">${time} <span class="material-symbols-outlined text-[10px] ml-0.5" style="vertical-align: middle">done_all</span></div>
                     </div>
                 </div>
@@ -2827,7 +2875,7 @@ function renderMessages(messages) {
                     </div>
                     <div class="bg-white px-5 py-4 rounded-3xl rounded-br-sm shadow-md text-sm border border-outline-variant/10 leading-relaxed text-on-surface">
                         ${imgHtml}
-                        <div class="markdown-body">${safeMessage}</div>
+                        <div class="markdown-body chat-message-text" dir="auto" style="unicode-bidi: plaintext; text-align: start;">${safeMessage}</div>
                         <div class="text-[9px] text-on-surface-variant/70 mt-2 text-right w-full block">${time}</div>
                     </div>
                 </div>

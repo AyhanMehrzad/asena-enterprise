@@ -30,22 +30,61 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POST['action'])) {
         if (!$authorized) {
             $message = 'شما مجوز مدیریت یا ارسال این سفارش را ندارید.';
             $messageType = 'error';
-        } elseif ($orderId > 0 && !empty($trackingCode)) {
-            require_once __DIR__ . '/../includes/OrderLifecycleService.php';
-            $lifecycle = new OrderLifecycleService($pdo);
-            $transRes = $lifecycle->transition($orderId, 'shipped', 'organization', (int)$currentUser['id'], $carrier, $trackingCode, 'ارسال مرسوله توسط مرکز درمانی');
+        } elseif ($orderId > 0) {
+            // BPMS Gateway Check: Verify if an associated prescription exists and is unlocked
+            $rxChk = $pdo->prepare("SELECT id, shipping_unlocked, bpms_state FROM prescriptions WHERE order_id = ?");
+            $rxChk->execute([$orderId]);
+            $linkedRx = $rxChk->fetch(PDO::FETCH_ASSOC);
 
-            if ($transRes['success']) {
-                $pdo->prepare("UPDATE seller_escrow_ledger SET status = 'in_inspection' WHERE order_id = ? AND status = 'pending_delivery'")->execute([$orderId]);
-                $message = "سفارش #PC-{$orderId} با کد رهگیری {$trackingCode} به عنوان ارسال شده ثبت گردید و پیامک رهگیری به خریدار ارسال شد.";
-                $messageType = 'success';
+            if ($linkedRx && (int)$linkedRx['shipping_unlocked'] !== 1) {
+                $message = '⚠️ ارسال این مرسوله به دلیل قفل امنیتی BPMS مسدود است: نسخه دارویی این سفارش هنوز توسط داروساز مسئول فنی تأیید (Accept Receipt) نشده است.';
+                $messageType = 'error';
+            } elseif (!empty($trackingCode)) {
+                require_once __DIR__ . '/../includes/OrderLifecycleService.php';
+                $lifecycle = new OrderLifecycleService($pdo);
+                $transRes = $lifecycle->transition($orderId, 'shipped', 'organization', (int)$currentUser['id'], $carrier, $trackingCode, 'ارسال مرسوله توسط مرکز درمانی');
+
+                if ($transRes['success']) {
+                    $pdo->prepare("UPDATE seller_escrow_ledger SET status = 'in_inspection' WHERE order_id = ? AND status = 'pending_delivery'")->execute([$orderId]);
+                    $message = "سفارش #PC-{$orderId} با کد رهگیری {$trackingCode} به عنوان ارسال شده ثبت گردید و پیامک رهگیری به خریدار ارسال شد.";
+                    $messageType = 'success';
+                } else {
+                    $message = $transRes['message'] ?? 'خطا در ثبت اطلاعات ارسال.';
+                    $messageType = 'error';
+                }
             } else {
-                $message = $transRes['message'] ?? 'خطا در ثبت اطلاعات ارسال.';
+                $message = 'لطفاً کد رهگیری پستی مرسوله را وارد نمایید.';
                 $messageType = 'error';
             }
-        } else {
+        }
+    } elseif ($action === 'dispatch_bpms_prescription') {
+        $rxId = (int)($_POST['rx_id'] ?? 0);
+        $trackingCode = trim($_POST['post_tracking_code'] ?? '');
+        $carrier = trim($_POST['carrier_name'] ?? 'شرکت ملی پست / پستکس');
+
+        $bpms = App::bpms();
+        $rx = $bpms->getPrescription($rxId);
+
+        $isOrgRx = ($rx && ((int)$rx['organization_id'] === $orgId || $currentUser['role'] === 'admin'));
+
+        if (!$isOrgRx) {
+            $message = 'شما مجوز مدیریت ارسال این نسخه دارویی را ندارید.';
+            $messageType = 'error';
+        } elseif (!$bpms->isShippingUnlocked($rxId)) {
+            $message = '⚠️ ارسال مرسوله مسدود است: نسخه هنوز به تأیید داروساز نرسیده است (قفل امنیتی BPMS فعال است).';
+            $messageType = 'error';
+        } elseif (empty($trackingCode)) {
             $message = 'لطفاً کد رهگیری پستی مرسوله را وارد نمایید.';
             $messageType = 'error';
+        } else {
+            $shipped = $bpms->orgMarkShipped($rxId, (int)$currentUser['id'], $trackingCode, $carrier);
+            if ($shipped) {
+                $message = "✅ مرسوله دارویی نسخه #{$rxId} با کد رهگیری {$trackingCode} با موفقیت به عنوان ارسال‌شده ثبت گردید.";
+                $messageType = 'success';
+            } else {
+                $message = 'خطا در ثبت وضعیت ارسال نسخه.';
+                $messageType = 'error';
+            }
         }
     } elseif ($action === 'update_order_status') {
         $orderId = (int)($_POST['order_id'] ?? 0);
@@ -142,7 +181,58 @@ if (!empty($orders)) {
         $ord['items'] = $itemsByOrder[$ord['id']] ?? [];
     }
     unset($ord);
+
+    // Attach prescription lock status to each order if exists
+    $orderPrescriptions = [];
+    $ph = implode(',', array_fill(0, count($orderIds), '?'));
+    $opStmt = $pdo->prepare("SELECT id, order_id, bpms_state, shipping_unlocked, pharmacist_decision FROM prescriptions WHERE order_id IN ($ph)");
+    $opStmt->execute($orderIds);
+    foreach ($opStmt->fetchAll(PDO::FETCH_ASSOC) as $op) {
+        $orderPrescriptions[$op['order_id']] = $op;
+    }
+} else {
+    $orderPrescriptions = [];
 }
+
+// Fetch BPMS Clinical Prescriptions assigned to this Organization
+$bpmsParams = [];
+$bpmsWhere = "1=1";
+if ($currentUser['role'] !== 'admin') {
+    $bpmsWhere = "p.organization_id = ?";
+    $bpmsParams[] = $orgId;
+}
+
+$bpmsStmt = $pdo->prepare("
+    SELECT p.*,
+           u.name as customer_name, u.phone as customer_phone,
+           d.name as doctor_name, d.specialty as doctor_specialty, d.license_number as doctor_license,
+           pet.pet_name, pet.species, pet.breed
+    FROM prescriptions p
+    LEFT JOIN users u ON p.user_id = u.id
+    LEFT JOIN doctors d ON p.doctor_id = d.id
+    LEFT JOIN pet_health_records pet ON p.pet_id = pet.id
+    WHERE {$bpmsWhere}
+    ORDER BY FIELD(p.bpms_state, 'pharmacist_approved', 'broadcasted', 'pharmacist_review', 'pharmacist_rejected', 'org_shipped', 'completed'), p.created_at DESC
+    LIMIT 60
+");
+$bpmsStmt->execute($bpmsParams);
+$bpmsPrescriptions = $bpmsStmt->fetchAll(PDO::FETCH_ASSOC);
+
+// Calculate BPMS metrics
+$bpmsLockedCount = 0;
+$bpmsReadyCount  = 0;
+$bpmsShippedCount = 0;
+foreach ($bpmsPrescriptions as $bRx) {
+    if ((int)$bRx['shipping_unlocked'] === 1 && $bRx['bpms_state'] !== 'org_shipped' && $bRx['bpms_state'] !== 'completed') {
+        $bpmsReadyCount++;
+    } elseif ((int)$bRx['shipping_unlocked'] === 0 && !in_array($bRx['bpms_state'], ['org_shipped', 'completed'])) {
+        $bpmsLockedCount++;
+    } elseif ($bRx['bpms_state'] === 'org_shipped') {
+        $bpmsShippedCount++;
+    }
+}
+
+$mainTab = $_GET['tab'] ?? 'orders';
 
 // Quick stats strictly scoped to this organization
 $statsStmt = $pdo->prepare("
@@ -275,18 +365,221 @@ $fmtDate = new IntlDateFormatter('fa_IR@calendar=persian', IntlDateFormatter::FU
         </div>
     </div>
 
+    <!-- Main Tabs: Regular Orders vs BPMS Prescriptions -->
+    <div class="flex items-center gap-3 border-b border-slate-200 pb-2">
+        <a href="orders.php?tab=orders" class="px-5 py-2.5 rounded-2xl text-xs font-black transition-all flex items-center gap-2 <?= $mainTab !== 'bpms' ? 'bg-sky-600 text-white shadow-md' : 'bg-slate-100 text-slate-600 hover:bg-slate-200' ?>">
+            <span class="material-symbols-outlined text-base">shopping_cart</span>
+            <span>سفارشات فروشگاهی و کالا (<?= (int)$stats['total_orders'] ?>)</span>
+        </a>
+        <a href="orders.php?tab=bpms" class="px-5 py-2.5 rounded-2xl text-xs font-black transition-all flex items-center gap-2 <?= $mainTab === 'bpms' ? 'bg-indigo-600 text-white shadow-md' : 'bg-slate-100 text-slate-600 hover:bg-slate-200' ?>">
+            <span class="material-symbols-outlined text-base">medication</span>
+            <span>کارتابل مرسولات دارویی BPMS (<?= count($bpmsPrescriptions) ?>)</span>
+            <?php if ($bpmsReadyCount > 0): ?>
+                <span class="px-2 py-0.5 rounded-full bg-emerald-400 text-white text-[10px] font-bold animate-pulse"><?= $bpmsReadyCount ?> آماده ارسال</span>
+            <?php endif; ?>
+            <?php if ($bpmsLockedCount > 0): ?>
+                <span class="px-2 py-0.5 rounded-full bg-amber-400 text-slate-900 text-[10px] font-bold">🔒 <?= $bpmsLockedCount ?> قفل</span>
+            <?php endif; ?>
+        </a>
+    </div>
+
+    <?php if ($mainTab === 'bpms'): ?>
+    <!-- ═════════════════════════════════════════════════════════
+         BPMS CLINICAL PRESCRIPTIONS DISPATCH BOARD
+    ═════════════════════════════════════════════════════════ -->
+    <div class="space-y-4">
+        <div class="p-4 bg-gradient-to-r from-indigo-50 via-blue-50 to-purple-50 rounded-2xl border border-indigo-100 flex items-start gap-3 text-xs text-indigo-950">
+            <div class="w-9 h-9 rounded-xl bg-indigo-100 text-indigo-700 flex items-center justify-center shrink-0">
+                <span class="material-symbols-outlined">account_tree</span>
+            </div>
+            <div>
+                <h4 class="font-black text-sm text-indigo-900 mb-0.5">دروازه مدیریت فرایند ارسال اقلام دارویی (BPMS Shipping Gateway)</h4>
+                <p class="text-indigo-800 leading-relaxed">
+                    نسخه‌های تجویزی پزشکان به صورت خودکار به داروساز ارسال می‌گردند. طبق پروتکل یکپارچه بالینی، <strong>تنها در صورتی که داروساز مسئول فنی نسخه را تأیید نماید (Accept Receipt)، قفل ارسال مرسوله برای کلینیک باز خواهد شد</strong> و کلینیک مجاز به بسته‌بندی و الصاق بارکد پستی خواهد بود.
+                </p>
+            </div>
+        </div>
+
+        <?php if (empty($bpmsPrescriptions)): ?>
+            <div class="bg-white rounded-2xl border border-slate-200 text-center py-16 text-slate-400 space-y-3">
+                <span class="material-symbols-outlined text-5xl text-slate-300">medication</span>
+                <p class="text-sm font-bold text-slate-600">هیچ نسخه دارویی ارجاعی در کارتابل کلینیک ثبت نشده است.</p>
+                <p class="text-xs text-slate-400">به محض اینکه پزشک در پنل خود نسخه‌ای را با انتخاب این مرکز ثبت نماید، در این بخش قابل مدیریت خواهد بود.</p>
+            </div>
+        <?php else: ?>
+            <?php foreach ($bpmsPrescriptions as $rx):
+                $items = json_decode($rx['items_json'] ?? '[]', true) ?: [];
+                $stateLabel = BpmsService::getStateLabelFa($rx['bpms_state'] ?? 'broadcasted');
+                $stateBadge = BpmsService::getStateBadgeClass($rx['bpms_state'] ?? 'broadcasted');
+                $isUnlocked = ((int)$rx['shipping_unlocked'] === 1);
+                $isShipped  = ($rx['bpms_state'] === 'org_shipped');
+            ?>
+            <div class="bg-white rounded-2xl border <?= $isUnlocked && !$isShipped ? 'border-emerald-300 ring-2 ring-emerald-50' : 'border-slate-200' ?> p-5 sm:p-6 shadow-sm hover:border-slate-300 transition-all space-y-4">
+                <!-- Top Bar -->
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100">
+                    <div class="flex flex-wrap items-center gap-3 text-xs">
+                        <span class="font-black text-slate-900 font-mono text-sm">#نسخه-<?= $rx['id'] ?></span>
+                        <span class="text-slate-300">•</span>
+                        <span class="text-slate-500 flex items-center gap-1 font-medium">
+                            <span class="material-symbols-outlined text-[14px]">calendar_today</span>
+                            <?= substr($rx['created_at'] ?? '', 0, 10) ?>
+                        </span>
+                        <span class="text-slate-300">•</span>
+                        <span class="font-bold text-slate-700">سرپرست: <?= htmlspecialchars($rx['customer_name'] ?? 'نامشخص') ?></span>
+                        <?php if (!empty($rx['customer_phone'])): ?>
+                            <a href="tel:<?= htmlspecialchars($rx['customer_phone']) ?>" class="text-sky-600 font-mono dir-ltr hover:underline">
+                                <?= htmlspecialchars($rx['customer_phone']) ?>
+                            </a>
+                        <?php endif; ?>
+                        <?php if (!empty($rx['pet_name'])): ?>
+                            <span class="text-slate-300">•</span>
+                            <span class="text-indigo-700 font-bold">🐾 پت: <?= htmlspecialchars($rx['pet_name']) ?> (<?= htmlspecialchars($rx['species'] ?? '') ?>)</span>
+                        <?php endif; ?>
+                    </div>
+
+                    <div class="flex items-center gap-2">
+                        <span class="px-3 py-1 rounded-full text-xs font-bold border <?= $stateBadge ?>">
+                            <?= $stateLabel ?>
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Doctor & Diagnosis -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                    <div class="p-3 bg-blue-50/70 rounded-xl border border-blue-100">
+                        <p class="text-[10px] font-bold text-blue-700 mb-1">🩺 پزشک معالج صادرکننده</p>
+                        <p class="font-bold text-slate-800"><?= htmlspecialchars($rx['doctor_name'] ?? 'نامشخص') ?> - <?= htmlspecialchars($rx['doctor_specialty'] ?? '') ?></p>
+                        <?php if (!empty($rx['doctor_license'])): ?><p class="text-[10px] text-slate-500 mt-0.5">شماره نظام: <?= htmlspecialchars($rx['doctor_license']) ?></p><?php endif; ?>
+                    </div>
+                    <div class="p-3 bg-amber-50/70 rounded-xl border border-amber-100">
+                        <p class="text-[10px] font-bold text-amber-700 mb-1">🔬 تشخیص بالینی پزشک</p>
+                        <p class="font-bold text-slate-800"><?= htmlspecialchars($rx['diagnosis'] ?? '—') ?></p>
+                    </div>
+                </div>
+
+                <!-- Doctor Clinical Examination Report -->
+                <?php if (!empty($rx['doctor_examination_report'])): ?>
+                <div class="p-3.5 bg-slate-50 rounded-xl border border-slate-200 text-xs text-slate-700 space-y-1">
+                    <p class="text-[10px] font-bold text-slate-500 flex items-center gap-1">
+                        <span class="material-symbols-outlined text-sm">clinical_notes</span>
+                        <span>گزارش معاینه بالینی پزشک</span>
+                    </p>
+                    <p class="leading-relaxed"><?= nl2br(htmlspecialchars($rx['doctor_examination_report'])) ?></p>
+                </div>
+                <?php endif; ?>
+
+                <!-- Drug Items -->
+                <?php if (!empty($items)): ?>
+                <div class="p-3 bg-indigo-50/60 rounded-xl border border-indigo-100">
+                    <p class="text-[10px] font-bold text-indigo-700 mb-2">💊 اقلام دارویی نسخه</p>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+                        <?php foreach ($items as $it): ?>
+                        <div class="p-2 bg-white rounded-lg border border-indigo-100 flex items-center justify-between text-xs">
+                            <div>
+                                <span class="font-bold text-slate-800"><?= htmlspecialchars($it['name'] ?? '') ?></span>
+                                <?php if (!empty($it['dose'])): ?><span class="text-indigo-600 font-mono text-[11px]">(<?= htmlspecialchars($it['dose']) ?>)</span><?php endif; ?>
+                            </div>
+                            <span class="text-slate-500 text-[11px]">× <?= (int)($it['qty'] ?? 1) ?></span>
+                        </div>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+                <?php endif; ?>
+
+                <!-- Shipping Lock / Dispatch Section -->
+                <?php if (!$isUnlocked): ?>
+                    <!-- Locked banner -->
+                    <div class="p-4 bg-amber-50 border border-amber-300 rounded-xl text-xs space-y-2">
+                        <div class="flex items-center gap-2 font-black text-amber-900">
+                            <span class="material-symbols-outlined text-amber-600">lock</span>
+                            <span>🔒 قفل فرایندی فعال است — ارسال مرسوله تا پیش از تأیید داروساز غیرمجاز است</span>
+                        </div>
+                        <p class="text-amber-800">
+                            این نسخه در کارتابل مسئول فنی داروخانه در حال بررسی است. به محض تأیید نسخه توسط داروساز (Accept Receipt)، قفل ارسال باز شده و امکان ثبت کد رهگیری پستی فعال خواهد شد.
+                        </p>
+                        <?php if ($rx['pharmacist_decision'] === 'rejected'): ?>
+                            <p class="text-rose-700 font-bold mt-1">❌ نسخه توسط داروساز رد شده است: <?= htmlspecialchars($rx['pharmacist_notes'] ?? 'نیاز به اصلاح دوز') ?></p>
+                        <?php endif; ?>
+                    </div>
+                <?php elseif ($isUnlocked && !$isShipped): ?>
+                    <!-- Unlocked & Ready for Dispatch -->
+                    <div class="p-4 bg-emerald-50 border border-emerald-300 rounded-xl text-xs space-y-3">
+                        <div class="flex items-center justify-between flex-wrap gap-2">
+                            <div class="flex items-center gap-2 font-black text-emerald-900">
+                                <span class="material-symbols-outlined text-emerald-600">verified</span>
+                                <span>✅ نسخه توسط داروساز تأیید شد — آماده بسته‌بندی و ارسال</span>
+                            </div>
+                            <span class="px-2.5 py-1 rounded-full bg-emerald-200 text-emerald-900 text-[10px] font-bold">قفل ارسال باز شد</span>
+                        </div>
+
+                        <?php if (!empty($rx['pharmacist_notes'])): ?>
+                            <p class="text-emerald-800 text-[11px]">یادداشت داروساز: <?= htmlspecialchars($rx['pharmacist_notes']) ?></p>
+                        <?php endif; ?>
+
+                        <!-- Dispatch Form -->
+                        <form method="POST" class="flex flex-wrap items-center gap-3 pt-2 border-t border-emerald-200">
+                            <?= csrf_field() ?>
+                            <input type="hidden" name="action" value="dispatch_bpms_prescription">
+                            <input type="hidden" name="rx_id" value="<?= $rx['id'] ?>">
+
+                            <div class="flex items-center gap-2">
+                                <label class="font-bold text-slate-700">کد رهگیری پستی / پستکس:</label>
+                                <input type="text" name="post_tracking_code" placeholder="مثال: 184590203001..." required class="px-3 py-2 rounded-xl border border-emerald-300 text-xs font-mono dir-ltr focus:ring-2 focus:ring-emerald-500 outline-none w-52 bg-white">
+                            </div>
+
+                            <div class="flex items-center gap-2">
+                                <label class="font-bold text-slate-700">حمل‌کننده:</label>
+                                <input type="text" name="carrier_name" value="شرکت ملی پست / پستکس" class="px-3 py-2 rounded-xl border border-slate-200 text-xs outline-none w-40 bg-white">
+                            </div>
+
+                            <button type="submit" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs flex items-center gap-1.5 shadow-sm transition-all">
+                                <span class="material-symbols-outlined text-base">local_shipping</span>
+                                <span>ثبت ارسال مرسوله دارویی</span>
+                            </button>
+                        </form>
+                    </div>
+                <?php else: ?>
+                    <!-- Shipped -->
+                    <div class="p-4 bg-sky-50 border border-sky-200 rounded-xl text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div class="space-y-1">
+                            <div class="flex items-center gap-2 font-black text-sky-900">
+                                <span class="material-symbols-outlined text-sky-600">task_alt</span>
+                                <span>📦 مرسوله دارویی به ناوگان پست تحویل داده شد</span>
+                            </div>
+                            <p class="text-sky-800">
+                                کد رهگیری پستی: <span class="font-mono font-bold"><?= htmlspecialchars($rx['shipping_tracking_code'] ?? '—') ?></span>
+                                <?php if (!empty($rx['shipped_at'])): ?> | تاریخ ارسال: <span dir="ltr"><?= substr($rx['shipped_at'], 0, 16) ?></span><?php endif; ?>
+                            </p>
+                        </div>
+                        <?php if (!empty($rx['shipping_tracking_code'])): ?>
+                        <a href="https://tracking.post.ir/?id=<?= urlencode($rx['shipping_tracking_code']) ?>" target="_blank" class="px-3.5 py-2 rounded-xl bg-sky-600 hover:bg-sky-700 text-white font-bold flex items-center gap-1 shrink-0 transition-all text-xs">
+                            <span class="material-symbols-outlined text-sm">track_changes</span>
+                            <span>استعلام وضعیت از سامانه پست</span>
+                        </a>
+                        <?php endif; ?>
+                    </div>
+                <?php endif; ?>
+            </div>
+            <?php endforeach; ?>
+        <?php endif; ?>
+    </div>
+
+    <?php else: ?>
+    <!-- ═════════════════════════════════════════════════════════
+         REGULAR STORE ORDERS FEED
+    ═════════════════════════════════════════════════════════ -->
     <!-- Filters -->
     <div class="flex items-center gap-2 overflow-x-auto pb-1 text-xs font-bold">
-        <a href="orders.php?filter=all" class="px-4 py-2 rounded-xl transition-all <?= $filter === 'all' ? 'bg-sky-600 text-white shadow-sm' : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200' ?>">
+        <a href="orders.php?tab=orders&filter=all" class="px-4 py-2 rounded-xl transition-all <?= $filter === 'all' ? 'bg-sky-600 text-white shadow-sm' : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200' ?>">
             همه سفارشات (<?= (int)$stats['total_orders'] ?>)
         </a>
-        <a href="orders.php?filter=pending" class="px-4 py-2 rounded-xl transition-all <?= $filter === 'pending' ? 'bg-amber-500 text-white shadow-sm' : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200' ?>">
+        <a href="orders.php?tab=orders&filter=pending" class="px-4 py-2 rounded-xl transition-all <?= $filter === 'pending' ? 'bg-amber-500 text-white shadow-sm' : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200' ?>">
             در انتظار آماده‌سازی (<?= (int)$stats['pending_dispatch'] ?>)
         </a>
-        <a href="orders.php?filter=shipped" class="px-4 py-2 rounded-xl transition-all <?= $filter === 'shipped' ? 'bg-indigo-600 text-white shadow-sm' : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200' ?>">
+        <a href="orders.php?tab=orders&filter=shipped" class="px-4 py-2 rounded-xl transition-all <?= $filter === 'shipped' ? 'bg-indigo-600 text-white shadow-sm' : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200' ?>">
             ارسال شده با رهگیری (<?= (int)$stats['shipped_orders'] ?>)
         </a>
-        <a href="orders.php?filter=delivered" class="px-4 py-2 rounded-xl transition-all <?= $filter === 'delivered' ? 'bg-emerald-600 text-white shadow-sm' : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200' ?>">
+        <a href="orders.php?tab=orders&filter=delivered" class="px-4 py-2 rounded-xl transition-all <?= $filter === 'delivered' ? 'bg-emerald-600 text-white shadow-sm' : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200' ?>">
             تحویل موفق به خریدار (<?= (int)$stats['delivered_orders'] ?>)
         </a>
     </div>
@@ -302,6 +595,9 @@ $fmtDate = new IntlDateFormatter('fa_IR@calendar=persian', IntlDateFormatter::FU
         <?php else: ?>
             <?php foreach ($orders as $ord): ?>
                 <?php
+                $linkedRx = $orderPrescriptions[$ord['id']] ?? null;
+                $isRxLocked = ($linkedRx && (int)$linkedRx['shipping_unlocked'] !== 1);
+
                 $statusMeta = match($ord['status']) {
                     'pending_payment' => ['title' => 'در انتظار پرداخت', 'bg' => 'bg-amber-50 text-amber-800 border-amber-200'],
                     'processing'      => ['title' => 'در حال بسته‌بندی در انبار', 'bg' => 'bg-blue-50 text-blue-800 border-blue-200'],
@@ -311,7 +607,7 @@ $fmtDate = new IntlDateFormatter('fa_IR@calendar=persian', IntlDateFormatter::FU
                     default           => ['title' => $ord['status'], 'bg' => 'bg-slate-100 text-slate-800 border-slate-200'],
                 };
                 ?>
-                <div class="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 shadow-sm hover:border-slate-300 transition-all space-y-4">
+                <div class="bg-white rounded-2xl border <?= $isRxLocked ? 'border-amber-300' : 'border-slate-200' ?> p-5 sm:p-6 shadow-sm hover:border-slate-300 transition-all space-y-4">
                     <!-- Top Bar -->
                     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100">
                         <div class="flex flex-wrap items-center gap-3 text-xs">
@@ -340,6 +636,24 @@ $fmtDate = new IntlDateFormatter('fa_IR@calendar=persian', IntlDateFormatter::FU
                             </a>
                         </div>
                     </div>
+
+<!-- BPMS Linked Prescription Alert -->
+                    <?php if ($linkedRx): ?>
+                        <?php if ($isRxLocked): ?>
+                            <div class="p-3 bg-amber-50 border border-amber-300 rounded-xl text-xs font-bold text-amber-900 flex items-center justify-between">
+                                <div class="flex items-center gap-2">
+                                    <span class="material-symbols-outlined text-amber-600">lock</span>
+                                    <span>🔒 قفل امنیتی BPMS فعال است: این سفارش شامل نسخه دارویی #<?= $linkedRx['id'] ?> است و تا پیش از تأیید داروساز، ارسال آن غیرمجاز است.</span>
+                                </div>
+                                <span class="px-2.5 py-1 rounded-full bg-amber-200 text-amber-900 text-[10px] font-bold">در انتظار بررسی داروساز</span>
+                            </div>
+                        <?php else: ?>
+                            <div class="p-2.5 bg-emerald-50 border border-emerald-200 rounded-xl text-xs font-bold text-emerald-900 flex items-center gap-2">
+                                <span class="material-symbols-outlined text-emerald-600 text-sm">verified</span>
+                                <span>✅ نسخه دارویی این سفارش (#<?= $linkedRx['id'] ?>) به تأیید داروساز رسیده است — قفل ارسال باز می‌باشد.</span>
+                            </div>
+                        <?php endif; ?>
+                    <?php endif; ?>
 
                     <!-- Shipping Address, Postal Code & Map Location -->
                     <?php
@@ -429,7 +743,7 @@ $fmtDate = new IntlDateFormatter('fa_IR@calendar=persian', IntlDateFormatter::FU
                                     <span>تحویل بسته:</span>
                                 </span>
 
-                                <select name="carrier_name" class="px-2.5 py-1.5 rounded-lg border border-slate-200 text-xs font-bold bg-white focus:ring-2 focus:ring-sky-500 outline-none">
+                                <select name="carrier_name" class="px-2.5 py-1.5 rounded-lg border border-slate-200 text-xs font-bold bg-white focus:ring-2 focus:ring-sky-500 outline-none" <?= $isRxLocked ? 'disabled' : '' ?>>
                                     <option value="شرکت ملی پست (پیشتاز)">شرکت ملی پست (پیشتاز)</option>
                                     <option value="پستکس (Postex)">پستکس (Postex)</option>
                                     <option value="تیپاکس (Tipax)">تیپاکس (Tipax)</option>
@@ -437,12 +751,19 @@ $fmtDate = new IntlDateFormatter('fa_IR@calendar=persian', IntlDateFormatter::FU
                                     <option value="پیک اختصاصی کلینیک">پیک اختصاصی کلینیک</option>
                                 </select>
 
-                                <input type="text" name="post_tracking_code" placeholder="بارکد پستی ۲۴ رقمی..." required class="px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-mono dir-ltr focus:ring-2 focus:ring-sky-500 outline-none w-44 bg-white">
+                                <input type="text" name="post_tracking_code" placeholder="بارکد پستی ۲۴ رقمی..." required class="px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-mono dir-ltr focus:ring-2 focus:ring-sky-500 outline-none w-44 bg-white" <?= $isRxLocked ? 'disabled' : '' ?>>
 
-                                <button type="submit" class="px-3.5 py-1.5 rounded-lg bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold shadow-sm transition-all flex items-center gap-1">
-                                    <span>تغییر به ارسال شد</span>
-                                    <span class="material-symbols-outlined text-sm">arrow_forward</span>
-                                </button>
+                                <?php if ($isRxLocked): ?>
+                                    <button type="button" disabled class="px-3.5 py-1.5 rounded-lg bg-slate-200 text-slate-400 text-xs font-bold cursor-not-allowed flex items-center gap-1" title="نسخه هنوز به تأیید داروساز نرسیده است">
+                                        <span class="material-symbols-outlined text-sm">lock</span>
+                                        <span>ارسال غیرمجاز (قفل BPMS)</span>
+                                    </button>
+                                <?php else: ?>
+                                    <button type="submit" class="px-3.5 py-1.5 rounded-lg bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold shadow-sm transition-all flex items-center gap-1">
+                                        <span>تغییر به ارسال شد</span>
+                                        <span class="material-symbols-outlined text-sm">arrow_forward</span>
+                                    </button>
+                                <?php endif; ?>
                             </form>
                         <?php else: ?>
                             <!-- Active Shipped Tracking State -->
@@ -470,6 +791,7 @@ $fmtDate = new IntlDateFormatter('fa_IR@calendar=persian', IntlDateFormatter::FU
             <?php endforeach; ?>
         <?php endif; ?>
     </div>
+    <?php endif; ?>
 
 </div>
 

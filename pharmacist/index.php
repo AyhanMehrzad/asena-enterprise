@@ -73,10 +73,60 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 $success = "موجودی داروی انتخابی بروزرسانی شد.";
             }
         }
+    } elseif ($action === 'bpms_start_review') {
+        require_once '../includes/App.php';
+        $rxId = (int)($_POST['rx_id'] ?? 0);
+        if ($rxId > 0) {
+            $ok = App::bpms()->pharmacistStartReview($rxId, $currentUser['id']);
+            $success = $ok ? "✅ بررسی نسخه #{$rxId} شروع شد. وضعیت فرایند به «در دست بررسی» تغییر یافت." : "خطا یا وضعیت نسخه معتبر نیست.";
+            if (!$ok) $error = $success; $success = '';
+        }
+    } elseif ($action === 'bpms_approve') {
+        require_once '../includes/App.php';
+        $rxId  = (int)($_POST['rx_id'] ?? 0);
+        $notes = trim($_POST['pharmacist_notes'] ?? '');
+        if ($rxId > 0) {
+            $ok = App::bpms()->pharmacistApprove($rxId, $currentUser['id'], $notes);
+            if ($ok) {
+                $success = "✅ نسخه #{$rxId} تأیید شد! قفل فرایندی ارسال کلینیک باز شد. کلینیک اکنون می‌تواند مرسوله را ارسال کند.";
+            } else {
+                $error = "خطا در تأیید نسخه. احتمالاً نسخه قبلاً پردازش شده است.";
+            }
+        }
+    } elseif ($action === 'bpms_reject') {
+        require_once '../includes/App.php';
+        $rxId   = (int)($_POST['rx_id'] ?? 0);
+        $reason = trim($_POST['rejection_reason'] ?? 'نسخه معتبر نیست یا اقلام دارویی با گزارش بالینی مطابقت ندارد.');
+        if ($rxId > 0) {
+            $ok = App::bpms()->pharmacistReject($rxId, $currentUser['id'], $reason);
+            if ($ok) {
+                $success = "❌ نسخه #{$rxId} رد شد. پزشک باید نسخه را اصلاح و مجدداً صادر نماید.";
+            } else {
+                $error = "خطا در رد نسخه.";
+            }
+        }
     }
 }
 
-// Fetch Electronic Prescriptions
+// ── BPMS: Fetch Pending Prescriptions for Pharmacist Review ──────────────────
+require_once '../includes/App.php';
+$bpms = App::bpms();
+$pharmacyId = null; // Single pharmacist linked to a pharmacy store
+try {
+    $psRow = $pdo->prepare("SELECT id FROM pharmacy_stores WHERE user_id = ?");
+    $psRow->execute([$currentUser['id']]);
+    $pharmacyId = (int)($psRow->fetchColumn() ?: 0) ?: null;
+} catch (Throwable $e) {}
+
+// All prescriptions visible to this pharmacist (their pharmacy or unassigned)
+$bpmsPrescriptions = $bpms->getPrescriptionsForPharmacist($pharmacyId, 60);
+
+// Segment by BPMS state
+$bpmsPending  = array_filter($bpmsPrescriptions, fn($r) => in_array($r['bpms_state'] ?? '', ['broadcasted', 'pharmacist_review']));
+$bpmsApproved = array_filter($bpmsPrescriptions, fn($r) => ($r['bpms_state'] ?? '') === 'pharmacist_approved');
+$bpmsRejected = array_filter($bpmsPrescriptions, fn($r) => ($r['bpms_state'] ?? '') === 'pharmacist_rejected');
+
+// Legacy: Fetch Electronic Prescriptions (backward compat)
 $rxStmt = $pdo->prepare("
     SELECT p.*, u.name as customer_name, u.phone as customer_phone,
            d.name as doctor_name, d.specialty as doctor_specialty
@@ -194,6 +244,156 @@ $fmtDate = new IntlDateFormatter('fa_IR@calendar=persian', IntlDateFormatter::FU
             <span class="material-symbols-outlined text-base">add</span>
             <span>افزودن داروی جدید</span>
         </button>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════
+         TAB: BPMS CLINICAL REVIEW (Pharmacist Gateway)
+    ══════════════════════════════════════════════════ -->
+    <div id="bpms-tab" class="tab-content hidden space-y-5">
+
+        <!-- Pending BPMS Review Queue -->
+        <div class="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+            <div class="p-5 border-b border-slate-100 flex items-center justify-between bg-gradient-to-r from-indigo-50 to-blue-50">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-indigo-100 text-indigo-700 flex items-center justify-center">
+                        <span class="material-symbols-outlined">hourglass_top</span>
+                    </div>
+                    <div>
+                        <h3 class="text-sm font-black text-indigo-900">نسخه‌های در انتظار تأیید / رد داروساز</h3>
+                        <p class="text-[10px] text-indigo-700">تا زمانی که داروساز تأیید نکند، کلینیک قادر به ارسال نیست. 🔒</p>
+                    </div>
+                </div>
+                <span class="text-xs bg-indigo-100 text-indigo-800 rounded-full px-3 py-1 font-bold border border-indigo-200"><?= count($bpmsPending) ?> نسخه</span>
+            </div>
+
+            <?php if (empty($bpmsPending)): ?>
+            <div class="p-8 text-center text-xs text-slate-400">
+                <span class="material-symbols-outlined text-4xl text-slate-200 block mb-2">inbox</span>
+                هیچ نسخه‌ای در صف انتظار تأیید BPMS وجود ندارد. ✅
+            </div>
+            <?php else: ?>
+            <div class="divide-y divide-slate-100">
+                <?php foreach ($bpmsPending as $rx):
+                    $items = json_decode($rx['items_json'] ?? '[]', true) ?: [];
+                    $stateLabel = BpmsService::getStateLabelFa($rx['bpms_state'] ?? 'broadcasted');
+                    $stateBadge = BpmsService::getStateBadgeClass($rx['bpms_state'] ?? 'broadcasted');
+                ?>
+                <div class="p-5 space-y-4 hover:bg-slate-50/50 transition-colors">
+                    <!-- Header row -->
+                    <div class="flex flex-col md:flex-row justify-between items-start gap-3">
+                        <div class="flex items-start gap-3">
+                            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-100 to-blue-100 text-indigo-700 flex items-center justify-center shrink-0">
+                                <span class="material-symbols-outlined">description</span>
+                            </div>
+                            <div>
+                                <div class="flex items-center gap-2 flex-wrap">
+                                    <span class="font-black text-sm text-slate-900">نسخه #<?= $rx['id'] ?></span>
+                                    <span class="px-2 py-0.5 rounded-full text-[10px] font-bold border <?= $stateBadge ?>"><?= $stateLabel ?></span>
+                                </div>
+                                <p class="text-xs text-slate-500 mt-0.5">
+                                    👤 بیمار: <strong><?= htmlspecialchars($rx['user_name'] ?? '—') ?></strong>
+                                    <?php if ($rx['pet_name']): ?> | 🐾 <strong><?= htmlspecialchars($rx['pet_name']) ?></strong><?php endif; ?>
+                                </p>
+                            </div>
+                        </div>
+                        <div class="text-right text-xs text-slate-400" dir="ltr"><?= substr($rx['created_at'] ?? '', 0, 10) ?></div>
+                    </div>
+
+                    <!-- Clinical & Diagnosis -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div class="p-3 bg-blue-50 rounded-xl border border-blue-100">
+                            <p class="text-[10px] font-bold text-blue-700 mb-1">🩺 پزشک صادرکننده</p>
+                            <p class="text-xs font-bold text-slate-800"><?= htmlspecialchars($rx['doctor_name'] ?? 'نامشخص') ?> - <?= htmlspecialchars($rx['doctor_specialty'] ?? '') ?></p>
+                            <?php if (!empty($rx['vet_license_number'])): ?><p class="text-[10px] text-slate-500">نظام: <?= htmlspecialchars($rx['vet_license_number']) ?></p><?php endif; ?>
+                        </div>
+                        <div class="p-3 bg-amber-50 rounded-xl border border-amber-100">
+                            <p class="text-[10px] font-bold text-amber-700 mb-1">🔬 تشخیص بالینی</p>
+                            <p class="text-xs font-bold text-slate-800"><?= htmlspecialchars($rx['diagnosis'] ?? '—') ?></p>
+                        </div>
+                    </div>
+
+                    <?php if (!empty($rx['doctor_examination_report'])): ?>
+                    <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs text-slate-700">
+                        <p class="text-[10px] font-bold text-slate-500 mb-1">📋 گزارش معاینه بالینی پزشک</p>
+                        <?= nl2br(htmlspecialchars($rx['doctor_examination_report'])) ?>
+                    </div>
+                    <?php endif; ?>
+
+                    <?php if (!empty($items)): ?>
+                    <div class="p-3 bg-indigo-50/60 rounded-xl border border-indigo-100">
+                        <p class="text-[10px] font-bold text-indigo-700 mb-2">💊 اقلام دارویی نسخه</p>
+                        <div class="space-y-1">
+                            <?php foreach ($items as $it): ?>
+                            <div class="flex items-center gap-2 text-xs">
+                                <span class="w-1.5 h-1.5 rounded-full bg-indigo-400 shrink-0"></span>
+                                <span class="font-bold text-slate-800"><?= htmlspecialchars($it['name'] ?? '') ?></span>
+                                <?php if (!empty($it['dose'])): ?><span class="text-indigo-600 font-mono">(<?= htmlspecialchars($it['dose']) ?>)</span><?php endif; ?>
+                                <span class="text-slate-500">× <?= (int)($it['qty'] ?? 1) ?> - <?= htmlspecialchars($it['instructions'] ?? '') ?></span>
+                            </div>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
+                    <?php endif; ?>
+
+                    <?php if ($rx['pet_name'] && ($rx['allergies'] || $rx['chronic_conditions'])): ?>
+                    <div class="p-3 bg-rose-50 rounded-xl border border-rose-100 text-xs">
+                        <?php if ($rx['allergies']): ?><p class="text-rose-700">⚠️ <strong>آلرژی:</strong> <?= htmlspecialchars($rx['allergies']) ?></p><?php endif; ?>
+                        <?php if ($rx['chronic_conditions']): ?><p class="text-amber-700 mt-0.5">💊 <strong>بیماری مزمن:</strong> <?= htmlspecialchars($rx['chronic_conditions']) ?></p><?php endif; ?>
+                    </div>
+                    <?php endif; ?>
+
+                    <!-- BPMS Action Buttons -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
+                        <!-- Approve -->
+                        <form method="POST" class="space-y-2">
+                            <?= csrf_field() ?>
+                            <input type="hidden" name="action" value="bpms_approve">
+                            <input type="hidden" name="rx_id" value="<?= $rx['id'] ?>">
+                            <textarea name="pharmacist_notes" rows="2" placeholder="یادداشت داروساز (اختیاری)..." class="w-full p-2.5 rounded-xl border border-emerald-300 text-xs bg-emerald-50 outline-none focus:ring-2 focus:ring-emerald-500 resize-none"></textarea>
+                            <button type="submit" class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-xl text-xs flex items-center justify-center gap-2 shadow-md transition-all">
+                                <span class="material-symbols-outlined text-sm">check_circle</span>
+                                ✅ تأیید نسخه — باز کردن قفل ارسال کلینیک
+                            </button>
+                        </form>
+                        <!-- Reject -->
+                        <form method="POST" class="space-y-2">
+                            <?= csrf_field() ?>
+                            <input type="hidden" name="action" value="bpms_reject">
+                            <input type="hidden" name="rx_id" value="<?= $rx['id'] ?>">
+                            <textarea name="rejection_reason" rows="2" placeholder="دلیل رد نسخه (الزامی)..." required class="w-full p-2.5 rounded-xl border border-rose-300 text-xs bg-rose-50 outline-none focus:ring-2 focus:ring-rose-500 resize-none"></textarea>
+                            <button type="submit" class="w-full py-3 bg-rose-600 hover:bg-rose-700 text-white font-black rounded-xl text-xs flex items-center justify-center gap-2 shadow-md transition-all" onclick="return confirm('آیا از رد این نسخه اطمینان دارید؟')">
+                                <span class="material-symbols-outlined text-sm">cancel</span>
+                                ❌ رد نسخه — نیاز به اصلاح توسط پزشک
+                            </button>
+                        </form>
+                    </div>
+                </div>
+                <?php endforeach; ?>
+            </div>
+            <?php endif; ?>
+        </div>
+
+        <!-- Approved BPMS -->
+        <?php if (!empty($bpmsApproved)): ?>
+        <div class="bg-white rounded-2xl border border-emerald-200 shadow-sm overflow-hidden">
+            <div class="p-4 border-b border-emerald-100 bg-emerald-50 flex items-center justify-between">
+                <h3 class="text-sm font-black text-emerald-800 flex items-center gap-2"><span class="material-symbols-outlined text-emerald-600">check_circle</span> نسخه‌های تأیید شده (آماده ارسال توسط کلینیک)</h3>
+                <span class="text-[10px] bg-emerald-100 text-emerald-700 rounded-full px-2 py-1 font-bold"><?= count($bpmsApproved) ?> نسخه</span>
+            </div>
+            <div class="divide-y divide-slate-100">
+                <?php foreach ($bpmsApproved as $rx): ?>
+                <div class="p-4 flex items-center justify-between gap-3 hover:bg-slate-50/50 text-xs">
+                    <div>
+                        <span class="font-bold text-slate-800">نسخه #<?= $rx['id'] ?></span>
+                        <span class="text-slate-500 mr-2"><?= htmlspecialchars($rx['user_name'] ?? '') ?></span>
+                        <?php if ($rx['pet_name']): ?><span class="text-indigo-600">🐾 <?= htmlspecialchars($rx['pet_name']) ?></span><?php endif; ?>
+                    </div>
+                    <div class="text-emerald-700 font-bold"><?= $rx['shipping_unlocked'] ? '🚀 قفل ارسال باز' : '⏳ در انتظار کلینیک' ?></div>
+                </div>
+                <?php endforeach; ?>
+            </div>
+        </div>
+        <?php endif; ?>
     </div>
 
     <!-- Tab 1: Prescriptions Queue (کارتابل نسخ الکترونیک) -->
@@ -652,6 +852,7 @@ function switchTab(tabId) {
     }
 
     const headers = {
+        'bpms':          { title: 'کارتابل BPMS — تأیید یا رد نسخه‌های پزشک', desc: 'گزارش معاینه بالینی، اقلام دارویی و تأیید/رد برای باز شدن قفل ارسال کلینیک', icon: 'account_tree' },
         'prescriptions': { title: 'کارتابل نسخه‌های الکترونیک', desc: 'بررسی نسخه‌های ارجاعی از پزشکان، تطبیق دوز، آماده‌سازی و تحویل دارو', icon: 'prescriptions' },
         'inventory': { title: 'انبار دارویی و کنترل موجودی', desc: 'مدیریت موجودی داروها، تاریخ انقضا، شماره بچ و قیمت‌گذاری', icon: 'medication' },
         'autoship': { title: 'تکرار دارو و اتوشیپ مزمن', desc: 'توزیع دوره‌ای داروهای بیماران مبتلا به بیماری‌های مزمن و پایش زنجیره سرد', icon: 'autorenew' },

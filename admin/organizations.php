@@ -280,10 +280,16 @@ require_once __DIR__ . '/includes/admin_header.php';
                             </div>
                         </td>
                         <td class="p-3.5 text-center">
-                            <button onclick="viewOrgDetails(<?= $org['id'] ?>)" class="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-secondary-container hover:text-white text-slate-700 font-bold text-xs transition-all flex items-center gap-1 mx-auto">
-                                <span class="material-symbols-outlined text-sm">visibility</span>
-                                <span>بررسی اکوسیستم</span>
-                            </button>
+                            <div class="flex items-center justify-center gap-1.5">
+                                <a href="tickets.php?new_ticket=organization&target_id=<?= (int)$org['id'] ?>" class="px-2.5 py-1.5 rounded-xl bg-indigo-50 hover:bg-indigo-600 hover:text-white text-indigo-700 font-bold text-xs transition-all flex items-center gap-1" title="ارسال پیام / تیکت به مرکز">
+                                    <span class="material-symbols-outlined text-sm">mail</span>
+                                    <span>پیام</span>
+                                </a>
+                                <button onclick="viewOrgDetails(<?= $org['id'] ?>)" class="px-2.5 py-1.5 rounded-xl bg-slate-100 hover:bg-secondary-container hover:text-white text-slate-700 font-bold text-xs transition-all flex items-center gap-1">
+                                    <span class="material-symbols-outlined text-sm">visibility</span>
+                                    <span>بررسی</span>
+                                </button>
+                            </div>
                         </td>
                     </tr>
                     <?php endforeach; ?>

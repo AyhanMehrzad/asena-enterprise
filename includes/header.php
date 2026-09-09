@@ -280,6 +280,7 @@ $effective_geo_icbm = $geo_icbm ?? '35.7350, 51.4110';
     <!-- Universal Lazy Loading & Progress Animation Engine -->
     <script src="assets/js/paw-loader.js?v=<?php echo time(); ?>"></script>
     <script src="assets/js/lazy-loader.js?v=<?php echo time(); ?>" defer></script>
+    <script src="assets/js/bidi-direction.js?v=<?php echo time(); ?>" defer></script>
     <!-- PWA Service Worker Registration -->
     <script>
     if ('serviceWorker' in navigator) {

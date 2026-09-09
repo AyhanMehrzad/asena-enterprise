@@ -15,7 +15,8 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 
 csrf_verify();
 
-$amount = (int)($_POST['amount'] ?? 0);
+$rawAmount = to_english_digits($_POST['amount'] ?? '0');
+$amount = (int)preg_replace('/[^0-9]/', '', $rawAmount);
 $campaign_id = !empty($_POST['campaign_id']) ? (int)$_POST['campaign_id'] : null;
 $is_anonymous = isset($_POST['is_anonymous']) && ($_POST['is_anonymous'] === '1' || $_POST['is_anonymous'] === 'true' || $_POST['is_anonymous'] === 'on');
 $donor_name = trim($_POST['donor_name'] ?? '');

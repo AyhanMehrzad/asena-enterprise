@@ -176,6 +176,8 @@ if (!$doctorProfile) {
             'services' => ['icon' => 'loyalty', 'title' => 'خدمات، علت‌ها و تگ‌ها', 'tab' => 'services-tab'],
             'reviews'  => ['icon' => 'reviews', 'title' => 'نظرات و بازخورد مراجعین', 'tab' => 'reviews-tab', 'feature' => 'reviews'],
             'history'  => ['icon' => 'history', 'title' => 'آرشیو مراجعات و پرونده‌ها', 'tab' => 'history-tab'],
+            'emr'      => ['icon' => 'manage_accounts', 'title' => 'رجیستری بیماران و EMR', 'tab' => 'emr-tab'],
+            'bpms'     => ['icon' => 'medication', 'title' => 'نسخه‌نویسی و گردش کار BPMS', 'tab' => 'bpms-tab'],
             'profile'  => ['icon' => 'contact_phone', 'title' => 'اطلاعات تماس و پیامک نوبت', 'tab' => 'profile-tab'],
         ];
 
