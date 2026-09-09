@@ -41,9 +41,42 @@ $orgStmt = $pdo->prepare("
 $orgStmt->execute([$doctorId]);
 $affiliatedOrgs = $orgStmt->fetchAll(PDO::FETCH_ASSOC);
 
-// SEO Metadata
-$page_title = 'پزشک';
-$page_desc = 'پروفایل رسمی، شماره نظام دامپزشکی، بیمارستان‌های همکار و رزرو آنلاین نوبت دکتر ' . htmlspecialchars($doctor['name']);
+// Dynamic Rich SEO, GEO & Profile Metadata
+$docName = htmlspecialchars($doctor['name']);
+$docSpec = htmlspecialchars($doctor['specialty'] ?? 'متخصص دامپزشکی');
+$page_title = "دکتر {$docName} ({$docSpec}) | نوبت‌دهی آنلاین - آسنا";
+$page_description = "مشاهده سوابق بالینی، شماره نظام دامپزشکی (" . ($doctor['vet_council_number'] ?? 'تاییدشده') . ")، کلینیک‌های همکار و رزرو آنلاین ویزیت دکتر {$docName} در آسنا.";
+$og_image = !empty($doctor['avatar_url']) ? $doctor['avatar_url'] : 'assets/images/placeholders/placeholder-doctor.svg';
+$og_type = 'profile';
+
+// Doctor Schema.org JSON-LD Structured Data
+$proto = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') || (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https') ? 'https' : 'http';
+$host = $_SERVER['HTTP_HOST'] ?? 'asena.company';
+$absAvatar = strpos($doctor['avatar_url'] ?? '', 'http') === 0 
+    ? $doctor['avatar_url'] 
+    : "$proto://$host/" . ltrim($doctor['avatar_url'] ?? 'assets/images/placeholders/placeholder-doctor.svg', '/');
+
+$page_schema = json_encode([
+    "@context" => "https://schema.org",
+    "@type" => "Veterinarian",
+    "@id" => "$proto://$host/doctor_profile.php?id={$doctorId}#veterinarian",
+    "name" => "دکتر " . $doctor['name'],
+    "image" => $absAvatar,
+    "description" => $doctor['bio'] ?? $page_description,
+    "medicalSpecialty" => "VeterinaryCare",
+    "identifier" => $doctor['vet_council_number'] ?? '',
+    "telephone" => $doctor['phone'] ?? '+98-914-667-6978',
+    "address" => [
+        "@type" => "PostalAddress",
+        "addressLocality" => "تهران",
+        "addressCountry" => "IR"
+    ],
+    "aggregateRating" => [
+        "@type" => "AggregateRating",
+        "ratingValue" => number_format((float)($doctor['rating'] ?? 5.0), 1),
+        "reviewCount" => max(1, (int)($doctor['reviews_count'] ?? 10))
+    ]
+], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
 
 require_once __DIR__ . '/includes/header.php';
 ?>

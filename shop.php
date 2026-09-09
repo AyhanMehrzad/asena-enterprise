@@ -8,8 +8,6 @@ if (!Feature::has('petshop_catalog')) {
     header('Location: index.php');
     exit;
 }
-require_once 'includes/header.php';
-
 // Pagination variables
 $limit = 12;
 $page = isset($_GET['page']) && is_numeric($_GET['page']) ? (int)$_GET['page'] : 1;
@@ -26,6 +24,36 @@ $selected_brands = isset($_GET['brands']) && is_array($_GET['brands']) ? $_GET['
 $price_ranges = isset($_GET['price_ranges']) && is_array($_GET['price_ranges']) ? $_GET['price_ranges'] : [];
 $in_stock = isset($_GET['in_stock']) ? $_GET['in_stock'] : '';
 $sort = isset($_GET['sort']) ? $_GET['sort'] : 'relevant';
+
+// Dynamic SEO Metadata for Shop Catalog
+$animal_fa_map = [
+    'dog' => 'سگ',
+    'cat' => 'گربه',
+    'bird' => 'پرندگان',
+    'smallpet' => 'جوندگان و حیوانات کوچک',
+    'horse' => 'اسب',
+    'cow' => 'دام بزرگ',
+    'chick' => 'طیور'
+];
+
+if (!empty($category)) {
+    $catClean = htmlspecialchars($category);
+    $page_title = "خرید اینترنتی {$catClean} | پت‌شاپ آنلاین آسنا";
+    $page_description = "خرید آنلاین انواع {$catClean} با بالاترین کیفیت، ضمانت اصالت کالا، بهترین قیمت و ارسال سریع در سامانه آسنا.";
+} elseif (!empty($animal) && isset($animal_fa_map[$animal])) {
+    $animLabel = $animal_fa_map[$animal];
+    $page_title = "خرید ملزومات و غذای {$animLabel} | پت‌شاپ تخصصی آسنا";
+    $page_description = "تخصصی‌ترین فروشگاه آنلاین ملزومات {$animLabel}؛ خرید غذای خشک، کنسرو، تشویقی، مکمل درمانی و خاک با ارسال اکسپرس در آسنا.";
+} elseif (!empty($search)) {
+    $qClean = htmlspecialchars($search);
+    $page_title = "جستجوی کالا: {$qClean} | پت‌شاپ آنلاین آسنا";
+    $page_description = "نتایج جستجو برای {$qClean} در پت‌شاپ و داروخانه تخصصی آسنا با ضمانت اصالت کالا.";
+} else {
+    $page_title = "پت‌شاپ آنلاین آسنا | خرید غذای سگ، گربه و ملزومات حیوانات خانگی";
+    $page_description = "فروشگاه اینترنتی ملزومات حیوانات خانگی آسنا؛ خرید انواع غذای سگ و گربه، مکمل‌ها، خاک بستر، تشویقی و تحویل دوره‌ای خودکار (Autoship) با ارسال سریع.";
+}
+
+require_once 'includes/header.php';
 
 // Check if new columns exist in database
 $has_animal_col = false;

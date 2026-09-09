@@ -3372,14 +3372,26 @@ function resetInterval() {
   "url": "<?php echo $proto . '://' . $host; ?>/",
   "logo": "<?php echo $proto . '://' . $host; ?>/assets/images/logo.png",
   "description": "مرجع تخصصی خرید آنلاین داروهای دامپزشکی، مکمل‌ها، واکسن‌ها و ملزومات حیوانات خانگی با تاییدیه دکتر داروساز و ارسال زنجیره سرد",
-  "telephone": "+98-21-88888888",
+  "telephone": "+98-914-667-6978",
   "priceRange": "$$",
+  "currenciesAccepted": "IRR",
+  "paymentAccepted": "Cash, Credit Card, Online",
   "address": {
     "@type": "PostalAddress",
     "streetAddress": "خیابان ولیعصر، بالاتر از پارک ساعی",
     "addressLocality": "تهران",
     "addressRegion": "تهران",
     "addressCountry": "IR"
+  },
+  "geo": {
+    "@type": "GeoCoordinates",
+    "latitude": 35.7350,
+    "longitude": 51.4110
+  },
+  "hasMap": "https://maps.google.com/?q=35.7350,51.4110",
+  "areaServed": {
+    "@type": "Country",
+    "name": "Iran"
   },
   "openingHoursSpecification": [
     {

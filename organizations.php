@@ -26,9 +26,41 @@ $activeCities  = $orgService->getActiveCities();
 $stats         = $orgService->getStats();
 $top5OrgIds    = App::leaderboard()->getTop5OrganizationIds();
 
-// Page SEO Metadata
-$page_title = 'مراکز';
-$page_desc = 'دایرکتوری جامع مراکز درمانی و بیمارستان‌های تخصصی دامپزشکی کشور با امکان رزرو آنلاین نوبت با پزشکان همکار و خدمات اورژانس ۲۴ ساعته.';
+// Dynamic Rich Directory SEO & GEO Metadata
+$proto = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') || (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https') ? 'https' : 'http';
+$host = $_SERVER['HTTP_HOST'] ?? 'asena.company';
+
+if (!empty($filters['city'])) {
+    $cityLabel = htmlspecialchars($filters['city']);
+    $page_title = "مراکز درمانی و کلینیک‌های دامپزشکی {$cityLabel} | نوبت‌دهی آنلاین - آسنا";
+    $page_description = "بانک جامع بیمارستان‌ها، کلینیک‌ها و مراکز شبانه‌روزی دامپزشکی در {$cityLabel} همراه با رزرو نوبت آنلاین، استعلام دارو و مسیریابی سریع در آسنا.";
+    $geo_placename = "{$cityLabel}, Iran";
+} else {
+    $page_title = "مراکز درمانی و بیمارستان‌های تخصصی دامپزشکی کشور | آسنا";
+    $page_description = "دایرکتوری جامع و رسمی بیمارستان‌ها، پلی‌کلینیک‌ها، مراکز جراحی و داروخانه‌های دامپزشکی سراسر کشور با امکان رزرو آنلاین نوبت، استعلام خدمات و مسیریابی.";
+    $geo_placename = "تهران, Iran";
+}
+
+// Build ItemList JSON-LD Schema for Organizations Directory
+$orgItems = [];
+$pos = 1;
+foreach (array_slice($organizations, 0, 15) as $orgItem) {
+    $slug = !empty($orgItem['slug']) ? $orgItem['slug'] : $orgItem['id'];
+    $orgItems[] = [
+        "@type" => "ListItem",
+        "position" => $pos++,
+        "name" => $orgItem['name'],
+        "url" => "$proto://$host/organization_profile.php?slug={$slug}"
+    ];
+}
+
+$page_schema = json_encode([
+    "@context" => "https://schema.org",
+    "@type" => "ItemList",
+    "name" => $page_title,
+    "description" => $page_description,
+    "itemListElement" => $orgItems
+], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
 
 require_once __DIR__ . '/includes/header.php';
 ?>

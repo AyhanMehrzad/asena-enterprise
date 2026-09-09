@@ -866,10 +866,11 @@ $host = $_SERVER['HTTP_HOST'] ?? 'asena.company';
 $base_url = "$proto://$host";
 
 if ($article) {
-    $page_title = 'دانشنامه';
+    $page_title = htmlspecialchars($article['title']) . ' | دانشنامه پزشکی آسنا';
     $page_description = $article['short_desc'];
-    $canonical_url = "$base_url/standard/knowledge_base.php?article=" . $article['slug'];
+    $canonical_url = "$base_url/knowledge_base.php?article=" . $article['slug'];
     $og_image = "$base_url/assets/images/og-asena.png";
+    $og_type = 'article';
 
     // Build FAQ array for Schema.org if available
     $faq_entities = [];
@@ -926,10 +927,11 @@ if ($article) {
     ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
 
 } else {
-    $page_title = 'دانشنامه';
+    $page_title = 'دانشنامه تخصصی دامپزشکی و سلامت پت | مقالات پزشکی آسنا';
     $page_description = 'مرجع معتبر مقالات پزشکی دامپزشکی، واکسیناسیون، تغذیه سگ و گربه، و راهنمای جامع خدمات نوبت‌دهی آنلاین، پت‌شاپ و داروخانه دامی آسنا.';
-    $canonical_url = "$base_url/standard/knowledge_base.php";
+    $canonical_url = "$base_url/knowledge_base.php";
     $og_image = "$base_url/assets/images/og-asena.png";
+    $og_type = 'website';
 }
 
 require_once __DIR__ . '/includes/header.php';

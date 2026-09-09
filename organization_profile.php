@@ -49,21 +49,38 @@ $typePersian = match($org['type']) {
 // Parse facilities
 $facilitiesList = !empty($org['facilities']) ? array_map('trim', explode(',', $org['facilities'])) : [];
 
-// SEO Metadata
-$page_title = 'مرکز';
-$page_desc = 'اطلاعات کامل، کادر پزشکان متخصص، داروخانه داخلی و رزرو آنلاین نوبت در ' . htmlspecialchars($org['name']);
+// Dynamic Rich SEO, Local GEO & Profile Metadata
+$orgCity = htmlspecialchars($org['city'] ?? 'تهران');
+$orgProv = htmlspecialchars($org['province'] ?? 'تهران');
+$orgName = htmlspecialchars($org['name']);
+$lat = !empty($org['latitude']) ? $org['latitude'] : '35.7350';
+$lng = !empty($org['longitude']) ? $org['longitude'] : '51.4110';
+
+$page_title = "{$orgName} ({$typePersian}) | نوبت‌دهی و نشانی در {$orgCity} - آسنا";
+$page_description = "اطلاعات کامل، آدرس دقیق، لوکیشن نقشه، کادر پزشکان متخصص، داروخانه داخلی و رزرو آنلاین نوبت در {$orgName} ({$typePersian}) واقع در {$orgProv}، {$orgCity}.";
+$og_image = !empty($org['banner_url']) ? $org['banner_url'] : (!empty($org['logo_url']) ? $org['logo_url'] : 'assets/images/og-asena.png');
+$og_type = 'business.business';
+
+// Dynamic Geographic Meta Tags for Local Pack Ranking
+$geo_region = 'IR-07';
+$geo_placename = "{$orgCity}, Iran";
+$geo_position = "{$lat};{$lng}";
+$geo_icbm = "{$lat}, {$lng}";
 
 require_once __DIR__ . '/includes/header.php';
 ?>
 
-<!-- Schema.org Structured Data for Google Rich Results -->
+<!-- Schema.org Structured Data for Google Rich Results (VeterinaryCare & Local Pack) -->
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
   "@type": "VeterinaryCare",
   "name": "<?= addslashes($org['name']) ?>",
   "description": "<?= addslashes($org['description'] ?? '') ?>",
-  "telephone": "<?= addslashes($org['phone'] ?? '') ?>",
+  "telephone": "<?= addslashes($org['phone'] ?? '+98-914-667-6978') ?>",
+  "priceRange": "$$",
+  "currenciesAccepted": "IRR",
+  "paymentAccepted": "Cash, Credit Card, Online",
   "address": {
     "@type": "PostalAddress",
     "streetAddress": "<?= addslashes($org['address'] ?? '') ?>",
@@ -71,6 +88,12 @@ require_once __DIR__ . '/includes/header.php';
     "addressRegion": "<?= addslashes($org['province'] ?? 'تهران') ?>",
     "addressCountry": "IR"
   },
+  "geo": {
+    "@type": "GeoCoordinates",
+    "latitude": <?= (float)$lat ?>,
+    "longitude": <?= (float)$lng ?>
+  },
+  "hasMap": "https://www.google.com/maps/dir/?api=1&destination=<?= $lat ?>,<?= $lng ?>",
   "openingHours": "<?= !empty($org['is_24_7']) ? 'Mo-Su 00:00-24:00' : 'Mo-Sa 08:00-22:00' ?>",
   "aggregateRating": {
     "@type": "AggregateRating",

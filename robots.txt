@@ -49,15 +49,23 @@ Allow: /llms-full.txt
 
 User-agent: ClaudeBot
 Allow: /
+Allow: /llms.txt
+Allow: /llms-full.txt
 
 User-agent: Google-Extended
 Allow: /
+Allow: /llms.txt
+Allow: /llms-full.txt
 
 User-agent: Applebot-Extended
 Allow: /
+Allow: /llms.txt
+Allow: /llms-full.txt
 
 User-agent: CCBot
 Allow: /
+Allow: /llms.txt
+Allow: /llms-full.txt
 
 # Disallow internal scripts, APIs, admin panels, and payment processing
 Disallow: /admin/

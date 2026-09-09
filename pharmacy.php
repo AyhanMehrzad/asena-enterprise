@@ -16,8 +16,18 @@ $tag_seo_map = [
 $selected_animal_param = isset($_GET['animal']) ? trim($_GET['animal']) : '';
 $selected_tag_param = isset($_GET['tag']) ? trim($_GET['tag']) : '';
 
-$page_title = "داروخانه";
-$page_description = "داروخانه آنلاین دامپزشکی آسنا؛ مرجع خرید آنلاین دارو، واکسن و مکمل‌های تخصصی.";
+if (!empty($selected_animal_param) && isset($animal_seo_map[$selected_animal_param])) {
+    $animName = $animal_seo_map[$selected_animal_param];
+    $page_title = "داروخانه تخصصی {$animName} | خرید دارو، مکمل و واکسن - آسنا";
+    $page_description = "خرید آنلاین انواع داروهای تخصصی، مکمل‌های تقویتی و ضد انگل ویژه {$animName} با تایید نسخه دکتر داروساز و ارسال زنجیره سرد در آسنا.";
+} elseif (!empty($selected_tag_param) && isset($tag_seo_map[$selected_tag_param])) {
+    $tagName = $tag_seo_map[$selected_tag_param];
+    $page_title = "خرید {$tagName} دامپزشکی | داروخانه آنلاین آسنا";
+    $page_description = "مرجع رسمی خرید اینترنتی {$tagName} با ضمانت اصالت، تاریخ انقضای معتبر و ارسال اکسپرس در سامانه جامع آسنا.";
+} else {
+    $page_title = "داروخانه آنلاین دامپزشکی آسنا | خرید دارو، مکمل و واکسن با تایید نسخه";
+    $page_description = "داروخانه تخصصی دامپزشکی آسنا؛ مرجع رسمی خرید آنلاین داروهای دام، طیور و پت، مکمل‌های درمانی و واکسن با تاییدیه نسخه پزشک داروساز و ارسال زنجیره سرد.";
+}
 
 require_once 'includes/db.php';
 if (!Feature::has('pharmacy_catalog')) {
@@ -717,18 +727,39 @@ function buildUrl($updates) {
     </section>
 
     <!-- Schema.org JSON-LD Structured Data for Pharmacy SEO & Rich Snippets -->
+    <?php
+    $proto = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') || (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https') ? 'https' : 'http';
+    $host = $_SERVER['HTTP_HOST'] ?? 'asena.company';
+    ?>
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
       "@graph": [
         {
           "@type": "Pharmacy",
-          "@id": "https://asena.pet/pharmacy#organization",
+          "@id": "<?php echo $proto . '://' . $host; ?>/pharmacy.php#organization",
           "name": "داروخانه آنلاین دامپزشکی آسنا",
           "description": "داروخانه تخصصی حیوانات خانگی و دام آسنا، تامین مستقیم انواع دارو، واکسن، مکمل و ضد انگل با تاییدیه دامپزشکی",
-          "telephone": "+98-21-88888888",
+          "telephone": "+98-914-667-6978",
           "priceRange": "$$",
-          "openingHours": "Mo-Su 00:00-24:00"
+          "openingHours": "Mo-Su 00:00-24:00",
+          "address": {
+            "@type": "PostalAddress",
+            "streetAddress": "خیابان ولیعصر، بالاتر از پارک ساعی",
+            "addressLocality": "تهران",
+            "addressRegion": "تهران",
+            "addressCountry": "IR"
+          },
+          "geo": {
+            "@type": "GeoCoordinates",
+            "latitude": 35.7350,
+            "longitude": 51.4110
+          },
+          "hasMap": "https://maps.google.com/?q=35.7350,51.4110",
+          "areaServed": {
+            "@type": "Country",
+            "name": "Iran"
+          }
         },
         {
           "@type": "BreadcrumbList",
@@ -737,13 +768,13 @@ function buildUrl($updates) {
               "@type": "ListItem",
               "position": 1,
               "name": "خانه",
-              "item": "https://asena.pet/index.php"
+              "item": "<?php echo $proto . '://' . $host; ?>/index.php"
             },
             {
               "@type": "ListItem",
               "position": 2,
               "name": "داروخانه تخصصی دامپزشکی",
-              "item": "https://asena.pet/pharmacy.php"
+              "item": "<?php echo $proto . '://' . $host; ?>/pharmacy.php"
             }
           ]
         },

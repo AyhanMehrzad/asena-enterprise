@@ -4,6 +4,10 @@ if (!Feature::has('clinic_booking')) {
     header('Location: index.php');
     exit;
 }
+
+$page_title = "رزرو آنلاین نوبت کلینیک دامپزشکی | ویزیت تخصصی دکتر دامپزشک - آسنا";
+$page_description = "سامانه نوبت‌دهی اینترنتی پزشکان دامپزشک کشور؛ رزرو وقت ویزیت عمومی و تخصصی سگ، گربه، پرندگان، جراحی، دندانپزشکی و واکسیناسیون با کادر مجرب در آسنا.";
+
 require_once 'includes/header.php';
 
 // Fetch doctors
