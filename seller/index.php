@@ -11,22 +11,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($action === 'update_tracking') {
         $orderId = (int)($_POST['order_id'] ?? 0);
         $trackingCode = trim($_POST['post_tracking_code'] ?? '');
-        $carrier = trim($_POST['carrier_name'] ?? 'پست پیشتاز (پستکس)');
+        $carrier = trim($_POST['carrier_name'] ?? 'شرکت ملی پست / پستکس');
 
         if ($orderId > 0 && !empty($trackingCode)) {
             // Verify this seller owns at least one item in this order
             $checkStmt = $pdo->prepare("SELECT COUNT(*) FROM order_items WHERE order_id = ? AND seller_id = ?");
             $checkStmt->execute([$orderId, $sellerId]);
             if ($checkStmt->fetchColumn() > 0 || $currentUser['role'] === 'admin') {
-                $upd = $pdo->prepare("
-                    UPDATE orders 
-                    SET post_tracking_code = ?, tracking_code = ?, carrier_name = ?, status = 'shipped' 
-                    WHERE id = ?
-                ");
-                $upd->execute([$trackingCode, $trackingCode, $carrier, $orderId]);
-                $msg = "کد رهگیری پستی ({$trackingCode}) برای سفارش #{$orderId} با موفقیت ثبت و وضعیت به «ارسال شده» تغییر یافت.";
-                $msgType = 'success';
+                require_once __DIR__ . '/../includes/OrderLifecycleService.php';
+                $lifecycle = new OrderLifecycleService($pdo);
+                $transRes = $lifecycle->transition($orderId, 'shipped', 'seller', (int)$currentUser['id'], $carrier, $trackingCode, 'ارسال مرسوله توسط پت‌شاپ / فروشنده');
+                
+                if ($transRes['success']) {
+                    $pdo->prepare("UPDATE seller_escrow_ledger SET status = 'in_inspection' WHERE order_id = ? AND status = 'pending_delivery'")->execute([$orderId]);
+                    $msg = "کد رهگیری پستی ({$trackingCode}) برای سفارش #{$orderId} با موفقیت ثبت، وضعیت به «ارسال شده» تغییر یافت و پیامک رهگیری به خریدار ارسال گردید.";
+                    $msgType = 'success';
+                } else {
+                    $msg = $transRes['message'] ?? 'خطا در تغییر وضعیت سفارش.';
+                    $msgType = 'error';
+                }
+            } else {
+                $msg = 'شما مجوز مدیریت یا ثبت ارسال برای این سفارش را ندارید.';
+                $msgType = 'error';
             }
+        } else {
+            $msg = 'لطفاً کد رهگیری پستی مرسوله را به درستی وارد نمایید.';
+            $msgType = 'error';
         }
     } elseif ($action === 'add_product') {
         $name = trim($_POST['name'] ?? '');
@@ -141,6 +151,11 @@ $ordersQuery = $pdo->prepare("
         o.delivered_at,
         u.name as buyer_name,
         u.phone as buyer_phone,
+        u.postal_code as buyer_postal_code,
+        u.address as buyer_address,
+        u.city as buyer_city,
+        u.latitude as buyer_lat,
+        u.longitude as buyer_lng,
         oi.product_name_snapshot,
         oi.quantity,
         oi.price_at_purchase,
@@ -246,12 +261,47 @@ $sellerProducts = $productsQuery->fetchAll(PDO::FETCH_ASSOC);
                     <span class="material-symbols-outlined text-secondary-container">local_shipping</span>
                     <span>سفارشات مشتریان و مدیریت ارسال مرسوله</span>
                 </h2>
-                <p class="text-xs text-slate-500 mt-1">پس از تحویل بسته به مامور پست یا تیپاکس، کد رهگیری ۲۴ رقمی را ثبت کنید تا فرآیند مهلت ۷ روزه عودت و تسویه مالی آغاز شود.</p>
+                <p class="text-xs text-slate-500 mt-1">پس از بسته‌بندی و تحویل به باجه پست، بارکد مرسوله را وارد کنید تا پیامک خودکار برای خریدار ارسال و مهلت ۷ روزه تضمین تسویه آغاز شود.</p>
             </div>
-            <div class="flex items-center gap-2">
+            <div class="flex items-center gap-2 flex-wrap">
+                <button id="postexSyncBtn" onclick="syncPostexNow()" class="px-3.5 py-1.5 rounded-xl bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm">
+                    <span class="material-symbols-outlined text-sm" id="postexSyncIcon">sync</span>
+                    <span id="postexSyncText">استعلام زنده پستکس</span>
+                </button>
                 <span class="px-3 py-1.5 rounded-xl bg-amber-50 text-amber-700 border border-amber-200 text-xs font-bold">
                     کارمزد پلتفرم: ۵٪ (۹۵٪ سهم خالص فروشنده)
                 </span>
+            </div>
+        </div>
+
+        <!-- Simplified 3-Step Fulfillment Guide for Non-Technical Sellers -->
+        <div class="bg-gradient-to-r from-orange-500/10 via-amber-500/5 to-transparent border border-orange-200/60 rounded-2xl p-4 sm:p-5">
+            <div class="flex items-center gap-2 mb-3">
+                <span class="material-symbols-outlined text-orange-600 text-xl">route</span>
+                <h3 class="text-sm font-black text-slate-800">راهنمای ساده و ۳ مرحله‌ای ارسال کالا (ویژه پت‌شاپ‌ها و فروشندگان)</h3>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+                <div class="bg-white/85 backdrop-blur rounded-xl p-3 border border-orange-100 flex items-start gap-2.5 shadow-xs">
+                    <span class="w-6 h-6 rounded-full bg-orange-500 text-white font-black flex items-center justify-center text-xs shrink-0">۱</span>
+                    <div>
+                        <strong class="text-slate-800 block mb-0.5">مشاهده نشانی و کپی کد پستی</strong>
+                        <span class="text-slate-500 text-[11px] leading-relaxed">کد پستی ۱۰ رقمی خریدار را با یک کلیک کپی کرده و آدرس و موقعیت نقشه را بررسی کنید.</span>
+                    </div>
+                </div>
+                <div class="bg-white/85 backdrop-blur rounded-xl p-3 border border-orange-100 flex items-start gap-2.5 shadow-xs">
+                    <span class="w-6 h-6 rounded-full bg-orange-500 text-white font-black flex items-center justify-center text-xs shrink-0">۲</span>
+                    <div>
+                        <strong class="text-slate-800 block mb-0.5">چاپ برچسب پستی کارتن</strong>
+                        <span class="text-slate-500 text-[11px] leading-relaxed">روی «چاپ برچسب» کلیک کرده و برگه آماده A5 یا برچسب حرارتی را مستقیم روی بسته بچسبانید.</span>
+                    </div>
+                </div>
+                <div class="bg-white/85 backdrop-blur rounded-xl p-3 border border-orange-100 flex items-start gap-2.5 shadow-xs">
+                    <span class="w-6 h-6 rounded-full bg-orange-500 text-white font-black flex items-center justify-center text-xs shrink-0">۳</span>
+                    <div>
+                        <strong class="text-slate-800 block mb-0.5">ثبت بارکد پس از تحویل به پست</strong>
+                        <span class="text-slate-500 text-[11px] leading-relaxed">پس از تحویل به پست یا تیپاکس، بارکد رهگیری را ثبت کنید تا پیامک خودکار برای خریدار برود.</span>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -269,22 +319,51 @@ $sellerProducts = $productsQuery->fetchAll(PDO::FETCH_ASSOC);
                         <tr>
                             <th class="p-3.5">سفارش #</th>
                             <th class="p-3.5">تاریخ ثبت</th>
-                            <th class="p-3.5">خریدار</th>
+                            <th class="p-3.5">خریدار و نشانی تحویل</th>
                             <th class="p-3.5">کالای خریداری شده</th>
                             <th class="p-3.5">سهم خالص فروشنده (تومان)</th>
                             <th class="p-3.5">وضعیت سفارش</th>
-                            <th class="p-3.5">کد رهگیری پستکس / پیشتاز</th>
-                            <th class="p-3.5 text-center">عملیات ارسال</th>
+                            <th class="p-3.5">کد رهگیری پستی</th>
+                            <th class="p-3.5 text-center">عملیات ارسال و چاپ</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100">
-                        <?php foreach ($sellerOrders as $ord): ?>
+                        <?php foreach ($sellerOrders as $ord): 
+                            $destCity = $ord['buyer_city'] ?? '';
+                            $destAddress = $ord['buyer_address'] ?? $ord['shipping_address'] ?? '';
+                            $destPostal = $ord['buyer_postal_code'] ?? '';
+                            $destLat = $ord['buyer_lat'] ?? null;
+                            $destLng = $ord['buyer_lng'] ?? null;
+                        ?>
                         <tr class="hover:bg-slate-50/50 transition-colors">
                             <td class="p-3.5 font-black text-on-surface">#<?= $ord['order_id'] ?></td>
                             <td class="p-3.5 text-slate-500"><?= htmlspecialchars(substr($ord['order_date'], 0, 16)) ?></td>
-                            <td class="p-3.5">
+                            <td class="p-3.5 max-w-xs">
                                 <div class="font-bold text-slate-900"><?= htmlspecialchars($ord['buyer_name'] ?: 'کاربر آسنا') ?></div>
-                                <div class="text-[11px] text-slate-400 font-mono"><?= htmlspecialchars($ord['buyer_phone'] ?: '-') ?></div>
+                                <div class="text-[11px] text-slate-500 font-mono mt-0.5 flex items-center gap-1">
+                                    <span class="material-symbols-outlined text-xs">call</span>
+                                    <span><?= htmlspecialchars($ord['buyer_phone'] ?: '-') ?></span>
+                                </div>
+                                <?php if (!empty($destCity) || !empty($destAddress)): ?>
+                                    <div class="text-[11px] text-slate-600 mt-1 line-clamp-2 leading-relaxed">
+                                        <?= !empty($destCity) ? '<strong class="text-slate-800">' . htmlspecialchars($destCity) . ':</strong> ' : '' ?>
+                                        <?= htmlspecialchars($destAddress) ?>
+                                    </div>
+                                <?php endif; ?>
+                                <div class="flex items-center gap-2 mt-1.5 flex-wrap">
+                                    <?php if (!empty($destPostal)): ?>
+                                        <button type="button" onclick="copyText('<?= htmlspecialchars($destPostal) ?>', this)" class="inline-flex items-center gap-1 font-mono text-[10px] font-bold text-slate-700 bg-slate-100 hover:bg-orange-50 hover:text-orange-700 px-2 py-0.5 rounded border border-slate-200 transition-colors" title="کلیک برای کپی کد پستی ۱۰ رقمی">
+                                            <span class="material-symbols-outlined text-xs">content_copy</span>
+                                            <span>کدپستی: <?= htmlspecialchars($destPostal) ?></span>
+                                        </button>
+                                    <?php endif; ?>
+                                    <?php if (!empty($destLat) && !empty($destLng)): ?>
+                                        <a href="https://nshn.ir/?lat=<?= $destLat ?>&lng=<?= $destLng ?>" target="_blank" class="inline-flex items-center gap-0.5 text-[10px] text-blue-600 hover:underline">
+                                            <span class="material-symbols-outlined text-xs">location_on</span>
+                                            <span>نقشه نشان</span>
+                                        </a>
+                                    <?php endif; ?>
+                                </div>
                             </td>
                             <td class="p-3.5">
                                 <span class="font-bold text-slate-800"><?= htmlspecialchars($ord['product_name_snapshot'] ?: 'کالای فروشگاه') ?></span>
@@ -314,18 +393,25 @@ $sellerProducts = $productsQuery->fetchAll(PDO::FETCH_ASSOC);
                             </td>
                             <td class="p-3.5">
                                 <?php if (!empty($ord['post_tracking_code'])): ?>
-                                    <span class="font-mono text-xs font-bold text-slate-700 bg-slate-100 px-2 py-1 rounded-md">
+                                    <span class="font-mono text-xs font-bold text-slate-700 bg-slate-100 px-2 py-1 rounded-md block truncate max-w-[140px]" title="<?= htmlspecialchars($ord['post_tracking_code']) ?>">
                                         <?= htmlspecialchars($ord['post_tracking_code']) ?>
                                     </span>
+                                    <span class="text-[10px] text-slate-400 block mt-0.5"><?= htmlspecialchars($ord['carrier_name'] ?: 'پستکس') ?></span>
                                 <?php else: ?>
                                     <span class="text-slate-400 italic text-[11px]">ثبت نشده</span>
                                 <?php endif; ?>
                             </td>
                             <td class="p-3.5 text-center">
-                                <button onclick="openTrackingModal(<?= $ord['order_id'] ?>, '<?= htmlspecialchars(addslashes($ord['post_tracking_code'] ?? '')) ?>', '<?= htmlspecialchars(addslashes($ord['carrier_name'] ?? 'پست پیشتاز (پستکس)')) ?>')" class="px-3 py-1.5 rounded-xl bg-secondary-container hover:bg-orange-600 text-white font-bold text-xs shadow-sm transition-all flex items-center gap-1 mx-auto">
-                                    <span class="material-symbols-outlined text-sm">local_shipping</span>
-                                    <span><?= !empty($ord['post_tracking_code']) ? 'ویرایش رهگیری' : 'ثبت بارکد پست' ?></span>
-                                </button>
+                                <div class="flex items-center justify-center gap-1.5 flex-wrap">
+                                    <a href="../actions/print_shipping_label.php?order_id=<?= $ord['order_id'] ?>" target="_blank" class="px-2.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition-all flex items-center gap-1" title="چاپ برچسب استاندارد پستی جهت چسباندن روی کارتن">
+                                        <span class="material-symbols-outlined text-sm">print</span>
+                                        <span>برچسب پستی</span>
+                                    </a>
+                                    <button onclick="openTrackingModal(<?= $ord['order_id'] ?>, '<?= htmlspecialchars(addslashes($ord['post_tracking_code'] ?? '')) ?>', '<?= htmlspecialchars(addslashes($ord['carrier_name'] ?? 'شرکت ملی پست / پستکس')) ?>')" class="px-3 py-1.5 rounded-xl bg-secondary-container hover:bg-orange-600 text-white font-bold text-xs shadow-sm transition-all flex items-center gap-1">
+                                        <span class="material-symbols-outlined text-sm">local_shipping</span>
+                                        <span><?= !empty($ord['post_tracking_code']) ? 'ویرایش بارکد' : 'ثبت بارکد پست' ?></span>
+                                    </button>
+                                </div>
                             </td>
                         </tr>
                         <?php endforeach; ?>
@@ -557,21 +643,25 @@ $sellerProducts = $productsQuery->fetchAll(PDO::FETCH_ASSOC);
             <div>
                 <label class="block text-xs font-bold text-slate-700 mb-1">شرکت پستی یا حامل</label>
                 <select id="modalCarrier" name="carrier_name" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-secondary-container outline-none font-bold">
-                    <option value="پست پیشتاز (پستکس)">پست پیشتاز (پستکس)</option>
+                    <option value="شرکت ملی پست / پستکس">شرکت ملی پست / سامانه پستکس (پیشتاز)</option>
                     <option value="تیپاکس">تیپاکس (Tipax)</option>
                     <option value="پیک موتوری اختصاصی">پیک موتوری اختصاصی</option>
+                    <option value="باربری">باربری بین‌شهری</option>
                 </select>
             </div>
 
             <div>
                 <label class="block text-xs font-bold text-slate-700 mb-1">بارکد ۲۴ رقمی رهگیری پستی</label>
                 <input type="text" id="modalTrackingCode" name="post_tracking_code" required dir="ltr" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-mono focus:ring-2 focus:ring-secondary-container outline-none" placeholder="100000000000000000000000">
-                <p class="text-[11px] text-slate-400 mt-1">با ثبت این کد، پیامک رهگیری خودکار برای خریدار ارسال می‌گردد.</p>
+                <p class="text-[11px] text-slate-400 mt-1">با ثبت این بارکد، وضعیت سفارش بلافاصله «ارسال شده» شده و پیامک رهگیری پستی به شماره خریدار ارسال می‌گردد.</p>
             </div>
 
             <div class="flex gap-2 justify-end pt-2">
                 <button type="button" onclick="closeTrackingModal()" class="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-all">انصراف</button>
-                <button type="submit" class="px-5 py-2 rounded-xl bg-secondary-container hover:bg-orange-600 text-white text-xs font-bold shadow-md transition-all">ثبت و آغاز مهلت عودت</button>
+                <button type="submit" class="px-5 py-2 rounded-xl bg-secondary-container hover:bg-orange-600 text-white text-xs font-bold shadow-md transition-all flex items-center gap-1.5">
+                    <span class="material-symbols-outlined text-sm">send</span>
+                    <span>تایید و ارسال مرسوله</span>
+                </button>
             </div>
         </form>
     </div>
@@ -703,6 +793,53 @@ function filterProducts() {
         const text = card.innerText.toLowerCase();
         card.style.display = text.includes(q) ? '' : 'none';
     });
+}
+
+function copyText(text, btn) {
+    if (!navigator.clipboard) {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+    } else {
+        navigator.clipboard.writeText(text);
+    }
+    const orig = btn.innerHTML;
+    btn.innerHTML = '<span class="material-symbols-outlined text-xs text-emerald-600">check</span><span class="text-emerald-600">کپی شد!</span>';
+    setTimeout(() => { btn.innerHTML = orig; }, 2000);
+}
+
+function syncPostexNow() {
+    const btn = document.getElementById('postexSyncBtn');
+    const icon = document.getElementById('postexSyncIcon');
+    const txt = document.getElementById('postexSyncText');
+    if (!btn) return;
+
+    btn.disabled = true;
+    icon.classList.add('animate-spin');
+    txt.innerText = 'در حال استعلام از پستکس...';
+
+    fetch('../actions/sync_shipping_action.php?csrf_token=<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>')
+        .then(res => res.json())
+        .then(data => {
+            icon.classList.remove('animate-spin');
+            btn.disabled = false;
+            if (data.success) {
+                txt.innerText = 'بروزرسانی شد (' + (data.data?.synced_count ?? 0) + ' مرسوله)';
+                setTimeout(() => { location.reload(); }, 1200);
+            } else {
+                txt.innerText = 'استعلام مجدد';
+                alert(data.message || 'خطا در ارتباط با پستکس.');
+            }
+        })
+        .catch(err => {
+            icon.classList.remove('animate-spin');
+            btn.disabled = false;
+            txt.innerText = 'استعلام مجدد';
+            console.error(err);
+        });
 }
 </script>
 

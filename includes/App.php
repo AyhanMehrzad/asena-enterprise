@@ -192,13 +192,28 @@ class App {
         return self::$crypto;
     }
 
+    public static function hasDb(): bool {
+        return !empty($GLOBALS['pdo']);
+    }
+
     /**
-     * Boot enterprise request environment: Headers, Secure Session, Traffic Inspection, WAF
+     * Boot enterprise request environment: Headers, Secure Session, Traffic Inspection, WAF, Background Postex Sync
      */
     public static function boot(): void {
         SecurityMiddleware::applyHeaders();
         SecurityMiddleware::secureSession();
-        TrafficMonitoringService::inspectAndLog(self::db());
-        WafMiddleware::inspect(self::db());
+        if (self::hasDb()) {
+            TrafficMonitoringService::inspectAndLog(self::db());
+            WafMiddleware::inspect(self::db());
+            
+            // Non-blocking background Postex tracking reindexer (Throttled 15m)
+            register_shutdown_function(function() {
+                try {
+                    if (App::hasDb()) {
+                        App::postex()->autoSyncIfDue(900);
+                    }
+                } catch (Throwable $e) {}
+            });
+        }
     }
 }

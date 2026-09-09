@@ -80,21 +80,37 @@ try {
         
         $order_id = $sub_id; // For the success message below
     } else {
-        // 1. Create order with real amount and ref_id
-    $orderStmt = $pdo->prepare(
-        "INSERT INTO orders (user_id, total_amount, status, gateway_ref_id)
-         VALUES (?, ?, 'processing', ?)"
-    );
-    // If gateway_ref_id column doesn't exist yet, fall back gracefully
-    try {
-        $orderStmt->execute([$user_id, $total_amount, $ref_id]);
-    } catch (PDOException $colErr) {
+        // Fetch snapshot of buyer address
+        $userAddrStmt = $pdo->prepare("SELECT city, address, postal_code FROM users WHERE id = ?");
+        $userAddrStmt->execute([$user_id]);
+        $uAddr = $userAddrStmt->fetch(PDO::FETCH_ASSOC) ?: [];
+        $fullShippingAddress = trim(($uAddr['city'] ?? '') . '، ' . ($uAddr['address'] ?? ''));
+        if (!empty($uAddr['postal_code'])) {
+            $fullShippingAddress .= ' (کد پستی: ' . $uAddr['postal_code'] . ')';
+        }
+
+        // 1. Create order with real amount, ref_id and shipping_address snapshot
         $orderStmt = $pdo->prepare(
-            "INSERT INTO orders (user_id, total_amount, status) VALUES (?, ?, 'processing')"
+            "INSERT INTO orders (user_id, total_amount, status, gateway_ref_id, shipping_address)
+             VALUES (?, ?, 'processing', ?, ?)"
         );
-        $orderStmt->execute([$user_id, $total_amount]);
-    }
-    $order_id = $pdo->lastInsertId();
+        // If gateway_ref_id or shipping_address column doesn't exist yet, fall back gracefully
+        try {
+            $orderStmt->execute([$user_id, $total_amount, $ref_id, $fullShippingAddress]);
+        } catch (PDOException $colErr) {
+            try {
+                $orderStmt = $pdo->prepare(
+                    "INSERT INTO orders (user_id, total_amount, status, shipping_address) VALUES (?, ?, 'processing', ?)"
+                );
+                $orderStmt->execute([$user_id, $total_amount, $fullShippingAddress]);
+            } catch (PDOException $colErr2) {
+                $orderStmt = $pdo->prepare(
+                    "INSERT INTO orders (user_id, total_amount, status) VALUES (?, ?, 'processing')"
+                );
+                $orderStmt->execute([$user_id, $total_amount]);
+            }
+        }
+        $order_id = $pdo->lastInsertId();
 
     // 2. Insert order_items and decrement stock
     if (!$is_booking && !$is_subscription) {

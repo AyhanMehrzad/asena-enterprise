@@ -452,6 +452,31 @@ class PostexShippingService
         ];
     }
 
+    /**
+     * Automated Periodic Sync Runner: Checks in-transit parcels if interval has elapsed.
+     * Uses a lightweight timestamp check to ensure zero overhead on page loads.
+     */
+    public function autoSyncIfDue(int $intervalSeconds = 900): array
+    {
+        $flagFile = sys_get_temp_dir() . '/asena_last_postex_sync.txt';
+        $now = time();
+        if (file_exists($flagFile)) {
+            $lastSync = (int)@file_get_contents($flagFile);
+            if (($now - $lastSync) < $intervalSeconds) {
+                return [
+                    'executed' => false,
+                    'reason' => 'Throttled (interval not elapsed)',
+                    'seconds_remaining' => $intervalSeconds - ($now - $lastSync)
+                ];
+            }
+        }
+
+        @file_put_contents($flagFile, (string)$now);
+        $res = $this->syncInTransitParcels();
+        $res['executed'] = true;
+        return $res;
+    }
+
 
     /**
      * Low-level HTTP executor using cURL with Postex authentication
