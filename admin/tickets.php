@@ -31,7 +31,7 @@ if ($selectedRole === 'organization') {
 } elseif ($selectedRole === 'specialist') {
     $roleWhere = "AND u.role IN ('doctor', 'pharmacist')";
 } elseif ($selectedRole === 'user') {
-    $roleWhere = "AND u.role = 'user'";
+    $roleWhere = "AND (u.role = 'user' OR u.role IS NULL OR u.role = '' OR u.role NOT IN ('organization', 'seller', 'doctor', 'pharmacist'))";
 }
 
 // Fetch tickets with role segmentation & last message preview
@@ -56,7 +56,7 @@ $counts = [
     'organization' => (int)$pdo->query("SELECT COUNT(*) FROM tickets t JOIN users u ON t.user_id = u.id WHERE t.mode = 'admin' AND u.role = 'organization'")->fetchColumn(),
     'seller'       => (int)$pdo->query("SELECT COUNT(*) FROM tickets t JOIN users u ON t.user_id = u.id WHERE t.mode = 'admin' AND u.role = 'seller'")->fetchColumn(),
     'specialist'   => (int)$pdo->query("SELECT COUNT(*) FROM tickets t JOIN users u ON t.user_id = u.id WHERE t.mode = 'admin' AND u.role IN ('doctor', 'pharmacist')")->fetchColumn(),
-    'user'         => (int)$pdo->query("SELECT COUNT(*) FROM tickets t JOIN users u ON t.user_id = u.id WHERE t.mode = 'admin' AND u.role = 'user'")->fetchColumn(),
+    'user'         => (int)$pdo->query("SELECT COUNT(*) FROM tickets t JOIN users u ON t.user_id = u.id WHERE t.mode = 'admin' AND (u.role = 'user' OR u.role IS NULL OR u.role = '' OR u.role NOT IN ('organization', 'seller', 'doctor', 'pharmacist'))")->fetchColumn(),
 ];
 
 // Open count
