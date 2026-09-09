@@ -31,30 +31,38 @@ if ($currentOrg) {
     }
     
     // Check if customized admin role exists
-    $checkAdmin = $pdo->prepare("SELECT * FROM organization_admins WHERE organization_id = ? AND user_id = ? LIMIT 1");
-    $checkAdmin->execute([$currentOrg['id'], $currentUser['id']]);
-    $adminRow = $checkAdmin->fetch(PDO::FETCH_ASSOC);
-    if ($adminRow) {
-        $currentAdminRole = $adminRow['admin_role'];
-        $currentAdminTitle = $adminRow['title'] ?: ($adminRow['admin_role'] === 'owner' ? 'مدیر ارشد و موسس' : 'مدیر مرکز');
-        $currentAdminPermissions = !empty($adminRow['permissions_json']) ? json_decode($adminRow['permissions_json'], true) : ['all'];
+    try {
+        $checkAdmin = $pdo->prepare("SELECT * FROM organization_admins WHERE organization_id = ? AND user_id = ? LIMIT 1");
+        $checkAdmin->execute([$currentOrg['id'], $currentUser['id']]);
+        $adminRow = $checkAdmin->fetch(PDO::FETCH_ASSOC);
+        if ($adminRow) {
+            $currentAdminRole = $adminRow['admin_role'];
+            $currentAdminTitle = $adminRow['title'] ?: ($adminRow['admin_role'] === 'owner' ? 'مدیر ارشد و موسس' : 'مدیر مرکز');
+            $currentAdminPermissions = !empty($adminRow['permissions_json']) ? json_decode($adminRow['permissions_json'], true) : ['all'];
+        }
+    } catch (Throwable $e) {
+        // Fallback to default owner permissions if table or query fails
     }
 } else {
     // Check if user is an active sub-admin in organization_admins
-    $subAdminStmt = $pdo->prepare("
-        SELECT o.*, oa.admin_role, oa.title as staff_title, oa.permissions_json, oa.status as staff_status
-        FROM organization_admins oa
-        JOIN organizations o ON o.id = oa.organization_id
-        WHERE oa.user_id = ? AND oa.status = 'active'
-        LIMIT 1
-    ");
-    $subAdminStmt->execute([$currentUser['id']]);
-    $subAdminRow = $subAdminStmt->fetch(PDO::FETCH_ASSOC);
-    if ($subAdminRow) {
-        $currentOrg = $subAdminRow;
-        $currentAdminRole = $subAdminRow['admin_role'];
-        $currentAdminTitle = $subAdminRow['staff_title'] ?: 'مدیر همکار مرکز';
-        $currentAdminPermissions = !empty($subAdminRow['permissions_json']) ? json_decode($subAdminRow['permissions_json'], true) : [];
+    try {
+        $subAdminStmt = $pdo->prepare("
+            SELECT o.*, oa.admin_role, oa.title as staff_title, oa.permissions_json, oa.status as staff_status
+            FROM organization_admins oa
+            JOIN organizations o ON o.id = oa.organization_id
+            WHERE oa.user_id = ? AND oa.status = 'active'
+            LIMIT 1
+        ");
+        $subAdminStmt->execute([$currentUser['id']]);
+        $subAdminRow = $subAdminStmt->fetch(PDO::FETCH_ASSOC);
+        if ($subAdminRow) {
+            $currentOrg = $subAdminRow;
+            $currentAdminRole = $subAdminRow['admin_role'];
+            $currentAdminTitle = $subAdminRow['staff_title'] ?: 'مدیر همکار مرکز';
+            $currentAdminPermissions = !empty($subAdminRow['permissions_json']) ? json_decode($subAdminRow['permissions_json'], true) : [];
+        }
+    } catch (Throwable $e) {
+        // Graceful fallback if table is not available
     }
 }
 
