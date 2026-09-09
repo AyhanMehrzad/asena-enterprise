@@ -3,138 +3,888 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>آسنا | اتصال اینترنت برقرار نیست</title>
+    <title>آسنا | اتصال اینترنت قطع است (حالت آفلاین)</title>
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
     <link rel="stylesheet" href="/assets/css/vazirmatn.css">
     <link rel="stylesheet" href="/assets/css/material-symbols.css">
     <style>
+        :root {
+            --primary: #001a48;
+            --primary-light: #002d72;
+            --accent: #fd8100;
+            --accent-light: #ffedd5;
+            --success: #10b981;
+            --bg-page: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --border-color: #e2e8f0;
+        }
+
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
             font-family: 'Vazirmatn', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            -webkit-tap-highlight-color: transparent;
         }
+
         body {
-            background-color: #f8fafc;
-            color: #1e293b;
+            background: linear-gradient(145deg, #f1f5f9 0%, #e2e8f0 100%);
+            color: var(--text-main);
+            min-height: 100vh;
+            padding: 24px 16px 48px;
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
-            min-height: 100vh;
-            padding: 24px;
-            text-align: center;
         }
-        .offline-card {
-            background: #ffffff;
-            border-radius: 28px;
-            box-shadow: 0 20px 40px -15px rgba(0, 45, 114, 0.08);
-            border: 1px solid #e2e8f0;
-            max-width: 520px;
+
+        .offline-container {
+            max-width: 620px;
             width: 100%;
-            padding: 48px 32px;
+            background: var(--card-bg);
+            border-radius: 32px;
+            box-shadow: 0 25px 50px -12px rgba(0, 26, 72, 0.12), 0 0 0 1px rgba(226, 232, 240, 0.8);
             position: relative;
             overflow: hidden;
+            padding: 36px 28px;
+            text-align: center;
         }
-        .offline-card::before {
+
+        .offline-container::before {
             content: '';
             position: absolute;
             top: 0;
             left: 0;
             right: 0;
             height: 6px;
-            background: linear-gradient(90deg, #002d72, #10b981, #002d72);
+            background: linear-gradient(90deg, #fd8100, #002d72, #10b981, #fd8100);
+            background-size: 200% 100%;
+            animation: gradientShift 4s ease infinite;
         }
-        .icon-bubble {
-            width: 88px;
-            height: 88px;
-            border-radius: 24px;
-            background: #eff6ff;
-            color: #002d72;
+
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* Status Badge */
+        .status-badge {
             display: inline-flex;
             align-items: center;
+            gap: 8px;
+            background: #fff7ed;
+            color: #c2410c;
+            border: 1px solid #fed7aa;
+            padding: 6px 16px;
+            border-radius: 9999px;
+            font-size: 12px;
+            font-weight: 800;
+            margin-bottom: 20px;
+        }
+
+        .radar-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #ea580c;
+            position: relative;
+        }
+
+        .radar-dot::after {
+            content: '';
+            position: absolute;
+            inset: -4px;
+            border-radius: 50%;
+            border: 2px solid #ea580c;
+            animation: radarPulse 1.8s infinite;
+        }
+
+        @keyframes radarPulse {
+            0% { transform: scale(0.6); opacity: 1; }
+            100% { transform: scale(2.2); opacity: 0; }
+        }
+
+        /* Animated Puppy Avatar */
+        .pet-radar-wrapper {
+            position: relative;
+            width: 110px;
+            height: 110px;
+            margin: 0 auto 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .radar-circle {
+            position: absolute;
+            border-radius: 50%;
+            border: 1.5px dashed rgba(253, 129, 0, 0.4);
+            animation: rotateRadar 12s linear infinite;
+        }
+        .radar-circle.c1 { width: 100%; height: 100%; }
+        .radar-circle.c2 { width: 75%; height: 75%; border-style: dotted; animation-duration: 8s; animation-direction: reverse; }
+
+        @keyframes rotateRadar {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .pet-icon-box {
+            width: 76px;
+            height: 76px;
+            border-radius: 24px;
+            background: linear-gradient(135deg, #eff6ff, #fff7ed);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 8px 20px -4px rgba(0, 45, 114, 0.15);
+            font-size: 38px;
+            position: relative;
+            z-index: 2;
+            animation: floatPet 3s ease-in-out infinite;
+        }
+
+        @keyframes floatPet {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-6px); }
+        }
+
+        h1 {
+            font-size: 22px;
+            font-weight: 900;
+            color: var(--primary);
+            margin-bottom: 8px;
+        }
+
+        p.lead {
+            font-size: 13.5px;
+            color: var(--text-muted);
+            line-height: 1.7;
+            margin-bottom: 20px;
+        }
+
+        /* Action Buttons */
+        .action-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
             justify-content: center;
             margin-bottom: 24px;
         }
-        .icon-bubble .material-symbols-outlined {
-            font-size: 44px;
-        }
-        h1 {
-            font-size: 22px;
-            font-weight: 800;
-            color: #0f172a;
-            margin-bottom: 12px;
-        }
-        p {
-            font-size: 14px;
-            color: #64748b;
-            line-height: 1.8;
-            margin-bottom: 28px;
-        }
-        .btn-retry {
+
+        .btn-primary-custom {
             display: inline-flex;
             align-items: center;
             justify-content: center;
             gap: 8px;
-            background: #002d72;
+            background: var(--primary);
             color: #ffffff;
-            font-size: 15px;
-            font-weight: 700;
-            padding: 14px 28px;
+            font-size: 14px;
+            font-weight: 800;
+            padding: 12px 24px;
             border-radius: 16px;
             border: none;
             cursor: pointer;
             transition: all 0.2s ease;
-            box-shadow: 0 4px 12px rgba(0, 45, 114, 0.25);
-            width: 100%;
-            max-width: 260px;
+            box-shadow: 0 4px 14px rgba(0, 26, 72, 0.25);
             text-decoration: none;
         }
-        .btn-retry:hover {
-            background: #001f4d;
+
+        .btn-primary-custom:hover {
+            background: var(--primary-light);
             transform: translateY(-2px);
         }
-        .emergency-box {
-            margin-top: 32px;
-            padding-top: 24px;
-            border-top: 1px dashed #e2e8f0;
-            font-size: 13px;
-            color: #64748b;
-        }
-        .emergency-link {
-            color: #ef4444;
-            font-weight: 800;
+
+        .btn-secondary-custom {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            background: #ffffff;
+            color: var(--primary);
+            font-size: 14px;
+            font-weight: 700;
+            padding: 12px 20px;
+            border-radius: 16px;
+            border: 1px solid #cbd5e1;
+            cursor: pointer;
+            transition: all 0.2s ease;
             text-decoration: none;
+        }
+
+        .btn-secondary-custom:hover {
+            background: #f8fafc;
+            border-color: #94a3b8;
+        }
+
+        /* Mini Game Canvas Card */
+        .game-card {
+            background: #0f172a;
+            border-radius: 20px;
+            padding: 16px;
+            margin-bottom: 24px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: inset 0 2px 8px rgba(0,0,0,0.5);
+            border: 2px solid #1e293b;
+        }
+
+        .game-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: #f8fafc;
+            font-size: 12px;
+            font-weight: 800;
+            margin-bottom: 10px;
+            padding: 0 6px;
+        }
+
+        .game-title {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: #fb923c;
+        }
+
+        .game-scores {
+            display: flex;
+            gap: 12px;
+            direction: ltr;
+        }
+
+        .score-pill {
+            background: rgba(255,255,255,0.1);
+            padding: 3px 10px;
+            border-radius: 10px;
+            font-family: monospace;
+            font-size: 13px;
+        }
+
+        #gameCanvas {
+            width: 100%;
+            max-width: 560px;
+            height: 150px;
+            background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+            border-radius: 14px;
+            display: block;
+            cursor: pointer;
+            touch-action: manipulation;
+        }
+
+        .game-instruction {
+            margin-top: 8px;
+            font-size: 11.5px;
+            color: #94a3b8;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 4px;
+        }
+
+        .btn-sound-toggle {
+            background: transparent;
+            border: none;
+            color: #cbd5e1;
+            cursor: pointer;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            padding: 2px;
+        }
+
+        /* First Aid Accordion */
+        .first-aid-box {
+            background: #f8fafc;
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 16px;
+            text-align: right;
+            margin-bottom: 20px;
+        }
+
+        .first-aid-header {
+            font-size: 13px;
+            font-weight: 800;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .first-aid-item {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 10px 14px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .first-aid-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .first-aid-item summary {
+            font-size: 12px;
+            font-weight: 700;
+            color: #1e293b;
+            list-style: none;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .first-aid-item p {
+            font-size: 11.5px;
+            color: #475569;
+            line-height: 1.7;
+            margin-top: 8px;
+            padding-top: 8px;
+            border-top: 1px dashed #f1f5f9;
+        }
+
+        /* Emergency Contact */
+        .emergency-banner {
+            border-top: 1px dashed var(--border-color);
+            padding-top: 16px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .emergency-phone {
+            color: #ef4444;
+            font-weight: 900;
+            font-size: 15px;
+            text-decoration: none;
+            direction: ltr;
             display: inline-flex;
             align-items: center;
             gap: 6px;
-            margin-top: 8px;
-            font-size: 16px;
-            direction: ltr;
+            background: #fef2f2;
+            padding: 6px 16px;
+            border-radius: 12px;
+            border: 1px solid #fee2e2;
+            transition: all 0.2s;
+        }
+
+        .emergency-phone:hover {
+            background: #fee2e2;
+            transform: scale(1.02);
+        }
+
+        /* Auto Reconnect Toast */
+        #onlineToast {
+            position: fixed;
+            top: 24px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-100px);
+            background: #10b981;
+            color: white;
+            font-weight: 800;
+            font-size: 14px;
+            padding: 12px 28px;
+            border-radius: 9999px;
+            box-shadow: 0 10px 25px rgba(16, 185, 129, 0.4);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            z-index: 1000;
+        }
+
+        #onlineToast.show {
+            transform: translateX(-50%) translateY(0);
         }
     </style>
 </head>
 <body>
-    <div class="offline-card">
-        <div class="icon-bubble">
-            <span class="material-symbols-outlined">wifi_off</span>
+
+    <div id="onlineToast">
+        <span class="material-symbols-outlined">wifi</span>
+        اینترنت متصل شد! در حال بازگشت به سامانه آسنا...
+    </div>
+
+    <div class="offline-container">
+        
+        <!-- Radar Status -->
+        <div class="status-badge">
+            <span class="radar-dot"></span>
+            <span>حالت آفلاین (بدون اینترنت) | PWA Active</span>
         </div>
-        <h1>اتصال اینترنت شما برقرار نیست</h1>
-        <p>
-            به نظر می‌رسد ارتباط اینترنتی شما قطع شده است. آسنا صفحات بازدید شده اخیر شما را در حافظه موقت (PWA) ذخیره کرده تا بتوانید اطلاعات کلینیک و اقلام قبلی را مرور کنید.
+
+        <!-- Animated Puppy Radar Avatar -->
+        <div class="pet-radar-wrapper">
+            <div class="radar-circle c1"></div>
+            <div class="radar-circle c2"></div>
+            <div class="pet-icon-box">
+                🐕
+            </div>
+        </div>
+
+        <h1>اتصال اینترنت شما قطع شده است</h1>
+        <p class="lead">
+            هاپوی جستجوگر آسنا در حال بو کشیدن امواج وای‌فای است! نگران نباشید، اطلاعات صفحات قبلی، پرونده‌ها و سبد خرید شما در حافظه محلی ذخیره است.
         </p>
 
-        <button onclick="window.location.reload()" class="btn-retry">
-            <span class="material-symbols-outlined">refresh</span>
-            تلاش مجدد برای اتصال
-        </button>
+        <!-- Actions -->
+        <div class="action-row">
+            <button onclick="checkConnectionNow()" class="btn-primary-custom" id="retryBtn">
+                <span class="material-symbols-outlined">refresh</span>
+                تست مجدد اتصال
+            </button>
+            <button onclick="window.history.back()" class="btn-secondary-custom">
+                <span class="material-symbols-outlined">arrow_back</span>
+                بازگشت به صفحه قبل
+            </button>
+        </div>
 
-        <div class="emergency-box">
-            <div>نیاز فوری به راهنمایی درمانی یا شرایط اورژانس دامپزشکی دارید؟</div>
-            <a href="tel:+989146676978" class="emergency-link">
+        <!-- Built-in Mini Game: Asena Puppy Jump -->
+        <div class="game-card">
+            <div class="game-header">
+                <div class="game-title">
+                    <span>🎮</span>
+                    <span>مینی‌گیم هاپوی دونده و شکار استخوان!</span>
+                </div>
+                <div class="game-scores">
+                    <span class="score-pill" title="امتیاز فعلی">🦴 <span id="currentScore">0</span></span>
+                    <span class="score-pill" title="بالاترین رکورد" style="color: #facc15;">🏆 <span id="highScore">0</span></span>
+                </div>
+            </div>
+
+            <canvas id="gameCanvas" width="560" height="150"></canvas>
+
+            <div class="game-instruction">
+                <span>💡 کلیک روی کادر یا فشردن <b>Space</b> برای پرش</span>
+                <button type="button" class="btn-sound-toggle" onclick="toggleSound()" title="قطع/وصل صدا">
+                    <span id="soundIcon" class="material-symbols-outlined" style="font-size: 18px;">volume_up</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Offline First Aid Box -->
+        <div class="first-aid-box">
+            <div class="first-aid-header">
+                <span class="material-symbols-outlined" style="color: #ef4444;">medical_services</span>
+                <span>راهنمای اورژانس حیوانات خانگی (بدون نیاز به اینترنت):</span>
+            </div>
+
+            <details class="first-aid-item">
+                <summary>
+                    <span>☀️ اقدامات فوری گرمازدگی سگ و گربه</span>
+                    <span class="material-symbols-outlined" style="font-size: 16px;">expand_more</span>
+                </summary>
+                <p>حیوان را سریعاً به سایه یا جلوی باد کولر منتقل کنید. پنجه‌ها، گردن و کشاله ران را با آب ولرم مرطوب کنید. <b>هرگز از یخ یا آب خیلی سرد استفاده نکنید</b> زیرا شوک عروقی ایجاد می‌کند.</p>
+            </details>
+
+            <details class="first-aid-item">
+                <summary>
+                    <span>🦴 خفگی یا گیر کردن جسم خارجی در گلو</span>
+                    <span class="material-symbols-outlined" style="font-size: 16px;">expand_more</span>
+                </summary>
+                <p>فک را با احتیاط باز کرده و در صورت مشاهده جسم آن را با انگشت خارج کنید. در صورت بیهوشی، دست‌ها را زیر قفسه سینه قفل کرده و فشار ملایم رو به بالا وارد نمایید (هایملیک دامپزشکی).</p>
+            </details>
+
+            <details class="first-aid-item">
+                <summary>
+                    <span>🧪 مسمومیت و بلعیدن مواد شوینده یا داروی انسانی</span>
+                    <span class="material-symbols-outlined" style="font-size: 16px;">expand_more</span>
+                </summary>
+                <p>حیوان را وادار به استفراغ نکنید (به‌ویژه در مواد سوزاننده یا نفتی). نمونه بسته‌بندی سم را برداشته و بلافاصله با شماره اورژانس زیر تماس بگیرید.</p>
+            </details>
+        </div>
+
+        <!-- Emergency Phone -->
+        <div class="emergency-banner">
+            <span>نیاز به راهنمایی تلفنی فوری در شرایط اضطراری دارید؟</span>
+            <a href="tel:+989146676978" class="emergency-phone">
                 <span class="material-symbols-outlined" style="font-size: 18px;">phone_in_talk</span>
                 +98 914 667 6978
             </a>
         </div>
+
     </div>
+
+    <!-- Offline SVG & Icon Helper Script -->
+    <script src="/assets/js/offline-icons.js"></script>
+
+    <!-- Mini-Game Engine & Network Reconnect Radar -->
+    <script>
+        // --- 1. Sound Synthesis via Web Audio API (100% Offline, Zero external files) ---
+        let audioCtx = null;
+        let soundEnabled = true;
+
+        function getAudioContext() {
+            if (!audioCtx) {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                if (AudioContext) audioCtx = new AudioContext();
+            }
+            if (audioCtx && audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+            return audioCtx;
+        }
+
+        function playBeep(freq, type, duration) {
+            if (!soundEnabled) return;
+            try {
+                const ctx = getAudioContext();
+                if (!ctx) return;
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = type;
+                osc.frequency.setValueAtTime(freq, ctx.currentTime);
+                gain.gain.setValueAtTime(0.08, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start();
+                osc.stop(ctx.currentTime + duration);
+            } catch(e){}
+        }
+
+        function playJumpSound() {
+            playBeep(320, 'sine', 0.12);
+        }
+
+        function playBoneSound() {
+            playBeep(780, 'triangle', 0.18);
+        }
+
+        function playCrashSound() {
+            playBeep(120, 'sawtooth', 0.25);
+        }
+
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            const icon = document.getElementById('soundIcon');
+            if (icon) icon.innerText = soundEnabled ? 'volume_up' : 'volume_off';
+        }
+
+        // --- 2. Asena Puppy Runner Mini-Game ---
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreEl = document.getElementById('currentScore');
+        const highScoreEl = document.getElementById('highScore');
+
+        let highScore = parseInt(localStorage.getItem('asena_runner_highscore') || '0', 10);
+        highScoreEl.innerText = highScore;
+
+        let gameRunning = false;
+        let gameOver = false;
+        let score = 0;
+        let speed = 4;
+        let frameCount = 0;
+
+        const groundY = 120;
+        const player = {
+            x: 60,
+            y: groundY - 28,
+            width: 32,
+            height: 28,
+            vy: 0,
+            gravity: 0.7,
+            jumpPower: -10.5,
+            isGrounded: true
+        };
+
+        let obstacles = [];
+        let bones = [];
+
+        function resetGame() {
+            player.y = groundY - 28;
+            player.vy = 0;
+            player.isGrounded = true;
+            obstacles = [];
+            bones = [];
+            score = 0;
+            speed = 4.2;
+            frameCount = 0;
+            scoreEl.innerText = score;
+            gameOver = false;
+            gameRunning = true;
+        }
+
+        function jump() {
+            getAudioContext();
+            if (!gameRunning) {
+                resetGame();
+                return;
+            }
+            if (gameOver) {
+                resetGame();
+                return;
+            }
+            if (player.isGrounded) {
+                player.vy = player.jumpPower;
+                player.isGrounded = false;
+                playJumpSound();
+            }
+        }
+
+        // Input Listeners
+        window.addEventListener('keydown', (e) => {
+            if (e.code === 'Space' || e.code === 'ArrowUp') {
+                e.preventDefault();
+                jump();
+            }
+        });
+        canvas.addEventListener('pointerdown', (e) => {
+            e.preventDefault();
+            jump();
+        });
+
+        function spawnEntities() {
+            // Spawn Obstacle
+            if (frameCount % 90 === 0 && Math.random() > 0.3) {
+                const types = [
+                    { type: 'bush', w: 22, h: 26, color: '#16a34a' },
+                    { type: 'bowl', w: 20, h: 18, color: '#0284c7' },
+                    { type: 'fence', w: 16, h: 32, color: '#d97706' }
+                ];
+                const obs = types[Math.floor(Math.random() * types.length)];
+                obstacles.push({
+                    x: canvas.width + 20,
+                    y: groundY - obs.h,
+                    w: obs.w,
+                    h: obs.h,
+                    color: obs.color,
+                    type: obs.type
+                });
+            }
+
+            // Spawn Golden Bone
+            if (frameCount % 130 === 0 && Math.random() > 0.4) {
+                bones.push({
+                    x: canvas.width + 40,
+                    y: groundY - 45 - (Math.random() * 30),
+                    w: 18,
+                    h: 18,
+                    collected: false
+                });
+            }
+        }
+
+        function update() {
+            if (!gameRunning || gameOver) return;
+
+            frameCount++;
+            speed += 0.0006; // Gradual speedup
+
+            // Physics
+            player.vy += player.gravity;
+            player.y += player.vy;
+            if (player.y >= groundY - player.height) {
+                player.y = groundY - player.height;
+                player.vy = 0;
+                player.isGrounded = true;
+            }
+
+            spawnEntities();
+
+            // Move & Collide Obstacles
+            for (let i = obstacles.length - 1; i >= 0; i--) {
+                const obs = obstacles[i];
+                obs.x -= speed;
+
+                // Collision with puppy
+                if (
+                    player.x + 4 < obs.x + obs.w &&
+                    player.x + player.width - 4 > obs.x &&
+                    player.y + player.height > obs.y + 4
+                ) {
+                    gameOver = true;
+                    playCrashSound();
+                    if (score > highScore) {
+                        highScore = score;
+                        localStorage.setItem('asena_runner_highscore', highScore);
+                        highScoreEl.innerText = highScore;
+                    }
+                }
+
+                if (obs.x + obs.w < -20) {
+                    obstacles.splice(i, 1);
+                    score += 1;
+                    scoreEl.innerText = score;
+                }
+            }
+
+            // Move & Collect Bones
+            for (let j = bones.length - 1; j >= 0; j--) {
+                const b = bones[j];
+                b.x -= speed;
+
+                if (!b.collected &&
+                    player.x < b.x + b.w &&
+                    player.x + player.width > b.x &&
+                    player.y < b.y + b.h &&
+                    player.y + player.height > b.y
+                ) {
+                    b.collected = true;
+                    score += 10;
+                    scoreEl.innerText = score;
+                    playBoneSound();
+                }
+
+                if (b.x + b.w < -20) {
+                    bones.splice(j, 1);
+                }
+            }
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // 1. Draw Night Sky Stars
+            ctx.fillStyle = "rgba(255, 255, 255, 0.4)";
+            for (let i = 0; i < 8; i++) {
+                const sx = (i * 75 + (frameCount * 0.2)) % canvas.width;
+                const sy = 20 + (i * 9) % 50;
+                ctx.fillRect(sx, sy, 2, 2);
+            }
+
+            // 2. Draw Ground
+            ctx.strokeStyle = "#334155";
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(0, groundY);
+            ctx.lineTo(canvas.width, groundY);
+            ctx.stroke();
+
+            // Ground pattern dashes
+            ctx.fillStyle = "#1e293b";
+            ctx.fillRect(0, groundY + 1, canvas.width, canvas.height - groundY);
+            ctx.fillStyle = "#475569";
+            for (let gx = - (frameCount * speed % 24); gx < canvas.width; gx += 24) {
+                ctx.fillRect(gx, groundY + 8, 12, 2);
+            }
+
+            // 3. Draw Obstacles
+            obstacles.forEach(obs => {
+                ctx.fillStyle = obs.color;
+                ctx.beginPath();
+                ctx.roundRect(obs.x, obs.y, obs.w, obs.h, 4);
+                ctx.fill();
+
+                if (obs.type === 'bowl') {
+                    ctx.fillStyle = "#ffffff";
+                    ctx.font = "10px sans-serif";
+                    ctx.fillText("🥣", obs.x + 2, obs.y + 13);
+                } else if (obs.type === 'bush') {
+                    ctx.fillStyle = "#ffffff";
+                    ctx.font = "12px sans-serif";
+                    ctx.fillText("🌿", obs.x + 2, obs.y + 18);
+                }
+            });
+
+            // 4. Draw Bones
+            bones.forEach(b => {
+                if (!b.collected) {
+                    ctx.font = "18px sans-serif";
+                    ctx.fillText("🦴", b.x, b.y + 14);
+                }
+            });
+
+            // 5. Draw Player Puppy 🐕
+            ctx.save();
+            ctx.translate(player.x, player.y);
+            
+            // Draw cartoon running puppy with canvas shapes
+            ctx.font = "26px sans-serif";
+            // Flap tail/bounce slightly based on ground status
+            const bobY = player.isGrounded ? Math.sin(frameCount * 0.4) * 2 : -2;
+            ctx.fillText("🐕", 0, 24 + bobY);
+            ctx.restore();
+
+            // 6. Overlay Messages
+            if (!gameRunning) {
+                ctx.fillStyle = "rgba(15, 23, 42, 0.75)";
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = "#facc15";
+                ctx.font = "bold 15px Vazirmatn, sans-serif";
+                ctx.textAlign = "center";
+                ctx.fillText("🐾 برای شروع بازی، روی کادر کلیک کنید یا Space بزنید", canvas.width / 2, canvas.height / 2 + 5);
+            } else if (gameOver) {
+                ctx.fillStyle = "rgba(15, 23, 42, 0.85)";
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = "#ef4444";
+                ctx.font = "bold 16px Vazirmatn, sans-serif";
+                ctx.textAlign = "center";
+                ctx.fillText("💥 اوپس! به مانع برخورد کردید", canvas.width / 2, canvas.height / 2 - 10);
+                ctx.fillStyle = "#f8fafc";
+                ctx.font = "13px Vazirmatn, sans-serif";
+                ctx.fillText(`امتیاز شما: ${score} 🦴 | برای تلاش دوباره کلیک کنید`, canvas.width / 2, canvas.height / 2 + 16);
+            }
+        }
+
+        function gameLoop() {
+            update();
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+        gameLoop();
+
+        // --- 3. Live Auto-Reconnect Detector & Heartbeat ---
+        const toast = document.getElementById('onlineToast');
+        let redirectTimer = null;
+
+        function handleOnline() {
+            if (toast) toast.classList.add('show');
+            playBoneSound();
+            if (!redirectTimer) {
+                redirectTimer = setTimeout(() => {
+                    window.location.reload();
+                }, 1400);
+            }
+        }
+
+        window.addEventListener('online', handleOnline);
+
+        function checkConnectionNow() {
+            const btn = document.getElementById('retryBtn');
+            if (btn) {
+                btn.innerHTML = '<span class="material-symbols-outlined" style="animation: rotateRadar 1s linear infinite;">autorenew</span> در حال بررسی سیگنال...';
+                btn.disabled = true;
+            }
+
+            fetch('/favicon.ico?t=' + Date.now(), { method: 'HEAD', cache: 'no-store' })
+                .then(res => {
+                    if (res.ok) {
+                        handleOnline();
+                    } else {
+                        throw new Error('Offline');
+                    }
+                })
+                .catch(() => {
+                    setTimeout(() => {
+                        if (btn) {
+                            btn.innerHTML = '<span class="material-symbols-outlined">wifi_off</span> اتصال هنوز برقرار نشد';
+                            setTimeout(() => {
+                                btn.innerHTML = '<span class="material-symbols-outlined">refresh</span> تست مجدد اتصال';
+                                btn.disabled = false;
+                            }, 1500);
+                        }
+                    }, 500);
+                });
+        }
+
+        // Automatic ping every 6 seconds
+        setInterval(() => {
+            if (navigator.onLine) {
+                fetch('/favicon.ico?t=' + Date.now(), { method: 'HEAD', cache: 'no-store' })
+                    .then(res => { if (res.ok) handleOnline(); })
+                    .catch(() => {});
+            }
+        }, 6000);
+    </script>
 </body>
 </html>

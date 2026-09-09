@@ -41,3 +41,20 @@
   -webkit-font-feature-settings: 'liga';
   -webkit-font-smoothing: antialiased;
 }
+
+/* Offline SVG Fallback & Direct SVG Icons */
+.asena-svg-icon {
+  width: 1em;
+  height: 1em;
+  display: inline-block;
+  vertical-align: -0.15em;
+  fill: currentColor;
+  stroke: none;
+  flex-shrink: 0;
+}
+.material-symbols-outlined.asena-icon-replaced {
+  font-family: inherit !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}

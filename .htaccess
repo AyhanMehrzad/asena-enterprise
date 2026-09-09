@@ -80,5 +80,10 @@ Options -Indexes
 </FilesMatch>
 
 # 10. Custom Branded Error Documents
+ErrorDocument 403 /403.php
 ErrorDocument 404 /404.php
+ErrorDocument 419 /419.php
 ErrorDocument 500 /500.php
+ErrorDocument 502 /502.php
+ErrorDocument 503 /503.php
+ErrorDocument 504 /504.php

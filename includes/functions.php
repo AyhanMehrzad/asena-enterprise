@@ -301,3 +301,12 @@ function format_price($amount, bool $showUnit = true, bool $persianDigits = true
     return $showUnit ? ($formatted . ' تومان') : $formatted;
 }
 
+/**
+ * Standardized Offline SVG Icon Renderer using local sprite sheet
+ */
+function svg_icon(string $name, string $classes = '', string $size = '24'): string {
+    $safeName = htmlspecialchars(trim($name), ENT_QUOTES, 'UTF-8');
+    $safeClasses = htmlspecialchars(trim($classes), ENT_QUOTES, 'UTF-8');
+    $safeSize = is_numeric($size) ? $size : '24';
+    return '<svg class="asena-svg-icon ' . $safeClasses . '" aria-hidden="true" focusable="false" width="' . $safeSize . '" height="' . $safeSize . '"><use href="/assets/icons/ui/sprite.svg#icon-' . $safeName . '"></use></svg>';
+}
