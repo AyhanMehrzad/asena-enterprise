@@ -342,6 +342,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </a>
 </div>
 
+<div class="mt-2.5 p-2.5 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-300/80 rounded-2xl flex items-center justify-between">
+    <div class="flex items-center gap-2">
+        <span class="material-symbols-outlined text-amber-600 text-lg">bolt</span>
+        <span class="text-xs font-black text-amber-950">توسعه: ورود بدون رمز به نقش‌ها</span>
+    </div>
+    <a href="auto_login.php" class="px-3 py-1 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-xs font-black transition-all shadow-sm flex items-center gap-1">
+        <span>Auto-Login</span>
+        <span class="material-symbols-outlined text-xs">arrow_back</span>
+    </a>
+</div>
+
 <div class="flex mt-6 p-1 bg-surface-container-low rounded-xl">
 <button class="flex-1 py-3 rounded-lg font-bold text-sm transition-all duration-300 bg-white shadow-sm text-primary" id="btn-login" onclick="toggleMode('login')">ورود</button>
 <button class="flex-1 py-3 rounded-lg font-bold text-sm transition-all duration-300 text-on-surface-variant hover:text-on-surface" id="btn-signup" onclick="toggleMode('signup')">ثبت‌نام عادی</button>
