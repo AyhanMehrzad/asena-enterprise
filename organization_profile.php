@@ -276,11 +276,24 @@ require_once __DIR__ . '/includes/header.php';
 
         <!-- Interactive Tabs Bar -->
         <div class="bg-white rounded-2xl p-2 border border-slate-200/90 shadow-sm flex items-center gap-2 overflow-x-auto scrollbar-none">
-            <button type="button" onclick="switchTab('tab-doctors')" id="btn-tab-doctors" class="tab-btn active px-5 py-2.5 rounded-xl text-xs font-black flex items-center gap-2 transition-all bg-sky-600 text-white shadow-sm">
-                <span class="material-symbols-outlined text-base">stethoscope</span>
-                <span>کادر پزشکان و متخصصین</span>
-                <span class="px-2 py-0.5 rounded-full text-[10px] bg-white/20"><?= count($doctors) ?></span>
-            </button>
+            <?php 
+            $hideDoctors = !empty($org['hide_doctors_roster']);
+            $orgFee = (int)($org['consultation_fee'] ?? 250000);
+            if ($orgFee <= 0) $orgFee = 250000;
+            ?>
+            <?php if ($hideDoctors): ?>
+                <button type="button" onclick="switchTab('tab-doctors')" id="btn-tab-doctors" class="tab-btn active px-5 py-2.5 rounded-xl text-xs font-black flex items-center gap-2 transition-all bg-sky-600 text-white shadow-sm">
+                    <span class="material-symbols-outlined text-base">calendar_clock</span>
+                    <span>رزرو وقت و پذیرش مستقیم مرکز</span>
+                    <span class="px-2 py-0.5 rounded-full text-[10px] bg-emerald-400 text-slate-950 font-black">فعال</span>
+                </button>
+            <?php else: ?>
+                <button type="button" onclick="switchTab('tab-doctors')" id="btn-tab-doctors" class="tab-btn active px-5 py-2.5 rounded-xl text-xs font-black flex items-center gap-2 transition-all bg-sky-600 text-white shadow-sm">
+                    <span class="material-symbols-outlined text-base">stethoscope</span>
+                    <span>کادر پزشکان و متخصصین</span>
+                    <span class="px-2 py-0.5 rounded-full text-[10px] bg-white/20"><?= count($doctors) ?></span>
+                </button>
+            <?php endif; ?>
 
             <button type="button" onclick="switchTab('tab-facilities')" id="btn-tab-facilities" class="tab-btn px-5 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2 transition-all text-slate-600 hover:bg-slate-100">
                 <span class="material-symbols-outlined text-base">medical_information</span>
@@ -307,8 +320,64 @@ require_once __DIR__ . '/includes/header.php';
             </button>
         </div>
 
-        <!-- TAB 1: DOCTORS ROSTER -->
+        <!-- TAB 1: DOCTORS ROSTER OR DIRECT FACILITY BOOKING -->
         <div id="tab-doctors" class="tab-content space-y-6">
+            <?php if ($hideDoctors): ?>
+                <!-- Direct Organization Admission Showcase Card -->
+                <div class="bg-gradient-to-br from-white to-sky-50/50 rounded-3xl border border-sky-100 p-6 sm:p-8 shadow-sm space-y-6">
+                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-6 border-b border-sky-100">
+                        <div class="flex items-start gap-4">
+                            <div class="w-16 h-16 rounded-2xl bg-sky-600 text-white flex items-center justify-center shrink-0 shadow-lg shadow-sky-600/30">
+                                <span class="material-symbols-outlined text-3xl">local_hospital</span>
+                            </div>
+                            <div>
+                                <div class="flex items-center gap-2">
+                                    <h2 class="text-xl font-black text-slate-900"><?= htmlspecialchars($org['name']) ?></h2>
+                                    <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">پذیرش متمرکز سازمانی</span>
+                                </div>
+                                <p class="text-xs text-slate-600 mt-1">نوبت‌دهی آنلاین با کادر مجرب، خدمات درمانی و اورژانس بدون نیاز به انتخاب پزشک اختصاصی</p>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center gap-4">
+                            <div class="text-left md:text-right">
+                                <span class="text-[11px] text-slate-500 block">تعرفه ویزیت مرکز:</span>
+                                <span class="text-lg font-black text-sky-700"><?= number_format($orgFee) ?> <span class="text-xs font-normal">تومان</span></span>
+                            </div>
+                            <a href="booking.php?org_id=<?= $orgId ?>" class="px-6 py-3.5 rounded-2xl bg-sky-600 hover:bg-sky-700 text-white font-black text-xs shadow-lg shadow-sky-600/25 transition-all flex items-center gap-2 shrink-0 animate-pulse">
+                                <span class="material-symbols-outlined text-lg">calendar_month</span>
+                                <span>رزرو آنلاین نوبت پذیرش مرکز</span>
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                        <div class="p-4 rounded-2xl bg-white border border-slate-200/80 space-y-1.5">
+                            <div class="flex items-center gap-2 text-sky-600">
+                                <span class="material-symbols-outlined text-xl">schedule</span>
+                                <span class="text-xs font-bold text-slate-800">ساعات پذیرش و شیفت‌ها</span>
+                            </div>
+                            <p class="text-xs text-slate-600"><?= !empty($org['is_24_7']) ? 'پذیرش ۲۴ ساعته شبانه‌روزی (۷ روز هفته)' : htmlspecialchars($org['operating_hours'] ?? 'همه‌روزه از ۰۸:۰۰ الی ۲۲:۰۰') ?></p>
+                        </div>
+
+                        <div class="p-4 rounded-2xl bg-white border border-slate-200/80 space-y-1.5">
+                            <div class="flex items-center gap-2 text-emerald-600">
+                                <span class="material-symbols-outlined text-xl">medical_services</span>
+                                <span class="text-xs font-bold text-slate-800">خدمات درمانی مرکز</span>
+                            </div>
+                            <p class="text-xs text-slate-600">معاینه عمومی و تخصصی، واکسیناسیون، سرم‌تراپی، پانسمان و جراحی سرپایی</p>
+                        </div>
+
+                        <div class="p-4 rounded-2xl bg-white border border-slate-200/80 space-y-1.5">
+                            <div class="flex items-center gap-2 text-indigo-600">
+                                <span class="material-symbols-outlined text-xl">pin_drop</span>
+                                <span class="text-xs font-bold text-slate-800">نشانی و دسترسی</span>
+                            </div>
+                            <p class="text-xs text-slate-600 truncate"><?= htmlspecialchars($org['address'] ?? 'ثبت شده در سیستم') ?></p>
+                        </div>
+                    </div>
+                </div>
+            <?php else: ?>
             <div class="flex items-center justify-between">
                 <div>
                     <h2 class="text-xl font-black text-slate-900 flex items-center gap-2">
@@ -398,6 +467,7 @@ require_once __DIR__ . '/includes/header.php';
                     </div>
                     <?php endforeach; ?>
                 </div>
+            <?php endif; ?>
             <?php endif; ?>
         </div>
 

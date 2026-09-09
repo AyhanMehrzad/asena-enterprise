@@ -2036,63 +2036,173 @@ function updateShebaPreview(input) {
         </div>
     <?php else: ?>
         <?php foreach($pets as $pet): ?>
-        <div class="flex items-center gap-4 p-3.5 border border-outline-variant rounded-2xl hover:border-primary transition-all bg-white shadow-sm group">
-            <div class="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary font-bold transition-transform group-hover:scale-105">
-                <span class="material-symbols-outlined text-2xl"><?php echo $pet['type'] == 'گربه' ? 'cat' : ($pet['type'] == 'سگ' ? 'dog' : 'pets'); ?></span>
-            </div>
-            <div class="flex-1 min-w-0">
-                <div class="flex items-center gap-2">
-                    <h4 class="text-sm font-black text-on-surface truncate"><?php echo htmlspecialchars($pet['name']); ?></h4>
-                    <span class="text-[10px] px-2 py-0.5 rounded-md font-bold bg-blue-50 text-blue-700 border border-blue-200"><?php echo htmlspecialchars($pet['type']); ?></span>
+        <div class="p-4 border border-outline-variant rounded-2xl hover:border-primary transition-all bg-white shadow-sm group space-y-3">
+            <div class="flex items-start gap-4">
+                <div class="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary font-bold transition-transform group-hover:scale-105 shrink-0 mt-0.5">
+                    <span class="material-symbols-outlined text-2xl"><?php echo $pet['type'] == 'گربه' ? 'cat' : ($pet['type'] == 'سگ' ? 'dog' : 'pets'); ?></span>
                 </div>
-                <p class="text-[11px] text-on-surface-variant mt-0.5 truncate">
-                    <?php if(!empty($pet['race'])) echo htmlspecialchars($pet['race']); ?>
-                    <?php if(!empty($pet['gender'])) echo ' • ' . htmlspecialchars($pet['gender']); ?>
-                    <?php if(!empty($pet['age'])) echo ' • سن: ' . htmlspecialchars($pet['age']); ?>
-                </p>
-            </div>
-            <div class="flex items-center gap-1">
-                <button type="button" onclick="openEditPetModal(<?php echo $pet['id']; ?>, '<?php echo addslashes(htmlspecialchars($pet['name'])); ?>', '<?php echo addslashes(htmlspecialchars($pet['type'])); ?>', '<?php echo addslashes(htmlspecialchars($pet['race'] ?? '')); ?>', '<?php echo addslashes(htmlspecialchars($pet['gender'] ?? '')); ?>', '<?php echo addslashes(htmlspecialchars($pet['age'] ?? '')); ?>')" class="p-2 rounded-lg text-on-surface-variant hover:text-primary hover:bg-slate-100 transition-colors" title="ویرایش">
-                    <span class="material-symbols-outlined text-base">edit</span>
-                </button>
-                <form action="actions/profile_action.php" method="POST" onsubmit="return confirm('آیا از حذف این حیوان خانگی اطمینان دارید؟');" class="inline m-0">
-                    <?php echo csrf_field(); ?>
-                    <input type="hidden" name="action" value="delete_pet">
-                    <input type="hidden" name="pet_id" value="<?php echo $pet['id']; ?>">
-                    <button type="submit" class="p-2 rounded-lg text-on-surface-variant hover:text-error hover:bg-rose-50 transition-colors" title="حذف">
-                        <span class="material-symbols-outlined text-base">delete</span>
+                <div class="flex-1 min-w-0">
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <h4 class="text-sm font-black text-on-surface truncate"><?php echo htmlspecialchars($pet['name']); ?></h4>
+                        <span class="text-[10px] px-2 py-0.5 rounded-md font-bold bg-blue-50 text-blue-700 border border-blue-200"><?php echo htmlspecialchars($pet['type']); ?></span>
+                        <?php if(!empty($pet['clinical_verified_at'])): ?>
+                            <span class="text-[10px] px-2 py-0.5 rounded-md font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-0.5" title="پرونده توسط دکتر دامپزشک تایید شده است">
+                                <span class="material-symbols-outlined text-xs">verified</span>
+                                <span>تأیید بالینی پزشک</span>
+                            </span>
+                        <?php endif; ?>
+                    </div>
+                    <div class="flex items-center gap-2 mt-1 flex-wrap text-[11px] text-on-surface-variant">
+                        <?php if(!empty($pet['race'])): ?>
+                            <span>نژاد: <strong><?= htmlspecialchars($pet['race']) ?></strong></span>
+                        <?php endif; ?>
+                        <?php if(!empty($pet['weight_kg'])): ?>
+                            <span class="text-indigo-700 font-bold"> • وزن: <?= $pet['weight_kg'] ?> کیلوگرم</span>
+                        <?php endif; ?>
+                        <?php if(!empty($pet['gender'])): ?>
+                            <span> • جنسیت: <?= htmlspecialchars($pet['gender']) ?></span>
+                        <?php endif; ?>
+                        <?php if(!empty($pet['age'])): ?>
+                            <span> • سن: <?= htmlspecialchars($pet['age']) ?></span>
+                        <?php endif; ?>
+                    </div>
+
+                    <?php if(!empty($pet['microchip_number'])): ?>
+                        <div class="text-[10px] text-slate-500 font-mono mt-1">
+                            میکروچیپ: <span class="dir-ltr font-bold text-slate-700"><?= htmlspecialchars($pet['microchip_number']) ?></span>
+                        </div>
+                    <?php endif; ?>
+
+                    <?php if(!empty($pet['allergies'])): ?>
+                        <div class="inline-flex items-center gap-1 text-[10px] font-bold text-rose-700 bg-rose-50 border border-rose-200 px-2 py-0.5 rounded-lg mt-1.5">
+                            <span class="material-symbols-outlined text-xs text-rose-600">warning</span>
+                            <span>آلرژی/حساسیت دارویی: <?= htmlspecialchars($pet['allergies']) ?></span>
+                        </div>
+                    <?php endif; ?>
+                </div>
+
+                <div class="flex items-center gap-1 shrink-0">
+                    <button type="button" onclick="openEditPetModal(<?php echo $pet['id']; ?>, '<?php echo addslashes(htmlspecialchars($pet['name'])); ?>', '<?php echo addslashes(htmlspecialchars($pet['type'])); ?>', '<?php echo addslashes(htmlspecialchars($pet['race'] ?? '')); ?>', '<?php echo addslashes(htmlspecialchars($pet['gender'] ?? '')); ?>', '<?php echo addslashes(htmlspecialchars($pet['age'] ?? '')); ?>', '<?php echo addslashes(htmlspecialchars((string)($pet['weight_kg'] ?? ''))); ?>', '<?php echo addslashes(htmlspecialchars($pet['microchip_number'] ?? '')); ?>', '<?php echo addslashes(htmlspecialchars($pet['allergies'] ?? '')); ?>')" class="p-2 rounded-lg text-on-surface-variant hover:text-primary hover:bg-slate-100 transition-colors" title="ویرایش شناسنامه">
+                        <span class="material-symbols-outlined text-base">edit</span>
                     </button>
-                </form>
+                    <form action="actions/profile_action.php" method="POST" onsubmit="return confirm('آیا از حذف این حیوان خانگی اطمینان دارید؟');" class="inline m-0">
+                        <?php echo csrf_field(); ?>
+                        <input type="hidden" name="action" value="delete_pet">
+                        <input type="hidden" name="pet_id" value="<?php echo $pet['id']; ?>">
+                        <button type="submit" class="p-2 rounded-lg text-on-surface-variant hover:text-error hover:bg-rose-50 transition-colors" title="حذف">
+                            <span class="material-symbols-outlined text-base">delete</span>
+                        </button>
+                    </form>
+                </div>
             </div>
+
+            <?php if (!empty($pet['pending_doctor_proposal'])): 
+                $prop = json_decode($pet['pending_doctor_proposal'], true);
+                if ($prop):
+            ?>
+            <!-- Interactive Doctor Consensus Proposal Card -->
+            <div class="p-4 rounded-2xl bg-gradient-to-r from-amber-50 to-orange-50 border-2 border-amber-300 space-y-3 shadow-xs">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-amber-200/80">
+                    <div class="flex items-center gap-2 text-amber-950 font-black text-xs">
+                        <span class="material-symbols-outlined text-amber-600 text-lg">clinical_notes</span>
+                        <span>پیشنهاد به‌روزرسانی پرونده بالینی توسط <?= htmlspecialchars($prop['doctor_name'] ?? 'دکتر دامپزشک') ?></span>
+                    </div>
+                    <span class="text-[10px] text-amber-700 font-mono"><?= htmlspecialchars($prop['proposed_at'] ?? '') ?></span>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px]">
+                    <?php if (!empty($prop['new_weight']) && (float)$prop['new_weight'] != (float)($pet['weight_kg'] ?? 0)): ?>
+                    <div class="bg-white p-2.5 rounded-xl border border-amber-200">
+                        <span class="text-slate-500 block text-[10px]">تغییر وزن معاینه‌شده:</span>
+                        <div class="flex items-center gap-1.5 mt-0.5">
+                            <span class="text-slate-600 line-through"><?= $pet['weight_kg'] ? $pet['weight_kg'] . ' kg' : 'ثبت‌نشده' ?></span>
+                            <span class="material-symbols-outlined text-xs text-amber-600">arrow_forward</span>
+                            <span class="text-amber-800 font-black text-xs"><?= $prop['new_weight'] ?> کیلوگرم</span>
+                        </div>
+                    </div>
+                    <?php endif; ?>
+
+                    <?php if (!empty($prop['new_allergies'])): ?>
+                    <div class="bg-white p-2.5 rounded-xl border border-amber-200">
+                        <span class="text-slate-500 block text-[10px]">حساسیت دارویی شناسایی‌شده:</span>
+                        <span class="font-bold text-rose-700 block mt-0.5"><?= htmlspecialchars($prop['new_allergies']) ?></span>
+                    </div>
+                    <?php endif; ?>
+                </div>
+
+                <?php if (!empty($prop['diagnosis'])): ?>
+                <div class="text-[11px] bg-white p-2.5 rounded-xl border border-amber-200 text-slate-700 space-y-1">
+                    <span class="font-bold text-slate-900 block">تشخیص پزشک معالج:</span>
+                    <p class="text-slate-600 leading-relaxed"><?= htmlspecialchars($prop['diagnosis']) ?></p>
+                </div>
+                <?php endif; ?>
+
+                <div class="flex items-center justify-end gap-2 pt-1">
+                    <form action="actions/pet_proposal_action.php" method="POST" class="inline m-0">
+                        <?= csrf_field(); ?>
+                        <input type="hidden" name="action" value="reject_proposal">
+                        <input type="hidden" name="pet_id" value="<?= $pet['id'] ?>">
+                        <button type="submit" class="px-3.5 py-1.5 rounded-xl bg-white hover:bg-slate-100 text-slate-700 text-xs font-bold transition-colors border border-slate-200">رد پیشنهاد</button>
+                    </form>
+                    <form action="actions/pet_proposal_action.php" method="POST" class="inline m-0">
+                        <?= csrf_field(); ?>
+                        <input type="hidden" name="action" value="accept_proposal">
+                        <input type="hidden" name="pet_id" value="<?= $pet['id'] ?>">
+                        <button type="submit" class="px-4 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-black shadow-sm transition-all flex items-center gap-1">
+                            <span class="material-symbols-outlined text-xs">check</span>
+                            <span>تأیید و به‌روزرسانی شناسنامه</span>
+                        </button>
+                    </form>
+                </div>
+            </div>
+            <?php endif; endif; ?>
         </div>
         <?php endforeach; ?>
 
-        <!-- Add New Pet Button/Form Area (put back in its place) -->
+        <!-- Add New Pet Button/Form Area -->
         <div class="pt-2">
             <button type="button" onclick="document.getElementById('addPetModal').classList.remove('hidden')" class="w-full border-2 border-dashed border-outline-variant text-on-surface-variant py-3 rounded-2xl font-bold text-xs flex items-center justify-center gap-2 hover:bg-white hover:border-primary hover:text-primary transition-all group shadow-sm">
                 <span class="material-symbols-outlined group-hover:scale-110 transition-transform text-sm">add_circle</span>
-                <span>افزودن حیوان جدید</span>
+                <span>افزودن حیوان خانگی جدید به شناسنامه</span>
             </button>
         </div>
     <?php endif; ?>
     </div>
 </div>
 
-
-        <!-- Standalone Clinical Dosage & BMI Calculator Section (Moved to its own place) -->
+<!-- Standalone Veterinary BCS & Nutritional Calculator Section -->
 <div id="dosage-calc-section" class="bg-surface-container-lowest rounded-3xl border border-outline-variant shadow-sm overflow-hidden mb-8 scroll-mt-24">
     <div class="px-6 py-4 border-b border-outline-variant bg-white flex items-center justify-between">
         <h3 class="text-sm font-bold text-primary flex items-center gap-2">
             <span class="material-symbols-outlined text-secondary-container">calculate</span>
-            <span>محاسبه‌گر بالینی و شاخص سلامت پت (دوز و BMI)</span>
+            <span>محاسبه‌گر وضعیت بدنی، کالری روزانه و هیدراتاسیون پت (BCS & Nutrition)</span>
         </h3>
-        <span class="text-[10px] bg-blue-50 text-blue-700 px-2.5 py-0.5 rounded-full font-bold border border-blue-200">بر اساس وزن</span>
+        <span class="text-[10px] bg-emerald-50 text-emerald-700 px-2.5 py-0.5 rounded-full font-bold border border-emerald-200">استاندارد جهانی WSAVA</span>
     </div>
     <div class="p-6 space-y-4 text-right">
         <p class="text-[11px] text-slate-600 leading-relaxed">
-            جهت تجویز ایمن دوز ضدانگل، قطره ضدکک و مسکن و بررسی شاخص وضعیت بدنی (BMI)، وزن پت را مشخص فرمایید:
+            جهت ارزیابی شاخص امتیاز وضعیت بدنی (Body Condition Score)، کالری مورد نیاز متابولیسمی (RER / MER) و حجم آب روزانه، پت خود را انتخاب یا مشخصات را وارد فرمایید:
         </p>
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+
+        <?php if(!empty($pets)): ?>
+        <div class="p-3 bg-slate-50 rounded-2xl border border-slate-200 space-y-1">
+            <label class="block text-[11px] text-slate-700 font-bold">انتخاب سریع از حیوانات خانگی من:</label>
+            <select id="calcPetSelect" onchange="onSelectBmiPet(this)" class="w-full text-xs p-2.5 rounded-xl bg-white border border-slate-200 outline-none focus:ring-2 focus:ring-primary font-bold">
+                <option value="">-- انتخاب پت برای تکمیل خودکار مشخصات --</option>
+                <?php foreach ($pets as $p): ?>
+                    <option value='<?= htmlspecialchars(json_encode([
+                        "species" => ($p['type'] === 'گربه' || strtolower($p['type']) === 'cat') ? 'cat' : 'dog',
+                        "weight" => $p['weight_kg'] ?? 10,
+                        "age" => $p['age'] ?? ''
+                    ])) ?>'>
+                        <?= htmlspecialchars($p['name'] . ' (' . $p['type'] . ' - ' . (!empty($p['weight_kg']) ? $p['weight_kg'] . ' کیلوگرم' : 'وزن ثبت‌نشده') . ')') ?>
+                    </option>
+                <?php endforeach; ?>
+            </select>
+        </div>
+        <?php endif; ?>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
                 <label class="block text-[10px] text-slate-500 font-bold mb-1">گونه حیوان</label>
                 <select id="calcSpecies" class="w-full text-xs p-2.5 rounded-xl bg-white border border-slate-200 outline-none focus:ring-1 focus:ring-primary">
@@ -2101,60 +2211,104 @@ function updateShebaPreview(input) {
                 </select>
             </div>
             <div>
-                <label class="block text-[10px] text-slate-500 font-bold mb-1">وزن پت (کیلوگرم)</label>
-                <input type="number" id="calcWeight" value="10" min="0.5" max="90" step="0.5" class="w-full text-xs p-2.5 rounded-xl bg-white border border-slate-200 outline-none focus:ring-1 focus:ring-primary">
+                <label class="block text-[10px] text-slate-500 font-bold mb-1">وزن فعلی پت (کیلوگرم)</label>
+                <input type="number" id="calcWeight" value="10" min="0.5" max="90" step="0.1" class="w-full text-xs p-2.5 rounded-xl bg-white border border-slate-200 outline-none focus:ring-1 focus:ring-primary">
             </div>
             <div>
-                <label class="block text-[10px] text-slate-500 font-bold mb-1">نوع دارو / درمان</label>
-                <select id="calcMedType" class="w-full text-xs p-2.5 rounded-xl bg-white border border-slate-200 outline-none focus:ring-1 focus:ring-primary">
-                    <option value="dewormer">قرص ضد انگل عمومی</option>
-                    <option value="flea_tick">ضد کک و کنه موضعی</option>
-                    <option value="antibiotic">آنتی‌بیوتیک عمومی</option>
-                    <option value="pain_relief">مسکن و ضدالتهاب</option>
+                <label class="block text-[10px] text-slate-500 font-bold mb-1">وضعیت بیولوژیک و سطح تحرک</label>
+                <select id="calcActivityLevel" class="w-full text-xs p-2.5 rounded-xl bg-white border border-slate-200 outline-none focus:ring-1 focus:ring-primary">
+                    <option value="normal_neutered">بالغ عقیم‌شده (فعالیت عادی منزل)</option>
+                    <option value="normal_intact">بالغ عقیم‌نشده (فعالیت متوسط)</option>
+                    <option value="weight_loss">مستعد چاقی / رژیم کنترل وزن</option>
+                    <option value="senior">مسن و کم‌تحرک (Senior)</option>
+                    <option value="puppy_kitten">توله / بچه گربه (درحال رشد)</option>
+                    <option value="active_working">بسیار پرتحرک / سگ ورزشی یا کار</option>
                 </select>
             </div>
         </div>
-        <button type="button" onclick="runDosageCalc()" class="w-full py-2.5 bg-primary text-white text-xs font-bold rounded-xl hover:bg-primary-hover transition-colors shadow-sm flex items-center justify-center gap-1.5 active:scale-[0.99]">
-            <span class="material-symbols-outlined text-sm">health_and_safety</span>
-            <span>محاسبه فوری دوز و شاخص سلامت</span>
+        <button type="button" onclick="runBcsCalc()" class="w-full py-2.5 bg-primary text-white text-xs font-bold rounded-xl hover:bg-primary-hover transition-colors shadow-sm flex items-center justify-center gap-1.5 active:scale-[0.99]">
+            <span class="material-symbols-outlined text-sm">monitor_weight</span>
+            <span>محاسبه شاخص بدنی (BCS)، کالری و آب روزانه</span>
         </button>
 
-        <div id="dosageResultBox" class="p-3.5 rounded-2xl bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 text-xs hidden space-y-2">
-            <div class="font-bold text-primary flex items-center gap-1.5">
-                <span class="material-symbols-outlined text-base text-emerald-600">check_circle</span>
-                <span>دوز پیشنهادی:</span>
-                <span id="resDosage" class="text-emerald-700 font-black"></span>
+        <div id="dosageResultBox" class="p-4 rounded-2xl bg-gradient-to-br from-slate-50 to-indigo-50/50 border border-indigo-100 text-xs hidden space-y-3">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2.5 border-b border-indigo-100">
+                <div class="flex items-center gap-2">
+                    <span class="material-symbols-outlined text-indigo-600 text-lg">speed</span>
+                    <span class="font-bold text-slate-800">شاخص وضعیت بدنی (BCS):</span>
+                    <span id="resBcsScore" class="font-black text-indigo-700"></span>
+                </div>
+                <div id="resBcsStatusBadge" class="px-2.5 py-1 rounded-lg text-xs font-bold border">
+                    <span id="resBcsStatus"></span>
+                </div>
             </div>
-            <div class="text-[11px] text-slate-600 flex items-start gap-1">
-                <span class="material-symbols-outlined text-xs text-secondary-container mt-0.5">info</span>
-                <span id="resInstructions"></span>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 text-center">
+                <div class="bg-white p-2.5 rounded-xl border border-slate-200">
+                    <span class="text-[10px] text-slate-500 block">انرژی نگه‌دارنده (MER)</span>
+                    <span id="resMerCalories" class="font-black text-emerald-700 text-sm mt-0.5 block"></span>
+                </div>
+                <div class="bg-white p-2.5 rounded-xl border border-slate-200">
+                    <span class="text-[10px] text-slate-500 block">کالری پایه استراحت (RER)</span>
+                    <span id="resRerCalories" class="font-bold text-slate-700 text-xs mt-1 block"></span>
+                </div>
+                <div class="bg-white p-2.5 rounded-xl border border-slate-200">
+                    <span class="text-[10px] text-slate-500 block">نیاز به آب آشامیدنی</span>
+                    <span id="resHydration" class="font-black text-sky-700 text-xs mt-1 block"></span>
+                </div>
             </div>
-            <div id="resBmiBadge" class="pt-2 text-[11px] font-bold text-indigo-900 border-t border-blue-200/60 flex items-center gap-1.5">
-                <span class="material-symbols-outlined text-sm text-indigo-600">monitor_weight</span>
-                <span id="resBmiText"></span>
+
+            <div class="text-[11px] text-slate-700 bg-white p-3 rounded-xl border border-indigo-100 space-y-1">
+                <div class="flex items-center gap-1 text-indigo-900 font-bold">
+                    <span class="material-symbols-outlined text-sm text-indigo-600">tips_and_updates</span>
+                    <span>راهنمای تغذیه و سلامت:</span>
+                </div>
+                <p id="resAdvice" class="text-slate-600 leading-relaxed"></p>
+            </div>
+
+            <div class="p-3 bg-rose-50 border border-rose-200 rounded-xl text-[10px] text-rose-800 space-y-1">
+                <div class="flex items-center gap-1 font-black text-rose-900">
+                    <span class="material-symbols-outlined text-sm">gavel</span>
+                    <span>سلب مسئولیت پزشکی و هشدار سلامت:</span>
+                </div>
+                <p class="leading-relaxed">
+                    این ابزار صرفاً جنبه محاسبات تغذیه و شاخص بدنی دارد. تجویز هرگونه دارو، قرص ضدانگل، قطره ضدکک یا واکسیناسیون باید منحصراً توسط دکتر دامپزشک پس از معاینه بالینی حضوری انجام پذیرد. مصرف خودسرانه داروهای انسانی برای پت‌ها خطر مسمومیت مرگبار دارد.
+                </p>
             </div>
         </div>
     </div>
 
     <script>
-    function runDosageCalc() {
+    function onSelectBmiPet(el) {
+        if (!el.value) return;
+        try {
+            const p = JSON.parse(el.value);
+            if (p.species) document.getElementById('calcSpecies').value = p.species;
+            if (p.weight) document.getElementById('calcWeight').value = p.weight;
+            runBcsCalc();
+        } catch(e) {
+            console.error(e);
+        }
+    }
+
+    function runBcsCalc() {
         const species = document.getElementById('calcSpecies').value;
         const weight = parseFloat(document.getElementById('calcWeight').value) || 10;
-        const med = document.getElementById('calcMedType').value;
+        const activity = document.getElementById('calcActivityLevel').value;
 
-        fetch(`api/v1/pets.php?action=calculate_dosage&species=${species}&weight_kg=${weight}&medication_type=${med}`)
+        fetch(`api/v1/pets.php?action=calculate_health&species=${species}&weight_kg=${weight}&activity_level=${activity}`)
             .then(res => res.json())
             .then(res => {
                 if (res.success && res.data) {
                     const box = document.getElementById('dosageResultBox');
-                    document.getElementById('resDosage').innerText = res.data.dosage_display || res.data.dosage;
-                    document.getElementById('resInstructions').innerText = res.data.instructions || res.data.frequency || '';
-                    if (res.data.bmi_status) {
-                        document.getElementById('resBmiText').innerText = res.data.bmi_status;
-                        document.getElementById('resBmiBadge').classList.remove('hidden');
-                    } else {
-                        document.getElementById('resBmiBadge').classList.add('hidden');
-                    }
+                    const d = res.data;
+                    document.getElementById('resBcsScore').innerText = d.bcs_score + ' / 9';
+                    document.getElementById('resBcsStatus').innerText = d.health_status;
+                    document.getElementById('resBcsStatusBadge').className = 'px-2.5 py-1 rounded-lg text-xs font-bold border ' + (d.status_class || 'text-emerald-700 bg-emerald-50 border-emerald-200');
+                    document.getElementById('resMerCalories').innerText = d.daily_mer_kcal + ' kcal/روز';
+                    document.getElementById('resRerCalories').innerText = d.daily_rer_kcal + ' kcal';
+                    document.getElementById('resHydration').innerText = d.hydration_ml_day;
+                    document.getElementById('resAdvice').innerText = d.clinical_advice;
                     box.classList.remove('hidden');
                 }
             }).catch(e => console.error(e));
@@ -3139,16 +3293,16 @@ function updateShebaPreview(input) {
 <div id="addPetModal" class="hidden fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4">
     <div class="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl relative">
         <button onclick="document.getElementById('addPetModal').classList.add('hidden')" class="absolute top-4 left-4 text-on-surface-variant hover:text-error"><span class="material-symbols-outlined">close</span></button>
-        <h2 class="text-xl font-bold text-primary mb-6">ثبت حیوان جدید</h2>
+        <h2 class="text-xl font-bold text-primary mb-6">ثبت شناسنامه حیوان جدید</h2>
         <form action="actions/profile_action.php" method="POST" class="space-y-4">
             <?php echo csrf_field(); ?>
             <input type="hidden" name="action" value="add_pet">
             <div>
-                <label class="block text-sm font-bold mb-1">نام حیوان</label>
-                <input type="text" name="pet_name" required class="w-full border border-outline-variant rounded-lg p-2 focus:ring-2 focus:ring-primary-container outline-none text-sm">
+                <label class="block text-sm font-bold mb-1">نام حیوان *</label>
+                <input type="text" name="pet_name" required placeholder="مثال: لئو" class="w-full border border-outline-variant rounded-lg p-2 focus:ring-2 focus:ring-primary-container outline-none text-sm">
             </div>
             <div>
-                <label class="block text-sm font-bold mb-1">نوع حیوان</label>
+                <label class="block text-sm font-bold mb-1">نوع حیوان *</label>
                 <select name="pet_type" required class="w-full border border-outline-variant rounded-lg p-2 focus:ring-2 focus:ring-primary-container outline-none text-sm">
                     <option value="">انتخاب کنید...</option>
                     <option value="سگ">سگ</option>
@@ -3158,11 +3312,17 @@ function updateShebaPreview(input) {
                     <option value="سایر">سایر</option>
                 </select>
             </div>
-            <div>
-                <label class="block text-sm font-bold mb-1">نژاد (اختیاری)</label>
-                <input type="text" name="pet_race" class="w-full border border-outline-variant rounded-lg p-2 focus:ring-2 focus:ring-primary-container outline-none text-sm">
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-sm font-bold mb-1">نژاد</label>
+                    <input type="text" name="pet_race" placeholder="مثال: پرشین" class="w-full border border-outline-variant rounded-lg p-2 focus:ring-2 focus:ring-primary-container outline-none text-sm">
+                </div>
+                <div>
+                    <label class="block text-sm font-bold mb-1">وزن (کیلوگرم)</label>
+                    <input type="number" step="0.1" min="0.1" max="150" name="weight_kg" placeholder="مثال: ۴.۵" class="w-full border border-outline-variant rounded-lg p-2 focus:ring-2 focus:ring-primary-container outline-none text-sm">
+                </div>
             </div>
-            <div class="grid grid-cols-2 gap-4">
+            <div class="grid grid-cols-2 gap-3">
                 <div>
                     <label class="block text-sm font-bold mb-1">جنسیت</label>
                     <select name="pet_gender" class="w-full border border-outline-variant rounded-lg p-2 focus:ring-2 focus:ring-primary-container outline-none text-sm">
@@ -3176,7 +3336,15 @@ function updateShebaPreview(input) {
                     <input type="text" name="pet_age" placeholder="مثال: ۲ سال" class="w-full border border-outline-variant rounded-lg p-2 focus:ring-2 focus:ring-primary-container outline-none text-sm">
                 </div>
             </div>
-            <button type="submit" class="w-full bg-primary-container text-white py-3 rounded-xl font-bold mt-4 hover:bg-primary transition-colors">ثبت مشخصات</button>
+            <div>
+                <label class="block text-sm font-bold mb-1">شماره میکروچیپ (اختیاری)</label>
+                <input type="text" name="microchip_number" placeholder="مثال: 900115000123456" class="w-full border border-outline-variant rounded-lg p-2 focus:ring-2 focus:ring-primary-container outline-none text-sm font-mono text-left dir-ltr">
+            </div>
+            <div>
+                <label class="block text-sm font-bold mb-1">حساسیت‌ها و آلرژی‌های دارویی/غذایی</label>
+                <input type="text" name="allergies" placeholder="مثال: پنی‌سیلین، گوشت مرغ..." class="w-full border border-outline-variant rounded-lg p-2 focus:ring-2 focus:ring-primary-container outline-none text-sm">
+            </div>
+            <button type="submit" class="w-full bg-primary-container text-white py-3 rounded-xl font-bold mt-4 hover:bg-primary transition-colors">ثبت مشخصات شناسنامه</button>
         </form>
     </div>
 </div>
@@ -3185,17 +3353,17 @@ function updateShebaPreview(input) {
 <div id="editPetModal" class="hidden fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4">
     <div class="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl relative">
         <button onclick="document.getElementById('editPetModal').classList.add('hidden')" class="absolute top-4 left-4 text-on-surface-variant hover:text-error"><span class="material-symbols-outlined">close</span></button>
-        <h2 class="text-xl font-bold text-primary mb-6">ویرایش حیوان خانگی</h2>
+        <h2 class="text-xl font-bold text-primary mb-6">ویرایش شناسنامه حیوان خانگی</h2>
         <form action="actions/profile_action.php" method="POST" class="space-y-4">
             <?php echo csrf_field(); ?>
             <input type="hidden" name="action" value="edit_pet">
             <input type="hidden" name="pet_id" id="edit_pet_id" value="">
             <div>
-                <label class="block text-sm font-bold mb-1">نام حیوان</label>
+                <label class="block text-sm font-bold mb-1">نام حیوان *</label>
                 <input type="text" name="pet_name" id="edit_pet_name" required class="w-full border border-outline-variant rounded-lg p-2 focus:ring-2 focus:ring-primary-container outline-none text-sm">
             </div>
             <div>
-                <label class="block text-sm font-bold mb-1">نوع حیوان</label>
+                <label class="block text-sm font-bold mb-1">نوع حیوان *</label>
                 <select name="pet_type" id="edit_pet_type" required class="w-full border border-outline-variant rounded-lg p-2 focus:ring-2 focus:ring-primary-container outline-none text-sm">
                     <option value="">انتخاب کنید...</option>
                     <option value="سگ">سگ</option>
@@ -3205,11 +3373,17 @@ function updateShebaPreview(input) {
                     <option value="سایر">سایر</option>
                 </select>
             </div>
-            <div>
-                <label class="block text-sm font-bold mb-1">نژاد (اختیاری)</label>
-                <input type="text" name="pet_race" id="edit_pet_race" class="w-full border border-outline-variant rounded-lg p-2 focus:ring-2 focus:ring-primary-container outline-none text-sm">
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-sm font-bold mb-1">نژاد</label>
+                    <input type="text" name="pet_race" id="edit_pet_race" class="w-full border border-outline-variant rounded-lg p-2 focus:ring-2 focus:ring-primary-container outline-none text-sm">
+                </div>
+                <div>
+                    <label class="block text-sm font-bold mb-1">وزن (کیلوگرم)</label>
+                    <input type="number" step="0.1" min="0.1" max="150" name="weight_kg" id="edit_pet_weight" class="w-full border border-outline-variant rounded-lg p-2 focus:ring-2 focus:ring-primary-container outline-none text-sm">
+                </div>
             </div>
-            <div class="grid grid-cols-2 gap-4">
+            <div class="grid grid-cols-2 gap-3">
                 <div>
                     <label class="block text-sm font-bold mb-1">جنسیت</label>
                     <select name="pet_gender" id="edit_pet_gender" class="w-full border border-outline-variant rounded-lg p-2 focus:ring-2 focus:ring-primary-container outline-none text-sm">
@@ -3223,7 +3397,15 @@ function updateShebaPreview(input) {
                     <input type="text" name="pet_age" id="edit_pet_age" class="w-full border border-outline-variant rounded-lg p-2 focus:ring-2 focus:ring-primary-container outline-none text-sm">
                 </div>
             </div>
-            <button type="submit" class="w-full bg-primary-container text-white py-3 rounded-xl font-bold mt-4 hover:bg-primary transition-colors">ذخیره تغییرات</button>
+            <div>
+                <label class="block text-sm font-bold mb-1">شماره میکروچیپ</label>
+                <input type="text" name="microchip_number" id="edit_pet_microchip" class="w-full border border-outline-variant rounded-lg p-2 focus:ring-2 focus:ring-primary-container outline-none text-sm font-mono text-left dir-ltr">
+            </div>
+            <div>
+                <label class="block text-sm font-bold mb-1">حساسیت‌ها و آلرژی‌های دارویی/غذایی</label>
+                <input type="text" name="allergies" id="edit_pet_allergies" class="w-full border border-outline-variant rounded-lg p-2 focus:ring-2 focus:ring-primary-container outline-none text-sm">
+            </div>
+            <button type="submit" class="w-full bg-primary-container text-white py-3 rounded-xl font-bold mt-4 hover:bg-primary transition-colors">ذخیره تغییرات شناسنامه</button>
         </form>
     </div>
 </div>
@@ -3379,13 +3561,16 @@ function updateShebaPreview(input) {
         }
     }
 
-    function openEditPetModal(id, name, type, race, gender, age) {
+    function openEditPetModal(id, name, type, race, gender, age, weight, microchip, allergies) {
         document.getElementById('edit_pet_id').value = id;
         document.getElementById('edit_pet_name').value = name;
         document.getElementById('edit_pet_type').value = type;
-        document.getElementById('edit_pet_race').value = race;
-        document.getElementById('edit_pet_gender').value = gender;
-        document.getElementById('edit_pet_age').value = age;
+        document.getElementById('edit_pet_race').value = race || '';
+        document.getElementById('edit_pet_gender').value = gender || '';
+        document.getElementById('edit_pet_age').value = age || '';
+        document.getElementById('edit_pet_weight').value = weight || '';
+        document.getElementById('edit_pet_microchip').value = microchip || '';
+        document.getElementById('edit_pet_allergies').value = allergies || '';
         document.getElementById('editPetModal').classList.remove('hidden');
     }
 

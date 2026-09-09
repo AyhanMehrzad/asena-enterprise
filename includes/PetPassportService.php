@@ -157,70 +157,94 @@ class PetPassportService
     }
 
     /**
-     * Chewy Clinical Tool: Veterinary Weight-Based Dosage Calculator
-     * Calculates recommended dosage according to species, weight, and clinical formulation.
+     * Veterinary Body Condition Score (BCS 1-9) & Nutritional Energy Calculator
+     * Replaces dangerous and unauthorized drug dosage prescription with standard veterinary
+     * Body Condition Scoring (WSAVA standard), Resting/Maintenance Energy Requirements (RER/MER),
+     * and daily hydration guidelines.
      */
-    public static function calculateDosage(string $drugCategory, float $weightKg, string $species = 'dog'): array
+    public static function calculateHealthAndBcs(float $weightKg, string $species = 'dog', ?int $ageYears = null, string $activityLevel = 'normal_neutered'): array
     {
         if ($weightKg <= 0) {
             return ['error' => 'وزن وارد شده باید بزرگتر از صفر باشد.'];
         }
 
-        switch (strtolower($drugCategory)) {
-            case 'dewormer': // قرص ضد انگل (پرازیکوانتل / پیرانتل: ۱ قرص به ازای هر ۱۰ کیلوگرم)
-                $tablets = max(0.25, round($weightKg / 10, 2));
-                return [
-                    'drug'        => 'ضد انگل وسیع‌الطیف (Praziquantel/Pyrantel)',
-                    'dosage'      => "{$tablets} عدد قرص",
-                    'frequency'   => 'تکرار هر ۳ ماه یک‌بار برای سگ و گربه بالغ',
-                    'instructions'=> 'همراه با مقدار کمی غذا خورانده شود.',
-                    'safe_limit'  => 'برای توله‌های زیر ۲ هفته یا زیر ۱ کیلوگرم با احتیاط مصرف شود.'
-                ];
+        $species = strtolower($species) === 'cat' ? 'cat' : 'dog';
 
-            case 'flea_tick': // کک و کنه موضعی یا خوراکی (براوکتو / نکست‌گارد / سیمپاریکا)
-                $band = '';
-                if ($weightKg < 4.5) $band = '۲ تا ۴.۵ کیلوگرم (بسیار کوچک)';
-                elseif ($weightKg < 10) $band = '۴.۵ تا ۱۰ کیلوگرم (کوچک)';
-                elseif ($weightKg < 20) $band = '۱۰ تا ۲۰ کیلوگرم (متوسط)';
-                elseif ($weightKg < 40) $band = '۲۰ تا ۴۰ کیلوگرم (بزرگ)';
-                else $band = '۴۰ تا ۵۶ کیلوگرم (بسیار بزرگ)';
+        // 1. Resting Energy Requirement (RER = 70 * weight^0.75 in kcal/day)
+        $rer = round(70 * pow($weightKg, 0.75));
 
-                return [
-                    'drug'        => 'محافظت ضد کک و کنه (Fluralaner / Afoxolaner)',
-                    'dosage'      => "۱ دوز مخصوص رده وزنی {$band}",
-                    'frequency'   => ($drugCategory === 'bravecto') ? 'هر ۱۲ هفته یک‌بار' : 'هر ۳۰ روز یک‌بار',
-                    'instructions'=> 'قرص جویدنی را در زمان یا بلافاصله پس از غذا به حیوان بدهید.',
-                    'safe_limit'  => 'برای توله‌های بالای ۸ هفته با حداقل وزن ۲ کیلوگرم.'
-                ];
+        // 2. Maintenance Energy Requirement Multiplier based on biological status
+        $multiplier = match ($activityLevel) {
+            'puppy_kitten'   => ($species === 'cat' ? 2.5 : 2.0),
+            'normal_intact'  => ($species === 'cat' ? 1.4 : 1.8),
+            'normal_neutered'=> ($species === 'cat' ? 1.2 : 1.6),
+            'weight_loss'    => 1.0,
+            'senior'         => ($species === 'cat' ? 1.1 : 1.2),
+            'active_working' => 2.5,
+            default          => 1.4,
+        };
 
-            case 'antibiotic': // آموکسی‌سیلین کلاوولانات (12.5 - 20 mg/kg دو بار در روز)
-                $doseMg = round($weightKg * 13.75, 1);
-                return [
-                    'drug'        => 'آموکسی‌سیلین کلاوولانات (Amoxicillin-Clavulanate)',
-                    'dosage'      => "{$doseMg} میلی‌گرم در هر وعده",
-                    'frequency'   => 'هر ۱۲ ساعت (۲ بار در روز) به مدت ۵ تا ۷ روز',
-                    'instructions'=> 'دوره درمان باید به طور کامل حتی پس از بهبود علائم ادامه یابد.',
-                    'safe_limit'  => 'در بیماران با نارسایی کلیوی دوز باید توسط دامپزشک تعدیل گردد.'
-                ];
+        $mer = round($rer * $multiplier);
 
-            case 'pain_relief': // ملوکسیکام (0.1 mg/kg روزانه برای سگ)
-                $meloxMg = round($weightKg * 0.1, 2);
-                return [
-                    'drug'        => 'ملوکسیکام ضدالتهاب غیراستروئیدی (Meloxicam)',
-                    'dosage'      => "{$meloxMg} میلی‌گرم در روز",
-                    'frequency'   => 'روزی یک‌بار همراه با وعده اصلی غذایی',
-                    'instructions'=> 'به هیچ عنوان با معده خالی مصرف نشود. آب آشامیدنی در دسترس باشد.',
-                    'safe_limit'  => 'در گربه‌ها با دوز بسیار پایین‌تر (0.05 mg/kg) و تنها با تجویز مستقیم پزشک.'
-                ];
+        // 3. Daily Hydration Requirement (50 - 60 ml / kg / day)
+        $minWaterMl = round($weightKg * 50);
+        $maxWaterMl = round($weightKg * 60);
 
-            default:
-                return [
-                    'drug'        => 'محاسبه‌گر عمومی داروهای دامپزشکی',
-                    'dosage'      => 'طبق دستور مندرج بر روی بسته‌بندی دارو متناسب با وزن حیوان',
-                    'frequency'   => 'مشاوره با داروساز یا دکتر دامپزشک الزامی است.',
-                    'instructions'=> 'قبل از مصرف بروشور رسمی دارو را مطالعه فرمایید.',
-                    'safe_limit'  => 'دارو را دور از دسترس کودکان نگهداری فرمایید.'
-                ];
+        // 4. Body Condition Score (BCS 1-9) Estimation & Weight Status
+        if ($species === 'cat') {
+            if ($weightKg < 3.0) {
+                $bcs = 3;
+                $status = 'زیر وزن ایده‌آل (لاغر)';
+                $statusClass = 'text-amber-700 bg-amber-50 border-amber-200';
+                $advice = 'دنده‌ها و مهره‌ها به راحتی قابل لمس بوده و چربی زیرپوستی اندک است. افزایش کالری روزانه با مشاوره پزشک توصیه می‌شود.';
+            } elseif ($weightKg <= 5.2) {
+                $bcs = 5;
+                $status = 'وزن ایده‌آل و اندام متناسب (WSAVA 5/9)';
+                $statusClass = 'text-emerald-700 bg-emerald-50 border-emerald-200';
+                $advice = 'تناسب اندام عالی، دنده‌ها بدون فشار قابل لمس و قوس کمر از بالا مشخص است. رژیم نگه‌دارنده فعلی را ادامه دهید.';
+            } elseif ($weightKg <= 6.5) {
+                $bcs = 7;
+                $status = 'دارای اضافه‌وزن خفیف (WSAVA 7/9)';
+                $statusClass = 'text-amber-700 bg-amber-50 border-amber-200';
+                $advice = 'تجمع چربی در ناحیه شکم و پهلوها؛ پیشنهاد می‌شود از تشویقی‌های کم‌کالری استفاده کرده و فعالیت بازی روزانه را افزایش دهید.';
+            } else {
+                $bcs = 9;
+                $status = 'چاق و پرخطر بالینی (WSAVA 9/9)';
+                $statusClass = 'text-rose-700 bg-rose-50 border-rose-200';
+                $advice = 'رسوب چربی ضخیم روی قفسه سینه و ستون فقرات. نیازمند تنظیم رژیم لاغری متابولیک تحت نظارت مستقیم دکتر دامپزشک.';
+            }
+        } else {
+            // Dog BCS Assessment
+            if ($weightKg < 4.0) {
+                $sizeCategory = 'جثه مینیاتوری / Toy';
+            } elseif ($weightKg <= 10.0) {
+                $sizeCategory = 'رده جثه کوچک / Small Breed';
+            } elseif ($weightKg <= 25.0) {
+                $sizeCategory = 'رده جثه متوسط / Medium Breed';
+            } elseif ($weightKg <= 45.0) {
+                $sizeCategory = 'رده جثه بزرگ / Large Breed';
+            } else {
+                $sizeCategory = 'رده جثه غول‌پیکر / Giant Breed';
+            }
+
+            $bcs = 5;
+            $status = "تناسب بالینی متناسب با رده ({$sizeCategory})";
+            $statusClass = 'text-emerald-700 bg-emerald-50 border-emerald-200';
+            $advice = 'برای ارزیابی دقیق ضخامت چربی دنده‌ای و دور کمر سگ‌ها، لمس فیزیکی در چکاپ‌های دوره‌ای کلینیک ضروری است.';
         }
+
+        return [
+            'species'            => $species,
+            'weight_kg'          => $weightKg,
+            'bcs_score'          => $bcs,
+            'bcs_scale'          => '1-9 (WSAVA Standard)',
+            'health_status'      => $status,
+            'status_class'       => $statusClass,
+            'daily_rer_kcal'     => $rer,
+            'daily_mer_kcal'     => $mer,
+            'hydration_ml_day'   => "{$minWaterMl} الی {$maxWaterMl} میلی‌لیتر در شبانه‌روز",
+            'clinical_advice'    => $advice,
+            'disclaimer'         => 'هشدار بالینی: این محاسبه‌گر صرفاً جهت ارزیابی تغذیه و شاخص وضعیت بدنی است. هرگونه تجویز دارویی، مسکن، ضدانگل یا واکسیناسیون باید منحصراً توسط پزشک دامپزشک تجویز گردد. مصرف خودسرانه داروهای انسانی برای پت‌ها خطر مسمومیت و مرگ دارد.'
+        ];
     }
 }

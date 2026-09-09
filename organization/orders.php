@@ -92,12 +92,13 @@ if ($filter === 'pending') {
     $whereClauses[] = "o.status = 'delivered'";
 }
 
-// Organization Multi-Tenant Restriction (Non-admin managers only see their organization's orders)
-if ($currentUser['role'] !== 'admin') {
-    $whereClauses[] = "(EXISTS (SELECT 1 FROM order_items oi WHERE oi.order_id = o.id AND (oi.seller_id = :org_user OR oi.seller_id = :curr_user)))";
-    $params[':org_user'] = (int)($currentOrg['user_id'] ?? 0);
-    $params[':curr_user'] = (int)$currentUser['id'];
-}
+// Strict Organization Multi-Tenant Restriction: Only orders containing items belonging to this organization
+$orgUserId = (int)($currentOrg['user_id'] ?? 0);
+$currUserId = (int)($currentUser['id'] ?? 0);
+
+$whereClauses[] = "(EXISTS (SELECT 1 FROM order_items oi WHERE oi.order_id = o.id AND (oi.seller_id = :org_user OR oi.seller_id = :curr_user)))";
+$params[':org_user'] = $orgUserId;
+$params[':curr_user'] = $currUserId;
 
 $whereSql = implode(' AND ', $whereClauses);
 
@@ -121,17 +122,18 @@ $stmt = $pdo->prepare($ordersQuery);
 $stmt->execute($params);
 $orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-// Attach items to each order
+// Attach items strictly belonging to this organization
 if (!empty($orders)) {
     $orderIds = array_column($orders, 'id');
     $ph = implode(',', array_fill(0, count($orderIds), '?'));
+    $itemParams = array_merge($orderIds, [$orgUserId, $currUserId]);
     $itemStmt = $pdo->prepare("
         SELECT oi.*, p.image_url, p.category 
         FROM order_items oi
         LEFT JOIN products p ON oi.product_id = p.id
-        WHERE oi.order_id IN ($ph)
+        WHERE oi.order_id IN ($ph) AND (oi.seller_id = ? OR oi.seller_id = ?)
     ");
-    $itemStmt->execute($orderIds);
+    $itemStmt->execute($itemParams);
     $itemsByOrder = [];
     foreach ($itemStmt->fetchAll(PDO::FETCH_ASSOC) as $it) {
         $itemsByOrder[$it['order_id']][] = $it;
@@ -142,16 +144,22 @@ if (!empty($orders)) {
     unset($ord);
 }
 
-// Quick stats
-$stats = $pdo->query("
+// Quick stats strictly scoped to this organization
+$statsStmt = $pdo->prepare("
     SELECT 
-        COUNT(*) as total_orders,
-        SUM(CASE WHEN status IN ('pending_payment', 'processing') THEN 1 ELSE 0 END) as pending_dispatch,
-        SUM(CASE WHEN status = 'shipped' THEN 1 ELSE 0 END) as shipped_orders,
-        SUM(CASE WHEN status = 'delivered' THEN 1 ELSE 0 END) as delivered_orders,
-        SUM(total_amount) as gross_revenue
-    FROM orders
-")->fetch(PDO::FETCH_ASSOC) ?: ['total_orders' => 0, 'pending_dispatch' => 0, 'shipped_orders' => 0, 'delivered_orders' => 0, 'gross_revenue' => 0];
+        COUNT(DISTINCT o.id) as total_orders,
+        SUM(CASE WHEN o.status IN ('pending_payment', 'processing') THEN 1 ELSE 0 END) as pending_dispatch,
+        SUM(CASE WHEN o.status = 'shipped' THEN 1 ELSE 0 END) as shipped_orders,
+        SUM(CASE WHEN o.status = 'delivered' THEN 1 ELSE 0 END) as delivered_orders,
+        COALESCE(SUM(oi.seller_net_amount), 0) as gross_revenue
+    FROM orders o
+    JOIN order_items oi ON oi.order_id = o.id AND (oi.seller_id = :org_user OR oi.seller_id = :curr_user)
+");
+$statsStmt->execute([
+    ':org_user' => $orgUserId,
+    ':curr_user' => $currUserId
+]);
+$stats = $statsStmt->fetch(PDO::FETCH_ASSOC) ?: ['total_orders' => 0, 'pending_dispatch' => 0, 'shipped_orders' => 0, 'delivered_orders' => 0, 'gross_revenue' => 0];
 
 $fmtDate = new IntlDateFormatter('fa_IR@calendar=persian', IntlDateFormatter::FULL, IntlDateFormatter::NONE, 'Asia/Tehran', IntlDateFormatter::TRADITIONAL, 'yyyy/MM/dd');
 ?>

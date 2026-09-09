@@ -1,42 +1,44 @@
 <?php
 /**
- * ASENA Enterprise - Migration Runner
+ * ASENA Enterprise - Comprehensive Migration Runner
+ * Iterates through all migrations in sequence and applies them safely.
  */
 require_once __DIR__ . '/../includes/db.php';
 
 global $pdo;
-$migrationFile = __DIR__ . '/migrations/01_enterprise_master_schema.sql';
 
-if (!file_exists($migrationFile)) {
-    echo "ERROR: Migration file not found: $migrationFile\n";
-    exit(1);
+$migrationsDir = __DIR__ . '/migrations';
+$files = glob($migrationsDir . '/*.sql');
+sort($files);
+
+echo "==================================================\n";
+echo "      ASENA ENTERPRISE - DATABASE MIGRATIONS     \n";
+echo "==================================================\n";
+
+if (empty($files)) {
+    echo "No migration files found in $migrationsDir\n";
+    exit(0);
 }
 
-echo "Running migration: " . basename($migrationFile) . "...\n";
+$successCount = 0;
+$errorCount = 0;
 
-try {
-    $sql = file_get_contents($migrationFile);
-    // Execute the SQL statements
-    $pdo->exec($sql);
-    echo "SUCCESS: Migration completed successfully.\n";
-
-    // Show summary of newly added tables
-    $stmt = $pdo->query("SHOW TABLES");
-    $tables = $stmt->fetchAll(PDO::FETCH_COLUMN);
-    echo "Total tables in database now: " . count($tables) . "\n";
+foreach ($files as $file) {
+    $filename = basename($file);
+    echo "Running migration: {$filename}... ";
     
-    $enterpriseTables = [
-        'pet_health_records', 'pet_vaccinations', 'prescriptions',
-        'product_price_tiers', 'b2b_rfqs', 'b2b_rfq_items',
-        'order_status_logs', 'shipping_rates', 'flash_sales',
-        'user_wallets', 'wallet_transactions'
-    ];
-    
-    foreach ($enterpriseTables as $t) {
-        $status = in_array($t, $tables) ? "[FOUND]" : "[MISSING]";
-        echo "  - $t: $status\n";
+    try {
+        $sql = file_get_contents($file);
+        if (!empty(trim($sql))) {
+            $pdo->exec($sql);
+        }
+        echo "[OK]\n";
+        $successCount++;
+    } catch (Throwable $e) {
+        echo "[FAILED: " . $e->getMessage() . "]\n";
+        $errorCount++;
     }
-} catch (Exception $e) {
-    echo "MIGRATION FAILED: " . $e->getMessage() . "\n";
-    exit(1);
 }
+
+echo "--------------------------------------------------\n";
+echo "Migrations finished: {$successCount} applied, {$errorCount} warnings/errors.\n";

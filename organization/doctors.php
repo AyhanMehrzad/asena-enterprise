@@ -38,8 +38,29 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POST['action'])) {
                 $messageType = 'success';
             }
         }
+    } elseif ($action === 'update_visibility_settings') {
+        $hideRoster = isset($_POST['hide_doctors_roster']) ? 1 : 0;
+        $directBooking = isset($_POST['direct_booking_enabled']) ? 1 : 0;
+        $fee = (int)($_POST['consultation_fee'] ?? 0);
+        $up = $pdo->prepare("UPDATE organizations SET hide_doctors_roster = ?, direct_booking_enabled = ?, consultation_fee = ? WHERE id = ?");
+        if ($up->execute([$hideRoster, $directBooking, $fee, $orgId])) {
+            $message = 'تنظیمات نمایش کادر و نوبت‌دهی مستقیم مرکز با موفقیت ذخیره شد.';
+            $messageType = 'success';
+        } else {
+            $message = 'خطا در ذخیره تنظیمات.';
+            $messageType = 'error';
+        }
     }
 }
+
+// Fetch current organization visibility & direct booking settings
+$orgSettingsStmt = $pdo->prepare("SELECT hide_doctors_roster, direct_booking_enabled, consultation_fee FROM organizations WHERE id = ?");
+$orgSettingsStmt->execute([$orgId]);
+$orgSettings = $orgSettingsStmt->fetch(PDO::FETCH_ASSOC) ?: [
+    'hide_doctors_roster' => 0,
+    'direct_booking_enabled' => 1,
+    'consultation_fee' => 0
+];
 
 // Role filter from query
 $activeRole = $_GET['role'] ?? 'all';
@@ -64,7 +85,7 @@ $countSellers = count($orgService->getDoctors($orgId, 'seller')) + count($orgSer
                 <span class="material-symbols-outlined text-indigo-600 text-3xl">groups</span>
                 <span>کادر پزشکان، گرومرها و پرسنل مرکز</span>
             </h1>
-            <p class="text-xs text-slate-500 mt-1">مدیریت تیم چندنقشی شامل دامپزشکان، گرومرها و آرایشگران پت، و مسئولان داروخانه و فروشگاه</p>
+            <p class="text-xs text-slate-500 mt-1">مدیریت تیم چندنقشی شامل دامپزشکان، گرومرها و آرایشگران پت، و تنظیمات نمایش کادر</p>
         </div>
 
         <div class="flex items-center gap-2">
@@ -89,6 +110,54 @@ $countSellers = count($orgService->getDoctors($orgId, 'seller')) + count($orgSer
             <span class="text-sm font-bold"><?= htmlspecialchars($message) ?></span>
         </div>
     <?php endif; ?>
+
+    <!-- Roster Visibility & Direct Facility Booking Settings Card -->
+    <div class="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white p-6 rounded-3xl shadow-lg border border-indigo-500/20">
+        <form method="POST" class="space-y-4">
+            <input type="hidden" name="action" value="update_visibility_settings">
+            
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-white/10">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-2xl bg-indigo-500/20 flex items-center justify-center text-indigo-400">
+                        <span class="material-symbols-outlined text-2xl">visibility_off</span>
+                    </div>
+                    <div>
+                        <h3 class="font-black text-sm text-white">تنظیمات نمایش کادر و نوبت‌دهی مستقیم درمانگاه</h3>
+                        <p class="text-xs text-slate-400 mt-0.5">در صورتی که نمی‌خواهید نام پزشکان به طور جداگانه در صفحه مرکز نمایش داده شود</p>
+                    </div>
+                </div>
+
+                <button type="submit" class="px-5 py-2.5 rounded-xl bg-indigo-500 hover:bg-indigo-600 text-white text-xs font-bold transition-all shadow-md flex items-center justify-center gap-1.5 shrink-0">
+                    <span class="material-symbols-outlined text-base">save</span>
+                    <span>ذخیره تغییرات نمایش</span>
+                </button>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 pt-1">
+                <label class="p-4 rounded-2xl bg-white/5 border border-white/10 hover:border-indigo-400/50 transition-colors cursor-pointer flex items-start gap-3">
+                    <input type="checkbox" name="hide_doctors_roster" value="1" <?= !empty($orgSettings['hide_doctors_roster']) ? 'checked' : '' ?> class="mt-1 rounded text-indigo-500 focus:ring-indigo-400">
+                    <div>
+                        <span class="text-xs font-bold text-white block">مخفی‌سازی اسامی پزشکان</span>
+                        <span class="text-[11px] text-slate-400 block mt-1">پروفایل تک‌تک پزشکان از صفحه عمومی پنهان شده و صفحه اختصاصی مرکز نمایش می‌یابد.</span>
+                    </div>
+                </label>
+
+                <label class="p-4 rounded-2xl bg-white/5 border border-white/10 hover:border-indigo-400/50 transition-colors cursor-pointer flex items-start gap-3">
+                    <input type="checkbox" name="direct_booking_enabled" value="1" <?= !empty($orgSettings['direct_booking_enabled']) ? 'checked' : '' ?> class="mt-1 rounded text-indigo-500 focus:ring-indigo-400">
+                    <div>
+                        <span class="text-xs font-bold text-white block">نوبت‌دهی مستقیم با بیمارستان</span>
+                        <span class="text-[11px] text-slate-400 block mt-1">امکان رزرو وقت به نام کلینیک و پذیرش عمومی بدون الزام انتخاب پزشک خاص.</span>
+                    </div>
+                </label>
+
+                <div class="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-2">
+                    <label class="block text-xs font-bold text-slate-200">تعرفه ویزیت پیش‌فرض مرکز (تومان)</label>
+                    <input type="number" name="consultation_fee" min="0" step="10000" value="<?= (int)($orgSettings['consultation_fee'] ?? 250000) ?>" class="w-full px-3 py-2 rounded-xl bg-white/10 border border-white/20 text-white font-bold text-xs outline-none focus:border-indigo-400">
+                    <span class="text-[10px] text-slate-400 block">در رزرو مستقیم با کلینیک مبنا قرار می‌گیرد.</span>
+                </div>
+            </div>
+        </form>
+    </div>
 
     <!-- Role Filter Tabs -->
     <div class="flex items-center gap-2 overflow-x-auto pb-1 border-b border-slate-200">

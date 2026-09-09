@@ -78,6 +78,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $msg = 'موجودی انبار کالا با موفقیت بروزرسانی شد.';
             $msgType = 'success';
         }
+    } elseif ($action === 'update_inventory_item') {
+        $productId = (int)($_POST['product_id'] ?? 0);
+        $name = trim($_POST['name'] ?? '');
+        $price = (int)($_POST['price'] ?? 0);
+        $stock = max(0, (int)($_POST['stock'] ?? 0));
+        $sku = trim($_POST['sku'] ?? '');
+        $threshold = max(1, (int)($_POST['low_stock_threshold'] ?? 5));
+        
+        if ($productId > 0 && $price > 0 && !empty($name)) {
+            try {
+                $upd = $pdo->prepare("
+                    UPDATE products 
+                    SET name = ?, price = ?, stock = ?, sku = ?, low_stock_threshold = ?
+                    WHERE id = ? AND (seller_id = ? OR ? = 'admin')
+                ");
+                $upd->execute([$name, $price, $stock, $sku, $threshold, $productId, $sellerId, $currentUser['role']]);
+            } catch (PDOException $e) {
+                $upd = $pdo->prepare("
+                    UPDATE products 
+                    SET name = ?, price = ?, stock = ?
+                    WHERE id = ? AND (seller_id = ? OR ? = 'admin')
+                ");
+                $upd->execute([$name, $price, $stock, $productId, $sellerId, $currentUser['role']]);
+            }
+            $msg = "مشخصات و موجودی کالای «{$name}» در انبار با موفقیت به‌روزرسانی شد.";
+            $msgType = 'success';
+        } else {
+            $msg = 'لطفاً نام کالا و قیمت معتبر وارد کنید.';
+            $msgType = 'error';
+        }
     } elseif ($action === 'update_bank') {
         $bankName = trim($_POST['bank_name'] ?? '');
         $holder = trim($_POST['bank_account_holder'] ?? $sellerName);
@@ -179,6 +209,28 @@ $productsQuery = $pdo->prepare("
 ");
 $productsQuery->execute([$sellerId, $currentUser['role']]);
 $sellerProducts = $productsQuery->fetchAll(PDO::FETCH_ASSOC);
+
+// ── Inventory Analytics ───────────────────────────────────────────────────────
+$inStockCount = 0;
+$lowStockCount = 0;
+$outOfStockCount = 0;
+$inventoryValuation = 0;
+
+foreach ($sellerProducts as $p) {
+    $stk = (int)($p['stock'] ?? 0);
+    $prc = (int)($p['price'] ?? 0);
+    $thresh = (int)($p['low_stock_threshold'] ?? 5);
+    if ($thresh <= 0) $thresh = 5;
+
+    $inventoryValuation += ($stk * $prc);
+    if ($stk === 0) {
+        $outOfStockCount++;
+    } elseif ($stk <= $thresh) {
+        $lowStockCount++;
+    } else {
+        $inStockCount++;
+    }
+}
 ?>
 
 <div class="p-4 lg:p-8 space-y-8">
@@ -422,28 +474,215 @@ $sellerProducts = $productsQuery->fetchAll(PDO::FETCH_ASSOC);
         </div>
     </section>
 
-    <!-- ── TAB 2: PRODUCTS CATALOG ─────────────────────────────────────────── -->
-    <section id="products-tab" class="seller-tab-content hidden space-y-4">
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-surface-container-lowest p-4 rounded-2xl stat-card-shadow border border-outline-variant/10">
-            <div>
-                <h2 class="text-base font-black text-on-surface flex items-center gap-2">
-                    <span class="material-symbols-outlined text-secondary-container">inventory_2</span>
-                    <span>ویترین و انبار محصولات پت‌شاپ شما</span>
-                </h2>
+    <!-- ── TAB 2: ADVANCED INVENTORY MANAGEMENT ─────────────────────────── -->
+    <section id="products-tab" class="seller-tab-content hidden space-y-5">
+        <!-- Inventory Top Stats Bar -->
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+            <div class="bg-surface-container-lowest p-3.5 rounded-2xl stat-card-shadow border border-outline-variant/10 flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-600 flex items-center justify-center shrink-0">
+                    <span class="material-symbols-outlined text-xl">inventory_2</span>
+                </div>
+                <div>
+                    <span class="text-[11px] text-slate-400 font-bold block">کل اقلام کاتالوگ</span>
+                    <span class="text-base font-black text-slate-800"><?= number_format($totalProductsCount) ?></span>
+                </div>
             </div>
-            <button onclick="openNewProductModal()" class="px-4 py-2.5 rounded-xl bg-secondary-container hover:bg-orange-600 text-white font-bold text-xs shadow-sm transition-all flex items-center gap-2 shrink-0">
-                <span class="material-symbols-outlined text-base">add_circle</span>
-                <span>+ افزودن کالای جدید</span>
-            </button>
+
+            <div class="bg-surface-container-lowest p-3.5 rounded-2xl stat-card-shadow border border-outline-variant/10 flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center shrink-0">
+                    <span class="material-symbols-outlined text-xl">check_circle</span>
+                </div>
+                <div>
+                    <span class="text-[11px] text-slate-400 font-bold block">موجودی کافی</span>
+                    <span class="text-base font-black text-emerald-600"><?= number_format($inStockCount) ?></span>
+                </div>
+            </div>
+
+            <div class="bg-surface-container-lowest p-3.5 rounded-2xl stat-card-shadow border border-outline-variant/10 flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-600 flex items-center justify-center shrink-0">
+                    <span class="material-symbols-outlined text-xl">warning</span>
+                </div>
+                <div>
+                    <span class="text-[11px] text-slate-400 font-bold block">کسری و روبه‌اتمام</span>
+                    <span class="text-base font-black text-amber-600"><?= number_format($lowStockCount) ?></span>
+                </div>
+            </div>
+
+            <div class="bg-surface-container-lowest p-3.5 rounded-2xl stat-card-shadow border border-outline-variant/10 flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-rose-500/10 text-rose-600 flex items-center justify-center shrink-0">
+                    <span class="material-symbols-outlined text-xl">production_quantity_limits</span>
+                </div>
+                <div>
+                    <span class="text-[11px] text-slate-400 font-bold block">اتمام موجودی</span>
+                    <span class="text-base font-black text-rose-600"><?= number_format($outOfStockCount) ?></span>
+                </div>
+            </div>
+
+            <div class="col-span-2 sm:col-span-1 bg-surface-container-lowest p-3.5 rounded-2xl stat-card-shadow border border-outline-variant/10 flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-indigo-500/10 text-indigo-600 flex items-center justify-center shrink-0">
+                    <span class="material-symbols-outlined text-xl">account_balance</span>
+                </div>
+                <div class="min-w-0">
+                    <span class="text-[11px] text-slate-400 font-bold block">ارزش ریالی انبار</span>
+                    <span class="text-xs font-black text-indigo-700 truncate block"><?= number_format($inventoryValuation) ?> <span class="text-[9px] font-normal">تومان</span></span>
+                </div>
+            </div>
         </div>
 
+        <!-- Inventory Control Bar -->
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 bg-surface-container-lowest p-4 rounded-2xl stat-card-shadow border border-outline-variant/10">
+            <div class="flex items-center gap-2 flex-wrap">
+                <button type="button" onclick="filterInventory('all')" id="invFilterAll" class="inv-filter-btn px-3 py-1.5 rounded-xl bg-slate-800 text-white text-xs font-bold transition-all shadow-xs">
+                    همه کالاها (<?= count($sellerProducts) ?>)
+                </button>
+                <button type="button" onclick="filterInventory('low')" id="invFilterLow" class="inv-filter-btn px-3 py-1.5 rounded-xl bg-amber-50 text-amber-800 hover:bg-amber-100 text-xs font-bold transition-all border border-amber-200">
+                    ⚠️ روبه‌اتمام (<?= $lowStockCount ?>)
+                </button>
+                <button type="button" onclick="filterInventory('out')" id="invFilterOut" class="inv-filter-btn px-3 py-1.5 rounded-xl bg-rose-50 text-rose-800 hover:bg-rose-100 text-xs font-bold transition-all border border-rose-200">
+                    ⛔ ناموجود (<?= $outOfStockCount ?>)
+                </button>
+                <button type="button" onclick="filterInventory('autoship')" id="invFilterAutoship" class="inv-filter-btn px-3 py-1.5 rounded-xl bg-teal-50 text-teal-800 hover:bg-teal-100 text-xs font-bold transition-all border border-teal-200">
+                    🔄 فعال در خرید دوره‌ای
+                </button>
+            </div>
+
+            <div class="flex items-center gap-2">
+                <button onclick="toggleInventoryView('table')" id="btnViewTable" class="p-2 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors" title="حالت جدول انبارداری">
+                    <span class="material-symbols-outlined text-lg">table_rows</span>
+                </button>
+                <button onclick="toggleInventoryView('grid')" id="btnViewGrid" class="p-2 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors" title="حالت کارت‌های ویترین">
+                    <span class="material-symbols-outlined text-lg">grid_view</span>
+                </button>
+                <button onclick="openNewProductModal()" class="px-4 py-2 rounded-xl bg-secondary-container hover:bg-orange-600 text-white font-bold text-xs shadow-sm transition-all flex items-center gap-1.5 shrink-0">
+                    <span class="material-symbols-outlined text-base">add_circle</span>
+                    <span>+ افزودن کالای جدید</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Quick Search Bar -->
         <div class="bg-surface-container-lowest p-3 rounded-2xl stat-card-shadow border border-outline-variant/10 flex items-center gap-2">
             <span class="material-symbols-outlined text-slate-400 text-lg pr-1">search</span>
-            <input type="text" id="productSearchInput" onkeyup="filterProducts()" placeholder="جستجوی سریع در نام کالا، برند یا دسته‌بندی ویترین..." class="w-full text-xs outline-none bg-transparent text-slate-800">
+            <input type="text" id="inventorySearchInput" onkeyup="searchInventoryTable()" placeholder="جستجوی سریع در نام کالا، بارکد، شناسه انبارداری (SKU) یا دسته‌بندی..." class="w-full text-xs outline-none bg-transparent text-slate-800">
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <?php foreach ($sellerProducts as $prod): ?>
+        <!-- 1. Detailed Inventory Table View (Default) -->
+        <div id="inventoryTableView" class="bg-surface-container-lowest rounded-2xl stat-card-shadow border border-outline-variant/10 overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="w-full text-right text-xs">
+                    <thead class="bg-slate-50 text-slate-600 font-bold border-b border-slate-100">
+                        <tr>
+                            <th class="p-3.5">کالا و مشخصات</th>
+                            <th class="p-3.5">کد انبار / SKU</th>
+                            <th class="p-3.5">قیمت فروش (تومان)</th>
+                            <th class="p-3.5">موجودی انبار</th>
+                            <th class="p-3.5">وضعیت انبار</th>
+                            <th class="p-3.5 text-center">تنظیم سریع موجودی</th>
+                            <th class="p-3.5 text-center">عملیات</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100" id="inventoryTableBody">
+                        <?php foreach ($sellerProducts as $prod): 
+                            $stk = (int)($prod['stock'] ?? 0);
+                            $thresh = (int)($prod['low_stock_threshold'] ?? 5);
+                            if ($thresh <= 0) $thresh = 5;
+
+                            $stockStatus = 'in_stock';
+                            if ($stk === 0) $stockStatus = 'out_of_stock';
+                            elseif ($stk <= $thresh) $stockStatus = 'low_stock';
+
+                            $statusBadge = match($stockStatus) {
+                                'out_of_stock' => '<span class="px-2.5 py-1 rounded-lg text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200 flex items-center gap-1 w-fit"><span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span>ناموجود</span>',
+                                'low_stock'    => '<span class="px-2.5 py-1 rounded-lg text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200 flex items-center gap-1 w-fit"><span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>کسری انبار (زیر ' . $thresh . ')</span>',
+                                default        => '<span class="px-2.5 py-1 rounded-lg text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1 w-fit"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>موجود در انبار</span>'
+                            };
+                        ?>
+                        <tr class="inv-row hover:bg-slate-50/50 transition-colors" 
+                            data-stock-status="<?= $stockStatus ?>" 
+                            data-autoship="<?= !empty($prod['is_autoship']) ? '1' : '0' ?>"
+                            data-name="<?= htmlspecialchars($prod['name']) ?>"
+                            data-category="<?= htmlspecialchars($prod['category']) ?>"
+                            data-sku="<?= htmlspecialchars($prod['sku'] ?? '') ?>">
+                            <td class="p-3.5">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-12 h-12 rounded-xl bg-slate-100 border border-slate-200 overflow-hidden shrink-0 flex items-center justify-center">
+                                        <img src="<?= !empty($prod['image_url']) ? htmlspecialchars(str_starts_with($prod['image_url'], 'http') ? $prod['image_url'] : '../' . ltrim($prod['image_url'], '/')) : '../assets/images/default-product.png' ?>" class="w-full h-full object-cover" onerror="this.src='../assets/images/default-product.png'" alt="">
+                                    </div>
+                                    <div class="min-w-0">
+                                        <div class="font-bold text-slate-900 truncate max-w-xs"><?= htmlspecialchars($prod['name']) ?></div>
+                                        <div class="flex items-center gap-2 mt-0.5">
+                                            <span class="text-[10px] text-slate-500 bg-slate-100 px-2 py-0.5 rounded"><?= htmlspecialchars($prod['category']) ?></span>
+                                            <?php if (!empty($prod['is_autoship'])): ?>
+                                                <span class="text-[10px] text-teal-700 bg-teal-50 px-1.5 py-0.5 rounded font-bold border border-teal-200">اتوشیپ</span>
+                                            <?php endif; ?>
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="p-3.5">
+                                <span class="font-mono text-xs text-slate-600 bg-slate-50 px-2 py-1 rounded border border-slate-200">
+                                    <?= !empty($prod['sku']) ? htmlspecialchars($prod['sku']) : 'PRD-' . $prod['id'] ?>
+                                </span>
+                            </td>
+                            <td class="p-3.5 font-black text-emerald-600">
+                                <?= number_format($prod['price']) ?>
+                            </td>
+                            <td class="p-3.5 font-mono text-sm font-bold text-slate-800">
+                                <?= $stk ?> عدد
+                            </td>
+                            <td class="p-3.5">
+                                <?= $statusBadge ?>
+                            </td>
+                            <td class="p-3.5 text-center">
+                                <div class="inline-flex items-center gap-1">
+                                    <form method="POST" class="inline m-0">
+                                        <input type="hidden" name="action" value="update_stock">
+                                        <input type="hidden" name="product_id" value="<?= $prod['id'] ?>">
+                                        <input type="hidden" name="stock_delta" value="-1">
+                                        <button type="submit" class="w-7 h-7 rounded-lg bg-slate-100 hover:bg-rose-50 hover:text-rose-600 text-slate-600 font-bold flex items-center justify-center text-sm transition-colors" title="کاهش ۱ عدد">-۱</button>
+                                    </form>
+                                    
+                                    <form method="POST" class="inline m-0 flex items-center gap-1">
+                                        <input type="hidden" name="action" value="update_stock">
+                                        <input type="hidden" name="product_id" value="<?= $prod['id'] ?>">
+                                        <input type="number" name="new_stock" value="<?= $stk ?>" min="0" class="w-14 h-7 text-center font-bold text-xs bg-slate-50 border border-slate-200 rounded-lg outline-none focus:ring-1 focus:ring-secondary-container">
+                                        <button type="submit" class="h-7 px-2 rounded-lg bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold text-[10px] transition-colors" title="ثبت تعداد">ثبت</button>
+                                    </form>
+
+                                    <form method="POST" class="inline m-0">
+                                        <input type="hidden" name="action" value="update_stock">
+                                        <input type="hidden" name="product_id" value="<?= $prod['id'] ?>">
+                                        <input type="hidden" name="stock_delta" value="1">
+                                        <button type="submit" class="w-7 h-7 rounded-lg bg-slate-100 hover:bg-emerald-50 hover:text-emerald-600 text-slate-600 font-bold flex items-center justify-center text-sm transition-colors" title="افزایش ۱ عدد">+۱</button>
+                                    </form>
+                                </div>
+                            </td>
+                            <td class="p-3.5 text-center">
+                                <button type="button" onclick="openEditInventoryModal(<?= htmlspecialchars(json_encode([
+                                    'id' => $prod['id'],
+                                    'name' => $prod['name'],
+                                    'price' => $prod['price'],
+                                    'stock' => $prod['stock'],
+                                    'sku' => $prod['sku'] ?? ('PRD-' . $prod['id']),
+                                    'low_stock_threshold' => $thresh,
+                                    'category' => $prod['category']
+                                ])) ?>)" class="p-2 rounded-xl bg-slate-100 hover:bg-secondary-container hover:text-white text-slate-600 font-bold text-xs transition-all flex items-center gap-1 mx-auto" title="ویرایش کامل کالا و آستانه کسری انبار">
+                                    <span class="material-symbols-outlined text-sm">edit</span>
+                                    <span>ویرایش کالا</span>
+                                </button>
+                            </td>
+                        </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- 2. Visual Catalog Cards View (Optional Toggle) -->
+        <div id="inventoryGridView" class="hidden grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <?php foreach ($sellerProducts as $prod): 
+                $stk = (int)($prod['stock'] ?? 0);
+            ?>
             <div class="seller-product-card bg-surface-container-lowest p-4 rounded-2xl stat-card-shadow border border-outline-variant/10 flex flex-col justify-between space-y-3">
                 <div class="flex items-start gap-3">
                     <div class="w-16 h-16 rounded-xl bg-slate-100 border border-slate-200 flex-shrink-0 overflow-hidden flex items-center justify-center">
@@ -459,22 +698,21 @@ $sellerProducts = $productsQuery->fetchAll(PDO::FETCH_ASSOC);
                 <div class="pt-2 border-t border-slate-100 flex items-center justify-between">
                     <div class="flex items-center gap-1.5">
                         <span class="text-[11px] text-slate-500 font-bold">موجودی انبار:</span>
-                        <span class="text-xs font-black <?= $prod['stock'] > 0 ? 'text-slate-800' : 'text-rose-600' ?>"><?= (int)$prod['stock'] ?></span>
+                        <span class="text-xs font-black <?= $stk > 5 ? 'text-slate-800' : ($stk > 0 ? 'text-amber-600' : 'text-rose-600') ?>"><?= $stk ?> عدد</span>
                     </div>
 
-                    <!-- Quick Stock Adjust Controls -->
                     <div class="flex items-center gap-1">
-                        <form method="POST" class="inline">
+                        <form method="POST" class="inline m-0">
                             <input type="hidden" name="action" value="update_stock">
                             <input type="hidden" name="product_id" value="<?= $prod['id'] ?>">
                             <input type="hidden" name="stock_delta" value="-1">
-                            <button type="submit" class="w-7 h-7 rounded-lg bg-slate-100 hover:bg-rose-50 hover:text-rose-600 text-slate-600 font-bold flex items-center justify-center transition-colors text-sm" title="کاهش یک عدد">-</button>
+                            <button type="submit" class="w-7 h-7 rounded-lg bg-slate-100 hover:bg-rose-50 hover:text-rose-600 text-slate-600 font-bold flex items-center justify-center transition-colors text-sm">-</button>
                         </form>
-                        <form method="POST" class="inline">
+                        <form method="POST" class="inline m-0">
                             <input type="hidden" name="action" value="update_stock">
                             <input type="hidden" name="product_id" value="<?= $prod['id'] ?>">
                             <input type="hidden" name="stock_delta" value="1">
-                            <button type="submit" class="w-7 h-7 rounded-lg bg-slate-100 hover:bg-emerald-50 hover:text-emerald-600 text-slate-600 font-bold flex items-center justify-center transition-colors text-sm" title="افزایش یک عدد">+</button>
+                            <button type="submit" class="w-7 h-7 rounded-lg bg-slate-100 hover:bg-emerald-50 hover:text-emerald-600 text-slate-600 font-bold flex items-center justify-center transition-colors text-sm">+</button>
                         </form>
                     </div>
                 </div>
@@ -752,6 +990,62 @@ $sellerProducts = $productsQuery->fetchAll(PDO::FETCH_ASSOC);
     </div>
 </div>
 
+<!-- Edit Inventory Modal -->
+<div id="editInventoryModal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+    <div class="bg-surface-container-lowest rounded-3xl p-6 max-w-lg w-full stat-card-shadow border border-outline-variant/10 space-y-4">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+            <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined text-secondary-container">inventory_2</span>
+                <h3 class="font-black text-sm text-slate-900">ویرایش انبارداری و مشخصات کالا</h3>
+            </div>
+            <button type="button" onclick="closeEditInventoryModal()" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center transition-colors">
+                <span class="material-symbols-outlined text-sm">close</span>
+            </button>
+        </div>
+
+        <form method="POST" class="space-y-4">
+            <input type="hidden" name="action" value="update_inventory_item">
+            <input type="hidden" name="product_id" id="editModalProductId">
+
+            <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">نام کالا *</label>
+                <input type="text" name="name" id="editModalName" required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-bold focus:ring-2 focus:ring-secondary-container outline-none">
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">کد انبار / بارکد / SKU</label>
+                    <input type="text" name="sku" id="editModalSku" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-mono focus:ring-2 focus:ring-secondary-container outline-none" placeholder="SKU-1001">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">قیمت فروش (تومان) *</label>
+                    <input type="number" name="price" id="editModalPrice" required min="1000" step="1000" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-bold focus:ring-2 focus:ring-secondary-container outline-none">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">موجودی فیزیکی در انبار *</label>
+                    <input type="number" name="stock" id="editModalStock" required min="0" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-bold focus:ring-2 focus:ring-secondary-container outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">آستانه هشدار کسری انبار</label>
+                    <input type="number" name="low_stock_threshold" id="editModalThreshold" required min="1" value="5" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-bold focus:ring-2 focus:ring-secondary-container outline-none" title="وقتی موجودی به کمتر یا مساوی این عدد برسد، هشدار کسری صادر می‌شود">
+                </div>
+            </div>
+
+            <p class="text-[11px] text-slate-500 bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                💡 راهنما: تغییر موجودی بلافاصله بر سفارشات خریداران، سبد خریدها و لیست‌های خرید منظم (Autoship) اعمال می‌گردد.
+            </p>
+
+            <div class="flex gap-2 justify-end pt-2">
+                <button type="button" onclick="closeEditInventoryModal()" class="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-all">انصراف</button>
+                <button type="submit" class="px-5 py-2 rounded-xl bg-secondary-container hover:bg-orange-600 text-white text-xs font-bold shadow-md transition-all">ذخیره تغییرات انبار</button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <script>
 function openTrackingModal(orderId, trackingCode, carrier) {
     document.getElementById('modalOrderId').value = orderId;
@@ -770,6 +1064,103 @@ function openNewProductModal() {
 
 function closeNewProductModal() {
     document.getElementById('newProductModal').classList.add('hidden');
+}
+
+function openEditInventoryModal(prod) {
+    document.getElementById('editModalProductId').value = prod.id;
+    document.getElementById('editModalName').value = prod.name || '';
+    document.getElementById('editModalSku').value = prod.sku || '';
+    document.getElementById('editModalPrice').value = prod.price || '';
+    document.getElementById('editModalStock').value = prod.stock ?? 0;
+    document.getElementById('editModalThreshold').value = prod.low_stock_threshold ?? 5;
+    document.getElementById('editInventoryModal').classList.remove('hidden');
+}
+
+function closeEditInventoryModal() {
+    document.getElementById('editInventoryModal').classList.add('hidden');
+}
+
+let activeInventoryFilter = 'all';
+
+function filterInventory(status) {
+    activeInventoryFilter = status;
+    const filterBtns = {
+        'all': document.getElementById('invFilterAll'),
+        'low': document.getElementById('invFilterLow'),
+        'out': document.getElementById('invFilterOut'),
+        'autoship': document.getElementById('invFilterAutoship')
+    };
+
+    Object.keys(filterBtns).forEach(k => {
+        const btn = filterBtns[k];
+        if (!btn) return;
+        if (k === status) {
+            btn.className = 'inv-filter-btn px-3 py-1.5 rounded-xl bg-slate-800 text-white text-xs font-bold transition-all shadow-xs';
+        } else {
+            btn.className = 'inv-filter-btn px-3 py-1.5 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 text-xs font-bold transition-all border border-slate-200';
+        }
+    });
+
+    const rows = document.querySelectorAll('.inv-row');
+    rows.forEach(row => {
+        const rowStatus = row.getAttribute('data-stock-status');
+        const isAutoship = row.getAttribute('data-autoship') === '1';
+
+        let show = true;
+        if (status === 'low') show = (rowStatus === 'low_stock');
+        else if (status === 'out') show = (rowStatus === 'out_of_stock');
+        else if (status === 'autoship') show = isAutoship;
+
+        row.style.display = show ? '' : 'none';
+    });
+}
+
+function toggleInventoryView(mode) {
+    const tblView = document.getElementById('inventoryTableView');
+    const gridView = document.getElementById('inventoryGridView');
+    const btnTbl = document.getElementById('btnViewTable');
+    const btnGrid = document.getElementById('btnViewGrid');
+
+    if (mode === 'table') {
+        tblView.classList.remove('hidden');
+        gridView.classList.add('hidden');
+        btnTbl.classList.add('bg-slate-800', 'text-white');
+        btnTbl.classList.remove('bg-slate-100', 'text-slate-700');
+        btnGrid.classList.remove('bg-slate-800', 'text-white');
+        btnGrid.classList.add('bg-slate-100', 'text-slate-700');
+    } else {
+        tblView.classList.add('hidden');
+        gridView.classList.remove('hidden');
+        btnGrid.classList.add('bg-slate-800', 'text-white');
+        btnGrid.classList.remove('bg-slate-100', 'text-slate-700');
+        btnTbl.classList.remove('bg-slate-800', 'text-white');
+        btnTbl.classList.add('bg-slate-100', 'text-slate-700');
+    }
+}
+
+function searchInventoryTable() {
+    const q = (document.getElementById('inventorySearchInput').value || '').toLowerCase().trim();
+    const rows = document.querySelectorAll('.inv-row');
+    rows.forEach(row => {
+        const name = (row.getAttribute('data-name') || '').toLowerCase();
+        const cat = (row.getAttribute('data-category') || '').toLowerCase();
+        const sku = (row.getAttribute('data-sku') || '').toLowerCase();
+        const match = name.includes(q) || cat.includes(q) || sku.includes(q);
+        
+        if (!match) {
+            row.style.display = 'none';
+        } else {
+            // Respect active filter if searching
+            const rowStatus = row.getAttribute('data-stock-status');
+            const isAutoship = row.getAttribute('data-autoship') === '1';
+            let showByFilter = true;
+            if (activeInventoryFilter === 'low') showByFilter = (rowStatus === 'low_stock');
+            else if (activeInventoryFilter === 'out') showByFilter = (rowStatus === 'out_of_stock');
+            else if (activeInventoryFilter === 'autoship') showByFilter = isAutoship;
+
+            row.style.display = showByFilter ? '' : 'none';
+        }
+    });
 }
 
 function checkPostTracking() {

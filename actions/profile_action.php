@@ -25,10 +25,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $race = trim($_POST['pet_race'] ?? '');
         $gender = trim($_POST['pet_gender'] ?? '');
         $age = trim($_POST['pet_age'] ?? '');
+        $weight_kg = isset($_POST['weight_kg']) && $_POST['weight_kg'] !== '' ? (float)$_POST['weight_kg'] : null;
+        $microchip = trim($_POST['microchip_number'] ?? '');
+        $allergies = trim($_POST['allergies'] ?? '');
         
         if (!empty($name) && !empty($type)) {
-            $stmt = $pdo->prepare("INSERT INTO user_pets (user_id, name, type, race, gender, age) VALUES (?, ?, ?, ?, ?, ?)");
-            if ($stmt->execute([$user_id, $name, $type, $race, $gender, $age])) {
+            $stmt = $pdo->prepare("
+                INSERT INTO user_pets 
+                    (user_id, name, type, race, gender, age, weight_kg, microchip_number, allergies) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ");
+            if ($stmt->execute([$user_id, $name, $type, $race, $gender, $age, $weight_kg, $microchip, $allergies])) {
                 $_SESSION['profile_success'] = "حیوان خانگی جدید با موفقیت اضافه شد.";
             } else {
                 $_SESSION['profile_error'] = "خطا در ثبت حیوان خانگی.";
@@ -90,11 +97,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $race = trim($_POST['pet_race'] ?? '');
         $gender = trim($_POST['pet_gender'] ?? '');
         $age = trim($_POST['pet_age'] ?? '');
+        $weight_kg = isset($_POST['weight_kg']) && $_POST['weight_kg'] !== '' ? (float)$_POST['weight_kg'] : null;
+        $microchip = trim($_POST['microchip_number'] ?? '');
+        $allergies = trim($_POST['allergies'] ?? '');
         
         if ($pet_id > 0 && !empty($name) && !empty($type)) {
             // Ensure the pet belongs to the user
-            $stmt = $pdo->prepare("UPDATE user_pets SET name = ?, type = ?, race = ?, gender = ?, age = ? WHERE id = ? AND user_id = ?");
-            if ($stmt->execute([$name, $type, $race, $gender, $age, $pet_id, $user_id])) {
+            $stmt = $pdo->prepare("
+                UPDATE user_pets SET 
+                    name = ?, type = ?, race = ?, gender = ?, age = ?, 
+                    weight_kg = ?, microchip_number = ?, allergies = ? 
+                WHERE id = ? AND user_id = ?
+            ");
+            if ($stmt->execute([$name, $type, $race, $gender, $age, $weight_kg, $microchip, $allergies, $pet_id, $user_id])) {
                 $_SESSION['profile_success'] = "مشخصات حیوان خانگی با موفقیت بروزرسانی شد.";
             } else {
                 $_SESSION['profile_error'] = "خطا در بروزرسانی حیوان خانگی.";

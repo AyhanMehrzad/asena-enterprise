@@ -112,7 +112,7 @@ $activeTab = $_GET['tab'] ?? 'orders';
         <?php
         $navItems = [
             'orders'   => ['icon' => 'local_shipping', 'title' => 'سفارشات و ارسال کالا', 'tab' => 'orders-tab'],
-            'products' => ['icon' => 'inventory_2', 'title' => 'ویترین و انبار محصولات', 'tab' => 'products-tab'],
+            'products' => ['icon' => 'inventory_2', 'title' => 'مدیریت موجودی و انبارداری', 'tab' => 'products-tab'],
             'wallet'   => ['icon' => 'account_balance_wallet', 'title' => 'کیف پول امانی و تسویه پایا', 'tab' => 'wallet-tab'],
             'shipping' => ['icon' => 'markunread_mailbox', 'title' => 'رهگیری مرسولات و پستکس', 'tab' => 'shipping-tab'],
             'settings' => ['icon' => 'store', 'title' => 'مشخصات فروشگاه و حساب بانکی', 'tab' => 'settings-tab'],

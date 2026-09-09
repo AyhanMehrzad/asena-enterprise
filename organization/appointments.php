@@ -99,11 +99,7 @@ $docStmt = $pdo->prepare("
 $docStmt->execute([$orgId]);
 $orgDoctors = $docStmt->fetchAll(PDO::FETCH_ASSOC);
 
-if (empty($orgDoctors)) {
-    $orgDoctors = $pdo->query("SELECT id, name, specialty, image_url, provider_type, price as consultation_fee FROM doctors LIMIT 15")->fetchAll(PDO::FETCH_ASSOC);
-}
 $orgDoctorIds = array_column($orgDoctors, 'id');
-$docPlaceholders = !empty($orgDoctorIds) ? implode(',', array_fill(0, count($orgDoctorIds), '?')) : '0';
 
 // Current filters
 $filter = $_GET['filter'] ?? 'all';
@@ -111,9 +107,17 @@ $roleFilter = $_GET['role'] ?? 'all';
 $searchQuery = trim($_GET['q'] ?? '');
 $dateToday = date('Y-m-d');
 
-// Build query
-$whereClauses = ["(a.organization_id = {$orgId} " . (!empty($orgDoctorIds) ? "OR a.doctor_id IN ($docPlaceholders)" : "") . ")"];
-$params = !empty($orgDoctorIds) ? $orgDoctorIds : [];
+// Build strict multi-tenant query: only appointments booked directly with this organization OR its affiliated practitioners
+$orgScopeClauses = ["a.organization_id = ?"];
+$orgScopeParams = [$orgId];
+if (!empty($orgDoctorIds)) {
+    $docPlaceholders = implode(',', array_fill(0, count($orgDoctorIds), '?'));
+    $orgScopeClauses[] = "a.doctor_id IN ($docPlaceholders)";
+    $orgScopeParams = array_merge($orgScopeParams, $orgDoctorIds);
+}
+
+$whereClauses = ["(" . implode(' OR ', $orgScopeClauses) . ")"];
+$params = $orgScopeParams;
 
 if ($filter === 'today') {
     $whereClauses[] = "a.appointment_date = ?";
@@ -156,7 +160,11 @@ $stmt = $pdo->prepare($aptQuery);
 $stmt->execute($params);
 $appointments = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-// Calculate Quick Stats
+// Calculate Quick Stats (Strictly scoped to this organization)
+$statScopeSql = "a.organization_id = " . (int)$orgId;
+if (!empty($orgDoctorIds)) {
+    $statScopeSql .= " OR a.doctor_id IN (" . implode(',', array_map('intval', $orgDoctorIds)) . ")";
+}
 $statsStmt = $pdo->prepare("
     SELECT 
         COUNT(*) as total_count,
@@ -167,7 +175,7 @@ $statsStmt = $pdo->prepare("
         SUM(CASE WHEN d.provider_type = 'doctor' THEN 1 ELSE 0 END) as doctor_count
     FROM appointments a
     LEFT JOIN doctors d ON a.doctor_id = d.id
-    WHERE a.organization_id = {$orgId} " . (!empty($orgDoctorIds) ? "OR a.doctor_id IN (" . implode(',', $orgDoctorIds) . ")" : "") . "
+    WHERE ({$statScopeSql})
 ");
 $statsStmt->execute();
 $stats = $statsStmt->fetch(PDO::FETCH_ASSOC) ?: [

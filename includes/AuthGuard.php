@@ -59,7 +59,7 @@ class AuthGuard {
                 $baseApp = dirname($script);
             }
             $baseApp = rtrim(str_replace('\\', '/', $baseApp), '/');
-            $loginTarget = (!empty($baseApp) && $baseApp !== '.') ? ($baseApp . '/login.php') : 'login.php';
+            $loginTarget = (!empty($baseApp) && $baseApp !== '.' && $baseApp !== '/') ? ($baseApp . '/login.php') : '/login.php';
             header("Location: " . $loginTarget . "?return_url=" . urlencode($url));
             exit;
         }

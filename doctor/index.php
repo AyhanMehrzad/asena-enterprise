@@ -198,18 +198,80 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         $diagnosis = trim($_POST['doctor_diagnosis'] ?? '');
         $prescription = trim($_POST['doctor_prescription'] ?? '');
         $status = $_POST['status'] ?? 'completed';
+        $petWeight = !empty($_POST['pet_weight']) ? (float)$_POST['pet_weight'] : null;
+        $petAllergies = trim($_POST['pet_allergies'] ?? '');
         
         $updated = false;
         try {
-            $stmt = $pdo->prepare("UPDATE appointments SET doctor_diagnosis = ?, doctor_prescription = ?, status = ? WHERE id = ? AND doctor_id = ?");
-            $updated = $stmt->execute([$diagnosis, $prescription, $status, $apptId, $doctorId]);
+            $stmt = $pdo->prepare("UPDATE appointments SET doctor_diagnosis = ?, doctor_prescription = ?, status = ?, pet_weight = COALESCE(?, pet_weight) WHERE id = ? AND doctor_id = ?");
+            $updated = $stmt->execute([$diagnosis, $prescription, $status, $petWeight, $apptId, $doctorId]);
         } catch (PDOException $e) {
             $stmt = $pdo->prepare("UPDATE appointments SET status = ? WHERE id = ? AND doctor_id = ?");
             $updated = $stmt->execute([$status, $apptId, $doctorId]);
         }
 
         if ($updated) {
-            $success = "پرونده بالینی، تشخیص و نسخه دارویی با موفقیت ثبت شد.";
+            // Check if pet_id is associated with this appointment
+            $apptStmt = $pdo->prepare("SELECT pet_id, user_id FROM appointments WHERE id = ?");
+            $apptStmt->execute([$apptId]);
+            $apptData = $apptStmt->fetch(PDO::FETCH_ASSOC);
+
+            if (!empty($apptData['pet_id'])) {
+                $petId = (int)$apptData['pet_id'];
+                $petStmt = $pdo->prepare("SELECT * FROM user_pets WHERE id = ?");
+                $petStmt->execute([$petId]);
+                $petRecord = $petStmt->fetch(PDO::FETCH_ASSOC);
+
+                if ($petRecord) {
+                    $doctorName = $doctorProfile['name'] ?? 'دامپزشک معالج';
+                    
+                    // Doctor Consensus Governance:
+                    // 1. If not yet verified by any doctor, OR last doctor was this same doctor:
+                    // Directly verify & update pet's clinical vitals
+                    if (empty($petRecord['clinical_verified_at']) || (int)$petRecord['last_doctor_id'] === $doctorId) {
+                        $updatePet = $pdo->prepare("
+                            UPDATE user_pets 
+                            SET weight_kg = COALESCE(?, weight_kg),
+                                allergies = CASE WHEN ? != '' THEN ? ELSE allergies END,
+                                last_doctor_id = ?,
+                                clinical_verified_at = NOW(),
+                                pending_doctor_proposal = NULL
+                            WHERE id = ?
+                        ");
+                        $updatePet->execute([$petWeight, $petAllergies, $petAllergies, $doctorId, $petId]);
+                        $success = "پرونده بالینی، تشخیص و نسخه با موفقیت ثبت شد و علائم بالینی شناسنامه پت تأیید و به‌روزرسانی گردید.";
+                    } else {
+                        // 2. Pet was previously verified by another doctor!
+                        // Check if doctor proposed different weight or allergies
+                        $weightDiffers = ($petWeight !== null && abs((float)$petRecord['weight_kg'] - $petWeight) > 0.05);
+                        $allergiesDiffer = ($petAllergies !== '' && $petAllergies !== ($petRecord['allergies'] ?? ''));
+
+                        if ($weightDiffers || $allergiesDiffer) {
+                            $proposalData = [
+                                'doctor_id' => $doctorId,
+                                'doctor_name' => $doctorName,
+                                'proposed_at' => date('Y-m-d H:i:s'),
+                                'current_weight' => $petRecord['weight_kg'],
+                                'new_weight' => $petWeight !== null ? $petWeight : $petRecord['weight_kg'],
+                                'current_allergies' => $petRecord['allergies'] ?? '',
+                                'new_allergies' => $petAllergies !== '' ? $petAllergies : ($petRecord['allergies'] ?? ''),
+                                'notes' => $diagnosis
+                            ];
+
+                            $propStmt = $pdo->prepare("UPDATE user_pets SET pending_doctor_proposal = ? WHERE id = ?");
+                            $propStmt->execute([json_encode($proposalData, JSON_UNESCAPED_UNICODE), $petId]);
+
+                            $success = "پرونده بالینی ثبت شد. با توجه به تأیید قبلی شناسنامه توسط پزشک دیگر، تغییرات وزن و حساسیت به عنوان پیشنهاد بالینی به کارتابل سرپرست پت ارسال شد.";
+                        } else {
+                            $success = "پرونده بالینی، تشخیص و نسخه دارویی با موفقیت ثبت شد.";
+                        }
+                    }
+                } else {
+                    $success = "پرونده بالینی، تشخیص و نسخه دارویی با موفقیت ثبت شد.";
+                }
+            } else {
+                $success = "پرونده بالینی، تشخیص و نسخه دارویی با موفقیت ثبت شد.";
+            }
         } else {
             $error = "خطا در ثبت اطلاعات بالینی.";
         }
@@ -279,11 +341,21 @@ if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $selectedCalDate)) {
     $selectedCalDate = date('Y-m-d');
 }
 
+// Appointment SELECT fields with user profile and registered pet vitals
+$apptSelect = "
+    a.*, 
+    u.name as user_name, u.phone, u.email, u.city, u.address,
+    up.name as registered_pet_name, up.weight_kg as profile_pet_weight, 
+    up.allergies as profile_pet_allergies, up.microchip_number as pet_microchip,
+    up.clinical_verified_at as pet_clinical_verified_at, up.last_doctor_id as pet_last_doctor_id
+";
+
 // Fetch Appointments for the Selected Calendar Date
 $stmt = $pdo->prepare("
-    SELECT a.*, u.name as user_name, u.phone, u.email, u.city, u.address 
+    SELECT {$apptSelect}
     FROM appointments a 
     JOIN users u ON a.user_id = u.id 
+    LEFT JOIN user_pets up ON a.pet_id = up.id
     WHERE a.doctor_id = ? AND a.appointment_date = ?
     ORDER BY a.appointment_time ASC
 ");
@@ -292,9 +364,10 @@ $calAppts = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Fetch Today's Appointments
 $stmt = $pdo->prepare("
-    SELECT a.*, u.name as user_name, u.phone, u.email, u.city, u.address 
+    SELECT {$apptSelect}
     FROM appointments a 
     JOIN users u ON a.user_id = u.id 
+    LEFT JOIN user_pets up ON a.pet_id = up.id
     WHERE a.doctor_id = ? AND a.appointment_date = CURDATE()
     ORDER BY a.appointment_time ASC
 ");
@@ -303,9 +376,10 @@ $todayAppts = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Fetch Upcoming Appointments
 $stmt = $pdo->prepare("
-    SELECT a.*, u.name as user_name, u.phone, u.email, u.city, u.address 
+    SELECT {$apptSelect}
     FROM appointments a 
     JOIN users u ON a.user_id = u.id 
+    LEFT JOIN user_pets up ON a.pet_id = up.id
     WHERE a.doctor_id = ? AND a.appointment_date > CURDATE()
     ORDER BY a.appointment_date ASC, a.appointment_time ASC
     LIMIT 30
@@ -315,9 +389,10 @@ $upcomingAppts = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Fetch History Appointments
 $stmt = $pdo->prepare("
-    SELECT a.*, u.name as user_name, u.phone, u.email, u.city, u.address 
+    SELECT {$apptSelect}
     FROM appointments a 
     JOIN users u ON a.user_id = u.id 
+    LEFT JOIN user_pets up ON a.pet_id = up.id
     WHERE a.doctor_id = ? AND a.appointment_date < CURDATE()
     ORDER BY a.appointment_date DESC, a.appointment_time DESC
     LIMIT 50
@@ -1153,6 +1228,8 @@ if (empty($myServices)) {
                         <div><span class="text-slate-400">نژاد:</span> <b id="dos_pet_race" class="text-slate-700">---</b></div>
                         <div><span class="text-slate-400">جنسیت:</span> <b id="dos_pet_gender" class="text-slate-700">---</b></div>
                         <div><span class="text-slate-400">سن:</span> <b id="dos_pet_age" class="text-slate-700">---</b></div>
+                        <div><span class="text-slate-400">وزن ثبت‌شده:</span> <b id="dos_pet_weight_display" class="text-slate-700">---</b></div>
+                        <div><span class="text-slate-400">میکروچیپ:</span> <b id="dos_pet_microchip_display" class="text-slate-700">---</b></div>
                     </div>
                 </div>
 
@@ -1235,11 +1312,29 @@ if (empty($myServices)) {
                 <input type="hidden" name="action" value="save_medical_record">
                 <input type="hidden" name="appointment_id" id="dos_form_appt_id" value="">
 
-                <div class="border-b border-slate-100 pb-2">
+                <div class="border-b border-slate-100 pb-2 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
                     <h4 class="font-bold text-xs text-slate-800 flex items-center gap-1.5">
                         <span class="material-symbols-outlined text-primary text-base">edit_document</span>
                         ثبت تشخیص بالینی، نسخه دارویی و اتمام ویزیت
                     </h4>
+                    <span id="dos_vitals_consensus_status" class="text-[11px] font-bold px-2.5 py-0.5 rounded-md bg-slate-100 text-slate-600">بررسی وضعیت</span>
+                </div>
+
+                <!-- Pet Vitals Verification & Doctor Consensus -->
+                <div class="p-3.5 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-[11px] font-bold text-slate-700 mb-1">⚖️ وزن بالینی پت (کیلوگرم)</label>
+                            <input type="number" step="0.05" min="0.1" max="150" name="pet_weight" id="dos_form_pet_weight" placeholder="مثال: 4.5" class="w-full p-2.5 rounded-xl border border-slate-300 text-xs bg-white outline-none focus:ring-2 focus:ring-primary font-bold">
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-bold text-slate-700 mb-1">⚠️ حساسیت‌های دارویی / غذایی پت</label>
+                            <input type="text" name="pet_allergies" id="dos_form_pet_allergies" placeholder="مثال: حساسیت به پنی‌سیلین، پروتئین مرغ..." class="w-full p-2.5 rounded-xl border border-slate-300 text-xs bg-white outline-none focus:ring-2 focus:ring-primary font-bold">
+                        </div>
+                    </div>
+                    <p class="text-[10px] text-slate-500 leading-relaxed">
+                        💡 در صورتی که این پت قبلاً توسط پزشک دیگری تأیید شده باشد، تغییرات شما به عنوان «پیشنهاد به‌روزرسانی بالینی» به کارتابل صاحب پت ارسال می‌شود تا مستقیماً تأیید گردد.
+                    </p>
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1425,6 +1520,14 @@ function openSmartPatientDossier(element) {
     document.getElementById('dos_pet_gender').innerText = appt.pet_gender || 'نامشخص';
     document.getElementById('dos_pet_age').innerText = appt.pet_age || 'نامشخص';
 
+    const currentWeight = appt.pet_weight || appt.profile_pet_weight;
+    if (document.getElementById('dos_pet_weight_display')) {
+        document.getElementById('dos_pet_weight_display').innerText = currentWeight ? (currentWeight + ' کیلوگرم') : 'ثبت نشده';
+    }
+    if (document.getElementById('dos_pet_microchip_display')) {
+        document.getElementById('dos_pet_microchip_display').innerText = appt.pet_microchip || 'فاقد میکروچیپ';
+    }
+
     // Set Owner Details
     document.getElementById('dos_owner_name').innerText = appt.user_name || 'بدون نام';
     document.getElementById('dos_owner_phone').innerText = appt.phone || 'بدون شماره';
@@ -1436,13 +1539,33 @@ function openSmartPatientDossier(element) {
     document.getElementById('dos_visit_purpose').innerText = appt.visit_purpose || 'معاینه عمومی و چکاپ';
     document.getElementById('dos_pet_notes').innerText = appt.pet_notes || 'صاحب پت توضیحات اولیه‌ای درج نکرده است.';
 
-    // Set Form IDs
+    // Set Form IDs & Vitals
     document.getElementById('dos_form_appt_id').value = appt.id;
     document.getElementById('upload_hidden_pet_id').value = appt.pet_id || '';
     document.getElementById('upload_hidden_user_id').value = appt.user_id || '';
     document.getElementById('dos_doctor_diagnosis').value = appt.doctor_diagnosis || '';
     document.getElementById('dos_doctor_prescription').value = appt.doctor_prescription || '';
     document.getElementById('dos_form_status').value = appt.status || 'completed';
+
+    if (document.getElementById('dos_form_pet_weight')) {
+        document.getElementById('dos_form_pet_weight').value = currentWeight || '';
+    }
+    if (document.getElementById('dos_form_pet_allergies')) {
+        document.getElementById('dos_form_pet_allergies').value = appt.profile_pet_allergies || '';
+    }
+    if (document.getElementById('dos_vitals_consensus_status')) {
+        const badge = document.getElementById('dos_vitals_consensus_status');
+        if (!appt.pet_id) {
+            badge.className = 'text-[11px] font-bold px-2.5 py-0.5 rounded-md bg-slate-100 text-slate-500';
+            badge.innerText = 'پت ثبت‌نشده در سامانه';
+        } else if (appt.pet_clinical_verified_at) {
+            badge.className = 'text-[11px] font-bold px-2.5 py-0.5 rounded-md bg-emerald-100 text-emerald-700';
+            badge.innerText = 'دارای تأییدیه بالینی قبلی';
+        } else {
+            badge.className = 'text-[11px] font-bold px-2.5 py-0.5 rounded-md bg-amber-100 text-amber-700';
+            badge.innerText = 'شناسنامه اولیه (تأیید نخست توسط شما)';
+        }
+    }
 
     // Set Reschedule Form Defaults
     document.getElementById('dos_reschedule_appt_id').value = appt.id;

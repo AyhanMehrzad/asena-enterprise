@@ -22,11 +22,24 @@ try {
 $user_pets = [];
 if (isset($_SESSION['user_id'])) {
     try {
-        $stmt = $pdo->prepare("SELECT id, name, type, race FROM user_pets WHERE user_id = ? ORDER BY created_at DESC");
+        $stmt = $pdo->prepare("SELECT id, name, type, race, gender, age, weight_kg FROM user_pets WHERE user_id = ? ORDER BY created_at DESC");
         $stmt->execute([$_SESSION['user_id']]);
         $user_pets = $stmt->fetchAll(PDO::FETCH_ASSOC);
     } catch (PDOException $e) {
         // ignore
+    }
+}
+
+// Fetch selected organization if org_id is provided
+$selectedOrgId = (int)($_GET['org_id'] ?? 0);
+$selectedOrg = null;
+if ($selectedOrgId > 0) {
+    try {
+        $oStmt = $pdo->prepare("SELECT * FROM organizations WHERE id = ?");
+        $oStmt->execute([$selectedOrgId]);
+        $selectedOrg = $oStmt->fetch(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {
+        $selectedOrg = null;
     }
 }
 
@@ -143,6 +156,11 @@ $booked_slots_json = json_encode($booked_slots);
         
         <!-- Hidden Inputs to store selections -->
         <input type="hidden" name="doctor_id" id="input_doctor_id" value="">
+        <input type="hidden" name="organization_id" id="input_organization_id" value="<?= $selectedOrgId ?>">
+        <input type="hidden" name="pet_id" id="input_pet_id" value="">
+        <input type="hidden" name="pet_name" id="input_pet_name" value="">
+        <input type="hidden" name="pet_gender" id="input_pet_gender" value="">
+        <input type="hidden" name="pet_age" id="input_pet_age" value="">
         <input type="hidden" name="appointment_date" id="input_date" value="">
         <input type="hidden" name="appointment_time" id="input_time" value="">
 
@@ -154,11 +172,42 @@ $booked_slots_json = json_encode($booked_slots);
                     <div>
                         <h2 class="text-2xl font-black text-slate-800 flex items-center gap-2">
                             <span class="material-symbols-outlined text-indigo-600">health_and_safety</span>
-                            <span>۱. انتخاب متخصص (پزشک یا گرومر)</span>
+                            <span>۱. انتخاب متخصص (پزشک یا گرومر) یا پذیرش مستقیم مرکز</span>
                         </h2>
-                        <p class="text-xs text-slate-500 mt-1">دامپزشکان عمومی، متخصصان جراحی، و آرایشگران حرفه‌ای پت (گرومینگ و اسپا)</p>
+                        <p class="text-xs text-slate-500 mt-1">دامپزشکان عمومی، متخصصان جراحی، گرومرها، یا پذیرش مستقیم بدون معطلی در بیمارستان</p>
                     </div>
                 </div>
+
+                <?php if ($selectedOrg): ?>
+                <!-- Direct Organization Booking Banner -->
+                <div id="org-direct-banner" class="bg-gradient-to-r from-sky-900 via-indigo-950 to-slate-900 text-white p-5 rounded-2xl shadow-lg border border-sky-400/30 mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div class="flex items-center gap-3.5">
+                        <div class="w-12 h-12 rounded-2xl bg-sky-500/20 text-sky-300 flex items-center justify-center border border-sky-400/30 shrink-0">
+                            <span class="material-symbols-outlined text-2xl">local_hospital</span>
+                        </div>
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <span class="text-[11px] font-bold text-sky-300">پذیرش متمرکز سازمانی</span>
+                                <span class="px-2 py-0.5 rounded-full text-[10px] bg-emerald-500/20 text-emerald-300 font-black border border-emerald-400/30">پیش‌فرض فعال</span>
+                            </div>
+                            <h3 class="text-sm font-black text-white mt-0.5"><?= htmlspecialchars($selectedOrg['name']) ?></h3>
+                            <p class="text-[11px] text-slate-300 mt-0.5">ویزیت و پذیرش حضوری توسط کادر کشیک بیمارستان بدون الزام به انتخاب پزشک اختصاصی</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2 shrink-0">
+                        <button type="button" onclick="selectOrganizationDirect(<?= htmlspecialchars(json_encode([
+                            'id' => $selectedOrg['id'],
+                            'name' => $selectedOrg['name'],
+                            'price' => $selectedOrg['consultation_fee'] > 0 ? (int)$selectedOrg['consultation_fee'] : 250000,
+                            'image' => !empty($selectedOrg['logo_url']) ? $selectedOrg['logo_url'] : 'assets/images/presentation-dog.jpg',
+                            'address' => $selectedOrg['address'] ?? ''
+                        ])) ?>)" id="btnSelectDirectOrg" class="px-4 py-2.5 rounded-xl bg-sky-500 hover:bg-sky-600 text-white text-xs font-black transition-all shadow-md flex items-center gap-1.5">
+                            <span class="material-symbols-outlined text-base">check_circle</span>
+                            <span>پذیرش مستقیم با بیمارستان</span>
+                        </button>
+                    </div>
+                </div>
+                <?php endif; ?>
 
                 <!-- Live Search & Category Filter Toolbar -->
                 <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm mb-6 space-y-3">
@@ -339,16 +388,24 @@ $booked_slots_json = json_encode($booked_slots);
                     <?php if(count($user_pets) > 0): ?>
                     <div class="col-span-1 md:col-span-2 space-y-2 mb-2">
                         <div class="flex items-center justify-between">
-                            <label class="text-label-md font-bold text-on-surface-variant">انتخاب از حیوانات ثبت شده شما</label>
+                            <label class="text-label-md font-bold text-on-surface-variant">انتخاب از پرونده حیوانات خانگی شما</label>
                             <a href="profile.php#pets-section" target="_blank" class="text-xs text-primary font-bold hover:underline flex items-center gap-1">
                                 <span class="material-symbols-outlined text-sm">edit</span>
-                                <span>مدیریت حیوانات خانگی در پروفایل</span>
+                                <span>مدیریت و افزودن حیوان در پروفایل</span>
                             </a>
                         </div>
-                        <select class="w-full h-12 px-4 appearance-none rounded-lg border border-outline-variant focus:border-primary-container bg-white text-sm" onchange="if(this.value){ const p = JSON.parse(this.value); document.getElementById('pet_type').value = p.type; document.getElementById('pet_race').value = p.race; checkFormCompleteness(); }">
+                        <select class="w-full h-12 px-4 appearance-none rounded-lg border border-outline-variant focus:border-primary-container bg-white text-sm" onchange="onSelectSavedPet(this)">
                             <option value="">-- انتخاب کنید یا اطلاعات را به صورت دستی وارد کنید --</option>
                             <?php foreach($user_pets as $pet): ?>
-                                <option value='<?php echo json_encode(["type" => $pet["type"], "race" => $pet["race"]]); ?>'><?php echo htmlspecialchars($pet['name'] . ' (' . $pet['type'] . ')'); ?></option>
+                                <option value='<?php echo json_encode([
+                                    "id" => $pet["id"],
+                                    "name" => $pet["name"],
+                                    "type" => $pet["type"],
+                                    "race" => $pet["race"],
+                                    "gender" => $pet["gender"] ?? "",
+                                    "age" => $pet["age"] ?? "",
+                                    "weight_kg" => $pet["weight_kg"] ?? ""
+                                ]); ?>'><?php echo htmlspecialchars($pet['name'] . ' (' . $pet['type'] . ' - ' . ($pet['weight_kg'] ? $pet['weight_kg'] . ' کیلوگرم' : 'بدون وزن') . ')'); ?></option>
                             <?php endforeach; ?>
                         </select>
                     </div>
@@ -366,7 +423,14 @@ $booked_slots_json = json_encode($booked_slots);
                     <?php endif; ?>
                     
                     <div class="space-y-2">
-                        <label class="text-label-md font-bold text-on-surface-variant">نوع حیوان</label>
+                        <label class="text-label-md font-bold text-on-surface-variant">نام حیوان خانگی</label>
+                        <input type="text" name="pet_name_display" id="pet_name_display" placeholder="مثال: لئو، برفی..."
+                               oninput="document.getElementById('input_pet_name').value = this.value; checkFormCompleteness();"
+                               class="w-full h-12 px-4 rounded-lg border border-outline-variant focus:border-primary-container focus:ring-1 focus:ring-primary-container bg-white text-sm text-on-surface transition-colors" />
+                    </div>
+
+                    <div class="space-y-2">
+                        <label class="text-label-md font-bold text-on-surface-variant">نوع حیوان *</label>
                         <div class="relative">
                             <select name="pet_type" id="pet_type" required class="w-full h-12 px-4 appearance-none rounded-lg border border-outline-variant focus:border-primary-container focus:ring-1 focus:ring-primary-container bg-white text-sm text-on-surface transition-colors pr-4 pl-10" onchange="checkFormCompleteness()">
                                 <option value="">انتخاب کنید...</option>
@@ -384,6 +448,15 @@ $booked_slots_json = json_encode($booked_slots);
                     <div class="space-y-2">
                         <label class="text-label-md font-bold text-on-surface-variant">نژاد (اختیاری)</label>
                         <input type="text" name="pet_race" id="pet_race" value="" placeholder="مثال: پرشین، ژرمن و..."
+                               class="w-full h-12 px-4 rounded-lg border border-outline-variant focus:border-primary-container focus:ring-1 focus:ring-primary-container bg-white text-sm text-on-surface transition-colors" />
+                    </div>
+
+                    <div class="space-y-2">
+                        <label class="text-label-md font-bold text-on-surface-variant flex items-center gap-1">
+                            <span class="material-symbols-outlined text-primary text-sm">scale</span>
+                            <span>وزن حیوان (کیلوگرم)</span>
+                        </label>
+                        <input type="number" step="0.1" min="0.1" max="150" name="pet_weight" id="pet_weight" placeholder="مثال: ۴.۵"
                                class="w-full h-12 px-4 rounded-lg border border-outline-variant focus:border-primary-container focus:ring-1 focus:ring-primary-container bg-white text-sm text-on-surface transition-colors" />
                     </div>
 
@@ -861,7 +934,98 @@ $booked_slots_json = json_encode($booked_slots);
         }
     }
 
-    <?php if (!empty($_GET['doctor_id'])): ?>
+    function onSelectSavedPet(el) {
+        if (!el.value) return;
+        try {
+            const p = JSON.parse(el.value);
+            if (p.type) document.getElementById('pet_type').value = p.type;
+            if (p.race) document.getElementById('pet_race').value = p.race;
+            if (p.weight_kg) document.getElementById('pet_weight').value = p.weight_kg;
+            if (p.id) document.getElementById('input_pet_id').value = p.id;
+            if (p.name) {
+                document.getElementById('input_pet_name').value = p.name;
+                const nameDisplay = document.getElementById('pet_name_display');
+                if (nameDisplay) nameDisplay.value = p.name;
+            }
+            if (p.gender) document.getElementById('input_pet_gender').value = p.gender;
+            if (p.age) document.getElementById('input_pet_age').value = p.age;
+        } catch(e) {
+            console.error(e);
+        }
+        checkFormCompleteness();
+    }
+
+    function selectOrganizationDirect(org) {
+        document.querySelectorAll('.doctor-card').forEach(c => {
+            c.classList.remove('selected', 'border-indigo-600', 'ring-2', 'ring-indigo-500/30');
+            const btn = c.querySelector('.select-btn');
+            if (btn) {
+                const isGr = (c.dataset.type === 'groomer');
+                btn.className = "w-full mt-4 border-2 border-indigo-100 bg-indigo-50/60 text-indigo-700 py-2.5 rounded-xl text-xs font-bold hover:bg-indigo-600 hover:border-indigo-600 hover:text-white transition-all shadow-sm select-btn flex items-center justify-center gap-1";
+                btn.innerHTML = `<span class="material-symbols-outlined text-sm">${isGr ? 'content_cut' : 'event_available'}</span><span>${isGr ? 'انتخاب گرومر و رزرو اصلاح' : 'انتخاب پزشک و رزرو نوبت'}</span>`;
+            }
+        });
+
+        const orgBtn = document.getElementById('btnSelectDirectOrg');
+        if (orgBtn) {
+            orgBtn.classList.remove('bg-sky-500');
+            orgBtn.classList.add('bg-emerald-600', 'ring-2', 'ring-white');
+            orgBtn.innerHTML = '<span class="material-symbols-outlined text-base">check</span><span>پذیرش مستقیم انتخاب شد</span>';
+        }
+
+        selectedDoctorId = 'org';
+        document.getElementById('input_doctor_id').value = "0";
+        document.getElementById('input_organization_id').value = org.id;
+
+        // Active standard daily hours for hospital
+        selectedDoctorSchedule = {
+            'sat': ['09:00', '10:00', '11:00', '12:00', '16:00', '17:00', '18:00', '19:00', '20:00'],
+            'sun': ['09:00', '10:00', '11:00', '12:00', '16:00', '17:00', '18:00', '19:00', '20:00'],
+            'mon': ['09:00', '10:00', '11:00', '12:00', '16:00', '17:00', '18:00', '19:00', '20:00'],
+            'tue': ['09:00', '10:00', '11:00', '12:00', '16:00', '17:00', '18:00', '19:00', '20:00'],
+            'wed': ['09:00', '10:00', '11:00', '12:00', '16:00', '17:00', '18:00', '19:00', '20:00'],
+            'thu': ['09:00', '10:00', '11:00', '12:00', '16:00', '17:00', '18:00', '19:00'],
+            'fri': ['10:00', '11:00', '12:00', '17:00', '18:00', '19:00']
+        };
+
+        // Update summary
+        document.getElementById('summary-doctor').classList.remove('opacity-50');
+        document.getElementById('summary-doctor-name').textContent = org.name;
+        document.getElementById('summary-doctor-img').src = org.image || 'assets/images/presentation-dog.jpg';
+        document.getElementById('summary-doctor-spec').textContent = 'پذیرش عمومی و اورژانس درمانگاه';
+        document.getElementById('summary-role-label').textContent = 'مرکز درمانی انتخابی';
+        document.getElementById('summary-clinic').textContent = org.address || org.name;
+
+        const priceNum = parseInt(org.price, 10) || 250000;
+        const commNum = Math.round(priceNum * 0.05);
+        document.getElementById('summary-base-fee').textContent = new Intl.NumberFormat('fa-IR').format(priceNum) + ' تومان';
+        document.getElementById('summary-commission').textContent = new Intl.NumberFormat('fa-IR').format(commNum) + ' تومان (شامل در تعرفه)';
+        document.getElementById('summary-price').textContent = new Intl.NumberFormat('fa-IR').format(priceNum);
+
+        // Reset Date & Time
+        selectedDate = null;
+        selectedTime = null;
+        document.getElementById('input_date').value = "";
+        document.getElementById('input_time').value = "";
+        document.getElementById('summary-date').textContent = "انتخاب نشده";
+        document.getElementById('summary-time').textContent = "انتخاب نشده";
+
+        renderDates();
+        updateStepper();
+        checkFormCompleteness();
+    }
+
+    <?php if (!empty($selectedOrg)): ?>
+    window.addEventListener('DOMContentLoaded', () => {
+        selectOrganizationDirect(<?= json_encode([
+            'id' => $selectedOrg['id'],
+            'name' => $selectedOrg['name'],
+            'price' => $selectedOrg['consultation_fee'] > 0 ? (int)$selectedOrg['consultation_fee'] : 250000,
+            'image' => !empty($selectedOrg['logo_url']) ? $selectedOrg['logo_url'] : 'assets/images/presentation-dog.jpg',
+            'address' => $selectedOrg['address'] ?? ''
+        ]) ?>);
+    });
+    <?php elseif (!empty($_GET['doctor_id'])): ?>
     window.addEventListener('DOMContentLoaded', () => {
         const targetDoc = document.querySelector(`.doctor-card[data-id="<?= (int)$_GET['doctor_id'] ?>"]`);
         if (targetDoc) {
