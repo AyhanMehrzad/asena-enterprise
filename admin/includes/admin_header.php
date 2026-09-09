@@ -200,44 +200,51 @@ $adminName = $adminCheck['name'] ?? 'مدیر سیستم';
             $activeKey = 'security_logs';
         } elseif ($currentFile === 'payouts.php') {
             $activeKey = 'payouts';
+        } elseif ($currentFile === 'reviews.php') {
+            $activeKey = 'reviews';
         } elseif ($currentFile === 'guide.php') {
             $activeKey = 'guide';
         }
 
         $pendingVerificationsCount = 0;
+        $openTicketsCount = 0;
+        $pendingReviewsCount = 0;
         try {
             $pendingVerificationsCount = (int)$pdo->query("SELECT COUNT(*) FROM role_applications WHERE status = 'pending'")->fetchColumn();
+            $openTicketsCount = (int)$pdo->query("SELECT COUNT(*) FROM tickets WHERE mode = 'admin' AND status = 'open'")->fetchColumn();
+            $pendingReviewsCount = (int)$pdo->query("SELECT COUNT(*) FROM reviews WHERE status = 'pending' OR rating <= 2")->fetchColumn();
         } catch (Throwable $e) {}
 
         $navSections = [
-            'اکوسیستم و مراکز' => [
-                'dashboard'      => ['icon' => 'dashboard', 'title' => 'پیشخوان مدیریت کلان', 'url' => 'index.php'],
+            'حاکمیت و نظارت بر پلتفرم' => [
+                'dashboard'      => ['icon' => 'dashboard', 'title' => 'پیشخوان پایش کلان', 'url' => 'index.php'],
+                'reviews'        => ['icon' => 'rate_review', 'title' => 'پایش کیفیت و نظرات', 'url' => 'reviews.php', 'badge' => $pendingReviewsCount],
                 'top_performers' => ['icon' => 'military_tech', 'title' => 'تالار برگزیدگان (Top 5)', 'url' => 'top_performers.php'],
+            ],
+            'مراکز و تامین‌کنندگان' => [
                 'organizations'  => ['icon' => 'apartment', 'title' => 'مراکز درمانی و بیمارستان‌ها', 'url' => 'organizations.php'],
-                'doctors'        => ['icon' => 'stethoscope', 'title' => 'پزشکان و تعاملات درمانی', 'url' => 'doctors.php'],
+                'doctors'        => ['icon' => 'stethoscope', 'title' => 'پزشکان و متخصصین', 'url' => 'doctors.php'],
                 'sellers'        => ['icon' => 'store', 'title' => 'فروشندگان و پت‌شاپ‌ها', 'url' => 'sellers.php'],
+                'verifications'  => ['icon' => 'verified_user', 'title' => 'احراز صلاحیت مدارک', 'url' => 'verifications.php', 'badge' => $pendingVerificationsCount],
+            ],
+            'لجستیک و سفارشات سراسری' => [
+                'orders'          => ['icon' => 'local_shipping', 'title' => 'سفارشات و رهگیری پستکس', 'url' => 'orders.php'],
+                'subscriptions'   => ['icon' => 'event_repeat', 'title' => 'اشتراک‌های ادواری (Autoship)', 'url' => 'subscriptions.php', 'feature' => 'autoship'],
+                'inventory'       => ['icon' => 'inventory_2', 'title' => 'نظارت بر کاتالوگ و محصولات', 'url' => 'inventory.php'],
+                'rfq_management'  => ['icon' => 'request_quote', 'title' => 'استعلام‌های عمده (RFQ)', 'url' => 'rfq_management.php'],
             ],
             'مالی و تسویه پایا' => [
                 'payouts'   => ['icon' => 'account_balance_wallet', 'title' => 'تسویه پایا و کارمزد ۵٪', 'url' => 'payouts.php'],
                 'analytics' => ['icon' => 'analytics', 'title' => 'تحلیل و آمار کلان', 'url' => 'analytics.php'],
             ],
-            'فروشگاه و عملیات' => [
-                'orders'          => ['icon' => 'local_shipping', 'title' => 'سفارشات سراسری', 'url' => 'orders.php'],
-                'inventory'       => ['icon' => 'inventory_2', 'title' => 'انبار و محصولات', 'url' => 'inventory.php'],
-                'pharmacist_queue'=> ['icon' => 'prescriptions', 'title' => 'تایید نسخه الکترونیک (Rx)', 'url' => 'pharmacist_queue.php', 'feature' => 'prescription_rx'],
-                'subscriptions'   => ['icon' => 'event_repeat', 'title' => 'مدیریت اشتراک‌ها (Autoship)', 'url' => 'subscriptions.php', 'feature' => 'autoship'],
-                'rfq_management'  => ['icon' => 'request_quote', 'title' => 'استعلام عمده و مناقصات (RFQ)', 'url' => 'rfq_management.php'],
-            ],
-            'کاربران و امنیت' => [
+            'پشتیبانی، امنیت و کاربران' => [
+                'tickets'       => ['icon' => 'support_agent', 'title' => 'مرکز تیکتینگ و شکایات', 'url' => 'tickets.php', 'badge' => $openTicketsCount],
                 'security_logs' => ['icon' => 'shield', 'title' => 'پایش امنیت و لاگ‌ها (SOC)', 'url' => 'security_logs.php'],
-                'verifications' => ['icon' => 'verified_user', 'title' => 'احراز صلاحیت پزشکان و مراکز', 'url' => 'verifications.php', 'badge' => $pendingVerificationsCount],
                 'users'         => ['icon' => 'group', 'title' => 'مدیریت کاربران و نقش‌ها', 'url' => 'user_management.php'],
-                'tickets'       => ['icon' => 'support_agent', 'title' => 'تیکت و پشتیبانی', 'url' => 'tickets.php'],
                 'sms_settings'  => ['icon' => 'sms', 'title' => 'تنظیمات پیامک و اعلان', 'url' => 'sms_settings.php', 'feature' => 'sms_automation'],
             ],
             'محتوا و راهنما' => [
                 'blogs' => ['icon' => 'edit_note', 'title' => 'مدیریت وبلاگ و مقالات', 'url' => 'blogs.php', 'feature' => 'blog_engine'],
-                'blog'  => ['icon' => 'auto_stories', 'title' => 'مشاهده پایگاه دانش', 'url' => '../knowledge_base.php', 'external' => true, 'feature' => 'blog_engine'],
                 'guide' => ['icon' => 'menu_book', 'title' => 'راهنمای پنل ادمین', 'url' => 'guide.php'],
             ]
         ];
