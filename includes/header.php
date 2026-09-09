@@ -301,6 +301,7 @@ $effective_geo_icbm = $geo_icbm ?? '35.7350, 51.4110';
     </script>
 </head>
 <body class="bg-background text-on-background overflow-x-hidden">
+<?php require_once __DIR__ . '/paw_loader.php'; ?>
 <?php
 $top_notif = null;
 if (function_exists('get_curated_recommendations')) {

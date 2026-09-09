@@ -169,7 +169,7 @@ require_once __DIR__ . '/includes/header.php';
 
         <!-- Filter & Search Bar -->
         <div id="directory" class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200/80">
-            <form method="GET" action="organizations.php" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-3.5 items-end">
+            <form method="GET" action="organizations.php" onsubmit="window.AsenaLoader.show('در حال جستجو و فیلتر مراکز...');" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-3.5 items-end">
                 
                 <!-- Search Query -->
                 <div class="lg:col-span-4">
@@ -456,6 +456,14 @@ require_once __DIR__ . '/includes/header.php';
                     <span class="material-symbols-outlined text-base">arrow_back</span>
                 </a>
             </div>
+        </div>
+
+        <!-- Floating Loader Preview Pill -->
+        <div class="fixed bottom-24 left-4 z-40 flex items-center">
+            <button type="button" onclick="window.AsenaLoader.show('پیش‌نمایش انیمیشن ردپای حیوانات و بارگذاری سریع')" class="bg-white/95 hover:bg-white text-sky-800 px-3.5 py-2 rounded-2xl shadow-xl border border-sky-200/80 backdrop-blur-md text-xs font-black flex items-center gap-2 transition-all hover:scale-105 active:scale-95 cursor-pointer" title="تست و مشاهده مجدد انیمیشن لودینگ">
+                <span class="material-symbols-outlined text-sky-600 text-base animate-spin" style="animation-duration: 4s;">pets</span>
+                <span>تست انیمیشن لودینگ</span>
+            </button>
         </div>
 
     </div>
