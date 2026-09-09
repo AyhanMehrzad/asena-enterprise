@@ -138,8 +138,6 @@ $effective_geo_icbm = $geo_icbm ?? '35.7350, 51.4110';
     <meta name="ICBM" content="<?php echo htmlspecialchars($effective_geo_icbm); ?>">
 
     <!-- ASENA Instant Full-Screen Loader & Veiled Screen (Zero FOUC) -->
-    <link rel="stylesheet" href="assets/css/paw-loader.css">
-    <script src="assets/js/paw-loader.js"></script>
 
     <!-- Master Brand Favicon Suite (Prioritized for Browser Tabs & Google Guidelines) -->
     <link rel="icon" type="image/png" sizes="32x32" href="assets/images/favicon-32x32.png?v=logo1">
@@ -278,7 +276,6 @@ $effective_geo_icbm = $geo_icbm ?? '35.7350, 51.4110';
     <link rel="stylesheet" href="assets/css/style.css?v=<?php echo time(); ?>">
     <link rel="stylesheet" href="assets/css/enterprise-ui.css?v=<?php echo time(); ?>">
     <!-- Universal Lazy Loading Engine -->
-    <script src="assets/js/lazy-loader.js" defer></script>
     <!-- PWA Service Worker Registration -->
     <script>
     if ('serviceWorker' in navigator) {
