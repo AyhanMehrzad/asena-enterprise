@@ -275,7 +275,11 @@ $effective_geo_icbm = $geo_icbm ?? '35.7350, 51.4110';
     <script src="assets/js/tailwind-config.js?v=<?php echo time(); ?>"></script>
     <link rel="stylesheet" href="assets/css/style.css?v=<?php echo time(); ?>">
     <link rel="stylesheet" href="assets/css/enterprise-ui.css?v=<?php echo time(); ?>">
-    <!-- Universal Lazy Loading Engine -->
+    <link rel="stylesheet" href="assets/css/paw-loader.css?v=<?php echo time(); ?>">
+    
+    <!-- Universal Lazy Loading & Progress Animation Engine -->
+    <script src="assets/js/paw-loader.js?v=<?php echo time(); ?>"></script>
+    <script src="assets/js/lazy-loader.js?v=<?php echo time(); ?>" defer></script>
     <!-- PWA Service Worker Registration -->
     <script>
     if ('serviceWorker' in navigator) {
@@ -297,6 +301,7 @@ $effective_geo_icbm = $geo_icbm ?? '35.7350, 51.4110';
     </script>
 </head>
 <body class="bg-background text-on-background overflow-x-hidden">
+<?php require_once __DIR__ . '/paw_loader.php'; ?>
 <?php
 $top_notif = null;
 if (function_exists('get_curated_recommendations')) {
