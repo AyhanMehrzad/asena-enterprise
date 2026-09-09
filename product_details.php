@@ -169,6 +169,10 @@ $og_image = !empty($product['image_url']) ? $product['image_url'] : 'assets/imag
 $og_type = 'product';
 $product_price_irr = ($product['discount_price'] ?: $product['price']) * 10;
 
+$proto = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') || (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https') ? 'https' : 'http';
+$host = $_SERVER['HTTP_HOST'] ?? 'asena.company';
+$canonical_url = "$proto://$host/product_details.php?id={$product_id}" . ($type === 'pharmacy' ? '&type=pharmacy' : '');
+
 require_once 'includes/header.php';
 ?>
 

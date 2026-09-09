@@ -4,6 +4,26 @@ if (!Feature::has('charity_campaigns')) {
     header('Location: index.php');
     exit;
 }
+// Dynamic SEO & Structured Data for Charity
+$page_title = "پویش‌های خیریه و درمان حیوانات بی‌سرپرست | نقاهتگاه و درمانگاه آسنا";
+$page_description = "مشارکت در درمان، واکسیناسیون، عقیم‌سازی و تامین غذای سگ‌ها و گربه‌های بی‌سرپرست با گزارش‌دهی شفاف، فاکتورهای بالینی و ترخیص در آسنا.";
+$og_type = 'website';
+
+$proto = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') || (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https') ? 'https' : 'http';
+$host = $_SERVER['HTTP_HOST'] ?? 'asena.company';
+$page_schema = json_encode([
+    "@context" => "https://schema.org",
+    "@type" => "NGO",
+    "name" => "پویش‌های درمانی و حمایتی حیوانات آسنا",
+    "url" => "$proto://$host/charity.php",
+    "description" => $page_description,
+    "logo" => "$proto://$host/assets/images/logo.png",
+    "areaServed" => [
+        "@type" => "Country",
+        "name" => "Iran"
+    ]
+], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+
 include 'includes/header.php';
 
 // Fetch active campaigns with accurate calculated current_amount & donor_count

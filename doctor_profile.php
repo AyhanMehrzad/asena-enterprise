@@ -52,6 +52,7 @@ $og_type = 'profile';
 // Doctor Schema.org JSON-LD Structured Data
 $proto = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') || (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https') ? 'https' : 'http';
 $host = $_SERVER['HTTP_HOST'] ?? 'asena.company';
+$canonical_url = "$proto://$host/doctor_profile.php?id={$doctorId}";
 $absAvatar = strpos($doctor['avatar_url'] ?? '', 'http') === 0 
     ? $doctor['avatar_url'] 
     : "$proto://$host/" . ltrim($doctor['avatar_url'] ?? 'assets/images/placeholders/placeholder-doctor.svg', '/');

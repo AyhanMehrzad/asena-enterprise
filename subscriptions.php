@@ -17,6 +17,11 @@ if (Feature::has('pharmacy_catalog')) {
     $catalog_products = array_merge($catalog_products, $stmt->fetchAll(PDO::FETCH_ASSOC));
 }
 
+// Dynamic SEO Metadata for Autoship Subscriptions
+$page_title = "سفارش دوره‌ای و تحویل خودکار ملزومات پت (Autoship) | تخفیف دائمی آسنا";
+$page_description = "با سرویس ارسال دوره‌ای و خودکار آسنا، ملزومات ضروری سگ و گربه را با تخفیف دائمی و ارسال منظم بدون نگرانی از اتمام غذا تحویل بگیرید.";
+$og_type = 'website';
+
 include 'includes/header.php';
 ?>
 

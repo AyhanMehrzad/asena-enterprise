@@ -7,7 +7,17 @@ RewriteRule .* - [e=HTTP_AUTHORIZATION:%1]
 # 2. Dynamic Sitemap rewrite
 RewriteRule ^sitemap\.xml$ sitemap.php [L]
 
-# 3. Remove .php extension from URLs
+# 3. Torob & Emalls Product Discovery Feed
+RewriteRule ^torob\.json$ api/torob_feed.php [L]
+RewriteRule ^torob$ api/torob_feed.php [L]
+
+# 4. Clean SEF URLs for Products, Doctors, Articles, Clinics
+RewriteRule ^product/([0-9]+)(/.*)?$ product_details.php?id=$1 [QSA,L]
+RewriteRule ^doctor/([0-9]+)(/.*)?$ doctor_profile.php?id=$1 [QSA,L]
+RewriteRule ^article/([a-zA-Z0-9_-]+)$ knowledge_base.php?article=$1 [QSA,L]
+RewriteRule ^clinic/([a-zA-Z0-9_-]+)$ organization_profile.php?slug=$1 [QSA,L]
+
+# 5. Remove .php extension from URLs
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME}.php -f

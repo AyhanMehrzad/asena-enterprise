@@ -1079,6 +1079,101 @@ function buildUrlRemoveArrayItem($arrayName, $valueToRemove) {
     </section>
     <?php endif; ?>
 
+    <!-- ========================================================================= -->
+    <!-- SECTION 6: PET SHOP CATEGORY SEO CONTENT & FAQ ACCORDION                 -->
+    <!-- ========================================================================= -->
+    <?php
+    $faq_title = "راهنمای خرید و سوالات متداول پت‌شاپ آنلاین آسنا";
+    $seo_guide_title = "پت‌شاپ تخصصی و اینترنتی آسنا (ASENA Pet Shop)";
+    $seo_guide_text = "سامانه جامع خدمات پت آسنا؛ مرجع تخصصی خرید آنلاین ملزومات حیوانات خانگی با تضمین اصالت و سلامت فیزیکی کالا، تاریخ انقضای معتبر و ارسال اکسپرس به سراسر کشور. با سیستم ارسال دوره‌ای Autoship آسنا، دیگر نگران تمام شدن غذای خشک، خاک یا مکمل‌های پت خود نخواهید بود.";
+    
+    $shop_faqs = [
+        [
+            'q' => 'سرویس ارسال دوره‌ای خودکار (Autoship) آسنا چیست و چه مزیتی دارد؟',
+            'a' => 'در سرویس Autoship شما دوره مصرف غذای پت خود (مثلاً هر ۳۰ یا ۴۵ روز یک‌بار) را مشخص می‌کنید و سیستم به‌صورت هوشمند و خودکار، بدون نیاز به ثبت سفارش مجدد، با تخفیف دائمی ۱۰٪ سفارش را برای شما ارسال می‌کند.'
+        ],
+        [
+            'q' => 'آیا محصولات پت‌شاپ آسنا دارای ضمانت اصالت کالا هستند؟',
+            'a' => 'بله؛ تمامی محصولات خارجی و ایرانی دارای بارکد اصالت، هولوگرام شرکتی و تاریخ انقضای معتبر هستند و با ضمانت بازگشت وجه در صورت هرگونه مغایرت ارائه می‌شوند.'
+        ],
+        [
+            'q' => 'مدت زمان ارسال سفارشات در تهران و شهرستان‌ها چقدر است؟',
+            'a' => 'سفارشات شهر تهران در کمتر از ۲ الی ۴ ساعت با پیک اختصاصی تحویل می‌شوند و سفارشات سایر استان‌ها از طریق پست پیشتاز ظرف ۲۴ الی ۷۲ ساعت کاری به دست خریدار می‌رسند.'
+        ],
+        [
+            'q' => 'چگونه می‌توانم مناسب‌ترین غذا را برای نژاد و سن حیوان خانگی‌ام انتخاب کنم؟',
+            'a' => 'شما می‌توانید از فیلترهای هوشمند گونه و رده سنی در بالای صفحه استفاده کنید، یا از طریق تماس با بخش پشتیبانی و مشاوره تخصصی دامپزشکی آسنا، راهنمایی رایگان دریافت نمایید.'
+        ]
+    ];
+
+    if ($animal === 'dog') {
+        $seo_guide_title = "راهنمای جامع خرید غذای سگ، مکمل‌ها و ملزومات سگ در آسنا";
+        $seo_guide_text = "خرید اینترنتی انواع غذای خشک سگ با بالاترین کیفیت پروتئینی برای توله‌سگ‌ها (Puppy) و سگ‌های بالغ (Adult). تنوع کامل برندهای معتبر جهانی و داخلی شامل غذای خشک، کنسرو، پوچ لذیذ، تشویقی‌های آموزش و دندانپزشکی، پد بهداشتی و قلاده با بهترین قیمت و ارسال اکسپرس.";
+        $shop_faqs[0] = [
+            'q' => 'تفاوت فرمولاسیون غذای خشک پاپی با غذای سگ بالغ چیست؟',
+            'a' => 'غذای توله‌سگ (Puppy) دارای درصد بالاتری از پروتئین زیستی، کلسیم و فسفر است تا نیاز رشد استخوان‌ها و عضلات را تامین کند؛ در حالی که غذای سگ بالغ بر حفظ وزن ایده‌آل و مفاصل متمرکز است.'
+        ];
+    } elseif ($animal === 'cat') {
+        $seo_guide_title = "راهنمای تخصصی خرید غذای گربه، خاک بستر و تشویقی در آسنا";
+        $seo_guide_text = "تخصصی‌ترین مرجع خرید اینترنتی غذای گربه؛ شامل فرمول‌های غذای خشک گربه‌های عقیم‌شده (Sterilised)، گربه‌های داخل خانه (Indoor)، غذای درمانی هپاتیک و رنال، کنسرو و سوپ لذیذ، خاک بستر گرانول کربن‌دار با جذب بوی حداکثری و اسباب‌بازی‌های سرگرم‌کننده.";
+        $shop_faqs[0] = [
+            'q' => 'چرا گربه‌های عقیم‌شده حتماً باید غذای استریلایزد (Sterilised) مصرف کنند؟',
+            'a' => 'پس از جراحی عقیم‌سازی متابولیسم بدن گربه حدود ۲۰ درصد کاهش یافته اما اشتهای حیوان افزایش می‌یابد. غذای استریلایزد با کالری کنترل‌شده، مانع از چاقی مفرط و تشکیل سنگ‌های مثانه و انسداد ادراری می‌شود.'
+        ];
+    }
+    ?>
+
+    <section class="mt-16 bg-white rounded-3xl p-8 border border-outline-variant/30 shadow-sm">
+        <div class="max-w-4xl mx-auto mb-10 text-center">
+            <span class="inline-flex items-center gap-1.5 px-3 py-1 bg-primary/10 text-primary text-xs font-bold rounded-full mb-3">
+                <span class="material-symbols-outlined text-[16px]">verified</span>
+                مرجع تخصصی ملزومات حیوانات خانگی
+            </span>
+            <h3 class="text-2xl md:text-3xl font-bold text-primary mb-3"><?= htmlspecialchars($seo_guide_title) ?></h3>
+            <p class="text-xs md:text-sm text-on-surface-variant leading-relaxed text-justify md:text-center"><?= htmlspecialchars($seo_guide_text) ?></p>
+        </div>
+
+        <div class="max-w-3xl mx-auto mb-6">
+            <h4 class="text-lg font-bold text-primary mb-4 flex items-center gap-2">
+                <span class="material-symbols-outlined text-primary text-xl">help</span>
+                <?= htmlspecialchars($faq_title) ?>
+            </h4>
+            <div class="space-y-3">
+                <?php foreach ($shop_faqs as $idx => $faq): ?>
+                <div class="border border-outline-variant/30 rounded-2xl p-4 hover:border-primary/40 transition-colors">
+                    <div class="font-bold text-primary text-sm flex items-center justify-between cursor-pointer select-none" onclick="this.nextElementSibling.classList.toggle('hidden'); this.querySelector('.arrow-icon').classList.toggle('rotate-180')">
+                        <span><?= ($idx + 1) . '. ' . htmlspecialchars($faq['q']) ?></span>
+                        <span class="material-symbols-outlined text-primary arrow-icon transition-transform">expand_more</span>
+                    </div>
+                    <p class="text-xs text-on-surface-variant mt-3 leading-relaxed hidden">
+                        <?= htmlspecialchars($faq['a']) ?>
+                    </p>
+                </div>
+                <?php endforeach; ?>
+            </div>
+        </div>
+    </section>
+
+    <!-- Schema.org JSON-LD FAQPage for Shop SEO -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        <?php foreach ($shop_faqs as $i => $faq): ?>
+        {
+          "@type": "Question",
+          "name": "<?= addslashes($faq['q']) ?>",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "<?= addslashes($faq['a']) ?>"
+          }
+        }<?= ($i < count($shop_faqs) - 1) ? ',' : '' ?>
+        <?php endforeach; ?>
+      ]
+    }
+    </script>
+
 </main>
 
 <!-- Client Side Interactive Scripts -->
