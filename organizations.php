@@ -275,8 +275,12 @@ require_once __DIR__ . '/includes/header.php';
                         <!-- Header Banner & Badges -->
                         <div class="h-36 relative p-4 flex items-start justify-between">
                             <!-- Background with overflow-hidden for rounded top corners -->
-                            <div class="absolute inset-0 rounded-t-3xl overflow-hidden bg-gradient-to-br from-slate-800 via-sky-950 to-indigo-950 bg-cover bg-center" style="<?= !empty($org['banner_url']) ? "background-image: url('" . htmlspecialchars($org['banner_url']) . "');" : '' ?>">
-                                <div class="absolute inset-0 opacity-20 bg-[radial-gradient(#38bdf8_1px,transparent_1px)] [background-size:16px_16px] <?= !empty($org['banner_url']) ? 'bg-black/40' : '' ?>"></div>
+                            <?php 
+                                $hasBanner = !empty($org['banner_url']);
+                                $bannerBgAttr = $hasBanner ? 'data-bg="' . htmlspecialchars($org['banner_url']) . '"' : '';
+                            ?>
+                            <div class="absolute inset-0 rounded-t-3xl overflow-hidden bg-gradient-to-br from-slate-800 via-sky-950 to-indigo-950 bg-cover bg-center lazy-img-wrapper" <?= $bannerBgAttr ?> style="<?= $hasBanner ? "background-image: url('" . htmlspecialchars($org['banner_url']) . "');" : '' ?>">
+                                <div class="absolute inset-0 opacity-20 bg-[radial-gradient(#38bdf8_1px,transparent_1px)] [background-size:16px_16px] <?= $hasBanner ? 'bg-black/40' : '' ?>"></div>
                             </div>
                             
                             <!-- Badges Left/Right -->
@@ -316,9 +320,9 @@ require_once __DIR__ . '/includes/header.php';
                             </div>
 
                             <!-- Logo Overlay (Floating OVER both banner and white card body) -->
-                            <div class="absolute -bottom-7 right-6 w-16 h-16 rounded-2xl bg-white shadow-xl border-2 border-white flex items-center justify-center overflow-hidden z-30 group-hover:scale-105 transition-transform p-1.5">
+                            <div class="absolute -bottom-7 right-6 w-16 h-16 rounded-2xl bg-white shadow-xl border-2 border-white flex items-center justify-center overflow-hidden z-30 group-hover:scale-105 transition-transform p-1.5 lazy-img-wrapper">
                                 <?php if (!empty($org['logo_url'])): ?>
-                                    <img src="<?= htmlspecialchars($org['logo_url']) ?>" alt="<?= htmlspecialchars($org['name']) ?>" class="w-full h-full object-contain">
+                                    <img loading="lazy" decoding="async" src="<?= htmlspecialchars($org['logo_url']) ?>" alt="<?= htmlspecialchars($org['name']) ?>" onerror="this.onerror=null; this.src='assets/images/placeholders/placeholder-no-image.svg';" class="w-full h-full object-contain">
                                 <?php else: ?>
                                     <span class="material-symbols-outlined text-3xl text-sky-600">local_hospital</span>
                                 <?php endif; ?>
@@ -387,9 +391,9 @@ require_once __DIR__ . '/includes/header.php';
                                     <div class="flex items-center gap-1.5 text-indigo-700 font-bold">
                                         <div class="flex -space-x-2 -space-x-reverse overflow-hidden">
                                             <?php foreach (array_slice($docList, 0, 3) as $doc): ?>
-                                                <div class="inline-block h-6 w-6 rounded-full ring-2 ring-white bg-slate-200 overflow-hidden" title="<?= htmlspecialchars($doc['name']) ?>">
+                                                <div class="inline-block h-6 w-6 rounded-full ring-2 ring-white bg-slate-200 overflow-hidden lazy-img-wrapper" title="<?= htmlspecialchars($doc['name']) ?>">
                                                     <?php if (!empty($doc['image_url'])): ?>
-                                                        <img class="h-full w-full object-cover" src="<?= htmlspecialchars($doc['image_url']) ?>" alt="<?= htmlspecialchars($doc['name']) ?>">
+                                                        <img loading="lazy" decoding="async" class="h-full w-full object-cover" src="<?= htmlspecialchars($doc['image_url']) ?>" alt="<?= htmlspecialchars($doc['name']) ?>" onerror="this.onerror=null; this.src='assets/images/placeholders/placeholder-doctor.svg';">
                                                     <?php else: ?>
                                                         <span class="material-symbols-outlined text-sm text-slate-600 flex items-center justify-center h-full">person</span>
                                                     <?php endif; ?>
