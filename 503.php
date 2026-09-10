@@ -1,4 +1,6 @@
 <?php
+$base_path = rtrim(str_replace(DIRECTORY_SEPARATOR, '/', dirname($_SERVER['SCRIPT_NAME'] ?? '')), '/');
+if ($base_path === '/') $base_path = '';
 http_response_code(503);
 header('Retry-After: 300');
 ?>
@@ -7,11 +9,11 @@ header('Retry-After: 300');
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>۵۰۳ | کلینیک در حال ضدعفونی و نگهداری دوره‌ای است - آسنا</title>
+    <title>۵۰۳ | در حال به‌روزرسانی - آسنا</title>
     <meta name="robots" content="noindex, follow">
-    <link rel="icon" type="image/x-icon" href="/favicon.ico">
-    <link rel="stylesheet" href="/assets/css/vazirmatn.css">
-    <link rel="stylesheet" href="/assets/css/material-symbols.css">
+    <link rel="icon" type="image/x-icon" href="<?= $base_path ?>/favicon.ico">
+    <link rel="stylesheet" href="<?= $base_path ?>/assets/css/vazirmatn.css">
+    <link rel="stylesheet" href="<?= $base_path ?>/assets/css/material-symbols.css">
     <style>
         :root {
             --primary: #001a48;
@@ -47,9 +49,9 @@ header('Retry-After: 300');
             background: #ffffff;
             border-radius: 32px;
             box-shadow: 0 25px 60px -15px rgba(2, 132, 199, 0.15), 0 0 0 1px rgba(224, 242, 254, 0.8);
-            max-width: 600px;
+            max-width: 580px;
             width: 100%;
-            padding: 44px 32px;
+            padding: 40px 32px;
             position: relative;
             overflow: hidden;
             z-index: 1;
@@ -76,36 +78,82 @@ header('Retry-After: 300');
             border-radius: 9999px;
             font-size: 12px;
             font-weight: 800;
-            margin-bottom: 16px;
+            margin-bottom: 20px;
         }
 
+        /* Tidy Mascot Layout */
         .mascot-area {
-            position: relative;
-            width: 150px;
-            height: 110px;
-            margin: 0 auto 12px;
             display: flex;
             align-items: center;
             justify-content: center;
+            margin: 0 auto 16px;
         }
 
-        .doctor-pets {
-            font-size: 64px;
-            display: inline-block;
-            animation: bounceMascot 2.8s ease-in-out infinite alternate;
+        .mascot-circle {
+            width: 105px;
+            height: 105px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 40% 40%, #ffffff 0%, #e0f2fe 65%, #bae6fd 100%);
+            border: 3px solid #ffffff;
+            box-shadow: 0 10px 25px -5px rgba(2, 132, 199, 0.22), 0 0 0 1px #bae6fd;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
         }
 
-        @keyframes bounceMascot {
-            0% { transform: scale(1) translateY(0); }
-            100% { transform: scale(1.05) translateY(-6px); }
+        .rabbit-avatar {
+            font-size: 52px;
+            line-height: 1;
+            display: block;
+            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.08));
+            animation: bunnyFloat 2.8s ease-in-out infinite alternate;
         }
 
-        .tools-badge {
+        @keyframes bunnyFloat {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(-4px); }
+        }
+
+        .stethoscope-badge {
             position: absolute;
-            top: 6px;
-            right: 16px;
-            font-size: 26px;
-            animation: spinTool 5s linear infinite;
+            bottom: -4px;
+            left: -4px;
+            width: 36px;
+            height: 36px;
+            background: #ffffff;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            line-height: 1;
+            box-shadow: 0 4px 10px rgba(2, 132, 199, 0.25);
+            border: 2px solid #bae6fd;
+            animation: stethoWiggle 3s ease-in-out infinite alternate;
+        }
+
+        @keyframes stethoWiggle {
+            0% { transform: rotate(-6deg); }
+            100% { transform: rotate(6deg); }
+        }
+
+        .gear-badge {
+            position: absolute;
+            top: -4px;
+            right: -4px;
+            width: 32px;
+            height: 32px;
+            background: #ffffff;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            line-height: 1;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            border: 2px solid #bae6fd;
+            animation: spinTool 6s linear infinite;
         }
 
         @keyframes spinTool {
@@ -114,7 +162,7 @@ header('Retry-After: 300');
         }
 
         .error-code {
-            font-size: 76px;
+            font-size: 72px;
             font-weight: 900;
             line-height: 1;
             letter-spacing: -2px;
@@ -135,16 +183,16 @@ header('Retry-After: 300');
             font-size: 13.5px;
             color: var(--text-muted);
             line-height: 1.8;
-            margin-bottom: 24px;
+            margin-bottom: 22px;
         }
 
         .info-card {
             background: #f8fafc;
-            border: 1px solid #e2e8f0;
+            border: 1px dashed #cbd5e1;
             border-radius: 16px;
             padding: 12px 18px;
             margin-bottom: 24px;
-            font-size: 12.5px;
+            font-size: 13px;
             color: #475569;
             display: flex;
             align-items: center;
@@ -156,7 +204,7 @@ header('Retry-After: 300');
             flex-wrap: wrap;
             gap: 10px;
             justify-content: center;
-            margin-bottom: 20px;
+            margin-bottom: 12px;
         }
 
         .btn-info-custom {
@@ -201,47 +249,77 @@ header('Retry-After: 300');
             background: #f8fafc;
             border-color: #94a3b8;
         }
+
+        .asena-svg-icon {
+            width: 18px;
+            height: 18px;
+            fill: currentColor;
+            display: inline-block;
+            vertical-align: middle;
+        }
     </style>
 </head>
 <body>
 
+    <!-- Direct Embedded SVG Icons (100% Zero-Latency, Never raw text) -->
+    <svg id="error-icons-defs" xmlns="http://www.w3.org/2000/svg" style="display: none;">
+      <symbol id="icon-cleaning_services" viewBox="0 -960 960 960">
+        <path d="M160-120v-80h640v80H160Zm160-160v-200h80v200h-80Zm240 0v-200h80v200h-80ZM200-560v-80h160v-160q0-33 23.5-56.5T440-880h80q33 0 56.5 23.5T600-800v160h160v80H200Zm240-240h80v-80h-80v80Z"/>
+      </symbol>
+      <symbol id="icon-schedule" viewBox="0 -960 960 960">
+        <path d="m612-292 56-56-148-148v-184h-80v216l172 172ZM480-80q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Zm0-400Zm0 320q133 0 226.5-93.5T800-480q0-133-93.5-226.5T480-800q-133 0-226.5 93.5T160-480q0 133 93.5 226.5T480-160Z"/>
+      </symbol>
+      <symbol id="icon-refresh" viewBox="0 -960 960 960">
+        <path d="M480-160q-134 0-227-93t-93-227q0-134 93-227t227-93q69 0 132 28.5T720-690v-110h80v280H520v-80h168q-32-56-87.5-88T480-720q-100 0-170 70t-70 170q0 100 70 170t170 70q77 0 139-44t87-116h84q-28 106-114 173t-196 67Z"/>
+      </symbol>
+      <symbol id="icon-home" viewBox="0 -960 960 960">
+        <path d="M240-200h120v-240h240v240h120v-360L480-740 240-560v360Zm-80 80v-480l320-240 320 240v480H520v-240h-80v240H160Zm320-350Z"/>
+      </symbol>
+    </svg>
+
     <div class="error-card">
         
         <div class="badge-error">
-            <span class="material-symbols-outlined" style="font-size: 16px;">cleaning_services</span>
-            <span>خطای ۵۰۳ - سرویس در حال تعمیر و به‌روزرسانی</span>
+            <svg class="asena-svg-icon" aria-hidden="true"><use href="#icon-cleaning_services"></use></svg>
+            <span>خطای ۵۰۳ - در حال به‌روزرسانی</span>
         </div>
 
         <div class="mascot-area">
-            <div class="doctor-pets">🩺🐰</div>
-            <div class="tools-badge">⚙️</div>
+            <div class="mascot-circle">
+                <span class="rabbit-avatar">🐰</span>
+                <span class="stethoscope-badge">🩺</span>
+                <span class="gear-badge">⚙️</span>
+            </div>
         </div>
 
         <div class="error-code">503</div>
 
-        <h1>کلینیک در حال ضدعفونی و چکاپ دوره‌ای سرورهاست!</h1>
+        <h1>کلینیک در حال به‌روزرسانی سرورهاست</h1>
         <p class="desc">
-            پزشکان و مهندسان آسنا در حال اجرای عملیات ارتقای پایداری و بهینه‌سازی سرورها هستند. سرویس به زودی و در کمتر از چند دقیقه مجدداً در دسترس قرار خواهد گرفت.
+            پزشکان و مهندسان فنی آسنا در حال بهینه‌سازی و ارتقای پایداری زیرساخت هستند. سرویس تا دقایقی دیگر مجدداً در دسترس خواهد بود.
         </p>
 
         <div class="info-card">
-            <span>⏱️ وضعیت عملیات نگهداری:</span>
+            <span style="display: inline-flex; align-items: center; gap: 6px;">
+                <svg class="asena-svg-icon" style="color: #0284c7;" aria-hidden="true"><use href="#icon-schedule"></use></svg>
+                وضعیت عملیات:
+            </span>
             <span style="font-weight: 800; color: #0284c7;">در حال اعمال آخرین تست‌ها...</span>
         </div>
 
         <div class="action-row">
             <button onclick="window.location.reload()" class="btn-info-custom">
-                <span class="material-symbols-outlined">refresh</span>
-                بررسی مجدد در دسترس بودن
+                <svg class="asena-svg-icon" aria-hidden="true"><use href="#icon-refresh"></use></svg>
+                <span>بررسی مجدد</span>
             </button>
-            <a href="/" class="btn-secondary-custom">
-                <span class="material-symbols-outlined">home</span>
-                صفحه اصلی
+            <a href="<?= $base_path ?>/" class="btn-secondary-custom">
+                <svg class="asena-svg-icon" aria-hidden="true"><use href="#icon-home"></use></svg>
+                <span>صفحه اصلی</span>
             </a>
         </div>
 
     </div>
 
-    <script src="/assets/js/offline-icons.js"></script>
+    <script src="<?= $base_path ?>/assets/js/offline-icons.js"></script>
 </body>
 </html>

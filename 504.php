@@ -1,4 +1,6 @@
 <?php
+$base_path = rtrim(str_replace(DIRECTORY_SEPARATOR, '/', dirname($_SERVER['SCRIPT_NAME'] ?? '')), '/');
+if ($base_path === '/') $base_path = '';
 http_response_code(504);
 ?>
 <!DOCTYPE html>
@@ -6,11 +8,11 @@ http_response_code(504);
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>۵۰۴ | لاک‌پشت نامه‌رسان در ترافیک مونده! - آسنا</title>
+    <title>۵۰۴ | مهلت زمانی سرور - آسنا</title>
     <meta name="robots" content="noindex, follow">
-    <link rel="icon" type="image/x-icon" href="/favicon.ico">
-    <link rel="stylesheet" href="/assets/css/vazirmatn.css">
-    <link rel="stylesheet" href="/assets/css/material-symbols.css">
+    <link rel="icon" type="image/x-icon" href="<?= $base_path ?>/favicon.ico">
+    <link rel="stylesheet" href="<?= $base_path ?>/assets/css/vazirmatn.css">
+    <link rel="stylesheet" href="<?= $base_path ?>/assets/css/material-symbols.css">
     <style>
         :root {
             --primary: #001a48;
@@ -46,9 +48,9 @@ http_response_code(504);
             background: #ffffff;
             border-radius: 32px;
             box-shadow: 0 25px 60px -15px rgba(217, 119, 6, 0.15), 0 0 0 1px rgba(254, 243, 199, 0.8);
-            max-width: 600px;
+            max-width: 580px;
             width: 100%;
-            padding: 44px 32px;
+            padding: 40px 32px;
             position: relative;
             overflow: hidden;
             z-index: 1;
@@ -75,36 +77,59 @@ http_response_code(504);
             border-radius: 9999px;
             font-size: 12px;
             font-weight: 800;
-            margin-bottom: 16px;
+            margin-bottom: 20px;
         }
 
+        /* Tidy Mascot Layout */
         .mascot-area {
-            position: relative;
-            width: 140px;
-            height: 110px;
-            margin: 0 auto 12px;
             display: flex;
             align-items: center;
             justify-content: center;
+            margin: 0 auto 16px;
         }
 
-        .turtle-box {
-            font-size: 64px;
-            display: inline-block;
-            animation: slowTurtle 4s ease-in-out infinite alternate;
+        .mascot-circle {
+            width: 105px;
+            height: 105px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 40% 40%, #ffffff 0%, #fef3c7 65%, #fde68a 100%);
+            border: 3px solid #ffffff;
+            box-shadow: 0 10px 25px -5px rgba(217, 119, 6, 0.22), 0 0 0 1px #fde68a;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
         }
 
-        @keyframes slowTurtle {
-            0% { transform: translateX(14px) rotate(0deg); }
-            100% { transform: translateX(-14px) rotate(-3deg); }
+        .turtle-avatar {
+            font-size: 52px;
+            line-height: 1;
+            display: block;
+            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.08));
+            animation: turtleWobble 3s ease-in-out infinite alternate;
         }
 
-        .hourglass-box {
+        @keyframes turtleWobble {
+            0% { transform: translateY(0) rotate(0deg); }
+            100% { transform: translateY(-4px) rotate(-3deg); }
+        }
+
+        .hourglass-badge {
             position: absolute;
-            top: 6px;
-            right: 12px;
-            font-size: 26px;
-            animation: flipHourglass 3s ease-in-out infinite;
+            bottom: -4px;
+            left: -4px;
+            width: 36px;
+            height: 36px;
+            background: #ffffff;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            line-height: 1;
+            box-shadow: 0 4px 10px rgba(217, 119, 6, 0.25);
+            border: 2px solid #fde68a;
+            animation: flipHourglass 3.5s ease-in-out infinite;
         }
 
         @keyframes flipHourglass {
@@ -114,7 +139,7 @@ http_response_code(504);
         }
 
         .error-code {
-            font-size: 76px;
+            font-size: 72px;
             font-weight: 900;
             line-height: 1;
             letter-spacing: -2px;
@@ -135,7 +160,7 @@ http_response_code(504);
             font-size: 13.5px;
             color: var(--text-muted);
             line-height: 1.8;
-            margin-bottom: 24px;
+            margin-bottom: 22px;
         }
 
         /* Countdown Card */
@@ -143,7 +168,7 @@ http_response_code(504);
             background: #f8fafc;
             border: 1px solid #e2e8f0;
             border-radius: 18px;
-            padding: 14px 20px;
+            padding: 12px 18px;
             margin-bottom: 24px;
         }
 
@@ -151,7 +176,7 @@ http_response_code(504);
             font-size: 13px;
             font-weight: 800;
             color: #475569;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -178,7 +203,7 @@ http_response_code(504);
             flex-wrap: wrap;
             gap: 10px;
             justify-content: center;
-            margin-bottom: 20px;
+            margin-bottom: 12px;
         }
 
         .btn-warning-custom {
@@ -223,20 +248,46 @@ http_response_code(504);
             background: #f8fafc;
             border-color: #94a3b8;
         }
+
+        .asena-svg-icon {
+            width: 18px;
+            height: 18px;
+            fill: currentColor;
+            display: inline-block;
+            vertical-align: middle;
+        }
     </style>
 </head>
 <body>
 
+    <!-- Direct Embedded SVG Icons (100% Zero-Latency, Never raw text) -->
+    <svg id="error-icons-defs" xmlns="http://www.w3.org/2000/svg" style="display: none;">
+      <symbol id="icon-timer" viewBox="0 -960 960 960">
+        <path d="M360-840v-80h240v80H360Zm80 440h80v-240h-80v240Zm40 320q-74 0-139.5-28.5T226-186q-49-49-77.5-114.5T120-440q0-74 28.5-139.5T226-694q49-49 114.5-77.5T480-800q62 0 119 20t107 58l56-56 56 56-56 56q38 50 58 107t20 119q0 74-28.5 139.5T734-186q-49 49-114.5 77.5T480-80Zm0-80q116 0 198-82t82-198q0-116-82-198t-198-82q-116 0-198 82t-82 198q0 116 82 198t198 82Zm0-280Z"/>
+      </symbol>
+      <symbol id="icon-autorenew" viewBox="0 -960 960 960">
+        <path d="M204-318q-22-38-33-78t-11-82q0-134 93-228t227-94h7l-64-64 56-56 160 160-160 160-56-56 64-64h-7q-100 0-170 70.5T240-478q0 26 6 51t18 49l-60 60ZM481-40 321-200l160-160 56 56-64 64h7q100 0 170-70.5T720-482q0-26-6-51t-18-49l60-60q22 38 33 78t11 82q0 134-93 228t-227 94h-7l64 64-56 56Z"/>
+      </symbol>
+      <symbol id="icon-rocket_launch" viewBox="0 -960 960 960">
+        <path d="m226-559 78 33q14-28 29-54t33-52l-56-11-84 84Zm142 83 114 113q42-16 90-49t90-75q70-70 109.5-155.5T806-800q-72-5-158 34.5T492-656q-42 42-75 90t-49 90Zm178-65q-23-23-23-56.5t23-56.5q23-23 57-23t57 23q23 23 23 56.5T660-541q-23 23-57 23t-57-23Zm19 321 84-84-11-56q-26 18-52 32.5T532-299l33 79Zm313-653q19 121-23.5 235.5T708-419l20 99q4 20-2 39t-20 33L538-80l-84-197-171-171-197-84 167-168q14-14 33.5-20t39.5-2l99 20q104-104 218-147t235-24ZM157-321q35-35 85.5-35.5T328-322q35 35 34.5 85.5T327-151q-25 25-83.5 43T82-76q14-103 32-161.5t43-83.5Zm57 56q-10 10-20 36.5T180-175q27-4 53.5-13.5T270-208q12-12 13-29t-11-29q-12-12-29-11.5T214-265Z"/>
+      </symbol>
+      <symbol id="icon-home" viewBox="0 -960 960 960">
+        <path d="M240-200h120v-240h240v240h120v-360L480-740 240-560v360Zm-80 80v-480l320-240 320 240v480H520v-240h-80v240H160Zm320-350Z"/>
+      </symbol>
+    </svg>
+
     <div class="error-card">
         
         <div class="badge-error">
-            <span class="material-symbols-outlined" style="font-size: 16px;">timer</span>
-            <span>خطای ۵۰۴ - مهلت زمانی سرور (Gateway Timeout)</span>
+            <svg class="asena-svg-icon" aria-hidden="true"><use href="#icon-timer"></use></svg>
+            <span>خطای ۵۰۴ - مهلت زمانی سرور</span>
         </div>
 
         <div class="mascot-area">
-            <div class="turtle-box" id="turtleMascot">🐢</div>
-            <div class="hourglass-box">⏳</div>
+            <div class="mascot-circle">
+                <span class="turtle-avatar" id="turtleMascot">🐢</span>
+                <span class="hourglass-badge">⏳</span>
+            </div>
         </div>
 
         <div class="error-code">504</div>
@@ -249,7 +300,7 @@ http_response_code(504);
         <!-- Auto Countdown -->
         <div class="countdown-card">
             <div class="countdown-text">
-                <span class="material-symbols-outlined" style="font-size: 18px; color: #d97706;">autorenew</span>
+                <svg class="asena-svg-icon" style="color: #d97706;" aria-hidden="true"><use href="#icon-autorenew"></use></svg>
                 <span>تلاش خودکار مجدد در <b id="countdownSec" style="color: #d97706; font-size: 15px;">10</b> ثانیه دیگر...</span>
             </div>
             <div class="progress-bar-bg">
@@ -259,18 +310,18 @@ http_response_code(504);
 
         <div class="action-row">
             <button onclick="instantRetry()" class="btn-warning-custom" id="turboBtn">
-                <span>🚀</span>
-                <span>شلیک توربو به لاک‌پشت (تلاش مجدد فوری)</span>
+                <svg class="asena-svg-icon" aria-hidden="true"><use href="#icon-rocket_launch"></use></svg>
+                <span>تلاش مجدد فوری (شلیک توربو)</span>
             </button>
-            <a href="/" class="btn-secondary-custom">
-                <span class="material-symbols-outlined">home</span>
-                صفحه اصلی
+            <a href="<?= $base_path ?>/" class="btn-secondary-custom">
+                <svg class="asena-svg-icon" aria-hidden="true"><use href="#icon-home"></use></svg>
+                <span>صفحه اصلی</span>
             </a>
         </div>
 
     </div>
 
-    <script src="/assets/js/offline-icons.js"></script>
+    <script src="<?= $base_path ?>/assets/js/offline-icons.js"></script>
     <script>
         let timeLeft = 10;
         const countdownEl = document.getElementById('countdownSec');
@@ -291,9 +342,9 @@ http_response_code(504);
             clearInterval(interval);
             const btn = document.getElementById('turboBtn');
             const turtle = document.getElementById('turtleMascot');
-            if (turtle) turtle.style.transform = 'scale(1.3) translateX(-30px)';
+            if (turtle) turtle.style.transform = 'scale(1.25) translateX(-8px)';
             if (btn) {
-                btn.innerHTML = '<span>🚀</span> در حال برقراری اتصال توربو...';
+                btn.innerHTML = '<svg class="asena-svg-icon" aria-hidden="true"><use href="#icon-rocket_launch"></use></svg><span>در حال اتصال توربو...</span>';
                 btn.disabled = true;
             }
             setTimeout(() => {

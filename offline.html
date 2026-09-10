@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>آسنا | اتصال اینترنت قطع است (حالت آفلاین)</title>
-    <link rel="icon" type="image/x-icon" href="/favicon.ico">
-    <link rel="stylesheet" href="/assets/css/vazirmatn.css">
-    <link rel="stylesheet" href="/assets/css/material-symbols.css">
+    <title>آفلاین | قطع اتصال اینترنت - آسنا</title>
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <link rel="stylesheet" href="assets/css/vazirmatn.css">
+    <link rel="stylesheet" href="assets/css/material-symbols.css">
     <style>
         :root {
             --primary: #001a48;
@@ -220,6 +220,15 @@
             border-color: #94a3b8;
         }
 
+        .asena-svg-icon {
+            width: 20px;
+            height: 20px;
+            fill: currentColor;
+            display: inline-block;
+            vertical-align: middle;
+            flex-shrink: 0;
+        }
+
         /* Mini Game Canvas Card */
         .game-card {
             background: #0f172a;
@@ -272,7 +281,41 @@
             border-radius: 14px;
             display: block;
             cursor: pointer;
+            touch-action: none;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        .mobile-jump-bar {
+            margin-top: 10px;
+            display: flex;
+            width: 100%;
+        }
+
+        .mobile-jump-btn {
+            width: 100%;
+            padding: 13px 18px;
+            background: linear-gradient(135deg, #fd8100 0%, #ea580c 100%);
+            color: #ffffff;
+            border: none;
+            border-radius: 14px;
+            font-size: 14px;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            cursor: pointer;
             touch-action: manipulation;
+            box-shadow: 0 4px 14px rgba(253, 129, 0, 0.3);
+            transition: transform 0.08s ease, filter 0.08s ease;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+        }
+
+        .mobile-jump-btn:active, .mobile-jump-btn.btn-active {
+            transform: scale(0.97);
+            filter: brightness(0.92);
         }
 
         .game-instruction {
@@ -387,31 +430,109 @@
             position: fixed;
             top: 24px;
             left: 50%;
-            transform: translateX(-50%) translateY(-100px);
+            transform: translateX(-50%) translateY(-120px);
             background: #10b981;
             color: white;
             font-weight: 800;
-            font-size: 14px;
-            padding: 12px 28px;
+            font-size: 13.5px;
+            padding: 10px 22px;
             border-radius: 9999px;
             box-shadow: 0 10px 25px rgba(16, 185, 129, 0.4);
-            display: flex;
+            display: inline-flex;
             align-items: center;
             gap: 8px;
+            white-space: nowrap;
+            max-width: 90vw;
+            box-sizing: border-box;
             transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             z-index: 1000;
+            pointer-events: none;
         }
 
         #onlineToast.show {
             transform: translateX(-50%) translateY(0);
         }
+
+        @media (max-width: 520px) {
+            body {
+                padding: 14px 10px;
+            }
+            .offline-container {
+                padding: 24px 14px;
+                border-radius: 24px;
+            }
+            h1 {
+                font-size: 19px;
+            }
+            .lead {
+                font-size: 13px;
+                margin-bottom: 16px;
+            }
+            .action-row {
+                flex-direction: column;
+                gap: 8px;
+                width: 100%;
+            }
+            .action-row .btn-primary-custom,
+            .action-row .btn-secondary-custom {
+                width: 100%;
+                box-sizing: border-box;
+            }
+            .game-card {
+                padding: 12px 10px;
+                border-radius: 18px;
+            }
+            .game-header {
+                font-size: 11px;
+            }
+            #onlineToast {
+                font-size: 12px;
+                padding: 8px 16px;
+                white-space: normal;
+                text-align: center;
+            }
+        }
     </style>
 </head>
 <body>
 
+    <!-- Embedded Offline SVG Icons (100% Zero-Network Guarantee) -->
+    <svg id="offline-icon-defs" xmlns="http://www.w3.org/2000/svg" style="display: none;">
+      <symbol id="icon-wifi" viewBox="0 -960 960 960">
+        <path d="M480-120q-42 0-71-29t-29-71q0-42 29-71t71-29q42 0 71 29t29 71q0 42-29 71t-71 29ZM254-346l-84-86q59-59 138.5-93.5T480-560q92 0 171.5 35T790-430l-84 84q-44-44-102-69t-124-25q-66 0-124 25t-102 69ZM84-516 0-600q92-94 215-147t265-53q142 0 265 53t215 147l-84 84q-77-77-178.5-120.5T480-680q-116 0-217.5 43.5T84-516Z"/>
+      </symbol>
+      <symbol id="icon-refresh" viewBox="0 -960 960 960">
+        <path d="M480-160q-134 0-227-93t-93-227q0-134 93-227t227-93q69 0 132 28.5T720-690v-110h80v280H520v-80h168q-32-56-87.5-88T480-720q-100 0-170 70t-70 170q0 100 70 170t170 70q77 0 139-44t87-116h84q-28 106-114 173t-196 67Z"/>
+      </symbol>
+      <symbol id="icon-arrow_back" viewBox="0 -960 960 960">
+        <path d="m313-440 224 224-57 56-320-320 320-320 57 56-224 224h487v80H313Z"/>
+      </symbol>
+      <symbol id="icon-volume_up" viewBox="0 -960 960 960">
+        <path d="M560-131v-82q90-26 145-100t55-168q0-94-55-168T560-749v-82q124 28 202 125.5T840-481q0 127-78 224.5T560-131ZM120-360v-240h160l200-200v640L280-360H120Zm440 40v-322q47 22 73.5 66t26.5 96q0 51-26.5 94.5T560-320ZM400-606l-86 86H200v80h114l86 86v-252ZM300-480Z"/>
+      </symbol>
+      <symbol id="icon-volume_off" viewBox="0 -960 960 960">
+        <path d="M792-56 671-177q-25 16-53 27.5T560-131v-82q14-5 27.5-10t25.5-12L480-368v208L280-360H120v-240h128L56-792l56-56 736 736-56 56Zm-8-232-58-58q17-31 25.5-65t8.5-70q0-94-55-168T560-749v-82q124 28 202 125.5T840-481q0 53-14.5 102T784-288ZM650-422l-90-90v-130q47 22 73.5 66t26.5 96q0 15-2.5 29.5T650-422ZM480-592 376-696l104-104v208Zm-80 238v-94l-72-72H200v80h114l86 86Zm-36-130Z"/>
+      </symbol>
+      <symbol id="icon-medical_services" viewBox="0 -960 960 960">
+        <path d="M160-80q-33 0-56.5-23.5T80-160v-480q0-33 23.5-56.5T160-720h160v-80q0-33 23.5-56.5T400-880h160q33 0 56.5 23.5T640-800v80h160q33 0 56.5 23.5T880-640v480q0 33-23.5 56.5T800-80H160Zm0-80h640v-480H160v480Zm240-560h160v-80H400v80ZM160-160v-480 480Zm280-200v120h80v-120h120v-80H520v-120h-80v120H320v80h120Z"/>
+      </symbol>
+      <symbol id="icon-expand_more" viewBox="0 -960 960 960">
+        <path d="M480-345 240-585l56-56 184 184 184-184 56 56-240 240Z"/>
+      </symbol>
+      <symbol id="icon-phone_in_talk" viewBox="0 -960 960 960">
+        <path d="M760-480q0-117-81.5-198.5T480-760v-80q75 0 140.5 28.5t114 77q48.5 48.5 77 114T840-480h-80Zm-160 0q0-50-35-85t-85-35v-80q83 0 141.5 58.5T680-480h-80Zm198 360q-125 0-247-54.5T329-329Q229-429 174.5-551T120-798q0-18 12-30t30-12h162q14 0 25 9.5t13 22.5l26 140q2 16-1 27t-11 19l-97 98q20 37 47.5 71.5T387-386q31 31 65 57.5t72 48.5l94-94q9-9 23.5-13.5T670-390l138 28q14 4 23 14.5t9 23.5v162q0 18-12 30t-30 12ZM241-600l66-66-17-94h-89q5 41 14 81t26 79Zm358 358q39 17 79.5 27t81.5 13v-88l-94-19-67 67ZM241-600Zm358 358Z"/>
+      </symbol>
+      <symbol id="icon-autorenew" viewBox="0 -960 960 960">
+        <path d="M204-318q-22-38-33-78t-11-82q0-134 93-228t227-94h7l-64-64 56-56 160 160-160 160-56-56 64-64h-7q-100 0-170 70.5T240-478q0 26 6 51t18 49l-60 60ZM481-40 321-200l160-160 56 56-64 64h7q100 0 170-70.5T720-482q0-26-6-51t-18-49l60-60q22 38 33 78t11 82q0 134-93 228t-227 94h-7l64 64-56 56Z"/>
+      </symbol>
+      <symbol id="icon-wifi_off" viewBox="0 -960 960 960">
+        <path d="M790-56 414-434q-47 11-87.5 33T254-346l-84-86q32-32 69-56t79-42l-90-90q-41 21-76.5 46.5T84-516L0-602q32-32 66.5-57.5T140-708l-84-84 56-56 736 736-58 56Zm-310-64q-42 0-71-29.5T380-220q0-42 29-71t71-29q42 0 71 29t29 71q0 41-29 70.5T480-120Zm236-238-29-29-29-29-144-144q81 8 151.5 41T790-432l-74 74Zm160-158q-77-77-178.5-120.5T480-680q-21 0-40.5 1.5T400-674L298-776q44-12 89.5-18t92.5-6q142 0 265 53t215 145l-84 86Z"/>
+      </symbol>
+    </svg>
+
     <div id="onlineToast">
-        <span class="material-symbols-outlined">wifi</span>
-        اینترنت متصل شد! در حال بازگشت به سامانه آسنا...
+        <svg class="asena-svg-icon" aria-hidden="true"><use href="#icon-wifi"></use></svg>
+        <span>اینترنت متصل شد! در حال بازگشت به سامانه آسنا...</span>
     </div>
 
     <div class="offline-container">
@@ -439,12 +560,12 @@
         <!-- Actions -->
         <div class="action-row">
             <button onclick="checkConnectionNow()" class="btn-primary-custom" id="retryBtn">
-                <span class="material-symbols-outlined">refresh</span>
-                تست مجدد اتصال
+                <svg class="asena-svg-icon" aria-hidden="true"><use href="#icon-refresh"></use></svg>
+                <span>تست مجدد اتصال</span>
             </button>
             <button onclick="window.history.back()" class="btn-secondary-custom">
-                <span class="material-symbols-outlined">arrow_back</span>
-                بازگشت به صفحه قبل
+                <svg class="asena-svg-icon" aria-hidden="true"><use href="#icon-arrow_back"></use></svg>
+                <span>بازگشت به صفحه قبل</span>
             </button>
         </div>
 
@@ -463,10 +584,18 @@
 
             <canvas id="gameCanvas" width="560" height="150"></canvas>
 
+            <div class="mobile-jump-bar">
+                <button type="button" id="mobileJumpBtn" class="mobile-jump-btn" aria-label="پرش هاپو">
+                    <span>🐾 برای پرش هاپو لمس کنید (یا کلیک روی صفحه)</span>
+                </button>
+            </div>
+
             <div class="game-instruction">
-                <span>💡 کلیک روی کادر یا فشردن <b>Space</b> برای پرش</span>
+                <span>💡 فشردن <b>Space</b> یا لمس دکمه برای پرش</span>
                 <button type="button" class="btn-sound-toggle" onclick="toggleSound()" title="قطع/وصل صدا">
-                    <span id="soundIcon" class="material-symbols-outlined" style="font-size: 18px;">volume_up</span>
+                    <svg id="soundIconSvg" class="asena-svg-icon" style="width: 18px; height: 18px;" aria-hidden="true">
+                        <use href="#icon-volume_up"></use>
+                    </svg>
                 </button>
             </div>
         </div>
@@ -474,14 +603,14 @@
         <!-- Offline First Aid Box -->
         <div class="first-aid-box">
             <div class="first-aid-header">
-                <span class="material-symbols-outlined" style="color: #ef4444;">medical_services</span>
+                <svg class="asena-svg-icon" style="color: #ef4444; width: 18px; height: 18px;" aria-hidden="true"><use href="#icon-medical_services"></use></svg>
                 <span>راهنمای اورژانس حیوانات خانگی (بدون نیاز به اینترنت):</span>
             </div>
 
             <details class="first-aid-item">
                 <summary>
                     <span>☀️ اقدامات فوری گرمازدگی سگ و گربه</span>
-                    <span class="material-symbols-outlined" style="font-size: 16px;">expand_more</span>
+                    <svg class="asena-svg-icon" style="width: 16px; height: 16px;" aria-hidden="true"><use href="#icon-expand_more"></use></svg>
                 </summary>
                 <p>حیوان را سریعاً به سایه یا جلوی باد کولر منتقل کنید. پنجه‌ها، گردن و کشاله ران را با آب ولرم مرطوب کنید. <b>هرگز از یخ یا آب خیلی سرد استفاده نکنید</b> زیرا شوک عروقی ایجاد می‌کند.</p>
             </details>
@@ -489,7 +618,7 @@
             <details class="first-aid-item">
                 <summary>
                     <span>🦴 خفگی یا گیر کردن جسم خارجی در گلو</span>
-                    <span class="material-symbols-outlined" style="font-size: 16px;">expand_more</span>
+                    <svg class="asena-svg-icon" style="width: 16px; height: 16px;" aria-hidden="true"><use href="#icon-expand_more"></use></svg>
                 </summary>
                 <p>فک را با احتیاط باز کرده و در صورت مشاهده جسم آن را با انگشت خارج کنید. در صورت بیهوشی، دست‌ها را زیر قفسه سینه قفل کرده و فشار ملایم رو به بالا وارد نمایید (هایملیک دامپزشکی).</p>
             </details>
@@ -497,7 +626,7 @@
             <details class="first-aid-item">
                 <summary>
                     <span>🧪 مسمومیت و بلعیدن مواد شوینده یا داروی انسانی</span>
-                    <span class="material-symbols-outlined" style="font-size: 16px;">expand_more</span>
+                    <svg class="asena-svg-icon" style="width: 16px; height: 16px;" aria-hidden="true"><use href="#icon-expand_more"></use></svg>
                 </summary>
                 <p>حیوان را وادار به استفراغ نکنید (به‌ویژه در مواد سوزاننده یا نفتی). نمونه بسته‌بندی سم را برداشته و بلافاصله با شماره اورژانس زیر تماس بگیرید.</p>
             </details>
@@ -507,7 +636,7 @@
         <div class="emergency-banner">
             <span>نیاز به راهنمایی تلفنی فوری در شرایط اضطراری دارید؟</span>
             <a href="tel:+989146676978" class="emergency-phone">
-                <span class="material-symbols-outlined" style="font-size: 18px;">phone_in_talk</span>
+                <svg class="asena-svg-icon" style="width: 18px; height: 18px;" aria-hidden="true"><use href="#icon-phone_in_talk"></use></svg>
                 +98 914 667 6978
             </a>
         </div>
@@ -515,7 +644,7 @@
     </div>
 
     <!-- Offline SVG & Icon Helper Script -->
-    <script src="/assets/js/offline-icons.js"></script>
+    <script src="assets/js/offline-icons.js"></script>
 
     <!-- Mini-Game Engine & Network Reconnect Radar -->
     <script>
@@ -566,8 +695,10 @@
 
         function toggleSound() {
             soundEnabled = !soundEnabled;
-            const icon = document.getElementById('soundIcon');
-            if (icon) icon.innerText = soundEnabled ? 'volume_up' : 'volume_off';
+            const useEl = document.querySelector('#soundIconSvg use');
+            if (useEl) {
+                useEl.setAttribute('href', soundEnabled ? '#icon-volume_up' : '#icon-volume_off');
+            }
         }
 
         // --- 2. Asena Puppy Runner Mini-Game ---
@@ -575,6 +706,7 @@
         const ctx = canvas.getContext('2d');
         const scoreEl = document.getElementById('currentScore');
         const highScoreEl = document.getElementById('highScore');
+        const mobileJumpBtn = document.getElementById('mobileJumpBtn');
 
         let highScore = parseInt(localStorage.getItem('asena_runner_highscore') || '0', 10);
         highScoreEl.innerText = highScore;
@@ -582,18 +714,23 @@
         let gameRunning = false;
         let gameOver = false;
         let score = 0;
-        let speed = 4;
+        
+        // Pacing & Physics (Comfortable, floaty, responsive)
+        const BASE_SPEED = 2.4;
+        let speed = BASE_SPEED;
+        let distanceSinceLastObstacle = 260;
+        let distanceSinceLastBone = 180;
         let frameCount = 0;
 
         const groundY = 120;
         const player = {
-            x: 60,
+            x: 55,
             y: groundY - 28,
-            width: 32,
+            width: 30,
             height: 28,
             vy: 0,
-            gravity: 0.7,
-            jumpPower: -10.5,
+            gravity: 0.38,
+            jumpPower: -7.8,
             isGrounded: true
         };
 
@@ -607,7 +744,9 @@
             obstacles = [];
             bones = [];
             score = 0;
-            speed = 4.2;
+            speed = BASE_SPEED;
+            distanceSinceLastObstacle = 260;
+            distanceSinceLastBone = 180;
             frameCount = 0;
             scoreEl.innerText = score;
             gameOver = false;
@@ -631,77 +770,114 @@
             }
         }
 
-        // Input Listeners
+        function handleJumpTrigger(e) {
+            if (e) {
+                if (e.cancelable) e.preventDefault();
+                e.stopPropagation();
+            }
+            jump();
+        }
+
+        // Input Listeners: Keyboard (Space / Up)
         window.addEventListener('keydown', (e) => {
             if (e.code === 'Space' || e.code === 'ArrowUp') {
                 e.preventDefault();
                 jump();
             }
         });
-        canvas.addEventListener('pointerdown', (e) => {
-            e.preventDefault();
-            jump();
-        });
 
-        function spawnEntities() {
-            // Spawn Obstacle
-            if (frameCount % 90 === 0 && Math.random() > 0.3) {
+        // Touch & Pointer Listeners for Canvas
+        canvas.addEventListener('pointerdown', handleJumpTrigger);
+        canvas.addEventListener('touchstart', handleJumpTrigger, { passive: false });
+        canvas.addEventListener('click', handleJumpTrigger);
+
+        // Touch & Pointer Listeners for Mobile Button
+        if (mobileJumpBtn) {
+            mobileJumpBtn.addEventListener('pointerdown', (e) => {
+                mobileJumpBtn.classList.add('btn-active');
+                handleJumpTrigger(e);
+            });
+            mobileJumpBtn.addEventListener('pointerup', () => mobileJumpBtn.classList.remove('btn-active'));
+            mobileJumpBtn.addEventListener('pointerleave', () => mobileJumpBtn.classList.remove('btn-active'));
+            mobileJumpBtn.addEventListener('touchstart', (e) => {
+                mobileJumpBtn.classList.add('btn-active');
+                handleJumpTrigger(e);
+            }, { passive: false });
+            mobileJumpBtn.addEventListener('touchend', () => mobileJumpBtn.classList.remove('btn-active'));
+            mobileJumpBtn.addEventListener('click', handleJumpTrigger);
+        }
+
+        function spawnEntities(dt) {
+            distanceSinceLastObstacle += speed * dt;
+            distanceSinceLastBone += speed * dt;
+
+            // Spawn Obstacles with guaranteed fair spacing (min 220px apart)
+            if (distanceSinceLastObstacle >= 220 && Math.random() < 0.03 * dt) {
                 const types = [
-                    { type: 'bush', w: 22, h: 26, color: '#16a34a' },
-                    { type: 'bowl', w: 20, h: 18, color: '#0284c7' },
-                    { type: 'fence', w: 16, h: 32, color: '#d97706' }
+                    { type: 'bush', w: 22, h: 22, color: '#16a34a' },
+                    { type: 'bowl', w: 20, h: 16, color: '#0284c7' },
+                    { type: 'fence', w: 16, h: 28, color: '#d97706' }
                 ];
                 const obs = types[Math.floor(Math.random() * types.length)];
                 obstacles.push({
-                    x: canvas.width + 20,
+                    x: canvas.width + 10,
                     y: groundY - obs.h,
                     w: obs.w,
                     h: obs.h,
                     color: obs.color,
                     type: obs.type
                 });
+                distanceSinceLastObstacle = 0;
             }
 
-            // Spawn Golden Bone
-            if (frameCount % 130 === 0 && Math.random() > 0.4) {
+            // Spawn Golden Bone at generous intervals
+            if (distanceSinceLastBone >= 250 && Math.random() < 0.02 * dt) {
                 bones.push({
-                    x: canvas.width + 40,
-                    y: groundY - 45 - (Math.random() * 30),
+                    x: canvas.width + 10,
+                    y: groundY - 45 - (Math.random() * 25),
                     w: 18,
                     h: 18,
                     collected: false
                 });
+                distanceSinceLastBone = 0;
             }
         }
 
-        function update() {
+        function update(dt) {
             if (!gameRunning || gameOver) return;
 
-            frameCount++;
-            speed += 0.0006; // Gradual speedup
+            frameCount += dt;
+            // Gentle acceleration up to max 3.9
+            speed = Math.min(speed + 0.00012 * dt, 3.9);
 
-            // Physics
-            player.vy += player.gravity;
-            player.y += player.vy;
+            // Physics with Delta Time
+            player.vy += player.gravity * dt;
+            player.y += player.vy * dt;
             if (player.y >= groundY - player.height) {
                 player.y = groundY - player.height;
                 player.vy = 0;
                 player.isGrounded = true;
             }
 
-            spawnEntities();
+            spawnEntities(dt);
 
             // Move & Collide Obstacles
             for (let i = obstacles.length - 1; i >= 0; i--) {
                 const obs = obstacles[i];
-                obs.x -= speed;
+                obs.x -= speed * dt;
 
-                // Collision with puppy
-                if (
-                    player.x + 4 < obs.x + obs.w &&
-                    player.x + player.width - 4 > obs.x &&
-                    player.y + player.height > obs.y + 4
-                ) {
+                // Generous, fair collision hitbox
+                const pLeft = player.x + 6;
+                const pRight = player.x + player.width - 6;
+                const pTop = player.y + 4;
+                const pBottom = player.y + player.height - 2;
+
+                const oLeft = obs.x + 4;
+                const oRight = obs.x + obs.w - 4;
+                const oTop = obs.y + 3;
+                const oBottom = obs.y + obs.h;
+
+                if (pRight > oLeft && pLeft < oRight && pBottom > oTop && pTop < oBottom) {
                     gameOver = true;
                     playCrashSound();
                     if (score > highScore) {
@@ -721,7 +897,7 @@
             // Move & Collect Bones
             for (let j = bones.length - 1; j >= 0; j--) {
                 const b = bones[j];
-                b.x -= speed;
+                b.x -= speed * dt;
 
                 if (!b.collected &&
                     player.x < b.x + b.w &&
@@ -745,9 +921,9 @@
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
             // 1. Draw Night Sky Stars
-            ctx.fillStyle = "rgba(255, 255, 255, 0.4)";
+            ctx.fillStyle = "rgba(255, 255, 255, 0.45)";
             for (let i = 0; i < 8; i++) {
-                const sx = (i * 75 + (frameCount * 0.2)) % canvas.width;
+                const sx = (i * 75 + (frameCount * 0.15)) % canvas.width;
                 const sy = 20 + (i * 9) % 50;
                 ctx.fillRect(sx, sy, 2, 2);
             }
@@ -764,7 +940,7 @@
             ctx.fillStyle = "#1e293b";
             ctx.fillRect(0, groundY + 1, canvas.width, canvas.height - groundY);
             ctx.fillStyle = "#475569";
-            for (let gx = - (frameCount * speed % 24); gx < canvas.width; gx += 24) {
+            for (let gx = - ((frameCount * speed) % 24); gx < canvas.width; gx += 24) {
                 ctx.fillRect(gx, groundY + 8, 12, 2);
             }
 
@@ -778,11 +954,11 @@
                 if (obs.type === 'bowl') {
                     ctx.fillStyle = "#ffffff";
                     ctx.font = "10px sans-serif";
-                    ctx.fillText("🥣", obs.x + 2, obs.y + 13);
+                    ctx.fillText("🥣", obs.x + 2, obs.y + 12);
                 } else if (obs.type === 'bush') {
                     ctx.fillStyle = "#ffffff";
                     ctx.font = "12px sans-serif";
-                    ctx.fillText("🌿", obs.x + 2, obs.y + 18);
+                    ctx.fillText("🌿", obs.x + 2, obs.y + 16);
                 }
             });
 
@@ -798,23 +974,21 @@
             ctx.save();
             ctx.translate(player.x, player.y);
             
-            // Draw cartoon running puppy with canvas shapes
             ctx.font = "26px sans-serif";
-            // Flap tail/bounce slightly based on ground status
-            const bobY = player.isGrounded ? Math.sin(frameCount * 0.4) * 2 : -2;
+            const bobY = player.isGrounded ? Math.sin(frameCount * 0.25) * 2 : -2;
             ctx.fillText("🐕", 0, 24 + bobY);
             ctx.restore();
 
             // 6. Overlay Messages
             if (!gameRunning) {
-                ctx.fillStyle = "rgba(15, 23, 42, 0.75)";
+                ctx.fillStyle = "rgba(15, 23, 42, 0.8)";
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
                 ctx.fillStyle = "#facc15";
                 ctx.font = "bold 15px Vazirmatn, sans-serif";
                 ctx.textAlign = "center";
-                ctx.fillText("🐾 برای شروع بازی، روی کادر کلیک کنید یا Space بزنید", canvas.width / 2, canvas.height / 2 + 5);
+                ctx.fillText("🐾 برای شروع بازی لمس کنید یا Space بزنید", canvas.width / 2, canvas.height / 2 + 5);
             } else if (gameOver) {
-                ctx.fillStyle = "rgba(15, 23, 42, 0.85)";
+                ctx.fillStyle = "rgba(15, 23, 42, 0.88)";
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
                 ctx.fillStyle = "#ef4444";
                 ctx.font = "bold 16px Vazirmatn, sans-serif";
@@ -822,16 +996,24 @@
                 ctx.fillText("💥 اوپس! به مانع برخورد کردید", canvas.width / 2, canvas.height / 2 - 10);
                 ctx.fillStyle = "#f8fafc";
                 ctx.font = "13px Vazirmatn, sans-serif";
-                ctx.fillText(`امتیاز شما: ${score} 🦴 | برای تلاش دوباره کلیک کنید`, canvas.width / 2, canvas.height / 2 + 16);
+                ctx.fillText(`امتیاز شما: ${score} 🦴 | برای تلاش دوباره لمس کنید`, canvas.width / 2, canvas.height / 2 + 16);
             }
         }
 
-        function gameLoop() {
-            update();
+        let lastTimestamp = 0;
+        function gameLoop(timestamp) {
+            if (!lastTimestamp) lastTimestamp = timestamp;
+            const elapsed = timestamp - lastTimestamp;
+            lastTimestamp = timestamp;
+
+            // Normalized to 60 FPS standard (16.67ms = 1.0)
+            const dt = Math.min(Math.max(elapsed / 16.667, 0.1), 2.0);
+
+            update(dt);
             draw();
             requestAnimationFrame(gameLoop);
         }
-        gameLoop();
+        requestAnimationFrame(gameLoop);
 
         // --- 3. Live Auto-Reconnect Detector & Heartbeat ---
         const toast = document.getElementById('onlineToast');
@@ -840,10 +1022,11 @@
         function handleOnline() {
             if (toast) toast.classList.add('show');
             playBoneSound();
-            if (!redirectTimer) {
+            // Don't interrupt if user is actively playing runner game
+            if (!redirectTimer && !gameRunning) {
                 redirectTimer = setTimeout(() => {
                     window.location.reload();
-                }, 1400);
+                }, 3500);
             }
         }
 
@@ -852,14 +1035,20 @@
         function checkConnectionNow() {
             const btn = document.getElementById('retryBtn');
             if (btn) {
-                btn.innerHTML = '<span class="material-symbols-outlined" style="animation: rotateRadar 1s linear infinite;">autorenew</span> در حال بررسی سیگنال...';
+                btn.innerHTML = '<svg class="asena-svg-icon" style="animation: rotateRadar 1s linear infinite;" aria-hidden="true"><use href="#icon-autorenew"></use></svg> <span>در حال بررسی سیگنال...</span>';
                 btn.disabled = true;
             }
 
-            fetch('/favicon.ico?t=' + Date.now(), { method: 'HEAD', cache: 'no-store' })
+            fetch('favicon.ico?t=' + Date.now(), { method: 'HEAD', cache: 'no-store' })
                 .then(res => {
                     if (res.ok) {
                         handleOnline();
+                        setTimeout(() => {
+                            if (btn) {
+                                btn.innerHTML = '<svg class="asena-svg-icon" aria-hidden="true"><use href="#icon-refresh"></use></svg> <span>تست مجدد اتصال</span>';
+                                btn.disabled = false;
+                            }
+                        }, 2500);
                     } else {
                         throw new Error('Offline');
                     }
@@ -867,9 +1056,9 @@
                 .catch(() => {
                     setTimeout(() => {
                         if (btn) {
-                            btn.innerHTML = '<span class="material-symbols-outlined">wifi_off</span> اتصال هنوز برقرار نشد';
+                            btn.innerHTML = '<svg class="asena-svg-icon" aria-hidden="true"><use href="#icon-wifi_off"></use></svg> <span>اتصال هنوز برقرار نشد</span>';
                             setTimeout(() => {
-                                btn.innerHTML = '<span class="material-symbols-outlined">refresh</span> تست مجدد اتصال';
+                                btn.innerHTML = '<svg class="asena-svg-icon" aria-hidden="true"><use href="#icon-refresh"></use></svg> <span>تست مجدد اتصال</span>';
                                 btn.disabled = false;
                             }, 1500);
                         }
@@ -880,7 +1069,7 @@
         // Automatic ping every 6 seconds
         setInterval(() => {
             if (navigator.onLine) {
-                fetch('/favicon.ico?t=' + Date.now(), { method: 'HEAD', cache: 'no-store' })
+                fetch('favicon.ico?t=' + Date.now(), { method: 'HEAD', cache: 'no-store' })
                     .then(res => { if (res.ok) handleOnline(); })
                     .catch(() => {});
             }

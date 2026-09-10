@@ -1,4 +1,6 @@
 <?php
+$base_path = rtrim(str_replace(DIRECTORY_SEPARATOR, '/', dirname($_SERVER['SCRIPT_NAME'] ?? '')), '/');
+if ($base_path === '/') $base_path = '';
 http_response_code(500);
 $errorTrackingId = 'ERR-' . strtoupper(substr(md5(uniqid(mt_rand(), true)), 0, 8));
 ?>
@@ -7,11 +9,11 @@ $errorTrackingId = 'ERR-' . strtoupper(substr(md5(uniqid(mt_rand(), true)), 0, 8
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>۵۰۰ | گربه بازیگوش سیم‌ها رو قاطی کرده! - آسنا</title>
+    <title>۵۰۰ | خطای داخلی سرور - آسنا</title>
     <meta name="robots" content="noindex, follow">
-    <link rel="icon" type="image/x-icon" href="/favicon.ico">
-    <link rel="stylesheet" href="/assets/css/vazirmatn.css">
-    <link rel="stylesheet" href="/assets/css/material-symbols.css">
+    <link rel="icon" type="image/x-icon" href="<?= $base_path ?>/favicon.ico">
+    <link rel="stylesheet" href="<?= $base_path ?>/assets/css/vazirmatn.css">
+    <link rel="stylesheet" href="<?= $base_path ?>/assets/css/material-symbols.css">
     <style>
         :root {
             --primary: #001a48;
@@ -47,9 +49,9 @@ $errorTrackingId = 'ERR-' . strtoupper(substr(md5(uniqid(mt_rand(), true)), 0, 8
             background: #ffffff;
             border-radius: 32px;
             box-shadow: 0 25px 60px -15px rgba(225, 29, 72, 0.14), 0 0 0 1px rgba(254, 205, 211, 0.7);
-            max-width: 600px;
+            max-width: 580px;
             width: 100%;
-            padding: 44px 32px;
+            padding: 40px 32px;
             position: relative;
             overflow: hidden;
             z-index: 1;
@@ -76,38 +78,59 @@ $errorTrackingId = 'ERR-' . strtoupper(substr(md5(uniqid(mt_rand(), true)), 0, 8
             border-radius: 9999px;
             font-size: 12px;
             font-weight: 800;
-            margin-bottom: 16px;
+            margin-bottom: 20px;
         }
 
-        /* Mascot Area: Cat + Yarn + Server */
+        /* Tidy Mascot Layout */
         .mascot-area {
-            position: relative;
-            width: 150px;
-            height: 120px;
-            margin: 0 auto 12px;
             display: flex;
             align-items: center;
             justify-content: center;
+            margin: 0 auto 16px;
         }
 
-        .cat-box {
-            font-size: 68px;
-            display: inline-block;
+        .mascot-circle {
+            width: 105px;
+            height: 105px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 40% 40%, #ffffff 0%, #ffe4e6 65%, #fecdd3 100%);
+            border: 3px solid #ffffff;
+            box-shadow: 0 10px 25px -5px rgba(225, 29, 72, 0.22), 0 0 0 1px #fecdd3;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .cat-avatar {
+            font-size: 52px;
+            line-height: 1;
+            display: block;
+            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.08));
             animation: catPlay 3s ease-in-out infinite;
-            z-index: 2;
         }
 
         @keyframes catPlay {
             0%, 100% { transform: translateY(0) rotate(0deg); }
-            30% { transform: translateY(-6px) rotate(-6deg); }
-            70% { transform: translateY(-2px) rotate(6deg); }
+            30% { transform: translateY(-4px) rotate(-5deg); }
+            70% { transform: translateY(-2px) rotate(5deg); }
         }
 
-        .yarn-box {
+        .yarn-badge {
             position: absolute;
-            bottom: 6px;
-            left: 14px;
-            font-size: 32px;
+            bottom: -4px;
+            left: -4px;
+            width: 36px;
+            height: 36px;
+            background: #ffffff;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            line-height: 1;
+            box-shadow: 0 4px 10px rgba(225, 29, 72, 0.25);
+            border: 2px solid #fecdd3;
             animation: rollYarn 4s linear infinite;
         }
 
@@ -116,21 +139,31 @@ $errorTrackingId = 'ERR-' . strtoupper(substr(md5(uniqid(mt_rand(), true)), 0, 8
             100% { transform: rotate(360deg); }
         }
 
-        .spark-box {
+        .spark-badge {
             position: absolute;
-            top: 10px;
-            right: 18px;
-            font-size: 26px;
+            top: -4px;
+            right: -4px;
+            width: 32px;
+            height: 32px;
+            background: #ffffff;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            line-height: 1;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            border: 2px solid #fecdd3;
             animation: sparkFlicker 1.5s infinite;
         }
 
         @keyframes sparkFlicker {
-            0%, 100% { opacity: 0.3; transform: scale(0.8); }
-            50% { opacity: 1; transform: scale(1.3); }
+            0%, 100% { opacity: 0.5; transform: scale(0.9); }
+            50% { opacity: 1; transform: scale(1.15); }
         }
 
         .error-code {
-            font-size: 76px;
+            font-size: 72px;
             font-weight: 900;
             line-height: 1;
             letter-spacing: -2px;
@@ -151,7 +184,7 @@ $errorTrackingId = 'ERR-' . strtoupper(substr(md5(uniqid(mt_rand(), true)), 0, 8
             font-size: 13.5px;
             color: var(--text-muted);
             line-height: 1.8;
-            margin-bottom: 22px;
+            margin-bottom: 20px;
         }
 
         /* Tracking Code Box */
@@ -162,7 +195,7 @@ $errorTrackingId = 'ERR-' . strtoupper(substr(md5(uniqid(mt_rand(), true)), 0, 8
             padding: 10px 16px;
             font-size: 12px;
             color: #475569;
-            margin-bottom: 24px;
+            margin-bottom: 22px;
             display: flex;
             align-items: center;
             justify-content: space-between;
@@ -196,7 +229,7 @@ $errorTrackingId = 'ERR-' . strtoupper(substr(md5(uniqid(mt_rand(), true)), 0, 8
             flex-wrap: wrap;
             gap: 10px;
             justify-content: center;
-            margin-bottom: 20px;
+            margin-bottom: 12px;
         }
 
         .btn-calm-cat {
@@ -241,37 +274,63 @@ $errorTrackingId = 'ERR-' . strtoupper(substr(md5(uniqid(mt_rand(), true)), 0, 8
             background: #f8fafc;
             border-color: #94a3b8;
         }
+
+        .asena-svg-icon {
+            width: 18px;
+            height: 18px;
+            fill: currentColor;
+            display: inline-block;
+            vertical-align: middle;
+        }
     </style>
 </head>
 <body>
 
+    <!-- Direct Embedded SVG Icons (100% Zero-Latency, Never raw text) -->
+    <svg id="error-icons-defs" xmlns="http://www.w3.org/2000/svg" style="display: none;">
+      <symbol id="icon-crisis_alert" viewBox="0 -960 960 960">
+        <path d="M480-80q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-114 59.5-210.5T301-838q1 19 4 38.5t10 45.5q-72 44-113.5 116.5T160-480q0 134 93 227t227 93q134 0 227-93t93-227q0-85-41.5-158T644-755q7-26 10-45.5t5-37.5q102 51 161.5 147T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Zm0-160q-100 0-170-70t-70-170q0-58 25.5-109t72.5-85q5 15 11 34.5t16 48.5q-22 23-33.5 51T320-480q0 66 47 113t113 47q66 0 113-47t47-113q0-32-11.5-60T595-591q8-24 14.5-44.5T621-674q47 34 73 85t26 109q0 100-70 170t-170 70Zm-40-380q-37-112-48.5-157.5T380-860q0-42 29-71t71-29q42 0 71 29t29 71q0 37-11.5 82.5T520-620h-80Zm40 220q-33 0-56.5-23.5T400-480q0-33 23.5-56.5T480-560q33 0 56.5 23.5T560-480q0 33-23.5 56.5T480-400Z"/>
+      </symbol>
+      <symbol id="icon-content_copy" viewBox="0 -960 960 960">
+        <path d="M300-200q-24 0-42-18t-18-42v-560q0-24 18-42t42-18h440q24 0 42 18t18 42v560q0 24-18 42t-42 18H300Zm0-60h440v-560H300v560ZM180-80q-24 0-42-18t-18-42v-620h60v620h500v60H180Zm120-180v-560 560Z"/>
+      </symbol>
+      <symbol id="icon-home" viewBox="0 -960 960 960">
+        <path d="M240-200h120v-240h240v240h120v-360L480-740 240-560v360Zm-80 80v-480l320-240 320 240v480H520v-240h-80v240H160Zm320-350Z"/>
+      </symbol>
+      <symbol id="icon-support_agent" viewBox="0 -960 960 960">
+        <path d="M440-120v-80h320v-284q0-117-81.5-198.5T480-764q-117 0-198.5 81.5T200-484v244h-40q-33 0-56.5-23.5T80-320v-80q0-21 10.5-39.5T120-469l3-53q8-68 39.5-126t79-101q47.5-43 109-67T480-840q68 0 129 24t109 66.5Q766-707 797-649t40 126l3 52q19 9 29.5 27t10.5 38v92q0 20-10.5 38T840-249v49q0 33-23.5 56.5T760-120H440Zm-80-280q-17 0-28.5-11.5T320-440q0-17 11.5-28.5T360-480q17 0 28.5 11.5T400-440q0 17-11.5 28.5T360-400Zm240 0q-17 0-28.5-11.5T560-440q0-17 11.5-28.5T600-480q17 0 28.5 11.5T640-440q0 17-11.5 28.5T600-400Zm-359-62q-7-106 64-182t177-76q89 0 156.5 56.5T720-519q-91-1-167.5-49T435-698q-16 80-67.5 142.5T241-462Z"/>
+      </symbol>
+    </svg>
+
     <div class="error-card">
         
         <div class="badge-error">
-            <span class="material-symbols-outlined" style="font-size: 16px;">crisis_alert</span>
-            <span>خطای ۵۰۰ - اختلال موقت سرور</span>
+            <svg class="asena-svg-icon" aria-hidden="true"><use href="#icon-crisis_alert"></use></svg>
+            <span>خطای ۵۰۰ - خطای داخلی سرور</span>
         </div>
 
         <div class="mascot-area">
-            <div class="cat-box" id="catMascot">🐱</div>
-            <div class="yarn-box">🧶</div>
-            <div class="spark-box">⚡</div>
+            <div class="mascot-circle">
+                <span class="cat-avatar" id="catMascot">🐱</span>
+                <span class="yarn-badge">🧶</span>
+                <span class="spark-badge">⚡</span>
+            </div>
         </div>
 
         <div class="error-code">500</div>
 
-        <h1>گربه بازیگوش سیم‌های سرور رو به کلاف کاموا تبدیل کرده!</h1>
+        <h1>گربه بازیگوش سیم‌ها رو قاطی کرده!</h1>
         <p class="desc">
-            یک خطای فنی غیرمنتظره در سرور رخ داده است. مهندسان فنی و دامپزشکان آی‌تی آسنا بلافاصله لاگ‌ها را بررسی و در حال مرتب کردن کابل‌ها هستند!
+            یک خطای فنی غیرمنتظره در سرور رخ داده است. مهندسان فنی آسنا بلافاصله گزارش خطا را دریافت کردند و در حال بررسی مشکل هستند.
         </p>
 
         <div class="tracking-box">
-            <span>کد پیگیری خطا در پشتیبانی:</span>
+            <span>کد پیگیری خطا:</span>
             <div style="display: flex; align-items: center; gap: 8px;">
                 <span class="tracking-code" id="errCode"><?= htmlspecialchars($errorTrackingId) ?></span>
                 <button class="btn-copy" onclick="copyTrackingCode()">
-                    <span class="material-symbols-outlined" style="font-size: 16px;">content_copy</span>
-                    کپی
+                    <svg class="asena-svg-icon" style="width: 14px; height: 14px;" aria-hidden="true"><use href="#icon-content_copy"></use></svg>
+                    <span>کپی</span>
                 </button>
             </div>
         </div>
@@ -279,33 +338,33 @@ $errorTrackingId = 'ERR-' . strtoupper(substr(md5(uniqid(mt_rand(), true)), 0, 8
         <div class="action-row">
             <button onclick="calmCatAndReload()" class="btn-calm-cat" id="calmBtn">
                 <span>🐟</span>
-                <span>دادن ماهی به گربه و بارگذاری مجدد!</span>
+                <span>راه‌اندازی مجدد</span>
             </button>
-            <a href="/" class="btn-secondary-custom">
-                <span class="material-symbols-outlined">home</span>
-                صفحه اصلی
+            <a href="<?= $base_path ?>/" class="btn-secondary-custom">
+                <svg class="asena-svg-icon" aria-hidden="true"><use href="#icon-home"></use></svg>
+                <span>صفحه اصلی</span>
             </a>
-            <a href="/user_tickets.php" class="btn-secondary-custom">
-                <span class="material-symbols-outlined">support_agent</span>
-                ارسال تیکت به پشتیبانی
+            <a href="<?= $base_path ?>/user_tickets.php" class="btn-secondary-custom">
+                <svg class="asena-svg-icon" aria-hidden="true"><use href="#icon-support_agent"></use></svg>
+                <span>پشتیبانی</span>
             </a>
         </div>
 
     </div>
 
-    <script src="/assets/js/offline-icons.js"></script>
+    <script src="<?= $base_path ?>/assets/js/offline-icons.js"></script>
     <script>
         function calmCatAndReload() {
             const cat = document.getElementById('catMascot');
             const btn = document.getElementById('calmBtn');
             cat.innerText = '😸';
-            cat.style.transform = 'scale(1.3) rotate(15deg)';
-            btn.innerHTML = '<span>🐟</span> در حال تشکر گربه و راه‌اندازی سرور...';
+            cat.style.transform = 'scale(1.25) rotate(10deg)';
+            btn.innerHTML = '<span>🐟</span> در حال راه‌اندازی سرور...';
             btn.disabled = true;
 
             setTimeout(() => {
                 window.location.reload();
-            }, 900);
+            }, 800);
         }
 
         function copyTrackingCode() {

@@ -1,4 +1,6 @@
 <?php
+$base_path = rtrim(str_replace(DIRECTORY_SEPARATOR, '/', dirname($_SERVER['SCRIPT_NAME'] ?? '')), '/');
+if ($base_path === '/') $base_path = '';
 http_response_code(502);
 ?>
 <!DOCTYPE html>
@@ -6,11 +8,11 @@ http_response_code(502);
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>۵۰۲ | عدم پاسخگویی سرور مبدا - آسنا</title>
+    <title>۵۰۲ | خطای درگاه ارتباطی - آسنا</title>
     <meta name="robots" content="noindex, follow">
-    <link rel="icon" type="image/x-icon" href="/favicon.ico">
-    <link rel="stylesheet" href="/assets/css/vazirmatn.css">
-    <link rel="stylesheet" href="/assets/css/material-symbols.css">
+    <link rel="icon" type="image/x-icon" href="<?= $base_path ?>/favicon.ico">
+    <link rel="stylesheet" href="<?= $base_path ?>/assets/css/vazirmatn.css">
+    <link rel="stylesheet" href="<?= $base_path ?>/assets/css/material-symbols.css">
     <style>
         :root {
             --primary: #001a48;
@@ -46,9 +48,9 @@ http_response_code(502);
             background: #ffffff;
             border-radius: 32px;
             box-shadow: 0 25px 60px -15px rgba(217, 119, 6, 0.15), 0 0 0 1px rgba(254, 243, 199, 0.8);
-            max-width: 600px;
+            max-width: 580px;
             width: 100%;
-            padding: 44px 32px;
+            padding: 40px 32px;
             position: relative;
             overflow: hidden;
             z-index: 1;
@@ -75,32 +77,68 @@ http_response_code(502);
             border-radius: 9999px;
             font-size: 12px;
             font-weight: 800;
-            margin-bottom: 16px;
+            margin-bottom: 20px;
         }
 
+        /* Tidy Mascot Layout */
         .mascot-area {
-            position: relative;
-            width: 140px;
-            height: 110px;
-            margin: 0 auto 12px;
             display: flex;
             align-items: center;
             justify-content: center;
+            margin: 0 auto 16px;
         }
 
-        .turtle-box {
-            font-size: 64px;
-            display: inline-block;
-            animation: slowTurtle 4s ease-in-out infinite alternate;
+        .mascot-circle {
+            width: 105px;
+            height: 105px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 40% 40%, #ffffff 0%, #fef3c7 65%, #fde68a 100%);
+            border: 3px solid #ffffff;
+            box-shadow: 0 10px 25px -5px rgba(217, 119, 6, 0.22), 0 0 0 1px #fde68a;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .turtle-avatar {
+            font-size: 52px;
+            line-height: 1;
+            display: block;
+            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.08));
+            animation: slowTurtle 3s ease-in-out infinite alternate;
         }
 
         @keyframes slowTurtle {
-            0% { transform: translateX(14px) rotate(0deg); }
-            100% { transform: translateX(-14px) rotate(-3deg); }
+            0% { transform: translateY(0); }
+            100% { transform: translateY(-3px); }
+        }
+
+        .sleep-badge {
+            position: absolute;
+            top: -4px;
+            right: -4px;
+            width: 34px;
+            height: 34px;
+            background: #ffffff;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            line-height: 1;
+            box-shadow: 0 4px 10px rgba(217, 119, 6, 0.25);
+            border: 2px solid #fde68a;
+            animation: sleepFloat 2s ease-in-out infinite alternate;
+        }
+
+        @keyframes sleepFloat {
+            0% { transform: translateY(0) scale(0.95); }
+            100% { transform: translateY(-3px) scale(1.05); }
         }
 
         .error-code {
-            font-size: 76px;
+            font-size: 72px;
             font-weight: 900;
             line-height: 1;
             letter-spacing: -2px;
@@ -129,7 +167,7 @@ http_response_code(502);
             flex-wrap: wrap;
             gap: 10px;
             justify-content: center;
-            margin-bottom: 20px;
+            margin-bottom: 12px;
         }
 
         .btn-warning-custom {
@@ -174,42 +212,65 @@ http_response_code(502);
             background: #f8fafc;
             border-color: #94a3b8;
         }
+
+        .asena-svg-icon {
+            width: 18px;
+            height: 18px;
+            fill: currentColor;
+            display: inline-block;
+            vertical-align: middle;
+        }
     </style>
 </head>
 <body>
 
+    <!-- Direct Embedded SVG Icons (100% Zero-Latency, Never raw text) -->
+    <svg id="error-icons-defs" xmlns="http://www.w3.org/2000/svg" style="display: none;">
+      <symbol id="icon-dns" viewBox="0 -960 960 960">
+        <path d="M300-720q-25 0-42.5 17.5T240-660q0 25 17.5 42.5T300-600q25 0 42.5-17.5T360-660q0-25-17.5-42.5T300-720Zm0 400q-25 0-42.5 17.5T240-260q0 25 17.5 42.5T300-200q25 0 42.5-17.5T360-260q0-25-17.5-42.5T300-320ZM160-840h640q17 0 28.5 11.5T840-800v280q0 17-11.5 28.5T800-480H160q-17 0-28.5-11.5T120-520v-280q0-17 11.5-28.5T160-840Zm40 80v200h560v-200H200Zm-40 320h640q17 0 28.5 11.5T840-400v280q0 17-11.5 28.5T800-80H160q-17 0-28.5-11.5T120-120v-280q0-17 11.5-28.5T160-440Zm40 80v200h560v-200H200Zm0-400v200-200Zm0 400v200-200Z"/>
+      </symbol>
+      <symbol id="icon-refresh" viewBox="0 -960 960 960">
+        <path d="M480-160q-134 0-227-93t-93-227q0-134 93-227t227-93q69 0 132 28.5T720-690v-110h80v280H520v-80h168q-32-56-87.5-88T480-720q-100 0-170 70t-70 170q0 100 70 170t170 70q77 0 139-44t87-116h84q-28 106-114 173t-196 67Z"/>
+      </symbol>
+      <symbol id="icon-home" viewBox="0 -960 960 960">
+        <path d="M240-200h120v-240h240v240h120v-360L480-740 240-560v360Zm-80 80v-480l320-240 320 240v480H520v-240h-80v240H160Zm320-350Z"/>
+      </symbol>
+    </svg>
+
     <div class="error-card">
         
         <div class="badge-error">
-            <span class="material-symbols-outlined" style="font-size: 16px;">dns</span>
-            <span>خطای ۵۰۲ - عدم پاسخگویی سرور میانی (Bad Gateway)</span>
+            <svg class="asena-svg-icon" aria-hidden="true"><use href="#icon-dns"></use></svg>
+            <span>خطای ۵۰۲ - خطای درگاه ارتباطی</span>
         </div>
 
         <div class="mascot-area">
-            <div class="turtle-box">🐢</div>
-            <div style="position: absolute; top: 8px; right: 14px; font-size: 26px;">💤</div>
+            <div class="mascot-circle">
+                <span class="turtle-avatar">🐢</span>
+                <span class="sleep-badge">💤</span>
+            </div>
         </div>
 
         <div class="error-code">502</div>
 
-        <h1>سرور میانی به خواب زمستانی رفته!</h1>
+        <h1>پاسخی از سرور میانی دریافت نشد</h1>
         <p class="desc">
-            درگاه اتصال پاسخی از سرویس بالادستی دریافت نکرد. سیستم به صورت خودکار در حال راه‌اندازی مجدد تونل ارتباطی است.
+            درگاه اتصال پاسخی از سرویس بالادستی دریافت نکرد. سرور به صورت خودکار در حال بازیابی ارتباط است.
         </p>
 
         <div class="action-row">
             <button onclick="window.location.reload()" class="btn-warning-custom">
-                <span class="material-symbols-outlined">refresh</span>
-                تلاش مجدد برای بیدار کردن سرور
+                <svg class="asena-svg-icon" aria-hidden="true"><use href="#icon-refresh"></use></svg>
+                <span>تلاش مجدد</span>
             </button>
-            <a href="/" class="btn-secondary-custom">
-                <span class="material-symbols-outlined">home</span>
-                صفحه اصلی
+            <a href="<?= $base_path ?>/" class="btn-secondary-custom">
+                <svg class="asena-svg-icon" aria-hidden="true"><use href="#icon-home"></use></svg>
+                <span>صفحه اصلی</span>
             </a>
         </div>
 
     </div>
 
-    <script src="/assets/js/offline-icons.js"></script>
+    <script src="<?= $base_path ?>/assets/js/offline-icons.js"></script>
 </body>
 </html>

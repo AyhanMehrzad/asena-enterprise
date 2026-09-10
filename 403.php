@@ -1,4 +1,6 @@
 <?php
+$base_path = rtrim(str_replace(DIRECTORY_SEPARATOR, '/', dirname($_SERVER['SCRIPT_NAME'] ?? '')), '/');
+if ($base_path === '/') $base_path = '';
 http_response_code(403);
 ?>
 <!DOCTYPE html>
@@ -6,11 +8,11 @@ http_response_code(403);
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>۴۰۳ | ورود ممنوع! سگ نگهبان شیفت کشیک - آسنا</title>
+    <title>۴۰۳ | دسترسی غیرمجاز - آسنا</title>
     <meta name="robots" content="noindex, follow">
-    <link rel="icon" type="image/x-icon" href="/favicon.ico">
-    <link rel="stylesheet" href="/assets/css/vazirmatn.css">
-    <link rel="stylesheet" href="/assets/css/material-symbols.css">
+    <link rel="icon" type="image/x-icon" href="<?= $base_path ?>/favicon.ico">
+    <link rel="stylesheet" href="<?= $base_path ?>/assets/css/vazirmatn.css">
+    <link rel="stylesheet" href="<?= $base_path ?>/assets/css/material-symbols.css">
     <style>
         :root {
             --primary: #001a48;
@@ -48,7 +50,7 @@ http_response_code(403);
             box-shadow: 0 25px 60px -15px rgba(220, 38, 38, 0.15), 0 0 0 1px rgba(254, 226, 226, 0.8);
             max-width: 580px;
             width: 100%;
-            padding: 44px 32px;
+            padding: 40px 32px;
             position: relative;
             overflow: hidden;
             z-index: 1;
@@ -75,46 +77,68 @@ http_response_code(403);
             border-radius: 9999px;
             font-size: 12px;
             font-weight: 800;
-            margin-bottom: 16px;
+            margin-bottom: 20px;
         }
 
-        /* Mascot Container */
+        /* Tidy Mascot Layout */
         .mascot-area {
-            position: relative;
-            width: 130px;
-            height: 120px;
-            margin: 0 auto 12px;
             display: flex;
             align-items: center;
             justify-content: center;
+            margin: 0 auto 16px;
         }
 
-        .dog-guard {
-            font-size: 68px;
-            display: inline-block;
-            animation: guardAlert 2.5s ease-in-out infinite;
+        .mascot-circle {
+            width: 105px;
+            height: 105px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 40% 40%, #ffffff 0%, #fee2e2 65%, #fecaca 100%);
+            border: 3px solid #ffffff;
+            box-shadow: 0 10px 25px -5px rgba(220, 38, 38, 0.22), 0 0 0 1px #fecaca;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
         }
 
-        @keyframes guardAlert {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.05) translateY(-4px); }
+        .dog-avatar {
+            font-size: 52px;
+            line-height: 1;
+            display: block;
+            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.08));
+            animation: dogAlert 2.5s ease-in-out infinite alternate;
+        }
+
+        @keyframes dogAlert {
+            0% { transform: scale(1) translateY(0); }
+            100% { transform: scale(1.05) translateY(-3px); }
         }
 
         .siren-badge {
             position: absolute;
-            top: 6px;
-            right: 14px;
-            font-size: 26px;
+            bottom: -4px;
+            left: -4px;
+            width: 36px;
+            height: 36px;
+            background: #ffffff;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            line-height: 1;
+            box-shadow: 0 4px 10px rgba(220, 38, 38, 0.25);
+            border: 2px solid #fecaca;
             animation: sirenFlash 1.2s infinite;
         }
 
         @keyframes sirenFlash {
             0%, 100% { transform: scale(1) rotate(0deg); opacity: 0.9; }
-            50% { transform: scale(1.2) rotate(15deg); opacity: 1; filter: drop-shadow(0 0 8px rgba(220, 38, 38, 0.6)); }
+            50% { transform: scale(1.15) rotate(15deg); opacity: 1; filter: drop-shadow(0 0 6px rgba(220, 38, 38, 0.5)); }
         }
 
         .error-code {
-            font-size: 76px;
+            font-size: 72px;
             font-weight: 900;
             line-height: 1;
             letter-spacing: -2px;
@@ -135,7 +159,7 @@ http_response_code(403);
             font-size: 13.5px;
             color: var(--text-muted);
             line-height: 1.8;
-            margin-bottom: 24px;
+            margin-bottom: 22px;
         }
 
         .alert-box {
@@ -157,7 +181,7 @@ http_response_code(403);
             flex-wrap: wrap;
             gap: 10px;
             justify-content: center;
-            margin-bottom: 20px;
+            margin-bottom: 12px;
         }
 
         .btn-danger-custom {
@@ -201,20 +225,46 @@ http_response_code(403);
             background: #f8fafc;
             border-color: #94a3b8;
         }
+
+        .asena-svg-icon {
+            width: 18px;
+            height: 18px;
+            fill: currentColor;
+            display: inline-block;
+            vertical-align: middle;
+        }
     </style>
 </head>
 <body>
 
+    <!-- Direct Embedded SVG Icons (100% Zero-Latency, Never raw text) -->
+    <svg id="error-icons-defs" xmlns="http://www.w3.org/2000/svg" style="display: none;">
+      <symbol id="icon-lock" viewBox="0 -960 960 960">
+        <path d="M240-80q-33 0-56.5-23.5T160-160v-400q0-33 23.5-56.5T240-640h40v-80q0-83 58.5-141.5T480-920q83 0 141.5 58.5T680-720v80h40q33 0 56.5 23.5T800-560v400q0 33-23.5 56.5T720-80H240Zm0-80h480v-400H240v400Zm240-120q33 0 56.5-23.5T560-360q0-33-23.5-56.5T480-440q-33 0-56.5 23.5T400-360q0 33 23.5 56.5T480-280ZM360-640h240v-80q0-50-35-85t-85-35q-50 0-85 35t-35 85v80ZM240-160v-400 400Z"/>
+      </symbol>
+      <symbol id="icon-shield_lock" viewBox="0 -960 960 960">
+        <path d="M480-80q-139-35-229.5-159.5T160-516v-244l320-120 320 120v244q0 152-90.5 276.5T480-80Zm0-84q104-33 172-132t68-220v-189l-240-90-240 90v189q0 121 68 220t172 132Zm0-316Zm-80 160h160q17 0 28.5-11.5T600-360v-120q0-17-11.5-28.5T560-520v-40q0-33-23.5-56.5T480-640q-33 0-56.5 23.5T400-560v40q-17 0-28.5 11.5T360-480v120q0 17 11.5 28.5T400-320Zm40-200v-40q0-17 11.5-28.5T480-600q17 0 28.5 11.5T520-560v40h-80Z"/>
+      </symbol>
+      <symbol id="icon-login" viewBox="0 -960 960 960">
+        <path d="M480-120v-80h280v-560H480v-80h280q33 0 56.5 23.5T840-760v560q0 33-23.5 56.5T760-120H480Zm-80-160-55-58 102-102H120v-80h327L345-622l55-58 200 200-200 200Z"/>
+      </symbol>
+      <symbol id="icon-home" viewBox="0 -960 960 960">
+        <path d="M240-200h120v-240h240v240h120v-360L480-740 240-560v360Zm-80 80v-480l320-240 320 240v480H520v-240h-80v240H160Zm320-350Z"/>
+      </symbol>
+    </svg>
+
     <div class="error-card">
         
         <div class="badge-error">
-            <span class="material-symbols-outlined" style="font-size: 16px;">lock</span>
+            <svg class="asena-svg-icon" aria-hidden="true"><use href="#icon-lock"></use></svg>
             <span>خطای ۴۰۳ - دسترسی غیرمجاز</span>
         </div>
 
         <div class="mascot-area">
-            <div class="dog-guard">🐕‍🦺</div>
-            <div class="siren-badge">🚨</div>
+            <div class="mascot-circle">
+                <span class="dog-avatar">🐕‍🦺</span>
+                <span class="siren-badge">🚨</span>
+            </div>
         </div>
 
         <div class="error-code">403</div>
@@ -225,23 +275,23 @@ http_response_code(403);
         </p>
 
         <div class="alert-box">
-            <span class="material-symbols-outlined" style="font-size: 22px; color: #ea580c;">shield_lock</span>
+            <svg class="asena-svg-icon" style="font-size: 20px; color: #ea580c; flex-shrink: 0;" aria-hidden="true"><use href="#icon-shield_lock"></use></svg>
             <span>اگر فکر می‌کنید دسترسی شما اشتباهاً محدود شده، با حساب کاربری دیگری وارد شوید یا با پشتیبانی تماس بگیرید.</span>
         </div>
 
         <div class="action-row">
-            <a href="/login.php" class="btn-danger-custom">
-                <span class="material-symbols-outlined">login</span>
-                ورود به حساب یا تغییر نقش
+            <a href="<?= $base_path ?>/login.php" class="btn-danger-custom">
+                <svg class="asena-svg-icon" aria-hidden="true"><use href="#icon-login"></use></svg>
+                <span>ورود به حساب کاربری</span>
             </a>
-            <a href="/" class="btn-secondary-custom">
-                <span class="material-symbols-outlined">home</span>
-                بازگشت به منطقه امن (صفحه اصلی)
+            <a href="<?= $base_path ?>/" class="btn-secondary-custom">
+                <svg class="asena-svg-icon" aria-hidden="true"><use href="#icon-home"></use></svg>
+                <span>صفحه اصلی</span>
             </a>
         </div>
 
     </div>
 
-    <script src="/assets/js/offline-icons.js"></script>
+    <script src="<?= $base_path ?>/assets/js/offline-icons.js"></script>
 </body>
 </html>

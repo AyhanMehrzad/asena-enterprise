@@ -1,4 +1,6 @@
 <?php
+$base_path = rtrim(str_replace(DIRECTORY_SEPARATOR, '/', dirname($_SERVER['SCRIPT_NAME'] ?? '')), '/');
+if ($base_path === '/') $base_path = '';
 http_response_code(404);
 ?>
 <!DOCTYPE html>
@@ -6,11 +8,11 @@ http_response_code(404);
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>۴۰۴ | هاپو این صفحه رو قایم کرده! - آسنا</title>
+    <title>۴۰۴ | صفحه پیدا نشد - آسنا</title>
     <meta name="robots" content="noindex, follow">
-    <link rel="icon" type="image/x-icon" href="/favicon.ico">
-    <link rel="stylesheet" href="/assets/css/vazirmatn.css">
-    <link rel="stylesheet" href="/assets/css/material-symbols.css">
+    <link rel="icon" type="image/x-icon" href="<?= $base_path ?>/favicon.ico">
+    <link rel="stylesheet" href="<?= $base_path ?>/assets/css/vazirmatn.css">
+    <link rel="stylesheet" href="<?= $base_path ?>/assets/css/material-symbols.css">
     <style>
         :root {
             --primary: #001a48;
@@ -65,9 +67,9 @@ http_response_code(404);
             background: #ffffff;
             border-radius: 32px;
             box-shadow: 0 25px 60px -15px rgba(0, 26, 72, 0.12), 0 0 0 1px rgba(226, 232, 240, 0.8);
-            max-width: 600px;
+            max-width: 580px;
             width: 100%;
-            padding: 44px 32px;
+            padding: 40px 32px;
             position: relative;
             overflow: hidden;
             z-index: 1;
@@ -94,49 +96,70 @@ http_response_code(404);
             border-radius: 9999px;
             font-size: 12px;
             font-weight: 800;
-            margin-bottom: 16px;
+            margin-bottom: 20px;
         }
 
-        /* Animated Puppy Searching Visual */
+        /* Tidy Mascot Layout */
         .mascot-area {
-            position: relative;
-            width: 140px;
-            height: 120px;
-            margin: 0 auto 12px;
             display: flex;
             align-items: center;
             justify-content: center;
+            margin: 0 auto 16px;
         }
 
-        .puppy-box {
-            font-size: 64px;
-            display: inline-block;
-            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        .mascot-circle {
+            width: 105px;
+            height: 105px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 40% 40%, #ffffff 0%, #ffedd5 65%, #fed7aa 100%);
+            border: 3px solid #ffffff;
+            box-shadow: 0 10px 25px -5px rgba(253, 129, 0, 0.22), 0 0 0 1px #fed7aa;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .puppy-avatar {
+            font-size: 52px;
+            line-height: 1;
+            display: block;
+            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.08));
             animation: puppySniff 3s ease-in-out infinite;
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
 
         @keyframes puppySniff {
             0%, 100% { transform: rotate(0deg) translateY(0); }
-            25% { transform: rotate(-8deg) translateY(-4px); }
-            75% { transform: rotate(8deg) translateY(-2px); }
+            25% { transform: rotate(-6deg) translateY(-3px); }
+            75% { transform: rotate(6deg) translateY(-2px); }
         }
 
-        .magnifier {
+        .magnifier-badge {
             position: absolute;
-            bottom: 12px;
-            right: 18px;
-            font-size: 32px;
+            bottom: -4px;
+            left: -4px;
+            width: 36px;
+            height: 36px;
+            background: #ffffff;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            line-height: 1;
+            box-shadow: 0 4px 10px rgba(253, 129, 0, 0.25);
+            border: 2px solid #fed7aa;
             animation: scanTrace 2.4s ease-in-out infinite alternate;
         }
 
         @keyframes scanTrace {
-            0% { transform: translate(0, 0) rotate(0deg); }
-            100% { transform: translate(-30px, -15px) rotate(-25deg); }
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(-15deg); }
         }
 
-        /* 404 Big Display */
         .error-code {
-            font-size: 76px;
+            font-size: 72px;
             font-weight: 900;
             line-height: 1;
             letter-spacing: -2px;
@@ -157,7 +180,7 @@ http_response_code(404);
             font-size: 13.5px;
             color: var(--text-muted);
             line-height: 1.8;
-            margin-bottom: 24px;
+            margin-bottom: 20px;
         }
 
         /* Interactive Whistle Button */
@@ -173,7 +196,7 @@ http_response_code(404);
             display: inline-flex;
             align-items: center;
             gap: 6px;
-            margin-bottom: 24px;
+            margin-bottom: 22px;
             transition: all 0.2s;
         }
 
@@ -188,12 +211,12 @@ http_response_code(404);
         .search-form {
             position: relative;
             max-width: 440px;
-            margin: 0 auto 24px;
+            margin: 0 auto 22px;
         }
 
         .search-input {
             width: 100%;
-            padding: 13px 44px 13px 18px;
+            padding: 12px 42px 12px 16px;
             border-radius: 16px;
             border: 1px solid #cbd5e1;
             font-size: 13px;
@@ -215,11 +238,10 @@ http_response_code(404);
             transform: translateY(-50%);
             background: none;
             border: none;
-            color: #94a3b8;
             cursor: pointer;
             display: flex;
             align-items: center;
-            font-size: 20px;
+            padding: 0;
         }
 
         /* Action Buttons */
@@ -228,7 +250,7 @@ http_response_code(404);
             flex-wrap: wrap;
             gap: 10px;
             justify-content: center;
-            margin-bottom: 24px;
+            margin-bottom: 20px;
         }
 
         .btn-primary-custom {
@@ -266,6 +288,7 @@ http_response_code(404);
             border: 1px solid #cbd5e1;
             text-decoration: none;
             transition: all 0.2s;
+            cursor: pointer;
         }
 
         .btn-secondary-custom:hover {
@@ -279,7 +302,7 @@ http_response_code(404);
             flex-wrap: wrap;
             gap: 8px;
             justify-content: center;
-            padding-top: 18px;
+            padding-top: 16px;
             border-top: 1px dashed #e2e8f0;
         }
 
@@ -300,9 +323,33 @@ http_response_code(404);
             border-color: #fed7aa;
             background: #fff7ed;
         }
+
+        .asena-svg-icon {
+            width: 18px;
+            height: 18px;
+            fill: currentColor;
+            display: inline-block;
+            vertical-align: middle;
+        }
     </style>
 </head>
 <body>
+
+    <!-- Direct Embedded SVG Icons (100% Zero-Latency, Never raw text) -->
+    <svg id="error-icons-defs" xmlns="http://www.w3.org/2000/svg" style="display: none;">
+      <symbol id="icon-search_off" viewBox="0 -960 960 960">
+        <path d="M280-80q-83 0-141.5-58.5T80-280q0-83 58.5-141.5T280-480q83 0 141.5 58.5T480-280q0 83-58.5 141.5T280-80Zm544-40L568-376q-12-13-25.5-26.5T516-428q38-24 61-64t23-88q0-75-52.5-127.5T420-760q-75 0-127.5 52.5T240-580q0 6 .5 11.5T242-557q-18 2-39.5 8T164-535q-2-11-3-22t-1-23q0-109 75.5-184.5T420-840q109 0 184.5 75.5T680-580q0 43-13.5 81.5T629-428l251 252-56 56Zm-615-61 71-71 70 71 29-28-71-71 71-71-28-28-71 71-71-71-28 28 71 71-71 71 28 28Z"/>
+      </symbol>
+      <symbol id="icon-search" viewBox="0 -960 960 960">
+        <path d="M784-120 532-372q-30 24-69 38t-83 14q-109 0-184.5-75.5T120-580q0-109 75.5-184.5T380-840q109 0 184.5 75.5T640-580q0 44-14 83t-38 69l252 252-56 56Zm380-400q75 0 127.5-52.5T560-580q0-75-52.5-127.5T380-760q-75 0-127.5 52.5T200-580q0 75 52.5 127.5T380-400Z"/>
+      </symbol>
+      <symbol id="icon-home" viewBox="0 -960 960 960">
+        <path d="M240-200h120v-240h240v240h120v-360L480-740 240-560v360Zm-80 80v-480l320-240 320 240v480H520v-240h-80v240H160Zm320-350Z"/>
+      </symbol>
+      <symbol id="icon-arrow_back" viewBox="0 -960 960 960">
+        <path d="m313-440 224 224-57 56-320-320 320-320 57 56-224 224h487v80H313Z"/>
+      </symbol>
+    </svg>
 
     <div class="bg-paw p1">🐾</div>
     <div class="bg-paw p2">🐾</div>
@@ -312,20 +359,22 @@ http_response_code(404);
     <div class="error-card">
         
         <div class="badge-error">
-            <span class="material-symbols-outlined" style="font-size: 16px;">search_off</span>
-            <span>خطای ۴۰۴ - صفحه یافت نشد</span>
+            <svg class="asena-svg-icon" aria-hidden="true"><use href="#icon-search_off"></use></svg>
+            <span>خطای ۴۰۴ - صفحه پیدا نشد</span>
         </div>
 
         <div class="mascot-area">
-            <div class="puppy-box" id="puppyMascot">🐕</div>
-            <div class="magnifier">🔍</div>
+            <div class="mascot-circle">
+                <span class="puppy-avatar" id="puppyMascot">🐕</span>
+                <span class="magnifier-badge">🔍</span>
+            </div>
         </div>
 
         <div class="error-code">404</div>
 
         <h1>هاپو این صفحه رو قایم کرده!</h1>
         <p class="desc">
-            سگ‌های جستجوگر آسنا تمام کلینیک و پت‌شاپ رو بو کشیدند، ولی آدرسی که وارد کردید پیدا نشد! ممکنه این صفحه حذف شده یا آدرسش تغییر کرده باشه.
+            سگ‌های جستجوگر آسنا تمام کلینیک رو گشتند اما صفحه‌ای با این آدرس پیدا نشد! احتمالاً صفحه جابه‌جا شده یا آدرس اشتباه وارد شده است.
         </p>
 
         <!-- Whistle Button -->
@@ -335,36 +384,36 @@ http_response_code(404);
         </button>
 
         <!-- Quick Search -->
-        <form action="/shop.php" method="GET" class="search-form">
-            <button type="submit" class="search-icon-btn">
-                <span class="material-symbols-outlined">search</span>
+        <form action="<?= $base_path ?>/shop.php" method="GET" class="search-form">
+            <button type="submit" class="search-icon-btn" aria-label="جستجو">
+                <svg class="asena-svg-icon" style="color: #94a3b8;" aria-hidden="true"><use href="#icon-search"></use></svg>
             </button>
             <input type="text" name="q" placeholder="جستجوی محصول، خدمات یا نام کلینیک..." class="search-input" required>
         </form>
 
         <!-- Main Actions -->
         <div class="action-row">
-            <a href="/" class="btn-primary-custom">
-                <span class="material-symbols-outlined">home</span>
-                صفحه اصلی آسنا
+            <a href="<?= $base_path ?>/" class="btn-primary-custom">
+                <svg class="asena-svg-icon" aria-hidden="true"><use href="#icon-home"></use></svg>
+                <span>صفحه اصلی</span>
             </a>
             <button onclick="window.history.back()" class="btn-secondary-custom">
-                <span class="material-symbols-outlined">arrow_back</span>
-                بازگشت به صفحه قبل
+                <svg class="asena-svg-icon" aria-hidden="true"><use href="#icon-arrow_back"></use></svg>
+                <span>بازگشت</span>
             </button>
         </div>
 
         <!-- Helpful Quick Links -->
         <div class="quick-links">
-            <a href="/booking.php" class="quick-link">🩺 نوبت‌دهی آنلاین</a>
-            <a href="/shop.php" class="quick-link">🛍️ پت‌شاپ و محصولات</a>
-            <a href="/organizations.php" class="quick-link">🏥 کلینیک‌ها و بیمارستان‌ها</a>
-            <a href="/knowledge_base.php" class="quick-link">📚 دانشنامه سلامت پت</a>
+            <a href="<?= $base_path ?>/booking.php" class="quick-link">🩺 نوبت‌دهی آنلاین</a>
+            <a href="<?= $base_path ?>/shop.php" class="quick-link">🛍️ پت‌شاپ و محصولات</a>
+            <a href="<?= $base_path ?>/organizations.php" class="quick-link">🏥 کلینیک‌ها و بیمارستان‌ها</a>
+            <a href="<?= $base_path ?>/knowledge_base.php" class="quick-link">📚 دانشنامه سلامت پت</a>
         </div>
 
     </div>
 
-    <script src="/assets/js/offline-icons.js"></script>
+    <script src="<?= $base_path ?>/assets/js/offline-icons.js"></script>
     <script>
         // Web Audio Whistle / Bark Synthesizer
         let audioCtx = null;
@@ -392,7 +441,7 @@ http_response_code(404);
 
                 // Puppy jump animation
                 const mascot = document.getElementById('puppyMascot');
-                mascot.style.transform = 'scale(1.35) rotate(-15deg)';
+                mascot.style.transform = 'scale(1.25) rotate(-10deg)';
                 mascot.innerText = '🐶';
                 setTimeout(() => {
                     mascot.style.transform = 'scale(1) rotate(0deg)';
