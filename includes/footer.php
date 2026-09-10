@@ -29,11 +29,11 @@
                     </nav>
                 </div>
                 <div class="flex flex-col gap-5">
-                    <h4 class="font-bold text-lg text-primary">خدمات درمانی</h4>
+                    <h4 class="font-bold text-lg text-primary">خدمات و قوانین</h4>
                     <nav class="flex flex-col gap-3">
-                        <a class="text-sm text-on-surface-variant hover:text-secondary-container transition-colors" href="#">رزرو ویزیت</a>
-                        <a class="text-sm text-on-surface-variant hover:text-secondary-container transition-colors" href="#">مشاوره هوشمند</a>
-                        <a class="text-sm text-on-surface-variant hover:text-secondary-container transition-colors" href="#">واکسیناسیون</a>
+                        <a class="text-sm text-on-surface-variant hover:text-secondary-container transition-colors" href="booking.php">رزرو نوبت کلینیک</a>
+                        <a class="text-sm text-on-surface-variant hover:text-secondary-container transition-colors" href="terms.php">قوانین و شرایط خدمات</a>
+                        <a class="text-sm text-on-surface-variant hover:text-secondary-container transition-colors" href="privacy.php">سیاست حریم خصوصی</a>
                     </nav>
                 </div>
                 <div class="flex flex-col gap-5">

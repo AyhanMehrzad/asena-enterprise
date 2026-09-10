@@ -21,7 +21,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt->execute([$phone]);
             
             if ($stmt->rowCount() === 0) {
-                $error = 'کاربری با این شماره موبایل یافت نشد.';
+                // Prevent user enumeration: Proceed to reset page identically without leaking user existence
+                $_SESSION['reset_password_data'] = [
+                    'phone'      => $phone,
+                    'otp'        => '000000',
+                    'expires_at' => time() + 180
+                ];
+                header("Location: reset_password.php?phone=" . urlencode($phone));
+                exit;
             } else {
                 // Generate a 6-digit OTP
                 $otp = sprintf("%06d", mt_rand(100000, 999999));

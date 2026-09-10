@@ -2,6 +2,8 @@
 vendor/
 node_modules/
 .env
+accounts_credentials.txt
+*credentials*.txt
 
 # System & OS
 .DS_Store

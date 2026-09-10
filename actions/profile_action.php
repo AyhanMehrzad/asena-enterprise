@@ -309,6 +309,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $hashed = password_hash($newPassword, PASSWORD_DEFAULT);
                         $stmt = $pdo->prepare("UPDATE users SET name = ?, email = ?, national_id = ?, password = ? WHERE id = ?");
                         $stmt->execute([$name, $email, $nationalId, $hashed, $user_id]);
+                        session_regenerate_id(true);
                         $_SESSION['profile_success'] = "اطلاعات کاربری و کلمه عبور با موفقیت به‌روزرسانی شد.";
                     }
                 } else {

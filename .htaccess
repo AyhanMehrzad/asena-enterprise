@@ -74,8 +74,8 @@ Options -Indexes
     </IfModule>
 </Files>
 
-# 9. Block access to sensitive configuration, database, container and log files
-<FilesMatch "\.(env|env\.example|sql|log|md|git|gitignore|yml|yaml|dockerignore)$">
+# 9. Block access to sensitive configuration, database, container and credential files
+<FilesMatch "(^\..*|\.(env|env\.example|sql|log|md|git|gitignore|yml|yaml|dockerignore)|accounts_credentials.*|credentials.*)$">
     Require all denied
 </FilesMatch>
 
