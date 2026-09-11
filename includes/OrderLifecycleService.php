@@ -186,6 +186,21 @@ class OrderLifecycleService
                 $cName = $carrier ?: 'پست/تیپاکس';
                 $code = $trackingCode ?: 'ثبت در سامانه';
                 $text = "آسنا: {$name} عزیز، سفارش شما (#{$orderId}) تحویل {$cName} گردید. کد رهگیری مرسوله: {$code}";
+
+                // Check seller SMS credits if this is a marketplace seller order
+                $selStmt = $this->pdo->prepare("SELECT seller_id FROM order_items WHERE order_id = ? AND seller_id IS NOT NULL LIMIT 1");
+                $selStmt->execute([$orderId]);
+                $sellerId = (int)$selStmt->fetchColumn();
+
+                if ($sellerId > 0) {
+                    $credits = SmsService::getUserSmsCredits($this->pdo, $sellerId);
+                    if ($credits <= 0) {
+                        error_log("Seller #{$sellerId} has 0 SMS credits. Shipping SMS was blocked for order #{$orderId}.");
+                        return;
+                    }
+                    SmsService::deductUserSmsCredits($this->pdo, $sellerId, $phone, $text, 1);
+                }
+
                 $sms->send($phone, $text);
             } elseif ($status === self::STATUS_OUT_DELIVERY) {
                 $text = "آسنا: {$name} عزیز، مرسوله سفارش (#{$orderId}) به پیک تحویل داده شد و در مسیر تحویل به شماست.";

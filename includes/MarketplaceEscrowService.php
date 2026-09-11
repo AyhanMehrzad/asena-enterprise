@@ -249,7 +249,13 @@ class MarketplaceEscrowService {
      * Generate weekly Central Bank Paya (پایا) settlement batch file
      */
     public function generateWeeklyPayoutBatch(int $adminId = 1): array {
-        // Find all sellers with positive balance_available_for_payout
+        // 1. Release matured product order escrows (past 7-day return period)
+        $this->releaseMaturedEscrow();
+
+        // 2. Release completed appointments
+        $this->releaseCompletedAppointments();
+
+        // Find all sellers & clinics with positive balance_available_for_payout
         $stmt = $this->db->prepare("
             SELECT w.*, u.name as seller_name, u.phone as seller_phone
             FROM seller_wallets w
@@ -328,6 +334,20 @@ class MarketplaceEscrowService {
             $updateLedger->execute([
                 'batch_id' => $batchId,
                 'seller_id' => $sellerId
+            ]);
+
+            // Update settled appointments
+            $updateApts = $this->db->prepare("
+                UPDATE appointments 
+                SET settlement_status = 'settled_in_batch',
+                    settlement_batch_id = :batch_id
+                WHERE (organization_id = :org_seller_id OR doctor_id IN (SELECT id FROM doctors WHERE user_id = :doc_seller_id))
+                  AND settlement_status = 'available_for_payout'
+            ");
+            $updateApts->execute([
+                'batch_id' => $batchId,
+                'org_seller_id' => $sellerId,
+                'doc_seller_id' => $sellerId
             ]);
 
             // Send SMS notification
@@ -643,5 +663,122 @@ class MarketplaceEscrowService {
         } catch (Throwable $e) {
             error_log("Payout executed notification error: " . $e->getMessage());
         }
+    }
+
+    /**
+     * Unlock and release funds for completed doctor/clinic visits into available payout balance
+     */
+    public function releaseCompletedAppointments(): int {
+        $stmt = $this->db->prepare("
+            SELECT a.*, d.user_id as doctor_user_id 
+            FROM appointments a
+            LEFT JOIN doctors d ON a.doctor_id = d.id
+            WHERE a.status = 'completed' AND a.settlement_status IN ('held_in_escrow', 'pending_service')
+        ");
+        $stmt->execute();
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $count = 0;
+
+        foreach ($rows as $r) {
+            $beneficiaryId = !empty($r['organization_id']) ? (int)$r['organization_id'] : (int)($r['doctor_user_id'] ?: 1);
+            $net = (int)$r['net_amount'];
+            if ($net > 0) {
+                $this->ensureWalletExists($beneficiaryId);
+                $this->db->prepare("
+                    UPDATE seller_wallets 
+                    SET balance_pending_escrow = GREATEST(0, balance_pending_escrow - :pending_deduct),
+                        balance_available_for_payout = balance_available_for_payout + :available_add
+                    WHERE seller_id = :seller_id
+                ")->execute([
+                    'pending_deduct' => $net,
+                    'available_add' => $net,
+                    'seller_id' => $beneficiaryId
+                ]);
+            }
+
+            $this->db->prepare("UPDATE appointments SET settlement_status = 'available_for_payout' WHERE id = ?")
+                ->execute([$r['id']]);
+            $count++;
+        }
+        return $count;
+    }
+
+    /**
+     * Automated Central Bank Paya Weekly Payout Scheduler
+     * Runs strictly on Thursdays at or after 09:00 AM Tehran Time (Asia/Tehran)
+     * Enforces strict idempotency per weekly cycle (no double payouts)
+     */
+    public function checkAndExecuteScheduledWeeklyPayout(bool $force = false, string $runType = 'scheduled'): array {
+        $tz = new DateTimeZone('Asia/Tehran');
+        $now = new DateTime('now', $tz);
+
+        $enabled = (get_setting($this->db, 'auto_payout_enabled', '1') === '1');
+        if (!$enabled && !$force) {
+            return ['executed' => false, 'reason' => 'تسویه حساب خودکار در تنظیمات غیرفعال است.'];
+        }
+
+        // Target: Thursday (w = 4) >= 09:00 AM Tehran
+        $dayOfWeek = (int)$now->format('w'); // 0 (Sun) to 6 (Sat), 4 is Thursday
+        $hour = (int)$now->format('G');      // 0 to 23
+        $targetDay = (int)get_setting($this->db, 'auto_payout_day', '4');
+        $targetHour = 9;
+
+        if (!$force) {
+            if ($dayOfWeek !== $targetDay) {
+                return ['executed' => false, 'reason' => 'امروز روز موعد تسویه پایا (پنج‌شنبه) نیست.'];
+            }
+            if ($hour < $targetHour) {
+                return ['executed' => false, 'reason' => 'ساعت جاری هنوز به موعد ۹:۰۰ صبح تهران نرسیده است.'];
+            }
+        }
+
+        // Weekly Cycle Key: e.g. PAYA-CYCLE-2026-W37
+        $cycleKey = 'PAYA-CYCLE-' . $now->format('Y-W');
+
+        // Check if cycle already ran
+        $checkStmt = $this->db->prepare("SELECT * FROM payout_cron_runs WHERE cycle_key = ?");
+        $checkStmt->execute([$cycleKey]);
+        $existingRun = $checkStmt->fetch(PDO::FETCH_ASSOC);
+
+        if ($existingRun && !$force) {
+            return [
+                'executed' => false,
+                'already_run' => true,
+                'reason' => "چرخه تسویه این هفته ({$cycleKey}) قبلاً با موفقیت اجرا شده است.",
+                'run_info' => $existingRun
+            ];
+        }
+
+        // Execute batch
+        $batchRes = $this->generateWeeklyPayoutBatch(1);
+        if (!$batchRes['success']) {
+            return [
+                'executed' => false,
+                'reason' => $batchRes['message'] ?? 'هیچ موجودی برای تسویه یافت نشد.'
+            ];
+        }
+
+        // Record successful run
+        $insRun = $this->db->prepare("
+            INSERT INTO payout_cron_runs (cycle_key, batch_id, total_amount, seller_count, run_type)
+            VALUES (?, ?, ?, ?, ?)
+            ON DUPLICATE KEY UPDATE 
+                batch_id = VALUES(batch_id),
+                total_amount = VALUES(total_amount),
+                seller_count = VALUES(seller_count)
+        ");
+        $insRun->execute([
+            $cycleKey,
+            $batchRes['batch_id'],
+            $batchRes['total_amount'],
+            $batchRes['seller_count'],
+            $runType
+        ]);
+
+        return [
+            'executed' => true,
+            'cycle_key' => $cycleKey,
+            'batch_res' => $batchRes
+        ];
     }
 }

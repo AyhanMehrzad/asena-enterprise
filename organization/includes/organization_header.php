@@ -198,6 +198,7 @@ $currentFile = basename($_SERVER['PHP_SELF']);
             'subscriptions.php'=> ['icon' => 'event_repeat', 'title' => 'اشتراک‌ها و Autoship کلینیک'],
             'inventory.php'    => ['icon' => 'medication', 'title' => 'داروخانه و موجودی کالا'],
             'wallet.php'       => ['icon' => 'account_balance_wallet', 'title' => 'مدیریت مالی و تسویه (پایا)'],
+            'interactions.php' => ['icon' => 'hub', 'title' => 'تعاملات مالی و پیامک با آسنا'],
             'admins.php'       => ['icon' => 'manage_accounts', 'title' => 'مدیران و دسترسی‌های مرکز'],
         ];
 

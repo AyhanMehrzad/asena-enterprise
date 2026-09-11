@@ -94,9 +94,15 @@ try {
     }
     
     // Calculate 5% platform interest / commission and 95% clinic net share
-    $commission_rate = 0.05;
-    $commission_amount = (int)round($doctor_price * $commission_rate);
+    $commission_rate_pct = (float)get_setting($pdo, 'platform_commission_percent', 5);
+    $commission_amount = (int)round($doctor_price * ($commission_rate_pct / 100.0));
     $net_amount = $doctor_price - $commission_amount;
+
+    // Calculate 9% VAT for user display & payment
+    $tax_on_appts = (get_setting($pdo, 'tax_on_appointments_enabled', '1') === '1');
+    $tax_rate_pct = $tax_on_appts ? (float)get_setting($pdo, 'tax_rate_percent', 9) : 0;
+    $tax_amount = (int)round($doctor_price * ($tax_rate_pct / 100.0));
+    $user_total_payable = $doctor_price + $tax_amount;
 
     $pdo->beginTransaction();
 
@@ -171,7 +177,9 @@ try {
         'type'           => 'booking',
         'booking_id'     => $appointment_id,
         'items'          => [],
-        'total_amount'   => $doctor_price,
+        'base_fee'       => $doctor_price,
+        'tax_amount'     => $tax_amount,
+        'total_amount'   => $user_total_payable,
         'commission'     => $commission_amount,
         'net_amount'     => $net_amount,
         'created_at'     => time(),

@@ -212,6 +212,8 @@ $adminName = $adminCheck['name'] ?? 'مدیر سیستم';
             $activeKey = 'security_logs';
         } elseif ($currentFile === 'payouts.php') {
             $activeKey = 'payouts';
+        } elseif ($currentFile === 'finance_settings.php') {
+            $activeKey = 'finance_settings';
         } elseif ($currentFile === 'reviews.php') {
             $activeKey = 'reviews';
         } elseif ($currentFile === 'guide.php') {
@@ -246,8 +248,9 @@ $adminName = $adminCheck['name'] ?? 'مدیر سیستم';
                 'rfq_management'  => ['icon' => 'request_quote', 'title' => 'استعلام‌های عمده (RFQ)', 'url' => 'rfq_management.php'],
             ],
             'مالی و تسویه پایا' => [
-                'payouts'   => ['icon' => 'account_balance_wallet', 'title' => 'تسویه پایا و کارمزد ۵٪', 'url' => 'payouts.php'],
-                'analytics' => ['icon' => 'analytics', 'title' => 'تحلیل و آمار کلان', 'url' => 'analytics.php'],
+                'payouts'          => ['icon' => 'account_balance_wallet', 'title' => 'تسویه پایا و کارمزد ۵٪', 'url' => 'payouts.php'],
+                'finance_settings' => ['icon' => 'settings_suggest', 'title' => 'تنظیمات حساب آسنا و مالیات', 'url' => 'finance_settings.php'],
+                'analytics'        => ['icon' => 'analytics', 'title' => 'تحلیل و آمار کلان', 'url' => 'analytics.php'],
             ],
             'پشتیبانی، امنیت و کاربران' => [
                 'tickets'       => ['icon' => 'support_agent', 'title' => 'مرکز تیکتینگ و شکایات', 'url' => 'tickets.php', 'badge' => $openTicketsCount],

@@ -111,11 +111,12 @@ $activeTab = $_GET['tab'] ?? 'orders';
     <nav class="flex-1 px-3 mt-2 space-y-1">
         <?php
         $navItems = [
-            'orders'   => ['icon' => 'local_shipping', 'title' => 'سفارشات و ارسال کالا', 'tab' => 'orders-tab'],
-            'products' => ['icon' => 'inventory_2', 'title' => 'مدیریت موجودی و انبارداری', 'tab' => 'products-tab'],
-            'wallet'   => ['icon' => 'account_balance_wallet', 'title' => 'کیف پول امانی و تسویه پایا', 'tab' => 'wallet-tab'],
-            'shipping' => ['icon' => 'markunread_mailbox', 'title' => 'رهگیری مرسولات و پستکس', 'tab' => 'shipping-tab'],
-            'settings' => ['icon' => 'store', 'title' => 'مشخصات فروشگاه و حساب بانکی', 'tab' => 'settings-tab'],
+            'orders'       => ['icon' => 'local_shipping', 'title' => 'سفارشات و ارسال کالا', 'tab' => 'orders-tab'],
+            'products'     => ['icon' => 'inventory_2', 'title' => 'مدیریت موجودی و انبارداری', 'tab' => 'products-tab'],
+            'wallet'       => ['icon' => 'account_balance_wallet', 'title' => 'کیف پول امانی و تسویه پایا', 'tab' => 'wallet-tab'],
+            'interactions' => ['icon' => 'hub', 'title' => 'تعاملات و صورت‌حساب آسنا', 'url' => '../interactions.php'],
+            'shipping'     => ['icon' => 'markunread_mailbox', 'title' => 'رهگیری مرسولات و پستکس', 'tab' => 'shipping-tab'],
+            'settings'     => ['icon' => 'store', 'title' => 'مشخصات فروشگاه و حساب بانکی', 'tab' => 'settings-tab'],
         ];
 
         foreach ($navItems as $key => $item):
@@ -123,9 +124,10 @@ $activeTab = $_GET['tab'] ?? 'orders';
             $classes = $isActive 
                 ? "seller-nav-link flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-white font-bold bg-secondary-container shadow-sm transition-all"
                 : "seller-nav-link flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-on-tertiary-container hover:bg-white/10 hover:text-white transition-all";
-            $onclick = "if(typeof switchSellerTab === 'function') { switchSellerTab('{$item['tab']}'); if(window.innerWidth < 1024) toggleSellerSidebar(); return false; }";
+            $onclick = !empty($item['tab']) ? "if(typeof switchSellerTab === 'function') { switchSellerTab('{$item['tab']}'); if(window.innerWidth < 1024) toggleSellerSidebar(); return false; }" : "";
+            $href = !empty($item['url']) ? $item['url'] : "index.php?tab={$key}";
         ?>
-        <a id="seller-nav-<?= $key ?>" class="<?= $classes ?>" href="index.php?tab=<?= $key ?>" onclick="<?= $onclick ?>">
+        <a id="seller-nav-<?= $key ?>" class="<?= $classes ?>" href="<?= $href ?>" <?= !empty($onclick) ? 'onclick="'.$onclick.'"' : '' ?>>
             <span class="material-symbols-outlined text-[20px]"><?= $item['icon'] ?></span>
             <span class="text-xs font-bold leading-tight"><?= $item['title'] ?></span>
         </a>
@@ -212,4 +214,8 @@ $activeTab = $_GET['tab'] ?? 'orders';
             <span class="material-symbols-outlined text-sm text-amber-600">store</span>
             <span>تنظیمات</span>
         </button>
+        <a href="../interactions.php" class="seller-mobile-tab px-3.5 py-2 rounded-xl bg-blue-50 border border-blue-200 text-blue-700 text-xs font-bold shrink-0 flex items-center gap-1.5">
+            <span class="material-symbols-outlined text-sm text-blue-600">hub</span>
+            <span>تعاملات آسنا</span>
+        </a>
     </div>

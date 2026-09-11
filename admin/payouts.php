@@ -133,6 +133,12 @@ require_once __DIR__ . '/includes/admin_header.php';
         </div>
 
         <div class="flex flex-wrap items-center gap-3">
+            <!-- Finance Settings Link -->
+            <a href="finance_settings.php" class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 dark:bg-slate-800 dark:text-white dark:hover:bg-slate-700 text-xs font-bold shadow-sm transition border border-slate-200 dark:border-slate-700">
+                <span class="material-symbols-outlined text-sm text-[#fd8100]">credit_card</span>
+                <span>تنظیمات کارت بانکی و خزانه‌داری</span>
+            </a>
+
             <!-- 1-Click Post Sync -->
             <form method="POST" class="inline">
                 <input type="hidden" name="csrf_token" value="<?= SecurityMiddleware::generateCsrfToken() ?>">

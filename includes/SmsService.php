@@ -31,22 +31,30 @@ class SmsService {
 
     public function __construct() {
         self::loadEnv();
+        require_once __DIR__ . '/functions.php';
 
-        $this->apiKey   = getenv('MELIPAYAMAK_API_KEY') ?: '';
-        $rawUsername    = getenv('MELIPAYAMAK_USERNAME') ?: '';
+        global $pdo;
+        $dbApiKey   = ($pdo instanceof PDO) ? get_setting($pdo, 'melipayamak_api_key', '') : '';
+        $dbUsername = ($pdo instanceof PDO) ? get_setting($pdo, 'melipayamak_username', '') : '';
+        $dbPassword = ($pdo instanceof PDO) ? get_setting($pdo, 'melipayamak_password', '') : '';
+        $dbFrom     = ($pdo instanceof PDO) ? get_setting($pdo, 'melipayamak_from', '') : '';
+        $dbSandbox  = ($pdo instanceof PDO) ? get_setting($pdo, 'melipayamak_sandbox', null) : null;
+
+        $this->apiKey   = !empty($dbApiKey) ? $dbApiKey : (getenv('MELIPAYAMAK_API_KEY') ?: '');
+        $rawUsername    = !empty($dbUsername) ? $dbUsername : (getenv('MELIPAYAMAK_USERNAME') ?: '');
         $this->username = self::normalizePhone($rawUsername) ?: '';
-        $this->password = getenv('MELIPAYAMAK_PASSWORD') ?: '';
-        $this->from     = getenv('MELIPAYAMAK_FROM') ?: '';
+        $this->password = !empty($dbPassword) ? $dbPassword : (getenv('MELIPAYAMAK_PASSWORD') ?: '');
+        $this->from     = !empty($dbFrom) ? $dbFrom : (getenv('MELIPAYAMAK_FROM') ?: '');
 
         // Safe Sandbox Detection:
-        // Automatically mock if explicit sandbox flag is set, credentials are empty/placeholder, or running in CLI tests
+        $isExplicitSandbox = ($dbSandbox !== null) ? ($dbSandbox === '1') : (getenv('MELIPAYAMAK_SANDBOX') === 'true');
         $this->isMock = (
-            getenv('MELIPAYAMAK_SANDBOX') === 'true' ||
+            $isExplicitSandbox ||
             empty($this->username) ||
             empty($this->password) ||
             $this->username === 'your_username' ||
             $this->password === 'your_password' ||
-            (php_sapi_name() === 'cli' && empty(getenv('MELIPAYAMAK_LIVE')))
+            (php_sapi_name() === 'cli' && empty(getenv('MELIPAYAMAK_LIVE')) && empty($dbApiKey))
         );
     }
 
@@ -670,5 +678,29 @@ class SmsService {
             }
         }
         return null;
+    }
+
+    /**
+     * Get remaining paid SMS credits for a seller/doctor/clinic
+     */
+    public static function getUserSmsCredits(PDO $pdo, int $userId): int {
+        $stmt = $pdo->prepare("SELECT sms_credits FROM seller_wallets WHERE seller_id = ?");
+        $stmt->execute([$userId]);
+        $val = $stmt->fetchColumn();
+        return ($val !== false) ? (int)$val : 0;
+    }
+
+    /**
+     * Deduct SMS credit from seller/doctor/clinic wallet upon sending
+     */
+    public static function deductUserSmsCredits(PDO $pdo, int $userId, string $recipient, string $message, int $credits = 1): bool {
+        $stmt = $pdo->prepare("UPDATE seller_wallets SET sms_credits = GREATEST(0, sms_credits - ?) WHERE seller_id = ? AND sms_credits >= ?");
+        $stmt->execute([$credits, $userId, $credits]);
+        if ($stmt->rowCount() > 0) {
+            $log = $pdo->prepare("INSERT INTO sms_usage_logs (user_id, recipient, message, credits_deducted) VALUES (?, ?, ?, ?)");
+            $log->execute([$userId, $recipient, $message, $credits]);
+            return true;
+        }
+        return false;
     }
 }

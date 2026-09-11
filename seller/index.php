@@ -24,7 +24,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 
                 if ($transRes['success']) {
                     $pdo->prepare("UPDATE seller_escrow_ledger SET status = 'in_inspection' WHERE order_id = ? AND status = 'pending_delivery'")->execute([$orderId]);
-                    $msg = "کد رهگیری پستی ({$trackingCode}) برای سفارش #{$orderId} با موفقیت ثبت، وضعیت به «ارسال شده» تغییر یافت و پیامک رهگیری به خریدار ارسال گردید.";
+                    $sellerCredits = SmsService::getUserSmsCredits($pdo, $sellerId);
+                    if ($sellerCredits <= 0) {
+                        $msg = "کد رهگیری پستی ({$trackingCode}) برای سفارش #{$orderId} با موفقیت ثبت و وضعیت به «ارسال شده» تغییر یافت. (توجه: به دلیل اتمام اعتبار پیامک پت‌شاپ [۰ عدد]، پیامک به خریدار ارسال نشد. لطفاً از بخش «تعاملات با آسنا» نسبت به شارژ بسته پیامک اقدام فرمایید).";
+                    } else {
+                        $msg = "کد رهگیری پستی ({$trackingCode}) برای سفارش #{$orderId} با موفقیت ثبت، وضعیت به «ارسال شده» تغییر یافت و پیامک رهگیری به خریدار ارسال و ۱ اعتبار از بسته شما کسر گردید.";
+                    }
                     $msgType = 'success';
                 } else {
                     $msg = $transRes['message'] ?? 'خطا در تغییر وضعیت سفارش.';

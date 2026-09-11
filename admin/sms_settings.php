@@ -36,6 +36,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         set_setting($pdo, 'doctor_sms_on_booking', $doctorSmsOnBooking);
 
         $success = "تنظیمات پیامک و اعلان‌های مدیران با موفقیت ذخیره شد.";
+    } elseif ($action === 'save_gateway_credentials') {
+        $apiKey   = trim($_POST['melipayamak_api_key'] ?? '');
+        $username = trim($_POST['melipayamak_username'] ?? '');
+        $password = trim($_POST['melipayamak_password'] ?? '');
+        $fromNum  = trim($_POST['melipayamak_from'] ?? '');
+        $sandbox  = isset($_POST['melipayamak_sandbox']) ? '1' : '0';
+        $smsPrice = max(100, (int)($_POST['sms_price_per_unit'] ?? 850));
+        $pack100  = max(1000, (int)($_POST['sms_pack_100_price'] ?? 85000));
+        $pack500  = max(1000, (int)($_POST['sms_pack_500_price'] ?? 375000));
+        $pack1000 = max(1000, (int)($_POST['sms_pack_1000_price'] ?? 680000));
+
+        set_setting($pdo, 'melipayamak_api_key', $apiKey);
+        set_setting($pdo, 'melipayamak_username', $username);
+        set_setting($pdo, 'melipayamak_password', $password);
+        set_setting($pdo, 'melipayamak_from', $fromNum);
+        set_setting($pdo, 'melipayamak_sandbox', $sandbox);
+        set_setting($pdo, 'sms_price_per_unit', $smsPrice);
+        set_setting($pdo, 'sms_pack_100_price', $pack100);
+        set_setting($pdo, 'sms_pack_500_price', $pack500);
+        set_setting($pdo, 'sms_pack_1000_price', $pack1000);
+
+        $success = "اطلاعات وب‌سرویس، تعرفه هر پیامک و قیمت بسته‌های پیامک با حاشیه سود آسنا به‌روزرسانی شد.";
     } elseif ($action === 'test_sms') {
         $testPhone = trim($_POST['test_phone'] ?? '');
         $testType  = $_POST['test_type'] ?? 'direct';
@@ -93,6 +115,18 @@ $adminNotificationPhones = get_setting($pdo, 'admin_notification_phones', '09146
 $adminSmsOnOrder         = get_setting($pdo, 'admin_sms_on_order', '1');
 $adminSmsOnBooking       = get_setting($pdo, 'admin_sms_on_booking', '1');
 $doctorSmsOnBooking      = get_setting($pdo, 'doctor_sms_on_booking', '1');
+
+$mApiKey      = get_setting($pdo, 'melipayamak_api_key', getenv('MELIPAYAMAK_API_KEY') ?: '');
+$mUsername    = get_setting($pdo, 'melipayamak_username', getenv('MELIPAYAMAK_USERNAME') ?: '');
+$mPassword    = get_setting($pdo, 'melipayamak_password', getenv('MELIPAYAMAK_PASSWORD') ?: '');
+$mFrom        = get_setting($pdo, 'melipayamak_from', getenv('MELIPAYAMAK_FROM') ?: '50004001');
+$smsUnitPrice = (int)get_setting($pdo, 'sms_price_per_unit', 850);
+$pack100Price = (int)get_setting($pdo, 'sms_pack_100_price', 85000);
+$pack500Price = (int)get_setting($pdo, 'sms_pack_500_price', 375000);
+$pack1000Price = (int)get_setting($pdo, 'sms_pack_1000_price', 680000);
+
+$smsInstance = new SmsService();
+$liveCredit = $smsInstance->getCredit();
 
 $phoneList = array_filter(array_map('trim', explode(',', $adminNotificationPhones)));
 
@@ -240,13 +274,158 @@ $patterns = [
 
         <div class="bg-surface-container-lowest p-5 rounded-2xl border border-outline-variant/40 stat-card-shadow flex items-center justify-between">
             <div>
-                <p class="text-xs font-bold text-on-surface-variant mb-1">درگاه ملی‌پیامک</p>
-                <p class="text-lg font-black text-emerald-600">متصل (توکن REST)</p>
+                <p class="text-xs font-bold text-on-surface-variant mb-1">مانده شارژ پنل ملی‌پیامک</p>
+                <p class="text-lg font-black <?= ($liveCredit !== null) ? 'text-emerald-600 font-mono' : 'text-amber-600' ?>">
+                    <?= ($liveCredit !== null) ? number_format($liveCredit) . ' ریال' : ($mSandbox === '1' ? 'حالت سندباکس' : 'متصل / بدون پاسخ مانده') ?>
+                </p>
             </div>
             <div class="w-12 h-12 bg-emerald-50 rounded-xl flex items-center justify-center text-emerald-600">
-                <span class="material-symbols-outlined text-[28px]">verified</span>
+                <span class="material-symbols-outlined text-[28px]">account_balance_wallet</span>
             </div>
         </div>
+    </div>
+
+    <!-- Administrative Gateway Credentials Card (Exclusive to Admin) -->
+    <div class="bg-surface-container-lowest border-2 border-primary/20 rounded-2xl p-6 lg:p-8 stat-card-shadow mb-8 relative overflow-hidden">
+        <div class="absolute top-0 left-0 bg-primary text-white text-[10px] font-bold px-3 py-1 rounded-br-xl">
+            اختصاصی مدیر ارشد آسنا
+        </div>
+        <div class="flex items-center gap-3 mb-6 pb-4 border-b border-outline-variant/30">
+            <span class="material-symbols-outlined text-primary text-[28px]">key</span>
+            <div>
+                <h3 class="font-bold text-primary text-lg">پیکربندی وب‌سرویس و API Key ملی‌پیامک (خزانه‌داری آسنا)</h3>
+                <p class="text-xs text-on-surface-variant">تنظیمات اتصال مستقیم به درگاه ملی‌پیامک، کلید اختصاصی و تعیین تعرفه فروش پیامک به فروشندگان و پزشکان</p>
+            </div>
+        </div>
+
+        <form method="POST" action="sms_settings.php" class="space-y-6">
+            <?= csrf_field() ?>
+            <input type="hidden" name="action" value="save_gateway_credentials">
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- API Key -->
+                <div class="sm:col-span-2 lg:col-span-1">
+                    <label class="block text-xs font-bold text-primary mb-2">کلید وب‌سرویس (API Key):</label>
+                    <input type="text" name="melipayamak_api_key" value="<?= htmlspecialchars($mApiKey) ?>" placeholder="e.g. 5ab7... یا خالی بگذارید" class="w-full px-4 py-3 rounded-xl border border-outline-variant bg-surface text-xs font-mono focus:border-primary focus:ring-1 focus:ring-primary outline-none dir-ltr text-left">
+                    <p class="text-[10px] text-on-surface-variant mt-1.5">کلید API ایجاد شده در کنسول ملی‌پیامک</p>
+                </div>
+
+                <!-- Username -->
+                <div>
+                    <label class="block text-xs font-bold text-primary mb-2">نام کاربری پنل ملی‌پیامک (شماره موبایل/یوزر):</label>
+                    <input type="text" name="melipayamak_username" value="<?= htmlspecialchars($mUsername) ?>" placeholder="0914... یا نام کاربری" class="w-full px-4 py-3 rounded-xl border border-outline-variant bg-surface text-xs font-mono focus:border-primary focus:ring-1 focus:ring-primary outline-none dir-ltr text-left">
+                    <p class="text-[10px] text-on-surface-variant mt-1.5">شماره موبایل یا شناسه کاربری ثبت‌شده در ملی‌پیامک</p>
+                </div>
+
+                <!-- Password -->
+                <div>
+                    <label class="block text-xs font-bold text-primary mb-2">رمز عبور / توکن وب‌سرویس:</label>
+                    <input type="password" name="melipayamak_password" value="<?= htmlspecialchars($mPassword) ?>" placeholder="••••••••" class="w-full px-4 py-3 rounded-xl border border-outline-variant bg-surface text-xs font-mono focus:border-primary focus:ring-1 focus:ring-primary outline-none dir-ltr text-left">
+                    <p class="text-[10px] text-on-surface-variant mt-1.5">رمز ورود به وب‌سرویس ارسال پیامک</p>
+                </div>
+
+                <!-- Dedicated From Number -->
+                <div>
+                    <label class="block text-xs font-bold text-primary mb-2">شماره خط اختصاصی ارسال‌کننده (From):</label>
+                    <input type="text" name="melipayamak_from" value="<?= htmlspecialchars($mFrom) ?>" placeholder="50004001..." class="w-full px-4 py-3 rounded-xl border border-outline-variant bg-surface text-xs font-mono focus:border-primary focus:ring-1 focus:ring-primary outline-none dir-ltr text-left">
+                    <p class="text-[10px] text-on-surface-variant mt-1.5">خط خدماتی یا تبلیغاتی شرکت آسنا</p>
+                </div>
+
+                <!-- SMS Price Per Unit for Roles -->
+                <div>
+                    <label class="block text-xs font-bold text-primary mb-2">تعرفه پایه هر پیامک آزاد (تومان):</label>
+                    <input type="number" name="sms_price_per_unit" value="<?= $smsUnitPrice ?>" min="100" step="50" class="w-full px-4 py-3 rounded-xl border border-outline-variant bg-surface text-xs font-bold focus:border-primary focus:ring-1 focus:ring-primary outline-none">
+                    <p class="text-[10px] text-on-surface-variant mt-1.5">مبلغ کسر شده به ازای هر پیامک ارسالی مستقیم</p>
+                </div>
+
+                <!-- Package 100 Price -->
+                <div>
+                    <label class="block text-xs font-bold text-primary mb-2">قیمت بسته ۱۰۰ پیامک (تومان):</label>
+                    <input type="number" name="sms_pack_100_price" value="<?= $pack100Price ?>" min="5000" step="1000" class="w-full px-4 py-3 rounded-xl border border-outline-variant bg-surface text-xs font-bold focus:border-primary focus:ring-1 focus:ring-primary outline-none">
+                    <p class="text-[10px] text-emerald-700 font-bold mt-1.5">هر پیامک <?= number_format(round($pack100Price/100)) ?> ت — سود آسنا: <?= number_format($pack100Price - 15000) ?> ت</p>
+                </div>
+
+                <!-- Package 500 Price -->
+                <div>
+                    <label class="block text-xs font-bold text-primary mb-2">قیمت بسته ۵۰۰ پیامک (تومان):</label>
+                    <input type="number" name="sms_pack_500_price" value="<?= $pack500Price ?>" min="20000" step="5000" class="w-full px-4 py-3 rounded-xl border border-outline-variant bg-surface text-xs font-bold focus:border-primary focus:ring-1 focus:ring-primary outline-none">
+                    <p class="text-[10px] text-emerald-700 font-bold mt-1.5">هر پیامک <?= number_format(round($pack500Price/500)) ?> ت — سود آسنا: <?= number_format($pack500Price - 75000) ?> ت</p>
+                </div>
+
+                <!-- Package 1000 Price -->
+                <div>
+                    <label class="block text-xs font-bold text-primary mb-2">قیمت بسته ۱۰۰۰ پیامک طلایی (تومان):</label>
+                    <input type="number" name="sms_pack_1000_price" value="<?= $pack1000Price ?>" min="50000" step="5000" class="w-full px-4 py-3 rounded-xl border border-outline-variant bg-surface text-xs font-bold focus:border-primary focus:ring-1 focus:ring-primary outline-none">
+                    <p class="text-[10px] text-emerald-700 font-bold mt-1.5">هر پیامک <?= number_format(round($pack100Price/1000 * 0.8)) ?> ت — سود آسنا: <?= number_format($pack1000Price - 150000) ?> ت</p>
+                </div>
+
+                <!-- Sandbox Mode Toggle -->
+                <div class="flex items-center gap-3 pt-6">
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" name="melipayamak_sandbox" value="1" <?= $mSandbox === '1' ? 'checked' : '' ?> class="sr-only peer">
+                        <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500"></div>
+                    </label>
+                    <div>
+                        <span class="text-xs font-bold text-slate-800 block">حالت شبیه‌ساز (Sandbox / Mock)</span>
+                        <span class="text-[10px] text-slate-500">در صورت فعال بودن، پیامک به صورت آزمایشی در لاگ ثبت می‌شود.</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Profit & Revenue Margin Analytics Box -->
+            <div class="mt-6 bg-gradient-to-r from-emerald-50 via-teal-50 to-blue-50 border border-emerald-200/80 rounded-2xl p-5">
+                <div class="flex items-center justify-between gap-3 mb-3 pb-2 border-b border-emerald-200/60">
+                    <div class="flex items-center gap-2">
+                        <span class="material-symbols-outlined text-emerald-700 text-lg">monetization_on</span>
+                        <h4 class="text-xs font-black text-emerald-900">تحلیل حاشیه سود اختصاصی پلتفرم آسنا از فروش پیامک به مراکز و پزشکان</h4>
+                    </div>
+                    <span class="text-[10px] font-extrabold bg-emerald-600 text-white px-2.5 py-0.5 rounded-full">سود ناخالص تا ۵۰۰٪+</span>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
+                    <div class="bg-white/80 p-3 rounded-xl border border-emerald-100 shadow-2xs">
+                        <div class="text-[11px] text-slate-500 font-bold mb-1">بسته ۱۰۰ پیامک (<?= number_format($pack100Price) ?> ت)</div>
+                        <div class="flex justify-between items-center text-[10px] text-slate-600 mb-1">
+                            <span>هزینه خرید ملی‌پیامک:</span>
+                            <span class="font-mono">۱۵,۰۰۰ ت</span>
+                        </div>
+                        <div class="flex justify-between items-center font-bold text-emerald-700 pt-1 border-t border-slate-100">
+                            <span>سود خالص آسنا:</span>
+                            <span class="font-mono text-sm">+<?= number_format($pack100Price - 15000) ?> ت</span>
+                        </div>
+                    </div>
+                    <div class="bg-white/80 p-3 rounded-xl border border-emerald-100 shadow-2xs">
+                        <div class="text-[11px] text-slate-500 font-bold mb-1">بسته ۵۰۰ پیامک (<?= number_format($pack500Price) ?> ت)</div>
+                        <div class="flex justify-between items-center text-[10px] text-slate-600 mb-1">
+                            <span>هزینه خرید ملی‌پیامک:</span>
+                            <span class="font-mono">۷۵,۰۰۰ ت</span>
+                        </div>
+                        <div class="flex justify-between items-center font-bold text-emerald-700 pt-1 border-t border-slate-100">
+                            <span>سود خالص آسنا:</span>
+                            <span class="font-mono text-sm">+<?= number_format($pack500Price - 75000) ?> ت</span>
+                        </div>
+                    </div>
+                    <div class="bg-white/80 p-3 rounded-xl border border-emerald-100 shadow-2xs">
+                        <div class="text-[11px] text-slate-500 font-bold mb-1">بسته ۱۰۰۰ پیامک طلایی (<?= number_format($pack1000Price) ?> ت)</div>
+                        <div class="flex justify-between items-center text-[10px] text-slate-600 mb-1">
+                            <span>هزینه خرید ملی‌پیامک:</span>
+                            <span class="font-mono">۱۵۰,۰۰۰ ت</span>
+                        </div>
+                        <div class="flex justify-between items-center font-bold text-emerald-700 pt-1 border-t border-slate-100">
+                            <span>سود خالص آسنا:</span>
+                            <span class="font-mono text-sm">+<?= number_format($pack1000Price - 150000) ?> ت</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pt-4 border-t border-outline-variant/30 flex justify-between items-center">
+                <span class="text-xs text-slate-500">اطلاعات در جدول تنظیمات پایگاه‌داده با اولویت بالاتر از .env ذخیره می‌شوند.</span>
+                <button type="submit" class="bg-primary hover:bg-primary-container text-white px-6 py-2.5 rounded-xl font-bold text-xs shadow-md transition-all flex items-center gap-2">
+                    <span class="material-symbols-outlined text-sm">save</span>
+                    <span>ذخیره مشخصات وب‌سرویس ملی‌پیامک</span>
+                </button>
+            </div>
+        </form>
     </div>
 
     <!-- Main 2-Column Grid -->

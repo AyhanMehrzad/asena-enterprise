@@ -178,11 +178,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                     $smsNotice = "";
                     if ($sendSms && $patientInfo && !empty($patientInfo['phone'])) {
                         require_once '../includes/SmsService.php';
-                        $sms = new SmsService();
-                        $petName = $patientInfo['pet_name'] ?: $patientInfo['pet_type'] ?: 'حیوان خانگی';
-                        $jalaliNewDate = (new IntlDateFormatter('fa_IR@calendar=persian', IntlDateFormatter::FULL, IntlDateFormatter::NONE, 'Asia/Tehran', IntlDateFormatter::TRADITIONAL, 'yyyy/MM/dd'))->format(new DateTime($newDate));
-                        $sms->sendAppointmentReschedule($patientInfo['phone'], $doctorName, $petName, $jalaliNewDate, $newTime, $reason);
-                        $smsNotice = " و پیامک اطلاع‌رسانی به شماره {$patientInfo['phone']} ارسال گردید.";
+                        $docUserId = (int)$_SESSION['user_id'];
+                        $docCredits = SmsService::getUserSmsCredits($pdo, $docUserId);
+
+                        if ($docCredits <= 0) {
+                            $smsNotice = " (هشدار: به علت اتمام اعتبار پیامک شما [۰ عدد]، پیامک تغییر زمان به بیمار ارسال نشد. لطفاً از پرتال تعاملات با آسنا نسبت به شارژ بسته پیامک اقدام فرمایید).";
+                        } else {
+                            $sms = new SmsService();
+                            $petName = $patientInfo['pet_name'] ?: $patientInfo['pet_type'] ?: 'حیوان خانگی';
+                            $jalaliNewDate = (new IntlDateFormatter('fa_IR@calendar=persian', IntlDateFormatter::FULL, IntlDateFormatter::NONE, 'Asia/Tehran', IntlDateFormatter::TRADITIONAL, 'yyyy/MM/dd'))->format(new DateTime($newDate));
+                            $smsSent = $sms->sendAppointmentReschedule($patientInfo['phone'], $doctorName, $petName, $jalaliNewDate, $newTime, $reason);
+                            if ($smsSent) {
+                                SmsService::deductUserSmsCredits($pdo, $docUserId, $patientInfo['phone'], "تغییر زمان نوبت {$petName} به {$jalaliNewDate} ساعت {$newTime}", 1);
+                                $smsNotice = " و پیامک اطلاع‌رسانی به شماره {$patientInfo['phone']} ارسال و ۱ اعتبار از بسته شما کسر گردید.";
+                            }
+                        }
                     }
                     $success = "زمان نوبت با موفقیت به تاریخ $newDate ساعت $newTime تغییر یافت" . $smsNotice;
                 } else {

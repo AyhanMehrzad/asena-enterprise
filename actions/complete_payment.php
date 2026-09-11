@@ -20,14 +20,14 @@ if ($status !== 'OK' || empty($authority)) {
 }
 
 // ── Gate 3: Authority must match session — prevents authority injection ────────
-$pending = $_SESSION['pending_order'] ?? null;
 $is_booking = ($pending['type'] ?? '') === 'booking';
 $is_subscription = ($pending['type'] ?? '') === 'subscription';
+$is_sms_package = ($pending['type'] ?? '') === 'sms_package';
 
 if (!$pending
     || ($pending['authority'] ?? '') !== $authority
     || empty($pending['total_amount'])
-    || (!$is_booking && !$is_subscription && empty($pending['items']))
+    || (!$is_booking && !$is_subscription && !$is_sms_package && empty($pending['items']))
 ) {
     unset($_SESSION['pending_order']);
     $_SESSION['profile_error'] = 'اطلاعات سفارش نامعتبر یا منقضی شده است.';
@@ -56,7 +56,18 @@ try {
     $total_amount = (int)$pending['total_amount'];
     $items        = $pending['items'] ?? [];
 
-    if ($is_subscription) {
+    if ($is_sms_package) {
+        $credits = (int)($pending['credits'] ?? 0);
+        $pkgName = $pending['package_name'] ?? 'بسته پیامک';
+        
+        $pdo->prepare("INSERT INTO seller_wallets (seller_id, sms_credits) VALUES (?, ?) ON DUPLICATE KEY UPDATE sms_credits = sms_credits + ?")
+            ->execute([$user_id, $credits, $credits]);
+            
+        $pdo->prepare("INSERT INTO sms_package_purchases (user_id, package_name, credits, price, payment_method, payment_ref, status) VALUES (?, ?, ?, ?, 'gateway', ?, 'completed')")
+            ->execute([$user_id, $pkgName, $credits, $total_amount, $ref_id]);
+            
+        $order_id = 0;
+    } elseif ($is_subscription) {
         $months = intval($pending['plan_id'] ?? 1);
         if ($months < 1) $months = 1;
         $sub_freq = $pending['frequency'] ?? '1_month';
@@ -213,23 +224,31 @@ try {
     $userPhone = $u['phone'] ?? '';
 
     if ($is_booking && !empty($pending['booking_id'])) {
-        $pdo->prepare("UPDATE appointments SET status = 'approved' WHERE id = ?")
-            ->execute([$pending['booking_id']]);
+        $bookingId = (int)$pending['booking_id'];
+        $pdo->prepare("UPDATE appointments SET status = 'approved', settlement_status = 'held_in_escrow' WHERE id = ?")
+            ->execute([$bookingId]);
         $pdo->prepare("UPDATE users SET loyalty_points = loyalty_points + 20 WHERE id = ?")
             ->execute([$user_id]);
             
         // 1. Fetch appointment & doctor details
         $doc_stmt = $pdo->prepare("
-            SELECT d.name as doctor_name, d.phone as doctor_phone, a.pet_name, a.pet_type, a.appointment_date, a.appointment_time, u_doc.phone as doc_user_phone
+            SELECT a.net_amount, a.organization_id, d.user_id as doctor_user_id, d.name as doctor_name, d.phone as doctor_phone, a.pet_name, a.pet_type, a.appointment_date, a.appointment_time, u_doc.phone as doc_user_phone
             FROM appointments a 
             JOIN doctors d ON a.doctor_id = d.id 
             LEFT JOIN users u_doc ON d.user_id = u_doc.id
             WHERE a.id = ?
         ");
-        $doc_stmt->execute([$pending['booking_id']]);
+        $doc_stmt->execute([$bookingId]);
         $apptDoc = $doc_stmt->fetch(PDO::FETCH_ASSOC);
 
         if ($apptDoc) {
+            $beneficiaryOrgOrDoc = !empty($apptDoc['organization_id']) ? (int)$apptDoc['organization_id'] : (int)($apptDoc['doctor_user_id'] ?: 1);
+            $netShare = (int)($apptDoc['net_amount'] ?: ($pending['net_amount'] ?? 0));
+            if ($netShare > 0) {
+                // Credit pending escrow to wallet
+                $pdo->prepare("INSERT INTO seller_wallets (seller_id, balance_pending_escrow) VALUES (?, ?) ON DUPLICATE KEY UPDATE balance_pending_escrow = balance_pending_escrow + ?")
+                    ->execute([$beneficiaryOrgOrDoc, $netShare, $netShare]);
+            }
             // Send Booking Confirmation SMS to User
             if (!empty($userPhone)) {
                 $sms->sendBookingConfirmation($userPhone, $apptDoc['appointment_date'], $apptDoc['appointment_time']);
@@ -287,9 +306,16 @@ try {
     // 4. Clean up session
     unset($_SESSION['cart'], $_SESSION['pending_order']);
     
-    if ($is_subscription) {
+    if ($is_sms_package) {
+        $_SESSION['profile_success'] = "پرداخت موفق! {$pending['package_name']} با موفقیت به حساب شما افزوده شد. کد رهگیری: {$ref_id}";
+        header('Location: ../interactions.php');
+        exit;
+    } elseif ($is_subscription) {
         $_SESSION['profile_success'] =
             "پرداخت موفق! اشتراک «{$pending['plan_name']}» با موفقیت فعال شد. کد رهگیری: {$ref_id}";
+    } elseif ($is_booking) {
+        $_SESSION['profile_success'] =
+            "پرداخت موفق! نوبت ویزیت تخصصی شما در سامانه آسنا با موفقیت تایید شد. کد رهگیری: {$ref_id}";
     } else {
         $_SESSION['profile_success'] =
             "پرداخت موفق! سفارش #PC-{$order_id} ثبت شد. کد رهگیری: {$ref_id}";

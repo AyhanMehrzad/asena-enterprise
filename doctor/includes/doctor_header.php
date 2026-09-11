@@ -187,8 +187,9 @@ if (!$doctorProfile) {
             'blogs'    => ['icon' => 'edit_note', 'title' => 'نگارش و مقالات وبلاگ', 'url' => 'blogs.php', 'feature' => 'blog_engine'],
             'services' => ['icon' => 'loyalty', 'title' => 'خدمات، علت‌ها و تگ‌ها', 'tab' => 'services-tab'],
             'reviews'  => ['icon' => 'reviews', 'title' => 'نظرات و بازخورد مراجعین', 'tab' => 'reviews-tab', 'feature' => 'reviews'],
-            'history'  => ['icon' => 'history', 'title' => 'آرشیو مراجعات و پرونده‌ها', 'tab' => 'history-tab'],
-            'profile'  => ['icon' => 'contact_phone', 'title' => 'اطلاعات تماس و پیامک نوبت', 'tab' => 'profile-tab'],
+            'history'      => ['icon' => 'history', 'title' => 'آرشیو مراجعات و پرونده‌ها', 'tab' => 'history-tab'],
+            'interactions' => ['icon' => 'hub', 'title' => 'تعاملات، مالی و پیامک آسنا', 'url' => '../interactions.php'],
+            'profile'      => ['icon' => 'contact_phone', 'title' => 'اطلاعات تماس و پیامک نوبت', 'tab' => 'profile-tab'],
         ];
 
         foreach ($navItems as $key => $item):

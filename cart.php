@@ -75,8 +75,15 @@ if (!empty($cart_items)) {
     }
 }
 
-$std_final_price = $std_total_price - $std_total_discount;
-$auto_final_price = $auto_total_price - $auto_total_discount;
+$tax_rate_pct = (float)get_setting($pdo, 'tax_rate_percent', 9);
+
+$std_subtotal = $std_total_price - $std_total_discount;
+$std_tax_amount = (int)round($std_subtotal * ($tax_rate_pct / 100.0));
+$std_final_price = $std_subtotal + $std_tax_amount;
+
+$auto_subtotal = $auto_total_price - $auto_total_discount;
+$auto_tax_amount = (int)round($auto_subtotal * ($tax_rate_pct / 100.0));
+$auto_final_price = $auto_subtotal + $auto_tax_amount;
 
 // Active tab determination with highest priority to URL param and session
 $default_tab = $_GET['tab'] ?? $_SESSION['active_cart_tab'] ?? ((empty($standard_products) && !empty($autoship_products)) ? 'autoship' : 'standard');
@@ -359,6 +366,13 @@ if (empty($wishlist_products)) {
                                     <span class="font-mono"><?= number_format($std_total_discount) ?> تومان</span>
                                 </div>
                                 <?php endif; ?>
+                                <div class="flex justify-between items-center text-slate-600 bg-slate-50 p-2 rounded-xl">
+                                    <span class="flex items-center gap-1">
+                                        <span class="material-symbols-outlined text-sm text-slate-400">account_balance</span>
+                                        مالیات بر ارزش افزوده (<?= (int)$tax_rate_pct ?>٪):
+                                    </span>
+                                    <span class="font-bold font-mono text-slate-800">+<?= number_format($std_tax_amount) ?> تومان</span>
+                                </div>
                                 <div class="flex justify-between items-center text-on-surface-variant">
                                     <span>هزینه بسته‌بندی و ارسال</span>
                                     <span class="text-status-active font-bold">رایگان</span>
@@ -624,8 +638,12 @@ if (empty($wishlist_products)) {
                                     <span>تخفیف اشتراک خودکار (۱۵٪):</span>
                                     <span class="font-mono">-<?= number_format($auto_total_discount) ?> ت</span>
                                 </div>
+                                <div class="flex justify-between items-center text-slate-600 bg-slate-50 p-2 rounded-xl">
+                                    <span>مالیات بر ارزش افزوده (<?= (int)$tax_rate_pct ?>٪):</span>
+                                    <span class="font-bold font-mono text-slate-800">+<?= number_format($auto_tax_amount) ?> تومان</span>
+                                </div>
                                 <div class="flex justify-between items-center text-on-surface-variant">
-                                    <span>مبلغ هر نوبت ارسال:</span>
+                                    <span>مبلغ نهایی با احتساب مالیات:</span>
                                     <span class="font-bold font-mono text-primary" id="perDeliveryPriceText"><?= number_format($auto_final_price) ?> تومان</span>
                                 </div>
                                 <div class="flex justify-between items-center text-on-surface-variant">
