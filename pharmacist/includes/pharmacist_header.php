@@ -4,8 +4,8 @@ require_once dirname(__DIR__, 2) . '/includes/App.php';
 require_once dirname(__DIR__, 2) . '/includes/AuthGuard.php';
 require_once dirname(__DIR__, 2) . '/includes/functions.php';
 
-// Route Guard: Pharmacist or Admin
-$currentUser = AuthGuard::requireRole(['pharmacist', 'admin'], $pdo);
+// Route Guard: Pharmacist, Pharmacy (new role), or Admin
+$currentUser = AuthGuard::requireRole(['pharmacist', 'pharmacy', 'admin'], $pdo);
 
 $pharmacistName = $currentUser['name'] ?: 'داروساز گرامی';
 
@@ -114,6 +114,7 @@ $orgId = (int)($linkedOrg['id'] ?? 1);
         $activeTabKey = $_GET['tab'] ?? 'prescriptions';
         
         $navItems = [
+            'bpms'          => ['icon' => 'account_tree', 'title' => 'کارتابل BPMS (تأیید نسخه‌ها)', 'tab' => 'bpms-tab'],
             'prescriptions' => ['icon' => 'prescriptions', 'title' => 'کارتابل نسخه‌های الکترونیک', 'tab' => 'prescriptions-tab'],
             'inventory'     => ['icon' => 'medication', 'title' => 'انبار دارویی و کنترل موجودی', 'tab' => 'inventory-tab'],
             'autoship'      => ['icon' => 'autorenew', 'title' => 'تکرار دارو و اتوشیپ مزمن', 'tab' => 'autoship-tab'],

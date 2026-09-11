@@ -66,6 +66,20 @@ $rolesConfig = [
         'description'  => 'کارتابل بررسی و تایید نسخه‌ها، کنترل زنجیره سرد، نظارت بر سری ساخت و تاریخ انقضای داروها.',
         'features'     => ['کارتابل تایید نسخه‌ها', 'پایش سری ساخت و انقضا', 'کنترل زنجیره سرد واکسن', 'بررسی تداخلات دارویی']
     ],
+    'pharmacy' => [
+        'title'        => 'داروخانه مستقل (نقش جدید)',
+        'subtitle'     => 'Pharmacy Store Owner — BPMS Gateway',
+        'badge'        => 'داروخانه مستقل',
+        'color'        => 'violet',
+        'gradient'     => 'from-violet-600 to-purple-700',
+        'bg_light'     => 'bg-violet-50 border-violet-200 text-violet-900',
+        'icon'         => 'local_pharmacy',
+        'phone'        => '09120000008',
+        'default_name' => 'داروخانه حکیم (دارنده پروانه مستقل)',
+        'target'       => 'pharmacist/index.php',
+        'description'  => 'نقش جدید: داروخانه مستقل با پروانه، انبار دارویی اختصاصی، و دروازه BPMS برای تأیید نسخه‌های پزشکان.',
+        'features'     => ['کارتابل BPMS تأیید نسخه', 'انبار دارویی اختصاصی', 'دروازه ارسال کلینیک', 'گزارش بالینی کامل']
+    ],
     'admin' => [
         'title'        => 'مدیر ارشد سامانه آسنا',
         'subtitle'     => 'Super Administrator',

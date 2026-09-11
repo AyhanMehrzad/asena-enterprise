@@ -15,6 +15,108 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     }
 }
 
+// Handle Admin Outbound Ticket to Specific Organization or Doctor
+$outboundNotice = '';
+$outboundType = '';
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'admin_new_outbound_ticket') {
+    csrf_verify();
+    $recipientType = trim($_POST['recipient_type'] ?? 'organization'); // 'organization' or 'doctor'
+    $targetId = (int)($_POST['target_id'] ?? 0);
+    $category = trim($_POST['category'] ?? 'مکاتبه اداری');
+    $subject = trim($_POST['subject'] ?? 'پیام رسمی مدیریت سامانه آسنا');
+    $message = trim($_POST['message'] ?? '');
+
+    if ($targetId > 0 && !empty($message)) {
+        $targetUserId = null;
+        $orgId = null;
+        $targetName = '';
+        $roleTab = 'organization';
+
+        if ($recipientType === 'organization') {
+            $roleTab = 'organization';
+            $oStmt = $pdo->prepare("SELECT * FROM organizations WHERE id = ?");
+            $oStmt->execute([$targetId]);
+            $orgRow = $oStmt->fetch(PDO::FETCH_ASSOC);
+
+            if ($orgRow) {
+                $orgId = (int)$orgRow['id'];
+                $targetName = $orgRow['name'];
+                $targetUserId = !empty($orgRow['user_id']) ? (int)$orgRow['user_id'] : null;
+
+                if (!$targetUserId) {
+                    // Check if a user with this phone exists
+                    $uCheck = $pdo->prepare("SELECT id FROM users WHERE phone = ? LIMIT 1");
+                    $uCheck->execute([$orgRow['phone']]);
+                    $existingU = $uCheck->fetchColumn();
+                    if ($existingU) {
+                        $targetUserId = (int)$existingU;
+                    } else {
+                        // Create organization user
+                        $insU = $pdo->prepare("INSERT INTO users (name, phone, role, created_at) VALUES (?, ?, 'organization', NOW())");
+                        $insU->execute([$orgRow['name'], $orgRow['phone']]);
+                        $targetUserId = (int)$pdo->lastInsertId();
+                    }
+                    $pdo->prepare("UPDATE organizations SET user_id = ? WHERE id = ?")->execute([$targetUserId, $orgId]);
+                }
+            }
+        } else {
+            // Recipient is Doctor
+            $roleTab = 'specialist';
+            $dStmt = $pdo->prepare("SELECT * FROM doctors WHERE id = ?");
+            $dStmt->execute([$targetId]);
+            $docRow = $dStmt->fetch(PDO::FETCH_ASSOC);
+
+            if ($docRow) {
+                $targetName = 'دکتر ' . $docRow['name'];
+                $orgId = !empty($docRow['organization_id']) ? (int)$docRow['organization_id'] : null;
+                $targetUserId = !empty($docRow['user_id']) ? (int)$docRow['user_id'] : null;
+
+                if (!$targetUserId) {
+                    $uCheck = $pdo->prepare("SELECT id FROM users WHERE phone = ? LIMIT 1");
+                    $uCheck->execute([$docRow['phone'] ?? '']);
+                    $existingU = $uCheck->fetchColumn();
+                    if ($existingU) {
+                        $targetUserId = (int)$existingU;
+                    } else {
+                        $docPhone = $docRow['phone'] ?: ('0999' . rand(1000000, 9999999));
+                        $insU = $pdo->prepare("INSERT INTO users (name, phone, role, created_at) VALUES (?, ?, 'doctor', NOW())");
+                        $insU->execute(['دکتر ' . $docRow['name'], $docPhone]);
+                        $targetUserId = (int)$pdo->lastInsertId();
+                    }
+                    $pdo->prepare("UPDATE doctors SET user_id = ? WHERE id = ?")->execute([$targetUserId, $docRow['id']]);
+                }
+            }
+        }
+
+        if ($targetUserId) {
+            $fullSubject = "[مدیریت آسنا] {$category}: {$subject}";
+            $insTicket = $pdo->prepare("
+                INSERT INTO tickets (user_id, subject, mode, organization_id, target_role, target_id, status, created_at, updated_at) 
+                VALUES (?, ?, 'admin', ?, ?, ?, 'open', NOW(), NOW())
+            ");
+            $insTicket->execute([$targetUserId, $fullSubject, $orgId, $recipientType, $targetId]);
+            $newTicketId = (int)$pdo->lastInsertId();
+
+            // Insert admin initial message
+            $msgStmt = $pdo->prepare("INSERT INTO ticket_messages (ticket_id, sender_type, message, created_at) VALUES (?, 'admin', ?, NOW())");
+            $msgStmt->execute([$newTicketId, $message]);
+
+            header("Location: tickets.php?role={$roleTab}&ticket_id={$newTicketId}");
+            exit;
+        } else {
+            $outboundNotice = 'خطا در شناسایی حساب کاربری مخاطب انتخابی.';
+            $outboundType = 'error';
+        }
+    } else {
+        $outboundNotice = 'لطفاً مخاطب و متن پیام را وارد فرمایید.';
+        $outboundType = 'error';
+    }
+}
+
+// Active organizations and doctors for the dropdown
+$allOrgsList = $pdo->query("SELECT id, name, city, phone FROM organizations ORDER BY name ASC")->fetchAll(PDO::FETCH_ASSOC);
+$allDocsList = $pdo->query("SELECT d.id, d.name, d.specialty, d.clinic_name, d.phone, o.name as org_name FROM doctors d LEFT JOIN organizations o ON d.organization_id = o.id ORDER BY d.name ASC")->fetchAll(PDO::FETCH_ASSOC);
+
 // Auto-close tickets inactive for 48 hours
 $pdo->exec("UPDATE tickets SET status = 'closed' WHERE status = 'open' AND updated_at < DATE_SUB(NOW(), INTERVAL 48 HOUR)");
 
@@ -80,6 +182,10 @@ $openCount = (int)$pdo->query("SELECT COUNT(*) FROM tickets WHERE mode = 'admin'
         </div>
 
         <div class="flex items-center gap-2">
+            <button onclick="openOutboundTicketModal()" class="px-4 py-2 rounded-xl text-xs font-black bg-secondary-container hover:bg-secondary text-white transition-all flex items-center gap-1.5 shadow-md">
+                <span class="material-symbols-outlined text-base">outgoing_mail</span>
+                <span>+ پیام مستقیم به مرکز یا پزشک</span>
+            </button>
             <a href="index.php" class="px-3.5 py-2 rounded-xl text-xs font-bold bg-surface-container hover:bg-surface-container-high text-on-surface transition-colors flex items-center gap-1.5">
                 <span class="material-symbols-outlined text-base">dashboard</span>
                 <span>پیشخوان کلان</span>
@@ -90,6 +196,18 @@ $openCount = (int)$pdo->query("SELECT COUNT(*) FROM tickets WHERE mode = 'admin'
             </a>
         </div>
     </div>
+
+    <?php if (!empty($outboundNotice)): ?>
+    <div class="p-4 rounded-2xl text-xs font-bold flex items-center justify-between <?= $outboundType === 'error' ? 'bg-rose-50 text-rose-800 border border-rose-200' : 'bg-emerald-50 text-emerald-800 border border-emerald-200' ?>">
+        <div class="flex items-center gap-2">
+            <span class="material-symbols-outlined text-base"><?= $outboundType === 'error' ? 'error' : 'check_circle' ?></span>
+            <span><?= htmlspecialchars($outboundNotice) ?></span>
+        </div>
+        <button onclick="this.parentElement.remove()" class="text-slate-400 hover:text-slate-600">
+            <span class="material-symbols-outlined text-sm">close</span>
+        </button>
+    </div>
+    <?php endif; ?>
 
     <!-- Role Filter Tabs -->
     <div class="flex items-center gap-2 overflow-x-auto pb-1 border-b border-outline-variant/30">
@@ -256,7 +374,7 @@ $openCount = (int)$pdo->query("SELECT COUNT(*) FROM tickets WHERE mode = 'admin'
                 <div class="p-4 bg-white border-t border-outline-variant/20">
                     <form id="admin-chat-form" class="flex items-center gap-3 relative" onsubmit="sendAdminMessage(event)">
                         <div class="flex-1 relative">
-                            <input id="admin-chat-input" class="w-full bg-surface-container-low border border-outline-variant/30 rounded-2xl pr-4 pl-4 py-3.5 focus:ring-2 focus:ring-primary focus:border-transparent transition-all text-xs font-medium" placeholder="پاسخ رسمی پشتیبانی آسنا به این نقش را تایپ کنید..." type="text" autocomplete="off" />
+                            <input id="admin-chat-input" dir="auto" class="w-full bg-surface-container-low border border-outline-variant/30 rounded-2xl pr-4 pl-4 py-3.5 focus:ring-2 focus:ring-primary focus:border-transparent transition-all text-xs font-medium" placeholder="پاسخ رسمی پشتیبانی آسنا به این نقش را تایپ کنید..." type="text" autocomplete="off" />
                         </div>
                         <button type="submit" class="w-12 h-12 bg-primary text-white rounded-2xl hover:scale-105 hover:bg-primary-container transition-all flex items-center justify-center shadow-lg shadow-primary/20 shrink-0">
                             <span class="material-symbols-outlined text-xl -ml-0.5">send</span>
@@ -269,10 +387,143 @@ $openCount = (int)$pdo->query("SELECT COUNT(*) FROM tickets WHERE mode = 'admin'
     </div>
 </div>
 
+<!-- Modal: Admin Outbound Ticket to Specific Organization or Doctor -->
+<div id="adminOutboundTicketModal" class="fixed inset-0 bg-black/50 z-50 hidden backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl p-6 max-w-lg w-full shadow-2xl space-y-4 text-right">
+        <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+            <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined text-secondary-container text-xl">outgoing_mail</span>
+                <h3 class="font-black text-slate-900 text-sm">ارسال پیام و ایجاد تیکت اختصاصی</h3>
+            </div>
+            <button onclick="closeOutboundTicketModal()" class="text-slate-400 hover:text-slate-600">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+        </div>
+
+        <form method="POST" action="tickets.php" class="space-y-3.5 text-xs">
+            <?= csrf_field() ?>
+            <input type="hidden" name="action" value="admin_new_outbound_ticket">
+
+            <div>
+                <label class="block font-bold text-slate-700 mb-1">نوع مخاطب هدف:</label>
+                <div class="grid grid-cols-2 gap-2">
+                    <label class="flex items-center justify-center gap-2 p-3 rounded-xl border border-slate-200 cursor-pointer hover:bg-slate-50 transition-colors has-[:checked]:bg-indigo-50 has-[:checked]:border-indigo-500 has-[:checked]:text-indigo-900">
+                        <input type="radio" name="recipient_type" value="organization" checked onchange="toggleRecipientSelect('organization')" class="text-indigo-600">
+                        <span class="font-bold">مرکز درمانی / کلینیک</span>
+                    </label>
+                    <label class="flex items-center justify-center gap-2 p-3 rounded-xl border border-slate-200 cursor-pointer hover:bg-slate-50 transition-colors has-[:checked]:bg-emerald-50 has-[:checked]:border-emerald-500 has-[:checked]:text-emerald-900">
+                        <input type="radio" name="recipient_type" value="doctor" onchange="toggleRecipientSelect('doctor')" class="text-emerald-600">
+                        <span class="font-bold">پزشک / متخصص</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Organization Target Dropdown -->
+            <div id="org-target-group">
+                <label class="block font-bold text-slate-700 mb-1">انتخاب مرکز درمانی:</label>
+                <select name="target_id" id="org-target-select" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 font-bold text-slate-800 outline-none focus:ring-2 focus:ring-indigo-500">
+                    <?php foreach($allOrgsList as $ol): ?>
+                        <option value="<?= (int)$ol['id'] ?>"><?= htmlspecialchars($ol['name']) ?> (<?= htmlspecialchars($ol['city']) ?>) - <?= htmlspecialchars($ol['phone']) ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+
+            <!-- Doctor Target Dropdown -->
+            <div id="doc-target-group" class="hidden">
+                <label class="block font-bold text-slate-700 mb-1">انتخاب پزشک / متخصص:</label>
+                <select id="doc-target-select" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 font-bold text-slate-800 outline-none focus:ring-2 focus:ring-emerald-500">
+                    <?php foreach($allDocsList as $dl): ?>
+                        <option value="<?= (int)$dl['id'] ?>">دکتر <?= htmlspecialchars($dl['name']) ?> (<?= htmlspecialchars($dl['specialty'] ?: 'عمومی') ?>) - <?= htmlspecialchars($dl['org_name'] ?: 'مطب مستقل') ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+
+            <div>
+                <label class="block font-bold text-slate-700 mb-1">دپارتمان / زمینه نظارتی:</label>
+                <select name="category" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 font-bold text-slate-800 outline-none focus:ring-2 focus:ring-secondary-container">
+                    <option value="استعلام مدارک و مجوزها">استعلام مدارک و مجوزهای رسمی</option>
+                    <option value="پایش کیفی و عملکرد">پایش نظرات مراجعین و کیفیت خدمات</option>
+                    <option value="امور مالی و تسویه پایا">امور مالی و هماهنگی تسویه حساب‌های پایا</option>
+                    <option value="اخطار و بررسی اداری">اخطار و تطبیق ضوابط سامانه‌ای</option>
+                    <option value="اطلاعیه عمومی">اطلاعیه و بخشنامه عمومی</option>
+                    <option value="سایر">سایر مکاتبات رسمی</option>
+                </select>
+            </div>
+
+            <div>
+                <label class="block font-bold text-slate-700 mb-1">عنوان خلاصه:</label>
+                <input type="text" name="subject" required placeholder="مثال: لزوم ارسال مدارک تمدید پروانه بهره‌برداری" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 font-medium text-slate-800 outline-none focus:ring-2 focus:ring-secondary-container">
+            </div>
+
+            <div>
+                <label class="block font-bold text-slate-700 mb-1">متن پیام یا دستور اداری:</label>
+                <textarea name="message" rows="4" required dir="auto" placeholder="متن پیام رسمی خود را به صورت شفاف مرقوم فرمایید..." class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 font-medium text-slate-800 outline-none focus:ring-2 focus:ring-secondary-container leading-relaxed"></textarea>
+            </div>
+
+            <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+                <button type="button" onclick="closeOutboundTicketModal()" class="px-4 py-2 rounded-xl bg-slate-100 text-slate-600 font-bold hover:bg-slate-200 transition-colors">انصراف</button>
+                <button type="submit" class="px-5 py-2 rounded-xl bg-secondary-container text-white font-black hover:bg-secondary transition-all shadow-md">ارسال پیام و ایجاد تیکت</button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <script>
 let currentAdminTicketId = null;
 let adminLastMessageId = 0;
 let adminPollingInterval = null;
+
+function openOutboundTicketModal(type = 'organization', targetId = null) {
+    const modal = document.getElementById('adminOutboundTicketModal');
+    if (modal) {
+        modal.classList.remove('hidden');
+        if (type === 'doctor') {
+            const docRadio = document.querySelector('input[name="recipient_type"][value="doctor"]');
+            if (docRadio) {
+                docRadio.checked = true;
+                toggleRecipientSelect('doctor');
+            }
+            if (targetId) {
+                const docSel = document.getElementById('doc-target-select');
+                if (docSel) docSel.value = targetId;
+            }
+        } else {
+            const orgRadio = document.querySelector('input[name="recipient_type"][value="organization"]');
+            if (orgRadio) {
+                orgRadio.checked = true;
+                toggleRecipientSelect('organization');
+            }
+            if (targetId) {
+                const orgSel = document.getElementById('org-target-select');
+                if (orgSel) orgSel.value = targetId;
+            }
+        }
+    }
+}
+
+function closeOutboundTicketModal() {
+    const modal = document.getElementById('adminOutboundTicketModal');
+    if (modal) modal.classList.add('hidden');
+}
+
+function toggleRecipientSelect(type) {
+    const orgGroup = document.getElementById('org-target-group');
+    const docGroup = document.getElementById('doc-target-group');
+    const orgSel = document.getElementById('org-target-select');
+    const docSel = document.getElementById('doc-target-select');
+
+    if (type === 'doctor') {
+        orgGroup.classList.add('hidden');
+        docGroup.classList.remove('hidden');
+        orgSel.removeAttribute('name');
+        docSel.setAttribute('name', 'target_id');
+    } else {
+        docGroup.classList.add('hidden');
+        orgGroup.classList.remove('hidden');
+        docSel.removeAttribute('name');
+        orgSel.setAttribute('name', 'target_id');
+    }
+}
 
 function filterTicketsClientSide() {
     const q = document.getElementById('ticket-search-input').value.toLowerCase().trim();
@@ -369,7 +620,8 @@ function renderAdminMessages(messages) {
             container.insertAdjacentHTML('beforeend', `
                 <div class="flex gap-3 max-w-[85%] flex-row-reverse ml-auto group">
                     <div class="bg-primary text-white px-4 py-3 rounded-2xl rounded-tl-sm shadow-sm text-xs leading-relaxed">
-                        <div>${safeMessage}</div>
+                        ${imgHtml}
+                        <div dir="auto" class="chat-message-text" style="unicode-bidi: plaintext; text-align: start;">${safeMessage}</div>
                         <div class="text-[9px] text-white/70 mt-1.5 text-left w-full block">${time} • پاسخ مدیر</div>
                     </div>
                 </div>
@@ -379,7 +631,7 @@ function renderAdminMessages(messages) {
                 <div class="flex gap-3 max-w-[85%]">
                     <div class="bg-white px-4 py-3 rounded-2xl rounded-br-sm shadow-sm text-xs border border-outline-variant/20 leading-relaxed text-slate-800">
                         ${imgHtml}
-                        <div>${safeMessage}</div>
+                        <div dir="auto" class="chat-message-text" style="unicode-bidi: plaintext; text-align: start;">${safeMessage}</div>
                         <div class="text-[9px] text-slate-400 mt-1.5 text-right w-full block">${time}</div>
                     </div>
                 </div>
@@ -413,6 +665,22 @@ function sendAdminMessage(e) {
             }
         });
 }
+
+// Auto-open modal or select ticket on load if query params present
+document.addEventListener('DOMContentLoaded', () => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('new_ticket')) {
+        const type = params.get('new_ticket') === 'doctor' ? 'doctor' : 'organization';
+        const targetId = params.get('target_id');
+        openOutboundTicketModal(type, targetId);
+    } else if (params.get('ticket_id')) {
+        const targetTicketId = parseInt(params.get('ticket_id'), 10);
+        const targetCard = document.querySelector(`.ticket-card[onclick*="loadTicket(${targetTicketId},"]`);
+        if (targetCard) {
+            targetCard.click();
+        }
+    }
+});
 </script>
 
 <?php require_once 'includes/admin_footer.php'; ?>

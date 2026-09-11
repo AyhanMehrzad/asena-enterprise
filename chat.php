@@ -17,8 +17,13 @@ if (!$ticket_id) {
 // Auto-close tickets inactive for 24 hours
 $pdo->exec("UPDATE tickets SET status = 'closed' WHERE status = 'open' AND updated_at < DATE_SUB(NOW(), INTERVAL 24 HOUR)");
 
-// Verify ticket ownership
-$stmt = $pdo->prepare("SELECT mode, status FROM tickets WHERE id = ? AND user_id = ?");
+// Verify ticket ownership & fetch details
+$stmt = $pdo->prepare("
+    SELECT t.*, o.name AS organization_name, o.logo_url AS organization_logo 
+    FROM tickets t 
+    LEFT JOIN organizations o ON t.organization_id = o.id 
+    WHERE t.id = ? AND t.user_id = ?
+");
 $stmt->execute([$ticket_id, $user_id]);
 $ticket = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -27,10 +32,17 @@ if (!$ticket) {
     exit;
 }
 
-$mode = $ticket['mode'];
+$mode = $ticket['mode'] ?? 'admin';
+$orgName = $ticket['organization_name'] ?? 'مرکز درمانی';
 
-// Fetch all tickets for sidebar
-$stmt = $pdo->prepare("SELECT * FROM tickets WHERE user_id = ? ORDER BY updated_at DESC");
+// Fetch all tickets for sidebar with organization name
+$stmt = $pdo->prepare("
+    SELECT t.*, o.name AS organization_name 
+    FROM tickets t 
+    LEFT JOIN organizations o ON t.organization_id = o.id 
+    WHERE t.user_id = ? 
+    ORDER BY t.updated_at DESC
+");
 $stmt->execute([$user_id]);
 $all_tickets = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -56,14 +68,28 @@ require_once 'includes/header.php';
                 </a>
             </div>
             <div class="flex-1 overflow-y-auto custom-scrollbar p-2 space-y-1">
-                <?php foreach($all_tickets as $t): ?>
+                <?php foreach($all_tickets as $t): 
+                    $tMode = $t['mode'];
+                    $icon = 'support_agent';
+                    $badgeClass = 'bg-secondary-container text-white';
+                    $tTitle = 'پشتیبانی مدیریت آسنا';
+                    if ($tMode === 'ai') {
+                        $icon = 'cruelty_free';
+                        $badgeClass = 'bg-primary-container text-white';
+                        $tTitle = 'لئو (AI)';
+                    } elseif ($tMode === 'organization') {
+                        $icon = 'apartment';
+                        $badgeClass = 'bg-sky-600 text-white';
+                        $tTitle = !empty($t['organization_name']) ? $t['organization_name'] : 'مرکز درمانی';
+                    }
+                ?>
                 <a href="chat.php?ticket_id=<?php echo $t['id']; ?>" class="block w-full text-right p-3 rounded-xl hover:bg-surface-container transition-colors flex items-center gap-3 <?php echo $t['id'] == $ticket_id ? 'bg-primary-container/10 border border-primary-container/20 shadow-sm' : ''; ?>">
-                    <div class="w-10 h-10 rounded-full <?php echo $t['mode'] == 'ai' ? 'bg-primary-container text-white' : 'bg-secondary-container text-white'; ?> flex items-center justify-center shrink-0">
-                        <span class="material-symbols-outlined text-xl"><?php echo $t['mode'] == 'ai' ? 'cruelty_free' : 'support_agent'; ?></span>
+                    <div class="w-10 h-10 rounded-full <?php echo $badgeClass; ?> flex items-center justify-center shrink-0">
+                        <span class="material-symbols-outlined text-xl"><?php echo $icon; ?></span>
                     </div>
                     <div class="flex-1 overflow-hidden">
                         <div class="flex justify-between items-center mb-1">
-                            <h4 class="font-bold text-primary text-sm truncate"><?php echo $t['mode'] == 'ai' ? 'لئو (AI)' : 'پشتیبانی انسانی'; ?></h4>
+                            <h4 class="font-bold text-primary text-sm truncate"><?php echo htmlspecialchars($tTitle); ?></h4>
                         </div>
                         <p class="text-[10px] text-on-surface-variant truncate flex justify-between">
                             <span>تیکت #<?php echo $t['id']; ?></span>
@@ -87,20 +113,31 @@ require_once 'includes/header.php';
                 <a href="user_tickets.php" class="w-10 h-10 rounded-full hover:bg-surface-container flex items-center justify-center text-on-surface-variant transition-colors">
                     <span class="material-symbols-outlined">arrow_forward</span>
                 </a>
+                <?php
+                $headerTitle = 'پشتیبانی مدیریت آسنا';
+                $headerIcon = 'support_agent';
+                if ($mode === 'ai') {
+                    $headerTitle = 'لئو (دستیار هوشمند آسنا)';
+                    $headerIcon = 'cruelty_free';
+                } elseif ($mode === 'organization') {
+                    $headerTitle = !empty($ticket['organization_name']) ? $ticket['organization_name'] : 'گفتگو با مرکز درمانی';
+                    $headerIcon = 'apartment';
+                }
+                ?>
                 <div class="relative">
                     <div class="w-14 h-14 rounded-full bg-primary-container/10 flex items-center justify-center text-primary-container border-2 border-primary-container">
-                        <span class="material-symbols-outlined text-3xl"><?php echo $mode === 'ai' ? 'cruelty_free' : 'support_agent'; ?></span>
+                        <span class="material-symbols-outlined text-3xl"><?php echo $headerIcon; ?></span>
                     </div>
                     <?php if($ticket['status'] === 'open'): ?>
                     <div class="absolute bottom-0 right-0 w-4 h-4 bg-emerald-500 rounded-full border-2 border-white"></div>
                     <?php endif; ?>
                 </div>
                 <div>
-                    <h3 class="font-bold text-lg text-primary"><?php echo $mode === 'ai' ? 'لئو (Leo)' : 'پشتیبانی یکپارچه'; ?></h3>
+                    <h3 class="font-bold text-lg text-primary"><?php echo htmlspecialchars($headerTitle); ?></h3>
                     <p class="text-xs text-on-surface-variant flex items-center gap-1">
                         <?php if($ticket['status'] === 'open'): ?>
                         <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                        آنلاین
+                        آنلاین و آماده پاسخگویی
                         <?php else: ?>
                         بسته شده
                         <?php endif; ?>
@@ -151,7 +188,7 @@ require_once 'includes/header.php';
                 </button>
                 
                 <div class="flex-1 relative">
-                    <input id="chat-input" class="w-full bg-surface-container-low border-none rounded-full pl-14 pr-6 py-4 focus:ring-2 focus:ring-primary-container transition-all text-sm font-medium" placeholder="پیام خود را بنویسید..." type="text" autocomplete="off" />
+                    <input id="chat-input" dir="auto" class="w-full bg-surface-container-low border-none rounded-full pl-14 pr-6 py-4 focus:ring-2 focus:ring-primary-container transition-all text-sm font-medium" placeholder="پیام خود را بنویسید..." type="text" autocomplete="off" />
                     <button type="button" class="absolute left-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full hover:bg-black/5 flex items-center justify-center text-on-surface-variant transition-colors">
                         <span class="material-symbols-outlined">sentiment_satisfied</span>
                     </button>
@@ -209,7 +246,12 @@ function renderMessages(messages) {
     
     messages.forEach(msg => {
         const isUser = msg.sender_type === 'user';
-        const avatar = chatMode === 'ai' ? 'cruelty_free' : 'support_agent';
+        let avatar = 'support_agent';
+        if (chatMode === 'ai') {
+            avatar = 'cruelty_free';
+        } else if (chatMode === 'organization') {
+            avatar = 'apartment';
+        }
         
         let imgHtml = '';
         if (msg.image_url) {
@@ -225,7 +267,7 @@ function renderMessages(messages) {
                 <div class="flex gap-4 max-w-[85%] flex-row-reverse ml-auto group">
                     <div class="bg-primary text-white px-5 py-4 rounded-3xl rounded-tl-sm shadow-md text-sm leading-relaxed">
                         ${imgHtml}
-                        <div>${safeMessage}</div>
+                        <div dir="auto" class="chat-message-text" style="unicode-bidi: plaintext; text-align: start;">${safeMessage}</div>
                         <div class="text-[9px] text-white/70 mt-2 text-left w-full block">${time} <span class="material-symbols-outlined text-[10px] ml-0.5" style="vertical-align: middle">done_all</span></div>
                     </div>
                 </div>
@@ -238,7 +280,7 @@ function renderMessages(messages) {
                     </div>
                     <div class="bg-white px-5 py-4 rounded-3xl rounded-br-sm shadow-md text-sm border border-outline-variant/10 leading-relaxed text-on-surface">
                         ${imgHtml}
-                        <div class="markdown-body">${safeMessage}</div>
+                        <div dir="auto" class="chat-message-text markdown-body" style="unicode-bidi: plaintext; text-align: start;">${safeMessage}</div>
                         <div class="text-[9px] text-on-surface-variant/70 mt-2 text-right w-full block">${time}</div>
                     </div>
                 </div>

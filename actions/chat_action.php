@@ -44,83 +44,149 @@ function get_smart_veterinary_fallback($userMessage) {
     return "سلام! من لئو دستیار تخصصی کلینیک آسنا هستم. پیام شما دریافت شد. در صورت نیاز به بررسی تخصصی یا سوالات پزشکی دقیق، می‌توانید از بخش «رزرو نوبت» یک وقت معاینه ثبت کنید یا از طریق پشتیبانی با کارشناسان ما در ارتباط باشید.";
 }
 
+function can_user_access_ticket(PDO $pdo, int $userId, array $ticket): bool {
+    // Ticket creator / owner always has access to their own ticket
+    if ((int)$ticket['user_id'] === $userId) {
+        return true;
+    }
+
+    $mode = $ticket['mode'] ?? 'admin';
+
+    // 1. Organization Tickets: ONLY the assigned organization staff has access (NOT platform admin, NOT other orgs)
+    if ($mode === 'organization' && !empty($ticket['organization_id'])) {
+        $orgId = (int)$ticket['organization_id'];
+        // Check if user owns the organization
+        $ownerStmt = $pdo->prepare("SELECT id FROM organizations WHERE id = ? AND user_id = ?");
+        $ownerStmt->execute([$orgId, $userId]);
+        if ($ownerStmt->fetchColumn()) {
+            return true;
+        }
+        // Check if user is an active sub-admin in organization_admins
+        try {
+            $subStmt = $pdo->prepare("SELECT id FROM organization_admins WHERE organization_id = ? AND user_id = ? AND status = 'active'");
+            $subStmt->execute([$orgId, $userId]);
+            if ($subStmt->fetchColumn()) {
+                return true;
+            }
+        } catch (Throwable $e) {}
+        return false;
+    }
+
+    // 2. Admin Tickets: Platform super-admin has access
+    if ($mode === 'admin') {
+        $isAdmin = (isset($_SESSION['role']) && in_array($_SESSION['role'], ['admin', 'superadmin']));
+        if (!$isAdmin) {
+            $uStmt = $pdo->prepare("SELECT role FROM users WHERE id = ?");
+            $uStmt->execute([$userId]);
+            $uRole = $uStmt->fetchColumn();
+            if (in_array($uRole, ['admin', 'superadmin'])) {
+                $isAdmin = true;
+            }
+        }
+        return $isAdmin;
+    }
+
+    return false;
+}
+
 if ($action === 'init') {
-    $mode = $_POST['mode'] ?? 'ai'; // 'ai' or 'admin'
-    
-    // Find active ticket for this mode
-    $stmt = $pdo->prepare("SELECT id FROM tickets WHERE user_id = ? AND mode = ? AND status = 'open' ORDER BY created_at DESC LIMIT 1");
-    $stmt->execute([$user_id, $mode]);
-    $ticket_id = $stmt->fetchColumn();
-    
-    if (!$ticket_id) {
-        $stmt = $pdo->prepare("INSERT INTO tickets (user_id, mode) VALUES (?, ?)");
+    $mode = $_POST['mode'] ?? 'ai'; // 'ai', 'admin', or 'organization'
+    $org_id = !empty($_POST['organization_id']) ? (int)$_POST['organization_id'] : null;
+
+    if ($mode === 'organization' && $org_id) {
+        // Find active open ticket for this user and this specific organization
+        $stmt = $pdo->prepare("SELECT id FROM tickets WHERE user_id = ? AND mode = 'organization' AND organization_id = ? AND status = 'open' ORDER BY created_at DESC LIMIT 1");
+        $stmt->execute([$user_id, $org_id]);
+        $ticket_id = $stmt->fetchColumn();
+
+        if (!$ticket_id) {
+            $orgNameStmt = $pdo->prepare("SELECT name FROM organizations WHERE id = ?");
+            $orgNameStmt->execute([$org_id]);
+            $orgName = $orgNameStmt->fetchColumn() ?: 'مرکز درمانی';
+
+            $stmt = $pdo->prepare("INSERT INTO tickets (user_id, mode, organization_id, subject, status, created_at, updated_at) VALUES (?, 'organization', ?, ?, 'open', NOW(), NOW())");
+            $stmt->execute([$user_id, $org_id, "پیام به " . $orgName]);
+            $ticket_id = $pdo->lastInsertId();
+
+            $welcome = "سلام و درود از طرف کلینیک «{$orgName}». پیام و سوال شما دریافت شد و کادر پذیرش و مدیریت به زودی پاسخگوی شما خواهند بود.";
+            $pdo->prepare("INSERT INTO ticket_messages (ticket_id, sender_type, message, created_at) VALUES (?, 'admin', ?, NOW())")->execute([$ticket_id, $welcome]);
+        }
+    } else {
+        // Find active ticket for this mode
+        $stmt = $pdo->prepare("SELECT id FROM tickets WHERE user_id = ? AND mode = ? AND status = 'open' ORDER BY created_at DESC LIMIT 1");
         $stmt->execute([$user_id, $mode]);
-        $ticket_id = $pdo->lastInsertId();
-        
-        // Add welcome message
-        if ($mode === 'ai') {
-            $welcome = "سلام! من لئو هستم، دستیار هوشمند شما. چطور می‌تونم به فرشته کوچولوت کمک کنم؟";
-            $pdo->prepare("INSERT INTO ticket_messages (ticket_id, sender_type, message) VALUES (?, 'ai', ?)")->execute([$ticket_id, $welcome]);
-        } else {
-            $welcome = "درخواست شما ثبت شد. یکی از کارشناسان ما به زودی پاسخگوی شما خواهد بود.";
-            $pdo->prepare("INSERT INTO ticket_messages (ticket_id, sender_type, message) VALUES (?, 'admin', ?)")->execute([$ticket_id, $welcome]);
+        $ticket_id = $stmt->fetchColumn();
+
+        if (!$ticket_id) {
+            $stmt = $pdo->prepare("INSERT INTO tickets (user_id, mode, status, created_at, updated_at) VALUES (?, ?, 'open', NOW(), NOW())");
+            $stmt->execute([$user_id, $mode]);
+            $ticket_id = $pdo->lastInsertId();
+
+            // Add welcome message
+            if ($mode === 'ai') {
+                $welcome = "سلام! من لئو هستم، دستیار هوشمند شما. چطور می‌تونم به فرشته کوچولوت کمک کنم؟";
+                $pdo->prepare("INSERT INTO ticket_messages (ticket_id, sender_type, message, created_at) VALUES (?, 'ai', ?, NOW())")->execute([$ticket_id, $welcome]);
+            } else {
+                $welcome = "درخواست شما با مدیریت آسنا ثبت شد. یکی از کارشناسان ما به زودی پاسخگوی شما خواهد بود.";
+                $pdo->prepare("INSERT INTO ticket_messages (ticket_id, sender_type, message, created_at) VALUES (?, 'admin', ?, NOW())")->execute([$ticket_id, $welcome]);
+            }
         }
     }
-    
-    echo json_encode(['status' => 'success', 'ticket_id' => $ticket_id]);
+
+    // Check if client expects JSON or standard redirect
+    $isAjax = (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest')
+              || (isset($_SERVER['HTTP_ACCEPT']) && str_contains($_SERVER['HTTP_ACCEPT'], 'application/json'))
+              || (isset($_POST['is_ajax']) && $_POST['is_ajax'] == 1);
+
+    if ($isAjax) {
+        echo json_encode(['status' => 'success', 'ticket_id' => $ticket_id]);
+    } else {
+        header("Location: ../chat.php?ticket_id=" . (int)$ticket_id);
+    }
     exit;
 }
 
 if ($action === 'fetch') {
     $ticket_id = (int)($_POST['ticket_id'] ?? 0);
     $last_id = (int)($_POST['last_id'] ?? 0);
-    
-    // IDOR Protection: Verify ticket belongs to user or user is admin
-    $chkStmt = $pdo->prepare("SELECT user_id FROM tickets WHERE id = ?");
+
+    // Multi-tenant IDOR Protection: Fetch ticket row
+    $chkStmt = $pdo->prepare("SELECT * FROM tickets WHERE id = ?");
     $chkStmt->execute([$ticket_id]);
-    $ticket_owner = $chkStmt->fetchColumn();
-    
-    if (!$ticket_owner) {
+    $ticketRow = $chkStmt->fetch(PDO::FETCH_ASSOC);
+
+    if (!$ticketRow) {
         echo json_encode(['status' => 'error', 'message' => 'Ticket not found']);
         exit;
     }
-    
-    $isAdmin = (isset($_SESSION['role']) && in_array($_SESSION['role'], ['admin', 'superadmin']));
-    if (!$isAdmin) {
-        $uStmt = $pdo->prepare("SELECT role FROM users WHERE id = ?");
-        $uStmt->execute([$user_id]);
-        $uRole = $uStmt->fetchColumn();
-        if (in_array($uRole, ['admin', 'superadmin'])) {
-            $isAdmin = true;
-        }
-    }
-    
-    if ($ticket_owner != $user_id && !$isAdmin) {
+
+    if (!can_user_access_ticket($pdo, (int)$user_id, $ticketRow)) {
         echo json_encode(['status' => 'error', 'message' => 'Unauthorized']);
         exit;
     }
-    
+
     $stmt = $pdo->prepare("SELECT id, sender_type, message, image_url, created_at FROM ticket_messages WHERE ticket_id = ? AND id > ? ORDER BY id ASC");
     $stmt->execute([$ticket_id, $last_id]);
     $messages = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    
+
     echo json_encode(['status' => 'success', 'messages' => $messages]);
     exit;
 }
 
 if ($action === 'send') {
-    $ticket_id = $_POST['ticket_id'] ?? 0;
+    $ticket_id = (int)($_POST['ticket_id'] ?? 0);
     $message = trim($_POST['message'] ?? '');
-    
+
     // Verify ticket belongs to user
-    $stmt = $pdo->prepare("SELECT mode FROM tickets WHERE id = ? AND user_id = ?");
+    $stmt = $pdo->prepare("SELECT mode, user_id FROM tickets WHERE id = ? AND user_id = ?");
     $stmt->execute([$ticket_id, $user_id]);
-    $mode = $stmt->fetchColumn();
-    
-    if (!$mode) {
+    $ticketRow = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    if (!$ticketRow) {
         echo json_encode(['status' => 'error', 'message' => 'Ticket not found or unauthorized']);
         exit;
     }
+    $mode = $ticketRow['mode'];
     
     $image_url = null;
     $base64_image = null;
@@ -139,7 +205,7 @@ if ($action === 'send') {
         
         if (isset($allowed_mime_map[$mime_type]) && $_FILES['image']['size'] <= 5 * 1024 * 1024) {
             $ext = $allowed_mime_map[$mime_type];
-            if ($mode === 'admin') {
+            if ($mode === 'admin' || $mode === 'organization') {
                 // Save safely with random hash and strict verified extension
                 $filename = 'ticket_' . bin2hex(random_bytes(10)) . '.' . $ext;
                 $filepath = '../uploads/' . $filename;
@@ -297,24 +363,66 @@ if ($action === 'send') {
         $stmt->execute([$ticket_id, $ai_reply]);
     }
     
+    // Update ticket timestamp & keep open
+    $pdo->prepare("UPDATE tickets SET updated_at = NOW(), status = 'open' WHERE id = ?")->execute([$ticket_id]);
+
     echo json_encode(['status' => 'success']);
     exit;
 }
 
+if ($action === 'org_send') {
+    $ticket_id = (int)($_POST['ticket_id'] ?? 0);
+    $message = trim($_POST['message'] ?? '');
+
+    if (empty($message)) {
+        echo json_encode(['status' => 'error', 'message' => 'پیام نمی‌تواند خالی باشد']);
+        exit;
+    }
+
+    // Verify user is authorized manager/staff of this ticket's organization
+    $chkStmt = $pdo->prepare("SELECT * FROM tickets WHERE id = ?");
+    $chkStmt->execute([$ticket_id]);
+    $ticketRow = $chkStmt->fetch(PDO::FETCH_ASSOC);
+
+    if (!$ticketRow || !can_user_access_ticket($pdo, (int)$user_id, $ticketRow)) {
+        echo json_encode(['status' => 'error', 'message' => 'Unauthorized']);
+        exit;
+    }
+
+    $stmt = $pdo->prepare("INSERT INTO ticket_messages (ticket_id, sender_type, message, created_at) VALUES (?, 'admin', ?, NOW())");
+    if ($stmt->execute([$ticket_id, $message])) {
+        $pdo->prepare("UPDATE tickets SET updated_at = NOW() WHERE id = ?")->execute([$ticket_id]);
+        echo json_encode(['status' => 'success']);
+    } else {
+        echo json_encode(['status' => 'error', 'message' => 'Failed to save message']);
+    }
+    exit;
+}
+
 if ($action === 'admin_send') {
-    $ticket_id = $_POST['ticket_id'] ?? 0;
+    $ticket_id = (int)($_POST['ticket_id'] ?? 0);
     $message = trim($_POST['message'] ?? '');
     
     // Verify admin
     $stmt = $pdo->prepare("SELECT role FROM users WHERE id = ?");
     $stmt->execute([$user_id]);
-    if ($stmt->fetchColumn() !== 'admin') {
+    if (!in_array($stmt->fetchColumn(), ['admin', 'superadmin'])) {
         echo json_encode(['status' => 'error', 'message' => 'Unauthorized']);
         exit;
     }
     
-    $stmt = $pdo->prepare("INSERT INTO ticket_messages (ticket_id, sender_type, message) VALUES (?, 'admin', ?)");
+    // Admin only sends to mode = 'admin' tickets (never private clinic-user tickets)
+    $chkStmt = $pdo->prepare("SELECT mode FROM tickets WHERE id = ?");
+    $chkStmt->execute([$ticket_id]);
+    $targetMode = $chkStmt->fetchColumn();
+    if ($targetMode !== 'admin') {
+        echo json_encode(['status' => 'error', 'message' => 'Unauthorized: Admin cannot send to private clinic tickets']);
+        exit;
+    }
+
+    $stmt = $pdo->prepare("INSERT INTO ticket_messages (ticket_id, sender_type, message, created_at) VALUES (?, 'admin', ?, NOW())");
     if ($stmt->execute([$ticket_id, $message])) {
+        $pdo->prepare("UPDATE tickets SET updated_at = NOW() WHERE id = ?")->execute([$ticket_id]);
         echo json_encode(['status' => 'success']);
     } else {
         echo json_encode(['status' => 'error']);
@@ -323,13 +431,13 @@ if ($action === 'admin_send') {
 }
 
 if ($action === 'reopen') {
-    $ticket_id = $_POST['ticket_id'] ?? 0;
+    $ticket_id = (int)($_POST['ticket_id'] ?? 0);
     
     // Verify user
     $stmt = $pdo->prepare("SELECT user_id FROM tickets WHERE id = ?");
     $stmt->execute([$ticket_id]);
     if ($stmt->fetchColumn() == $user_id) {
-        $stmt = $pdo->prepare("UPDATE tickets SET status = 'open' WHERE id = ?");
+        $stmt = $pdo->prepare("UPDATE tickets SET status = 'open', updated_at = NOW() WHERE id = ?");
         $stmt->execute([$ticket_id]);
         echo json_encode(['status' => 'success']);
     } else {

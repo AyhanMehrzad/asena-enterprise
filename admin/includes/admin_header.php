@@ -127,6 +127,7 @@ $adminName = $adminCheck['name'] ?? 'مدیر سیستم';
         }
         .rtl { direction: rtl; }
     </style>
+    <script src="../assets/js/bidi-direction.js?v=<?php echo time(); ?>" defer></script>
 </head>
 <body class="bg-surface text-on-surface selection:bg-secondary-container/30">
 

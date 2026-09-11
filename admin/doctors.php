@@ -244,10 +244,16 @@ require_once __DIR__ . '/includes/admin_header.php';
                             ★ <?= number_format((float)($doc['rating_cache'] ?? $doc['rating'] ?? 5.0), 1) ?>
                         </td>
                         <td class="p-3.5 text-center">
-                            <button onclick="viewDoctorInteractions(<?= $doc['id'] ?>)" class="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-secondary-container hover:text-white text-slate-700 font-bold text-xs transition-all flex items-center gap-1 mx-auto">
-                                <span class="material-symbols-outlined text-sm">history_edu</span>
-                                <span>تعاملات بیماران</span>
-                            </button>
+                            <div class="flex items-center justify-center gap-1.5">
+                                <a href="tickets.php?new_ticket=doctor&target_id=<?= (int)$doc['id'] ?>" class="px-2.5 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-600 hover:text-white text-emerald-700 font-bold text-xs transition-all flex items-center gap-1" title="ارسال پیام / تیکت به پزشک">
+                                    <span class="material-symbols-outlined text-sm">mail</span>
+                                    <span>پیام</span>
+                                </a>
+                                <button onclick="viewDoctorInteractions(<?= $doc['id'] ?>)" class="px-2.5 py-1.5 rounded-xl bg-slate-100 hover:bg-secondary-container hover:text-white text-slate-700 font-bold text-xs transition-all flex items-center gap-1">
+                                    <span class="material-symbols-outlined text-sm">history_edu</span>
+                                    <span>تعاملات</span>
+                                </button>
+                            </div>
                         </td>
                     </tr>
                     <?php endforeach; ?>

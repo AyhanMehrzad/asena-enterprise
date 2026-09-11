@@ -27,6 +27,7 @@ require_once __DIR__ . '/TrafficMonitoringService.php';
 require_once __DIR__ . '/PostexShippingService.php';
 require_once __DIR__ . '/LeaderboardService.php';
 require_once __DIR__ . '/DataSecurityService.php';
+require_once __DIR__ . '/BpmsService.php';
 
 class App {
     private static ?PDO $db = null;
@@ -49,6 +50,7 @@ class App {
     private static ?PostexShippingService $postex = null;
     private static ?LeaderboardService $leaderboard = null;
     private static ?DataSecurityService $crypto = null;
+    private static ?BpmsService $bpms = null;
 
 
 
@@ -194,6 +196,13 @@ class App {
 
     public static function hasDb(): bool {
         return !empty($GLOBALS['pdo']);
+    }
+
+    public static function bpms(): BpmsService {
+        if (self::$bpms === null) {
+            self::$bpms = new BpmsService(self::db());
+        }
+        return self::$bpms;
     }
 
     /**

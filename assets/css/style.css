@@ -196,3 +196,10 @@ body {
     padding-left: env(safe-area-inset-left, 0);
     padding-right: env(safe-area-inset-right, 0);
 }
+
+/* Bi-directional Text & Punctuation Auto-Formatting */
+[dir="auto"], .bidi-auto, .chat-message-text {
+    unicode-bidi: plaintext;
+    text-align: start;
+}
+

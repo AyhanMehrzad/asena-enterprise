@@ -231,7 +231,7 @@ $recentDonations = $stmt->fetchAll(PDO::FETCH_ASSOC);
                             <button type="button" onclick="setAmount(1000000, this)" data-amount="1000000" class="btn-amount py-3.5 rounded-2xl border-2 border-outline-variant/30 text-primary font-black text-sm hover:border-primary hover:bg-primary/5 transition-all">۱,۰۰۰,۰۰۰</button>
                         </div>
                         <div class="relative">
-                            <input type="number" name="amount" id="customAmount" placeholder="مبلغ دلخواه خود را وارد کنید..." required min="1000" class="w-full bg-surface-container-low border border-outline-variant/20 rounded-2xl p-4 pl-16 focus:ring-2 focus:ring-primary text-on-surface font-black text-lg">
+                            <input type="text" inputmode="numeric" name="amount" id="customAmount" placeholder="مبلغ دلخواه خود را وارد کنید..." required dir="ltr" class="w-full bg-surface-container-low border border-outline-variant/20 rounded-2xl p-4 pl-16 focus:ring-2 focus:ring-primary text-on-surface font-black text-lg text-left" autocomplete="off">
                             <span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm font-bold">تومان</span>
                         </div>
                     </div>
@@ -437,7 +437,8 @@ $recentDonations = $stmt->fetchAll(PDO::FETCH_ASSOC);
     function setAmount(amount, btnElement) {
         const input = document.getElementById('customAmount');
         if (input) {
-            input.value = amount;
+            input.value = Number(amount).toLocaleString('en-US');
+            input.dispatchEvent(new Event('input'));
         }
         document.querySelectorAll('.btn-amount').forEach(btn => {
             btn.classList.remove('bg-primary', 'text-white', 'border-primary', 'shadow-md');
@@ -450,11 +451,20 @@ $recentDonations = $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
     document.getElementById('customAmount')?.addEventListener('input', function(e) {
-        const val = parseInt(e.target.value, 10);
+        const raw = window.toEnglishDigits ? window.toEnglishDigits(e.target.value) : e.target.value;
+        const cleanDigits = raw.replace(/[^\d]/g, '');
+        const val = parseInt(cleanDigits, 10);
+        
+        if (cleanDigits) {
+            e.target.value = Number(cleanDigits).toLocaleString('en-US');
+        } else {
+            e.target.value = '';
+        }
+
         let matched = false;
         document.querySelectorAll('.btn-amount').forEach(btn => {
             const btnAmt = parseInt(btn.getAttribute('data-amount'), 10);
-            if (btnAmt === val) {
+            if (!isNaN(val) && btnAmt === val) {
                 btn.classList.remove('border-outline-variant/30', 'text-primary');
                 btn.classList.add('bg-primary', 'text-white', 'border-primary', 'shadow-md');
                 matched = true;
@@ -463,6 +473,14 @@ $recentDonations = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 btn.classList.add('border-outline-variant/30', 'text-primary');
             }
         });
+    });
+
+    document.getElementById('charityDonationForm')?.addEventListener('submit', function(e) {
+        const amountInput = document.getElementById('customAmount');
+        if (amountInput) {
+            const rawVal = window.toEnglishDigits ? window.toEnglishDigits(amountInput.value) : amountInput.value;
+            amountInput.value = rawVal.replace(/[^\d]/g, '');
+        }
     });
 
     // 4. Number Smooth Count-Up Animation
@@ -688,7 +706,8 @@ $recentDonations = $stmt->fetchAll(PDO::FETCH_ASSOC);
     // 7. Instant In-Page Donation Handler
     async function handleInstantDonation() {
         const amountInput = document.getElementById('customAmount');
-        const amount = parseInt(amountInput?.value || '0', 10);
+        const rawVal = window.toEnglishDigits ? window.toEnglishDigits(amountInput?.value || '') : (amountInput?.value || '');
+        const amount = parseInt(rawVal.replace(/[^\d]/g, '') || '0', 10);
         if (isNaN(amount) || amount < 1000) {
             alert('لطفاً مبلغ معتبری (حداقل ۱,۰۰۰ تومان) وارد نمایید.');
             amountInput?.focus();

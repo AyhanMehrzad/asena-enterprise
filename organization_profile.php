@@ -230,6 +230,17 @@ require_once __DIR__ . '/includes/header.php';
                             <span class="material-symbols-outlined text-base">near_me</span>
                             <span>مسیریابی</span>
                         </a>
+
+                        <form action="actions/chat_action.php" method="POST" class="inline">
+                            <?= csrf_field() ?>
+                            <input type="hidden" name="action" value="init">
+                            <input type="hidden" name="mode" value="organization">
+                            <input type="hidden" name="organization_id" value="<?= $orgId ?>">
+                            <button type="submit" class="px-4 py-2.5 rounded-xl bg-primary-container hover:bg-primary text-white font-black text-xs flex items-center gap-1.5 transition-all shadow-md shadow-primary-container/20">
+                                <span class="material-symbols-outlined text-base">chat</span>
+                                <span>ارسال پیام آنلاین به مرکز</span>
+                            </button>
+                        </form>
                     </div>
                 </div>
 

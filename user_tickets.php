@@ -40,22 +40,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 // Auto-close tickets inactive for 48 hours
 $pdo->exec("UPDATE tickets SET status = 'closed' WHERE status = 'open' AND updated_at < DATE_SUB(NOW(), INTERVAL 48 HOUR)");
 
-// Active Tab Filter: 'admin', 'ai', 'all'
+// Active Tab Filter: 'admin', 'organization', 'ai', 'all'
 $activeTab = trim($_GET['tab'] ?? 'admin');
-if (!in_array($activeTab, ['admin', 'ai', 'all'])) {
+if (!in_array($activeTab, ['admin', 'organization', 'ai', 'all'])) {
     $activeTab = 'admin';
 }
 
 $tabCondition = "";
 if ($activeTab === 'admin') {
     $tabCondition = "AND t.mode = 'admin'";
+} elseif ($activeTab === 'organization') {
+    $tabCondition = "AND t.mode = 'organization'";
 } elseif ($activeTab === 'ai') {
     $tabCondition = "AND t.mode = 'ai'";
 }
 
-// Fetch tickets for this user with last message preview
+// Fetch tickets for this user with last message preview and organization details
 $stmt = $pdo->prepare("
     SELECT t.*, 
+           o.name as organization_name, o.logo_url as organization_logo,
            COALESCE(
                (SELECT message FROM ticket_messages WHERE ticket_id = t.id ORDER BY id DESC LIMIT 1),
                'پیامی ثبت نشده است'
@@ -63,6 +66,7 @@ $stmt = $pdo->prepare("
            (SELECT sender_type FROM ticket_messages WHERE ticket_id = t.id ORDER BY id DESC LIMIT 1) as last_sender,
            (SELECT created_at FROM ticket_messages WHERE ticket_id = t.id ORDER BY id DESC LIMIT 1) as last_message_time
     FROM tickets t 
+    LEFT JOIN organizations o ON t.organization_id = o.id
     WHERE t.user_id = ? {$tabCondition}
     ORDER BY (t.status = 'open') DESC, t.updated_at DESC, t.created_at DESC
 ");
@@ -71,18 +75,20 @@ $tickets = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Counts for tabs
 $counts = [
-    'all'   => (int)$pdo->prepare("SELECT COUNT(*) FROM tickets WHERE user_id = ?")->execute([$user_id]) ? $pdo->query("SELECT FOUND_ROWS()")->fetchColumn() : 0,
-    'admin' => 0,
-    'ai'    => 0,
+    'all'          => 0,
+    'admin'        => 0,
+    'organization' => 0,
+    'ai'           => 0,
 ];
 
 $stmtCounts = $pdo->prepare("SELECT mode, COUNT(*) as c FROM tickets WHERE user_id = ? GROUP BY mode");
 $stmtCounts->execute([$user_id]);
 while ($r = $stmtCounts->fetch(PDO::FETCH_ASSOC)) {
-    if ($r['mode'] === 'admin') $counts['admin'] = (int)$r['c'];
-    if ($r['mode'] === 'ai') $counts['ai'] = (int)$r['c'];
+    if (isset($counts[$r['mode']])) {
+        $counts[$r['mode']] = (int)$r['c'];
+    }
 }
-$counts['all'] = $counts['admin'] + $counts['ai'];
+$counts['all'] = $counts['admin'] + $counts['organization'] + $counts['ai'];
 
 require_once 'includes/header.php';
 $fmtDateTime = new IntlDateFormatter('fa_IR@calendar=persian', IntlDateFormatter::FULL, IntlDateFormatter::FULL, 'Asia/Tehran', IntlDateFormatter::TRADITIONAL, 'd MMMM YYYY - HH:mm');
@@ -133,18 +139,25 @@ $fmtDateTime = new IntlDateFormatter('fa_IR@calendar=persian', IntlDateFormatter
         <!-- 1. Normal Admin Ticketing Tab -->
         <a href="user_tickets.php?tab=admin" class="px-5 py-2.5 rounded-2xl text-xs font-black transition-all flex items-center gap-2 shrink-0 <?= $activeTab === 'admin' ? 'bg-secondary-container text-white shadow-md shadow-secondary-container/20' : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200' ?>">
             <span class="material-symbols-outlined text-base">support_agent</span>
-            <span>تیکت‌های پشتیبانی مدیریت (Normal Admin Ticketing)</span>
+            <span>پشتیبانی مدیریت آسنا (Asena Admin)</span>
             <span class="px-2 py-0.5 rounded-full text-[10px] <?= $activeTab === 'admin' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-800' ?>"><?= $counts['admin'] ?></span>
         </a>
 
-        <!-- 2. AI Assistant Tab -->
+        <!-- 2. Organization / Clinic Ticketing Tab -->
+        <a href="user_tickets.php?tab=organization" class="px-5 py-2.5 rounded-2xl text-xs font-black transition-all flex items-center gap-2 shrink-0 <?= $activeTab === 'organization' ? 'bg-sky-600 text-white shadow-md shadow-sky-600/20' : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200' ?>">
+            <span class="material-symbols-outlined text-base">apartment</span>
+            <span>مراکز درمانی و کلینیک‌ها</span>
+            <span class="px-2 py-0.5 rounded-full text-[10px] <?= $activeTab === 'organization' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-800' ?>"><?= $counts['organization'] ?></span>
+        </a>
+
+        <!-- 3. AI Assistant Tab -->
         <a href="user_tickets.php?tab=ai" class="px-5 py-2.5 rounded-2xl text-xs font-bold transition-all flex items-center gap-2 shrink-0 <?= $activeTab === 'ai' ? 'bg-primary-container text-white shadow-md' : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200' ?>">
             <span class="material-symbols-outlined text-base">cruelty_free</span>
-            <span>مشاوره هوشمند با لئو (هوش مصنوعی)</span>
+            <span>مشاوره با لئو (هوش مصنوعی)</span>
             <span class="px-2 py-0.5 rounded-full text-[10px] <?= $activeTab === 'ai' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-800' ?>"><?= $counts['ai'] ?></span>
         </a>
 
-        <!-- 3. All Tickets Tab -->
+        <!-- 4. All Tickets Tab -->
         <a href="user_tickets.php?tab=all" class="px-5 py-2.5 rounded-2xl text-xs font-bold transition-all flex items-center gap-2 shrink-0 <?= $activeTab === 'all' ? 'bg-slate-800 text-white shadow-md' : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200' ?>">
             <span class="material-symbols-outlined text-base">all_inbox</span>
             <span>همه گفتگوها</span>
@@ -159,14 +172,16 @@ $fmtDateTime = new IntlDateFormatter('fa_IR@calendar=persian', IntlDateFormatter
             <!-- Empty State -->
             <div class="text-center py-16 space-y-4 max-w-md mx-auto">
                 <div class="w-16 h-16 rounded-3xl bg-secondary-container/10 text-secondary-container flex items-center justify-center mx-auto">
-                    <span class="material-symbols-outlined text-3xl"><?= $activeTab === 'ai' ? 'cruelty_free' : 'support_agent' ?></span>
+                    <span class="material-symbols-outlined text-3xl">
+                        <?= $activeTab === 'ai' ? 'cruelty_free' : ($activeTab === 'organization' ? 'apartment' : 'support_agent') ?>
+                    </span>
                 </div>
                 <div>
                     <h3 class="text-base font-black text-slate-900 mb-1">
-                        <?= $activeTab === 'admin' ? 'هیچ تیکتی با تیم پشتیبانی مدیریت ندارید' : ($activeTab === 'ai' ? 'هیچ گفتگویی با هوش مصنوعی ندارید' : 'هیچ تیکت یا گفتگویی یافت نشد') ?>
+                        <?= $activeTab === 'admin' ? 'هیچ تیکتی با تیم پشتیبانی مدیریت ندارید' : ($activeTab === 'organization' ? 'هیچ گفتگویی با مراکز درمانی و کلینیک‌ها ندارید' : ($activeTab === 'ai' ? 'هیچ گفتگویی با هوش مصنوعی ندارید' : 'هیچ تیکت یا گفتگویی یافت نشد')) ?>
                     </h3>
                     <p class="text-xs text-slate-500 leading-relaxed">
-                        <?= $activeTab === 'admin' ? 'در صورت داشتن هرگونه سوال در مورد سفارش، پرداخت، نوبت کلینیک یا گزارش مشکل، تیکت جدید ارسال کنید تا کارشناسان ما پاسخ دهند.' : 'برای مشاوره سریع پزشکی، تغذیه و سلامت پت می‌توانید همین حالا با لئو گفتگو کنید.' ?>
+                        <?= $activeTab === 'admin' ? 'در صورت داشتن هرگونه سوال در مورد سفارش، پرداخت، نوبت کلینیک یا گزارش مشکل، تیکت جدید ارسال کنید تا کارشناسان ما پاسخ دهند.' : ($activeTab === 'organization' ? 'می‌توانید از صفحه هر مرکز درمانی، مستقیماً با کادر پذیرش و مدیریت همان کلینیک گفتگو نمایید.' : 'برای مشاوره سریع پزشکی، تغذیه و سلامت پت می‌توانید همین حالا با لئو گفتگو کنید.') ?>
                     </p>
                 </div>
 
@@ -175,6 +190,11 @@ $fmtDateTime = new IntlDateFormatter('fa_IR@calendar=persian', IntlDateFormatter
                         <button onclick="openNewTicketModal()" class="px-6 py-2.5 rounded-xl bg-secondary-container text-white text-xs font-black shadow-md hover:opacity-95 transition-all">
                             ارسال اولین تیکت به مدیریت
                         </button>
+                    <?php elseif ($activeTab === 'organization'): ?>
+                        <a href="organizations.php" class="px-6 py-2.5 rounded-xl bg-sky-600 text-white text-xs font-black shadow-md hover:bg-sky-700 transition-all inline-flex items-center gap-2">
+                            <span class="material-symbols-outlined text-sm">apartment</span>
+                            <span>مشاهده مراکز درمانی و ارسال پیام</span>
+                        </a>
                     <?php else: ?>
                         <form action="actions/chat_action.php" method="POST" class="inline">
                             <?= csrf_field() ?>
@@ -192,32 +212,54 @@ $fmtDateTime = new IntlDateFormatter('fa_IR@calendar=persian', IntlDateFormatter
             <!-- Tickets List Stream -->
             <div class="space-y-3.5">
                 <?php foreach ($tickets as $t): 
-                    $isAdmin = ($t['mode'] === 'admin');
+                    $tMode = $t['mode'];
                     $isOpen = ($t['status'] === 'open');
+                    $icon = 'support_agent';
+                    $iconBox = 'bg-secondary-container/10 text-secondary-container border border-secondary-container/20';
+                    $tagClass = 'bg-orange-100 text-orange-800';
+                    $title = 'تیکت پشتیبانی مدیریت آسنا';
+                    $tagLabel = 'مدیریت آسنا';
+                    $btnClass = 'bg-secondary-container text-white shadow-md hover:opacity-95';
+
+                    if ($tMode === 'organization') {
+                        $icon = 'apartment';
+                        $iconBox = 'bg-sky-50 text-sky-600 border border-sky-200';
+                        $tagClass = 'bg-sky-100 text-sky-800';
+                        $title = !empty($t['organization_name']) ? ('گفتگو با ' . htmlspecialchars($t['organization_name'])) : 'گفتگو با مرکز درمانی';
+                        $tagLabel = 'کلینیک / بیمارستان';
+                        $btnClass = 'bg-sky-600 text-white shadow-md hover:bg-sky-700';
+                    } elseif ($tMode === 'ai') {
+                        $icon = 'cruelty_free';
+                        $iconBox = 'bg-primary-container/10 text-primary-container border border-primary-container/20';
+                        $tagClass = 'bg-blue-100 text-blue-800';
+                        $title = 'مشاوره هوشمند با لئو (هوش مصنوعی)';
+                        $tagLabel = 'دستیار AI';
+                        $btnClass = 'bg-primary-container text-white shadow-md hover:bg-primary';
+                    }
                 ?>
                     <div class="p-5 rounded-2xl bg-slate-50 hover:bg-slate-100/90 border border-slate-200/80 transition-all flex flex-col md:flex-row items-start md:items-center justify-between gap-4 group">
                         
                         <!-- Left: Info & Snippet -->
                         <div class="flex items-start gap-4 min-w-0 flex-1">
-                            <div class="w-12 h-12 rounded-2xl <?= $isAdmin ? 'bg-secondary-container/10 text-secondary-container border border-secondary-container/20' : 'bg-primary-container/10 text-primary-container border border-primary-container/20' ?> flex items-center justify-center shrink-0 shadow-sm mt-0.5">
-                                <span class="material-symbols-outlined text-2xl"><?= $isAdmin ? 'support_agent' : 'cruelty_free' ?></span>
+                            <div class="w-12 h-12 rounded-2xl <?= $iconBox ?> flex items-center justify-center shrink-0 shadow-sm mt-0.5">
+                                <span class="material-symbols-outlined text-2xl"><?= $icon ?></span>
                             </div>
 
                             <div class="space-y-1 min-w-0 flex-1">
                                 <div class="flex items-center gap-2 flex-wrap">
                                     <h3 class="text-sm font-black text-slate-900">
-                                        <?= $isAdmin ? 'تیکت پشتیبانی مدیریت (ارتباط با اپراتور)' : 'مشاوره هوشمند با لئو (هوش مصنوعی)' ?>
+                                        <?= $title ?>
                                     </h3>
-                                    <span class="px-2 py-0.5 rounded-full text-[10px] font-black <?= $isAdmin ? 'bg-orange-100 text-orange-800' : 'bg-blue-100 text-blue-800' ?>">
-                                        <?= $isAdmin ? 'پشتیبانی انسانی' : 'دستیار AI' ?>
+                                    <span class="px-2 py-0.5 rounded-full text-[10px] font-black <?= $tagClass ?>">
+                                        <?= $tagLabel ?>
                                     </span>
                                     <span class="text-slate-400 font-mono text-[10px]">#TKT-<?= $t['id'] ?></span>
                                 </div>
 
                                 <!-- Last Message Preview -->
-                                <p class="text-xs text-slate-600 line-clamp-1 leading-relaxed">
+                                <p class="text-xs text-slate-600 line-clamp-1 leading-relaxed" dir="auto">
                                     <?php if ($t['last_sender'] === 'admin'): ?>
-                                        <strong class="text-primary font-bold">پاسخ کارشناس: </strong>
+                                        <strong class="text-primary font-bold"><?= $tMode === 'organization' ? 'پاسخ کلینیک: ' : 'پاسخ کارشناس: ' ?></strong>
                                     <?php elseif ($t['last_sender'] === 'user'): ?>
                                         <span class="text-slate-500">پیام شما: </span>
                                     <?php endif; ?>
@@ -240,9 +282,9 @@ $fmtDateTime = new IntlDateFormatter('fa_IR@calendar=persian', IntlDateFormatter
 
                         <!-- Right: Action Button -->
                         <div class="shrink-0 self-end md:self-center">
-                            <a href="chat.php?ticket_id=<?= (int)$t['id'] ?>" class="px-5 py-2.5 rounded-xl <?= $isOpen ? ($isAdmin ? 'bg-secondary-container text-white shadow-md hover:opacity-95' : 'bg-primary-container text-white shadow-md hover:bg-primary') : 'bg-white text-slate-700 border border-slate-300 hover:bg-slate-100' ?> text-xs font-black flex items-center gap-2 transition-all">
+                            <a href="chat.php?ticket_id=<?= (int)$t['id'] ?>" class="px-5 py-2.5 rounded-xl <?= $isOpen ? $btnClass : 'bg-white text-slate-700 border border-slate-300 hover:bg-slate-100' ?> text-xs font-black flex items-center gap-2 transition-all">
                                 <span class="material-symbols-outlined text-sm"><?= $isOpen ? 'chat' : 'history' ?></span>
-                                <span><?= $isOpen ? ($isAdmin ? 'گفتگو با کارشناس' : 'ادامه گفتگو') : 'مشاهده سوابق گفتگو' ?></span>
+                                <span><?= $isOpen ? 'ادامه گفتگو' : 'مشاهده سوابق گفتگو' ?></span>
                                 <span class="material-symbols-outlined text-xs">arrow_back</span>
                             </a>
                         </div>
