@@ -19,44 +19,88 @@
                     </a>
                 </div>
             </div>
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10 lg:gap-12 flex-1 text-center sm:text-right">
-                <div class="flex flex-col gap-4 lg:gap-5">
-                    <h4 class="font-bold text-lg text-primary">فروشگاه</h4>
-                    <nav class="flex flex-col gap-3">
-                        <a class="text-sm text-on-surface-variant hover:text-secondary-container transition-colors" href="shop.php">غذای سگ و گربه</a>
-                        <a class="text-sm text-on-surface-variant hover:text-secondary-container transition-colors" href="shop.php">لوازم بهداشتی</a>
-                        <a class="text-sm text-on-surface-variant hover:text-secondary-container transition-colors" href="shop.php">اسباب‌بازی</a>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-10 flex-1 text-center sm:text-right">
+                <div class="flex flex-col gap-4">
+                    <h4 class="font-bold text-base text-primary">فروشگاه و خدمات</h4>
+                    <nav class="flex flex-col gap-2.5">
+                        <a class="text-xs text-on-surface-variant hover:text-secondary-container transition-colors" href="shop.php">غذای خشک و کنسرو</a>
+                        <a class="text-xs text-on-surface-variant hover:text-secondary-container transition-colors" href="pharmacy.php">داروخانه و مکمل‌ها</a>
+                        <a class="text-xs text-on-surface-variant hover:text-secondary-container transition-colors" href="booking.php">نوبت‌دهی کلینیک و گرومینگ</a>
+                        <a class="text-xs text-on-surface-variant hover:text-secondary-container transition-colors" href="subscriptions.php">سفارش خودکار Autoship</a>
                     </nav>
                 </div>
-                <div class="flex flex-col gap-5">
-                    <h4 class="font-bold text-lg text-primary">خدمات و قوانین</h4>
-                    <nav class="flex flex-col gap-3">
-                        <a class="text-sm text-on-surface-variant hover:text-secondary-container transition-colors" href="booking.php">رزرو نوبت کلینیک</a>
-                        <a class="text-sm text-on-surface-variant hover:text-secondary-container transition-colors" href="terms.php">قوانین و شرایط خدمات</a>
-                        <a class="text-sm text-on-surface-variant hover:text-secondary-container transition-colors" href="privacy.php">سیاست حریم خصوصی</a>
+                <div class="flex flex-col gap-4">
+                    <h4 class="font-bold text-base text-primary">قوانین و امور مشتریان</h4>
+                    <nav class="flex flex-col gap-2.5">
+                        <a class="text-xs text-on-surface-variant hover:text-secondary-container transition-colors" href="about.php">درباره ما و مجوزها</a>
+                        <a class="text-xs text-on-surface-variant hover:text-secondary-container transition-colors font-bold text-primary" href="contact.php">تماس با ما و ثبت شکایات</a>
+                        <a class="text-xs text-on-surface-variant hover:text-secondary-container transition-colors" href="terms.php">قوانین و شرایط خدمات (مهلت ۷ روزه)</a>
+                        <a class="text-xs text-on-surface-variant hover:text-secondary-container transition-colors" href="privacy.php">سیاست حفظ حریم خصوصی</a>
                     </nav>
                 </div>
-                <div class="flex flex-col gap-5">
-                    <h4 class="font-bold text-lg text-primary">پایگاه دانش و راهنما</h4>
-                    <nav class="flex flex-col gap-3">
-                        <a class="text-sm text-on-surface-variant hover:text-secondary-container transition-colors flex items-center gap-1.5" href="knowledge_base.php">
-                            <span class="material-symbols-outlined text-[16px] text-primary">auto_stories</span>
-                            پایگاه دانش و مقالات تخصصی
+                <div class="flex flex-col gap-4">
+                    <h4 class="font-bold text-base text-primary">پایگاه دانش دامپزشکی</h4>
+                    <nav class="flex flex-col gap-2.5">
+                        <a class="text-xs text-on-surface-variant hover:text-secondary-container transition-colors flex items-center justify-center sm:justify-start gap-1" href="knowledge_base.php">
+                            <span class="material-symbols-outlined text-[15px] text-primary">auto_stories</span>
+                            مقالات و راهنمای سلامت
                         </a>
-                        <a class="text-sm text-on-surface-variant hover:text-secondary-container transition-colors flex items-center gap-1.5" href="knowledge_base.php?article=vaccination-schedule-dogs-cats">
-                            <span class="material-symbols-outlined text-[16px] text-primary">vaccines</span>
-                            جدول واکسیناسیون سگ و گربه
+                        <a class="text-xs text-on-surface-variant hover:text-secondary-container transition-colors flex items-center justify-center sm:justify-start gap-1" href="knowledge_base.php?article=vaccination-schedule-dogs-cats">
+                            <span class="material-symbols-outlined text-[15px] text-primary">vaccines</span>
+                            جدول واکسیناسیون پت
                         </a>
-                        <a class="text-sm text-on-surface-variant hover:text-secondary-container transition-colors flex items-center gap-1.5" href="knowledge_base.php?article=how-autoship-works-guide">
-                            <span class="material-symbols-outlined text-[16px] text-primary">autorenew</span>
-                            راهنمای تحویل خودکار (Autoship)
-                        </a>
-                        <a class="text-sm text-on-surface-variant hover:text-secondary-container transition-colors flex items-center gap-1.5" href="knowledge_base.php?article=pet-poisoning-emergency-guide">
-                            <span class="material-symbols-outlined text-[16px] text-primary">emergency</span>
-                            راهنمای مسمومیت حیوانات
+                        <a class="text-xs text-on-surface-variant hover:text-secondary-container transition-colors flex items-center justify-center sm:justify-start gap-1" href="charity.php">
+                            <span class="material-symbols-outlined text-[15px] text-emerald-600">volunteer_activism</span>
+                            خیریه و درمان حیوانات
                         </a>
                     </nav>
                 </div>
+
+                <!-- Enamad & Trust Badges Column -->
+                <div class="flex flex-col gap-3 items-center sm:items-start">
+                    <h4 class="font-bold text-base text-primary">مجوزها و نماد اعتماد</h4>
+                    <p class="text-[11px] text-slate-500 leading-relaxed">
+                        دارای نماد اعتماد الکترونیکی از وزارت صمت و پروتکل امن SSL
+                    </p>
+                    
+                    <div class="flex items-center gap-3 pt-1">
+                        <?php 
+                        $enamadHtml = ($pdo instanceof PDO) ? get_setting($pdo, 'enamad_html_code', '') : '';
+                        if (!empty($enamadHtml)): 
+                            echo $enamadHtml;
+                        else:
+                        ?>
+                        <!-- Official Enamad Badge Slot -->
+                        <a href="https://enamad.ir" target="_blank" rel="noopener noreferrer" class="w-20 h-24 p-2 bg-white rounded-2xl border border-slate-200 shadow-xs flex flex-col items-center justify-between text-center group hover:border-primary transition-all cursor-pointer" title="نماد اعتماد الکترونیکی مرکز توسعه تجارت الکترونیکی">
+                            <div class="w-10 h-10 flex items-center justify-center mt-1">
+                                <svg class="w-8 h-8 text-primary group-hover:scale-105 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                                    <path d="m9 12 2 2 4-4"/>
+                                </svg>
+                            </div>
+                            <span class="text-[9px] font-black text-slate-700 group-hover:text-primary transition-colors leading-tight">نماد اعتماد الکترونیکی</span>
+                            <span class="text-[8px] text-emerald-600 font-bold bg-emerald-50 px-1.5 py-0.5 rounded-full">اینماد تاییدشده</span>
+                        </a>
+
+                        <!-- Samandehi Badge Slot -->
+                        <a href="https://samandehi.ir" target="_blank" rel="noopener noreferrer" class="w-20 h-24 p-2 bg-white rounded-2xl border border-slate-200 shadow-xs flex flex-col items-center justify-between text-center group hover:border-[#fd8100] transition-all cursor-pointer" title="نشان ملی ثبت رسانه‌های دیجیتال (ساماندهی)">
+                            <div class="w-10 h-10 flex items-center justify-center mt-1">
+                                <svg class="w-8 h-8 text-[#fd8100] group-hover:scale-105 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="12" cy="12" r="10"/>
+                                    <path d="m4.93 4.93 4.24 4.24"/>
+                                    <path d="m14.83 9.17 4.24-4.24"/>
+                                    <path d="m14.83 14.83 4.24 4.24"/>
+                                    <path d="m9.17 14.83-4.24 4.24"/>
+                                    <circle cx="12" cy="12" r="4"/>
+                                </svg>
+                            </div>
+                            <span class="text-[9px] font-black text-slate-700 group-hover:text-[#fd8100] transition-colors leading-tight">نشان ساماندهی</span>
+                            <span class="text-[8px] text-blue-600 font-bold bg-blue-50 px-1.5 py-0.5 rounded-full">رسانه دیجیتال</span>
+                        </a>
+                        <?php endif; ?>
+                    </div>
+                </div>
+            </div>
         </div>
     </footer>
 

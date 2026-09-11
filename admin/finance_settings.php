@@ -49,7 +49,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             set_setting($pdo, 'auto_payout_day', $autoPayoutDay);
             set_setting($pdo, 'auto_payout_time', $autoPayoutTime);
 
-            $success = "تنظیمات حساب بانکی آسنا، مالیات و زمان‌بندی تسویه با موفقیت ذخیره شد.";
+            $enamadCode = trim($_POST['enamad_html_code'] ?? '');
+            set_setting($pdo, 'enamad_html_code', $enamadCode);
+
+            $success = "تنظیمات حساب بانکی، مالیات، زمان‌بندی تسویه و کد نماد اعتماد با موفقیت ذخیره شد.";
         }
     } elseif ($action === 'force_test_payout') {
         $res = $escrowService->checkAndExecuteScheduledWeeklyPayout(true, 'manual_admin');
@@ -75,6 +78,7 @@ $taxOnAppts     = get_setting($pdo, 'tax_on_appointments_enabled', '1');
 $autoPayoutEnabled = get_setting($pdo, 'auto_payout_enabled', '1');
 $autoPayoutDay     = (int)get_setting($pdo, 'auto_payout_day', 4);
 $autoPayoutTime    = get_setting($pdo, 'auto_payout_time', '09:00');
+$enamadCode        = get_setting($pdo, 'enamad_html_code', '');
 
 // Iranian Bank Card Prefix Detection
 function detectBankName(string $card): string {
@@ -337,6 +341,21 @@ require_once __DIR__ . '/includes/admin_header.php';
                             <input type="text" name="auto_payout_time" value="<?= htmlspecialchars($autoPayoutTime) ?>" placeholder="09:00" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-xs font-mono font-bold focus:border-primary focus:bg-white outline-none dir-ltr text-center">
                             <p class="text-[10px] text-slate-400 mt-1">ساعت ۰۹:۰۰ صبح (آغاز اولین سیکل روزانه پایا)</p>
                         </div>
+                    </div>
+                </div>
+
+                <!-- Section 4: Enamad & Legal Trust Badges -->
+                <div>
+                    <h3 class="font-bold text-slate-900 dark:text-white text-base flex items-center gap-2 border-b border-slate-100 dark:border-slate-800 pb-3 mb-4">
+                        <span class="material-symbols-outlined text-[#001a48] dark:text-blue-400 text-xl">verified</span>
+                        کد نماد اعتماد الکترونیکی (اینماد enamad.ir)
+                    </h3>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-2">کد HTML/اسکریپت نماد اعتماد اینماد:</label>
+                        <textarea name="enamad_html_code" rows="3" placeholder="کد دریافتی از پنل کاربری سامانه اینماد (enamad.ir) را اینجا قرار دهید..." class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-xs font-mono focus:border-primary focus:bg-white outline-none dir-ltr text-left"><?= htmlspecialchars($enamadCode) ?></textarea>
+                        <p class="text-[10px] text-slate-400 mt-1.5 leading-relaxed">
+                            پس از تکمیل مراحل احراز هویت، ثبت دامنه و تایید کارشناس در سامانه اینماد، کد اختصاصی نماد را در کادر بالا کپی کنید تا بلافاصله به صورت زنده در فوتر سایت نمایش یابد.
+                        </p>
                     </div>
                 </div>
 

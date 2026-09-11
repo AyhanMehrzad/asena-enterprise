@@ -183,9 +183,15 @@ $init_status = $post['status'] ?? 'published';
 
             <!-- Header Quick Actions -->
             <div class="flex items-center gap-2 md:gap-3">
+                <!-- AI Copilot Trigger -->
+                <button type="button" onclick="openAiArticleModal()" class="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-black bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 hover:from-purple-500 hover:to-indigo-500 text-white shadow-md shadow-purple-500/25 transition-all active:scale-95">
+                    <span class="material-symbols-outlined text-base text-amber-300 animate-pulse">auto_awesome</span>
+                    <span>دستیار هوش مصنوعی</span>
+                </button>
+
                 <!-- Ready-made Templates Trigger -->
-                <button type="button" onclick="openTemplatesModal()" class="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-300 dark:border-amber-800 hover:bg-amber-100 transition-all shadow-sm">
-                    <span class="material-symbols-outlined text-base">auto_awesome</span>
+                <button type="button" onclick="openTemplatesModal()" class="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-300 dark:border-amber-800 hover:bg-amber-100 transition-all shadow-sm">
+                    <span class="material-symbols-outlined text-base">format_shapes</span>
                     <span>قالب‌های آماده</span>
                 </button>
 
@@ -248,6 +254,59 @@ $init_status = $post['status'] ?? 'published';
     <!-- Main Writing Canvas Container -->
     <main id="editor-main-container" class="max-w-5xl mx-auto px-4 mt-6 transition-all duration-300">
         
+        <!-- ASENA AI Copilot VIP Header Bar -->
+        <div class="mb-5 p-4 md:p-5 rounded-3xl bg-gradient-to-r from-slate-950 via-indigo-950 to-purple-950 text-white shadow-xl shadow-indigo-950/20 border border-purple-500/30 backdrop-blur-xl relative overflow-hidden">
+            <!-- Ambient Background Glow -->
+            <div class="absolute -left-12 -top-12 w-48 h-48 bg-purple-500/20 rounded-full blur-3xl pointer-events-none"></div>
+            <div class="absolute -right-12 -bottom-12 w-48 h-48 bg-blue-500/20 rounded-full blur-3xl pointer-events-none"></div>
+
+            <div class="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-purple-600 via-indigo-600 to-amber-500 flex items-center justify-center shrink-0 shadow-lg shadow-purple-500/30">
+                        <span class="material-symbols-outlined text-white text-2xl animate-pulse">auto_awesome</span>
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <h2 class="font-black text-sm md:text-base text-white tracking-tight">دستیار هوش مصنوعی آسنا (ASENA AI Copilot)</h2>
+                            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-400/20 text-amber-300 border border-amber-400/30 flex items-center gap-1">
+                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span>
+                                موتور فعال: هوش بالینی و سئو آسنا
+                            </span>
+                        </div>
+                        <p class="text-[11px] text-slate-300 mt-0.5">نگارش هوشمند مقالات جامع دامپزشکی، سئو تخصصی گوگل و بازنویسی علمی متون</p>
+                    </div>
+                </div>
+
+                <!-- AI Quick Action Buttons -->
+                <div class="flex items-center gap-2 flex-wrap">
+                    <button type="button" onclick="openAiArticleModal()" class="px-3.5 py-2 rounded-xl bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black text-xs flex items-center gap-1.5 transition-all shadow-md shadow-amber-500/20 active:scale-95">
+                        <span class="material-symbols-outlined text-base">rocket_launch</span>
+                        <span>نگارش کامل با AI</span>
+                    </button>
+
+                    <button type="button" onclick="openAiTitleModal()" class="px-3 py-2 rounded-xl bg-white/10 hover:bg-white/20 border border-white/15 text-white font-bold text-xs flex items-center gap-1.5 transition-all active:scale-95">
+                        <span class="material-symbols-outlined text-base text-amber-300">lightbulb</span>
+                        <span>۵ تیتر جذاب سئو</span>
+                    </button>
+
+                    <button type="button" onclick="openAiPolisherModal()" class="px-3 py-2 rounded-xl bg-white/10 hover:bg-white/20 border border-white/15 text-white font-bold text-xs flex items-center gap-1.5 transition-all active:scale-95">
+                        <span class="material-symbols-outlined text-base text-purple-300">magic_button</span>
+                        <span>بازنویسی متن</span>
+                    </button>
+
+                    <button type="button" onclick="triggerAiFaqGeneration()" class="px-3 py-2 rounded-xl bg-white/10 hover:bg-white/20 border border-white/15 text-white font-bold text-xs flex items-center gap-1.5 transition-all active:scale-95">
+                        <span class="material-symbols-outlined text-base text-cyan-300">quiz</span>
+                        <span>تولید سوالات متداول</span>
+                    </button>
+
+                    <button type="button" onclick="triggerAiAlertGeneration()" class="px-3 py-2 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 border border-rose-500/40 text-rose-200 font-bold text-xs flex items-center gap-1.5 transition-all active:scale-95">
+                        <span class="material-symbols-outlined text-base text-rose-400">crisis_alert</span>
+                        <span>هشدار اورژانسی</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
         <!-- Quick Block Inserter Bar (One-Click Component Palette) -->
         <div class="mb-4 p-3 rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white/70 dark:bg-slate-900/70 backdrop-blur-md shadow-sm">
             <div class="flex items-center justify-between mb-2">
@@ -557,6 +616,218 @@ $init_status = $post['status'] ?? 'published';
         </div>
     </div>
 </div>
+
+<!-- ======================================================== -->
+<!-- ASENA AI COPILOT MODALS SUITE                            -->
+<!-- ======================================================== -->
+
+<!-- Modal 1: Full AI Article Generator -->
+<div id="ai-article-modal" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-md hidden items-center justify-center p-3 sm:p-4 overflow-y-auto">
+    <div class="bg-white dark:bg-slate-900 rounded-3xl p-5 sm:p-7 max-w-3xl w-full border border-purple-500/30 shadow-2xl shadow-purple-950/40 space-y-5 my-8">
+        
+        <!-- Modal Header -->
+        <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-4">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-purple-600 to-amber-500 flex items-center justify-center text-white shadow-md shadow-purple-500/20">
+                    <span class="material-symbols-outlined text-xl animate-pulse">rocket_launch</span>
+                </div>
+                <div>
+                    <h3 class="text-base sm:text-lg font-black text-slate-900 dark:text-white flex items-center gap-1.5">
+                        <span>نگارش کامل مقاله با هوش مصنوعی آسنا</span>
+                        <span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-purple-100 text-purple-800 dark:bg-purple-950/60 dark:text-purple-300">AI Writer</span>
+                    </h3>
+                    <p class="text-[11px] text-slate-500">تولید ساختاریافته تیتر، اسلاگ، خلاصه متا، متن غنی HTML و سوالات متداول</p>
+                </div>
+            </div>
+            <button type="button" onclick="closeAiArticleModal()" class="w-8 h-8 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 flex items-center justify-center transition-colors">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+        </div>
+
+        <!-- Inputs Section -->
+        <div class="space-y-4">
+            <div>
+                <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">موضوع یا بیماری مورد نظر را وارد نمایید:</label>
+                <div class="relative">
+                    <input type="text" id="ai-topic-input" placeholder="مثلاً: واکسیناسیون توله سگ، نارسایی کلیوی در گربه، مسمومیت با شکلات..." class="w-full text-sm font-medium rounded-2xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 px-4 py-3 pl-10 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50 transition-all">
+                    <span class="material-symbols-outlined absolute left-3 top-3.5 text-slate-400 text-xl pointer-events-none">search</span>
+                </div>
+            </div>
+
+            <!-- Fast Prompt Chips -->
+            <div>
+                <span class="text-[11px] font-extrabold text-slate-400 block mb-2">موضوعات پرتکرار و پیشنهادی دامپزشکی:</span>
+                <div class="flex items-center gap-1.5 flex-wrap">
+                    <button type="button" onclick="setAiTopic('واکسیناسیون توله سگ و جدول زمان‌بندی')" class="px-2.5 py-1 rounded-xl text-[11px] font-bold bg-slate-100 dark:bg-slate-800 hover:bg-purple-100 dark:hover:bg-purple-900/40 text-slate-700 dark:text-slate-300 hover:text-purple-700 border border-slate-200 dark:border-slate-700 transition-all">🐶 واکسیناسیون توله سگ</button>
+                    <button type="button" onclick="setAiTopic('نارسایی کلیوی مزمن در گربه‌ها (CKD)')" class="px-2.5 py-1 rounded-xl text-[11px] font-bold bg-slate-100 dark:bg-slate-800 hover:bg-purple-100 dark:hover:bg-purple-900/40 text-slate-700 dark:text-slate-300 hover:text-purple-700 border border-slate-200 dark:border-slate-700 transition-all">🐱 نارسایی کلیه گربه</button>
+                    <button type="button" onclick="setAiTopic('مسمومیت با شکلات و پیاز در سگ‌ها')" class="px-2.5 py-1 rounded-xl text-[11px] font-bold bg-slate-100 dark:bg-slate-800 hover:bg-purple-100 dark:hover:bg-purple-900/40 text-slate-700 dark:text-slate-300 hover:text-purple-700 border border-slate-200 dark:border-slate-700 transition-all">🍫 مسمومیت با شکلات</button>
+                    <button type="button" onclick="setAiTopic('مراقبت‌های پس از جراحی عقیم‌سازی')" class="px-2.5 py-1 rounded-xl text-[11px] font-bold bg-slate-100 dark:bg-slate-800 hover:bg-purple-100 dark:hover:bg-purple-900/40 text-slate-700 dark:text-slate-300 hover:text-purple-700 border border-slate-200 dark:border-slate-700 transition-all">✂️ مراقبت پس از عقیم‌سازی</button>
+                    <button type="button" onclick="setAiTopic('بهداشت دهان و پیشگیری از جرم دندان پت')" class="px-2.5 py-1 rounded-xl text-[11px] font-bold bg-slate-100 dark:bg-slate-800 hover:bg-purple-100 dark:hover:bg-purple-900/40 text-slate-700 dark:text-slate-300 hover:text-purple-700 border border-slate-200 dark:border-slate-700 transition-all">🦷 بهداشت دهان و دندان</button>
+                    <button type="button" onclick="setAiTopic('درمان فوری کک، کنه و جرب پوستی')" class="px-2.5 py-1 rounded-xl text-[11px] font-bold bg-slate-100 dark:bg-slate-800 hover:bg-purple-100 dark:hover:bg-purple-900/40 text-slate-700 dark:text-slate-300 hover:text-purple-700 border border-slate-200 dark:border-slate-700 transition-all">🦟 کک، کنه و انگل پوستی</button>
+                </div>
+            </div>
+
+            <!-- Parameters Grid -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+                <div>
+                    <label class="block text-[11px] font-bold text-slate-500 mb-1">لحن نگارش:</label>
+                    <select id="ai-tone-select" class="w-full text-xs font-bold rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-2 text-slate-800 dark:text-slate-200 outline-none">
+                        <option value="clinical">🔬 علمی و کلینیکی (تخصصی)</option>
+                        <option value="friendly">🐾 خودمانی و راهنمای سرپرست</option>
+                        <option value="emergency">⚠️ هشداردهنده و اورژانسی</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-[11px] font-bold text-slate-500 mb-1">گونه هدف:</label>
+                    <select id="ai-species-select" class="w-full text-xs font-bold rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-2 text-slate-800 dark:text-slate-200 outline-none">
+                        <option value="all">🐾 همه حیوانات خانگی</option>
+                        <option value="dog">🐶 سگ</option>
+                        <option value="cat">🐱 گربه</option>
+                        <option value="bird">🦜 پرندگان زینتی</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-[11px] font-bold text-slate-500 mb-1">دسته‌بندی محتوا:</label>
+                    <select id="ai-category-select" class="w-full text-xs font-bold rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-2 text-slate-800 dark:text-slate-200 outline-none">
+                        <option value="medical">💉 پزشکی و سلامت</option>
+                        <option value="pharmacy">💊 دارو و نسخه</option>
+                        <option value="shop">🐾 پت‌شاپ و تغذیه</option>
+                        <option value="platform">📖 راهنمای سامانه</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Submit Button -->
+            <div class="pt-2">
+                <button type="button" id="btn-generate-ai-article" onclick="generateAiArticle()" class="w-full py-3.5 px-6 rounded-2xl bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white font-extrabold text-sm shadow-lg shadow-purple-600/30 flex items-center justify-center gap-2 transition-all active:scale-[0.99]">
+                    <span id="ai-btn-icon" class="material-symbols-outlined text-amber-300">auto_awesome</span>
+                    <span id="ai-btn-text">شروع نگارش کامل مقاله با هوش مصنوعی</span>
+                    <div id="ai-btn-spinner" class="hidden w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                </button>
+                <div id="ai-status-msg" class="text-center text-xs font-bold text-purple-600 dark:text-purple-400 mt-2 min-h-[1.25rem]"></div>
+            </div>
+        </div>
+
+        <!-- Generation Preview Drawer (Initially Hidden) -->
+        <div id="ai-article-preview" class="hidden border-t border-slate-200 dark:border-slate-800 pt-4 space-y-4">
+            <div class="p-4 rounded-2xl bg-purple-50/70 dark:bg-purple-950/30 border border-purple-200 dark:border-purple-800/60 space-y-2.5">
+                <div class="flex items-center justify-between">
+                    <span class="text-[11px] font-black uppercase text-purple-700 dark:text-purple-300 flex items-center gap-1">
+                        <span class="material-symbols-outlined text-sm">check_circle</span>
+                        پیش‌نمایش خروجی تولید شده:
+                    </span>
+                    <span id="preview-source-badge" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-purple-200"></span>
+                </div>
+
+                <div>
+                    <h4 id="preview-title" class="text-base font-extrabold text-slate-900 dark:text-white leading-snug"></h4>
+                    <p id="preview-desc" class="text-xs text-slate-600 dark:text-slate-300 mt-1 leading-relaxed"></p>
+                </div>
+
+                <div class="flex items-center gap-3 text-[11px] text-slate-500 pt-1 border-t border-purple-200/60 dark:border-purple-800/40">
+                    <span id="preview-read-time" class="flex items-center gap-1 font-bold"></span>
+                    <span id="preview-slug" class="font-mono text-[10px] text-slate-400 truncate max-w-xs"></span>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="flex items-center gap-3">
+                <button type="button" onclick="applyAiArticleToEditor()" class="flex-1 py-3 px-5 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-sm flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/20 transition-all active:scale-95">
+                    <span class="material-symbols-outlined">bolt</span>
+                    <span>اعمال مستقیم در تمام فیلدها و بوم مقاله (۱ کلیک)</span>
+                </button>
+                <button type="button" onclick="closeAiArticleModal()" class="px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-bold transition-all">
+                    بستن
+                </button>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- Modal 2: AI SEO Titles Suggester -->
+<div id="ai-title-modal" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm hidden items-center justify-center p-4">
+    <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 md:p-8 max-w-xl w-full border border-slate-200 dark:border-slate-800 shadow-2xl space-y-4">
+        <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+            <h3 class="text-base font-black text-slate-900 dark:text-white flex items-center gap-2">
+                <span class="material-symbols-outlined text-amber-500">lightbulb</span>
+                ایده‌پرداز ۵ تیتر سئو و کلیک‌خور با هوش مصنوعی
+            </h3>
+            <button type="button" onclick="closeAiTitleModal()" class="text-slate-400 hover:text-slate-600">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+        </div>
+
+        <div class="space-y-3">
+            <div class="flex items-center gap-2">
+                <input type="text" id="ai-title-topic" placeholder="موضوع مقاله را وارد کنید..." class="flex-1 text-xs font-bold rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3.5 py-2.5 text-slate-900 dark:text-white outline-none">
+                <button type="button" id="btn-fetch-titles" onclick="fetchAiTitles()" class="px-4 py-2.5 rounded-xl bg-primary text-white font-bold text-xs hover:bg-blue-700 transition-all shrink-0">
+                    تولید تیترها
+                </button>
+            </div>
+
+            <div id="ai-titles-list" class="space-y-2 max-h-72 overflow-y-auto pr-1">
+                <!-- Generated Titles will be rendered here -->
+                <p class="text-xs text-slate-400 text-center py-6">موضوع را بنویسید و روی دکمه «تولید تیترها» کلیک فرمایید.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal 3: AI Text Polisher & Rewriter -->
+<div id="ai-polisher-modal" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm hidden items-center justify-center p-4">
+    <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 md:p-8 max-w-2xl w-full border border-slate-200 dark:border-slate-800 shadow-2xl space-y-4">
+        <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+            <h3 class="text-base font-black text-slate-900 dark:text-white flex items-center gap-2">
+                <span class="material-symbols-outlined text-purple-500">magic_button</span>
+                دستیار بازنویسی، ارتقا و ویرایش لحن با هوش مصنوعی
+            </h3>
+            <button type="button" onclick="closeAiPolisherModal()" class="text-slate-400 hover:text-slate-600">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+        </div>
+
+        <div class="space-y-3">
+            <div>
+                <label class="block text-[11px] font-bold text-slate-500 mb-1">متن مورد نظر برای بازنویسی:</label>
+                <textarea id="ai-polish-source" rows="4" class="w-full text-xs font-medium rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 p-3 text-slate-900 dark:text-white outline-none leading-relaxed" placeholder="متن انتخابی یا پیش‌نویس خود را اینجا وارد کنید..."></textarea>
+            </div>
+
+            <!-- Mode Selector Chips -->
+            <div>
+                <span class="text-[11px] font-bold text-slate-400 block mb-1.5">انتخاب سبک و تغییر لحن:</span>
+                <div class="flex items-center gap-1.5 flex-wrap">
+                    <button type="button" onclick="runAiPolish('scientific')" class="px-3 py-1.5 rounded-xl bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border border-purple-200 text-xs font-bold hover:bg-purple-100 transition-all">🔬 تخصصی و کلینیکی</button>
+                    <button type="button" onclick="runAiPolish('friendly')" class="px-3 py-1.5 rounded-xl bg-teal-50 dark:bg-teal-950/40 text-teal-700 dark:text-teal-300 border border-teal-200 text-xs font-bold hover:bg-teal-100 transition-all">🐾 ساده و خودمانی</button>
+                    <button type="button" onclick="runAiPolish('expand')" class="px-3 py-1.5 rounded-xl bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border border-blue-200 text-xs font-bold hover:bg-blue-100 transition-all">📈 بسط و افزایش جزئیات</button>
+                    <button type="button" onclick="runAiPolish('summarize')" class="px-3 py-1.5 rounded-xl bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200 text-xs font-bold hover:bg-amber-100 transition-all">📋 خلاصه‌سازی بالت‌پوینت</button>
+                    <button type="button" onclick="runAiPolish('fix_grammar')" class="px-3 py-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 text-xs font-bold hover:bg-emerald-100 transition-all">✍️ اصلاح نگارشی</button>
+                </div>
+            </div>
+
+            <!-- Result Box -->
+            <div>
+                <label class="block text-[11px] font-bold text-slate-500 mb-1">نتیجه بازنویسی شده:</label>
+                <div id="ai-polish-result" class="min-h-[5rem] p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800/50 text-xs text-slate-800 dark:text-slate-200 leading-relaxed font-medium">
+                    سبک بازنویسی مورد نظر خود را از دکمه‌های بالا انتخاب فرمایید...
+                </div>
+            </div>
+
+            <div class="flex items-center gap-2 pt-2">
+                <button type="button" id="btn-apply-polish" onclick="applyAiPolishedText()" class="flex-1 py-2.5 px-4 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-all">
+                    <span class="material-symbols-outlined text-base">input</span>
+                    <span>درج در موقعیت جاری نشانگر</span>
+                </button>
+                <button type="button" onclick="closeAiPolisherModal()" class="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 text-xs font-bold">بستن</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Floating Toast Container -->
+<div id="asena-toast-container" class="fixed bottom-6 left-6 z-[9999] flex flex-col gap-2 pointer-events-none"></div>
 
 <script>
 function formatDoc(cmd, value = null) {
@@ -945,6 +1216,469 @@ function prepareAndSubmit() {
     document.getElementById('input-read-time').value = readTimeEl.value.trim();
     document.getElementById('input-author-name').value = authorNameEl.value.trim();
     document.getElementById('input-author-role').value = authorRoleEl.value.trim();
+}
+
+// ========================================================
+// ASENA AI COPILOT JAVASCRIPT CONTROLLERS
+// ========================================================
+
+let currentGeneratedArticle = null;
+let currentPolishedText = '';
+
+// Floating Toast Notification
+function showToast(message, type = 'success') {
+    const container = document.getElementById('asena-toast-container');
+    if (!container) return;
+
+    const toast = document.createElement('div');
+    const isError = type === 'error';
+    const isWarn = type === 'warning';
+    
+    let bgClass = 'bg-slate-900/95 text-white border-emerald-500/40';
+    let iconName = 'check_circle';
+    let iconColor = 'text-emerald-400';
+
+    if (isError) {
+        bgClass = 'bg-rose-950/95 text-white border-rose-500/40';
+        iconName = 'cancel';
+        iconColor = 'text-rose-400';
+    } else if (isWarn) {
+        bgClass = 'bg-amber-950/95 text-white border-amber-500/40';
+        iconName = 'warning';
+        iconColor = 'text-amber-400';
+    }
+
+    toast.className = `pointer-events-auto flex items-center gap-2.5 px-4 py-3 rounded-2xl border shadow-xl backdrop-blur-xl text-xs font-bold transition-all duration-300 transform translate-y-4 opacity-0 ${bgClass}`;
+    toast.innerHTML = `
+        <span class="material-symbols-outlined text-base ${iconColor}">${iconName}</span>
+        <span>${message}</span>
+    `;
+
+    container.appendChild(toast);
+
+    // Animate In
+    requestAnimationFrame(() => {
+        toast.classList.remove('translate-y-4', 'opacity-0');
+    });
+
+    // Auto-remove after 4s
+    setTimeout(() => {
+        toast.classList.add('opacity-0', 'translate-y-2');
+        setTimeout(() => toast.remove(), 300);
+    }, 4000);
+}
+
+// Helper: Get CSRF Token
+function getCsrfToken() {
+    const el = document.querySelector('input[name="csrf_token"]');
+    return el ? el.value : '';
+}
+
+// Helper: Insert HTML into Canvas
+function insertHtmlIntoCanvas(html) {
+    const contentEl = document.getElementById('canvas-content');
+    if (!contentEl) return;
+    
+    // Focus canvas
+    contentEl.focus();
+    const sel = window.getSelection();
+    if (sel.rangeCount > 0 && contentEl.contains(sel.anchorNode)) {
+        const range = sel.getRangeAt(0);
+        range.deleteContents();
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = html;
+        const frag = document.createDocumentFragment();
+        let node;
+        while ((node = tempDiv.firstChild)) {
+            frag.appendChild(node);
+        }
+        range.insertNode(frag);
+    } else {
+        contentEl.innerHTML += html;
+    }
+    updateLiveMetrics();
+}
+
+// --- 1. FULL ARTICLE GENERATOR ---
+function openAiArticleModal() {
+    const modal = document.getElementById('ai-article-modal');
+    if (!modal) return;
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+
+    const topicInput = document.getElementById('ai-topic-input');
+    const titleEl = document.getElementById('canvas-title');
+    if (topicInput && (!topicInput.value || topicInput.value.trim() === '')) {
+        const currentTitle = titleEl ? titleEl.innerText.trim() : '';
+        if (currentTitle && !currentTitle.includes('عنوان جذاب و سئومحور')) {
+            topicInput.value = currentTitle;
+        }
+    }
+    if (topicInput) topicInput.focus();
+}
+
+function closeAiArticleModal() {
+    const modal = document.getElementById('ai-article-modal');
+    if (!modal) return;
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+}
+
+function setAiTopic(topic) {
+    const input = document.getElementById('ai-topic-input');
+    if (input) {
+        input.value = topic;
+        input.focus();
+    }
+}
+
+async function generateAiArticle() {
+    const topicInput = document.getElementById('ai-topic-input');
+    const topic = topicInput ? topicInput.value.trim() : '';
+    if (!topic) {
+        showToast('لطفاً ابتدا موضوع مقاله را وارد نمایید.', 'warning');
+        if (topicInput) topicInput.focus();
+        return;
+    }
+
+    const tone = document.getElementById('ai-tone-select').value;
+    const species = document.getElementById('ai-species-select').value;
+    const category = document.getElementById('ai-category-select').value;
+
+    const btn = document.getElementById('btn-generate-ai-article');
+    const btnText = document.getElementById('ai-btn-text');
+    const btnIcon = document.getElementById('ai-btn-icon');
+    const spinner = document.getElementById('ai-btn-spinner');
+    const statusMsg = document.getElementById('ai-status-msg');
+    const previewDiv = document.getElementById('ai-article-preview');
+
+    btn.disabled = true;
+    btnText.innerText = 'در حال تحلیل بالینی و نگارش کامل مقاله...';
+    btnIcon.classList.add('hidden');
+    spinner.classList.remove('hidden');
+    statusMsg.innerText = 'هوش مصنوعی آسنا در حال تدوین محتوای علمی، جدول‌ها و سوالات متداول است...';
+
+    try {
+        const formData = new FormData();
+        formData.append('action', 'generate_article');
+        formData.append('topic', topic);
+        formData.append('tone', tone);
+        formData.append('species', species);
+        formData.append('category', category);
+        formData.append('csrf_token', getCsrfToken());
+
+        const res = await fetch('actions/ai_blog_action.php', {
+            method: 'POST',
+            body: formData
+        });
+
+        const data = await res.json();
+        if (data.status === 'success' && data.data) {
+            currentGeneratedArticle = data.data;
+
+            // Render Preview
+            document.getElementById('preview-title').innerText = data.data.title;
+            document.getElementById('preview-desc').innerText = data.data.short_desc;
+            document.getElementById('preview-read-time').innerHTML = `<span class="material-symbols-outlined text-sm">schedule</span> ${data.data.read_time}`;
+            document.getElementById('preview-slug').innerText = `اسلاگ: /${data.data.slug}`;
+            
+            const sourceLabel = data.data.source === 'gemini' ? '✨ موتور زنده Gemini 1.5' : '🩺 موتور سنتز بالینی آسنا';
+            document.getElementById('preview-source-badge').innerText = sourceLabel;
+
+            previewDiv.classList.remove('hidden');
+            statusMsg.innerText = '✅ مقاله با موفقیت آماده شد! می‌توانید پیش‌نمایش را بررسی و با ۱ کلیک اعمال کنید.';
+            showToast('مقاله با موفقیت توسط هوش مصنوعی تولید شد!', 'success');
+        } else {
+            statusMsg.innerText = '❌ خطا: ' + (data.message || 'مشکلی رخ داد.');
+            showToast(data.message || 'خطا در تولید مقاله', 'error');
+        }
+    } catch (err) {
+        statusMsg.innerText = '❌ خطا در برقراری ارتباط با سرور.';
+        showToast('خطا در ارتباط با سرور هوش مصنوعی', 'error');
+    } finally {
+        btn.disabled = false;
+        btnText.innerText = 'نگارش مجدد با هوش مصنوعی';
+        btnIcon.classList.remove('hidden');
+        spinner.classList.add('hidden');
+    }
+}
+
+function applyAiArticleToEditor() {
+    if (!currentGeneratedArticle) return;
+
+    // Apply Title
+    const titleEl = document.getElementById('canvas-title');
+    const inputTitle = document.getElementById('input-title');
+    if (titleEl) titleEl.innerText = currentGeneratedArticle.title;
+    if (inputTitle) inputTitle.value = currentGeneratedArticle.title;
+
+    // Apply Slug
+    const slugEl = document.getElementById('canvas-slug');
+    const inputSlug = document.getElementById('input-slug');
+    if (slugEl) slugEl.value = currentGeneratedArticle.slug;
+    if (inputSlug) inputSlug.value = currentGeneratedArticle.slug;
+
+    // Apply Short Desc
+    const descEl = document.getElementById('canvas-short-desc');
+    const inputDesc = document.getElementById('input-short-desc');
+    if (descEl) descEl.innerText = currentGeneratedArticle.short_desc;
+    if (inputDesc) inputDesc.value = currentGeneratedArticle.short_desc;
+
+    // Apply Category
+    const catSelect = document.getElementById('select-category');
+    const inputCategory = document.getElementById('input-category');
+    if (catSelect) catSelect.value = currentGeneratedArticle.category;
+    if (inputCategory) inputCategory.value = currentGeneratedArticle.category;
+
+    // Apply Read Time
+    const labelReadTime = document.getElementById('label-read-time');
+    const canvasReadTime = document.getElementById('canvas-read-time');
+    const inputReadTime = document.getElementById('input-read-time');
+    if (labelReadTime) labelReadTime.innerText = currentGeneratedArticle.read_time;
+    if (canvasReadTime) canvasReadTime.value = currentGeneratedArticle.read_time;
+    if (inputReadTime) inputReadTime.value = currentGeneratedArticle.read_time;
+
+    // Apply Content + FAQ Accordion
+    const fullContentHtml = currentGeneratedArticle.content + (currentGeneratedArticle.faq_html || '');
+    const contentEl = document.getElementById('canvas-content');
+    const inputContent = document.getElementById('input-content');
+    if (contentEl) contentEl.innerHTML = fullContentHtml;
+    if (inputContent) inputContent.value = fullContentHtml;
+
+    updateLiveMetrics();
+    closeAiArticleModal();
+    showToast('✨ مقاله هوشمند و سوالات متداول با موفقیت در ویرایشگر بارگذاری شدند!', 'success');
+
+    // Smooth scroll down to canvas
+    window.scrollTo({ top: 180, behavior: 'smooth' });
+}
+
+// --- 2. SEO TITLES SUGGESTER ---
+function openAiTitleModal() {
+    const modal = document.getElementById('ai-title-modal');
+    if (!modal) return;
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+
+    const topicInput = document.getElementById('ai-title-topic');
+    const titleEl = document.getElementById('canvas-title');
+    if (topicInput) {
+        const curTitle = titleEl ? titleEl.innerText.trim() : '';
+        if (curTitle && !curTitle.includes('عنوان جذاب و سئومحور')) {
+            topicInput.value = curTitle;
+            fetchAiTitles();
+        }
+        topicInput.focus();
+    }
+}
+
+function closeAiTitleModal() {
+    const modal = document.getElementById('ai-title-modal');
+    if (!modal) return;
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+}
+
+async function fetchAiTitles() {
+    const topic = document.getElementById('ai-title-topic').value.trim();
+    if (!topic) {
+        showToast('لطفاً موضوع را وارد نمایید.', 'warning');
+        return;
+    }
+
+    const btn = document.getElementById('btn-fetch-titles');
+    const list = document.getElementById('ai-titles-list');
+    btn.disabled = true;
+    btn.innerText = 'در حال تحلیل...';
+    list.innerHTML = '<div class="text-center py-6 text-xs text-purple-600 font-bold"><div class="w-6 h-6 border-2 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>در حال ایده‌پردازی تیترهای جذاب سئو...</div>';
+
+    try {
+        const formData = new FormData();
+        formData.append('action', 'suggest_titles');
+        formData.append('topic', topic);
+        formData.append('csrf_token', getCsrfToken());
+
+        const res = await fetch('actions/ai_blog_action.php', { method: 'POST', body: formData });
+        const data = await res.json();
+
+        if (data.status === 'success' && data.data && data.data.titles) {
+            let html = '';
+            data.data.titles.forEach((t, i) => {
+                const escaped = t.replace(/'/g, "\\'");
+                html += `
+                    <div onclick="applyAiTitle('${escaped}')" class="p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800 hover:border-amber-400 hover:bg-amber-50/50 dark:hover:bg-amber-950/20 cursor-pointer transition-all flex items-center justify-between group">
+                        <div class="flex items-center gap-2.5">
+                            <span class="w-6 h-6 rounded-full bg-amber-100 text-amber-800 font-black text-xs flex items-center justify-center shrink-0">${i + 1}</span>
+                            <span class="text-xs font-bold text-slate-800 dark:text-slate-200 group-hover:text-primary transition-colors">${t}</span>
+                        </div>
+                        <span class="text-[10px] font-bold text-primary opacity-0 group-hover:opacity-100 transition-opacity shrink-0">انتخاب این تیتر ↵</span>
+                    </div>
+                `;
+            });
+            list.innerHTML = html;
+        } else {
+            list.innerHTML = '<p class="text-xs text-rose-500 text-center py-4">خطا در دریافت تیترها.</p>';
+        }
+    } catch (e) {
+        list.innerHTML = '<p class="text-xs text-rose-500 text-center py-4">خطا در ارتباط با سرور.</p>';
+    } finally {
+        btn.disabled = false;
+        btn.innerText = 'تولید تیترها';
+    }
+}
+
+function applyAiTitle(title) {
+    const titleEl = document.getElementById('canvas-title');
+    const inputTitle = document.getElementById('input-title');
+    if (titleEl) titleEl.innerText = title;
+    if (inputTitle) inputTitle.value = title;
+
+    // Auto update slug
+    const autoSlug = title.replace(/[^\p{L}\p{N}\-]+/gu, '-').replace(/^-+|-+$/g, '');
+    const slugEl = document.getElementById('canvas-slug');
+    const inputSlug = document.getElementById('input-slug');
+    if (slugEl) slugEl.value = autoSlug;
+    if (inputSlug) inputSlug.value = autoSlug;
+
+    updateLiveMetrics();
+    closeAiTitleModal();
+    showToast('تیتر سئو با موفقیت در مقاله ثبت شد!', 'success');
+}
+
+// --- 3. TEXT POLISHER & REWRITER ---
+function openAiPolisherModal() {
+    const modal = document.getElementById('ai-polisher-modal');
+    if (!modal) return;
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+
+    const sourceTextarea = document.getElementById('ai-polish-source');
+    const sel = window.getSelection();
+    let textToPolish = '';
+
+    if (sel && sel.toString().trim().length > 0) {
+        textToPolish = sel.toString().trim();
+    } else {
+        const shortDesc = document.getElementById('canvas-short-desc');
+        if (shortDesc && shortDesc.innerText.trim().length > 10) {
+            textToPolish = shortDesc.innerText.trim();
+        }
+    }
+
+    if (sourceTextarea) {
+        if (textToPolish) sourceTextarea.value = textToPolish;
+        sourceTextarea.focus();
+    }
+}
+
+function closeAiPolisherModal() {
+    const modal = document.getElementById('ai-polisher-modal');
+    if (!modal) return;
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+}
+
+async function runAiPolish(mode) {
+    const sourceTextarea = document.getElementById('ai-polish-source');
+    const text = sourceTextarea ? sourceTextarea.value.trim() : '';
+    if (!text) {
+        showToast('لطفاً ابتدا متنی برای بازنویسی وارد نمایید.', 'warning');
+        return;
+    }
+
+    const resultBox = document.getElementById('ai-polish-result');
+    resultBox.innerHTML = '<div class="flex items-center gap-2 text-purple-600 font-bold"><div class="w-4 h-4 border-2 border-purple-500 border-t-transparent rounded-full animate-spin"></div>در حال بازنویسی با هوش مصنوعی...</div>';
+
+    try {
+        const formData = new FormData();
+        formData.append('action', 'polish_text');
+        formData.append('text', text);
+        formData.append('mode', mode);
+        formData.append('csrf_token', getCsrfToken());
+
+        const res = await fetch('actions/ai_blog_action.php', { method: 'POST', body: formData });
+        const data = await res.json();
+
+        if (data.status === 'success' && data.data && data.data.polished) {
+            currentPolishedText = data.data.polished;
+            resultBox.innerText = currentPolishedText;
+            showToast('متن با موفقیت بازنویسی شد!', 'success');
+        } else {
+            resultBox.innerHTML = '<span class="text-rose-500">خطا در بازنویسی متن.</span>';
+        }
+    } catch (e) {
+        resultBox.innerHTML = '<span class="text-rose-500">خطا در ارتباط با سرور.</span>';
+    }
+}
+
+function applyAiPolishedText() {
+    if (!currentPolishedText) {
+        showToast('هنوز متنی بازنویسی نشده است.', 'warning');
+        return;
+    }
+
+    insertHtmlIntoCanvas(`<p>${currentPolishedText}</p>`);
+    closeAiPolisherModal();
+    showToast('متن جدید با موفقیت به ویرایشگر افزوده شد!', 'success');
+}
+
+// --- 4. INSTANT AI FAQS GENERATOR ---
+async function triggerAiFaqGeneration() {
+    const titleEl = document.getElementById('canvas-title');
+    const defaultTopic = titleEl ? titleEl.innerText.trim() : '';
+    const topic = prompt('موضوع سوالات متداول را وارد فرمایید:', defaultTopic || 'واکسیناسیون و سلامت حیوان');
+    if (!topic) return;
+
+    showToast('در حال استخراج و تولید ۴ سوال و پاسخ متداول...', 'warning');
+
+    try {
+        const formData = new FormData();
+        formData.append('action', 'generate_faqs');
+        formData.append('topic', topic);
+        formData.append('count', '4');
+        formData.append('csrf_token', getCsrfToken());
+
+        const res = await fetch('actions/ai_blog_action.php', { method: 'POST', body: formData });
+        const data = await res.json();
+
+        if (data.status === 'success' && data.data && data.data.html) {
+            insertHtmlIntoCanvas(data.data.html);
+            showToast('✅ سوالات متداول با موفقیت به انتهای مقاله اضافه شد!', 'success');
+        } else {
+            showToast('خطا در تولید سوالات متداول.', 'error');
+        }
+    } catch (e) {
+        showToast('خطا در ارتباط با سرور هوش مصنوعی.', 'error');
+    }
+}
+
+// --- 5. INSTANT CLINICAL RED ALERT GENERATOR ---
+async function triggerAiAlertGeneration() {
+    const titleEl = document.getElementById('canvas-title');
+    const defaultTopic = titleEl ? titleEl.innerText.trim() : '';
+    const condition = prompt('عنوان بیماری یا شرایط اورژانسی برای ایجاد باکس هشدار:', defaultTopic || 'علائم خطرناک و مداخله فوری');
+    if (!condition) return;
+
+    showToast('در حال ایجاد باکس هشدار بالینی...', 'warning');
+
+    try {
+        const formData = new FormData();
+        formData.append('action', 'generate_alert');
+        formData.append('topic', condition);
+        formData.append('csrf_token', getCsrfToken());
+
+        const res = await fetch('actions/ai_blog_action.php', { method: 'POST', body: formData });
+        const data = await res.json();
+
+        if (data.status === 'success' && data.data && data.data.html) {
+            insertHtmlIntoCanvas(data.data.html);
+            showToast('✅ باکس هشدار بالینی در مقاله درج گردید!', 'success');
+        } else {
+            showToast('خطا در تولید باکس هشدار.', 'error');
+        }
+    } catch (e) {
+        showToast('خطا در ارتباط با سرور هوش مصنوعی.', 'error');
+    }
 }
 
 // Attach Live Listeners
