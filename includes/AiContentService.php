@@ -22,6 +22,10 @@ class AiContentService {
     private string $apiKey;
     private string $geminiUrl;
     private ?string $proxy;
+    private string $avalaiApiKey;
+    private string $avalaiUrl = 'https://api.avalai.ir/v1/chat/completions';
+    private string $avalaiModel = 'gemini-3.5-flash-lite';
+    private string $avalaiChatModel = 'gemini-3.5-flash-lite';
 
     public function __construct(?PDO $pdo = null) {
         $this->pdo = $pdo;
@@ -36,6 +40,12 @@ class AiContentService {
 
         $this->geminiUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=" . urlencode($this->apiKey);
         $this->proxy = getenv('GEMINI_PROXY') ?: (getenv('HTTPS_PROXY') ?: null);
+
+        // AvalAI Configuration (Multi-model Iranian provider - ultra-low cost)
+        $dbAvalaiKey = ($this->pdo instanceof PDO) ? get_setting($this->pdo, 'avalai_api_key', '') : '';
+        $this->avalaiApiKey = !empty($dbAvalaiKey) ? $dbAvalaiKey : (getenv('AVALAI_API_KEY') ?: 'aa-OYnaadEq49DVrgUetouRgFRhmNjSuS7ZknCL5FdEQqHAehsl');
+        $this->avalaiModel = getenv('AVALAI_MODEL_ARTICLE') ?: 'gemini-3.5-flash-lite';
+        $this->avalaiChatModel = getenv('AVALAI_MODEL_CHAT') ?: 'gemini-3.5-flash-lite';
     }
 
     /**
@@ -47,7 +57,16 @@ class AiContentService {
             throw new InvalidArgumentException('موضوع مقاله نمی‌تواند خالی باشد.');
         }
 
-        // Try Gemini live generation first if key available
+        // 1. Try AvalAI live generation (Ultra cheap, fast, no sanction blocks)
+        if (!empty($this->avalaiApiKey)) {
+            $avalaiResult = $this->callAvalAiForArticle($topic, $tone, $species, $category);
+            if ($avalaiResult !== null) {
+                $avalaiResult['source'] = 'avalai (' . $this->avalaiModel . ')';
+                return $avalaiResult;
+            }
+        }
+
+        // 2. Try Gemini live generation if key available
         if (!empty($this->apiKey)) {
             $geminiResult = $this->callGeminiForArticle($topic, $tone, $species, $category);
             if ($geminiResult !== null) {
@@ -56,7 +75,7 @@ class AiContentService {
             }
         }
 
-        // Resilient Offline Clinical Heuristics Engine
+        // 3. Resilient Offline Clinical Heuristics Engine
         $result = $this->synthesizeClinicalArticle($topic, $tone, $species, $category);
         $result['source'] = 'clinical_engine';
         return $result;
@@ -69,6 +88,13 @@ class AiContentService {
         $topic = trim($topic);
         if (empty($topic)) {
             return [];
+        }
+
+        if (!empty($this->avalaiApiKey)) {
+            $titles = $this->callAvalAiForTitles($topic, $style);
+            if (!empty($titles)) {
+                return $titles;
+            }
         }
 
         if (!empty($this->apiKey)) {
@@ -90,6 +116,13 @@ class AiContentService {
             return '';
         }
 
+        if (!empty($this->avalaiApiKey)) {
+            $polished = $this->callAvalAiForPolishing($text, $mode);
+            if (!empty($polished)) {
+                return $polished;
+            }
+        }
+
         if (!empty($this->apiKey)) {
             $polished = $this->callGeminiForPolishing($text, $mode);
             if (!empty($polished)) {
@@ -107,6 +140,13 @@ class AiContentService {
         $topic = trim($topic);
         if (empty($topic)) {
             return [];
+        }
+
+        if (!empty($this->avalaiApiKey)) {
+            $faqs = $this->callAvalAiForFaqs($topic, $count);
+            if (!empty($faqs)) {
+                return $faqs;
+            }
         }
 
         if (!empty($this->apiKey)) {
@@ -134,6 +174,187 @@ class AiContentService {
             'title' => $alert['title'],
             'triggers' => $alert['triggers']
         ];
+    }
+
+    // ==========================================
+    // AVALAI (MULTI-MODEL IRANIAN API) CALLERS
+    // ==========================================
+
+    private function callAvalAi(array $messages, int $maxTokens = 800, ?string $model = null, float $temperature = 0.4, int $timeout = 25): ?string {
+        if (empty($this->avalaiApiKey)) {
+            return null;
+        }
+
+        $model = $model ?: $this->avalaiModel;
+
+        $payload = [
+            'model' => $model,
+            'messages' => $messages,
+            'max_tokens' => $maxTokens,
+            'temperature' => $temperature
+        ];
+
+        $ch = curl_init($this->avalaiUrl);
+        $options = [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_POST => true,
+            CURLOPT_POSTFIELDS => json_encode($payload),
+            CURLOPT_HTTPHEADER => [
+                'Content-Type: application/json',
+                'Authorization: Bearer ' . $this->avalaiApiKey
+            ],
+            CURLOPT_TIMEOUT => $timeout,
+            CURLOPT_SSL_VERIFYPEER => false,
+        ];
+
+        curl_setopt_array($ch, $options);
+        $response = curl_exec($ch);
+        $err = curl_error($ch);
+        curl_close($ch);
+
+        if ($err || !$response) {
+            return null;
+        }
+
+        $data = json_decode($response, true);
+        if (isset($data['choices'][0]['message']['content'])) {
+            $content = trim($data['choices'][0]['message']['content']);
+            if (!empty($content)) {
+                return $content;
+            }
+        }
+
+        return null;
+    }
+
+    private function callAvalAiForArticle(string $topic, string $tone, string $species, string $category): ?array {
+        $messages = [
+            [
+                'role' => 'system',
+                'content' => "شما دکتر دامپزشک ارشد و نویسنده پایگاه دانش تخصصی سامانه درمانی و پت‌شاپ آسنا (ASENA Enterprise) هستید. خروجی را صرفاً به صورت یک ساختار معتبر JSON (بدون هیچ مارک‌داون یا توضیحات اضافه) ارسال کنید."
+            ],
+            [
+                'role' => 'user',
+                'content' => "موضوع مقاله: '{$topic}'
+گونه هدف: '{$species}'
+لحن نگارش: '{$tone}'
+دسته‌بندی: '{$category}'
+
+لطفاً خروجی را دقیقاً و صرفاً به صورت یک شیء JSON با ساختار زیر تولید کنید:
+{
+  \"title\": \"عنوان سئو شده و جذاب (حداکثر ۶۵ کاراکتر با کلمه کلیدی اصلی)\",
+  \"slug\": \"نامک-استاندارد-فارسی-یا-انگلیسی\",
+  \"short_desc\": \"چکیده جذاب و متا دیسکریپشن برای گوگل (حداکثر ۱۶۰ کاراکتر)\",
+  \"category\": \"{$category}\",
+  \"read_time\": \"زمان تخمینی مطالعه (مثلاً ۵ دقیقه مطالعه)\",
+  \"content\": \"متن کامل مقاله به فرمت HTML5 غنی شامل تگ‌های h2, h3, p, ul, li و در صورت تناسب المان‌های جذاب دامپزشکی\",
+  \"faqs\": [
+    {\"q\": \"سوال پرتکرار ۱؟\", \"a\": \"پاسخ بالینی کامل و دقیق ۱\"},
+    {\"q\": \"سوال پرتکرار ۲؟\", \"a\": \"پاسخ بالینی کامل و دقیق ۲\"}
+  ]
+}"
+            ]
+        ];
+
+        $raw = $this->callAvalAi($messages, 1400, $this->avalaiModel, 0.4, 25);
+        if (empty($raw)) {
+            return null;
+        }
+
+        $cleanJson = preg_replace('/^```json\s*|\s*```$/ui', '', trim($raw));
+        $parsed = json_decode($cleanJson, true);
+
+        if (is_array($parsed) && !empty($parsed['title']) && !empty($parsed['content'])) {
+            return [
+                'title' => (string)$parsed['title'],
+                'slug' => (string)($parsed['slug'] ?? ''),
+                'short_desc' => (string)($parsed['short_desc'] ?? ''),
+                'category' => (string)($parsed['category'] ?? $category),
+                'read_time' => (string)($parsed['read_time'] ?? '۵ دقیقه مطالعه'),
+                'content' => (string)$parsed['content'],
+                'faqs' => is_array($parsed['faqs'] ?? null) ? $parsed['faqs'] : []
+            ];
+        }
+
+        return null;
+    }
+
+    private function callAvalAiForTitles(string $topic, string $style): ?array {
+        $messages = [
+            [
+                'role' => 'system',
+                'content' => "به عنوان متخصص سئو پزشکی و دامپزشکی، خروجی فقط و فقط باید یک آرایه معتبر JSON شامل ۵ رشته متنی باشد. هیچ متن دیگری ننویسید."
+            ],
+            [
+                'role' => 'user',
+                'content' => "برای موضوع '{$topic}' دقیقاً ۵ عنوان بسیار جذاب، کلیک‌خور و سئو شده به زبان فارسی بنویسید.
+فرمت خروجی صرفاً:
+[\"عنوان ۱\", \"عنوان ۲\", \"عنوان ۳\", \"عنوان ۴\", \"عنوان ۵\"]"
+            ]
+        ];
+
+        $raw = $this->callAvalAi($messages, 300, $this->avalaiModel, 0.6, 15);
+        if (empty($raw)) return null;
+
+        $clean = preg_replace('/^```json\s*|\s*```$/ui', '', trim($raw));
+        $parsed = json_decode($clean, true);
+        if (is_array($parsed) && count($parsed) >= 3) {
+            return array_slice($parsed, 0, 5);
+        }
+        return null;
+    }
+
+    private function callAvalAiForPolishing(string $text, string $mode): ?string {
+        $instructions = [
+            'scientific' => 'این متن را با واژگان دقیق علمی، اصطلاحات کلینیکی دامپزشکی و لحن رسمی و فوق‌تخصصی بازنویسی کن.',
+            'friendly' => 'این متن را بسیار ساده، صمیمی، همدلانه و روان برای سرپرستان حیوانات خانگی بازنویسی کن.',
+            'expand' => 'این متن را به شکل علمی گسترش بده و نکات بالینی، آزمایشگاهی، علائم تکمیلی و راهکارهای درمانی به آن اضافه کن.',
+            'summarize' => 'این متن را به صورت خلاصه اجرایی و نکات کلیدی بالت‌پوینت بازنویسی کن.',
+            'fix_grammar' => 'خطاهای املایی، نگارشی، علائم سجاوندی و ساختار جملات این متن را بدون تغییر مفهوم اصلی اصلاح کن.'
+        ];
+
+        $instruction = $instructions[$mode] ?? $instructions['scientific'];
+        $messages = [
+            [
+                'role' => 'system',
+                'content' => "شما ویراستار ارشد متون دامپزشکی هستید. فقط متن بازنویسی شده را برگردانید بدون هیچ توضیح مقدماتی یا نتیجه‌گیری."
+            ],
+            [
+                'role' => 'user',
+                'content' => "{$instruction}\n\nمتن اولیه:\n\"{$text}\""
+            ]
+        ];
+
+        $raw = $this->callAvalAi($messages, 600, $this->avalaiModel, 0.3, 15);
+        return !empty($raw) ? trim($raw) : null;
+    }
+
+    private function callAvalAiForFaqs(string $topic, int $count): ?array {
+        $messages = [
+            [
+                'role' => 'system',
+                'content' => "شما متخصص دامپزشکی بالینی هستید. خروجی فقط یک آرایه JSON معتبر شامل سوال و پاسخ باشد."
+            ],
+            [
+                'role' => 'user',
+                'content' => "درباره موضوع دامپزشکی '{$topic}'، دقیقاً {$count} سوال بسیار مهم و پرتکرار که سرپرستان حیوانات خانگی می‌پرسند به همراه پاسخ‌های علمی، دقیق و قابل درک تولید کن.
+فرمت JSON دقیق:
+[
+  {\"q\": \"متن سوال ۱؟\", \"a\": \"متن پاسخ ۱\"},
+  {\"q\": \"متن سوال ۲؟\", \"a\": \"متن پاسخ ۲\"}
+]"
+            ]
+        ];
+
+        $raw = $this->callAvalAi($messages, 600, $this->avalaiModel, 0.4, 20);
+        if (empty($raw)) return null;
+
+        $clean = preg_replace('/^```json\s*|\s*```$/ui', '', trim($raw));
+        $parsed = json_decode($clean, true);
+        if (is_array($parsed)) {
+            return $parsed;
+        }
+        return null;
     }
 
     // ==========================================

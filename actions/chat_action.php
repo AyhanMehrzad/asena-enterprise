@@ -10,6 +10,11 @@ if (!isset($_SESSION['user_id'])) {
 $user_id = $_SESSION['user_id'];
 $action = $_POST['action'] ?? '';
 
+// AvalAI Multi-Model Configuration (Iranian ultra-low cost AI provider)
+$avalai_api_key = getenv('AVALAI_API_KEY') ?: 'aa-OYnaadEq49DVrgUetouRgFRhmNjSuS7ZknCL5FdEQqHAehsl';
+$avalai_model = getenv('AVALAI_MODEL_CHAT') ?: 'gemini-3.5-flash-lite';
+$avalai_url = 'https://api.avalai.ir/v1/chat/completions';
+
 // GEMINI API Configuration
 $gemini_api_key = getenv('GEMINI_API_KEY') ?: 'YOUR_GEMINI_API_KEY_HERE';
 $gemini_url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=" . $gemini_api_key;
@@ -194,8 +199,65 @@ if ($action === 'send') {
         ];
         
         $ai_reply = null;
-        
-        if (!empty($gemini_api_key) && $gemini_api_key !== 'YOUR_GEMINI_API_KEY_HERE') {
+
+        // 1. Primary Engine: AvalAI Multi-Model API (Ultra-low cost, fast Persian processing)
+        if (!empty($avalai_api_key)) {
+            $avalaiMessages = [
+                ['role' => 'system', 'content' => $leo_system_prompt]
+            ];
+            foreach ($history as $msg) {
+                if ($msg['sender_type'] === 'user') {
+                    if ($msg['message'] == $message && !empty($base64_image)) {
+                        $avalaiMessages[] = [
+                            'role' => 'user',
+                            'content' => [
+                                ['type' => 'text', 'text' => $msg['message'] ?: 'این تصویر از حیوان خانگی من است:'],
+                                ['type' => 'image_url', 'image_url' => ['url' => "data:{$mime_type};base64,{$base64_image}"]]
+                            ]
+                        ];
+                    } else {
+                        $avalaiMessages[] = ['role' => 'user', 'content' => (string)($msg['message'] ?: '')];
+                    }
+                } else if ($msg['sender_type'] === 'ai') {
+                    $avalaiMessages[] = ['role' => 'assistant', 'content' => (string)($msg['message'] ?: '')];
+                }
+            }
+
+            $ch = curl_init($avalai_url);
+            $avPayload = [
+                'model' => $avalai_model,
+                'messages' => $avalaiMessages,
+                'max_tokens' => 250,
+                'temperature' => 0.4
+            ];
+            curl_setopt_array($ch, [
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_POST           => true,
+                CURLOPT_POSTFIELDS     => json_encode($avPayload),
+                CURLOPT_HTTPHEADER     => [
+                    'Content-Type: application/json',
+                    'Authorization: Bearer ' . $avalai_api_key
+                ],
+                CURLOPT_TIMEOUT        => 20,
+                CURLOPT_SSL_VERIFYPEER => false,
+            ]);
+            $avResp = curl_exec($ch);
+            $avErr = curl_error($ch);
+            curl_close($ch);
+
+            if (!$avErr && $avResp) {
+                $avData = json_decode($avResp, true);
+                if (isset($avData['choices'][0]['message']['content'])) {
+                    $content = trim($avData['choices'][0]['message']['content']);
+                    if (!empty($content)) {
+                        $ai_reply = $content;
+                    }
+                }
+            }
+        }
+
+        // 2. Secondary Engine: Gemini API
+        if (empty($ai_reply) && !empty($gemini_api_key) && $gemini_api_key !== 'YOUR_GEMINI_API_KEY_HERE') {
             $ch = curl_init($gemini_url);
             $curlOptions = [
                 CURLOPT_RETURNTRANSFER => true,
