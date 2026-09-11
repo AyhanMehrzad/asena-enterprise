@@ -1,6 +1,8 @@
 <?php
 require_once __DIR__ . '/../includes/db.php';
 require_once __DIR__ . '/../includes/functions.php';
+require_once __DIR__ . '/../includes/SecurityMiddleware.php';
+require_once __DIR__ . '/../includes/SecurityAuditService.php';
 
 if (!isset($_SESSION['user_id'])) {
     header("Location: ../login.php");
@@ -309,8 +311,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $hashed = password_hash($newPassword, PASSWORD_DEFAULT);
                         $stmt = $pdo->prepare("UPDATE users SET name = ?, email = ?, national_id = ?, password = ? WHERE id = ?");
                         $stmt->execute([$name, $email, $nationalId, $hashed, $user_id]);
+
+                        // 1. Immediately regenerate current session ID and delete old session
                         session_regenerate_id(true);
-                        $_SESSION['profile_success'] = "اطلاعات کاربری و کلمه عبور با موفقیت به‌روزرسانی شد.";
+
+                        // 2. Set updated password hash in current session
+                        $_SESSION['password_hash'] = hash('sha256', $hashed);
+
+                        // 3. Invalidate all other active sessions on disk for this user
+                        $revokedSessions = SecurityMiddleware::invalidateOtherUserSessions($user_id, session_id());
+
+                        // 4. Log security audit event
+                        $audit = new SecurityAuditService($pdo);
+                        $audit->logEvent(
+                            'password_changed',
+                            'info',
+                            $user_id,
+                            "رمز عبور کاربر تغییر یافت. شناسه سشن بازتولید شد و {$revokedSessions} نشست فعال دیگر لغو گردیدند."
+                        );
+
+                        $_SESSION['profile_success'] = "اطلاعات کاربری و کلمه عبور با موفقیت به‌روزرسانی شد و سایر نشست‌های فعال لغو گردیدند.";
                     }
                 } else {
                     $stmt = $pdo->prepare("UPDATE users SET name = ?, email = ?, national_id = ? WHERE id = ?");
@@ -340,6 +360,212 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             } catch (PDOException $e) {
                 $_SESSION['profile_error'] = "خطا در به‌روزرسانی نشانی و موقعیت مکانی.";
             }
+        }
+    } elseif ($action === 'delete_account') {
+        $confirmPassword = $_POST['confirm_password'] ?? '';
+        $confirmationText = trim($_POST['confirmation_text'] ?? '');
+
+        // 1. Validate confirmation string
+        if (strtoupper($confirmationText) !== 'DELETE') {
+            $_SESSION['profile_error'] = "جهت تایید نهایی حذف حساب، باید عبارت DELETE را دقیقاً وارد نمایید.";
+            header("Location: ../profile.php#personal-info");
+            exit;
+        }
+
+        // 2. Fetch user data and check credentials
+        $uStmt = $pdo->prepare("SELECT * FROM users WHERE id = ?");
+        $uStmt->execute([$user_id]);
+        $uData = $uStmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$uData || empty($uData['password']) || !password_verify($confirmPassword, $uData['password'])) {
+            $_SESSION['profile_error'] = "کلمه عبور وارد شده نادرست است. عملیات حذف حساب لغو شد.";
+            header("Location: ../profile.php#personal-info");
+            exit;
+        }
+
+        // 3. Role restrictions: Admin protection
+        if (($uData['role'] ?? '') === 'admin') {
+            $_SESSION['profile_error'] = "حساب مدیر کل سامانه امکان حذف مستقیم از طریق پروفایل کاربری را ندارد.";
+            header("Location: ../profile.php#personal-info");
+            exit;
+        }
+
+        // 4. Role restrictions: Clinic/Organization Owner
+        if (in_array($uData['role'] ?? '', ['organization', 'organization_manager'])) {
+            $orgStmt = $pdo->prepare("SELECT id, name FROM organizations WHERE user_id = ? LIMIT 1");
+            $orgStmt->execute([$user_id]);
+            $ownedOrg = $orgStmt->fetch(PDO::FETCH_ASSOC);
+            if ($ownedOrg) {
+                $_SESSION['profile_error'] = "حساب شما مالک مرکز درمانی «{$ownedOrg['name']}» است. قبل از حذف، باید مدیریت مرکز را واگذار یا آن را تعیین تکلیف فرمایید.";
+                header("Location: ../profile.php#personal-info");
+                exit;
+            }
+        }
+
+        // 5. Role restrictions: Doctor with active appointments
+        if (($uData['role'] ?? '') === 'doctor') {
+            $docPending = $pdo->prepare("
+                SELECT COUNT(*) FROM appointments a
+                JOIN doctors d ON a.doctor_id = d.id
+                WHERE d.user_id = ? AND a.appointment_date >= CURDATE() AND a.status IN ('confirmed', 'pending')
+            ");
+            $docPending->execute([$user_id]);
+            if ($docPending->fetchColumn() > 0) {
+                $_SESSION['profile_error'] = "امکان حذف حساب پزشک به دلیل وجود نوبت‌های ویزیت فعال با مراجعین وجود ندارد.";
+                header("Location: ../profile.php#personal-info");
+                exit;
+            }
+        }
+
+        // 6. Active Orders check: Ensure no orders are currently in-transit or in-processing
+        $activeOrders = $pdo->prepare("
+            SELECT COUNT(*) FROM orders 
+            WHERE user_id = ? AND status IN ('pending_payment', 'processing', 'shipped')
+        ");
+        $activeOrders->execute([$user_id]);
+        if ($activeOrders->fetchColumn() > 0) {
+            $_SESSION['profile_error'] = "امکان حذف حساب کاربری به دلیل وجود سفارشات فعال یا در حال ارسال وجود ندارد. پس از تحویل نهایی کالاها می‌توانید اقدام فرمایید.";
+            header("Location: ../profile.php#personal-info");
+            exit;
+        }
+
+        // 7. Seller wallet balance check
+        if (($uData['role'] ?? '') === 'seller') {
+            $swStmt = $pdo->prepare("SELECT in_escrow_balance, cleared_balance FROM seller_wallets WHERE seller_id = ?");
+            $swStmt->execute([$user_id]);
+            $sw = $swStmt->fetch(PDO::FETCH_ASSOC);
+            if ($sw && ((float)$sw['in_escrow_balance'] > 0 || (float)$sw['cleared_balance'] > 0)) {
+                $_SESSION['profile_error'] = "امکان حذف حساب فروشگاه به دلیل وجود موجودی فعال یا در حال امانت در کیف پول وجود ندارد. لطفاً ابتدا تسویه حساب نمایید.";
+                header("Location: ../profile.php?view=seller");
+                exit;
+            }
+        }
+
+        // 8. Execute Deletion and Anonymization Transaction
+        $pdo->beginTransaction();
+        try {
+            // A. Get or create Anonymized System Account for legal/financial audit trail
+            $anonStmt = $pdo->prepare("SELECT id FROM users WHERE phone = '09000000000' LIMIT 1");
+            $anonStmt->execute();
+            $anonUserId = $anonStmt->fetchColumn();
+
+            if (!$anonUserId) {
+                $insAnon = $pdo->prepare("
+                    INSERT INTO users (phone, name, password, role, verification_status, loyalty_points, created_at)
+                    VALUES ('09000000000', 'کاربر ناشناس (حساب حذف‌شده)', 'ANONYMIZED_PLACEHOLDER', 'user', 'approved', 0, NOW())
+                ");
+                $insAnon->execute();
+                $anonUserId = (int)$pdo->lastInsertId();
+            }
+
+            // B. Anonymize user's past orders and reassign to system placeholder
+            $pdo->prepare("
+                UPDATE orders 
+                SET user_id = ?,
+                    shipping_address = 'آدرس به درخواست کاربر طبق قوانین حریم خصوصی پاکسازی شد.'
+                WHERE user_id = ?
+            ")->execute([$anonUserId, $user_id]);
+
+            // C. Anonymize donations and reviews
+            $pdo->prepare("UPDATE donations SET user_id = NULL, donor_name = 'نیکوکار ناشناس' WHERE user_id = ?")->execute([$user_id]);
+            $pdo->prepare("UPDATE reviews SET user_id = ? WHERE user_id = ?")->execute([$anonUserId, $user_id]);
+
+            // D. Remove physical pet document files and pet records
+            $petsStmt = $pdo->prepare("SELECT id FROM user_pets WHERE user_id = ?");
+            $petsStmt->execute([$user_id]);
+            $petIds = $petsStmt->fetchAll(PDO::FETCH_COLUMN);
+
+            if (!empty($petIds)) {
+                $inQuery = implode(',', array_fill(0, count($petIds), '?'));
+                
+                $docStmt = $pdo->prepare("SELECT file_path FROM pet_documents WHERE pet_id IN ($inQuery)");
+                $docStmt->execute($petIds);
+                $docFiles = $docStmt->fetchAll(PDO::FETCH_COLUMN);
+                foreach ($docFiles as $df) {
+                    if (!empty($df)) {
+                        $filePath = dirname(__DIR__) . '/' . ltrim($df, '/');
+                        if (is_file($filePath)) {
+                            @unlink($filePath);
+                        }
+                    }
+                }
+
+                $pdo->prepare("DELETE FROM pet_documents WHERE pet_id IN ($inQuery)")->execute($petIds);
+                $pdo->prepare("DELETE FROM pet_vaccinations WHERE pet_id IN ($inQuery)")->execute($petIds);
+                $pdo->prepare("DELETE FROM pet_health_records WHERE pet_id IN ($inQuery)")->execute($petIds);
+                $pdo->prepare("DELETE FROM user_pets WHERE user_id = ?")->execute([$user_id]);
+            }
+
+            // E. Delete wishlist, tickets, and cancel appointments
+            $pdo->prepare("DELETE FROM wishlist WHERE user_id = ?")->execute([$user_id]);
+
+            $ticketsStmt = $pdo->prepare("SELECT id FROM tickets WHERE user_id = ?");
+            $ticketsStmt->execute([$user_id]);
+            $ticketIds = $ticketsStmt->fetchAll(PDO::FETCH_COLUMN);
+            if (!empty($ticketIds)) {
+                $tInQuery = implode(',', array_fill(0, count($ticketIds), '?'));
+                $pdo->prepare("DELETE FROM ticket_messages WHERE ticket_id IN ($tInQuery)")->execute($ticketIds);
+                $pdo->prepare("DELETE FROM tickets WHERE user_id = ?")->execute([$user_id]);
+            }
+
+            $pdo->prepare("UPDATE appointments SET status = 'cancelled' WHERE user_id = ? AND appointment_date >= CURDATE()")->execute([$user_id]);
+            $pdo->prepare("UPDATE user_subscriptions SET status = 'cancelled' WHERE user_id = ?")->execute([$user_id]);
+
+            // F. Delete user wallets
+            $pdo->prepare("DELETE FROM user_wallets WHERE user_id = ?")->execute([$user_id]);
+
+            if (($uData['role'] ?? '') === 'seller') {
+                $pdo->prepare("DELETE FROM seller_wallets WHERE seller_id = ?")->execute([$user_id]);
+                $pdo->prepare("DELETE FROM products WHERE seller_id = ?")->execute([$user_id]);
+            }
+
+            // G. Delete the user row completely
+            $pdo->prepare("DELETE FROM users WHERE id = ?")->execute([$user_id]);
+
+            $pdo->commit();
+
+            // H. Invalidate all active session files on disk
+            SecurityMiddleware::invalidateOtherUserSessions($user_id);
+
+            // I. Audit log
+            $audit = new SecurityAuditService($pdo);
+            $audit->logEvent(
+                'account_deleted',
+                'warning',
+                null,
+                "حساب کاربری شماره #{$user_id} ({$uData['phone']}) و کلیه اطلاعات هویتی و پرونده‌های وابسته با درخواست کاربر و طبق مقررات حریم خصوصی/GDPR به طور قطعی حذف و داده‌های مالی ناشناس گردیدند."
+            );
+
+            // J. Destroy session and expire cookie
+            $_SESSION = [];
+            if (ini_get("session.use_cookies")) {
+                $params = session_get_cookie_params();
+                setcookie(
+                    session_name(),
+                    '',
+                    time() - 42000,
+                    $params["path"],
+                    $params["domain"],
+                    $params["secure"],
+                    $params["httponly"]
+                );
+            }
+            session_destroy();
+
+            // K. Start clean session for flash notification
+            if (session_status() === PHP_SESSION_NONE) {
+                session_start();
+            }
+            $_SESSION['login_success'] = "حساب کاربری و کلیه اطلاعات هویتی شما با موفقیت و به صورت دائمی حذف گردید.";
+            header("Location: ../login.php?account_deleted=1");
+            exit;
+        } catch (Throwable $e) {
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+            $_SESSION['profile_error'] = "خطا در فرآیند حذف حساب کاربری: " . $e->getMessage();
+            header("Location: ../profile.php#personal-info");
+            exit;
         }
     }
 }

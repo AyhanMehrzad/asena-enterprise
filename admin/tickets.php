@@ -1,5 +1,4 @@
 <?php
-session_start();
 $currentPage = 'tickets';
 require_once 'includes/admin_header.php';
 require_once '../includes/functions.php';

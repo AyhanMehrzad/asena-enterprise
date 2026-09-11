@@ -5,9 +5,19 @@
  */
 
 require_once __DIR__ . '/SecurityAuditService.php';
+require_once __DIR__ . '/SecurityMiddleware.php';
 
 class AuthGuard {
     private static ?array $cachedUser = null;
+
+    /**
+     * Ensure session is started with strict security flags
+     */
+    private static function ensureSession(): void {
+        if (session_status() === PHP_SESSION_NONE) {
+            SecurityMiddleware::secureSession();
+        }
+    }
 
     /**
      * Get current authenticated user
@@ -17,9 +27,7 @@ class AuthGuard {
             return self::$cachedUser;
         }
 
-        if (session_status() === PHP_SESSION_NONE) {
-            @session_start();
-        }
+        self::ensureSession();
 
         $userId = (int)($_SESSION['user_id'] ?? 0);
         if ($userId <= 0) {
@@ -36,6 +44,22 @@ class AuthGuard {
             $stmt->execute([$userId]);
             $u = $stmt->fetch(PDO::FETCH_ASSOC);
             if ($u) {
+                // Session Revocation Check: Verify password hash has not changed
+                if (isset($_SESSION['password_hash']) && !empty($u['password'])) {
+                    $expectedHash = hash('sha256', $u['password']);
+                    if (!hash_equals($_SESSION['password_hash'], $expectedHash)) {
+                        // Password was updated elsewhere: terminate obsolete session
+                        $_SESSION = [];
+                        if (session_status() === PHP_SESSION_ACTIVE) {
+                            session_destroy();
+                        }
+                        self::$cachedUser = null;
+                        return null;
+                    }
+                } elseif (!isset($_SESSION['password_hash']) && !empty($u['password'])) {
+                    $_SESSION['password_hash'] = hash('sha256', $u['password']);
+                }
+
                 unset($u['password']);
                 self::$cachedUser = $u;
                 return self::$cachedUser;
@@ -135,9 +159,7 @@ class AuthGuard {
      * Verify CSRF from POST or HTTP Header X-CSRF-TOKEN
      */
     public static function verifyCsrf(): bool {
-        if (session_status() === PHP_SESSION_NONE) {
-            @session_start();
-        }
+        self::ensureSession();
 
         $sessionToken = $_SESSION['csrf_token'] ?? '';
         $requestToken = $_POST['csrf_token'] ?? ($_SERVER['HTTP_X_CSRF_TOKEN'] ?? '');

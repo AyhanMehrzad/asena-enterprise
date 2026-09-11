@@ -345,6 +345,149 @@ class MarketplaceEscrowService {
     }
 
     /**
+     * Generate single seller / organization Paya settlement based on admin preference
+     */
+    public function generateSingleSellerPayout(int $sellerId, int $adminId = 1, ?int $customAmount = null): array {
+        $stmt = $this->db->prepare("
+            SELECT w.*, u.name as seller_name, u.phone as seller_phone
+            FROM seller_wallets w
+            JOIN users u ON w.seller_id = u.id
+            WHERE w.seller_id = ?
+        ");
+        $stmt->execute([$sellerId]);
+        $seller = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$seller) {
+            return [
+                'success' => false,
+                'message' => 'کیف پول فروشنده یا مرکز درمانی مورد نظر یافت نشد.'
+            ];
+        }
+
+        $available = (int)$seller['balance_available_for_payout'];
+        if ($available <= 0) {
+            return [
+                'success' => false,
+                'message' => 'موجودی آماده تسویه برای این فروشنده صفر می‌باشد.'
+            ];
+        }
+
+        if ($customAmount !== null) {
+            if ($customAmount <= 0) {
+                return [
+                    'success' => false,
+                    'message' => 'مبلغ درخواستی تسویه باید بزرگتر از صفر باشد.'
+                ];
+            }
+            if ($customAmount > $available) {
+                return [
+                    'success' => false,
+                    'message' => 'مبلغ درخواستی (' . number_format($customAmount) . ' تومان) بیشتر از موجودی قابل تسویه (' . number_format($available) . ' تومان) است.'
+                ];
+            }
+            $payoutAmount = $customAmount;
+        } else {
+            $payoutAmount = $available;
+        }
+
+        $batchCode = 'PAYA-SNGL-' . date('Ymd') . '-' . strtoupper(substr(uniqid(), -4));
+        $sheba = !empty($seller['bank_sheba']) ? strtoupper(trim($seller['bank_sheba'])) : 'IR000000000000000000000000';
+        $holder = !empty($seller['bank_account_holder']) ? $seller['bank_account_holder'] : $seller['seller_name'];
+        $bank = !empty($seller['bank_name']) ? $seller['bank_name'] : 'سامانه پایا مرکزی';
+        $desc = "تسویه حساب انفرادی آسنا - {$seller['seller_name']} - کد {$batchCode}";
+
+        $payaLines = [
+            "IBAN\tAMOUNT_TOMAN\tRECIPIENT_NAME\tBANK_NAME\tDESCRIPTION\tREFERENCE_BATCH",
+            "{$sheba}\t{$payoutAmount}\t{$holder}\t{$bank}\t{$desc}\t{$batchCode}"
+        ];
+        $exportContent = implode("\r\n", $payaLines);
+
+        // Save batch to database
+        $batchStmt = $this->db->prepare("
+            INSERT INTO seller_payout_batches 
+            (batch_code, total_payout_amount, seller_count, status, paya_export_content, processed_by, processed_at)
+            VALUES 
+            (:batch_code, :total_amount, 1, 'completed', :content, :admin_id, NOW())
+        ");
+        $batchStmt->execute([
+            'batch_code' => $batchCode,
+            'total_amount' => $payoutAmount,
+            'content' => $exportContent,
+            'admin_id' => $adminId
+        ]);
+        $batchId = (int)$this->db->lastInsertId();
+
+        // Update seller wallet
+        $updateWallet = $this->db->prepare("
+            UPDATE seller_wallets 
+            SET balance_settled_lifetime = balance_settled_lifetime + ?,
+                balance_available_for_payout = balance_available_for_payout - ?
+            WHERE seller_id = ?
+        ");
+        $updateWallet->execute([
+            $payoutAmount,
+            $payoutAmount,
+            $sellerId
+        ]);
+
+        // Update ledger records
+        if ($payoutAmount >= $available) {
+            $updateLedger = $this->db->prepare("
+                UPDATE seller_escrow_ledger 
+                SET status = 'settled_in_batch',
+                    settlement_batch_id = :batch_id 
+                WHERE seller_id = :seller_id AND status = 'released_to_available'
+            ");
+            $updateLedger->execute([
+                'batch_id' => $batchId,
+                'seller_id' => $sellerId
+            ]);
+        } else {
+            $stmtLedger = $this->db->prepare("
+                SELECT id, net_seller_amount 
+                FROM seller_escrow_ledger 
+                WHERE seller_id = :seller_id AND status = 'released_to_available'
+                ORDER BY id ASC
+            ");
+            $stmtLedger->execute(['seller_id' => $sellerId]);
+            $rows = $stmtLedger->fetchAll(PDO::FETCH_ASSOC);
+
+            $accumulated = 0;
+            $rowIdsToUpdate = [];
+            foreach ($rows as $r) {
+                if ($accumulated + (int)$r['net_seller_amount'] <= $payoutAmount) {
+                    $accumulated += (int)$r['net_seller_amount'];
+                    $rowIdsToUpdate[] = (int)$r['id'];
+                }
+            }
+            if (!empty($rowIdsToUpdate)) {
+                $inPlaceholders = implode(',', array_fill(0, count($rowIdsToUpdate), '?'));
+                $params = array_merge([$batchId], $rowIdsToUpdate);
+                $upd = $this->db->prepare("
+                    UPDATE seller_escrow_ledger 
+                    SET status = 'settled_in_batch',
+                        settlement_batch_id = ?
+                    WHERE id IN ($inPlaceholders)
+                ");
+                $upd->execute($params);
+            }
+        }
+
+        // Send SMS notification
+        $this->notifySellerPayoutExecuted($seller, $payoutAmount, $batchCode);
+
+        return [
+            'success' => true,
+            'batch_id' => $batchId,
+            'batch_code' => $batchCode,
+            'total_amount' => $payoutAmount,
+            'seller_name' => $seller['seller_name'],
+            'seller_count' => 1,
+            'export_content' => $exportContent
+        ];
+    }
+
+    /**
      * Get or create seller wallet
      */
     public function getSellerWallet(int $sellerId): array {

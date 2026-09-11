@@ -1872,6 +1872,28 @@ function updateShebaPreview(input) {
                 <span>تنظیم یا تعویض کارت بانکی</span>
             </button>
         </div>
+
+        <!-- Privacy & Danger Zone: Account Deletion & Right to be Forgotten (GDPR) -->
+        <div class="bg-red-50/60 border border-red-200/80 rounded-3xl p-6 sm:p-7 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-6 transition-all hover:border-red-300">
+            <div class="space-y-2">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-9 h-9 rounded-2xl bg-red-100 text-red-600 flex items-center justify-center shrink-0 shadow-sm">
+                        <span class="material-symbols-outlined text-xl">delete_forever</span>
+                    </div>
+                    <div>
+                        <h4 class="text-sm font-black text-red-950">حذف قطعی حساب کاربری و پاکسازی داده‌ها (حق فراموش‌شدن / GDPR)</h4>
+                        <span class="text-[10px] text-red-600 font-bold">مطابق ماده ۱۷ آیین‌نامه عمومی حفاظت از داده‌ها و استانداردهای حریم خصوصی</span>
+                    </div>
+                </div>
+                <p class="text-xs text-red-900/80 leading-relaxed max-w-2xl">
+                    در صورت تمایل به خروج همیشگی از آسنا، با ثبت درخواست حذف حساب کلیه اطلاعات هویتی، پرونده‌های پزشکی پت‌ها و نشست‌های فعال شما به طور غیرقابل بازگشت پاکسازی شده و سوابق مالی و سفارشات گذشته مطابق قوانین به صورت ناشناس (Anonymized) آرشیو می‌گردند.
+                </p>
+            </div>
+            <button type="button" onclick="openDeleteAccountModal()" class="px-5 py-3 rounded-2xl bg-red-600 hover:bg-red-700 active:scale-95 text-white font-bold text-xs shadow-lg shadow-red-600/25 transition-all flex items-center gap-2 shrink-0">
+                <span class="material-symbols-outlined text-base">person_remove</span>
+                <span>درخواست حذف حساب و پاکسازی</span>
+            </button>
+        </div>
     </div>
 
     
@@ -3208,6 +3230,62 @@ function updateShebaPreview(input) {
     </div>
 </div>
 
+<!-- Modal for Delete Account & GDPR Privacy Anonymization -->
+<div id="deleteAccountModal" class="hidden fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 backdrop-blur-sm">
+    <div class="bg-white rounded-3xl p-6 sm:p-8 max-w-lg w-full shadow-2xl space-y-5 relative animate-fade-in border border-red-100">
+        <button type="button" onclick="closeDeleteAccountModal()" class="absolute top-5 left-5 text-slate-400 hover:text-slate-600 transition-colors">
+            <span class="material-symbols-outlined">close</span>
+        </button>
+        
+        <div class="flex items-center gap-3 border-b border-red-100 pb-4">
+            <div class="w-12 h-12 rounded-2xl bg-red-100 text-red-600 flex items-center justify-center shrink-0">
+                <span class="material-symbols-outlined text-2xl">warning</span>
+            </div>
+            <div>
+                <h3 class="text-base font-black text-red-950">تأیید حذف قطعی و پاکسازی حساب کاربری</h3>
+                <p class="text-[11px] text-slate-500 mt-0.5">این عملیات غیرقابل بازگشت است و تمام دسترسی‌های شما بلافاصله قطع خواهد شد.</p>
+            </div>
+        </div>
+
+        <div class="bg-amber-50 border border-amber-200 rounded-2xl p-4 text-xs text-amber-900 space-y-2">
+            <div class="font-bold flex items-center gap-1.5 text-amber-950">
+                <span class="material-symbols-outlined text-base">info</span>
+                فرآیند پاکسازی اطلاعات مطابق آیین‌نامه GDPR و حفظ حریم خصوصی:
+            </div>
+            <ul class="list-disc list-inside space-y-1 text-[11px] text-amber-900/90 leading-relaxed pr-1">
+                <li>حذف کامل پرونده‌های پزشکی، واکسیناسیون و مدارک حیوانات خانگی شما</li>
+                <li>ناشناس‌سازی (Anonymization) کامل سوابق تراکنش‌ها و سفارشات مالی</li>
+                <li>انقضا و ابطال کلیه نشست‌های فعال و نشست جاری در تمامی دستگاه‌ها</li>
+                <li>حذف نام کاربری، شماره موبایل، ایمیل و کدملی از سیستم</li>
+            </ul>
+        </div>
+
+        <form action="actions/profile_action.php" method="POST" class="space-y-4" onsubmit="return confirmAccountDeletion(this);">
+            <?= csrf_field() ?>
+            <input type="hidden" name="action" value="delete_account">
+
+            <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1.5">کلمه عبور فعلی جهت احراز اصالت هویت *</label>
+                <input type="password" name="confirm_password" required placeholder="رمز عبور حساب کاربری" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-red-500 outline-none dir-ltr text-left">
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1.5">برای تایید نهایی عبارت <span class="text-red-600 font-black font-mono">DELETE</span> را تایپ کنید *</label>
+                <input type="text" name="confirmation_text" id="delete_confirm_text" required placeholder="DELETE" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-mono tracking-widest text-center focus:ring-2 focus:ring-red-500 outline-none dir-ltr">
+            </div>
+
+            <div class="pt-2 flex justify-end gap-2.5 border-t border-slate-100">
+                <button type="button" onclick="closeDeleteAccountModal()" class="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-all">
+                    انصراف
+                </button>
+                <button type="submit" class="px-6 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold transition-all shadow-md shadow-red-600/20">
+                    حذف قطعی و خروج از سامانه
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <!-- Add Product Modal for Sellers -->
 <div id="addProductModal" class="hidden fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 backdrop-blur-sm">
     <div class="bg-white rounded-3xl p-6 sm:p-8 max-w-lg w-full shadow-2xl space-y-5 relative animate-fade-in">
@@ -3794,6 +3872,21 @@ function updateShebaPreview(input) {
     }
     function closeEditShebaModal() {
         document.getElementById('editShebaModal').classList.add('hidden');
+    }
+
+    function openDeleteAccountModal() {
+        document.getElementById('deleteAccountModal').classList.remove('hidden');
+    }
+    function closeDeleteAccountModal() {
+        document.getElementById('deleteAccountModal').classList.add('hidden');
+    }
+    function confirmAccountDeletion(form) {
+        const text = document.getElementById('delete_confirm_text').value.trim();
+        if (text.toUpperCase() !== 'DELETE') {
+            alert('لطفاً جهت تأیید حذف حساب، عبارت DELETE را وارد فرمایید.');
+            return false;
+        }
+        return confirm('آیا از حذف قطعی و دائمی حساب کاربری خود و پاکسازی اطلاعات اطمینان کامل دارید؟ این عملیات غیرقابل بازگشت است.');
     }
 
     function formatCustomerCardInput(input) {

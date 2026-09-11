@@ -51,16 +51,44 @@ class SecurityMiddleware {
     }
 
     /**
+     * Start session with strict enterprise security flags
+     */
+    public static function startSecureSession(): void {
+        if (php_sapi_name() === 'cli' || session_status() === PHP_SESSION_ACTIVE) {
+            return;
+        }
+
+        $isHttps = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') ||
+                   (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https');
+
+        ini_set('session.cookie_httponly', '1');
+        ini_set('session.use_only_cookies', '1');
+        ini_set('session.use_strict_mode', '1');
+        ini_set('session.cookie_samesite', 'Lax');
+        if ($isHttps) {
+            ini_set('session.cookie_secure', '1');
+        }
+
+        if (!headers_sent()) {
+            session_set_cookie_params([
+                'lifetime' => 0,
+                'path'     => '/',
+                'domain'   => '',
+                'secure'   => $isHttps,
+                'httponly' => true,
+                'samesite' => 'Lax'
+            ]);
+        }
+
+        @session_start();
+    }
+
+    /**
      * Session Hijacking & Fixation Defense
      */
     public static function secureSession(): void {
         if (session_status() === PHP_SESSION_NONE) {
-            ini_set('session.cookie_httponly', 1);
-            ini_set('session.use_only_cookies', 1);
-            if (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') {
-                ini_set('session.cookie_secure', 1);
-            }
-            session_start();
+            self::startSecureSession();
         }
 
         // Session fingerprint verification
@@ -70,7 +98,7 @@ class SecurityMiddleware {
                 // Potential session hijacking detected: invalidate session
                 session_unset();
                 session_destroy();
-                session_start();
+                self::startSecureSession();
             }
         } else {
             $_SESSION['_security_fingerprint'] = $currentFingerprint;
@@ -83,6 +111,57 @@ class SecurityMiddleware {
             session_regenerate_id(true);
             $_SESSION['_last_regeneration'] = time();
         }
+    }
+
+    /**
+     * Invalidate all active PHP session files for a specific user, optionally keeping one session ID active.
+     * Essential for revocation upon password change, account takeover response, or user lockout.
+     */
+    public static function invalidateOtherUserSessions(int $userId, ?string $keepSessionId = null): int {
+        if ($userId <= 0) {
+            return 0;
+        }
+
+        $revokedCount = 0;
+        $savePath = session_save_path() ?: sys_get_temp_dir();
+        if (empty($savePath) || !is_dir($savePath)) {
+            return 0;
+        }
+
+        $keepFile = $keepSessionId ? ('sess_' . $keepSessionId) : (session_id() ? ('sess_' . session_id()) : '');
+        $pattern = rtrim($savePath, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . 'sess_*';
+        $files = glob($pattern);
+
+        if (is_array($files)) {
+            $userPatterns = [
+                'user_id|i:' . $userId . ';',
+                '"user_id";i:' . $userId . ';',
+                'user_id|s:' . strlen((string)$userId) . ':"' . $userId . '";',
+                '"user_id";s:' . strlen((string)$userId) . ':"' . $userId . '";'
+            ];
+
+            foreach ($files as $file) {
+                if (!is_file($file) || ($keepFile && basename($file) === $keepFile)) {
+                    continue;
+                }
+
+                $content = @file_get_contents($file);
+                if ($content === false) {
+                    continue;
+                }
+
+                foreach ($userPatterns as $p) {
+                    if (strpos($content, $p) !== false) {
+                        if (@unlink($file)) {
+                            $revokedCount++;
+                        }
+                        break;
+                    }
+                }
+            }
+        }
+
+        return $revokedCount;
     }
 
     /**
@@ -128,8 +207,8 @@ class SecurityMiddleware {
      * Generate or retrieve session CSRF token
      */
     public static function generateCsrfToken(): string {
-        if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
-            @session_start();
+        if (session_status() === PHP_SESSION_NONE) {
+            self::startSecureSession();
         }
         if (empty($_SESSION['csrf_token'])) {
             $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
@@ -141,8 +220,8 @@ class SecurityMiddleware {
      * Validate submitted CSRF token using constant-time comparison
      */
     public static function validateCsrfToken(?string $token): bool {
-        if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
-            @session_start();
+        if (session_status() === PHP_SESSION_NONE) {
+            self::startSecureSession();
         }
         $expected = $_SESSION['csrf_token'] ?? '';
         if (empty($expected) || empty($token) || !hash_equals($expected, trim($token))) {

@@ -6,11 +6,26 @@ App::boot();
 // Monthly Loyalty Points Check & Role Refresh
 $user_points_balance = 0;
 if (isset($_SESSION['user_id'])) {
-    $stmt = $pdo->prepare("SELECT last_monthly_points_date, role, loyalty_points FROM users WHERE id = ?");
+    $stmt = $pdo->prepare("SELECT last_monthly_points_date, role, loyalty_points, password FROM users WHERE id = ?");
     $stmt->execute([$_SESSION['user_id']]);
     $user_pts = $stmt->fetch(PDO::FETCH_ASSOC);
     
     if ($user_pts) {
+        // Password update check: if password was changed elsewhere, revoke this session
+        if (isset($_SESSION['password_hash']) && !empty($user_pts['password'])) {
+            $expectedHash = hash('sha256', $user_pts['password']);
+            if (!hash_equals($_SESSION['password_hash'], $expectedHash)) {
+                $_SESSION = [];
+                if (session_status() === PHP_SESSION_ACTIVE) {
+                    session_destroy();
+                }
+                header("Location: login.php?reason=password_changed");
+                exit;
+            }
+        } elseif (!isset($_SESSION['password_hash']) && !empty($user_pts['password'])) {
+            $_SESSION['password_hash'] = hash('sha256', $user_pts['password']);
+        }
+
         $_SESSION['user_role'] = $user_pts['role'];
         $user_points_balance = (int)($user_pts['loyalty_points'] ?? 0);
         $current_month = date('Y-m');

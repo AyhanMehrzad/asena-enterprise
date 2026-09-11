@@ -2,6 +2,7 @@
 require_once 'includes/db.php';
 require_once 'includes/functions.php';
 require_once 'includes/SmsService.php';
+require_once 'includes/SecurityMiddleware.php';
 
 $error = '';
 $success = '';
@@ -32,58 +33,59 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 if ($stmt->execute([$otp, $phone])) {
                     $sms = new SmsService();
                     $sms->sendOtp($phone, $otp);
-                    $success = 'کد تأیید جدید پیامک شد.';
-                } else {
-                    $error = 'خطا در سیستم. لطفاً دوباره تلاش کنید.';
                 }
             } else {
-                $error = 'کاربری یافت نشد.';
+                // Prevent timing attack enumeration
+                usleep(rand(150000, 300000));
             }
+            // Uniform response prevents user enumeration
+            $success = 'در صورت وجود حساب کاربری، کد تأیید جدید ارسال گردید.';
         }
     } else {
         $otp = SmsService::sanitizeCode($_POST['otp'] ?? '');
         $password = $_POST['password'] ?? '';
     
-    if (empty($otp) || empty($password)) {
-        $error = 'لطفاً تمامی فیلدها را پر کنید.';
-    } else {
-        $rate_error = check_rate_limit($pdo, $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1', $phone);
-        if ($rate_error) {
-            $error = $rate_error;
+        if (empty($otp) || empty($password)) {
+            $error = 'لطفاً تمامی فیلدها را پر کنید.';
+        } elseif (strlen($password) < 6) {
+            $error = 'رمز عبور جدید باید حداقل ۶ کاراکتر باشد.';
         } else {
-            // Check expiry if set in session
-            if (isset($_SESSION['reset_password_data']) && time() > ($_SESSION['reset_password_data']['expires_at'] ?? 0)) {
-                $error = 'کد تأیید منقضی شده است. لطفاً بر روی «ارسال مجدد کد» کلیک کنید.';
+            $rate_error = check_rate_limit($pdo, $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1', $phone);
+            if ($rate_error) {
+                $error = $rate_error;
             } else {
-                $stmt = $pdo->prepare("SELECT id, sms_code FROM users WHERE phone = ?");
-                $stmt->execute([$phone]);
-                $user = $stmt->fetch(PDO::FETCH_ASSOC);
-                
-                if (!$user) {
-                    $error = 'کاربری با این مشخصات یافت نشد.';
-                } elseif (empty($user['sms_code']) || $user['sms_code'] !== $otp) {
-                    $error = 'کد تأیید وارد شده نامعتبر است.';
+                // Check expiry if set in session
+                if (isset($_SESSION['reset_password_data']) && time() > ($_SESSION['reset_password_data']['expires_at'] ?? 0)) {
+                    $error = 'کد تأیید منقضی شده است. لطفاً بر روی «ارسال مجدد کد» کلیک کنید.';
                 } else {
-                    // Success! Reset password
-                    $hash = password_hash($password, PASSWORD_DEFAULT);
-                    $stmt = $pdo->prepare("UPDATE users SET password = ?, sms_code = NULL WHERE id = ?");
-                    if ($stmt->execute([$hash, $user['id']])) {
-                        unset($_SESSION['reset_password_data']);
-                    // Optional: Automatically log them in
-                    // $_SESSION['user_id'] = $user['id'];
+                    $stmt = $pdo->prepare("SELECT id, sms_code FROM users WHERE phone = ?");
+                    $stmt->execute([$phone]);
+                    $user = $stmt->fetch(PDO::FETCH_ASSOC);
                     
-                    // For now, redirect to login with success message in session or query string
-                    $_SESSION['login_success'] = 'رمز عبور شما با موفقیت تغییر کرد. لطفاً وارد شوید.';
-                    header("Location: login.php?reset=success");
-                    exit;
-                } else {
-                    $error = 'خطا در تغییر رمز عبور. لطفاً دوباره تلاش کنید.';
+                    // Uniform error & timing protection against user enumeration
+                    $isValid = ($user && !empty($user['sms_code']) && hash_equals((string)$user['sms_code'], (string)$otp));
+                    if (!$isValid) {
+                        usleep(rand(50000, 100000));
+                        $error = 'کد تأیید وارد شده نامعتبر یا منقضی است.';
+                    } else {
+                        // Success! Reset password
+                        $hash = password_hash($password, PASSWORD_DEFAULT);
+                        $stmt = $pdo->prepare("UPDATE users SET password = ?, sms_code = NULL WHERE id = ?");
+                        if ($stmt->execute([$hash, $user['id']])) {
+                            SecurityMiddleware::invalidateOtherUserSessions($user['id']);
+                            session_regenerate_id(true);
+                            unset($_SESSION['reset_password_data']);
+                            $_SESSION['login_success'] = 'رمز عبور شما با موفقیت تغییر کرد. لطفاً وارد شوید.';
+                            header("Location: login.php?reset=success");
+                            exit;
+                        } else {
+                            $error = 'خطا در تغییر رمز عبور. لطفاً دوباره تلاش کنید.';
+                        }
+                    }
                 }
             }
         }
     }
-}
-}
 }
 ?>
 <!DOCTYPE html>

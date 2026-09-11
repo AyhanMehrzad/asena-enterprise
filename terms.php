@@ -116,6 +116,60 @@ require_once 'includes/header.php';
                 </p>
             </section>
 
+            <hr class="border-slate-100">
+
+            <!-- Section 5 -->
+            <section class="space-y-3">
+                <div class="flex items-center gap-3">
+                    <span class="w-8 h-8 rounded-xl bg-accent/10 text-accent flex items-center justify-center font-bold text-xs">۵</span>
+                    <h2 class="text-lg font-bold text-slate-900">روش‌های ارسال، هزینه‌ها و بازه زمانی تحویل سفارش‌ها</h2>
+                </div>
+                <p class="text-slate-600 pr-11">
+                    ارسال مرسولات پت‌شاپ و داروخانه آنلاین آسنا از طریق درگاه‌های لجستیکی استاندارد (پستکس، پست پیشتاز جمهوری اسلامی ایران و ناوگان پیک درون‌شهری) انجام می‌گیرد:
+                </p>
+                <ul class="list-disc list-inside space-y-2 text-slate-600 pr-11">
+                    <li><b>زمان پردازش:</b> سفارش‌های ثبت‌شده ظرف ۲۴ تا ۴۸ ساعت کاری پردازش و تحویل شرکت پست می‌گردند.</li>
+                    <li><b>کد رهگیری:</b> پس از تحویل به پست، کد رهگیری ۲۴ رقمی پستی از طریق پیامک برای خریدار ارسال شده و در بخش «پیگیری سفارشات» پروفایل قابل استعلام است.</li>
+                    <li><b>هزینه ارسال:</b> کرایه حمل بر مبنای وزن و مسافت طبق تعرفه مصوب پستی در پیش‌فاکتور محاسبه و شفاف درج می‌شود.</li>
+                </ul>
+            </section>
+
+            <hr class="border-slate-100">
+
+            <!-- Section 6 -->
+            <section class="space-y-3">
+                <div class="flex items-center gap-3">
+                    <span class="w-8 h-8 rounded-xl bg-accent/10 text-accent flex items-center justify-center font-bold text-xs">۶</span>
+                    <h2 class="text-lg font-bold text-slate-900">رویه ثبت، پیگیری و رسیدگی به شکایات (الزامات اینماد)</h2>
+                </div>
+                <p class="text-slate-600 pr-11">
+                    آسنا متعهد به پاسخگویی شفاف و رسیدگی سریع به درخواست‌ها و شکایات کاربران گرامی است:
+                </p>
+                <div class="p-4 rounded-2xl bg-blue-50/70 border border-blue-200/80 mr-11 space-y-2">
+                    <p class="text-xs text-blue-900 leading-relaxed">
+                        <b>نحوه ثبت شکایت:</b> کاربران می‌توانند شکایات خود را از طریق تیکت ۲۴ ساعته در پنل کاربری، تماس با تلفن پشتیبانی یا ارسال ایمیل ثبت فرمایند.
+                    </p>
+                    <p class="text-xs text-blue-800 leading-relaxed">
+                        <b>مهلت رسیدگی:</b> واحد پشتیبانی و امور مشتریان حداکثر ظرف ۲۴ الی ۴۸ ساعت کاری با شاکی تماس حاصل نموده و موضوع را بررسی و رفع اثر می‌نماید. در صورت عدم حصول توافق، مراجع نظارتی و صنفی قانونی ذی‌صلاح مرجع داوری نهایی خواهند بود.
+                    </p>
+                </div>
+            </section>
+
+            <hr class="border-slate-100">
+
+            <!-- Section 7 -->
+            <section class="space-y-3">
+                <div class="flex items-center gap-3">
+                    <span class="w-8 h-8 rounded-xl bg-accent/10 text-accent flex items-center justify-center font-bold text-xs">۷</span>
+                    <h2 class="text-lg font-bold text-slate-900">اطلاعات رسمی تماس و پشتیبانی</h2>
+                </div>
+                <ul class="list-disc list-inside space-y-2 text-slate-600 pr-11">
+                    <li><b>پشتیبانی تلفنی:</b> ۰۲۱-۹۱۰۰۰۰۰۰ (روزهای کاری از ساعت ۹ الی ۱۸)</li>
+                    <li><b>ایمیل امور مشتریان:</b> support@asena.company</li>
+                    <li><b>سامانه پشتیبانی آنلاین:</b> ۲۴ ساعته از طریق بخش «پشتیبانی و تیکت‌ها» در پنل کاربری</li>
+                </ul>
+            </section>
+
         </div>
 
         <!-- Back to Home Button -->

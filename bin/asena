@@ -448,6 +448,14 @@ function runSystemHealthCheck(): void {
  */
 function runDatabaseBackup(): void {
     info("در حال تهیه نسخه پشتیبان کامل از پایگاه داده (Database Backup)...");
+    $shScript = ASENA_ROOT . '/scripts/backup.sh';
+    if (file_exists($shScript) && is_executable($shScript)) {
+        passthru("/bin/bash " . escapeshellarg($shScript), $exitCode);
+        if ($exitCode === 0) {
+            return;
+        }
+    }
+
     require_once ASENA_ROOT . '/includes/db.php';
     $pdo = $GLOBALS['pdo'];
 

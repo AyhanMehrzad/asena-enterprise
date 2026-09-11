@@ -99,6 +99,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $_SESSION['user_id'] = $newUserId;
                         $_SESSION['user_role'] = 'customer';
                         $_SESSION['user_name'] = $flow['name'];
+                        $_SESSION['password_hash'] = hash('sha256', $hash);
                         unset($_SESSION['reg_flow']);
                         $_SESSION['login_success'] = 'ثبت‌نام شما با موفقیت انجام شد و ۵۰ امتیاز باشگاه مشتریان دریافت نمودید!';
                         header("Location: index.php");

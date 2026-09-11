@@ -6,10 +6,6 @@
  * Seller, Organization/Clinic, Doctor, Pharmacist, Super Admin, and Regular User.
  */
 
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
-
 require_once __DIR__ . '/includes/db.php';
 
 // Role configurations and metadata
@@ -136,6 +132,9 @@ function loginAsRole($pdo, $role, $cfg) {
     $_SESSION['role']      = $user['role'];
     $_SESSION['name']      = $user['name'] ?: $cfg['default_name'];
     $_SESSION['phone']     = $user['phone'] ?? $cfg['phone'];
+    if (!empty($user['password'])) {
+        $_SESSION['password_hash'] = hash('sha256', $user['password']);
+    }
 
     return $user;
 }

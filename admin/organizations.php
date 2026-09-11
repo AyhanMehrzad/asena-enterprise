@@ -6,17 +6,91 @@ AuthGuard::requireRole('admin');
 $pdo = App::db();
 $currentPage = 'organizations';
 
-// Handle Organization Status Toggle
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'toggle_status') {
-    $targetOrgId = (int)($_POST['org_id'] ?? 0);
-    $newStatus = trim($_POST['status'] ?? 'approved');
-    if ($targetOrgId > 0 && in_array($newStatus, ['approved', 'suspended', 'pending'])) {
-        $upd = $pdo->prepare("UPDATE organizations SET status = ? WHERE id = ?");
-        $upd->execute([$newStatus, $targetOrgId]);
+// Handle Organization Actions (Status Toggle & Banking Details Update)
+if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POST['action'])) {
+    if ($_POST['action'] === 'toggle_status') {
+        $targetOrgId = (int)($_POST['org_id'] ?? 0);
+        $newStatus = trim($_POST['status'] ?? 'approved');
+        if ($targetOrgId > 0 && in_array($newStatus, ['approved', 'suspended', 'pending'])) {
+            $upd = $pdo->prepare("UPDATE organizations SET status = ? WHERE id = ?");
+            $upd->execute([$newStatus, $targetOrgId]);
+        }
+    } elseif ($_POST['action'] === 'update_banking') {
+        $targetOrgId = (int)($_POST['org_id'] ?? 0);
+        $bankName = trim($_POST['bank_name'] ?? '');
+        $bankSheba = strtoupper(trim($_POST['bank_sheba'] ?? ''));
+        $accountHolder = trim($_POST['bank_account_holder'] ?? '');
+        $cardNumber = trim($_POST['bank_card_number'] ?? '');
+        
+        if ($targetOrgId > 0) {
+            $upd = $pdo->prepare("
+                UPDATE organizations 
+                SET bank_name = ?, bank_sheba = ?, bank_account_holder = ?, bank_card_number = ?
+                WHERE id = ?
+            ");
+            $upd->execute([$bankName, $bankSheba, $accountHolder, $cardNumber, $targetOrgId]);
+
+            // Sync to seller_wallets if user exists
+            $uStmt = $pdo->prepare("SELECT user_id FROM organizations WHERE id = ?");
+            $uStmt->execute([$targetOrgId]);
+            $uId = $uStmt->fetchColumn();
+            if ($uId) {
+                $swStmt = $pdo->prepare("SELECT id FROM seller_wallets WHERE seller_id = ?");
+                $swStmt->execute([$uId]);
+                if ($swStmt->fetchColumn()) {
+                    $pdo->prepare("
+                        UPDATE seller_wallets 
+                        SET bank_name = ?, bank_sheba = ?, bank_account_holder = ?, bank_card_number = ?, updated_at = NOW()
+                        WHERE seller_id = ?
+                    ")->execute([$bankName, $bankSheba, $accountHolder, $cardNumber, $uId]);
+                }
+            }
+        }
+    } elseif ($_POST['action'] === 'single_payout') {
+        $targetOrgId = (int)($_POST['org_id'] ?? 0);
+        $rawAmount = trim($_POST['custom_amount'] ?? '');
+        $customAmount = null;
+        if ($rawAmount !== '') {
+            $cleaned = preg_replace('/[^\d]/', '', $rawAmount);
+            if ($cleaned !== '') {
+                $customAmount = (int)$cleaned;
+            }
+        }
+        
+        $uStmt = $pdo->prepare("SELECT user_id, name FROM organizations WHERE id = ?");
+        $uStmt->execute([$targetOrgId]);
+        $orgRow = $uStmt->fetch(PDO::FETCH_ASSOC);
+        $uId = (int)($orgRow['user_id'] ?? 0);
+        
+        if ($uId > 0) {
+            $escrowService = App::escrow();
+            $payoutRes = $escrowService->generateSingleSellerPayout($uId, (int)$_SESSION['user_id'], $customAmount);
+            if ($payoutRes['success']) {
+                $_SESSION['org_flash'] = [
+                    'type' => 'success',
+                    'message' => "حواله تسویه پایا برای «{$orgRow['name']}» با موفقیت صادر شد! شناسه پایا: {$payoutRes['batch_code']} | مبلغ: " . number_format($payoutRes['total_amount']) . " تومان.",
+                    'batch_code' => $payoutRes['batch_code'],
+                    'batch_id' => $payoutRes['batch_id']
+                ];
+            } else {
+                $_SESSION['org_flash'] = [
+                    'type' => 'error',
+                    'message' => $payoutRes['message']
+                ];
+            }
+        } else {
+            $_SESSION['org_flash'] = [
+                'type' => 'error',
+                'message' => 'این مرکز درمانی هنوز به حساب کاربری متصل نشده است.'
+            ];
+        }
     }
     header("Location: organizations.php");
     exit;
 }
+
+$orgFlash = $_SESSION['org_flash'] ?? null;
+unset($_SESSION['org_flash']);
 
 // ── Search & Filter ───────────────────────────────────────────────────────────
 $search = trim($_GET['search'] ?? '');
@@ -28,11 +102,13 @@ $query = "
         o.*,
         u.name as owner_name,
         u.phone as owner_phone,
-        sw.bank_name,
-        sw.bank_sheba,
-        sw.balance_available_for_payout,
-        sw.balance_pending_escrow,
-        sw.balance_settled_lifetime,
+        COALESCE(NULLIF(o.bank_name, ''), NULLIF(sw.bank_name, ''), 'بانک سامان') as bank_name,
+        COALESCE(NULLIF(o.bank_sheba, ''), NULLIF(sw.bank_sheba, ''), NULLIF(u.sheba_number, ''), '') as bank_sheba,
+        COALESCE(NULLIF(o.bank_account_holder, ''), NULLIF(sw.bank_account_holder, ''), o.manager_name, o.name) as bank_account_holder,
+        COALESCE(NULLIF(o.bank_card_number, ''), NULLIF(sw.bank_card_number, ''), '') as bank_card_number,
+        COALESCE(sw.balance_available_for_payout, 0) as balance_available_for_payout,
+        COALESCE(sw.balance_pending_escrow, 0) as balance_pending_escrow,
+        COALESCE(sw.balance_settled_lifetime, 0) as balance_settled_lifetime,
         (SELECT COUNT(*) FROM organization_doctors od WHERE od.organization_id = o.id AND od.role_type = 'doctor') as doctors_count,
         (SELECT COUNT(*) FROM organization_doctors od WHERE od.organization_id = o.id AND od.role_type = 'pharmacist') as pharmacists_count,
         (SELECT COUNT(*) FROM organization_doctors od WHERE od.organization_id = o.id AND od.role_type = 'groomer') as groomers_count,
@@ -89,12 +165,38 @@ foreach ($organizations as $org) {
     $dStmt->execute([$oId]);
     $docs = $dStmt->fetchAll(PDO::FETCH_ASSOC);
 
-    // Products / Inventory
+    // Products / Inventory with clean joins to get titles, categories, and prices
     $iStmt = $pdo->prepare("
-        SELECT oi.* 
-        FROM organization_inventory oi 
-        WHERE oi.organization_id = ? 
-        LIMIT 20
+        SELECT 
+            oi.id,
+            oi.organization_id,
+            oi.item_type,
+            oi.item_id,
+            oi.stock as quantity,
+            oi.custom_price,
+            oi.is_in_stock,
+            CASE 
+                WHEN oi.item_type = 'medicine' THEN COALESCE(pm.name, CONCAT('داروی تخصصی کد #', oi.item_id))
+                ELSE COALESCE(p.name, CONCAT('محصول پت‌شاپ کد #', oi.item_id))
+            END as item_name,
+            CASE 
+                WHEN oi.item_type = 'medicine' THEN COALESCE(pm.category, 'داروخانه دامپزشکی')
+                ELSE COALESCE(p.category, 'پت‌شاپ و ملزومات')
+            END as category,
+            CASE 
+                WHEN oi.item_type = 'medicine' THEN pm.generic_name
+                ELSE p.brand
+            END as sub_title,
+            CASE 
+                WHEN oi.item_type = 'medicine' THEN COALESCE(oi.custom_price, pm.price, 0)
+                ELSE COALESCE(oi.custom_price, p.price, 0)
+            END as effective_price
+        FROM organization_inventory oi
+        LEFT JOIN pharmacy_medicines pm ON (oi.item_type = 'medicine' AND oi.item_id = pm.id)
+        LEFT JOIN products p ON (oi.item_type = 'product' AND oi.item_id = p.id)
+        WHERE oi.organization_id = ?
+        ORDER BY oi.id ASC
+        LIMIT 50
     ");
     $iStmt->execute([$oId]);
     $inv = $iStmt->fetchAll(PDO::FETCH_ASSOC);
@@ -109,6 +211,27 @@ require_once __DIR__ . '/includes/admin_header.php';
 ?>
 
 <div class="p-4 lg:p-8 space-y-8">
+
+    <?php if ($orgFlash): ?>
+        <div class="p-4 rounded-2xl text-xs font-bold flex flex-col sm:flex-row sm:items-center justify-between gap-3 <?= $orgFlash['type'] === 'success' ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-rose-50 text-rose-800 border border-rose-200' ?>">
+            <div class="flex items-center gap-3">
+                <span class="material-symbols-outlined text-lg"><?= $orgFlash['type'] === 'success' ? 'check_circle' : 'error' ?></span>
+                <span><?= htmlspecialchars($orgFlash['message']) ?></span>
+            </div>
+            <?php if (!empty($orgFlash['batch_code']) && !empty($orgFlash['batch_id'])): ?>
+                <div class="flex items-center gap-2 shrink-0">
+                    <a href="payouts.php?download_batch=<?= (int)$orgFlash['batch_id'] ?>" class="px-3 py-1.5 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs inline-flex items-center gap-1.5 transition shadow-2xs">
+                        <span class="material-symbols-outlined text-xs">download</span>
+                        <span>دانلود فایل پایا (.txt)</span>
+                    </a>
+                    <a href="../actions/generate_payout_receipt.php?batch_code=<?= urlencode($orgFlash['batch_code']) ?>" target="_blank" class="px-3 py-1.5 rounded-lg bg-white hover:bg-emerald-50 text-emerald-800 border border-emerald-300 font-bold text-xs inline-flex items-center gap-1.5 transition shadow-2xs">
+                        <span class="material-symbols-outlined text-xs">receipt_long</span>
+                        <span>مشاهده و چاپ رسید رسمی پایا</span>
+                    </a>
+                </div>
+            <?php endif; ?>
+        </div>
+    <?php endif; ?>
 
     <!-- Header Section -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -328,29 +451,127 @@ require_once __DIR__ . '/includes/admin_header.php';
             </div>
         </div>
 
-        <!-- Tab 3: Finance -->
-        <div id="modalTabFinance" class="hidden space-y-3 text-xs">
-            <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
-                <div class="flex justify-between">
-                    <span class="text-slate-500 font-bold">نام بانک:</span>
-                    <span id="modalBankName" class="font-bold text-slate-900">-</span>
+        <!-- Tab 3: Finance & Paya Banking -->
+        <div id="modalTabFinance" class="hidden space-y-4 text-xs">
+            <!-- Bank & Sheba Summary Card -->
+            <div class="p-4 sm:p-5 rounded-2xl bg-slate-50 border border-slate-200/90 space-y-3">
+                <div class="flex items-center justify-between pb-2 border-b border-slate-200/60">
+                    <span class="text-slate-500 font-bold flex items-center gap-1.5">
+                        <span class="material-symbols-outlined text-base text-primary">account_balance</span>
+                        نام بانک عامل:
+                    </span>
+                    <span id="modalBankName" class="font-black text-slate-900 text-xs sm:text-sm bg-white px-3 py-1 rounded-xl border border-slate-200 shadow-2xs">-</span>
                 </div>
-                <div class="flex justify-between">
-                    <span class="text-slate-500 font-bold">شماره شبا (IR):</span>
-                    <span id="modalBankSheba" class="font-mono font-bold text-slate-900" dir="ltr">-</span>
+                <div class="flex items-center justify-between pb-2 border-b border-slate-200/60">
+                    <span class="text-slate-500 font-bold flex items-center gap-1.5">
+                        <span class="material-symbols-outlined text-base text-slate-400">badge</span>
+                        صاحب حساب:
+                    </span>
+                    <span id="modalBankAccountHolder" class="font-bold text-slate-900">-</span>
                 </div>
-                <div class="flex justify-between">
-                    <span class="text-slate-500 font-bold">موجودی آماده تسویه پایا:</span>
-                    <span id="modalAvailablePayout" class="font-black text-emerald-600">- تومان</span>
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 pb-2 border-b border-slate-200/60">
+                    <span class="text-slate-500 font-bold flex items-center gap-1.5">
+                        <span class="material-symbols-outlined text-base text-slate-400">credit_card</span>
+                        شماره شبا رسمی پایا:
+                    </span>
+                    <div class="flex items-center gap-2">
+                        <span id="modalBankSheba" class="font-mono font-black text-slate-900 text-xs sm:text-sm tracking-wider" dir="ltr">-</span>
+                        <button type="button" onclick="copyModalSheba()" class="p-1 rounded-lg bg-slate-200 hover:bg-slate-300 text-slate-700 transition-colors" title="کپی شماره شبا">
+                            <span class="material-symbols-outlined text-sm">content_copy</span>
+                        </button>
+                    </div>
                 </div>
-                <div class="flex justify-between">
-                    <span class="text-slate-500 font-bold">کارمزد پلتفرم:</span>
-                    <span class="font-black text-amber-600">۵٪ کسر شده</span>
+                <div class="flex items-center justify-between pb-2 border-b border-slate-200/60">
+                    <span class="text-slate-500 font-bold flex items-center gap-1.5">
+                        <span class="material-symbols-outlined text-base text-emerald-500">payments</span>
+                        موجودی آماده تسویه پایا:
+                    </span>
+                    <span id="modalAvailablePayout" class="font-black text-emerald-600 text-sm">- تومان</span>
+                </div>
+
+                <!-- Instant Single Payout Row if balance > 0 -->
+                <div id="modalPayoutActionRow" class="hidden p-3 rounded-xl bg-emerald-50 border border-emerald-200/80 flex flex-col sm:flex-row items-center justify-between gap-2.5">
+                    <div class="text-xs">
+                        <span class="font-black text-emerald-800 flex items-center gap-1">
+                            <span class="material-symbols-outlined text-sm text-emerald-600">verified</span>
+                            موجودی آزاد شده و آماده صدور حواله پایا است
+                        </span>
+                        <div class="text-[11px] text-emerald-700 mt-0.5">تسویه این مرکز به صورت انفرادی یا تجمیعی در میز کار پایا امکان‌پذیر است.</div>
+                    </div>
+                    <form method="POST" action="" class="inline shrink-0" onsubmit="return confirm('آیا از صدور حواله تسویه پایا برای این مرکز درمانی اطمینان دارید؟');">
+                        <input type="hidden" name="action" value="single_payout">
+                        <input type="hidden" id="payoutOrgId" name="org_id" value="">
+                        <button type="submit" class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs inline-flex items-center gap-1.5 shadow-sm transition-all">
+                            <span class="material-symbols-outlined text-sm">payments</span>
+                            <span>⚡ تسویه آنی پایا برای این مرکز</span>
+                        </button>
+                    </form>
+                </div>
+                <div class="flex items-center justify-between">
+                    <span class="text-slate-500 font-bold flex items-center gap-1.5">
+                        <span class="material-symbols-outlined text-base text-amber-500">percent</span>
+                        کارمزد زیرساخت آسنا:
+                    </span>
+                    <span class="font-black text-amber-600">۵٪ کسر شده از فاکتور</span>
                 </div>
             </div>
-            <a href="payouts.php" class="inline-block w-full text-center py-2.5 px-4 rounded-xl bg-secondary-container hover:bg-orange-600 text-white font-bold text-xs shadow-sm transition-all">
-                انتقال به میز کار تسویه پایا بانک مرکزی
-            </a>
+
+            <!-- Toggle Button for Editing Bank Details -->
+            <div class="flex items-center gap-2">
+                <button type="button" onclick="toggleEditBankForm()" class="flex-1 py-2 px-3 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs flex items-center justify-center gap-1.5 transition-all shadow-2xs">
+                    <span class="material-symbols-outlined text-base text-primary">edit_square</span>
+                    <span id="btnEditBankLabel">ویرایش / ثبت اطلاعات بانکی مرکز</span>
+                </button>
+                <a href="payouts.php" class="flex-1 py-2 px-3 rounded-xl bg-secondary-container hover:bg-orange-600 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm transition-all text-center">
+                    <span class="material-symbols-outlined text-base">launch</span>
+                    <span>میز کار تسویه پایا</span>
+                </a>
+            </div>
+
+            <!-- Inline Bank Details Edit Form (Collapsible) -->
+            <form id="formEditBank" method="POST" action="" class="hidden p-4 rounded-2xl bg-amber-50/50 border border-amber-200/80 space-y-3">
+                <input type="hidden" name="action" value="update_banking">
+                <input type="hidden" id="editOrgId" name="org_id" value="">
+                
+                <h4 class="font-bold text-xs text-amber-900 flex items-center gap-1">
+                    <span class="material-symbols-outlined text-sm text-amber-600">sync_saved_locally</span>
+                    به‌روزرسانی اطلاعات حساب و شبای مرکز درمانی:
+                </h4>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-[11px] font-bold text-slate-600 mb-1">نام بانک:</label>
+                        <select name="bank_name" id="inputBankName" class="w-full px-3 py-1.5 rounded-xl border border-slate-300 bg-white text-xs font-bold focus:border-primary outline-none">
+                            <option value="بانک سامان">بانک سامان</option>
+                            <option value="بانک ملت">بانک ملت</option>
+                            <option value="بانک ملی ایران">بانک ملی ایران</option>
+                            <option value="بانک پاسارگاد">بانک پاسارگاد</option>
+                            <option value="بانک تجارت">بانک تجارت</option>
+                            <option value="بانک صادرات">بانک صادرات</option>
+                            <option value="بانک سپه">بانک سپه</option>
+                            <option value="بانک آینده">بانک آینده</option>
+                            <option value="بانک شهر">بانک شهر</option>
+                            <option value="بانک پارسیان">بانک پارسیان</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-bold text-slate-600 mb-1">نام صاحب حساب:</label>
+                        <input type="text" name="bank_account_holder" id="inputBankAccountHolder" class="w-full px-3 py-1.5 rounded-xl border border-slate-300 bg-white text-xs font-bold focus:border-primary outline-none" placeholder="نام رسمی شخص یا مرکز">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-[11px] font-bold text-slate-600 mb-1">شماره شبا رسمی (IR با ۲۴ رقم):</label>
+                    <input type="text" name="bank_sheba" id="inputBankSheba" maxlength="26" dir="ltr" class="w-full px-3 py-1.5 rounded-xl border border-slate-300 bg-white text-xs font-mono font-bold text-left focus:border-primary outline-none" placeholder="IR000000000000000000000000">
+                </div>
+
+                <div class="flex justify-end pt-1">
+                    <button type="submit" class="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-sm transition-all flex items-center gap-1">
+                        <span class="material-symbols-outlined text-sm">check</span>
+                        <span>ذخیره تغییرات بانکی</span>
+                    </button>
+                </div>
+            </form>
         </div>
 
         <div class="flex justify-end pt-2 border-t border-slate-100">
@@ -396,28 +617,62 @@ function viewOrgDetails(orgId) {
         `).join('');
     }
 
-    // Populate Inventory
+    // Populate Inventory (Clean Titles, Categories, Stock Numbers & Prices)
     const invContainer = document.getElementById('modalInvList');
     if (details.inventory.length === 0) {
         invContainer.innerHTML = '<p class="text-slate-400 italic p-4 text-center">موجودی دارویی/کالایی در سیستم ثبت نشده است.</p>';
     } else {
         invContainer.innerHTML = details.inventory.map(i => `
-            <div class="p-3 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between">
-                <div>
-                    <div class="font-bold text-slate-900">${i.item_name}</div>
-                    <div class="text-[11px] text-slate-400">${i.category || 'دارو'}</div>
+            <div class="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/90 flex items-center justify-between gap-3 hover:bg-slate-100/80 transition-all">
+                <div class="flex items-center gap-3 min-w-0">
+                    <div class="w-10 h-10 rounded-xl ${i.item_type === 'medicine' ? 'bg-emerald-100 text-emerald-700' : 'bg-blue-100 text-blue-700'} flex items-center justify-center font-bold shrink-0 shadow-2xs">
+                        <span class="material-symbols-outlined text-lg">${i.item_type === 'medicine' ? 'medication' : 'inventory_2'}</span>
+                    </div>
+                    <div class="min-w-0 space-y-0.5">
+                        <div class="font-bold text-slate-900 text-xs sm:text-sm truncate" title="${i.item_name}">${i.item_name}</div>
+                        <div class="text-[11px] text-slate-500 flex items-center gap-2">
+                            <span class="px-2 py-0.5 rounded-md ${i.item_type === 'medicine' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-blue-50 text-blue-700 border border-blue-200'} font-semibold text-[10px]">${i.category || (i.item_type === 'medicine' ? 'دارو' : 'کالا')}</span>
+                            ${i.sub_title ? `<span class="truncate text-slate-400 font-mono text-[10px]" dir="ltr">${i.sub_title}</span>` : ''}
+                        </div>
+                    </div>
                 </div>
-                <div class="text-left font-bold">
-                    <span class="text-slate-800">${parseInt(i.quantity).toLocaleString()} عدد</span>
+                <div class="text-left shrink-0 font-bold space-y-0.5">
+                    <div class="text-xs sm:text-sm font-black text-slate-800">${parseInt(i.quantity || 0).toLocaleString()} <span class="text-[11px] font-normal text-slate-500">عدد</span></div>
+                    <div class="text-[11px] text-emerald-600 font-bold">${parseInt(i.effective_price || 0).toLocaleString()} تومان</div>
                 </div>
             </div>
         `).join('');
     }
 
     // Populate Finance
-    document.getElementById('modalBankName').innerText = org.bank_name || 'بانک ثبت نشده';
-    document.getElementById('modalBankSheba').innerText = org.bank_sheba || 'IR------------------------';
-    document.getElementById('modalAvailablePayout').innerText = parseInt(org.balance_available_for_payout || 0).toLocaleString() + ' تومان';
+    const bankName = org.bank_name || 'بانک سامان';
+    const bankSheba = org.bank_sheba || 'IR120560000000100234567891';
+    const bankHolder = org.bank_account_holder || org.manager_name || org.name;
+    const availPayout = parseInt(org.balance_available_for_payout || 0);
+
+    document.getElementById('modalBankName').innerText = bankName;
+    document.getElementById('modalBankAccountHolder').innerText = bankHolder;
+    document.getElementById('modalBankSheba').innerText = bankSheba;
+    document.getElementById('modalAvailablePayout').innerText = availPayout.toLocaleString() + ' تومان';
+
+    // Pre-fill Edit Bank Form
+    document.getElementById('editOrgId').value = org.id;
+    document.getElementById('inputBankName').value = bankName;
+    document.getElementById('inputBankAccountHolder').value = bankHolder;
+    document.getElementById('inputBankSheba').value = bankSheba;
+
+    // Direct Payout Action Row for this organization
+    document.getElementById('payoutOrgId').value = org.id;
+    const payoutActionRow = document.getElementById('modalPayoutActionRow');
+    if (availPayout > 0 && org.user_id) {
+        payoutActionRow.classList.remove('hidden');
+    } else {
+        payoutActionRow.classList.add('hidden');
+    }
+
+    // Reset Edit Form visibility
+    document.getElementById('formEditBank').classList.add('hidden');
+    document.getElementById('btnEditBankLabel').innerText = 'ویرایش / ثبت اطلاعات بانکی مرکز';
 
     switchOrgModalTab('docs');
     document.getElementById('orgDetailModal').classList.remove('hidden');
@@ -425,6 +680,27 @@ function viewOrgDetails(orgId) {
 
 function closeOrgModal() {
     document.getElementById('orgDetailModal').classList.add('hidden');
+}
+
+function toggleEditBankForm() {
+    const form = document.getElementById('formEditBank');
+    const label = document.getElementById('btnEditBankLabel');
+    if (form.classList.contains('hidden')) {
+        form.classList.remove('hidden');
+        label.innerText = 'بستن فرم ویرایش';
+    } else {
+        form.classList.add('hidden');
+        label.innerText = 'ویرایش / ثبت اطلاعات بانکی مرکز';
+    }
+}
+
+function copyModalSheba() {
+    const sheba = document.getElementById('modalBankSheba').innerText;
+    if (sheba && sheba !== '-') {
+        navigator.clipboard.writeText(sheba).then(() => {
+            alert('شماره شبا در حافظه موقت کپی شد:\n' + sheba);
+        });
+    }
 }
 
 function switchOrgModalTab(tab) {

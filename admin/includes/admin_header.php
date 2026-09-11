@@ -6,12 +6,24 @@ if (!isset($_SESSION['user_id'])) {
     header("Location: ../index.php");
     exit;
 }
-$stmt = $pdo->prepare("SELECT role, name FROM users WHERE id = ?");
+$stmt = $pdo->prepare("SELECT role, name, password FROM users WHERE id = ?");
 $stmt->execute([$_SESSION['user_id']]);
 $adminCheck = $stmt->fetch();
 if (!$adminCheck || $adminCheck['role'] !== 'admin') {
     header("Location: ../index.php");
     exit;
+}
+if (isset($_SESSION['password_hash']) && !empty($adminCheck['password'])) {
+    if (!hash_equals($_SESSION['password_hash'], hash('sha256', $adminCheck['password']))) {
+        $_SESSION = [];
+        if (session_status() === PHP_SESSION_ACTIVE) {
+            session_destroy();
+        }
+        header("Location: ../login.php?reason=password_changed");
+        exit;
+    }
+} elseif (!isset($_SESSION['password_hash']) && !empty($adminCheck['password'])) {
+    $_SESSION['password_hash'] = hash('sha256', $adminCheck['password']);
 }
 $adminName = $adminCheck['name'] ?? 'مدیر سیستم';
 ?>

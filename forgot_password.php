@@ -21,7 +21,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt->execute([$phone]);
             
             if ($stmt->rowCount() === 0) {
-                // Prevent user enumeration: Proceed to reset page identically without leaking user existence
+                // Prevent user enumeration: Simulate network delay to avoid timing attacks, set dummy session, proceed identically
+                usleep(rand(150000, 300000));
                 $_SESSION['reset_password_data'] = [
                     'phone'      => $phone,
                     'otp'        => '000000',

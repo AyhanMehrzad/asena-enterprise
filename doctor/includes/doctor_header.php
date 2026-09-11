@@ -6,12 +6,24 @@ if (!isset($_SESSION['user_id'])) {
     header("Location: ../login.php");
     exit;
 }
-$stmt = $pdo->prepare("SELECT role, name FROM users WHERE id = ?");
+$stmt = $pdo->prepare("SELECT role, name, password FROM users WHERE id = ?");
 $stmt->execute([$_SESSION['user_id']]);
 $docCheck = $stmt->fetch();
 if (!$docCheck || $docCheck['role'] !== 'doctor' || !Feature::has('clinic_booking')) {
     header("Location: ../index.php");
     exit;
+}
+if (isset($_SESSION['password_hash']) && !empty($docCheck['password'])) {
+    if (!hash_equals($_SESSION['password_hash'], hash('sha256', $docCheck['password']))) {
+        $_SESSION = [];
+        if (session_status() === PHP_SESSION_ACTIVE) {
+            session_destroy();
+        }
+        header("Location: ../login.php?reason=password_changed");
+        exit;
+    }
+} elseif (!isset($_SESSION['password_hash']) && !empty($docCheck['password'])) {
+    $_SESSION['password_hash'] = hash('sha256', $docCheck['password']);
 }
 $doctorName = $docCheck['name'] ?: 'پزشک گرامی';
 

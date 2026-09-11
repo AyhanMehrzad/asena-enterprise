@@ -28,16 +28,6 @@ if (!$batch) {
     die("حواله پایا با کد مشخص شده یافت نشد.");
 }
 
-// Fetch seller wallet & user info
-$sellerStmt = $pdo->prepare("
-    SELECT u.name, u.phone, u.national_id, w.* 
-    FROM users u 
-    LEFT JOIN seller_wallets w ON u.id = w.seller_id 
-    WHERE u.id = ?
-");
-$sellerStmt->execute([$userId]);
-$seller = $sellerStmt->fetch(PDO::FETCH_ASSOC);
-
 // Fetch items settled in this batch for this seller
 $ledgerStmt = $pdo->prepare("
     SELECT l.*, o.id as order_number, o.created_at as order_date, o.post_tracking_code 
@@ -49,6 +39,56 @@ $ledgerStmt = $pdo->prepare("
 $ledgerParams = $isAdmin ? [$batch['id']] : [$batch['id'], $userId];
 $ledgerStmt->execute($ledgerParams);
 $items = $ledgerStmt->fetchAll(PDO::FETCH_ASSOC);
+
+// Determine beneficiary user ID
+$beneficiaryUserId = $userId;
+if ($isAdmin) {
+    $targetSellerId = (int)($_GET['seller_id'] ?? 0);
+    if (!$targetSellerId && !empty($items)) {
+        $targetSellerId = (int)$items[0]['seller_id'];
+    }
+    if (!$targetSellerId && !empty($batch['paya_export_content'])) {
+        $tsvLines = explode("\r\n", trim($batch['paya_export_content']));
+        if (count($tsvLines) >= 2) {
+            $tsvCols = explode("\t", $tsvLines[1]);
+            $foundSheba = trim($tsvCols[0] ?? '');
+            if ($foundSheba) {
+                $swStmt = $pdo->prepare("SELECT seller_id FROM seller_wallets WHERE bank_sheba = ? LIMIT 1");
+                $swStmt->execute([$foundSheba]);
+                $targetSellerId = (int)$swStmt->fetchColumn();
+            }
+        }
+    }
+    if ($targetSellerId > 0) {
+        $beneficiaryUserId = $targetSellerId;
+    }
+}
+
+// Fetch seller wallet & user info
+$sellerStmt = $pdo->prepare("
+    SELECT u.name, u.phone, u.national_id, w.* 
+    FROM users u 
+    LEFT JOIN seller_wallets w ON u.id = w.seller_id 
+    WHERE u.id = ?
+");
+$sellerStmt->execute([$beneficiaryUserId]);
+$seller = $sellerStmt->fetch(PDO::FETCH_ASSOC);
+
+// If seller record is not found in DB, fallback to data from Paya export
+if (!$seller && !empty($batch['paya_export_content'])) {
+    $tsvLines = explode("\r\n", trim($batch['paya_export_content']));
+    if (count($tsvLines) >= 2) {
+        $tsvCols = explode("\t", $tsvLines[1]);
+        $seller = [
+            'name' => $tsvCols[2] ?? 'فروشنده همکار',
+            'bank_account_holder' => $tsvCols[2] ?? 'فروشنده همکار',
+            'bank_sheba' => $tsvCols[0] ?? '',
+            'bank_name' => $tsvCols[3] ?? 'شبکه بانکی شتاب/پایا',
+            'phone' => '-',
+            'bank_card_number' => '-'
+        ];
+    }
+}
 
 if (empty($items) && !$isAdmin) {
     die("شما دسترسی لازم برای مشاهده این رسید تسویه را ندارید.");

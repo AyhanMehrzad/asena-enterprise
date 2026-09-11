@@ -6,15 +6,11 @@
  * inspect recipient postal codes and locations, and verify customer delivery.
  */
 
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
-
-header('Content-Type: application/json; charset=utf-8');
-
 require_once __DIR__ . '/../includes/db.php';
 require_once __DIR__ . '/../includes/PostexShippingService.php';
 require_once __DIR__ . '/../includes/IranPostService.php';
+
+header('Content-Type: application/json; charset=utf-8');
 
 // Auth Guard: Admin or Seller
 $userId = $_SESSION['user_id'] ?? 0;
