@@ -24,8 +24,11 @@ class AiContentService {
     private ?string $proxy;
     private string $avalaiApiKey;
     private string $avalaiUrl = 'https://api.avalai.ir/v1/chat/completions';
-    private string $avalaiModel = 'gemini-3.5-flash-lite';
+    private string $avalaiModel = 'gemini-3.7-flash';
     private string $avalaiChatModel = 'gemini-3.5-flash-lite';
+    private string $avalaiTitlesModel = 'gemini-3.5-flash-lite';
+    private string $avalaiPolishModel = 'gemini-3.5-flash-lite';
+    private string $avalaiImageModel = 'gpt-image-2.5-flare';
 
     public function __construct(?PDO $pdo = null) {
         $this->pdo = $pdo;
@@ -44,8 +47,11 @@ class AiContentService {
         // AvalAI Configuration (Multi-model Iranian provider - ultra-low cost)
         $dbAvalaiKey = ($this->pdo instanceof PDO) ? get_setting($this->pdo, 'avalai_api_key', '') : '';
         $this->avalaiApiKey = !empty($dbAvalaiKey) ? $dbAvalaiKey : (getenv('AVALAI_API_KEY') ?: 'aa-OYnaadEq49DVrgUetouRgFRhmNjSuS7ZknCL5FdEQqHAehsl');
-        $this->avalaiModel = getenv('AVALAI_MODEL_ARTICLE') ?: 'gemini-3.5-flash-lite';
+        $this->avalaiModel = getenv('AVALAI_MODEL_ARTICLE') ?: 'gemini-3.7-flash';
         $this->avalaiChatModel = getenv('AVALAI_MODEL_CHAT') ?: 'gemini-3.5-flash-lite';
+        $this->avalaiTitlesModel = getenv('AVALAI_MODEL_TITLES') ?: 'gemini-3.5-flash-lite';
+        $this->avalaiPolishModel = getenv('AVALAI_MODEL_POLISH') ?: 'gemini-3.5-flash-lite';
+        $this->avalaiImageModel = getenv('AVALAI_MODEL_IMAGE') ?: 'gpt-image-2.5-flare';
     }
 
     /**
@@ -293,7 +299,7 @@ class AiContentService {
             ]
         ];
 
-        $raw = $this->callAvalAi($messages, 300, $this->avalaiModel, 0.6, 15);
+        $raw = $this->callAvalAi($messages, 300, $this->avalaiTitlesModel, 0.6, 15);
         if (empty($raw)) return null;
 
         $clean = preg_replace('/^```json\s*|\s*```$/ui', '', trim($raw));
@@ -325,7 +331,7 @@ class AiContentService {
             ]
         ];
 
-        $raw = $this->callAvalAi($messages, 600, $this->avalaiModel, 0.3, 15);
+        $raw = $this->callAvalAi($messages, 600, $this->avalaiPolishModel, 0.3, 15);
         return !empty($raw) ? trim($raw) : null;
     }
 
@@ -354,6 +360,54 @@ class AiContentService {
         if (is_array($parsed)) {
             return $parsed;
         }
+        return null;
+    }
+
+    /**
+     * Generate an AI image for a blog cover or clinic asset using AvalAI Tier 1 image models
+     * Models: gpt-image-2.5-flare, gpt-image-2.5-sunburst
+     */
+    public function generateImage(string $prompt, ?string $model = null, string $size = '1024x1024'): ?string {
+        if (empty($this->avalaiApiKey)) {
+            return null;
+        }
+
+        $model = $model ?: $this->avalaiImageModel;
+        $url = 'https://api.avalai.ir/v1/images/generations';
+
+        $payload = [
+            'model' => $model,
+            'prompt' => $prompt,
+            'n' => 1,
+            'size' => $size
+        ];
+
+        $ch = curl_init($url);
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_POST => true,
+            CURLOPT_POSTFIELDS => json_encode($payload),
+            CURLOPT_HTTPHEADER => [
+                'Content-Type: application/json',
+                'Authorization: Bearer ' . $this->avalaiApiKey
+            ],
+            CURLOPT_TIMEOUT => 40,
+            CURLOPT_SSL_VERIFYPEER => false,
+        ]);
+
+        $response = curl_exec($ch);
+        $err = curl_error($ch);
+        curl_close($ch);
+
+        if ($err || !$response) {
+            return null;
+        }
+
+        $data = json_decode($response, true);
+        if (!empty($data['data'][0]['url'])) {
+            return (string)$data['data'][0]['url'];
+        }
+
         return null;
     }
 

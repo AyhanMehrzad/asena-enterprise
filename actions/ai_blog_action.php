@@ -133,6 +133,34 @@ try {
             ], JSON_UNESCAPED_UNICODE);
             break;
 
+        case 'generate_image':
+            $prompt = trim($_POST['prompt'] ?? '');
+            $model = trim($_POST['model'] ?? 'gpt-image-2.5-flare');
+            $size = trim($_POST['size'] ?? '1024x1024');
+
+            if (empty($prompt)) {
+                echo json_encode(['status' => 'error', 'message' => 'توصیف تصویر (پرامپت) الزامی است.'], JSON_UNESCAPED_UNICODE);
+                exit;
+            }
+
+            $imageUrl = $aiService->generateImage($prompt, $model, $size);
+            if ($imageUrl) {
+                echo json_encode([
+                    'status' => 'success',
+                    'data' => [
+                        'url' => $imageUrl,
+                        'prompt' => $prompt,
+                        'model' => $model
+                    ]
+                ], JSON_UNESCAPED_UNICODE);
+            } else {
+                echo json_encode([
+                    'status' => 'error',
+                    'message' => 'خطا در تولید تصویر توسط مدل‌های هوش مصنوعی تصویرساز AvalAI.'
+                ], JSON_UNESCAPED_UNICODE);
+            }
+            break;
+
         default:
             echo json_encode(['status' => 'error', 'message' => 'عملیات نامعتبر است.'], JSON_UNESCAPED_UNICODE);
             break;
