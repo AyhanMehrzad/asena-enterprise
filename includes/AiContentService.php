@@ -30,7 +30,44 @@ class AiContentService {
     private string $avalaiPolishModel = 'gemini-3.5-flash-lite';
     private string $avalaiImageModel = 'gpt-image-2.5-flare';
 
+    public static function loadEnv(): void {
+        static $loaded = false;
+        if ($loaded) return;
+        $loaded = true;
+
+        $envPaths = [
+            __DIR__ . '/../../.env',
+            __DIR__ . '/../.env',
+            __DIR__ . '/.env',
+            dirname(__DIR__, 2) . '/.env',
+            dirname(__DIR__, 3) . '/.env'
+        ];
+
+        foreach ($envPaths as $path) {
+            if (file_exists($path) && is_readable($path)) {
+                $lines = file($path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+                foreach ($lines as $line) {
+                    $line = trim($line);
+                    if ($line === '' || strpos($line, '#') === 0) continue;
+                    if (strpos($line, '=') !== false) {
+                        list($key, $val) = explode('=', $line, 2);
+                        $key = trim($key);
+                        $val = trim($val, " \t\n\r\0\x0B\"'");
+                        if (getenv($key) === false || getenv($key) === '') {
+                            putenv("$key=$val");
+                        }
+                        if (!isset($_ENV[$key]) || $_ENV[$key] === '') {
+                            $_ENV[$key] = $val;
+                        }
+                    }
+                }
+                break;
+            }
+        }
+    }
+
     public function __construct(?PDO $pdo = null) {
+        self::loadEnv();
         $this->pdo = $pdo;
         
         $dbKey = ($this->pdo instanceof PDO) ? get_setting($this->pdo, 'gemini_api_key', '') : '';

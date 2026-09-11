@@ -1,5 +1,7 @@
 <?php
 require __DIR__ . '/../includes/db.php';
+require_once __DIR__ . '/../includes/AiContentService.php';
+AiContentService::loadEnv();
 header('Content-Type: application/json');
 
 if (!isset($_SESSION['user_id'])) {
