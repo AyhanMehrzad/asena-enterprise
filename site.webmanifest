@@ -1,41 +1,116 @@
 {
-  "name": "ASENA Company - Veterinary Clinic & Pet Care Platform",
-  "short_name": "ASENA",
-  "description": "پلتفرم یکپارچه کلینیک دامپزشکی، پت‌شاپ و داروخانه تخصصی آنلاین آسنا",
-  "start_url": "/",
+  "name": "آسنا | ASENA",
+  "short_name": "آسنا",
+  "description": "سامانه جامع و یکپارچه کلینیک دامپزشکی، پت‌شاپ آنلاین و داروخانه تخصصی آسنا",
+  "id": "asena-pet-platform",
+  "start_url": "pwa.php",
+  "scope": "./",
   "display": "standalone",
+  "display_override": [
+    "window-controls-overlay",
+    "standalone",
+    "minimal-ui"
+  ],
   "orientation": "portrait",
-  "background_color": "#f8fafc",
+  "background_color": "#002d72",
   "theme_color": "#002d72",
   "lang": "fa-IR",
   "dir": "rtl",
+  "categories": [
+    "medical",
+    "health",
+    "shopping",
+    "lifestyle"
+  ],
   "icons": [
     {
-      "src": "/assets/images/favicon-48x48.png",
+      "src": "assets/images/pwa-icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "assets/images/pwa-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "assets/images/pwa-icon-maskable-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "assets/images/pwa-icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "assets/images/favicon-48x48.png",
       "sizes": "48x48",
       "type": "image/png"
     },
     {
-      "src": "/assets/images/favicon-96x96.png",
+      "src": "assets/images/favicon-96x96.png",
       "sizes": "96x96",
       "type": "image/png"
     },
     {
-      "src": "/assets/images/favicon-192x192.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "/assets/images/favicon-512x512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "/apple-touch-icon.png",
+      "src": "apple-touch-icon.png",
       "sizes": "180x180",
       "type": "image/png"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "نوبت‌دهی آنلاین کلینیک",
+      "short_name": "نوبت‌دهی",
+      "description": "رزرو سریع وقت ویزیت با پزشک متخصص دامپزشک",
+      "url": "pwa.php?tab=booking",
+      "icons": [
+        {
+          "src": "assets/images/pwa-icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "پت‌شاپ تخصصی آنلاین",
+      "short_name": "پت‌شاپ",
+      "description": "سفارش غذای خشک، لوازم بهداشتی و اکسسوری پت",
+      "url": "pwa.php?tab=shop",
+      "icons": [
+        {
+          "src": "assets/images/pwa-icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "داروخانه تخصصی دامپزشکی",
+      "short_name": "داروخانه",
+      "description": "تامین داروهای مجاز، مکمل‌ها و تایید نسخه داروساز",
+      "url": "pwa.php?tab=pharmacy",
+      "icons": [
+        {
+          "src": "assets/images/pwa-icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "پرونده سلامت الکترونیک",
+      "short_name": "پرونده سلامت",
+      "description": "مشاهده کارت واکسیناسیون و تاریخچه درمان پت",
+      "url": "pwa.php?tab=records",
+      "icons": [
+        {
+          "src": "assets/images/pwa-icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
     }
   ]
 }
