@@ -29,6 +29,13 @@ class BpmsService
     public function __construct(PDO $pdo)
     {
         $this->pdo = $pdo;
+        // Auto-heal schema if license_number is missing in doctors table
+        try {
+            $cols = $this->pdo->query("SHOW COLUMNS FROM doctors LIKE 'license_number'")->fetchAll();
+            if (empty($cols)) {
+                $this->pdo->exec("ALTER TABLE doctors ADD COLUMN license_number VARCHAR(100) NULL DEFAULT NULL AFTER phone");
+            }
+        } catch (Throwable $e) {}
     }
 
     /**
@@ -289,7 +296,9 @@ class BpmsService
         $stmt = $this->pdo->query("
             SELECT p.*,
                    u.name as user_name, u.phone as user_phone,
-                   d.name as doctor_name, d.specialty as doctor_specialty, d.license_number as doctor_license,
+                   COALESCE(NULLIF(d.name, ''), NULLIF(p.vet_name, ''), '') as doctor_name,
+                   d.specialty as doctor_specialty,
+                   COALESCE(NULLIF(p.vet_license_number, ''), NULLIF(d.license_number, ''), '') as doctor_license,
                    pet.pet_name, pet.species, pet.breed, pet.birth_date, pet.allergies, pet.chronic_conditions, pet.weight_kg,
                    org.name as org_name
             FROM prescriptions p

@@ -205,7 +205,9 @@ if ($currentUser['role'] !== 'admin') {
 $bpmsStmt = $pdo->prepare("
     SELECT p.*,
            u.name as customer_name, u.phone as customer_phone,
-           d.name as doctor_name, d.specialty as doctor_specialty, d.license_number as doctor_license,
+           COALESCE(NULLIF(d.name, ''), NULLIF(p.vet_name, ''), '') as doctor_name,
+           d.specialty as doctor_specialty,
+           COALESCE(NULLIF(p.vet_license_number, ''), NULLIF(d.license_number, ''), '') as doctor_license,
            pet.pet_name, pet.species, pet.breed
     FROM prescriptions p
     LEFT JOIN users u ON p.user_id = u.id
