@@ -28,9 +28,6 @@ require_once __DIR__ . '/PostexShippingService.php';
 require_once __DIR__ . '/LeaderboardService.php';
 require_once __DIR__ . '/DataSecurityService.php';
 require_once __DIR__ . '/BpmsService.php';
-require_once __DIR__ . '/CircuitBreakerMiddleware.php';
-require_once __DIR__ . '/GlobalExceptionBoundary.php';
-require_once __DIR__ . '/UniversalBpmsEngine.php';
 
 class App {
     private static ?PDO $db = null;
@@ -54,7 +51,6 @@ class App {
     private static ?LeaderboardService $leaderboard = null;
     private static ?DataSecurityService $crypto = null;
     private static ?BpmsService $bpms = null;
-    private static ?UniversalBpmsEngine $universalBpms = null;
 
 
 
@@ -209,37 +205,12 @@ class App {
         return self::$bpms;
     }
 
-    public static function universalBpms(): UniversalBpmsEngine {
-        if (self::$universalBpms === null) {
-            self::$universalBpms = new UniversalBpmsEngine(self::db());
-        }
-        return self::$universalBpms;
-    }
-
     /**
-     * Boot enterprise request environment:
-     * 1. Layer 1: Fast-Drop Circuit Breaker (< 0.5ms, shields against 3+ bad requests)
-     * 2. Layer 2: Fail-Safe Global Exception & Error Boundary
-     * 3. Layer 3: Security Headers & Protected Session Initialization
-     * 4. Layer 4: Non-blocking Session Concurrency (Releases lock early for GET requests)
-     * 5. Layer 5: Traffic Monitoring, WAF, and Background Sync
+     * Boot enterprise request environment: Headers, Secure Session, Traffic Inspection, WAF, Background Postex Sync
      */
     public static function boot(): void {
-        // 1. Check Circuit Breaker before any database or session initialization
-        CircuitBreakerMiddleware::inspect();
-
-        // 2. Initialize global exception boundary
-        GlobalExceptionBoundary::init(self::hasDb() ? self::db() : null);
-
-        // 3. Security headers & session cookies
         SecurityMiddleware::applyHeaders();
         SecurityMiddleware::secureSession();
-
-        // 4. Non-blocking session lock release for read-only requests
-        if (($_SERVER['REQUEST_METHOD'] ?? '') === 'GET' && session_status() === PHP_SESSION_ACTIVE) {
-            session_write_close();
-        }
-
         if (self::hasDb()) {
             TrafficMonitoringService::inspectAndLog(self::db());
             WafMiddleware::inspect(self::db());
