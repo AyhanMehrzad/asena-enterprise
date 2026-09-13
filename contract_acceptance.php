@@ -206,6 +206,17 @@ require_once __DIR__ . '/includes/header.php';
                         </div>
                     <?php endforeach; ?>
                 </div>
+
+                <div class="pt-2 flex items-center justify-between text-xs text-slate-400">
+                    <span class="flex items-center gap-1.5">
+                        <span class="material-symbols-outlined text-xs text-amber-400">policy</span>
+                        <span>منطبق بر قانون تجارت الکترونیک، قانون حمایت از مصرف‌کننده، نظام دامپزشکی و سازمان غذا و دارو</span>
+                    </span>
+                    <a href="terms.php?role=<?= urlencode($rawRole) ?>" target="_blank" class="text-primary-light hover:underline font-bold flex items-center gap-1">
+                        <span>مطالعه منشور مشروح قوانین و چاپ نسخه رسمی</span>
+                        <span class="material-symbols-outlined text-xs">open_in_new</span>
+                    </a>
+                </div>
             </div>
 
             <!-- Digital Signature Form (Non-Bypassable Gate) -->
