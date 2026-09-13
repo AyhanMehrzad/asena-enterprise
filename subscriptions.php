@@ -7,13 +7,38 @@ if (!Feature::has('autoship')) {
 require_once 'includes/functions.php';
 
 // Fetch available products for the custom box builder from active catalogs
+// Enforces Autoship Inventory Authentication: Only suggests products with >= 5 units (3+ months stock buffer)
 $catalog_products = [];
 if (Feature::has('petshop_catalog')) {
-    $stmt = $pdo->query("SELECT id, name, category, price, discount_price, image_url, brand, target_animal, is_autoship, 'product' as item_source FROM products WHERE stock > 0 ORDER BY is_autoship DESC, rating_cache DESC LIMIT 50");
+    $stmt = $pdo->query("
+        SELECT p.id, p.name, p.category, p.price, p.discount_price, p.image_url, p.brand, p.target_animal, 
+               p.is_autoship, p.stock, p.autoship_min_months_stock, 'product' as item_source,
+               p.seller_id, p.organization_id,
+               o.name as org_name, o.type as org_type,
+               u.name as seller_name
+        FROM products p
+        LEFT JOIN organizations o ON p.organization_id = o.id
+        LEFT JOIN users u ON p.seller_id = u.id
+        WHERE p.stock >= IFNULL(p.autoship_min_months_stock, 5) AND p.stock >= 5
+        ORDER BY p.is_autoship DESC, p.rating_cache DESC 
+        LIMIT 50
+    ");
     $catalog_products = array_merge($catalog_products, $stmt->fetchAll(PDO::FETCH_ASSOC));
 }
 if (Feature::has('pharmacy_catalog')) {
-    $stmt = $pdo->query("SELECT id, name, category, price, discount_price, image_url, brand, target_animal, is_autoship, 'pharmacy' as item_source FROM pharmacy_medicines WHERE stock > 0 ORDER BY is_autoship DESC, rating_cache DESC LIMIT 50");
+    $stmt = $pdo->query("
+        SELECT m.id, m.name, m.category, m.price, m.discount_price, m.image_url, m.brand, m.target_animal, 
+               m.is_autoship, m.stock, m.autoship_min_months_stock, 'pharmacy' as item_source,
+               m.seller_id, m.organization_id,
+               o.name as org_name, o.type as org_type,
+               u.name as seller_name
+        FROM pharmacy_medicines m
+        LEFT JOIN organizations o ON m.organization_id = o.id
+        LEFT JOIN users u ON m.seller_id = u.id
+        WHERE m.stock >= IFNULL(m.autoship_min_months_stock, 5) AND m.stock >= 5
+        ORDER BY m.is_autoship DESC, m.rating_cache DESC 
+        LIMIT 50
+    ");
     $catalog_products = array_merge($catalog_products, $stmt->fetchAll(PDO::FETCH_ASSOC));
 }
 
@@ -216,11 +241,19 @@ include 'includes/header.php';
                                         <img src="<?= htmlspecialchars($prod['image_url']) ?>" onerror="this.src='assets/images/pharma-default.svg'" class="w-full h-full object-cover" alt="<?= htmlspecialchars($prod['name']) ?>">
                                     </div>
                                     <div class="flex-1 min-w-0">
-                                        <span class="text-[10px] font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded-md mb-1 inline-block"><?= htmlspecialchars($prod['category']) ?></span>
+                                        <?php $provTag = AutoshipService::resolveProviderTag($prod); ?>
+                                        <div class="flex items-center gap-1.5 flex-wrap mb-1">
+                                            <span class="text-[9px] font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded-md inline-block"><?= htmlspecialchars($prod['category']) ?></span>
+                                            <a href="<?= htmlspecialchars($provTag['profile_url']) ?>" target="_blank" class="text-[9px] font-bold <?= htmlspecialchars($provTag['badge_class']) ?> border px-1.5 py-0.5 rounded-md inline-flex items-center gap-0.5 hover:opacity-85 transition-opacity" title="ارائه‌دهنده رسمی">
+                                                <span class="material-symbols-outlined text-[10px]"><?= $provTag['icon'] ?></span>
+                                                <span class="truncate max-w-[110px]"><?= htmlspecialchars($provTag['name']) ?></span>
+                                            </a>
+                                        </div>
                                         <h4 class="text-xs font-bold text-on-surface truncate leading-tight"><?= htmlspecialchars($prod['name']) ?></h4>
-                                        <div class="mt-1 flex items-center gap-1.5">
+                                        <div class="mt-1 flex items-center gap-1.5 flex-wrap">
                                             <span class="text-xs font-bold text-primary font-mono"><?= number_format($prod['price']) ?> تومان</span>
-                                            <span class="text-[10px] text-emerald-800 bg-emerald-100 font-bold px-1.5 py-0.2 rounded">-۱۵٪ اشتراک</span>
+                                            <span class="text-[9px] text-emerald-800 bg-emerald-100 font-bold px-1.5 py-0.2 rounded">-۱۵٪ اشتراک</span>
+                                            <span class="text-[9px] text-teal-800 bg-teal-50 border border-teal-200 font-bold px-1 rounded">📦 ذخیره: <?= (int)$prod['stock'] ?></span>
                                         </div>
                                     </div>
                                 </div>

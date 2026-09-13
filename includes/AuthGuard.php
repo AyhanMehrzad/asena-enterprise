@@ -6,6 +6,7 @@
 
 require_once __DIR__ . '/SecurityAuditService.php';
 require_once __DIR__ . '/SecurityMiddleware.php';
+require_once __DIR__ . '/ContractService.php';
 
 class AuthGuard {
     private static ?array $cachedUser = null;
@@ -70,23 +71,43 @@ class AuthGuard {
     }
 
     /**
-     * Require authenticated session
+     * Require authenticated session with automated non-bypassable contract gate
      */
-    public static function requireAuth(?string $returnUrl = null): array {
+    public static function requireAuth(?string $returnUrl = null, bool $checkContract = true): array {
         $u = self::user();
+        $script = str_replace('\\', '/', $_SERVER['SCRIPT_NAME'] ?? '');
+
+        if (preg_match('#/(organization|admin|pharmacist|doctor|seller)/#', $script)) {
+            $baseApp = dirname(dirname($script));
+        } else {
+            $baseApp = dirname($script);
+        }
+        $baseApp = rtrim(str_replace('\\', '/', $baseApp), '/');
+
         if (!$u) {
             $url = $returnUrl ?? ($_SERVER['REQUEST_URI'] ?? 'index.php');
-            $script = str_replace('\\', '/', $_SERVER['SCRIPT_NAME'] ?? '');
-            if (preg_match('#/(organization|admin|pharmacist|doctor|seller)/#', $script)) {
-                $baseApp = dirname(dirname($script));
-            } else {
-                $baseApp = dirname($script);
-            }
-            $baseApp = rtrim(str_replace('\\', '/', $baseApp), '/');
             $loginTarget = (!empty($baseApp) && $baseApp !== '.' && $baseApp !== '/') ? ($baseApp . '/login.php') : '/login.php';
             header("Location: " . $loginTarget . "?return_url=" . urlencode($url));
             exit;
         }
+
+        // Automated Non-Bypassable Contract Acceptance Gate (Both sides win)
+        if ($checkContract && ($u['role'] ?? '') !== 'admin') {
+            $isContractPage = (bool)preg_match('#/contract_acceptance\.php#i', $script);
+            $isLogoutPage   = (bool)preg_match('#/logout\.php#i', $script);
+
+            if (!$isContractPage && !$isLogoutPage) {
+                global $pdo;
+                $contractService = new ContractService($pdo);
+                if (!$contractService->hasAcceptedCurrentContract((int)$u['id'], $u['role'] ?? 'user')) {
+                    $contractTarget = (!empty($baseApp) && $baseApp !== '.' && $baseApp !== '/') ? ($baseApp . '/contract_acceptance.php') : '/contract_acceptance.php';
+                    $url = $returnUrl ?? ($_SERVER['REQUEST_URI'] ?? 'index.php');
+                    header("Location: " . $contractTarget . "?return_url=" . urlencode($url));
+                    exit;
+                }
+            }
+        }
+
         return $u;
     }
 

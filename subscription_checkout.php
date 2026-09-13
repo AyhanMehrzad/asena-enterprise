@@ -3,14 +3,9 @@ require_once 'includes/db.php';
 require_once 'includes/functions.php';
 require_once 'includes/gateway.php';
 
-if (!isset($_SESSION['user_id'])) {
-    header('Location: login.php');
-    exit;
-}
+require_once 'includes/AuthGuard.php';
 
-$userStmt = $pdo->prepare("SELECT email, phone, city, address FROM users WHERE id = ?");
-$userStmt->execute([$_SESSION['user_id']]);
-$currentUser = $userStmt->fetch(PDO::FETCH_ASSOC);
+$currentUser = AuthGuard::requireAuth();
 
 if (empty(trim((string)$currentUser['city'])) || empty(trim((string)$currentUser['address']))) {
     $_SESSION['profile_error'] = "لطفاً پیش از خرید اشتراک، آدرس منزل و شهر خود را در پروفایل تکمیل کنید تا امکان ارسال مرسولات فراهم باشد.";

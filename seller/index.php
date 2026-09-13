@@ -615,10 +615,20 @@ foreach ($sellerProducts as $p) {
                                     </div>
                                     <div class="min-w-0">
                                         <div class="font-bold text-slate-900 truncate max-w-xs"><?= htmlspecialchars($prod['name']) ?></div>
-                                        <div class="flex items-center gap-2 mt-0.5">
+                                        <div class="flex items-center gap-2 mt-0.5 flex-wrap">
                                             <span class="text-[10px] text-slate-500 bg-slate-100 px-2 py-0.5 rounded"><?= htmlspecialchars($prod['category']) ?></span>
                                             <?php if (!empty($prod['is_autoship'])): ?>
-                                                <span class="text-[10px] text-teal-700 bg-teal-50 px-1.5 py-0.5 rounded font-bold border border-teal-200">اتوشیپ</span>
+                                                <?php if ($stk >= 5): ?>
+                                                    <span class="text-[10px] text-teal-800 bg-teal-50 px-2 py-0.5 rounded-md font-bold border border-teal-200 inline-flex items-center gap-1" title="واجد شرایط نمایش در باکس و پیشنهادات اشتراک دوره‌ای">
+                                                        <span class="material-symbols-outlined text-[11px]">autorenew</span>
+                                                        اتوشیپ: سهمیه تکمیل (<?= $stk ?> عدد)
+                                                    </span>
+                                                <?php else: ?>
+                                                    <span class="text-[10px] text-amber-800 bg-amber-50 px-2 py-0.5 rounded-md font-bold border border-amber-200 inline-flex items-center gap-1" title="جهت فعال‌سازی در سبد اتوشیپ، موجودی را به حداقل ۵ عدد برسانید">
+                                                        <span class="material-symbols-outlined text-[11px]">warning</span>
+                                                        اتوشیپ: نیازمند شارژ انبار (<?= 5 - $stk ?> عدد کسری)
+                                                    </span>
+                                                <?php endif; ?>
                                             <?php endif; ?>
                                         </div>
                                     </div>

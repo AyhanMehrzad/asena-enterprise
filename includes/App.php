@@ -28,6 +28,7 @@ require_once __DIR__ . '/PostexShippingService.php';
 require_once __DIR__ . '/LeaderboardService.php';
 require_once __DIR__ . '/DataSecurityService.php';
 require_once __DIR__ . '/BpmsService.php';
+require_once __DIR__ . '/ContractService.php';
 
 class App {
     private static ?PDO $db = null;
@@ -51,6 +52,7 @@ class App {
     private static ?LeaderboardService $leaderboard = null;
     private static ?DataSecurityService $crypto = null;
     private static ?BpmsService $bpms = null;
+    private static ?ContractService $contract = null;
 
 
 
@@ -203,6 +205,13 @@ class App {
             self::$bpms = new BpmsService(self::db());
         }
         return self::$bpms;
+    }
+
+    public static function contract(): ContractService {
+        if (self::$contract === null) {
+            self::$contract = new ContractService(self::db());
+        }
+        return self::$contract;
     }
 
     /**

@@ -1,31 +1,12 @@
 <?php
-require_once '../includes/db.php';
+require_once dirname(__DIR__, 2) . '/includes/db.php';
+require_once dirname(__DIR__, 2) . '/includes/App.php';
+require_once dirname(__DIR__, 2) . '/includes/AuthGuard.php';
+require_once dirname(__DIR__, 2) . '/includes/functions.php';
 
-// Route Guard
-if (!isset($_SESSION['user_id'])) {
-    header("Location: ../login.php");
-    exit;
-}
-$stmt = $pdo->prepare("SELECT role, name, password FROM users WHERE id = ?");
-$stmt->execute([$_SESSION['user_id']]);
-$docCheck = $stmt->fetch();
-if (!$docCheck || $docCheck['role'] !== 'doctor' || !Feature::has('clinic_booking')) {
-    header("Location: ../index.php");
-    exit;
-}
-if (isset($_SESSION['password_hash']) && !empty($docCheck['password'])) {
-    if (!hash_equals($_SESSION['password_hash'], hash('sha256', $docCheck['password']))) {
-        $_SESSION = [];
-        if (session_status() === PHP_SESSION_ACTIVE) {
-            session_destroy();
-        }
-        header("Location: ../login.php?reason=password_changed");
-        exit;
-    }
-} elseif (!isset($_SESSION['password_hash']) && !empty($docCheck['password'])) {
-    $_SESSION['password_hash'] = hash('sha256', $docCheck['password']);
-}
-$doctorName = $docCheck['name'] ?: 'پزشک گرامی';
+// Route Guard: Doctor or Admin
+$currentUser = AuthGuard::requireRole(['doctor', 'admin'], $pdo);
+$doctorName = $currentUser['name'] ?: 'پزشک گرامی';
 
 // Also fetch doctor profile info
 $stmt = $pdo->prepare("SELECT * FROM doctors WHERE user_id = ?");

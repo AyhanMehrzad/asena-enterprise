@@ -142,12 +142,29 @@ if ($total == 0 && empty($search) && empty($pharmacy_tag) && empty($animal) && e
     $countStmt = $pdo->query("SELECT COUNT(*) FROM pharmacy_medicines");
     $total = $countStmt->fetchColumn();
     $totalPages = ceil($total / $limit);
-    $stmt = $pdo->prepare("SELECT * FROM pharmacy_medicines $orderBy LIMIT $limit OFFSET $offset");
+    $stmt = $pdo->prepare("
+        SELECT p.*, 
+               o.name as org_name, o.type as org_type, o.id as org_id,
+               u.name as seller_name
+        FROM pharmacy_medicines p
+        LEFT JOIN organizations o ON p.organization_id = o.id
+        LEFT JOIN users u ON p.seller_id = u.id
+        $orderBy LIMIT $limit OFFSET $offset
+    ");
     $stmt->execute();
     $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
 } else {
     $totalPages = ceil($total / $limit);
-    $stmt = $pdo->prepare("SELECT * FROM pharmacy_medicines $whereClause $orderBy LIMIT $limit OFFSET $offset");
+    $stmt = $pdo->prepare("
+        SELECT p.*, 
+               o.name as org_name, o.type as org_type, o.id as org_id,
+               u.name as seller_name
+        FROM pharmacy_medicines p
+        LEFT JOIN organizations o ON p.organization_id = o.id
+        LEFT JOIN users u ON p.seller_id = u.id
+        $whereClause 
+        $orderBy LIMIT $limit OFFSET $offset
+    ");
     $stmt->execute($params);
     $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
@@ -603,6 +620,39 @@ function buildUrl($updates) {
                         <a href="product_details.php?id=<?php echo $product['id']; ?>" class="block mb-2">
                             <h3 class="text-sm sm:text-base font-bold text-on-surface line-clamp-2 hover:text-primary transition-colors leading-snug"><?php echo htmlspecialchars($product['name']); ?></h3>
                         </a>
+
+                        <?php 
+                            $provTag = AutoshipService::resolveProviderTag($product);
+                            $autoAuth = AutoshipService::authenticateAutoshipInventory($product);
+                        ?>
+
+                        <!-- Organization / Pharmacy Tag Visible on Card -->
+                        <div class="mb-2">
+                            <a href="<?php echo htmlspecialchars($provTag['profile_url']); ?>" class="text-[10px] font-bold <?php echo htmlspecialchars($provTag['badge_class']); ?> border px-2 py-0.5 rounded-lg inline-flex items-center gap-1 hover:opacity-85 transition-opacity" title="داروخانه و مرکز درمانی رسمی">
+                                <span class="material-symbols-outlined text-[12px]"><?php echo $provTag['icon']; ?></span>
+                                <span class="truncate max-w-[140px]"><?php echo htmlspecialchars($provTag['name']); ?></span>
+                                <span class="material-symbols-outlined text-[11px] text-teal-600">verified</span>
+                            </a>
+                        </div>
+
+                        <!-- Autoship Eligibility Badge -->
+                        <?php if(!empty($product['is_autoship'])): ?>
+                            <?php if($autoAuth['is_eligible']): ?>
+                            <div class="mb-2">
+                                <span class="text-[10px] text-emerald-800 font-bold bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md inline-flex items-center gap-1" title="<?php echo htmlspecialchars($autoAuth['user_note']); ?>">
+                                    <span class="material-symbols-outlined text-[12px]">autorenew</span>
+                                    اشتراک دوره‌ای: <?php echo $product['autoship_discount'] ?? 10; ?>٪ تخفیف
+                                </span>
+                            </div>
+                            <?php else: ?>
+                            <div class="mb-2">
+                                <span class="text-[10px] text-slate-500 font-medium bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-md inline-flex items-center gap-1" title="<?php echo htmlspecialchars($autoAuth['user_note']); ?>">
+                                    <span class="material-symbols-outlined text-[12px] text-amber-500">info</span>
+                                    خرید تکی فعال (سهمیه اشتراک محدود)
+                                </span>
+                            </div>
+                            <?php endif; ?>
+                        <?php endif; ?>
 
                         <!-- Card Footer with Price & Permanent Touch-Friendly Button -->
                         <div class="mt-auto flex items-center justify-between pt-3 border-t border-outline-variant/20 gap-2">

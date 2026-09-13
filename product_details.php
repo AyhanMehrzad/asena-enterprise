@@ -47,6 +47,24 @@ if (!$product) {
     exit;
 }
 
+// Resolve provider organization & seller details for prominent card tagging
+if (!empty($product['organization_id'])) {
+    $orgStmt = $pdo->prepare("SELECT name as org_name, type as org_type, city, rating as org_rating, review_count as org_reviews FROM organizations WHERE id = ?");
+    $orgStmt->execute([$product['organization_id']]);
+    $orgData = $orgStmt->fetch(PDO::FETCH_ASSOC);
+    if ($orgData) {
+        $product = array_merge($product, $orgData);
+    }
+}
+if (!empty($product['seller_id'])) {
+    $sellerStmt = $pdo->prepare("SELECT name as seller_name FROM users WHERE id = ?");
+    $sellerStmt->execute([$product['seller_id']]);
+    $sellerName = $sellerStmt->fetchColumn();
+    if ($sellerName) {
+        $product['seller_name'] = $sellerName;
+    }
+}
+
 // Handle review submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'submit_review') {
     csrf_verify();
@@ -237,6 +255,28 @@ require_once 'includes/header.php';
                     <?php endif; ?>
                 </div>
 
+                <?php 
+                    $provTag = AutoshipService::resolveProviderTag($product);
+                    $autoAuth = AutoshipService::authenticateAutoshipInventory($product);
+                ?>
+
+                <!-- Prominent Provider & Organization Badge -->
+                <div class="mb-3 flex items-center gap-2 flex-wrap">
+                    <a href="<?php echo htmlspecialchars($provTag['profile_url']); ?>" class="text-xs font-bold <?php echo htmlspecialchars($provTag['badge_class']); ?> border px-3 py-1.5 rounded-xl inline-flex items-center gap-1.5 hover:opacity-85 shadow-sm transition-opacity" title="تأمین‌کننده رسمی تأیید شده در سامانه آسنا">
+                        <span class="material-symbols-outlined text-base"><?php echo $provTag['icon']; ?></span>
+                        <span class="font-bold"><?php echo htmlspecialchars($provTag['tag_label']); ?></span>
+                        <?php if ($provTag['is_verified']): ?>
+                            <span class="material-symbols-outlined text-xs text-primary" title="نشان اعتبارسنجی مدارک">verified</span>
+                        <?php endif; ?>
+                    </a>
+
+                    <?php if(!empty($product['brand'])): ?>
+                        <span class="text-xs font-bold text-slate-600 bg-slate-100 border border-slate-200 px-3 py-1.5 rounded-xl">
+                            برند: <?php echo htmlspecialchars($product['brand']); ?>
+                        </span>
+                    <?php endif; ?>
+                </div>
+
                 <h1 class="text-2xl lg:text-3xl font-bold text-on-surface mb-4 leading-snug"><?php echo htmlspecialchars($product['name']); ?></h1>
                 
                 <!-- Ratings Summary -->
@@ -257,33 +297,44 @@ require_once 'includes/header.php';
                     <?php echo nl2br(htmlspecialchars(!empty(trim($product['description'] ?? '')) ? $product['description'] : 'توضیحات و مشخصات فنی این کالا توسط دامپزشکان و کارشناسان آسنا تایید شده است. برای کسب اطلاعات بیشتر می‌توانید با بخش مشاوره تماس حاصل فرمایید.')); ?>
                 </div>
 
-                <!-- Autoship Option Selector Box (Page 6) -->
+                <!-- Autoship Option Selector Box (Page 6 - Balanced Win-Win) -->
                 <?php if($is_autoship): ?>
-                <div class="bg-gradient-to-r from-amber-50 to-orange-50 p-5 rounded-2xl border-2 border-secondary-container/30 mb-8">
-                    <div class="flex items-center justify-between mb-3">
-                        <div class="flex items-center gap-2">
-                            <span class="material-symbols-outlined text-secondary-container text-2xl animate-spin" style="animation-duration: 10s;">autorenew</span>
-                            <div>
-                                <span class="text-sm font-bold text-primary block">خرید اشتراکی با تحویل خودکار (Autoship)</span>
-                                <span class="text-xs text-on-surface-variant">تخفیف مداوم <?php echo $autoship_discount; ?>٪ و تحویل سروقت در بازه دلخواه</span>
+                    <?php if($autoAuth['is_eligible']): ?>
+                    <div class="bg-gradient-to-r from-amber-50 to-orange-50 p-5 rounded-2xl border-2 border-secondary-container/30 mb-8">
+                        <div class="flex items-center justify-between mb-3">
+                            <div class="flex items-center gap-2">
+                                <span class="material-symbols-outlined text-secondary-container text-2xl animate-spin" style="animation-duration: 10s;">autorenew</span>
+                                <div>
+                                    <span class="text-sm font-bold text-primary block">خرید اشتراکی با تحویل خودکار (Autoship)</span>
+                                    <span class="text-xs text-on-surface-variant">تخفیف مداوم <?php echo $autoship_discount; ?>٪ و تحویل سروقت در بازه دلخواه (موجودی پایدار)</span>
+                                </div>
                             </div>
+                            <span class="bg-secondary-container text-white text-xs font-bold px-3 py-1 rounded-full shadow-sm">
+                                <?php echo number_format($autoship_price); ?> تومان
+                            </span>
                         </div>
-                        <span class="bg-secondary-container text-white text-xs font-bold px-3 py-1 rounded-full shadow-sm">
-                            <?php echo number_format($autoship_price); ?> تومان
-                        </span>
+                        
+                        <div class="flex flex-wrap items-center gap-3 text-xs pt-2 border-t border-secondary-container/20">
+                            <label class="flex items-center gap-1.5 cursor-pointer font-bold text-primary">
+                                <input type="radio" name="purchase_type" value="one_time" checked class="text-primary focus:ring-primary">
+                                خرید معمولی یک‌باره
+                            </label>
+                            <label class="flex items-center gap-1.5 cursor-pointer font-bold text-secondary-container">
+                                <input type="radio" name="purchase_type" value="autoship" class="text-secondary-container focus:ring-secondary-container">
+                                ارسال دوره‌ای خودکار (با <?php echo $autoship_discount; ?>٪ تخفیف)
+                            </label>
+                        </div>
                     </div>
-                    
-                    <div class="flex flex-wrap items-center gap-3 text-xs pt-2 border-t border-secondary-container/20">
-                        <label class="flex items-center gap-1.5 cursor-pointer font-bold text-primary">
-                            <input type="radio" name="purchase_type" value="one_time" checked class="text-primary focus:ring-primary">
-                            خرید معمولی یک‌باره
-                        </label>
-                        <label class="flex items-center gap-1.5 cursor-pointer font-bold text-secondary-container">
-                            <input type="radio" name="purchase_type" value="autoship" class="text-secondary-container focus:ring-secondary-container">
-                            ارسال دوره‌ای خودکار (با <?php echo $autoship_discount; ?>٪ تخفیف)
-                        </label>
+                    <?php else: ?>
+                    <!-- Friendly Fallback: Single Purchase Active, Autoship Paused (Neither User nor Provider is Sad) -->
+                    <div class="bg-amber-50/90 border border-amber-200/90 p-4 rounded-2xl mb-8 flex items-start gap-3 shadow-sm">
+                        <span class="material-symbols-outlined text-amber-600 text-xl shrink-0 mt-0.5">verified</span>
+                        <div class="text-xs leading-relaxed text-amber-900">
+                            <strong class="block mb-0.5 font-bold text-amber-950">📦 امکان خرید تکی کالا فعال است</strong>
+                            جهت تضمین کیفیت و جلوگیری از کسری انبار در ماه‌های آینده، سفارش دوره‌ای (اشتراک خودکار) برای این کالا موقتاً غیرفعال است. شما می‌توانید همین حالا این کالا را به صورت تکی سفارش دهید.
+                        </div>
                     </div>
-                </div>
+                    <?php endif; ?>
                 <?php endif; ?>
             </div>
 

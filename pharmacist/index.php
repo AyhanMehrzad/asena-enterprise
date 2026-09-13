@@ -559,6 +559,22 @@ $fmtDate = new IntlDateFormatter('fa_IR@calendar=persian', IntlDateFormatter::FU
                                 <td class="p-4">
                                     <div class="font-bold text-slate-900"><?= htmlspecialchars($med['name']) ?></div>
                                     <div class="text-[11px] text-slate-500 font-mono mt-0.5"><?= htmlspecialchars($med['generic_name'] ?? '') ?></div>
+                                    <?php if (!empty($med['is_autoship'])): ?>
+                                        <?php $mStk = (int)$med['stock']; ?>
+                                        <div class="mt-1">
+                                            <?php if ($mStk >= 5): ?>
+                                                <span class="text-[10px] text-teal-800 bg-teal-50 px-2 py-0.5 rounded font-bold border border-teal-200 inline-flex items-center gap-1" title="واجد شرایط اشتراک دوره‌ای دارویی">
+                                                    <span class="material-symbols-outlined text-[11px]">autorenew</span>
+                                                    اتوشیپ: سهمیه فعال (<?= $mStk ?> عدد)
+                                                </span>
+                                            <?php else: ?>
+                                                <span class="text-[10px] text-amber-800 bg-amber-50 px-2 py-0.5 rounded font-bold border border-amber-200 inline-flex items-center gap-1" title="جهت فعال‌سازی در سبد اشتراک دوره‌ای، موجودی را به حداقل ۵ عدد برسانید">
+                                                    <span class="material-symbols-outlined text-[11px]">warning</span>
+                                                    اتوشیپ: نیازمند شارژ انبار (<?= 5 - $mStk ?> عدد کسری)
+                                                </span>
+                                            <?php endif; ?>
+                                        </div>
+                                    <?php endif; ?>
                                 </td>
                                 <td class="p-4">
                                     <span class="px-2 py-0.5 rounded-lg bg-slate-100 text-slate-700 text-[11px] font-bold">

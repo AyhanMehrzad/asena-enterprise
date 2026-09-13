@@ -1,19 +1,12 @@
 <?php
 require_once 'includes/db.php';
-if (!isset($_SESSION['user_id'])) {
-    header("Location: login.php");
-    exit;
-}
+require_once 'includes/AuthGuard.php';
 
-$user_id = $_SESSION['user_id'];
+$user = AuthGuard::requireAuth();
+$user_id = (int)$user['id'];
 $success = $_SESSION['profile_success'] ?? '';
 $error = $_SESSION['profile_error'] ?? '';
 unset($_SESSION['profile_success'], $_SESSION['profile_error']);
-
-// Fetch user info
-$stmt = $pdo->prepare("SELECT * FROM users WHERE id = ?");
-$stmt->execute([$user_id]);
-$user = $stmt->fetch(PDO::FETCH_ASSOC);
 
 $userRole = $user['role'] ?? 'user';
 
