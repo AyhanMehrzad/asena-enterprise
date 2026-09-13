@@ -78,7 +78,11 @@ $taxOnAppts     = get_setting($pdo, 'tax_on_appointments_enabled', '1');
 $autoPayoutEnabled = get_setting($pdo, 'auto_payout_enabled', '1');
 $autoPayoutDay     = (int)get_setting($pdo, 'auto_payout_day', 4);
 $autoPayoutTime    = get_setting($pdo, 'auto_payout_time', '09:00');
-$enamadCode        = get_setting($pdo, 'enamad_html_code', '');
+$defaultEnamadCode = "<a referrerpolicy='origin' target='_blank' href='https://trustseal.enamad.ir/?id=7706608&Code=qBmonKZeAe36PvBvs1zpTGrrRb7uFJs8'><img referrerpolicy='origin' src='https://trustseal.enamad.ir/logo.aspx?id=7706608&Code=qBmonKZeAe36PvBvs1zpTGrrRb7uFJs8' alt='' style='cursor:pointer' code='qBmonKZeAe36PvBvs1zpTGrrRb7uFJs8'></a>";
+$enamadCode        = get_setting($pdo, 'enamad_html_code', $defaultEnamadCode);
+if (empty(trim((string)$enamadCode))) {
+    $enamadCode = $defaultEnamadCode;
+}
 
 // Iranian Bank Card Prefix Detection
 function detectBankName(string $card): string {

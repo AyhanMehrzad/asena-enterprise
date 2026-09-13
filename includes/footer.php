@@ -65,22 +65,16 @@
                     
                     <div class="flex items-center gap-3 pt-1">
                         <?php 
-                        $enamadHtml = ($pdo instanceof PDO) ? get_setting($pdo, 'enamad_html_code', '') : '';
-                        if (!empty($enamadHtml)): 
-                            echo $enamadHtml;
-                        else:
+                        $defaultEnamadCode = "<a referrerpolicy='origin' target='_blank' href='https://trustseal.enamad.ir/?id=7706608&Code=qBmonKZeAe36PvBvs1zpTGrrRb7uFJs8'><img referrerpolicy='origin' src='https://trustseal.enamad.ir/logo.aspx?id=7706608&Code=qBmonKZeAe36PvBvs1zpTGrrRb7uFJs8' alt='نماد اعتماد الکترونیکی آسنا' style='cursor:pointer' code='qBmonKZeAe36PvBvs1zpTGrrRb7uFJs8'></a>";
+                        $enamadHtml = ($pdo instanceof PDO) ? get_setting($pdo, 'enamad_html_code', $defaultEnamadCode) : $defaultEnamadCode;
+                        if (empty(trim((string)$enamadHtml))) {
+                            $enamadHtml = $defaultEnamadCode;
+                        }
                         ?>
-                        <!-- Official Enamad Badge Slot -->
-                        <a href="https://enamad.ir" target="_blank" rel="noopener noreferrer" class="w-20 h-24 p-2 bg-white rounded-2xl border border-slate-200 shadow-xs flex flex-col items-center justify-between text-center group hover:border-primary transition-all cursor-pointer" title="نماد اعتماد الکترونیکی مرکز توسعه تجارت الکترونیکی">
-                            <div class="w-10 h-10 flex items-center justify-center mt-1">
-                                <svg class="w-8 h-8 text-primary group-hover:scale-105 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-                                    <path d="m9 12 2 2 4-4"/>
-                                </svg>
-                            </div>
-                            <span class="text-[9px] font-black text-slate-700 group-hover:text-primary transition-colors leading-tight">نماد اعتماد الکترونیکی</span>
-                            <span class="text-[8px] text-emerald-600 font-bold bg-emerald-50 px-1.5 py-0.5 rounded-full">اینماد تاییدشده</span>
-                        </a>
+                        <!-- Official Enamad Trust Seal Badge Slot -->
+                        <div class="w-20 h-24 p-1.5 bg-white rounded-2xl border border-slate-200 shadow-xs flex items-center justify-center text-center group hover:border-primary transition-all cursor-pointer enamad-trust-seal overflow-hidden" title="نماد اعتماد الکترونیکی مرکز توسعه تجارت الکترونیکی">
+                            <?= $enamadHtml ?>
+                        </div>
 
                         <!-- Samandehi Badge Slot -->
                         <a href="https://samandehi.ir" target="_blank" rel="noopener noreferrer" class="w-20 h-24 p-2 bg-white rounded-2xl border border-slate-200 shadow-xs flex flex-col items-center justify-between text-center group hover:border-[#fd8100] transition-all cursor-pointer" title="نشان ملی ثبت رسانه‌های دیجیتال (ساماندهی)">
@@ -97,8 +91,28 @@
                             <span class="text-[9px] font-black text-slate-700 group-hover:text-[#fd8100] transition-colors leading-tight">نشان ساماندهی</span>
                             <span class="text-[8px] text-blue-600 font-bold bg-blue-50 px-1.5 py-0.5 rounded-full">رسانه دیجیتال</span>
                         </a>
-                        <?php endif; ?>
                     </div>
+                    <style>
+                    .enamad-trust-seal a {
+                        display: flex !important;
+                        align-items: center !important;
+                        justify-content: center !important;
+                        width: 100% !important;
+                        height: 100% !important;
+                    }
+                    .enamad-trust-seal img {
+                        max-width: 100% !important;
+                        max-height: 100% !important;
+                        width: auto !important;
+                        height: auto !important;
+                        object-fit: contain !important;
+                        margin: 0 auto !important;
+                        transition: transform 0.25s ease !important;
+                    }
+                    .enamad-trust-seal:hover img {
+                        transform: scale(1.06) !important;
+                    }
+                    </style>
                 </div>
             </div>
         </div>

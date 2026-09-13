@@ -142,6 +142,8 @@ $effective_geo_icbm = $geo_icbm ?? '35.7350, 51.4110';
     <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
     <meta name="google-site-verification" content="LBsu_9wpFihCnRoY9_g6YwFJJ_bvUDZAZ6lAMMRn-8k">
     <meta name="google-site-verification" content="google82c161050c864f06">
+    <meta name="enamad" content="7706608" />
+    <meta name="enamad-code" content="qBmonKZeAe36PvBvs1zpTGrrRb7uFJs8" />
     <link rel="canonical" href="<?php echo htmlspecialchars($effective_canonical); ?>">
     <link rel="alternate" hreflang="fa-IR" href="<?php echo htmlspecialchars($effective_canonical); ?>">
     <link rel="alternate" hreflang="x-default" href="<?php echo htmlspecialchars($effective_canonical); ?>">

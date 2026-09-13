@@ -150,6 +150,18 @@ require_once 'includes/header.php';
                                 <span class="font-mono font-bold text-slate-800 dir-ltr inline-block">۱۹۹۷۸۳۴۵۲۱</span>
                             </div>
                         </div>
+
+                        <!-- Enamad Trust Seal Verification Badge -->
+                        <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between gap-3">
+                            <div>
+                                <span class="text-xs font-bold text-slate-800 block">نماد اعتماد الکترونیکی (اینماد)</span>
+                                <span class="text-[10px] text-slate-400 block mt-0.5">شناسه ثبتی صمت: ۷۷۰۶۶۰۸</span>
+                                <span class="text-[9px] text-emerald-600 font-bold bg-emerald-50 px-2 py-0.5 rounded-full inline-block mt-1">تاییدشده رسمی</span>
+                            </div>
+                            <div class="w-20 h-24 p-1.5 bg-white rounded-2xl border border-slate-200 shadow-xs flex items-center justify-center text-center enamad-trust-seal overflow-hidden shrink-0 hover:border-primary transition-all">
+                                <a referrerpolicy='origin' target='_blank' href='https://trustseal.enamad.ir/?id=7706608&Code=qBmonKZeAe36PvBvs1zpTGrrRb7uFJs8'><img referrerpolicy='origin' src='https://trustseal.enamad.ir/logo.aspx?id=7706608&Code=qBmonKZeAe36PvBvs1zpTGrrRb7uFJs8' alt='نماد اعتماد الکترونیکی آسنا' style='cursor:pointer' code='qBmonKZeAe36PvBvs1zpTGrrRb7uFJs8'></a>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
