@@ -326,7 +326,7 @@ foreach ($sellerProducts as $p) {
                     <span id="postexSyncText">استعلام زنده پستکس</span>
                 </button>
                 <span class="px-3 py-1.5 rounded-xl bg-amber-50 text-amber-700 border border-amber-200 text-xs font-bold">
-                    کارمزد پلتفرم: ۵٪ (۹۵٪ سهم خالص فروشنده)
+                    کارمزد پلتفرم: ۱۵٪ (۸۵٪ سهم خالص فروشنده)
                 </span>
             </div>
         </div>

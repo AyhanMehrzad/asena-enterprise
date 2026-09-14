@@ -546,7 +546,7 @@ $booked_slots_json = json_encode($booked_slots);
                             <div class="flex justify-between items-center text-[11px] text-emerald-800 bg-emerald-100/60 px-2.5 py-1.5 rounded-xl">
                                 <span class="flex items-center gap-1">
                                     <span class="material-symbols-outlined text-sm text-emerald-600">verified</span>
-                                    <span>سهم پلتفرم (۵٪ تضمین و پیامک):</span>
+                                    <span>سهم پلتفرم (۱۵٪ تضمین و پیامک):</span>
                                 </span>
                                 <span id="summary-commission" class="font-mono font-black text-emerald-900">شامل در تعرفه</span>
                             </div>

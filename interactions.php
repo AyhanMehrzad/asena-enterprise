@@ -210,7 +210,7 @@ foreach ($ledgerItems as $li) {
     $totalCommissionPaid += (int)$li['commission_amount'];
 }
 foreach ($appointmentItems as $ai) {
-    $totalCommissionPaid += (int)($ai['commission_amount'] ?: round((int)$ai['fee'] * 0.05));
+    $totalCommissionPaid += (int)($ai['commission_amount'] ?: round((int)$ai['fee'] * 0.15));
 }
 
 // 2. Fetch SMS Purchases & Usage Logs
@@ -337,7 +337,7 @@ if (!in_array($activeTab, ['overview', 'debits', 'payouts', 'sms', 'tickets'])) 
                 </div>
                 <h1 class="text-xl lg:text-2xl font-black">تعاملات مالی، صورت‌حساب کارمزد و خدمات با پلتفرم آسنا</h1>
                 <p class="text-xs text-slate-300 mt-1 max-w-2xl leading-relaxed">
-                    شفافیت کامل در مبالغ پرداختی به آسنا (کارمزد ۵٪ کاتالوگ و بسته‌های پیامک)، واریزی‌های هفتگی پایا، مانده پیامک اختصاصی و تیکت‌های پشتیبانی با خزانه‌داری
+                    شفافیت کامل در مبالغ پرداختی به آسنا (کارمزد ۱۵٪ کاتالوگ و بسته‌های پیامک)، واریزی‌های هفتگی پایا، مانده پیامک اختصاصی و تیکت‌های پشتیبانی با خزانه‌داری
                 </p>
             </div>
 
@@ -361,12 +361,12 @@ if (!in_array($activeTab, ['overview', 'debits', 'payouts', 'sms', 'tickets'])) 
 
     <!-- Overview Stat Cards -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <!-- 1. What You Pay Asena (5% Commission + SMS) -->
+        <!-- 1. What You Pay Asena (15% Commission + SMS) -->
         <div class="p-5 rounded-2xl bg-white border border-slate-200/80 shadow-sm flex items-center justify-between">
             <div>
                 <span class="text-xs font-bold text-slate-500 block mb-1">کل پرداختی شما به آسنا (کارمزد+پیامک):</span>
                 <span class="text-xl font-black text-rose-600 font-mono"><?= number_format($totalCommissionPaid + $smsSpentTotal) ?> تومان</span>
-                <span class="text-[10px] text-slate-400 block mt-1">کارمزد ۵٪: <?= number_format($totalCommissionPaid) ?> ت</span>
+                <span class="text-[10px] text-slate-400 block mt-1">کارمزد ۱۵٪: <?= number_format($totalCommissionPaid) ?> ت</span>
             </div>
             <div class="w-12 h-12 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center shrink-0">
                 <span class="material-symbols-outlined text-2xl">receipt</span>
@@ -418,7 +418,7 @@ if (!in_array($activeTab, ['overview', 'debits', 'payouts', 'sms', 'tickets'])) 
         </a>
         <a href="?tab=debits" class="tab-btn px-4 py-2.5 rounded-xl font-bold text-xs flex items-center gap-1.5 text-slate-600 hover:text-primary transition <?= $activeTab === 'debits' ? 'active' : 'bg-white' ?>">
             <span class="material-symbols-outlined text-base">point_of_sale</span>
-            <span>آنچه باید به آسنا بپردازید (کارمزد ۵٪)</span>
+            <span>آنچه باید به آسنا بپردازید (کارمزد ۱۵٪)</span>
         </a>
         <a href="?tab=payouts" class="tab-btn px-4 py-2.5 rounded-xl font-bold text-xs flex items-center gap-1.5 text-slate-600 hover:text-primary transition <?= $activeTab === 'payouts' ? 'active' : 'bg-white' ?>">
             <span class="material-symbols-outlined text-base">receipt_long</span>
@@ -454,7 +454,7 @@ if (!in_array($activeTab, ['overview', 'debits', 'payouts', 'sms', 'tickets'])) 
                 </div>
 
                 <div class="flex justify-between items-center p-3 rounded-xl bg-rose-50/70 border border-rose-100 text-rose-900">
-                    <span class="font-bold">سهم کارمزد پلتفرم آسنا (۵٪):</span>
+                    <span class="font-bold">سهم کارمزد پلتفرم آسنا (۱۵٪):</span>
                     <span class="font-mono font-bold text-rose-700">-<?= number_format($totalCommissionPaid) ?> تومان</span>
                 </div>
 
@@ -519,7 +519,7 @@ if (!in_array($activeTab, ['overview', 'debits', 'payouts', 'sms', 'tickets'])) 
                     <span class="text-[10px] text-slate-400">پاسخگویی مستقیم</span>
                 </div>
                 <p class="text-xs text-slate-500 leading-relaxed">
-                    هرگونه مغایرت در تسویه، تغییر شماره شبا یا سوال در مورد کارمزد ۵٪ را مستقیماً از طریق تیکت اختصاصی مطرح نمایید.
+                    هرگونه مغایرت در تسویه، تغییر شماره شبا یا سوال در مورد کارمزد ۱۵٪ را مستقیماً از طریق تیکت اختصاصی مطرح نمایید.
                 </p>
                 <a href="?tab=tickets" class="w-full bg-[#001a48] hover:bg-[#002d72] text-white py-3 rounded-xl font-bold text-xs flex items-center justify-center gap-2 shadow-sm transition">
                     <span class="material-symbols-outlined text-sm">chat</span>
@@ -530,16 +530,16 @@ if (!in_array($activeTab, ['overview', 'debits', 'payouts', 'sms', 'tickets'])) 
     </div>
     <?php endif; ?>
 
-    <!-- TAB 2: DEBITS & 5% COMMISSION BREAKDOWN -->
+    <!-- TAB 2: DEBITS & 15% COMMISSION BREAKDOWN -->
     <?php if ($activeTab === 'debits'): ?>
     <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-6">
         <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-2 border-b border-slate-100 pb-4">
             <div>
                 <h3 class="font-bold text-slate-900 text-sm flex items-center gap-2">
                     <span class="material-symbols-outlined text-rose-600 text-base">point_of_sale</span>
-                    ریز اقلام کارمزدهای کسر شده (سهم ۵٪ پلتفرم آسنا)
+                    ریز اقلام کارمزدهای کسر شده (سهم ۱۵٪ پلتفرم آسنا)
                 </h3>
-                <p class="text-xs text-slate-500 mt-0.5">کارمزد ۵٪ بابت خدمات بازاریابی، پشتیبانی، هاستینگ و زیرساخت پرداخت از مبالغ فروش کسر می‌گردد.</p>
+                <p class="text-xs text-slate-500 mt-0.5">کارمزد ۱۵٪ بابت خدمات بازاریابی، پشتیبانی، هاستینگ و زیرساخت پرداخت از مبالغ فروش کسر می‌گردد.</p>
             </div>
             <span class="font-bold text-xs text-rose-700 bg-rose-50 px-3 py-1.5 rounded-xl border border-rose-100">
                 مجموع کارمزدهای کسر شده: <?= number_format($totalCommissionPaid) ?> تومان
@@ -554,8 +554,8 @@ if (!in_array($activeTab, ['overview', 'debits', 'payouts', 'sms', 'tickets'])) 
                         <th class="p-3">شناسه سفارش / نوبت</th>
                         <th class="p-3">تاریخ ثبت</th>
                         <th class="p-3 text-center">مبلغ ناخالص فروش</th>
-                        <th class="p-3 text-center text-rose-600">کارمزد پلتفرم آسنا (۵٪)</th>
-                        <th class="p-3 text-center text-emerald-700">سهم خالص شما (۹۵٪)</th>
+                        <th class="p-3 text-center text-rose-600">کارمزد پلتفرم آسنا (۱۵٪)</th>
+                        <th class="p-3 text-center text-emerald-700">سهم خالص شما (۸۵٪)</th>
                         <th class="p-3 text-center">وضعیت تسویه</th>
                     </tr>
                 </thead>
@@ -868,7 +868,7 @@ if (!in_array($activeTab, ['overview', 'debits', 'payouts', 'sms', 'tickets'])) 
                     <select name="department" class="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs font-bold bg-slate-50 outline-none">
                         <option value="امور مالی و تسویه پایا">امور مالی و تسویه پایا پنج‌شنبه‌ها</option>
                         <option value="شارژ پنل پیامک و فاکتور">شارژ پنل پیامک و فاکتور</option>
-                        <option value="استعلام کارمزد و کاتالوگ">استعلام کارمزد ۵٪ و مغایرت سفارش</option>
+                        <option value="استعلام کارمزد و کاتالوگ">استعلام کارمزد ۱۵٪ و مغایرت سفارش</option>
                         <option value="پشتیبانی فنی پلتفرم">پشتیبانی فنی و دسترسی</option>
                     </select>
                 </div>

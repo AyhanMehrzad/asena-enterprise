@@ -39,11 +39,11 @@ $groomer = $pdo->query("SELECT * FROM doctors WHERE provider_type = 'groomer' LI
 assertTest("Groomer has services_json", !empty($groomer['services_json']), "Groomer: {$groomer['name']}");
 assertTest("Groomer has clinic/salon name", !empty($groomer['clinic_name']), "Clinic: {$groomer['clinic_name']}");
 
-// 2. Platform Interest (5% on appointments)
+// 2. Platform Interest (15% on appointments)
 $testPrice = 400000;
-$expectedComm = round($testPrice * 0.05); // 20,000
-$expectedNet = $testPrice - $expectedComm; // 380,000
-assertTest("5% Platform Interest Calculation", $expectedComm === 20000.0 && $expectedNet === 380000.0, "Gross: {$testPrice}, 5% Comm: {$expectedComm}, 95% Net: {$expectedNet}");
+$expectedComm = round($testPrice * 0.15); // 60,000
+$expectedNet = $testPrice - $expectedComm; // 340,000
+assertTest("15% Platform Interest Calculation", $expectedComm === 60000.0 && $expectedNet === 340000.0, "Gross: {$testPrice}, 15% Comm: {$expectedComm}, 85% Net: {$expectedNet}");
 
 // 3. Single Person Seller Role & Wallet
 $sellerStmt = $pdo->prepare("SELECT * FROM users WHERE role = 'seller' LIMIT 1");
@@ -85,7 +85,7 @@ assertTest("Autoship Subscriptions table populated", $subCount > 0, "Total subsc
 // 6. Test Appointment Full Lifecycle
 $testAptDoc = $pdo->query("SELECT id, price FROM doctors WHERE provider_type = 'groomer' LIMIT 1")->fetch(PDO::FETCH_ASSOC);
 $grossFee = (int)$testAptDoc['price'];
-$commFee = (int)round($grossFee * 0.05);
+$commFee = (int)round($grossFee * 0.15);
 $netFee = $grossFee - $commFee;
 
 $insTestApt = $pdo->prepare("
@@ -101,7 +101,7 @@ $insTestApt = $pdo->prepare("
 ");
 $insTestApt->execute([$testAptDoc['id'], $grossFee, $commFee, $netFee]);
 $testAptId = (int)$pdo->lastInsertId();
-assertTest("Can create Grooming appointment with 5% commission", $testAptId > 0, "Apt #{$testAptId}, Fee: {$grossFee}, Comm: {$commFee}, Net: {$netFee}");
+assertTest("Can create Grooming appointment with 15% commission", $testAptId > 0, "Apt #{$testAptId}, Fee: {$grossFee}, Comm: {$commFee}, Net: {$netFee}");
 
 // Transition to approved
 $upApp = $pdo->prepare("UPDATE appointments SET status = 'approved' WHERE id = ?");

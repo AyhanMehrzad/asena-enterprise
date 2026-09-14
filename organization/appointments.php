@@ -51,8 +51,8 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POST['action'])) {
         $aptTime = trim($_POST['appointment_time'] ?? date('H:i'));
         $fee = (int)($_POST['fee'] ?? 350000);
         if ($fee <= 0) $fee = 350000;
-        $comm = round($fee * 0.05); // 5% platform interest
-        $net = $fee - $comm; // 95% clinic net
+        $comm = round($fee * 0.15); // 15% platform interest
+        $net = $fee - $comm; // 85% clinic net
         $visitPurpose = trim($_POST['visit_purpose'] ?? 'ویزیت حضوری');
         $serviceType = trim($_POST['service_type'] ?? 'general_checkup');
 
@@ -76,7 +76,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POST['action'])) {
                 VALUES (?, ?, ?, ?, ?, 'approved', ?, ?, ?, ?, ?, ?, ?, 'held_in_escrow', NOW())
             ");
             if ($insApt->execute([$existingUserId, $doctorId, $orgId, $aptDate, $aptTime, $petName, $petType, $fee, $comm, $net, $visitPurpose, $serviceType])) {
-                $message = 'نوبت پذیرش حضوری با موفقیت ثبت شد (سهم مرکز: ' . number_format($net) . ' تومان، کارمزد ۵٪ پلتفرم: ' . number_format($comm) . ' تومان).';
+                $message = 'نوبت پذیرش حضوری با موفقیت ثبت شد (سهم مرکز: ' . number_format($net) . ' تومان، کارمزد ۱۵٪ پلتفرم: ' . number_format($comm) . ' تومان).';
                 $messageType = 'success';
             } else {
                 $message = 'خطا در ثبت نوبت حضوری.';
@@ -195,7 +195,7 @@ $fmtDate = new IntlDateFormatter('fa_IR@calendar=persian', IntlDateFormatter::FU
                 <span class="material-symbols-outlined text-sky-600 text-3xl">calendar_month</span>
                 <span>مدیریت نوبت‌دهی و پذیرش بیماران</span>
             </h1>
-            <p class="text-xs text-slate-500 mt-1">مشاهده تقویم ویزیت پزشکان، خدمات گرومرها، محاسبه کارمزد ۵٪ و تسویه پایا</p>
+            <p class="text-xs text-slate-500 mt-1">مشاهده تقویم ویزیت پزشکان، خدمات گرومرها، محاسبه کارمزد ۱۵٪ و تسویه پایا</p>
         </div>
 
         <div class="flex items-center gap-2.5">
@@ -324,7 +324,7 @@ $fmtDate = new IntlDateFormatter('fa_IR@calendar=persian', IntlDateFormatter::FU
                             <th class="p-4">مشخصات پت</th>
                             <th class="p-4">متخصص معالج</th>
                             <th class="p-4">خدمت / تعرفه</th>
-                            <th class="p-4">سهم مرکز / کارمزد ۵٪</th>
+                            <th class="p-4">سهم مرکز / کارمزد ۱۵٪</th>
                             <th class="p-4">وضعیت نوبت</th>
                             <th class="p-4 text-center">عملیات</th>
                         </tr>
@@ -334,7 +334,7 @@ $fmtDate = new IntlDateFormatter('fa_IR@calendar=persian', IntlDateFormatter::FU
                             <?php
                             $isGroomer = ($apt['provider_type'] ?? '') === 'groomer';
                             $fee = (int)($apt['fee'] ?: 0);
-                            $comm = (int)($apt['commission_amount'] ?: round($fee * 0.05));
+                            $comm = (int)($apt['commission_amount'] ?: round($fee * 0.15));
                             $net = (int)($apt['net_amount'] ?: ($fee - $comm));
 
                             $statusBadge = match($apt['status']) {
@@ -404,7 +404,7 @@ $fmtDate = new IntlDateFormatter('fa_IR@calendar=persian', IntlDateFormatter::FU
 
                                 <td class="p-4">
                                     <div class="font-bold text-emerald-600 font-mono"><?= number_format($net) ?> تومان</div>
-                                    <div class="text-[10px] text-rose-500 font-mono">کارمزد ۵٪: <?= number_format($comm) ?> تومان</div>
+                                    <div class="text-[10px] text-rose-500 font-mono">کارمزد ۱۵٪: <?= number_format($comm) ?> تومان</div>
                                 </td>
 
                                 <td class="p-4">
@@ -531,7 +531,7 @@ $fmtDate = new IntlDateFormatter('fa_IR@calendar=persian', IntlDateFormatter::FU
                 <div>
                     <label class="block text-xs font-bold text-slate-700 mb-1.5">تعرفه ویزیت / خدمت (تومان)</label>
                     <input type="number" name="fee" id="walkin_fee_input" value="350000" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-sky-500 outline-none font-mono">
-                    <span class="text-[10px] text-slate-400 mt-1 block">۵٪ کارمزد پلتفرم، ۹۵٪ سهم مستقیم مرکز</span>
+                    <span class="text-[10px] text-slate-400 mt-1 block">۱۵٪ کارمزد پلتفرم، ۸۵٪ سهم مستقیم مرکز</span>
                 </div>
             </div>
 

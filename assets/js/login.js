@@ -1,48 +1,71 @@
-function toggleMode(mode) {
-    const btnLogin = document.getElementById('btn-login');
-    const btnSignup = document.getElementById('btn-signup');
-    const signupFields = document.getElementById('signup-fields');
-    const loginExtras = document.getElementById('login-extras');
-    const formTitle = document.getElementById('form-title');
-    const formSubtitle = document.getElementById('form-subtitle');
-    const submitText = document.getElementById('submit-text');
-    const container = document.getElementById('auth-container');
-    const formMode = document.getElementById('form-mode');
-    
-    formMode.value = mode;
+/**
+ * ASENA Enterprise - Clean Tabbed Authentication Manager
+ */
+function switchAuthTab(tabId) {
+    // Hide all tab panes
+    const panes = document.querySelectorAll('.tab-pane');
+    panes.forEach(pane => {
+        pane.classList.add('hidden');
+        pane.classList.remove('active');
+    });
 
-    // Apply quick animation
-    container.style.opacity = '0';
-    container.style.transform = 'translateY(10px)';
+    // Reset tab buttons
+    const tabs = document.querySelectorAll('.tab-btn');
+    tabs.forEach(btn => {
+        btn.classList.remove('bg-white', 'text-teal-900', 'shadow-sm', 'font-extrabold');
+        btn.classList.add('text-slate-500', 'font-medium');
+    });
 
-    setTimeout(() => {
-        if (mode === 'signup') {
-            btnLogin.classList.remove('bg-white', 'shadow-sm', 'text-primary');
-            btnLogin.classList.add('text-on-surface-variant');
-            btnSignup.classList.add('bg-white', 'shadow-sm', 'text-primary');
-            btnSignup.classList.remove('text-on-surface-variant');
-            
-            signupFields.classList.remove('hidden');
-            loginExtras.classList.add('hidden');
-            
-            formTitle.innerText = 'عضویت در خانواده ما';
-            formSubtitle.innerText = 'برای استفاده از تمامی امکانات، حساب کاربری خود را بسازید.';
-            submitText.innerText = 'ایجاد حساب کاربری';
-        } else {
-            btnSignup.classList.remove('bg-white', 'shadow-sm', 'text-primary');
-            btnSignup.classList.add('text-on-surface-variant');
-            btnLogin.classList.add('bg-white', 'shadow-sm', 'text-primary');
-            btnLogin.classList.remove('text-on-surface-variant');
-            
-            signupFields.classList.add('hidden');
-            loginExtras.classList.remove('hidden');
-            
-            formTitle.innerText = 'خوش آمدید';
-            formSubtitle.innerText = 'لطفاً برای ورود به پنل کاربری اطلاعات خود را وارد کنید.';
-            submitText.innerText = 'ورود به حساب';
+    // Activate selected pane
+    const targetPane = document.getElementById('pane-' + tabId);
+    const targetBtn = document.getElementById('tab-' + tabId);
+    if (targetPane) {
+        targetPane.classList.remove('hidden');
+        targetPane.classList.add('active');
+    }
+    if (targetBtn) {
+        targetBtn.classList.add('bg-white', 'text-teal-900', 'shadow-sm', 'font-extrabold');
+        targetBtn.classList.remove('text-slate-500', 'font-medium');
+    }
+
+    // Update URL parameter without reload
+    const url = new URL(window.location.href);
+    url.searchParams.set('tab', tabId);
+    window.history.replaceState({}, '', url);
+}
+
+function togglePasswordVisibility(inputId, btnEl) {
+    const input = document.getElementById(inputId);
+    if (!input) return;
+    const isPassword = input.type === 'password';
+    input.type = isPassword ? 'text' : 'password';
+    const icon = btnEl.querySelector('.material-symbols-outlined');
+    if (icon) {
+        icon.textContent = isPassword ? 'visibility_off' : 'visibility';
+    }
+}
+
+// Countdown timer handler for OTP
+function initOtpCountdown(timerId, btnId, seconds = 120) {
+    const timerEl = document.getElementById(timerId);
+    const btnEl = document.getElementById(btnId);
+    if (!timerEl || !btnEl) return;
+
+    let remaining = seconds;
+    btnEl.disabled = true;
+
+    const interval = setInterval(() => {
+        remaining--;
+        const mins = Math.floor(remaining / 60);
+        const secs = remaining % 60;
+        timerEl.textContent = `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+
+        if (remaining <= 0) {
+            clearInterval(interval);
+            timerEl.textContent = '00:00';
+            btnEl.disabled = false;
+            btnEl.classList.remove('opacity-50', 'cursor-not-allowed');
+            btnEl.classList.add('text-teal-700', 'hover:underline', 'cursor-pointer');
         }
-        
-        container.style.opacity = '1';
-        container.style.transform = 'translateY(0)';
-    }, 200);
+    }, 1000);
 }

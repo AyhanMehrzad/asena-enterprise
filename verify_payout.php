@@ -240,7 +240,7 @@ $auditHash = strtoupper(substr(hash('sha256', $batchCode . $totalSettled . $asen
                 <?= number_format($totalSettled) ?> <span class="text-base text-slate-200 font-normal">تومان</span>
             </div>
             <p class="text-xs text-slate-300 mt-2">
-                معادل <span class="font-bold text-white"><?= number_format($totalSettled * 10) ?></span> ریال تمام — کسر کارمزد پلتفرم (۵٪) قبلاً در صورت‌حساب اعمال گردیده است.
+                معادل <span class="font-bold text-white"><?= number_format($totalSettled * 10) ?></span> ریال تمام — کسر کارمزد پلتفرم (۱۵٪) قبلاً در صورت‌حساب اعمال گردیده است.
             </p>
         </div>
 
@@ -259,7 +259,7 @@ $auditHash = strtoupper(substr(hash('sha256', $batchCode . $totalSettled . $asen
                             <th class="p-2.5">شناسه مرجع</th>
                             <th class="p-2.5">شرح قلم / خدمات</th>
                             <th class="p-2.5 text-center">مبلغ ناخالص</th>
-                            <th class="p-2.5 text-center text-red-600">کارمزد پلتفرم (۵٪)</th>
+                            <th class="p-2.5 text-center text-red-600">کارمزد پلتفرم (۱۵٪)</th>
                             <th class="p-2.5 text-center text-emerald-700">مبلغ خالص واریزی</th>
                         </tr>
                     </thead>

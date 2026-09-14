@@ -93,8 +93,8 @@ try {
         $doctor_id = null;
     }
     
-    // Calculate 5% platform interest / commission and 95% clinic net share
-    $commission_rate_pct = (float)get_setting($pdo, 'platform_commission_percent', 5);
+    // Calculate 15% platform interest / commission and 85% clinic net share
+    $commission_rate_pct = (float)get_setting($pdo, 'platform_commission_percent', 15);
     $commission_amount = (int)round($doctor_price * ($commission_rate_pct / 100.0));
     $net_amount = $doctor_price - $commission_amount;
 

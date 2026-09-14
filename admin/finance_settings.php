@@ -23,7 +23,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         $holderName = trim($_POST['admin_bank_holder'] ?? 'شرکت توسعه تجارت الکترونیک آسنا');
         
         $taxRate = max(0, min(100, (float)($_POST['tax_rate_percent'] ?? 9)));
-        $commissionRate = max(0, min(100, (float)($_POST['platform_commission_percent'] ?? 5)));
+        $commissionRate = max(0, min(100, (float)($_POST['platform_commission_percent'] ?? 15)));
         $taxOnAppts = isset($_POST['tax_on_appointments_enabled']) ? '1' : '0';
 
         $autoPayoutEnabled = isset($_POST['auto_payout_enabled']) ? '1' : '0';
@@ -72,7 +72,7 @@ $adminBank      = get_setting($pdo, 'admin_bank_name', 'بانک سامان');
 $adminHolder    = get_setting($pdo, 'admin_bank_holder', 'شرکت توسعه تجارت الکترونیک آسنا');
 
 $taxRate        = (float)get_setting($pdo, 'tax_rate_percent', 9);
-$commissionRate = (float)get_setting($pdo, 'platform_commission_percent', 5);
+$commissionRate = (float)get_setting($pdo, 'platform_commission_percent', 15);
 $taxOnAppts     = get_setting($pdo, 'tax_on_appointments_enabled', '1');
 
 $autoPayoutEnabled = get_setting($pdo, 'auto_payout_enabled', '1');
@@ -291,7 +291,7 @@ require_once __DIR__ . '/includes/admin_header.php';
                                 <input type="number" name="platform_commission_percent" value="<?= $commissionRate ?>" step="0.5" min="0" max="50" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-xs font-mono font-bold focus:border-primary focus:bg-white outline-none pl-8">
                                 <span class="absolute left-3 top-2.5 text-slate-400 text-xs font-bold">٪</span>
                             </div>
-                            <p class="text-[10px] text-slate-400 mt-1">پیش‌فرض ۵٪؛ از مبلغ فروشنده کسر می‌شود و برای خریدار پنهان است.</p>
+                            <p class="text-[10px] text-slate-400 mt-1">پیش‌فرض ۱۵٪؛ از مبلغ فروشنده کسر می‌شود و برای خریدار پنهان است.</p>
                         </div>
                     </div>
 

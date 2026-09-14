@@ -48,7 +48,7 @@ $aptStmt = $pdo->prepare("
 $aptStmt->execute([$orgId, $orgId]);
 $orgAppointments = $aptStmt->fetchAll(PDO::FETCH_ASSOC);
 
-// Calculate Appointment Financials (5% Platform Interest / Commission)
+// Calculate Appointment Financials (15% Platform Interest / Commission)
 $totalApptGross = 0;
 $totalApptCommission = 0;
 $totalApptNet = 0;
@@ -57,7 +57,7 @@ $pendingApptNet = 0;
 
 foreach ($orgAppointments as $apt) {
     $fee = (int)($apt['fee'] ?: 0);
-    $comm = (int)($apt['commission_amount'] ?: round($fee * 0.05));
+    $comm = (int)($apt['commission_amount'] ?: round($fee * 0.15));
     $net = (int)($apt['net_amount'] ?: ($fee - $comm));
 
     $totalApptGross += $fee;
@@ -75,7 +75,7 @@ foreach ($orgAppointments as $apt) {
 $combinedAvailable = (int)$wallet['balance_available_for_payout'] + $availableApptNet;
 $combinedPending = (int)$wallet['balance_pending_escrow'] + $pendingApptNet;
 $combinedGross = (int)$wallet['balance_settled_lifetime'] + (int)$wallet['balance_available_for_payout'] + $totalApptGross;
-$combinedPlatformInterest = (int)$totalApptCommission + round((int)$wallet['balance_settled_lifetime'] * 0.05);
+$combinedPlatformInterest = (int)$totalApptCommission + round((int)$wallet['balance_settled_lifetime'] * 0.15);
 
 $activeTab = $_GET['tab'] ?? 'appointments';
 ?>
@@ -89,7 +89,7 @@ $activeTab = $_GET['tab'] ?? 'appointments';
             </div>
             <div>
                 <h1 class="text-xl font-black text-slate-900">مدیریت مالی، کارمزد پلتفرم و تسویه پایا</h1>
-                <p class="text-xs text-slate-500 mt-1">گردش مالی نوبت‌های ویزیت، خدمات گرومینگ و فروش کالا، با محاسبه دقیق کارمزد ۵٪ پلتفرم و واریز هفتگی</p>
+                <p class="text-xs text-slate-500 mt-1">گردش مالی نوبت‌های ویزیت، خدمات گرومینگ و فروش کالا، با محاسبه دقیق کارمزد ۱۵٪ پلتفرم و واریز هفتگی</p>
             </div>
         </div>
 
@@ -143,11 +143,11 @@ $activeTab = $_GET['tab'] ?? 'appointments';
             </p>
         </div>
 
-        <!-- 5% Platform Commission / Interest -->
+        <!-- 15% Platform Commission / Interest -->
         <div class="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm relative overflow-hidden flex flex-col justify-between">
             <div>
                 <div class="flex items-center justify-between">
-                    <span class="text-xs font-bold text-slate-500">کارمزد ۵٪ پلتفرم آسنا</span>
+                    <span class="text-xs font-bold text-slate-500">کارمزد ۱۵٪ پلتفرم آسنا</span>
                     <span class="material-symbols-outlined text-indigo-500">percent</span>
                 </div>
                 <div class="text-2xl font-black text-indigo-700 mt-2 font-mono">
@@ -226,7 +226,7 @@ $activeTab = $_GET['tab'] ?? 'appointments';
         <div class="px-6 pt-5 border-b border-slate-100 flex items-center gap-4">
             <a href="wallet.php?tab=appointments" class="pb-3 text-xs font-black transition-all flex items-center gap-1.5 <?= $activeTab === 'appointments' ? 'text-sky-600 border-b-2 border-sky-600' : 'text-slate-400 hover:text-slate-700' ?>">
                 <span class="material-symbols-outlined text-base">calendar_month</span>
-                <span>درآمد نوبت‌های کلینیک و کارمزد ۵٪ پلتفرم</span>
+                <span>درآمد نوبت‌های کلینیک و کارمزد ۱۵٪ پلتفرم</span>
                 <span class="px-2 py-0.5 rounded-full text-[10px] bg-sky-50 text-sky-700"><?= count($orgAppointments) ?></span>
             </a>
 
@@ -250,7 +250,7 @@ $activeTab = $_GET['tab'] ?? 'appointments';
                                 <th class="px-4 py-3">نوع خدمت</th>
                                 <th class="px-4 py-3">تاریخ و ساعت</th>
                                 <th class="px-4 py-3">تعرفه ناخالص</th>
-                                <th class="px-4 py-3">کارمزد پلتفرم (۵٪)</th>
+                                <th class="px-4 py-3">کارمزد پلتفرم (۱۵٪)</th>
                                 <th class="px-4 py-3">سهم خالص مرکز</th>
                                 <th class="px-4 py-3">وضعیت تسویه</th>
                             </tr>
@@ -265,7 +265,7 @@ $activeTab = $_GET['tab'] ?? 'appointments';
                             <?php else: ?>
                                 <?php foreach ($orgAppointments as $apt): 
                                     $fee = (int)($apt['fee'] ?: 0);
-                                    $comm = (int)($apt['commission_amount'] ?: round($fee * 0.05));
+                                    $comm = (int)($apt['commission_amount'] ?: round($fee * 0.15));
                                     $net = (int)($apt['net_amount'] ?: ($fee - $comm));
                                     $isGr = ($apt['provider_type'] ?? '') === 'groomer';
                                 ?>
@@ -315,7 +315,7 @@ $activeTab = $_GET['tab'] ?? 'appointments';
                                 <th class="px-4 py-3">تاریخ سفارش</th>
                                 <th class="px-4 py-3">کد رهگیری پست</th>
                                 <th class="px-4 py-3">مبلغ فروش</th>
-                                <th class="px-4 py-3">کارمزد پلتفرم (۵٪)</th>
+                                <th class="px-4 py-3">کارمزد پلتفرم (۱۵٪)</th>
                                 <th class="px-4 py-3">سهم خالص مرکز</th>
                                 <th class="px-4 py-3">وضعیت وجه</th>
                                 <th class="px-4 py-3">موعد آزادسازی</th>

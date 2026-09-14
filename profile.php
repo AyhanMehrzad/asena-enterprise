@@ -527,7 +527,7 @@ $nextPayoutFormatted = $fmtDateText->format($nextThursday) . ' ساعت ۲۲:۰�
                     <span class="material-symbols-outlined text-xs">verified</span>
                     فروشنده رسمی بازارگاه
                 </span>
-                <span class="text-xs text-on-surface-variant font-medium">• کارمزد پلتفرم: ۵٪ امانی</span>
+                <span class="text-xs text-on-surface-variant font-medium">• کارمزد پلتفرم: ۱۵٪ امانی</span>
             </div>
             <h2 class="text-xl sm:text-2xl font-black text-slate-900"><?= htmlspecialchars($user['name'] ?? 'فروشگاه شما') ?></h2>
             <p class="text-xs text-on-surface-variant mt-0.5">مدیریت سفارشات دریافتی، صدور فاکتور رسمی و چرخه تسویه هفتگی پنج‌شنبه‌ها</p>
@@ -942,7 +942,7 @@ $nextPayoutFormatted = $fmtDateText->format($nextThursday) . ' ساعت ۲۲:۰�
                 </div>
                 <div class="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200 shrink-0">
                     <span class="material-symbols-outlined text-xs">verified_user</span>
-                    تسویه با کارمزد ۵٪ پلتفرم
+                    تسویه با کارمزد ۱۵٪ پلتفرم
                 </div>
             </div>
 
@@ -1148,7 +1148,7 @@ function updateShebaPreview(input) {
                 $isShipped = ($so['order_status'] ?? '') === 'shipped';
                 $isDelivered = ($so['order_status'] ?? '') === 'delivered';
                 $grossPrice = (float)($so['price_at_purchase'] * $so['quantity']);
-                $commission = (float)($so['commission_amount'] ?: ($grossPrice * 0.05));
+                $commission = (float)($so['commission_amount'] ?: ($grossPrice * 0.15));
                 $netShare = (float)($so['seller_net_amount'] ?: ($grossPrice - $commission));
                 ?>
                 <div class="border border-outline-variant/70 rounded-2xl p-5 bg-white shadow-sm hover:border-primary/40 transition-all space-y-4">
@@ -1224,11 +1224,11 @@ function updateShebaPreview(input) {
                                 <span class="font-bold text-slate-700"><?= number_format($grossPrice) ?> تومان</span>
                             </div>
                             <div>
-                                <span class="text-[10px] text-red-500 block">کارمزد پلتفرم (۵٪):</span>
+                                <span class="text-[10px] text-red-500 block">کارمزد پلتفرم (۱۵٪):</span>
                                 <span class="font-bold text-red-600">-<?= number_format($commission) ?> تومان</span>
                             </div>
                             <div class="bg-emerald-50 px-3 py-1.5 rounded-xl border border-emerald-200">
-                                <span class="text-[10px] text-emerald-800 block font-bold">سهم خالص شما (۹۵٪):</span>
+                                <span class="text-[10px] text-emerald-800 block font-bold">سهم خالص شما (۸۵٪):</span>
                                 <span class="font-black text-emerald-700 text-sm">+<?= number_format($netShare) ?> تومان</span>
                             </div>
                         </div>

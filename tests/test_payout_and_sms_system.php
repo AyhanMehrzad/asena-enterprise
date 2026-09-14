@@ -34,7 +34,7 @@ it("QrCode requires no external network calls", !str_contains($svg, 'qrserver') 
 // 2. Iranian Tax & Hidden Commission Calculation
 $productPrice = 1000000; // 1,000,000 Tomans
 $taxRate = 0.09;
-$commissionRate = 0.05;
+$commissionRate = 0.15;
 
 $buyerVat = (int)round($productPrice * $taxRate);
 $buyerTotal = $productPrice + $buyerVat;
@@ -42,18 +42,18 @@ $platformInterest = (int)round($productPrice * $commissionRate);
 $sellerNetEarnings = $productPrice - $platformInterest;
 
 it("9% VAT calculation for buyer is exactly 90,000 Tomans on 1,000,000 Tomans", $buyerVat === 90000 && $buyerTotal === 1090000);
-it("5% hidden platform commission is exactly 50,000 Tomans on 1,000,000 Tomans", $platformInterest === 50000);
-it("Seller net earnings after 5% deduction is exactly 950,000 Tomans", $sellerNetEarnings === 950000);
-it("Buyer does NOT pay the 5% platform commission", ($buyerTotal - $productPrice) === $buyerVat);
+it("15% hidden platform commission is exactly 150,000 Tomans on 1,000,000 Tomans", $platformInterest === 150000);
+it("Seller net earnings after 15% deduction is exactly 850,000 Tomans", $sellerNetEarnings === 850000);
+it("Buyer does NOT pay the 15% platform commission", ($buyerTotal - $productPrice) === $buyerVat);
 
 // 3. Appointment Tax & Commission (Article 9 Medical Exemption Configurable)
 $appointmentFee = 350000; // 350,000 Tomans
 $aptVat = (int)round($appointmentFee * 0.09);
-$aptDoctorComm = (int)round($appointmentFee * 0.05);
+$aptDoctorComm = (int)round($appointmentFee * 0.15);
 $aptDoctorNet = $appointmentFee - $aptDoctorComm;
 it("Appointment 9% VAT calculation: 31,500 Tomans on 350,000", $aptVat === 31500);
-it("Appointment 5% hidden commission: 17,500 Tomans on 350,000", $aptDoctorComm === 17500);
-it("Doctor net earnings: 332,500 Tomans", $aptDoctorNet === 332500);
+it("Appointment 15% hidden commission: 52,500 Tomans on 350,000", $aptDoctorComm === 52500);
+it("Doctor net earnings: 297,500 Tomans", $aptDoctorNet === 297500);
 
 // 4. Admin Site Settings & Bank Credentials
 $cardStmt = $pdo->query("SELECT setting_value FROM site_settings WHERE setting_key = 'admin_bank_card'");
