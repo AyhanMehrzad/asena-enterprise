@@ -132,14 +132,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     'expires_at' => time() + 180,
                     'dev_hint'   => ($sms->isMock() || !$sent)
                 ];
-                
-                if ($sms->isMock()) {
-                    $success = 'کد تأیید ورود برای شماره ' . htmlspecialchars($phone) . ' ایجاد شد. (حالت شبیه‌ساز فعال است؛ کد تایید در کادر زیر قرار گرفت).';
-                } elseif (!$sent) {
-                    $success = 'کد تأیید ورود ایجاد شد. با توجه به عدم پاسخ درگاه پیامک، کد آزمایشی زیر را وارد فرمایید.';
-                } else {
-                    $success = 'کد تأیید ۶ رقمی به شماره ' . htmlspecialchars($phone) . ' پیامک شد.';
-                }
             }
         }
     }
@@ -246,14 +238,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         'expires_at' => time() + 180,
                         'dev_hint'   => ($sms->isMock() || !$sent)
                     ];
-                    
-                    if ($sms->isMock()) {
-                        $success = 'کد عضویت برای شماره ' . htmlspecialchars($phone) . ' ایجاد شد. (حالت شبیه‌ساز فعال است؛ کد تایید در کادر زیر قرار گرفت).';
-                    } elseif (!$sent) {
-                        $success = 'کد عضویت ایجاد شد. با توجه به عدم پاسخ درگاه پیامک، کد آزمایشی زیر را وارد فرمایید.';
-                    } else {
-                        $success = 'کد تأیید عضویت به شماره ' . htmlspecialchars($phone) . ' پیامک شد.';
-                    }
                 }
             }
         }
@@ -467,7 +451,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
             <?php endif; ?>
 
-            <?php if (!empty($success)): ?>
+            <?php if (!empty($success) && empty($_SESSION['otp_login_data']) && empty($_SESSION['signup_data'])): ?>
                 <div class="flex items-start gap-3 bg-emerald-50 border border-emerald-200 text-emerald-800 p-3.5 rounded-xl mb-5 text-xs animate-fade-in shadow-sm">
                     <span class="material-symbols-outlined text-emerald-600 text-lg shrink-0 mt-0.5">check_circle</span>
                     <div class="leading-relaxed flex-1"><?= htmlspecialchars($success) ?></div>
@@ -542,12 +526,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <form method="POST" action="login.php?tab=otp" class="space-y-4">
                         <input type="hidden" name="action" value="verify_otp">
 
-                        <div class="p-3.5 bg-teal-50/70 border border-teal-100 rounded-xl text-xs text-teal-900 flex items-center justify-between">
-                            <div class="flex items-center gap-2">
-                                <span class="material-symbols-outlined text-teal-700 text-base">send_to_mobile</span>
-                                <span>ارسال شده به: <strong><?= htmlspecialchars($_SESSION['otp_login_data']['phone']) ?></strong></span>
+                        <div class="p-3.5 bg-emerald-50 border border-emerald-200/80 rounded-xl text-xs text-emerald-900 flex items-center justify-between shadow-2xs">
+                            <div class="flex items-center gap-2 min-w-0">
+                                <span class="material-symbols-outlined text-emerald-600 text-base shrink-0">check_circle</span>
+                                <span class="truncate">کد تأیید ورود به شماره <strong class="font-mono text-xs dir-ltr"><?= htmlspecialchars($_SESSION['otp_login_data']['phone']) ?></strong> ارسال شد</span>
                             </div>
-                            <a href="login.php?cancel_otp=1" class="text-teal-700 hover:underline font-bold">تغییر شماره</a>
+                            <a href="login.php?cancel_otp=1" class="text-emerald-700 hover:text-emerald-800 underline font-bold shrink-0 text-xs mr-2">تغییر شماره</a>
                         </div>
 
                         <?php if (!empty($_SESSION['otp_login_data']['dev_hint'])): ?>
@@ -623,12 +607,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <form method="POST" action="login.php?tab=signup" class="space-y-4">
                         <input type="hidden" name="action" value="verify_signup">
 
-                        <div class="p-3.5 bg-emerald-50/70 border border-emerald-100 rounded-xl text-xs text-emerald-900 flex items-center justify-between">
-                            <div class="flex items-center gap-2">
-                                <span class="material-symbols-outlined text-emerald-700 text-base">check_circle</span>
-                                <span>کد عضویت به <strong><?= htmlspecialchars($_SESSION['signup_data']['phone']) ?></strong> ارسال شد</span>
+                        <div class="p-3.5 bg-emerald-50 border border-emerald-200/80 rounded-xl text-xs text-emerald-900 flex items-center justify-between shadow-2xs">
+                            <div class="flex items-center gap-2 min-w-0">
+                                <span class="material-symbols-outlined text-emerald-600 text-base shrink-0">check_circle</span>
+                                <span class="truncate">کد عضویت به شماره <strong class="font-mono text-xs dir-ltr"><?= htmlspecialchars($_SESSION['signup_data']['phone']) ?></strong> ارسال شد</span>
                             </div>
-                            <a href="login.php?cancel_signup=1" class="text-emerald-700 hover:underline font-bold">تغییر شماره</a>
+                            <a href="login.php?cancel_signup=1" class="text-emerald-700 hover:text-emerald-800 underline font-bold shrink-0 text-xs mr-2">تغییر شماره</a>
                         </div>
 
                         <?php if (!empty($_SESSION['signup_data']['dev_hint'])): ?>
