@@ -479,7 +479,8 @@ class SmsService {
         // Safe Mock Delivery in Sandbox Mode
         if ($this->isMock) {
             $this->logMockDelivery($actionTag, $phone, (string)$intBodyId, implode(' ; ', $textVariables));
-            return true;
+            $this->lastError = 'اطلاعات وب‌سرویس ملی‌پیامک (کلید API یا نام کاربری و رمز عبور) تنظیم نشده است. لطفاً از پنل مدیریت > تنظیمات پیامک اقدام نمایید.';
+            return false;
         }
 
         $indexedArgs = array_values(array_map('strval', $textVariables));
@@ -607,7 +608,8 @@ class SmsService {
         // Safe Mock Delivery in Sandbox Mode
         if ($this->isMock) {
             $this->logMockDelivery($actionTag, $phone, null, (string)$text);
-            return true;
+            $this->lastError = 'اطلاعات وب‌سرویس ملی‌پیامک (کلید API یا نام کاربری و رمز عبور) تنظیم نشده است. لطفاً از پنل مدیریت > تنظیمات پیامک اقدام نمایید.';
+            return false;
         }
 
         // 1. Primary Modern Engine: Melipayamak Console REST API

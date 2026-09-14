@@ -126,12 +126,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $sms = new SmsService();
                 $sent = $sms->sendOtp($phone, $otp);
 
-                $_SESSION['otp_login_data'] = [
-                    'phone'      => $phone,
-                    'otp'        => $otp,
-                    'expires_at' => time() + 180,
-                    'dev_hint'   => ($sms->isMock() || !$sent)
-                ];
+                if (!$sent) {
+                    $error = 'خطا در ارسال پیامک مخابراتی: ' . ($sms->getLastError() ?: 'عدم دسترسی به درگاه پیامک.');
+                } else {
+                    $_SESSION['otp_login_data'] = [
+                        'phone'      => $phone,
+                        'otp'        => $otp,
+                        'expires_at' => time() + 180
+                    ];
+                }
             }
         }
     }
@@ -230,14 +233,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $sms = new SmsService();
                     $sent = $sms->sendOtp($phone, $otp);
 
-                    $_SESSION['signup_data'] = [
-                        'name'       => $name,
-                        'phone'      => $phone,
-                        'password'   => $password,
-                        'otp'        => $otp,
-                        'expires_at' => time() + 180,
-                        'dev_hint'   => ($sms->isMock() || !$sent)
-                    ];
+                    if (!$sent) {
+                        $error = 'خطا در ارسال پیامک فعال‌سازی: ' . ($sms->getLastError() ?: 'عدم دسترسی به درگاه پیامک.');
+                    } else {
+                        $_SESSION['signup_data'] = [
+                            'name'       => $name,
+                            'phone'      => $phone,
+                            'password'   => $password,
+                            'otp'        => $otp,
+                            'expires_at' => time() + 180
+                        ];
+                    }
                 }
             }
         }
@@ -534,15 +540,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <a href="login.php?cancel_otp=1" class="text-emerald-700 hover:text-emerald-800 underline font-bold shrink-0 text-xs mr-2">تغییر شماره</a>
                         </div>
 
-                        <?php if (!empty($_SESSION['otp_login_data']['dev_hint'])): ?>
-                            <div class="p-3 bg-amber-50 border border-amber-200 text-amber-900 rounded-xl text-xs flex items-center justify-between shadow-2xs">
-                                <span class="font-bold flex items-center gap-1.5">
-                                    <span class="material-symbols-outlined text-amber-700 text-base">info</span>
-                                    <span>کد تایید ورود آزمایشی (سندباکس):</span>
-                                </span>
-                                <strong class="font-mono text-base tracking-widest text-amber-900 bg-white px-2.5 py-0.5 rounded border border-amber-300"><?= htmlspecialchars($_SESSION['otp_login_data']['otp']) ?></strong>
-                            </div>
-                        <?php endif; ?>
 
                         <div>
                             <label class="block text-xs font-bold text-slate-700 mb-1.5 text-center">کد تأیید ۶ رقمی را وارد کنید</label>
@@ -615,15 +612,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <a href="login.php?cancel_signup=1" class="text-emerald-700 hover:text-emerald-800 underline font-bold shrink-0 text-xs mr-2">تغییر شماره</a>
                         </div>
 
-                        <?php if (!empty($_SESSION['signup_data']['dev_hint'])): ?>
-                            <div class="p-3 bg-emerald-50 border border-emerald-200 text-emerald-900 rounded-xl text-xs flex items-center justify-between shadow-2xs">
-                                <span class="font-bold flex items-center gap-1.5">
-                                    <span class="material-symbols-outlined text-emerald-700 text-base">info</span>
-                                    <span>کد تایید عضویت آزمایشی (سندباکس):</span>
-                                </span>
-                                <strong class="font-mono text-base tracking-widest text-emerald-900 bg-white px-2.5 py-0.5 rounded border border-emerald-300"><?= htmlspecialchars($_SESSION['signup_data']['otp']) ?></strong>
-                            </div>
-                        <?php endif; ?>
 
                         <div>
                             <label class="block text-xs font-bold text-slate-700 mb-1.5 text-center">کد تأیید ۶ رقمی</label>
