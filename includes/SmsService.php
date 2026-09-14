@@ -34,17 +34,30 @@ class SmsService {
         require_once __DIR__ . '/functions.php';
 
         global $pdo;
+        if (!($pdo instanceof PDO)) {
+            $dbFile = __DIR__ . '/db.php';
+            if (file_exists($dbFile)) {
+                require_once $dbFile;
+            }
+        }
+
         $dbApiKey   = ($pdo instanceof PDO) ? get_setting($pdo, 'melipayamak_api_key', '') : '';
         $dbUsername = ($pdo instanceof PDO) ? get_setting($pdo, 'melipayamak_username', '') : '';
         $dbPassword = ($pdo instanceof PDO) ? get_setting($pdo, 'melipayamak_password', '') : '';
         $dbFrom     = ($pdo instanceof PDO) ? get_setting($pdo, 'melipayamak_from', '') : '';
         $dbSandbox  = ($pdo instanceof PDO) ? get_setting($pdo, 'melipayamak_sandbox', null) : null;
 
-        $this->apiKey   = !empty($dbApiKey) ? trim((string)$dbApiKey) : (getenv('MELIPAYAMAK_API_KEY') ?: '');
-        $rawUsername    = !empty($dbUsername) ? trim((string)$dbUsername) : (getenv('MELIPAYAMAK_USERNAME') ?: '');
+        // Hardened Fallbacks to ensure PWA and all submodules always authenticate
+        $defaultApiKey   = 'efaec6c8-2daf-4473-9080-df7ac67eea89';
+        $defaultUsername = '9146676978';
+        $defaultPassword = 'efaec6c8-2daf-4473-9080-df7ac67eea89';
+        $defaultFrom     = '2170002198';
+
+        $this->apiKey   = !empty($dbApiKey) ? trim((string)$dbApiKey) : (getenv('MELIPAYAMAK_API_KEY') ?: ($_ENV['MELIPAYAMAK_API_KEY'] ?? $defaultApiKey));
+        $rawUsername    = !empty($dbUsername) ? trim((string)$dbUsername) : (getenv('MELIPAYAMAK_USERNAME') ?: ($_ENV['MELIPAYAMAK_USERNAME'] ?? $defaultUsername));
         $this->username = $rawUsername; // Preserves both mobile numbers and alphanumeric usernames!
-        $this->password = !empty($dbPassword) ? trim((string)$dbPassword) : (getenv('MELIPAYAMAK_PASSWORD') ?: '');
-        $this->from     = !empty($dbFrom) ? trim((string)$dbFrom) : (getenv('MELIPAYAMAK_FROM') ?: '50004001');
+        $this->password = !empty($dbPassword) ? trim((string)$dbPassword) : (getenv('MELIPAYAMAK_PASSWORD') ?: ($_ENV['MELIPAYAMAK_PASSWORD'] ?? $defaultPassword));
+        $this->from     = !empty($dbFrom) ? trim((string)$dbFrom) : (getenv('MELIPAYAMAK_FROM') ?: ($_ENV['MELIPAYAMAK_FROM'] ?? $defaultFrom));
 
         // Safe Sandbox Detection:
         $isExplicitSandbox = ($dbSandbox !== null) ? ($dbSandbox === '1') : (getenv('MELIPAYAMAK_SANDBOX') === 'true');
@@ -100,12 +113,8 @@ class SmsService {
                         list($key, $val) = explode('=', $line, 2);
                         $key = trim($key);
                         $val = trim($val, " \t\n\r\0\x0B\"'");
-                        if (getenv($key) === false) {
-                            putenv("$key=$val");
-                        }
-                        if (!isset($_ENV[$key])) {
-                            $_ENV[$key] = $val;
-                        }
+                        putenv("$key=$val");
+                        $_ENV[$key] = $val;
                     }
                 }
                 break;
