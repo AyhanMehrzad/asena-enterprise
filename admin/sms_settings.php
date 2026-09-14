@@ -67,13 +67,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             $error = "لطفاً یک شماره موبایل معتبر جهت تست وارد نمایید.";
         } else {
             $sms = new SmsService();
-            if ($testType === 'otp') {
+            if ($sms->isMock()) {
+                $testResult = [
+                    'ok' => false,
+                    'type' => 'حالت شبیه‌ساز (Sandbox / Mock)',
+                    'message' => "⚠️ درگاه در حالت شبیه‌ساز قرار دارد و پیامک مخابراتی واقعی ارسال نمی‌شود. جهت دریافت پیامک روی سیم‌کارت، لطفاً کلید API Key یا نام کاربری و رمز عبور ملی‌پیامک را در فرم زیر وارد نموده و دکمه ذخیره را بزنید."
+                ];
+            } elseif ($testType === 'otp') {
                 $code = rand(100000, 999999);
                 $res = $sms->sendOtp($testPhone, $code);
                 $testResult = [
                     'ok' => (bool)$res,
                     'type' => 'کد تایید اعتبارسنجی (OTP)',
-                    'message' => $res ? "کد تایید آزمایشی ($code) با موفقیت به شماره $testPhone ارسال شد." : ("خطا در ارسال کد تایید: " . ($sms->getLastError() ?: 'پاسخ ناموفق درگاه'))
+                    'message' => $res ? "کد تایید ($code) به درگاه ملی‌پیامک ارسال گردید و به شماره $testPhone تحویل داده شد." : ("خطا در ارسال کد تایید از طریق درگاه: " . ($sms->getLastError() ?: 'پاسخ ناموفق درگاه'))
                 ];
             } elseif ($testType === 'admin_order') {
                 $fakeOrderId = rand(1050, 1999);
@@ -82,14 +88,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 $testResult = [
                     'ok' => (bool)$res,
                     'type' => 'هشدار سفارش جدید به مدیر',
-                    'message' => $res ? "پیامک هشدار سفارش فرضی (#PC-$fakeOrderId) به شماره $testPhone ارسال شد." : ("خطا در ارسال هشدار مدیر: " . ($sms->getLastError() ?: 'پاسخ ناموفق درگاه'))
+                    'message' => $res ? "پیامک هشدار سفارش (#PC-$fakeOrderId) با موفقیت به درگاه ارسال شد." : ("خطا در ارسال هشدار مدیر: " . ($sms->getLastError() ?: 'پاسخ ناموفق درگاه'))
                 ];
             } elseif ($testType === 'doctor_booking') {
                 $res = $sms->sendDoctorNewAppointmentAlert($testPhone, 'دکتر نامی', 'میلو', '1404/06/20', '17:30');
                 $testResult = [
                     'ok' => (bool)$res,
                     'type' => 'هشدار رزرو نوبت به پزشک',
-                    'message' => $res ? "پیامک نوبت فرضی با موفقیت به شماره $testPhone ارسال شد." : ("خطا در ارسال هشدار پزشک: " . ($sms->getLastError() ?: 'پاسخ ناموفق درگاه'))
+                    'message' => $res ? "پیامک نوبت با موفقیت به درگاه ارسال شد." : ("خطا در ارسال هشدار پزشک: " . ($sms->getLastError() ?: 'پاسخ ناموفق درگاه'))
                 ];
             } else {
                 $text = "تست موفقیت‌آمیز ارتباط پنل پیامک با سامانه آسنا.\nasena.company\nزمان: " . date('H:i:s');
@@ -97,7 +103,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 $testResult = [
                     'ok' => (bool)$res,
                     'type' => 'پیامک مستقیم',
-                    'message' => $res ? "پیامک مستقیم با موفقیت به $testPhone ارسال شد." : ("خطا در ارسال پیامک مستقیم: " . ($sms->getLastError() ?: 'پاسخ ناموفق درگاه'))
+                    'message' => $res ? "پیامک مستقیم با موفقیت به شماره $testPhone ارسال شد." : ("خطا در ارسال پیامک مستقیم: " . ($sms->getLastError() ?: 'پاسخ ناموفق درگاه'))
                 ];
             }
 

@@ -40,22 +40,29 @@ class SmsService {
         $dbFrom     = ($pdo instanceof PDO) ? get_setting($pdo, 'melipayamak_from', '') : '';
         $dbSandbox  = ($pdo instanceof PDO) ? get_setting($pdo, 'melipayamak_sandbox', null) : null;
 
-        $this->apiKey   = !empty($dbApiKey) ? $dbApiKey : (getenv('MELIPAYAMAK_API_KEY') ?: '');
-        $rawUsername    = !empty($dbUsername) ? $dbUsername : (getenv('MELIPAYAMAK_USERNAME') ?: '');
-        $this->username = self::normalizePhone($rawUsername) ?: '';
-        $this->password = !empty($dbPassword) ? $dbPassword : (getenv('MELIPAYAMAK_PASSWORD') ?: '');
-        $this->from     = !empty($dbFrom) ? $dbFrom : (getenv('MELIPAYAMAK_FROM') ?: '');
+        $this->apiKey   = !empty($dbApiKey) ? trim((string)$dbApiKey) : (getenv('MELIPAYAMAK_API_KEY') ?: '');
+        $rawUsername    = !empty($dbUsername) ? trim((string)$dbUsername) : (getenv('MELIPAYAMAK_USERNAME') ?: '');
+        $this->username = $rawUsername; // Preserves both mobile numbers and alphanumeric usernames!
+        $this->password = !empty($dbPassword) ? trim((string)$dbPassword) : (getenv('MELIPAYAMAK_PASSWORD') ?: '');
+        $this->from     = !empty($dbFrom) ? trim((string)$dbFrom) : (getenv('MELIPAYAMAK_FROM') ?: '50004001');
 
         // Safe Sandbox Detection:
         $isExplicitSandbox = ($dbSandbox !== null) ? ($dbSandbox === '1') : (getenv('MELIPAYAMAK_SANDBOX') === 'true');
-        $this->isMock = (
-            $isExplicitSandbox ||
-            empty($this->username) ||
-            empty($this->password) ||
-            $this->username === 'your_username' ||
-            $this->password === 'your_password' ||
-            (php_sapi_name() === 'cli' && empty(getenv('MELIPAYAMAK_LIVE')) && empty($dbApiKey))
-        );
+        $hasRealApiKey = !empty($this->apiKey) && !str_contains($this->apiKey, 'SANDBOX') && strlen($this->apiKey) >= 16;
+        $hasRealUserPass = !empty($this->username) && !empty($this->password) && $this->username !== 'your_username' && $this->password !== 'your_password';
+
+        // Run live if explicit live credentials exist; otherwise run in safe mock sandbox
+        $this->isMock = ($isExplicitSandbox || (!$hasRealApiKey && !$hasRealUserPass));
+    }
+
+    public function isMock(): bool {
+        return $this->isMock;
+    }
+
+    public function getActiveGateway(): string {
+        if ($this->isMock) return 'mock';
+        if (!empty($this->apiKey) && !str_contains($this->apiKey, 'SANDBOX')) return 'console';
+        return 'classic';
     }
 
     /**
@@ -355,6 +362,105 @@ class SmsService {
     }
 
     /**
+     * Modern Console REST API for OTP and Patterns (console.melipayamak.com)
+     */
+    public function sendViaConsoleApi($phone, $bodyId, array $args, $isOtp = false) {
+        if (empty($this->apiKey) || str_contains($this->apiKey, 'SANDBOX')) {
+            return false;
+        }
+
+        $endpoint = $isOtp 
+            ? "https://console.melipayamak.com/api/send/otp/{$this->apiKey}" 
+            : "https://console.melipayamak.com/api/send/shared/{$this->apiKey}";
+
+        $payload = [
+            'to'     => $phone,
+            'bodyId' => (int)$bodyId,
+            'args'   => array_values(array_map('strval', $args))
+        ];
+
+        $startTime = microtime(true);
+        $ch = curl_init($endpoint);
+        curl_setopt_array($ch, [
+            CURLOPT_POST           => true,
+            CURLOPT_POSTFIELDS     => json_encode($payload, JSON_UNESCAPED_UNICODE),
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_HTTPHEADER     => ['Content-Type: application/json; charset=utf-8'],
+            CURLOPT_TIMEOUT        => 8,
+            CURLOPT_SSL_VERIFYPEER => false,
+            CURLOPT_SSL_VERIFYHOST => false
+        ]);
+
+        $response   = curl_exec($ch);
+        $httpCode   = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $curlError  = curl_error($ch);
+        curl_close($ch);
+        $durationMs = round((microtime(true) - $startTime) * 1000);
+
+        $this->logDiagnostic(($isOtp ? 'CONSOLE_OTP' : 'CONSOLE_SHARED'), $endpoint, ['Content-Type: application/json'], $payload, $httpCode, $response, $curlError, $durationMs);
+
+        $result = json_decode((string)$response, true);
+        if ($httpCode >= 200 && $httpCode < 300) {
+            if (isset($result['status']) && ($result['status'] === 200 || $result['status'] === 'success' || (isset($result['recId']) && $result['recId'] > 0))) {
+                return true;
+            }
+            if (isset($result['recId']) && is_numeric($result['recId']) && (float)$result['recId'] > 0) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Modern Console REST API for Direct Simple SMS (console.melipayamak.com)
+     */
+    public function sendDirectViaConsoleApi($phone, $text) {
+        if (empty($this->apiKey) || str_contains($this->apiKey, 'SANDBOX')) {
+            return false;
+        }
+
+        $endpoint = "https://console.melipayamak.com/api/send/simple/{$this->apiKey}";
+        $payload = [
+            'to'   => $phone,
+            'from' => $this->from ?: '50004001',
+            'text' => (string)$text
+        ];
+
+        $startTime = microtime(true);
+        $ch = curl_init($endpoint);
+        curl_setopt_array($ch, [
+            CURLOPT_POST           => true,
+            CURLOPT_POSTFIELDS     => json_encode($payload, JSON_UNESCAPED_UNICODE),
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_HTTPHEADER     => ['Content-Type: application/json; charset=utf-8'],
+            CURLOPT_TIMEOUT        => 8,
+            CURLOPT_SSL_VERIFYPEER => false,
+            CURLOPT_SSL_VERIFYHOST => false
+        ]);
+
+        $response   = curl_exec($ch);
+        $httpCode   = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $curlError  = curl_error($ch);
+        curl_close($ch);
+        $durationMs = round((microtime(true) - $startTime) * 1000);
+
+        $this->logDiagnostic('CONSOLE_SIMPLE', $endpoint, ['Content-Type: application/json'], $payload, $httpCode, $response, $curlError, $durationMs);
+
+        $result = json_decode((string)$response, true);
+        if ($httpCode >= 200 && $httpCode < 300) {
+            if (isset($result['status']) && ($result['status'] === 200 || $result['status'] === 'success' || (isset($result['recId']) && $result['recId'] > 0))) {
+                return true;
+            }
+            if (isset($result['recId']) && is_numeric($result['recId']) && (float)$result['recId'] > 0) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
      * Send pattern request with indexed variables
      */
     public function sendPatternRequest($phone, $bodyId, array $textVariables, $actionTag = 'PATTERN') {
@@ -379,7 +485,15 @@ class SmsService {
         $indexedArgs = array_values(array_map('strval', $textVariables));
         $effectiveUser = $this->getEffectiveUsername();
 
-        // 1. Primary Engine: Melipayamak Classic REST API (BaseServiceNumber)
+        // 1. Primary Modern Engine: Melipayamak Console REST API
+        if (!empty($this->apiKey) && !str_contains($this->apiKey, 'SANDBOX') && strlen($this->apiKey) >= 16) {
+            $isOtpAction = (strpos($actionTag, 'OTP') !== false);
+            if ($this->sendViaConsoleApi($phone, $intBodyId, $indexedArgs, $isOtpAction)) {
+                return true;
+            }
+        }
+
+        // 2. Secondary Engine: Melipayamak Classic REST API (BaseServiceNumber)
         $url = "https://rest.payamak-panel.com/api/SendSMS/BaseServiceNumber";
         $headers = ['Content-Type: application/json; charset=utf-8'];
         $payload = [
@@ -496,6 +610,14 @@ class SmsService {
             return true;
         }
 
+        // 1. Primary Modern Engine: Melipayamak Console REST API
+        if (!empty($this->apiKey) && !str_contains($this->apiKey, 'SANDBOX') && strlen($this->apiKey) >= 16) {
+            if ($this->sendDirectViaConsoleApi($phone, $text)) {
+                return true;
+            }
+        }
+
+        // 2. Secondary Engine: Melipayamak Classic REST API (SendSMS)
         $url = "https://rest.payamak-panel.com/api/SendSMS/SendSMS";
         $headers = ['Content-Type: application/json; charset=utf-8'];
         $payload = [
