@@ -3511,7 +3511,7 @@ function updateShebaPreview(input) {
     </div>
 </div>
 <!-- Floating Chat Button -->
-<a href="chat.php" class="fixed bottom-8 left-8 w-14 h-14 bg-primary-container text-white rounded-full shadow-2xl flex items-center justify-center hover:scale-110 active:scale-95 transition-all z-50 group">
+<a href="chat.php" class="floating-chat-btn fixed bottom-[calc(76px+env(safe-area-inset-bottom,0px))] left-4 sm:left-6 md:bottom-8 md:left-8 w-14 h-14 bg-primary-container text-white rounded-full shadow-2xl flex items-center justify-center hover:scale-110 active:scale-95 transition-all z-[950] group" title="پشتیبانی آنلاین آسنا" aria-label="پشتیبانی آنلاین آسنا">
 <span class="material-symbols-outlined text-[28px]">chat_bubble</span>
 <span class="absolute left-16 bg-white text-primary-container px-4 py-2 rounded-xl shadow-xl border border-outline-variant font-bold text-sm opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
         پشتیبانی آنلاین آسنا

@@ -417,6 +417,37 @@ body, button, input, select, textarea {
     justify-content: center;
 }
 
+/* 5. Floating Action & Chat Support Button (Always Floats Comfortably Above Mobile Bottom Nav) */
+.floating-chat-layer,
+.floating-chat-btn,
+.floating-fab-container,
+div.fixed.bottom-6.left-6,
+a.fixed.bottom-8.left-8 {
+    position: fixed !important;
+    z-index: 950 !important;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@media (max-width: 1023px) {
+    .floating-chat-layer,
+    .floating-chat-btn,
+    .floating-fab-container,
+    div.fixed.bottom-6.left-6,
+    a.fixed.bottom-8.left-8 {
+        bottom: calc(76px + env(safe-area-inset-bottom, 0px)) !important;
+        left: 16px !important;
+    }
+}
+
+@media (min-width: 1024px) {
+    .floating-chat-layer,
+    .floating-chat-btn,
+    .floating-fab-container {
+        bottom: 36px !important;
+        left: 36px !important;
+    }
+}
+
 /* 6. Universal Live Search Dropdown & Micro-Interactions */
 #headerSearchResults, #heroSearchResults {
     box-shadow: 0 20px 45px -10px rgba(0, 45, 114, 0.22), 0 0 0 1px rgba(0, 45, 114, 0.06);

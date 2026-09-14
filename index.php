@@ -2667,13 +2667,15 @@ $top_donors = $donor_stmt->fetchAll(PDO::FETCH_ASSOC);
         </section>
     </main>
 
-<!-- Interaction Layer -->
-    <div class="fixed bottom-6 left-6 md:bottom-12 md:left-12 flex flex-col gap-3 md:gap-4 z-50">
+<!-- Interaction Layer (Floating Support / Chat) -->
+    <div class="floating-chat-layer fixed bottom-[calc(76px+env(safe-area-inset-bottom,0px))] left-4 sm:left-6 md:bottom-10 md:left-10 lg:bottom-12 lg:left-12 flex flex-col gap-3 md:gap-4 z-[950]">
         <a href="chat.php"
-            class="w-12 h-12 md:w-16 md:h-16 bg-white border border-outline-variant text-primary rounded-2xl shadow-2xl flex items-center justify-center hover:scale-110 hover:bg-primary hover:text-white transition-all group relative">
+            class="w-12 h-12 md:w-16 md:h-16 bg-white border border-outline-variant text-primary rounded-2xl shadow-2xl flex items-center justify-center hover:scale-110 hover:bg-primary hover:text-white transition-all group relative"
+            title="پشتیبانی آنلاین آسنا"
+            aria-label="پشتیبانی آنلاین آسنا">
             <span class="material-symbols-outlined text-xl md:text-3xl">chat_bubble</span>
             <span
-                class="absolute left-14 md:left-20 bg-primary text-white px-4 py-2 rounded-xl text-xs font-bold opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap shadow-xl">پشتیبانی
+                class="absolute left-14 md:left-20 bg-primary text-white px-4 py-2 rounded-xl text-xs font-bold opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap shadow-xl pointer-events-none">پشتیبانی
                 آنلاین</span>
         </a>
     </div>
