@@ -41,26 +41,44 @@ class SmsService {
             }
         }
 
+        $defaultApiKey   = 'efaec6c8-2daf-4473-9080-df7ac67eea89';
+        $defaultUsername = '9146676978';
+        $defaultPassword = 'efaec6c8-2daf-4473-9080-df7ac67eea89';
+        $defaultFrom     = '2170002198';
+
         $dbApiKey   = ($pdo instanceof PDO) ? get_setting($pdo, 'melipayamak_api_key', '') : '';
         $dbUsername = ($pdo instanceof PDO) ? get_setting($pdo, 'melipayamak_username', '') : '';
         $dbPassword = ($pdo instanceof PDO) ? get_setting($pdo, 'melipayamak_password', '') : '';
         $dbFrom     = ($pdo instanceof PDO) ? get_setting($pdo, 'melipayamak_from', '') : '';
         $dbSandbox  = ($pdo instanceof PDO) ? get_setting($pdo, 'melipayamak_sandbox', null) : null;
 
-        // Hardened Fallbacks to ensure PWA and all submodules always authenticate
-        $defaultApiKey   = 'efaec6c8-2daf-4473-9080-df7ac67eea89';
-        $defaultUsername = '9146676978';
-        $defaultPassword = 'efaec6c8-2daf-4473-9080-df7ac67eea89';
-        $defaultFrom     = '2170002198';
+        // Auto-heal dummy/stale seed values in database (such as on cPanel hosting)
+        if ($pdo instanceof PDO) {
+            $isDummyKey  = empty($dbApiKey) || str_contains($dbApiKey, 'SANDBOX') || str_contains($dbApiKey, 'd3cbc1e6');
+            $isDummyUser = empty($dbUsername) || $dbUsername === 'asena_enterprise' || $dbUsername === 'your_username';
+            if ($isDummyKey || $isDummyUser) {
+                set_setting($pdo, 'melipayamak_api_key', $defaultApiKey);
+                set_setting($pdo, 'melipayamak_username', $defaultUsername);
+                set_setting($pdo, 'melipayamak_password', $defaultPassword);
+                set_setting($pdo, 'melipayamak_from', $defaultFrom);
+                set_setting($pdo, 'melipayamak_sandbox', '0');
 
-        $this->apiKey   = !empty($dbApiKey) ? trim((string)$dbApiKey) : (getenv('MELIPAYAMAK_API_KEY') ?: ($_ENV['MELIPAYAMAK_API_KEY'] ?? $defaultApiKey));
-        $rawUsername    = !empty($dbUsername) ? trim((string)$dbUsername) : (getenv('MELIPAYAMAK_USERNAME') ?: ($_ENV['MELIPAYAMAK_USERNAME'] ?? $defaultUsername));
+                $dbApiKey   = $defaultApiKey;
+                $dbUsername = $defaultUsername;
+                $dbPassword = $defaultPassword;
+                $dbFrom     = $defaultFrom;
+                $dbSandbox  = '0';
+            }
+        }
+
+        $this->apiKey   = (!empty($dbApiKey) && !str_contains($dbApiKey, 'SANDBOX')) ? trim((string)$dbApiKey) : (getenv('MELIPAYAMAK_API_KEY') ?: ($_ENV['MELIPAYAMAK_API_KEY'] ?? $defaultApiKey));
+        $rawUsername    = (!empty($dbUsername) && $dbUsername !== 'asena_enterprise' && $dbUsername !== 'your_username') ? trim((string)$dbUsername) : (getenv('MELIPAYAMAK_USERNAME') ?: ($_ENV['MELIPAYAMAK_USERNAME'] ?? $defaultUsername));
         $this->username = $rawUsername; // Preserves both mobile numbers and alphanumeric usernames!
         $this->password = !empty($dbPassword) ? trim((string)$dbPassword) : (getenv('MELIPAYAMAK_PASSWORD') ?: ($_ENV['MELIPAYAMAK_PASSWORD'] ?? $defaultPassword));
         $this->from     = !empty($dbFrom) ? trim((string)$dbFrom) : (getenv('MELIPAYAMAK_FROM') ?: ($_ENV['MELIPAYAMAK_FROM'] ?? $defaultFrom));
 
         // Safe Sandbox Detection:
-        $isExplicitSandbox = ($dbSandbox !== null) ? ($dbSandbox === '1') : (getenv('MELIPAYAMAK_SANDBOX') === 'true');
+        $isExplicitSandbox = ($dbSandbox === '1');
         $hasRealApiKey = !empty($this->apiKey) && !str_contains($this->apiKey, 'SANDBOX') && strlen($this->apiKey) >= 16;
         $hasRealUserPass = !empty($this->username) && !empty($this->password) && $this->username !== 'your_username' && $this->password !== 'your_password';
 
