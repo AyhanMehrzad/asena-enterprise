@@ -505,15 +505,7 @@ class SmsService {
         $indexedArgs = array_values(array_map('strval', $textVariables));
         $effectiveUser = $this->getEffectiveUsername();
 
-        // 1. Primary Modern Engine: Melipayamak Console REST API
-        if (!empty($this->apiKey) && !str_contains($this->apiKey, 'SANDBOX') && strlen($this->apiKey) >= 16) {
-            $isOtpAction = (strpos($actionTag, 'OTP') !== false);
-            if ($this->sendViaConsoleApi($phone, $intBodyId, $indexedArgs, $isOtpAction)) {
-                return true;
-            }
-        }
-
-        // 2. Secondary Engine: Melipayamak Classic REST API (BaseServiceNumber)
+        // 1. Primary Engine: Melipayamak Classic REST API (BaseServiceNumber)
         $url = "https://rest.payamak-panel.com/api/SendSMS/BaseServiceNumber";
         $headers = ['Content-Type: application/json; charset=utf-8'];
         $payload = [
@@ -730,7 +722,7 @@ class SmsService {
         if ($retStatus === 1 || ($val !== null && is_numeric($val) && (float)$val > 1000)) {
             $interpretation = 'ارسال موفق به مخابرات (کد رهگیری: ' . ($val ?: $retStatus) . ')';
         } elseif ($val === '-108' || $retStatus === -108) {
-            $interpretation = 'خطای -108: مسدود شدن موقت IP سرور به دلیل تلاش‌های ناموفق مکرر (لطفاً چند دقیقه منتظر بمانید یا تیکت ثبت کنید)';
+            $interpretation = 'خطای -108: مسدود شدن موقت IP سرور در ملی‌پیامک به دلیل تلاش‌های ناموفق مکرر قبلی. این محدودیت به زودی (۱۰ الی ۱۵ دقیقه) به صورت خودکار رفع می‌شود یا می‌توانید IP سرور خود را در پنل ملی‌پیامک > تنظیمات > IP های مجاز ثبت کنید.';
         } elseif ($val === '-110' || $retStatus === -110) {
             $interpretation = 'خطای -110: الزام استفاده از ApiKey یا رمز عبور نامعتبر';
         } elseif ($val === '-111' || $retStatus === -111) {
@@ -775,11 +767,12 @@ class SmsService {
             'interpretation' => $interpretation
         ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . PHP_EOL;
 
-        // Write to workspace log file
-        $logFile = dirname(__DIR__, 2) . '/logs/sms.log';
-        if (!is_dir(dirname($logFile))) {
-            @mkdir(dirname($logFile), 0777, true);
+        // Write to project logs directory (safe under open_basedir)
+        $logDir = __DIR__ . '/../logs';
+        if (!is_dir($logDir)) {
+            @mkdir($logDir, 0777, true);
         }
+        $logFile = $logDir . '/sms.log';
         @file_put_contents($logFile, $logEntry, FILE_APPEND | LOCK_EX);
 
         // Also write summary to PHP error log for monitoring

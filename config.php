@@ -2,10 +2,12 @@
 /**
  * ASENA Enterprise - Master Configuration
  * Auto-detects Localhost (XAMPP) vs Production Hosting (cPanel)
+ * Fully compliant with open_basedir restrictions.
  */
 
 $is_local = false;
-if (is_dir('C:\\xampp') || file_exists('/opt/lampp')) {
+if (DIRECTORY_SEPARATOR === '\\') {
+    // Running on Windows local development (XAMPP)
     $is_local = true;
 } elseif (isset($_SERVER['HTTP_HOST'])) {
     $host = $_SERVER['HTTP_HOST'];
@@ -16,10 +18,11 @@ if (is_dir('C:\\xampp') || file_exists('/opt/lampp')) {
         strpos($host, '.local') !== false) {
         $is_local = true;
     }
-} elseif (php_sapi_name() === 'cli') {
-    if (!file_exists('/home/asencomp')) {
-        $is_local = true;
-    }
+}
+
+// If executing inside cPanel /home/ structure, force production mode without checking external paths
+if (strpos(__DIR__, '/home/') !== false || (isset($_SERVER['DOCUMENT_ROOT']) && strpos($_SERVER['DOCUMENT_ROOT'], '/home/') !== false)) {
+    $is_local = false;
 }
 
 if ($is_local) {
