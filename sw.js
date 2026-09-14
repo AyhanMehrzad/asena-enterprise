@@ -3,7 +3,7 @@
  * Version: 1.0.0
  */
 
-const CACHE_NAME = 'asena-enterprise-v1.0.3';
+const CACHE_NAME = 'asena-enterprise-v1.0.4';
 const STATIC_ASSETS = [
     './offline.html',
     './assets/css/style.css',
@@ -13,6 +13,7 @@ const STATIC_ASSETS = [
     './assets/css/enterprise-ui.css',
     './assets/icons/ui/sprite.svg',
     './assets/js/offline-icons.js',
+    './assets/js/notification-system.js',
     './assets/fonts/kJEPBvYX7BgnkSrUwT8OhrdQw4oELdPIeeII9v6oDMzBwG-RpA6RzaxHMPdY40KH8nGzv3fzfVJO1Q.woff2',
     './assets/images/logo.png',
     './favicon.ico',

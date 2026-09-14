@@ -359,11 +359,9 @@ if (function_exists('get_curated_recommendations')) {
     <!-- Digikala-Style Mobile Top App Bar (Sleek Minimalist Search & Notification Bar) -->
     <div class="lg:hidden sticky top-0 z-50 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md px-3 py-2 border-b border-slate-200/80 dark:border-slate-800 flex items-center gap-2.5 shadow-sm transition-all" id="digikalaMobileHeader">
         <!-- Notifications Bell Button (Left side in RTL) -->
-        <a href="<?= isset($_SESSION['user_id']) ? 'profile.php#appointments' : 'login.php' ?>" class="w-10 h-10 rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-200 flex items-center justify-center shrink-0 border border-slate-200/60 dark:border-slate-700 transition-colors relative" title="اعلان‌ها و یادآوری‌ها">
+        <a href="javascript:void(0)" onclick="toggleNotificationDrawer()" class="notification-bell-btn w-10 h-10 rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-200 flex items-center justify-center shrink-0 border border-slate-200/60 dark:border-slate-700 transition-colors relative cursor-pointer" title="اعلان‌ها و یادآوری‌ها">
             <span class="material-symbols-outlined text-[22px]">notifications</span>
-            <?php if (!empty($appointments) && count($appointments) > 0): ?>
-                <span class="absolute top-1.5 right-1.5 w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-white animate-pulse"></span>
-            <?php endif; ?>
+            <span class="notification-badge-count hidden absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-rose-500 text-white text-[10px] font-black flex items-center justify-center border-2 border-white dark:border-slate-900 shadow-xs">0</span>
         </a>
 
         <!-- Digikala Search Pill Bar (Filling remaining width) -->
@@ -519,6 +517,12 @@ if (function_exists('get_curated_recommendations')) {
                 </div>
                 
                 <div class="flex items-center gap-1 lg:gap-2">
+                    <!-- Notification Bell (Desktop) -->
+                    <a href="javascript:void(0)" onclick="toggleNotificationDrawer()" class="notification-bell-btn relative material-symbols-outlined text-white p-1.5 lg:p-2 hover:bg-white/10 rounded-full transition-colors flex text-xl lg:text-2xl cursor-pointer" title="اعلان‌ها و رویدادها">
+                        notifications
+                        <span class="notification-badge-count hidden absolute top-0.5 right-0.5 bg-rose-500 text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-black shadow-sm">0</span>
+                    </a>
+
                     <a href="<?php echo isset($_SESSION['user_id']) ? 'profile.php' : 'login.php'; ?>" class="material-symbols-outlined text-white p-1.5 lg:p-2 hover:bg-white/10 rounded-full transition-colors flex text-xl lg:text-2xl" title="حساب کاربری">person</a>
                     
                     <a href="cart.php" class="relative material-symbols-outlined text-white p-1.5 lg:p-2 hover:bg-white/10 rounded-full transition-colors flex text-xl lg:text-2xl" title="سبد خرید">
@@ -953,3 +957,4 @@ if (function_exists('get_curated_recommendations')) {
             }
         });
     </script>
+    <script src="assets/js/notification-system.js?v=<?php echo time(); ?>"></script>

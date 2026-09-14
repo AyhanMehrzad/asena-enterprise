@@ -219,6 +219,8 @@ $adminName = $adminCheck['name'] ?? 'مدیر سیستم';
             $activeKey = 'reviews';
         } elseif ($currentFile === 'guide.php') {
             $activeKey = 'guide';
+        } elseif ($currentFile === 'notifications.php') {
+            $activeKey = 'notifications';
         }
 
         $pendingVerificationsCount = 0;
@@ -257,6 +259,7 @@ $adminName = $adminCheck['name'] ?? 'مدیر سیستم';
                 'tickets'       => ['icon' => 'support_agent', 'title' => 'مرکز تیکتینگ و شکایات', 'url' => 'tickets.php', 'badge' => $openTicketsCount],
                 'security_logs' => ['icon' => 'shield', 'title' => 'پایش امنیت و لاگ‌ها (SOC)', 'url' => 'security_logs.php'],
                 'users'         => ['icon' => 'group', 'title' => 'مدیریت کاربران و نقش‌ها', 'url' => 'user_management.php'],
+                'notifications' => ['icon' => 'campaign', 'title' => 'اعلان‌های آنی و PWA (مارکتینگ)', 'url' => 'notifications.php'],
                 'sms_settings'  => ['icon' => 'sms', 'title' => 'تنظیمات پیامک و اعلان', 'url' => 'sms_settings.php', 'feature' => 'sms_automation'],
             ],
             'محتوا و راهنما' => [

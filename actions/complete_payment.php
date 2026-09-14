@@ -298,6 +298,52 @@ try {
                 $orderTotalAmount = $total_amount ?? ($pending['final_amount'] ?? ($pending['amount'] ?? 0));
                 $sms->sendAdminNewOrderAlert($adminPhones, $order_id, $orderTotalAmount);
             }
+
+            // Notify Marketplace Seller(s) with items in this order (Pattern 535286 / Direct SMS)
+            if (!empty($order_id)) {
+                try {
+                    $sellerStmt = $pdo->prepare("
+                        SELECT DISTINCT u.phone, u.name 
+                        FROM order_items oi
+                        JOIN users u ON oi.seller_id = u.id
+                        WHERE oi.order_id = ? AND u.phone IS NOT NULL AND u.phone != ''
+                    ");
+                    $sellerStmt->execute([$order_id]);
+                    $sellers = $sellerStmt->fetchAll(PDO::FETCH_ASSOC);
+                    foreach ($sellers as $sRow) {
+                        $sms->sendSellerNewOrderAlert($sRow['phone'], $order_id);
+                    }
+                } catch (Throwable $sEx) {
+                    error_log("Seller new order SMS alert error: " . $sEx->getMessage());
+                }
+            }
+
+            // In-app Notification for User
+            try {
+                require_once __DIR__ . '/../includes/PushNotificationService.php';
+                $notifService = new PushNotificationService($pdo);
+                if (!empty($order_id)) {
+                    $notifService->createNotification(
+                        (int)$user_id,
+                        'order_status',
+                        "سفارش #{$order_id} با موفقیت ثبت شد",
+                        "سفارش شما با موفقیت تایید شد و هم‌اکنون در صف بسته‌بندی و تحویل به ناوگان پستی قرار گرفت.",
+                        "profile.php",
+                        "local_shipping"
+                    );
+                } elseif ($is_booking && !empty($bookingId)) {
+                    $notifService->createNotification(
+                        (int)$user_id,
+                        'order_status',
+                        "رزرو نوبت ویزیت با موفقیت ثبت شد",
+                        "نوبت پزشکی شما در سامانه آسنا با موفقیت تایید گردید. لطفا در زمان مقرر در کلینیک حاضر باشید.",
+                        "profile.php#appointments",
+                        "calendar_month"
+                    );
+                }
+            } catch (Throwable $notifEx) {
+                error_log("In-app notification creation error: " . $notifEx->getMessage());
+            }
         }
     }
 
