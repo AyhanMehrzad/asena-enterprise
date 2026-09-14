@@ -66,6 +66,16 @@ class SmsService {
     }
 
     /**
+     * Resolve effective credential secret (ApiKey if set, or panel password)
+     */
+    public function getAuthSecret(): string {
+        if (!empty($this->apiKey) && !str_contains($this->apiKey, 'SANDBOX') && strlen($this->apiKey) >= 16) {
+            return $this->apiKey;
+        }
+        return $this->password;
+    }
+
+    /**
      * Ensure environment variables from root .env are loaded into getenv() and $_ENV
      */
     public static function loadEnv() {
@@ -499,7 +509,7 @@ class SmsService {
         $headers = ['Content-Type: application/json; charset=utf-8'];
         $payload = [
             'username' => $effectiveUser,
-            'password' => $this->password,
+            'password' => $this->getAuthSecret(),
             'text'     => implode(';', $indexedArgs),
             'to'       => $phone,
             'bodyId'   => $intBodyId
@@ -547,7 +557,7 @@ class SmsService {
 
                 $soapData = [
                     'username' => $effectiveUser,
-                    'password' => $this->password,
+                    'password' => $this->getAuthSecret(),
                     'to'       => $phone,
                     'bodyId'   => $intBodyId,
                     'text'     => implode(';', $indexedArgs)
@@ -624,7 +634,7 @@ class SmsService {
         $headers = ['Content-Type: application/json; charset=utf-8'];
         $payload = [
             'username' => $this->getEffectiveUsername(),
-            'password' => $this->password,
+            'password' => $this->getAuthSecret(),
             'from'     => $this->from,
             'to'       => $phone,
             'text'     => (string)$text,
@@ -794,7 +804,7 @@ class SmsService {
                 ]);
                 $res = $client->GetCredit([
                     'username' => $this->getEffectiveUsername(),
-                    'password' => $this->password
+                    'password' => $this->getAuthSecret()
                 ]);
                 return isset($res->GetCreditResult) ? (float)$res->GetCreditResult : null;
             } catch (\Exception $e) {
