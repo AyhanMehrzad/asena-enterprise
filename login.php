@@ -294,7 +294,76 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <link href="assets/css/material-symbols.css" rel="stylesheet"/>
     <link href="assets/css/geist.css" rel="stylesheet"/>
     <script src="assets/js/tailwind-config.js"></script>
-    <link rel="stylesheet" href="assets/css/login.css">
+    <link rel="stylesheet" href="assets/css/login.css?v=<?= time() ?>">
+    <script>
+    function switchAuthTab(tabId) {
+        if (!tabId) return;
+        var panes = document.querySelectorAll('.tab-pane');
+        for (var i = 0; i < panes.length; i++) {
+            panes[i].classList.add('hidden');
+            panes[i].classList.remove('active');
+        }
+        var tabs = document.querySelectorAll('.tab-btn');
+        for (var j = 0; j < tabs.length; j++) {
+            tabs[j].classList.remove('bg-white', 'text-teal-900', 'shadow-sm', 'font-extrabold');
+            tabs[j].classList.add('text-slate-500', 'font-medium');
+        }
+        var targetPane = document.getElementById('pane-' + tabId);
+        var targetBtn = document.getElementById('tab-' + tabId);
+        if (targetPane) {
+            targetPane.classList.remove('hidden');
+            targetPane.classList.add('active');
+        }
+        if (targetBtn) {
+            targetBtn.classList.add('bg-white', 'text-teal-900', 'shadow-sm', 'font-extrabold');
+            targetBtn.classList.remove('text-slate-500', 'font-medium');
+        }
+        try {
+            if (window.history && window.history.replaceState) {
+                var url = new URL(window.location.href);
+                url.searchParams.set('tab', tabId);
+                window.history.replaceState({}, '', url.toString());
+            }
+        } catch (e) {}
+    }
+
+    function togglePasswordVisibility(inputId, btnEl) {
+        var input = document.getElementById(inputId);
+        if (!input) return;
+        var isPassword = input.type === 'password';
+        input.type = isPassword ? 'text' : 'password';
+        if (btnEl) {
+            var icon = btnEl.querySelector('.material-symbols-outlined');
+            if (icon) {
+                icon.textContent = isPassword ? 'visibility_off' : 'visibility';
+            }
+        }
+    }
+
+    function initOtpCountdown(timerId, btnId, seconds) {
+        seconds = typeof seconds === 'number' ? seconds : 120;
+        var timerEl = document.getElementById(timerId);
+        var btnEl = btnId ? document.getElementById(btnId) : null;
+        if (!timerEl) return;
+        var remaining = seconds;
+        if (btnEl) btnEl.disabled = true;
+        var interval = setInterval(function() {
+            remaining--;
+            var mins = Math.floor(remaining / 60);
+            var secs = remaining % 60;
+            timerEl.textContent = (mins < 10 ? '0' : '') + mins + ':' + (secs < 10 ? '0' : '') + secs;
+            if (remaining <= 0) {
+                clearInterval(interval);
+                timerEl.textContent = '00:00';
+                if (btnEl) {
+                    btnEl.disabled = false;
+                    btnEl.classList.remove('opacity-50', 'cursor-not-allowed');
+                    btnEl.classList.add('text-teal-700', 'hover:underline', 'cursor-pointer');
+                }
+            }
+        }, 1000);
+    }
+    </script>
 </head>
 <body class="bg-slate-50 min-h-screen text-slate-800 antialiased selection:bg-teal-500 selection:text-white">
 <main class="min-h-screen w-full flex flex-row items-stretch">
@@ -390,19 +459,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <?php endif; ?>
 
             <!-- Segmented Tab Navigation -->
-            <div class="p-1 bg-slate-100/90 rounded-2xl flex items-center gap-1 mb-6 text-xs border border-slate-200/60">
-                <button type="button" onclick="switchAuthTab('password')" id="tab-password" class="tab-btn flex-1 py-2.5 rounded-xl transition-all flex items-center justify-center gap-1.5 <?= $activeTab === 'password' ? 'bg-white text-teal-900 shadow-sm font-extrabold' : 'text-slate-500 font-medium hover:text-slate-900' ?>">
-                    <span class="material-symbols-outlined text-base">lock</span>
-                    <span>ورود با رمز</span>
-                </button>
-                <button type="button" onclick="switchAuthTab('otp')" id="tab-otp" class="tab-btn flex-1 py-2.5 rounded-xl transition-all flex items-center justify-center gap-1.5 <?= $activeTab === 'otp' ? 'bg-white text-teal-900 shadow-sm font-extrabold' : 'text-slate-500 font-medium hover:text-slate-900' ?>">
-                    <span class="material-symbols-outlined text-base">sms</span>
-                    <span>ورود پیامکی (OTP)</span>
-                </button>
-                <button type="button" onclick="switchAuthTab('signup')" id="tab-signup" class="tab-btn flex-1 py-2.5 rounded-xl transition-all flex items-center justify-center gap-1.5 <?= $activeTab === 'signup' ? 'bg-white text-teal-900 shadow-sm font-extrabold' : 'text-slate-500 font-medium hover:text-slate-900' ?>">
-                    <span class="material-symbols-outlined text-base">person_add</span>
-                    <span>ثبت‌نام سریع</span>
-                </button>
+            <div class="p-1 bg-slate-100/90 rounded-2xl flex items-center gap-1 mb-6 text-xs border border-slate-200/60 select-none">
+                <a href="login.php?tab=password" role="button" data-tab="password" onclick="switchAuthTab('password'); return false;" id="tab-password" class="tab-btn flex-1 py-2.5 rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer <?= $activeTab === 'password' ? 'bg-white text-teal-900 shadow-sm font-extrabold' : 'text-slate-500 font-medium hover:text-slate-900' ?>">
+                    <span class="material-symbols-outlined text-base pointer-events-none">lock</span>
+                    <span class="pointer-events-none">ورود با رمز</span>
+                </a>
+                <a href="login.php?tab=otp" role="button" data-tab="otp" onclick="switchAuthTab('otp'); return false;" id="tab-otp" class="tab-btn flex-1 py-2.5 rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer <?= $activeTab === 'otp' ? 'bg-white text-teal-900 shadow-sm font-extrabold' : 'text-slate-500 font-medium hover:text-slate-900' ?>">
+                    <span class="material-symbols-outlined text-base pointer-events-none">sms</span>
+                    <span class="pointer-events-none">ورود پیامکی (OTP)</span>
+                </a>
+                <a href="login.php?tab=signup" role="button" data-tab="signup" onclick="switchAuthTab('signup'); return false;" id="tab-signup" class="tab-btn flex-1 py-2.5 rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer <?= $activeTab === 'signup' ? 'bg-white text-teal-900 shadow-sm font-extrabold' : 'text-slate-500 font-medium hover:text-slate-900' ?>">
+                    <span class="material-symbols-outlined text-base pointer-events-none">person_add</span>
+                    <span class="pointer-events-none">ثبت‌نام سریع</span>
+                </a>
             </div>
 
             <!-- ======================================================= -->
@@ -655,6 +724,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </section>
 </main>
 
-<script src="assets/js/login.js"></script>
+<script src="assets/js/login.js?v=<?= time() ?>"></script>
 </body>
 </html>
