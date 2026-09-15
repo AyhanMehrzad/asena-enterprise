@@ -315,19 +315,57 @@ exit;
             let marker = L.marker([startLat, startLng], {draggable: true}).addTo(map);
 
             const addressInput = document.querySelector('textarea[name="address"]');
+            const postalInput = document.querySelector('input[name="postal_code"]');
 
             async function reverseGeocode(lat, lng) {
                 try {
-                    const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`);
-                    const data = await response.json();
-                    if (data && data.display_name) {
-                        // Keep user's custom details if any, but replace or prepend?
-                        // Let's just overwrite for now since they are picking a new spot.
-                        addressInput.value = data.display_name;
-                        
-                        // Add a subtle flash effect to let user know it updated
-                        addressInput.parentElement.classList.add('ring-2', 'ring-primary', 'transition-all');
-                        setTimeout(() => addressInput.parentElement.classList.remove('ring-2', 'ring-primary'), 1000);
+                    let data = null;
+                    try {
+                        const response = await fetch(`actions/reverse_geocode.php?lat=${lat}&lng=${lng}`);
+                        if (response.ok) {
+                            const resJson = await response.json();
+                            if (resJson && resJson.status === 'success' && resJson.data) {
+                                data = resJson.data;
+                            }
+                        }
+                    } catch (e) {
+                        console.warn('[SettingsMap] Server reverse geocode failed, using direct fallback');
+                    }
+
+                    if (!data) {
+                        const directResp = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1&accept-language=fa`);
+                        if (directResp.ok) {
+                            const dJson = await directResp.json();
+                            if (dJson && dJson.address) {
+                                const a = dJson.address;
+                                const road = a.road || a.pedestrian || a.residential || '';
+                                const hood = a.neighbourhood || a.suburb || a.quarter || '';
+                                const formatted = [hood, road ? (road.startsWith('خیابان') ? road : 'خیابان ' + road) : '']
+                                    .filter(Boolean).join('، ') || dJson.display_name;
+                                data = {
+                                    formatted_address: formatted,
+                                    postal_code: (a.postcode || '').replace(/[^0-9]/g, '').slice(0, 10)
+                                };
+                            }
+                        }
+                    }
+
+                    if (data && data.formatted_address) {
+                        if (addressInput) {
+                            addressInput.value = data.formatted_address;
+                            addressInput.parentElement.classList.add('ring-2', 'ring-emerald-500', 'transition-all');
+                            setTimeout(() => addressInput.parentElement.classList.remove('ring-2', 'ring-emerald-500'), 1500);
+                        }
+                        if (postalInput && data.postal_code && !postalInput.value.trim()) {
+                            postalInput.value = data.postal_code;
+                        }
+                        if (marker) {
+                            marker.bindPopup(`
+                                <div style="font-family: 'Vazirmatn', sans-serif; text-align: right; direction: rtl; font-size: 12px;">
+                                    <b>موقعیت انتخابی:</b><br>${data.formatted_address}
+                                </div>
+                            `).openPopup();
+                        }
                     }
                 } catch (error) {
                     console.error("Geocoding failed:", error);
@@ -337,16 +375,16 @@ exit;
             // Update inputs on marker drag
             marker.on('dragend', function(e) {
                 const position = marker.getLatLng();
-                latInput.value = position.lat;
-                lngInput.value = position.lng;
+                latInput.value = position.lat.toFixed(6);
+                lngInput.value = position.lng.toFixed(6);
                 reverseGeocode(position.lat, position.lng);
             });
 
             // Update inputs and marker on map click
             map.on('click', function(e) {
                 marker.setLatLng(e.latlng);
-                latInput.value = e.latlng.lat;
-                lngInput.value = e.latlng.lng;
+                latInput.value = e.latlng.lat.toFixed(6);
+                lngInput.value = e.latlng.lng.toFixed(6);
                 reverseGeocode(e.latlng.lat, e.latlng.lng);
             });
         });

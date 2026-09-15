@@ -1964,32 +1964,64 @@ function updateShebaPreview(input) {
                         <span class="material-symbols-outlined text-secondary-container">pin_drop</span>
                         انتخاب موقعیت دقیق مکانی روی نقشه آنلاین
                     </h4>
-                    <p class="text-xs text-slate-500 mt-1">نشانگر را روی نقشه جابجا کنید تا مختصات دقیق محل سکونت شما ثبت شود.</p>
+                    <p class="text-xs text-slate-500 mt-1">با کلیک یا جابجایی نشانگر روی نقشه، نشانی پستی (خیابان و محله) و شهر به صورت خودکار تکمیل می‌شود.</p>
                 </div>
-                <button type="button" onclick="locateUserPosition()" class="px-4 py-2 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-bold transition-all border border-blue-200 flex items-center gap-1.5 self-start sm:self-auto">
-                    <span class="material-symbols-outlined text-base">my_location</span>
-                    <span>موقعیت مکانی من (GPS)</span>
-                </button>
+                <div class="flex items-center gap-2">
+                    <button type="button" onclick="locateUserPosition()" class="px-4 py-2 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-bold transition-all border border-blue-200 flex items-center gap-1.5 self-start sm:self-auto cursor-pointer shadow-sm active:scale-95">
+                        <span class="material-symbols-outlined text-base">my_location</span>
+                        <span>موقعیت مکانی من (GPS)</span>
+                    </button>
+                </div>
             </div>
 
-            <!-- Leaflet Map Container -->
+            <!-- Quick City & Neighborhood Jumpers -->
+            <div class="flex items-center gap-2 overflow-x-auto pb-1 text-xs scrollbar-none">
+                <span class="text-slate-400 font-bold shrink-0 text-[11px]">پرش سریع:</span>
+                <button type="button" onclick="jumpMapTo(38.0700, 46.2931, 14, 'تبریز')" class="px-3 py-1 rounded-xl bg-slate-100 hover:bg-primary/10 hover:text-primary font-bold transition-all shrink-0 active:scale-95 cursor-pointer">📍 تبریز</button>
+                <button type="button" onclick="jumpMapTo(38.0645, 46.3600, 15, 'ولیعصر تبریز')" class="px-3 py-1 rounded-xl bg-slate-100 hover:bg-primary/10 hover:text-primary font-bold transition-all shrink-0 active:scale-95 cursor-pointer">ولیعصر</button>
+                <button type="button" onclick="jumpMapTo(38.0580, 46.3750, 15, 'ائل‌گلی تبریز')" class="px-3 py-1 rounded-xl bg-slate-100 hover:bg-primary/10 hover:text-primary font-bold transition-all shrink-0 active:scale-95 cursor-pointer">ائل‌گلی</button>
+                <button type="button" onclick="jumpMapTo(38.0680, 46.3260, 15, 'آبرسان تبریز')" class="px-3 py-1 rounded-xl bg-slate-100 hover:bg-primary/10 hover:text-primary font-bold transition-all shrink-0 active:scale-95 cursor-pointer">آبرسان</button>
+                <button type="button" onclick="jumpMapTo(35.6892, 51.3890, 13, 'تهران')" class="px-3 py-1 rounded-xl bg-slate-100 hover:bg-primary/10 hover:text-primary font-bold transition-all shrink-0 active:scale-95 cursor-pointer">📍 تهران</button>
+                <button type="button" onclick="jumpMapTo(35.7800, 51.3700, 14, 'سعادت‌آباد')" class="px-3 py-1 rounded-xl bg-slate-100 hover:bg-primary/10 hover:text-primary font-bold transition-all shrink-0 active:scale-95 cursor-pointer">سعادت‌آباد</button>
+            </div>
+
+            <!-- Leaflet Map Container with Floating Real-time Address Pill -->
             <div class="relative w-full rounded-2xl overflow-hidden border border-slate-200 shadow-inner">
-                <div id="customer-address-map" class="w-full h-80 z-0"></div>
-                <div class="absolute bottom-3 right-3 bg-white/90 backdrop-blur-md px-3 py-1.5 rounded-xl text-[11px] font-bold text-slate-700 shadow-md border border-slate-200 z-10 pointer-events-none">
-                    برای تغییر موقعیت، روی نقشه کلیک کنید یا نشانگر را بکشید
+                <div id="customer-address-map" class="w-full h-80 sm:h-96 z-0"></div>
+                
+                <!-- Floating Geocoding Live Indicator -->
+                <div id="map-address-pill" class="absolute top-3 left-3 right-3 sm:right-3 sm:left-auto max-w-md bg-white/95 backdrop-blur-md px-3.5 py-2.5 rounded-2xl text-xs font-bold text-slate-800 shadow-xl border border-slate-200/90 z-[400] flex items-center gap-2.5 transition-all">
+                    <span id="map-pill-icon" class="material-symbols-outlined text-secondary-container text-lg shrink-0">location_on</span>
+                    <span id="map-pill-text" class="truncate font-medium">روی نقشه کلیک کنید تا نشانی استخراج شود</span>
                 </div>
+
+                <div class="absolute bottom-3 right-3 bg-white/90 backdrop-blur-md px-3 py-1.5 rounded-xl text-[11px] font-bold text-slate-700 shadow-md border border-slate-200 z-[400] pointer-events-none">
+                    نشانگر را بکشید یا روی هر نقطه کلیک کنید
+                </div>
+            </div>
+
+            <!-- Real-time Autofill Alert Banner -->
+            <div id="address-autofill-alert" class="hidden p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2 animate-fade-in transition-all">
+                <div class="flex items-center gap-2">
+                    <span class="material-symbols-outlined text-emerald-600 text-lg">check_circle</span>
+                    <span id="autofill-alert-msg" class="font-bold">نشانی و شهر از روی نقشه استخراج و در فرم زیر درج شد.</span>
+                </div>
+                <span class="text-[11px] text-emerald-700 font-medium opacity-90">در صورت تمایل پلاک، طبقه و زنگ را تکمیل نمایید</span>
             </div>
 
             <!-- Address Update Form -->
             <form method="POST" action="actions/profile_action.php" class="space-y-4 pt-2">
                 <?= csrf_field() ?>
                 <input type="hidden" name="action" value="update_address">
-                <input type="hidden" name="latitude" id="address_latitude" value="<?= htmlspecialchars($user['latitude'] ?? '35.6892') ?>">
-                <input type="hidden" name="longitude" id="address_longitude" value="<?= htmlspecialchars($user['longitude'] ?? '51.3890') ?>">
+                <input type="hidden" name="latitude" id="address_latitude" value="<?= htmlspecialchars($user['latitude'] ?? '38.0700') ?>">
+                <input type="hidden" name="longitude" id="address_longitude" value="<?= htmlspecialchars($user['longitude'] ?? '46.2931') ?>">
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-xs font-bold text-slate-700 mb-1.5">استان / شهر تحویل گیرنده *</label>
+                        <label class="block text-xs font-bold text-slate-700 mb-1.5 flex items-center justify-between">
+                            <span>استان / شهر تحویل گیرنده *</span>
+                            <span class="text-[10px] text-emerald-600 font-normal">تنظیم هوشمند از نقشه</span>
+                        </label>
                         <input type="text" name="city" id="address_city" value="<?= htmlspecialchars($user['city'] ?? 'تبریز') ?>" required class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-secondary-container font-medium text-xs text-slate-800 bg-slate-50 focus:bg-white transition-all">
                     </div>
                     <div>
@@ -1999,15 +2031,21 @@ function updateShebaPreview(input) {
                 </div>
 
                 <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1.5">نشانی پستی دقیق (نام خیابان، کوچه، پلاک، طبقه و واحد) *</label>
-                    <textarea name="address" id="address_text" rows="3" required placeholder="مثال: ولیعصر، خیابان توانیر، کوچه مریم، پلاک ۱۴، زنگ ۲" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-secondary-container font-medium text-xs text-slate-800 bg-slate-50 focus:bg-white transition-all leading-relaxed"><?= htmlspecialchars($user['address'] ?? '') ?></textarea>
+                    <div class="flex items-center justify-between mb-1.5">
+                        <label class="block text-xs font-bold text-slate-700">نشانی پستی دقیق (نام خیابان، کوچه، پلاک، طبقه و واحد) *</label>
+                        <button type="button" onclick="triggerCurrentLocationGeocode()" class="text-[11px] text-primary hover:underline font-bold flex items-center gap-1 cursor-pointer">
+                            <span class="material-symbols-outlined text-xs">sync</span>
+                            <span>استخراج مجدد از نشانگر نقشه</span>
+                        </button>
+                    </div>
+                    <textarea name="address" id="address_text" rows="3" required placeholder="مثال: ولیعصر، خیابان توانیر، کوچه مریم، پلاک ۱۴، زنگ ۲" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-secondary-container font-medium text-xs text-slate-800 bg-slate-50 focus:bg-white transition-all leading-relaxed shadow-sm"><?= htmlspecialchars($user['address'] ?? '') ?></textarea>
                 </div>
 
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 border-t border-slate-100">
                     <span class="text-[11px] text-slate-400">
                         با ذخیره این نشانی، تمام سفارشات آتی و اتوشیپ به این آدرس ارسال خواهند شد.
                     </span>
-                    <button type="submit" class="px-6 py-3 rounded-xl bg-secondary-container hover:bg-[#ea580c] text-white font-bold text-xs shadow-md transition-all flex items-center justify-center gap-2">
+                    <button type="submit" class="px-6 py-3 rounded-xl bg-secondary-container hover:bg-[#ea580c] text-white font-bold text-xs shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95">
                         <span class="material-symbols-outlined text-base">save</span>
                         <span>ثبت و به‌روزرسانی نهایی نشانی تحویل</span>
                     </button>
@@ -3786,63 +3824,242 @@ function updateShebaPreview(input) {
         }
     }
 
-    // ─── Leaflet Map & Geocoding for Customer Addresses ───────────────────────────
+    // ─── Leaflet Map & Smart Address Geocoding for Customer ─────────────────────
     let customerMap = null;
     let customerMarker = null;
+    let geocodeAbortCtrl = null;
 
     function initCustomerAddressMap() {
         const mapContainer = document.getElementById('customer-address-map');
         if (!mapContainer || customerMap) return;
 
-        let initialLat = parseFloat(document.getElementById('address_latitude').value) || 35.6892;
-        let initialLng = parseFloat(document.getElementById('address_longitude').value) || 51.3890;
+        let initialLat = parseFloat(document.getElementById('address_latitude').value) || 38.0700;
+        let initialLng = parseFloat(document.getElementById('address_longitude').value) || 46.2931;
 
-        customerMap = L.map('customer-address-map').setView([initialLat, initialLng], 13);
+        customerMap = L.map('customer-address-map', {
+            zoomControl: true,
+            attributionControl: false
+        }).setView([initialLat, initialLng], 14);
 
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            maxZoom: 19,
-            attribution: '© OpenStreetMap contributors'
+            maxZoom: 19
         }).addTo(customerMap);
 
-        // Marker
+        // Interactive Marker
         customerMarker = L.marker([initialLat, initialLng], {
             draggable: true
         }).addTo(customerMap);
 
+        // When user finishes dragging the marker -> Auto Fill Address
         customerMarker.on('dragend', function(e) {
             const pos = e.target.getLatLng();
             updateLatLngInputs(pos.lat, pos.lng);
+            reverseGeocodeAndFillAddress(pos.lat, pos.lng);
         });
 
+        // When user clicks anywhere on the map -> Move Marker & Auto Fill Address
         customerMap.on('click', function(e) {
             customerMarker.setLatLng(e.latlng);
             updateLatLngInputs(e.latlng.lat, e.latlng.lng);
+            reverseGeocodeAndFillAddress(e.latlng.lat, e.latlng.lng);
         });
+
+        // If address text is currently empty, auto-resolve default coordinates
+        const currentAddr = (document.getElementById('address_text')?.value || '').trim();
+        if (!currentAddr) {
+            reverseGeocodeAndFillAddress(initialLat, initialLng, false);
+        } else {
+            const pillText = document.getElementById('map-pill-text');
+            if (pillText) {
+                pillText.textContent = currentAddr.length > 50 ? currentAddr.substring(0, 50) + '...' : currentAddr;
+            }
+        }
     }
 
     function updateLatLngInputs(lat, lng) {
         const latInput = document.getElementById('address_latitude');
         const lngInput = document.getElementById('address_longitude');
-        if (latInput) latInput.value = lat.toFixed(6);
-        if (lngInput) lngInput.value = lng.toFixed(6);
+        if (latInput) latInput.value = Number(lat).toFixed(6);
+        if (lngInput) lngInput.value = Number(lng).toFixed(6);
     }
 
+    /**
+     * Automatically queries the reverse geocoding API and fills the address, city, and postal code
+     */
+    async function reverseGeocodeAndFillAddress(lat, lng, highlight = true) {
+        const pillText = document.getElementById('map-pill-text');
+        const pillIcon = document.getElementById('map-pill-icon');
+        const addressTextarea = document.getElementById('address_text');
+        const cityInput = document.getElementById('address_city');
+        const postalInput = document.getElementById('address_postal_code');
+        const alertBanner = document.getElementById('address-autofill-alert');
+
+        if (pillText) {
+            pillText.innerHTML = '<span class="inline-flex items-center gap-1.5 text-secondary-container"><span class="material-symbols-outlined text-sm animate-spin">sync</span> در حال استخراج آدرس از نقشه...</span>';
+        }
+
+        if (geocodeAbortCtrl) {
+            geocodeAbortCtrl.abort();
+        }
+        geocodeAbortCtrl = new AbortController();
+
+        try {
+            let data = null;
+
+            // 1. Primary: Server-side Persian geocoding endpoint
+            try {
+                const response = await fetch(`actions/reverse_geocode.php?lat=${lat}&lng=${lng}`, {
+                    signal: geocodeAbortCtrl.signal
+                });
+                if (response.ok) {
+                    const resJson = await response.json();
+                    if (resJson && resJson.status === 'success' && resJson.data) {
+                        data = resJson.data;
+                    }
+                }
+            } catch (srvErr) {
+                if (srvErr.name === 'AbortError') return;
+                console.warn('[Geocode] Server endpoint fallback:', srvErr);
+            }
+
+            // 2. Secondary fallback: Direct OpenStreetMap Nominatim with Persian language
+            if (!data) {
+                const directUrl = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1&accept-language=fa`;
+                const directResp = await fetch(directUrl, { signal: geocodeAbortCtrl.signal });
+                if (directResp.ok) {
+                    const dJson = await directResp.json();
+                    if (dJson && dJson.address) {
+                        const a = dJson.address;
+                        const c = a.city || a.town || a.village || a.county || 'تبریز';
+                        const road = a.road || a.pedestrian || a.residential || '';
+                        const hood = a.neighbourhood || a.suburb || a.quarter || '';
+                        const formatted = [hood, road ? (road.startsWith('خیابان') ? road : 'خیابان ' + road) : '']
+                            .filter(Boolean).join('، ') || dJson.display_name;
+                        data = {
+                            city: c.replace(/^(شهرستان|شهر|بخش)\s+/g, '').trim(),
+                            formatted_address: formatted,
+                            postal_code: (a.postcode || '').replace(/[^0-9]/g, '').slice(0, 10)
+                        };
+                    }
+                }
+            }
+
+            if (data && data.formatted_address) {
+                // Auto fill the Address Textarea!
+                if (addressTextarea) {
+                    addressTextarea.value = data.formatted_address;
+                    if (highlight) {
+                        addressTextarea.classList.add('ring-2', 'ring-emerald-500', 'bg-emerald-50/30', 'transition-all');
+                        setTimeout(() => {
+                            addressTextarea.classList.remove('ring-2', 'ring-emerald-500', 'bg-emerald-50/30');
+                        }, 1800);
+                    }
+                }
+
+                // Auto fill the City input
+                if (cityInput && data.city) {
+                    cityInput.value = data.city;
+                }
+
+                // Auto fill the Postal Code if currently empty
+                if (postalInput && data.postal_code && !postalInput.value.trim()) {
+                    postalInput.value = data.postal_code;
+                }
+
+                // Update Map Floating Pill
+                if (pillText) {
+                    pillText.textContent = data.formatted_address;
+                }
+                if (pillIcon) {
+                    pillIcon.textContent = 'check_circle';
+                    pillIcon.classList.remove('text-secondary-container');
+                    pillIcon.classList.add('text-emerald-600');
+                    setTimeout(() => {
+                        pillIcon.textContent = 'location_on';
+                        pillIcon.classList.remove('text-emerald-600');
+                        pillIcon.classList.add('text-secondary-container');
+                    }, 2000);
+                }
+
+                // Bind Marker Popup
+                if (customerMarker) {
+                    customerMarker.bindPopup(`
+                        <div style="font-family: 'Vazirmatn', sans-serif; text-align: right; direction: rtl; padding: 4px; font-size: 12px;">
+                            <b style="color: #001a48;">موقعیت انتخابی شما:</b>
+                            <p style="margin: 4px 0 0 0; color: #334155; font-weight: bold;">${data.formatted_address}</p>
+                            <span style="font-size: 10px; color: #16a34a; display: block; margin-top: 4px;">✔ نشانی در فرم ثبت شد</span>
+                        </div>
+                    `).openPopup();
+                }
+
+                // Show success notification banner
+                if (alertBanner) {
+                    alertBanner.classList.remove('hidden');
+                }
+            }
+        } catch (err) {
+            if (err.name === 'AbortError') return;
+            console.error('[Geocoding] Error:', err);
+            if (pillText) {
+                pillText.textContent = 'نقطه انتخاب شد (لطفاً جزئیات نشانی را در کادر زیر تکمیل فرمایید)';
+            }
+        }
+    }
+
+    /**
+     * Trigger re-geocoding from current marker position
+     */
+    function triggerCurrentLocationGeocode() {
+        if (!customerMarker) return;
+        const pos = customerMarker.getLatLng();
+        reverseGeocodeAndFillAddress(pos.lat, pos.lng, true);
+    }
+
+    /**
+     * Quick Jump to specific city/neighborhood and auto-fill address
+     */
+    function jumpMapTo(lat, lng, zoom = 14, name = '') {
+        if (!customerMap || !customerMarker) {
+            initCustomerAddressMap();
+        }
+        if (customerMap && customerMarker) {
+            customerMap.flyTo([lat, lng], zoom, { duration: 1.0 });
+            customerMarker.setLatLng([lat, lng]);
+            updateLatLngInputs(lat, lng);
+            reverseGeocodeAndFillAddress(lat, lng, true);
+        }
+    }
+
+    /**
+     * Locate user with GPS, center map, move marker, and auto-fill address
+     */
     function locateUserPosition() {
         if (!navigator.geolocation) {
-            alert('مرورگر شما از قابلیت مکان‌یابی پشتیبانی نمی‌کند.');
+            alert('مرورگر شما از قابلیت موقعیت‌یابی GPS پشتیبانی نمی‌کند.');
             return;
         }
+
+        const pillText = document.getElementById('map-pill-text');
+        if (pillText) {
+            pillText.innerHTML = '<span class="inline-flex items-center gap-1.5 text-blue-600"><span class="material-symbols-outlined text-sm animate-spin">sync</span> در حال دریافت مختصات GPS شما...</span>';
+        }
+
         navigator.geolocation.getCurrentPosition(pos => {
             const lat = pos.coords.latitude;
             const lng = pos.coords.longitude;
+            if (!customerMap) initCustomerAddressMap();
             if (customerMap && customerMarker) {
-                customerMap.setView([lat, lng], 15);
+                customerMap.flyTo([lat, lng], 16, { duration: 1.2 });
                 customerMarker.setLatLng([lat, lng]);
                 updateLatLngInputs(lat, lng);
+                reverseGeocodeAndFillAddress(lat, lng, true);
             }
         }, err => {
-            alert('دسترسی به موقعیت مکانی انجام نشد یا رد گردید.');
-        }, { enableHighAccuracy: true });
+            alert('دسترسی به موقعیت مکانی انجام نشد یا توسط مرورگر مسدود گردید.');
+            if (pillText) {
+                pillText.textContent = 'نشانگر را جابجا کنید تا نشانی استخراج شود';
+            }
+        }, { enableHighAccuracy: true, timeout: 10000 });
     }
 
     // ─── Modal Helpers ────────────────────────────────────────────────────────────
