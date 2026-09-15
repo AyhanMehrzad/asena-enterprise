@@ -1042,10 +1042,14 @@ function handleWishlistAddToCart(e, form, productId) {
             btn.classList.add('bg-emerald-50', 'text-emerald-700', 'border', 'border-emerald-300');
             
             // Update live cart badges in desktop and mobile bottom bar
-            document.querySelectorAll('.nav-cart-badge, .cart-badge-count').forEach(badge => {
-                badge.textContent = data.cart_count;
-                badge.classList.remove('hidden');
-            });
+            if (typeof window.updateCartBadges === 'function') {
+                window.updateCartBadges(data.cart_count, true);
+            } else {
+                document.querySelectorAll('.nav-cart-badge, .cart-badge-count').forEach(badge => {
+                    badge.textContent = data.cart_count;
+                    badge.classList.remove('hidden');
+                });
+            }
             
             if (typeof showWishlistToast === 'function') {
                 showWishlistToast('کالا به سبد خرید اضافه شد 🛒', 'added');

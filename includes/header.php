@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/db.php';
+require_once __DIR__ . '/functions.php';
 require_once __DIR__ . '/App.php';
 App::boot();
 
@@ -298,6 +299,11 @@ $effective_geo_icbm = $geo_icbm ?? '35.7350, 51.4110';
     <script src="assets/js/paw-loader.js?v=<?php echo time(); ?>"></script>
     <script src="assets/js/lazy-loader.js?v=<?php echo time(); ?>" defer></script>
     <script src="assets/js/bidi-direction.js?v=<?php echo time(); ?>" defer></script>
+    
+    <!-- Universal Live Cart Manager & CSRF Context -->
+    <meta name="csrf-token" content="<?php echo csrf_token(); ?>">
+    <script>window.ASENA_CSRF_TOKEN = "<?php echo csrf_token(); ?>";</script>
+    <script src="assets/js/cart-manager.js?v=<?php echo time(); ?>"></script>
     <!-- PWA Service Worker Registration -->
     <script>
     if ('serviceWorker' in navigator) {
@@ -525,11 +531,9 @@ if (function_exists('get_curated_recommendations')) {
 
                     <a href="<?php echo isset($_SESSION['user_id']) ? 'profile.php' : 'login.php'; ?>" class="material-symbols-outlined text-white p-1.5 lg:p-2 hover:bg-white/10 rounded-full transition-colors flex text-xl lg:text-2xl" title="حساب کاربری">person</a>
                     
-                    <a href="cart.php" class="relative material-symbols-outlined text-white p-1.5 lg:p-2 hover:bg-white/10 rounded-full transition-colors flex text-xl lg:text-2xl" title="سبد خرید">
+                    <a href="cart.php" id="header-cart-btn" class="relative material-symbols-outlined text-white p-1.5 lg:p-2 hover:bg-white/10 rounded-full transition-colors flex text-xl lg:text-2xl" title="سبد خرید">
                         shopping_cart
-                        <?php if($cart_count > 0): ?>
-                            <span class="absolute top-0 right-0 bg-secondary-container text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-bold shadow"><?php echo $cart_count; ?></span>
-                        <?php endif; ?>
+                        <span id="header-cart-badge" class="header-cart-badge cart-badge-count absolute top-0 right-0 bg-secondary-container text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-bold shadow transition-transform duration-200 <?php echo ($cart_count > 0) ? '' : 'hidden'; ?>"><?php echo $cart_count; ?></span>
                     </a>
                 </div>
                 

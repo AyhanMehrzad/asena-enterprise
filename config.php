@@ -18,6 +18,10 @@ if (DIRECTORY_SEPARATOR === '\\') {
         strpos($host, '.local') !== false) {
         $is_local = true;
     }
+} elseif (php_sapi_name() === 'cli') {
+    if (file_exists('/opt/lampp') && !file_exists('/home/asencomp')) {
+        $is_local = true;
+    }
 }
 
 // If executing inside cPanel /home/ structure, force production mode without checking external paths

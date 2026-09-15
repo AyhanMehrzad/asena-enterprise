@@ -1292,43 +1292,11 @@ function toggleAutoshipParam(isChecked) {
     window.location.href = url.toString();
 }
 
-// Add to Cart with AJAX
+// Add to Cart with Universal Optimistic Cart Manager (0ms latency live counter)
 function addToCart(btn, productId, type = 'standard') {
-    if(window.event) window.event.preventDefault();
-    
-    const originalText = btn.innerHTML;
-    btn.innerHTML = '<span class="material-symbols-outlined animate-spin text-[18px]">sync</span>';
-    btn.disabled = true;
-    
-    fetch('actions/cart_action.php', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: 'action=add&ajax=1&csrf_token=<?php echo csrf_token(); ?>&product_id=' + productId + '&type=' + type
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.status === 'success') {
-            btn.innerHTML = '<span class="material-symbols-outlined text-[18px]">check_circle</span>';
-            btn.classList.add('bg-status-active');
-            
-            setTimeout(() => {
-                btn.innerHTML = originalText;
-                btn.classList.remove('bg-status-active');
-                btn.disabled = false;
-            }, 2000);
-        } else {
-            alert('خطا در افزودن به سبد خرید');
-            btn.innerHTML = originalText;
-            btn.disabled = false;
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        btn.innerHTML = originalText;
-        btn.disabled = false;
-    });
+    if (typeof window.addToCart === 'function') {
+        window.addToCart(btn, productId, type);
+    }
 }
 
 // Wishlist interactions are handled universally by assets/js/wishlist-manager.js

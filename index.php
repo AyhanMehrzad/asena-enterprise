@@ -2979,41 +2979,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-// Cart Logic
+// Cart Logic (Delegated to Universal Live Cart Manager)
 function addToCart(btn, productId, type = 'standard') {
-    if(window.event) window.event.preventDefault();
-    
-    const originalText = btn.innerHTML;
-    btn.innerHTML = '<span class="material-symbols-outlined animate-spin text-sm">sync</span>';
-    
-    fetch('actions/cart_action.php', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: 'action=add&ajax=1&csrf_token=<?php echo csrf_token(); ?>&product_id=' + productId + '&type=' + type
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.status === 'success') {
-            btn.innerHTML = '<span class="material-symbols-outlined text-sm">check_circle</span>';
-            btn.classList.add('bg-green-500', 'text-white');
-            btn.classList.remove('bg-primary');
-            
-            setTimeout(() => {
-                btn.innerHTML = originalText;
-                btn.classList.remove('bg-green-500');
-                btn.classList.add('bg-primary');
-            }, 2000);
-        } else {
-            alert('خطا در افزودن به سبد خرید');
-            btn.innerHTML = originalText;
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        btn.innerHTML = originalText;
-    });
+    if (typeof window.addToCart === 'function') {
+        window.addToCart(btn, productId, type);
+    }
 }
 
 // Wishlist interactions are handled universally by assets/js/wishlist-manager.js

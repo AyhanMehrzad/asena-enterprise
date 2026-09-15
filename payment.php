@@ -164,10 +164,12 @@ if (!$result['success']) {
 // ── Store authority in pending order ──────────────────────────────────────────
 if ($isBooking || $isSmsPackage) {
     $_SESSION['pending_order']['authority'] = $result['authority'];
+    $_SESSION['pending_order']['user_id']   = (int)$_SESSION['user_id'];
 } else {
     $_SESSION['pending_order'] = [
         'type'            => 'cart',
         'checkout_type'   => $checkout_type,
+        'user_id'         => (int)$_SESSION['user_id'],
         'items'           => $pending_items,
         'subtotal'        => $subtotal,
         'tax_amount'      => $tax_amount,

@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/../includes/db.php';
+require_once __DIR__ . '/../includes/functions.php';
 require_once __DIR__ . '/../includes/gateway.php';
 
 // ── Gate 1: Must arrive via GET callback from ZarinPal ───────────────────────
@@ -20,12 +21,15 @@ if ($status !== 'OK' || empty($authority)) {
 }
 
 // ── Gate 3: Authority must match session — prevents authority injection ────────
-$is_booking = ($pending['type'] ?? '') === 'booking';
-$is_subscription = ($pending['type'] ?? '') === 'subscription';
-$is_sms_package = ($pending['type'] ?? '') === 'sms_package';
+$pending = $_SESSION['pending_order'] ?? null;
+
+$is_booking = (($pending['type'] ?? '') === 'booking');
+$is_subscription = (($pending['type'] ?? '') === 'subscription');
+$is_sms_package = (($pending['type'] ?? '') === 'sms_package');
 
 if (!$pending
-    || ($pending['authority'] ?? '') !== $authority
+    || empty($pending['authority'])
+    || !hash_equals((string)$pending['authority'], (string)$authority)
     || empty($pending['total_amount'])
     || (!$is_booking && !$is_subscription && !$is_sms_package && empty($pending['items']))
 ) {
@@ -34,6 +38,7 @@ if (!$pending
     header('Location: ../cart.php');
     exit;
 }
+
 
 // ── Gate 4: Server-to-server verification with ZarinPal ──────────────────────
 $gateway    = new ZarinPalGateway();
@@ -52,7 +57,13 @@ $ref_id = $verified['ref_id'];
 try {
     $pdo->beginTransaction();
 
-    $user_id      = (int)$_SESSION['user_id'];
+    $user_id = (int)($_SESSION['user_id'] ?? $pending['user_id'] ?? 0);
+    if ($user_id > 0 && empty($_SESSION['user_id'])) {
+        $_SESSION['user_id'] = $user_id;
+    }
+    if ($user_id <= 0) {
+        throw new RuntimeException('نشست کاربری شما معتبر نیست. لطفاً مجدداً وارد حساب کاربری شوید.');
+    }
     $total_amount = (int)$pending['total_amount'];
     $items        = $pending['items'] ?? [];
 
@@ -350,7 +361,7 @@ try {
     $pdo->commit();
 
     // 4. Clean up session
-    unset($_SESSION['cart'], $_SESSION['pending_order']);
+    unset($_SESSION['cart'], $_SESSION['cart_types'], $_SESSION['cart_frequency'], $_SESSION['active_cart_tab'], $_SESSION['pending_order']);
     
     if ($is_sms_package) {
         $_SESSION['profile_success'] = "پرداخت موفق! {$pending['package_name']} با موفقیت به حساب شما افزوده شد. کد رهگیری: {$ref_id}";
@@ -381,6 +392,14 @@ try {
     error_log("Payment commit error [{$ref_id}]: " . $e->getMessage());
     $_SESSION['profile_error'] =
         'خطای سیستمی در ثبت سفارش. مبلغ کسر شده با کد رهگیری ' . $ref_id . ' قابل استرداد است.';
+    header('Location: ../cart.php');
+    exit;
+
+} catch (Throwable $e) {
+    if ($pdo->inTransaction()) $pdo->rollBack();
+    error_log("Payment unexpected error [{$ref_id}]: " . $e->getMessage());
+    $_SESSION['profile_error'] =
+        'خطای غیرمنتظره در ثبت نهایی سفارش: ' . $e->getMessage();
     header('Location: ../cart.php');
     exit;
 }

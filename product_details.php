@@ -668,50 +668,12 @@ require_once 'includes/header.php';
 
 <script>
 function addToCart(btn, productId) {
-    if(window.event) window.event.preventDefault();
-    
-    const originalText = btn.innerHTML;
-    btn.innerHTML = '<span class="material-symbols-outlined animate-spin text-[18px]">sync</span> در حال افزودن...';
-    btn.disabled = true;
-
-    // Check purchase type (one_time or autoship)
     const selectedRadio = document.querySelector('input[name="purchase_type"]:checked');
     const purchaseType = selectedRadio ? selectedRadio.value : 'standard';
-    
-    let postBody = 'action=add&ajax=1&csrf_token=<?php echo csrf_token(); ?>&product_id=' + productId;
-    if (purchaseType === 'autoship') {
-        postBody += '&type=autoship&frequency=1_month';
+    if (typeof window.addToCart === 'function') {
+        window.addToCart(btn, productId, purchaseType);
     }
-    
-    fetch('actions/cart_action.php', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: postBody
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.status === 'success') {
-            btn.innerHTML = '<span class="material-symbols-outlined text-[18px]">check_circle</span> اضافه شد';
-            btn.classList.add('bg-status-active');
-            
-            setTimeout(() => {
-                btn.innerHTML = originalText;
-                btn.classList.remove('bg-status-active');
-                btn.disabled = false;
-            }, 2000);
-        } else {
-            alert('خطا در افزودن به سبد خرید');
-            btn.innerHTML = originalText;
-            btn.disabled = false;
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        btn.innerHTML = originalText;
-        btn.disabled = false;
-    });
+}
 </script>
 
 <!-- Schema.org JSON-LD Structured Data for Google Rich Snippets (Product, Offer, Rating) -->

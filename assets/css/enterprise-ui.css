@@ -732,6 +732,150 @@ img.lazy-img-loaded {
     transition: background-image 0.4s ease-in-out;
 }
 
+/* =========================================================================
+   Live Cart Micro-Animations, Badges & Floating Toasts
+   ========================================================================= */
 
+@keyframes cartBadgeBouncePop {
+    0% {
+        transform: scale(0.6);
+        opacity: 0.7;
+    }
+    40% {
+        transform: scale(1.45);
+        opacity: 1;
+    }
+    70% {
+        transform: scale(0.9);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
 
+.cart-badge-pop {
+    animation: cartBadgeBouncePop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards !important;
+}
 
+@keyframes cartIconBump {
+    0% {
+        transform: scale(1);
+    }
+    30% {
+        transform: scale(1.25) rotate(-6deg);
+    }
+    60% {
+        transform: scale(0.95) rotate(3deg);
+    }
+    100% {
+        transform: scale(1) rotate(0deg);
+    }
+}
+
+.cart-icon-bump {
+    animation: cartIconBump 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards !important;
+}
+
+/* Floating Cart Particle Burst */
+.cart-burst-container {
+    position: fixed;
+    pointer-events: none;
+    z-index: 999999;
+}
+
+.floating-cart-particle {
+    position: absolute;
+    font-size: 16px;
+    font-weight: 800;
+    user-select: none;
+    animation: floatCartParticle 0.75s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes floatCartParticle {
+    0% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(0.4);
+    }
+    50% {
+        opacity: 1;
+        transform: translate(calc(-50% + var(--tx)), calc(-50% + var(--ty))) scale(1.25) rotate(var(--rot));
+    }
+    100% {
+        opacity: 0;
+        transform: translate(calc(-50% + var(--tx) * 1.3), calc(-50% + var(--ty) - 25px)) scale(0.8) rotate(var(--rot));
+    }
+}
+
+/* Live Cart Toast Notifications */
+.cart-toast-container {
+    position: fixed;
+    bottom: 84px; /* Above mobile bottom navigation */
+    right: 20px;
+    z-index: 999998;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    pointer-events: none;
+}
+
+@media (min-width: 1024px) {
+    .cart-toast-container {
+        bottom: 24px;
+        right: 24px;
+    }
+}
+
+.cart-toast {
+    pointer-events: auto;
+    background: rgba(15, 23, 42, 0.94);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    color: #ffffff;
+    padding: 12px 18px;
+    border-radius: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    box-shadow: 0 16px 36px -6px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.12);
+    animation: cartToastSlideIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    min-width: 270px;
+    max-width: 90vw;
+    font-size: 13px;
+    font-family: inherit;
+    direction: rtl;
+}
+
+.cart-toast-success {
+    border-right: 4px solid #fd8100;
+}
+
+.cart-toast-error {
+    border-right: 4px solid #ef4444;
+}
+
+@keyframes cartToastSlideIn {
+    0% {
+        opacity: 0;
+        transform: translateY(20px) scale(0.94);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.cart-toast-fadeout {
+    animation: cartToastSlideOut 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards !important;
+}
+
+@keyframes cartToastSlideOut {
+    0% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+    100% {
+        opacity: 0;
+        transform: translateY(-12px) scale(0.92);
+    }
+}

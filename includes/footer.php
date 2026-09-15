@@ -161,9 +161,7 @@
         <a href="cart.php" class="bottom-nav-link <?php echo ($current_page === 'cart.php') ? 'active' : ''; ?>">
             <div class="relative flex items-center justify-center">
                 <span class="material-symbols-outlined">shopping_cart</span>
-                <?php if (!empty($cart_count) && $cart_count > 0): ?>
-                    <span class="nav-cart-badge"><?php echo $cart_count; ?></span>
-                <?php endif; ?>
+                <span id="mobile-nav-cart-badge" class="nav-cart-badge cart-badge-count <?php echo (!empty($cart_count) && $cart_count > 0) ? '' : 'hidden'; ?>"><?php echo $cart_count ?? 0; ?></span>
             </div>
             <span>سبد خرید</span>
         </a>

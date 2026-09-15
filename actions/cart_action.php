@@ -26,6 +26,9 @@ if (!isset($_SESSION['cart_frequency'])) {
     $_SESSION['cart_frequency'] = [];
 }
 
+$action_status = "success";
+$action_message = "کالا با موفقیت به سبد خرید اضافه شد";
+
 if ($product_id > 0) {
     // Helper to resolve product from either products or pharmacy_medicines
     $prodLookup = function(PDO $p, int $id): ?array {
@@ -54,6 +57,11 @@ if ($product_id > 0) {
                 } elseif (!isset($_SESSION['cart_types'][$product_id])) {
                     $_SESSION['cart_types'][$product_id] = 'standard';
                 }
+            } else {
+                $action_status = 'error';
+                $action_message = ($product_row && (int)$product_row['stock'] <= 0) 
+                    ? 'موجودی این کالا به اتمام رسیده است.' 
+                    : 'کالای مورد نظر در دسترس نیست.';
             }
             break;
 
@@ -128,14 +136,15 @@ if (isset($_POST['ajax']) && $_POST['ajax'] == 1) {
         }
     }
     echo json_encode([
-        'status' => 'success', 
-        'cart_count' => array_sum($_SESSION['cart']),
+        'status' => $action_status, 
+        'message' => $action_message,
+        'cart_count' => array_sum($_SESSION['cart'] ?? []),
         'standard_count' => $standard_count,
         'autoship_count' => $autoship_count,
         'item_type' => $_SESSION['cart_types'][$product_id] ?? 'standard',
         'item_frequency' => $_SESSION['cart_frequency'][$product_id] ?? '1_month',
         'active_tab' => $active_tab
-    ]);
+    ], JSON_UNESCAPED_UNICODE);
     exit;
 }
 

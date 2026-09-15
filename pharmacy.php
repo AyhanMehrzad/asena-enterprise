@@ -910,23 +910,9 @@ function toggleFilters() {
 }
 
 function addToCart(btn, productId, type = 'standard') {
-    if(window.event) window.event.preventDefault();
-    const originalText = btn.innerHTML;
-    btn.innerHTML = '<span class="material-symbols-outlined animate-spin text-[18px]">sync</span>';
-    btn.disabled = true;
-    fetch('actions/cart_action.php', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: 'action=add&ajax=1&csrf_token=<?php echo csrf_token(); ?>&product_id=' + productId + '&type=' + type
-    })
-    .then(r => r.json())
-    .then(d => {
-        if(d.status === 'success') {
-            btn.innerHTML = '<span class="material-symbols-outlined text-[18px]">check_circle</span> اضافه شد';
-            btn.classList.add('bg-status-active');
-            setTimeout(() => { btn.innerHTML = originalText; btn.classList.remove('bg-status-active'); btn.disabled = false; }, 2000);
-        }
-    });
+    if (typeof window.addToCart === 'function') {
+        window.addToCart(btn, productId, type);
+    }
 }
 </script>
 

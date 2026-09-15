@@ -60,18 +60,28 @@ class Env {
             }
         }
 
+        // Filter dummy placeholders from .env.example
+        $envHost = getenv('DB_HOST');
+        $envName = getenv('DB_NAME');
+        $envUser = getenv('DB_USER');
+        $envPass = getenv('DB_PASS');
+
+        if ($envPass === 'your_db_password_here' || $envPass === 'your_password') $envPass = false;
+        if ($envUser === 'your_username') $envUser = false;
+        if ($envName === 'your_db_name_here') $envName = false;
+
         // Define DB constants from .env if not yet defined
         if (!defined('DB_HOST')) {
-            define('DB_HOST', getenv('DB_HOST') ?: '127.0.0.1');
+            define('DB_HOST', $envHost ?: 'localhost');
         }
         if (!defined('DB_NAME')) {
-            define('DB_NAME', getenv('DB_NAME') ?: 'asena_premium');
+            define('DB_NAME', $envName ?: 'asencomp_asena_db');
         }
         if (!defined('DB_USER')) {
-            define('DB_USER', getenv('DB_USER') ?: 'root');
+            define('DB_USER', $envUser ?: 'asencomp_admin');
         }
         if (!defined('DB_PASS')) {
-            define('DB_PASS', getenv('DB_PASS') !== false ? getenv('DB_PASS') : '');
+            define('DB_PASS', $envPass !== false ? $envPass : 'X3~YN,HY9M:j%jx');
         }
     }
 
