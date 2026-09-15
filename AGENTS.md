@@ -20,3 +20,6 @@ This document establishes the foundational architectural rules, coding standards
 
 4. **Multi-Tier Compatibility & Packaging**:
    - Use `bin/asena` CLI to check status (`php bin/asena status`) and build client bundles (`php bin/asena package --tier=<tier>`).
+
+5. **Context Maintenance & Change Log**:
+   - Whenever any feature or file is modified/added, immediately append a concise summary of the changes to Section 3 (Change Log) of [`PROJECT_CONTEXT.md`](file:///PROJECT_CONTEXT.md) to keep context lightweight, persistent, and synchronized.
