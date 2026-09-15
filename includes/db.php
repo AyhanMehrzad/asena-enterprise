@@ -1,4 +1,21 @@
 <?php
+// Prevent direct execution of include file
+if (basename($_SERVER['SCRIPT_FILENAME'] ?? '') === basename(__FILE__)) {
+    http_response_code(403);
+    exit('Direct access forbidden');
+}
+
+// Global production error configuration & security header hardening
+if (php_sapi_name() !== 'cli') {
+    ini_set('display_errors', '0');
+    ini_set('log_errors', '1');
+    if (ob_get_level() === 0) {
+        ob_start();
+    }
+    @header_remove('X-Powered-By');
+    @header_remove('X-XSS-Protection');
+}
+
 // Ensure secure session configuration globally before any potential output
 if (php_sapi_name() !== 'cli' && session_status() === PHP_SESSION_NONE) {
     $isHttps = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') ||

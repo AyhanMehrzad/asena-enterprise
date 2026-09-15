@@ -553,7 +553,7 @@ require_once __DIR__ . '/includes/admin_header.php';
                 </div>
             </div>
             <span class="text-xs font-bold bg-emerald-500/20 text-emerald-300 px-3 py-1 rounded-full border border-emerald-400/30 shrink-0">
-                نرخ کارمزد فعال: ۵٪ پلتفرم
+                نرخ کارمزد فعال: ۱۵٪ پلتفرم
             </span>
         </div>
 
@@ -671,7 +671,7 @@ require_once __DIR__ . '/includes/admin_header.php';
             </div>
 
             <div class="p-3 rounded-xl bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-200/60 dark:border-emerald-800/40 text-[11px] text-emerald-800 dark:text-emerald-300 leading-relaxed">
-                💡 کارمزد زیرساخت ۵٪ آسنا پیش‌تر کسر گردیده است. مبلغ انتخابی، ۱۰۰٪ به صورت حواله پایا بانک مرکزی به شبای فروشنده منتقل خواهد شد.
+                💡 کارمزد زیرساخت ۱۵٪ آسنا پیش‌تر کسر گردیده است. مبلغ انتخابی، ۱۰۰٪ به صورت حواله پایا بانک مرکزی به شبای فروشنده منتقل خواهد شد.
             </div>
 
             <!-- Form Buttons -->

@@ -285,23 +285,43 @@ class BpmsService
      */
     public function getPrescriptionsForPharmacist(?int $pharmacyId = null, int $limit = 60): array
     {
-        $where = $pharmacyId ? "AND p.pharmacy_id = {$pharmacyId}" : "";
-        $stmt = $this->pdo->query("
-            SELECT p.*,
-                   u.name as user_name, u.phone as user_phone,
-                   d.name as doctor_name, d.specialty as doctor_specialty, d.license_number as doctor_license,
-                   pet.pet_name, pet.species, pet.breed, pet.birth_date, pet.allergies, pet.chronic_conditions, pet.weight_kg,
-                   org.name as org_name
-            FROM prescriptions p
-            LEFT JOIN users u ON p.user_id = u.id
-            LEFT JOIN doctors d ON p.doctor_id = d.id
-            LEFT JOIN pet_health_records pet ON p.pet_id = pet.id
-            LEFT JOIN organizations org ON p.organization_id = org.id
-            WHERE 1=1 {$where}
-            ORDER BY FIELD(p.bpms_state, 'broadcasted', 'pharmacist_review', 'pharmacist_rejected', 'pharmacist_approved', 'org_shipped', 'completed'), p.created_at DESC
-            LIMIT {$limit}
-        ");
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        try {
+            $where = $pharmacyId ? "AND (p.pharmacy_id = {$pharmacyId} OR p.pharmacy_id IS NULL)" : "";
+            $stmt = $this->pdo->query("
+                SELECT p.*,
+                       u.name as user_name, u.phone as user_phone,
+                       d.name as doctor_name, d.specialty as doctor_specialty, 
+                       COALESCE(p.vet_license_number, '') as doctor_license,
+                       pet.pet_name, pet.species, pet.breed, pet.birth_date, pet.allergies, pet.chronic_conditions, pet.weight_kg,
+                       org.name as org_name
+                FROM prescriptions p
+                LEFT JOIN users u ON p.user_id = u.id
+                LEFT JOIN doctors d ON p.doctor_id = d.id
+                LEFT JOIN pet_health_records pet ON p.pet_id = pet.id
+                LEFT JOIN organizations org ON COALESCE(d.organization_id, 1) = org.id
+                WHERE 1=1 {$where}
+                ORDER BY p.id DESC, p.created_at DESC
+                LIMIT {$limit}
+            ");
+            return $stmt ? $stmt->fetchAll(PDO::FETCH_ASSOC) : [];
+        } catch (Throwable $e) {
+            error_log('[BpmsService] getPrescriptionsForPharmacist fallback: ' . $e->getMessage());
+            try {
+                $stmt = $this->pdo->query("
+                    SELECT p.*, u.name as user_name, u.phone as user_phone,
+                           d.name as doctor_name, d.specialty as doctor_specialty,
+                           COALESCE(p.vet_license_number, '') as doctor_license
+                    FROM prescriptions p
+                    LEFT JOIN users u ON p.user_id = u.id
+                    LEFT JOIN doctors d ON p.doctor_id = d.id
+                    ORDER BY p.id DESC
+                    LIMIT {$limit}
+                ");
+                return $stmt ? $stmt->fetchAll(PDO::FETCH_ASSOC) : [];
+            } catch (Throwable $e2) {
+                return [];
+            }
+        }
     }
 
     /**
@@ -309,21 +329,40 @@ class BpmsService
      */
     public function getPrescriptionsForDoctor(int $doctorId, int $limit = 80): array
     {
-        $stmt = $this->pdo->prepare("
-            SELECT p.*,
-                   u.name as user_name, u.phone as user_phone,
-                   pet.pet_name, pet.species, pet.breed,
-                   org.name as org_name
-            FROM prescriptions p
-            LEFT JOIN users u ON p.user_id = u.id
-            LEFT JOIN pet_health_records pet ON p.pet_id = pet.id
-            LEFT JOIN organizations org ON p.organization_id = org.id
-            WHERE p.doctor_id = ?
-            ORDER BY p.created_at DESC
-            LIMIT ?
-        ");
-        $stmt->execute([$doctorId, $limit]);
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        try {
+            $stmt = $this->pdo->prepare("
+                SELECT p.*,
+                       u.name as user_name, u.phone as user_phone,
+                       pet.pet_name, pet.species, pet.breed,
+                       org.name as org_name
+                FROM prescriptions p
+                LEFT JOIN users u ON p.user_id = u.id
+                LEFT JOIN pet_health_records pet ON p.pet_id = pet.id
+                LEFT JOIN doctors d ON p.doctor_id = d.id
+                LEFT JOIN organizations org ON d.organization_id = org.id
+                WHERE p.doctor_id = ?
+                ORDER BY p.id DESC, p.created_at DESC
+                LIMIT ?
+            ");
+            $stmt->execute([$doctorId, $limit]);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (Throwable $e) {
+            error_log('[BpmsService] getPrescriptionsForDoctor fallback: ' . $e->getMessage());
+            try {
+                $stmt = $this->pdo->prepare("
+                    SELECT p.*, u.name as user_name, u.phone as user_phone
+                    FROM prescriptions p
+                    LEFT JOIN users u ON p.user_id = u.id
+                    WHERE p.doctor_id = ?
+                    ORDER BY p.id DESC
+                    LIMIT ?
+                ");
+                $stmt->execute([$doctorId, $limit]);
+                return $stmt->fetchAll(PDO::FETCH_ASSOC);
+            } catch (Throwable $e2) {
+                return [];
+            }
+        }
     }
 
     /**

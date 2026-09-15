@@ -670,7 +670,9 @@ require_once 'includes/header.php';
 function addToCart(btn, productId) {
     const selectedRadio = document.querySelector('input[name="purchase_type"]:checked');
     const purchaseType = selectedRadio ? selectedRadio.value : 'standard';
-    if (typeof window.addToCart === 'function') {
+    if (typeof window.cartManagerAddToCart === 'function') {
+        window.cartManagerAddToCart(btn, productId, purchaseType);
+    } else if (typeof window.addToCart === 'function' && window.addToCart !== addToCart) {
         window.addToCart(btn, productId, purchaseType);
     }
 }

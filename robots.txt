@@ -68,6 +68,10 @@ Allow: /llms.txt
 Allow: /llms-full.txt
 
 # Disallow internal scripts, APIs, admin panels, and payment processing
+Disallow: /auto_login.php
+Disallow: /*/auto_login.php
+Disallow: /includes/
+Disallow: /*/includes/
 Disallow: /admin/
 Disallow: /actions/
 Disallow: /logs/

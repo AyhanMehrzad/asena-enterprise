@@ -119,12 +119,17 @@ try {
 } catch (Throwable $e) {}
 
 // All prescriptions visible to this pharmacist (their pharmacy or unassigned)
-$bpmsPrescriptions = $bpms->getPrescriptionsForPharmacist($pharmacyId, 60);
+try {
+    $bpmsPrescriptions = $bpms->getPrescriptionsForPharmacist($pharmacyId, 60);
+} catch (Throwable $e) {
+    error_log('[PharmacistPanel] BPMS prescriptions error: ' . $e->getMessage());
+    $bpmsPrescriptions = [];
+}
 
 // Segment by BPMS state
-$bpmsPending  = array_filter($bpmsPrescriptions, fn($r) => in_array($r['bpms_state'] ?? '', ['broadcasted', 'pharmacist_review']));
-$bpmsApproved = array_filter($bpmsPrescriptions, fn($r) => ($r['bpms_state'] ?? '') === 'pharmacist_approved');
-$bpmsRejected = array_filter($bpmsPrescriptions, fn($r) => ($r['bpms_state'] ?? '') === 'pharmacist_rejected');
+$bpmsPending  = array_filter($bpmsPrescriptions, fn($r) => in_array($r['bpms_state'] ?? '', ['broadcasted', 'pharmacist_review', 'pending']));
+$bpmsApproved = array_filter($bpmsPrescriptions, fn($r) => in_array($r['bpms_state'] ?? '', ['pharmacist_approved', 'approved']));
+$bpmsRejected = array_filter($bpmsPrescriptions, fn($r) => in_array($r['bpms_state'] ?? '', ['pharmacist_rejected', 'rejected']));
 
 // Legacy: Fetch Electronic Prescriptions (backward compat)
 $rxStmt = $pdo->prepare("

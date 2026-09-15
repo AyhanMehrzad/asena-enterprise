@@ -287,7 +287,7 @@ foreach ($sellerProducts as $p) {
                     <span class="text-2xl font-black text-emerald-600"><?= number_format($availablePayout) ?></span>
                     <span class="text-xs text-on-surface-variant font-bold">تومان</span>
                 </div>
-                <p class="text-[11px] text-emerald-600 font-medium">تسویه خودکار چهارشنبه‌ها</p>
+                <p class="text-[11px] text-emerald-600 font-medium">تسویه خودکار پنج‌شنبه‌ها ساعت ۹:۰۰</p>
             </div>
             <div class="w-12 h-12 rounded-2xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center">
                 <span class="material-symbols-outlined text-2xl">account_balance_wallet</span>
@@ -777,7 +777,7 @@ foreach ($sellerProducts as $p) {
                 </form>
 
                 <div class="text-[11px] text-slate-400 leading-relaxed bg-white/5 p-3 rounded-xl">
-                    💡 طبق چرخه بانکی پایا، واریزی‌های فروشندگان روزهای چهارشنبه هر هفته به‌صورت گروهی به شماره شبای ثبت‌شده واریز می‌گردد.
+                    💡 طبق چرخه بانکی پایا، واریزی‌های فروشندگان روزهای پنج‌شنبه هر هفته (ساعت ۹:۰۰ صبح) به‌صورت گروهی به شماره شبای ثبت‌شده واریز می‌گردد.
                 </div>
             </div>
 

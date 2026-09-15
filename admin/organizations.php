@@ -306,7 +306,7 @@ require_once __DIR__ . '/includes/admin_header.php';
                     <span class="text-2xl font-black text-slate-800"><?= number_format($totalLifetimeSettled) ?></span>
                     <span class="text-xs text-on-surface-variant font-bold">تومان</span>
                 </div>
-                <p class="text-[11px] text-slate-400">با کسر ۵٪ کارمزد پلتفرم</p>
+                <p class="text-[11px] text-slate-400">با کسر ۱۵٪ کارمزد پلتفرم</p>
             </div>
             <div class="w-12 h-12 rounded-2xl bg-amber-500/10 text-amber-600 flex items-center justify-center">
                 <span class="material-symbols-outlined text-2xl">account_balance</span>

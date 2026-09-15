@@ -76,25 +76,87 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// Fetch Metrics
-$totalNotifications = (int)$pdo->query("SELECT COUNT(*) FROM user_notifications")->fetchColumn();
-$unreadNotifications = (int)$pdo->query("SELECT COUNT(*) FROM user_notifications WHERE is_read = 0")->fetchColumn();
-$pwaSubscribers = (int)$pdo->query("SELECT COUNT(*) FROM pwa_subscriptions WHERE is_active = 1")->fetchColumn();
-$socialProofCount = (int)$pdo->query("SELECT COUNT(*) FROM live_social_proof_events WHERE is_active = 1")->fetchColumn();
+// Ensure required tables exist gracefully
+try {
+    $pdo->exec("
+        CREATE TABLE IF NOT EXISTS `user_notifications` (
+          `id` int(11) NOT NULL AUTO_INCREMENT,
+          `user_id` int(11) DEFAULT NULL,
+          `type` varchar(50) NOT NULL DEFAULT 'system',
+          `title` varchar(255) NOT NULL,
+          `message` text NOT NULL,
+          `link_url` varchar(500) DEFAULT NULL,
+          `icon` varchar(50) DEFAULT 'notifications',
+          `image_url` varchar(500) DEFAULT NULL,
+          `target_audience` varchar(50) DEFAULT 'all',
+          `is_read` tinyint(1) NOT NULL DEFAULT 0,
+          `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+          PRIMARY KEY (`id`),
+          KEY `idx_user_notif_user` (`user_id`),
+          KEY `idx_user_notif_read` (`is_read`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-// Fetch Notifications Log
-$stmt = $pdo->query("
-    SELECT n.*, u.name as user_name, u.phone as user_phone
-    FROM user_notifications n
-    LEFT JOIN users u ON n.user_id = u.id
-    ORDER BY n.created_at DESC
-    LIMIT 30
-");
-$notificationsList = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        CREATE TABLE IF NOT EXISTS `pwa_subscriptions` (
+          `id` int(11) NOT NULL AUTO_INCREMENT,
+          `user_id` int(11) DEFAULT NULL,
+          `endpoint` text NOT NULL,
+          `p256dh` text DEFAULT NULL,
+          `auth` varchar(255) DEFAULT NULL,
+          `device_type` varchar(50) DEFAULT 'unknown',
+          `is_active` tinyint(1) NOT NULL DEFAULT 1,
+          `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+          `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+          PRIMARY KEY (`id`),
+          KEY `idx_pwa_user` (`user_id`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-// Fetch Social Proof Events
-$spStmt = $pdo->query("SELECT * FROM live_social_proof_events ORDER BY id DESC LIMIT 20");
-$socialProofEvents = $spStmt->fetchAll(PDO::FETCH_ASSOC);
+        CREATE TABLE IF NOT EXISTS `live_social_proof_events` (
+          `id` int(11) NOT NULL AUTO_INCREMENT,
+          `user_name` varchar(150) NOT NULL,
+          `city` varchar(100) DEFAULT 'تهران',
+          `event_type` varchar(50) NOT NULL DEFAULT 'purchase',
+          `item_title` varchar(255) NOT NULL,
+          `item_link` varchar(500) DEFAULT 'shop.php',
+          `item_image` varchar(500) DEFAULT 'assets/images/cat-hero.jpg',
+          `minutes_ago` int(11) DEFAULT 5,
+          `is_active` tinyint(1) NOT NULL DEFAULT 1,
+          `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+          PRIMARY KEY (`id`),
+          KEY `idx_sp_active` (`is_active`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+    ");
+} catch (Throwable $e) {
+    error_log('[Notifications] Table initialization notice: ' . $e->getMessage());
+}
+
+// Fetch Metrics safely
+$totalNotifications = 0;
+$unreadNotifications = 0;
+$pwaSubscribers = 0;
+$socialProofCount = 0;
+$notificationsList = [];
+$socialProofEvents = [];
+
+try {
+    $totalNotifications = (int)$pdo->query("SELECT COUNT(*) FROM user_notifications")->fetchColumn();
+    $unreadNotifications = (int)$pdo->query("SELECT COUNT(*) FROM user_notifications WHERE is_read = 0")->fetchColumn();
+    $pwaSubscribers = (int)$pdo->query("SELECT COUNT(*) FROM pwa_subscriptions WHERE is_active = 1")->fetchColumn();
+    $socialProofCount = (int)$pdo->query("SELECT COUNT(*) FROM live_social_proof_events WHERE is_active = 1")->fetchColumn();
+
+    $stmt = $pdo->query("
+        SELECT n.*, u.name as user_name, u.phone as user_phone
+        FROM user_notifications n
+        LEFT JOIN users u ON n.user_id = u.id
+        ORDER BY n.created_at DESC
+        LIMIT 30
+    ");
+    $notificationsList = $stmt ? $stmt->fetchAll(PDO::FETCH_ASSOC) : [];
+
+    $spStmt = $pdo->query("SELECT * FROM live_social_proof_events ORDER BY id DESC LIMIT 20");
+    $socialProofEvents = $spStmt ? $spStmt->fetchAll(PDO::FETCH_ASSOC) : [];
+} catch (Throwable $e) {
+    error_log('[Notifications] Metrics query error: ' . $e->getMessage());
+}
 ?>
 
 <div class="p-6 lg:p-10 max-w-[1440px] mx-auto space-y-8">

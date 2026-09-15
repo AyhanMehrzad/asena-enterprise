@@ -534,7 +534,12 @@ require_once '../includes/App.php';
 $bpms = App::bpms();
 
 // Doctor's issued prescriptions (BPMS tracking board)
-$myPrescriptions = $bpms->getPrescriptionsForDoctor($doctorId, 60);
+try {
+    $myPrescriptions = $bpms->getPrescriptionsForDoctor($doctorId, 60);
+} catch (Throwable $e) {
+    error_log('[DoctorPanel] BPMS prescriptions error: ' . $e->getMessage());
+    $myPrescriptions = [];
+}
 
 // Patient search (called via AJAX but pre-seed empty)
 $emrSearchResults = [];

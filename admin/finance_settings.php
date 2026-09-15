@@ -133,7 +133,7 @@ require_once __DIR__ . '/includes/admin_header.php';
             </div>
             <div>
                 <h1 class="text-xl font-black text-slate-900 dark:text-white">تنظیمات خزانه‌داری آسنا، کارت بانکی، مالیات و تسویه خودکار</h1>
-                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">مدیریت شماره کارت و شبای آسنا، اعمال نرخ مالیات ۹٪، کارمزد ۵٪ و زمان‌بندی تسویه پنج‌شنبه‌ها ساعت ۹:۰۰ صبح تهران</p>
+                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">مدیریت شماره کارت و شبای آسنا، اعمال نرخ مالیات ۹٪، کارمزد ۱۵٪ و زمان‌بندی تسویه پنج‌شنبه‌ها ساعت ۹:۰۰ صبح تهران</p>
             </div>
         </div>
 

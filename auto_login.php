@@ -6,6 +6,7 @@
  * Seller, Organization/Clinic, Doctor, Pharmacist, Super Admin, and Regular User.
  */
 
+header('X-Robots-Tag: noindex, nofollow, noarchive');
 require_once __DIR__ . '/includes/db.php';
 
 // Role configurations and metadata
@@ -67,7 +68,7 @@ $rolesConfig = [
         'features'     => ['کارتابل تایید نسخه‌ها', 'پایش سری ساخت و انقضا', 'کنترل زنجیره سرد واکسن', 'بررسی تداخلات دارویی']
     ],
     'pharmacy' => [
-        'title'        => 'داروخانه مستقل (نقش جدید)',
+        'title'        => 'داروخانه مستقل (مسئول فنی و انبار)',
         'subtitle'     => 'Pharmacy Store Owner — BPMS Gateway',
         'badge'        => 'داروخانه مستقل',
         'color'        => 'violet',
@@ -77,7 +78,7 @@ $rolesConfig = [
         'phone'        => '09120000008',
         'default_name' => 'داروخانه حکیم (دارنده پروانه مستقل)',
         'target'       => 'pharmacist/index.php',
-        'description'  => 'نقش جدید: داروخانه مستقل با پروانه، انبار دارویی اختصاصی، و دروازه BPMS برای تأیید نسخه‌های پزشکان.',
+        'description'  => 'داروخانه مستقل با پروانه، انبار دارویی اختصاصی، و دروازه BPMS برای تأیید نسخه‌های پزشکان.',
         'features'     => ['کارتابل BPMS تأیید نسخه', 'انبار دارویی اختصاصی', 'دروازه ارسال کلینیک', 'گزارش بالینی کامل']
     ],
     'admin' => [
@@ -99,28 +100,31 @@ $rolesConfig = [
         'subtitle'     => 'Pet Owner & End Customer',
         'badge'        => 'مشتری نهایی',
         'color'        => 'sky',
-        'gradient'     => 'from-sky-600 to-cyan-700',
+        'gradient'     => 'from-sky-500 to-blue-600',
         'bg_light'     => 'bg-sky-50 border-sky-200 text-sky-900',
         'icon'         => 'pets',
-        'phone'        => '09000000001',
-        'default_name' => 'سارا محمدی (کاربر آزمایشی)',
+        'phone'        => '09121234567',
+        'default_name' => 'مهدی حسینی (سرپرست تدی)',
         'target'       => 'profile.php',
-        'description'  => 'پروفایل کاربری، کیف پول اعتباری، سفارش کالا و غذا، رزرو نوبت و پیگیری درمان پت‌ها.',
-        'features'     => ['پروفایل کاربری و اطلاعات پت', 'کیف پول شارژ اعتباری', 'پیگیری آنلاین سفارشات', 'نوبت‌های رزرو شده']
+        'description'  => 'رزرو نوبت آنلاین، خرید ملزومات پت، پرونده سلامت حیوان خانگی و دریافت مشاوره دارویی.',
+        'features'     => ['پرونده واکسیناسیون و نوبت‌ها', 'سبد خرید و تاریخچه سفارشات', 'سفارشات تحویل دوره‌ای', 'باشگاه مشتریان و تخفیف‌ها']
     ]
 ];
 
 // Helper: authenticate a given role
 function loginAsRole($pdo, $role, $cfg) {
-    // 1. Try finding by preferred demo phone
+    // 1. Map role safely for database compatibility (pharmacy maps to pharmacist in user role)
+    $mappedDbRole = ($role === 'pharmacy') ? 'pharmacist' : $role;
+
+    // 2. Try finding by preferred demo phone
     $stmt = $pdo->prepare("SELECT * FROM users WHERE phone = ? LIMIT 1");
     $stmt->execute([$cfg['phone']]);
     $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
-    // 2. Fallback: find any user with that role
+    // 3. Fallback: find any user with that role
     if (!$user) {
-        $stmtRole = $pdo->prepare("SELECT * FROM users WHERE role = ? ORDER BY id ASC LIMIT 1");
-        $stmtRole->execute([$role]);
+        $stmtRole = $pdo->prepare("SELECT * FROM users WHERE role = ? OR role = ? ORDER BY id ASC LIMIT 1");
+        $stmtRole->execute([$role, $mappedDbRole]);
         $user = $stmtRole->fetch(PDO::FETCH_ASSOC);
     }
 
@@ -199,6 +203,7 @@ foreach ($rolesConfig as $rKey => $cfg) {
 <head>
     <meta charset="utf-8"/>
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <meta name="robots" content="noindex, nofollow, noarchive"/>
     <title>ورود خودکار و انتخاب سریع نقش | سامانه جامع آسنا</title>
     <script src="assets/js/tailwindcss-cdn.js"></script>
     <link href="assets/css/material-symbols.css" rel="stylesheet"/>

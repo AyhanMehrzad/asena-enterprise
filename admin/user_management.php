@@ -17,9 +17,16 @@ if (!empty($search)) {
     $params[] = $searchParam;
 }
 
-if ($role_filter !== 'all' && in_array($role_filter, ['admin', 'doctor', 'user'])) {
-    $whereClauses[] = "role = ?";
-    $params[] = $role_filter;
+$allowedRoles = ['admin', 'doctor', 'organization', 'seller', 'pharmacist', 'pharmacy', 'user'];
+if ($role_filter !== 'all' && in_array($role_filter, $allowedRoles)) {
+    if ($role_filter === 'organization') {
+        $whereClauses[] = "role IN ('organization', 'organization_manager')";
+    } elseif ($role_filter === 'pharmacist') {
+        $whereClauses[] = "role IN ('pharmacist', 'pharmacy')";
+    } else {
+        $whereClauses[] = "role = ?";
+        $params[] = $role_filter;
+    }
 }
 
 $whereSql = !empty($whereClauses) ? "WHERE " . implode(" AND ", $whereClauses) : "";
@@ -28,11 +35,14 @@ $stmt = $pdo->prepare("SELECT * FROM users $whereSql ORDER BY created_at DESC");
 $stmt->execute($params);
 $users = $stmt->fetchAll();
 
-// Counts for Badges & Cards
+// Counts for Badges & Cards (Single Source of Truth across all platform roles)
 $totalUsers = (int)$pdo->query("SELECT COUNT(*) FROM users")->fetchColumn();
 $adminUsers = (int)$pdo->query("SELECT COUNT(*) FROM users WHERE role = 'admin'")->fetchColumn();
 $doctorUsers = (int)$pdo->query("SELECT COUNT(*) FROM users WHERE role = 'doctor'")->fetchColumn();
-$regularUsers = (int)$pdo->query("SELECT COUNT(*) FROM users WHERE role = 'user'")->fetchColumn();
+$orgUsers = (int)$pdo->query("SELECT COUNT(*) FROM users WHERE role IN ('organization', 'organization_manager')")->fetchColumn();
+$sellerUsers = (int)$pdo->query("SELECT COUNT(*) FROM users WHERE role = 'seller'")->fetchColumn();
+$pharmacistUsers = (int)$pdo->query("SELECT COUNT(*) FROM users WHERE role IN ('pharmacist', 'pharmacy')")->fetchColumn();
+$regularUsers = (int)$pdo->query("SELECT COUNT(*) FROM users WHERE role = 'user' OR role NOT IN ('admin', 'doctor', 'organization', 'organization_manager', 'seller', 'pharmacist', 'pharmacy')")->fetchColumn();
 
 // Premium Users (having active subscription)
 $subStmt = $pdo->query("SELECT COUNT(DISTINCT user_id) FROM subscriptions WHERE status = 'active'");
@@ -108,46 +118,66 @@ function timeAgo($timestamp) {
         </div>
     </div>
 
-    <!-- Bento Grid Stats -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 mb-8">
-        <a href="?role=all" class="bg-white p-6 rounded-2xl shadow-sm border border-outline-variant/30 flex items-center gap-4 hover:shadow-md transition-shadow">
-            <div class="w-12 h-12 rounded-full bg-primary-fixed flex items-center justify-center text-primary">
-                <span class="material-symbols-outlined">group</span>
+    <!-- Bento Grid Stats (Complete Role Spectrum Reconciled) -->
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
+        <a href="?role=all" class="bg-white p-4 rounded-2xl shadow-sm border border-outline-variant/30 flex flex-col justify-between hover:shadow-md transition-shadow">
+            <div class="flex items-center justify-between mb-2">
+                <span class="font-label-sm text-xs font-bold text-on-surface-variant">کل کاربران</span>
+                <div class="w-8 h-8 rounded-full bg-primary-fixed flex items-center justify-center text-primary">
+                    <span class="material-symbols-outlined text-base">group</span>
+                </div>
             </div>
-            <div>
-                <p class="font-label-sm text-label-sm text-on-surface-variant">کل کاربران</p>
-                <p class="font-headline-md text-headline-md text-primary"><?= number_format($totalUsers) ?></p>
-            </div>
+            <p class="font-headline-md text-xl font-black text-primary"><?= number_format($totalUsers) ?></p>
         </a>
         
-        <a href="?role=doctor" class="bg-white p-6 rounded-2xl shadow-sm border border-outline-variant/30 flex items-center gap-4 hover:shadow-md transition-shadow">
-            <div class="w-12 h-12 rounded-full bg-secondary-container/15 flex items-center justify-center text-secondary-container">
-                <span class="material-symbols-outlined">stethoscope</span>
+        <a href="?role=user" class="bg-white p-4 rounded-2xl shadow-sm border border-outline-variant/30 flex flex-col justify-between hover:shadow-md transition-shadow">
+            <div class="flex items-center justify-between mb-2">
+                <span class="font-label-sm text-xs font-bold text-on-surface-variant">کاربران عادی</span>
+                <div class="w-8 h-8 rounded-full bg-surface-container-high flex items-center justify-center text-on-surface">
+                    <span class="material-symbols-outlined text-base">person</span>
+                </div>
             </div>
-            <div>
-                <p class="font-label-sm text-label-sm text-on-surface-variant">پزشکان و دامپزشکان</p>
-                <p class="font-headline-md text-headline-md text-secondary-container"><?= number_format($doctorUsers) ?></p>
+            <p class="font-headline-md text-xl font-black text-on-surface"><?= number_format($regularUsers) ?></p>
+        </a>
+
+        <a href="?role=doctor" class="bg-white p-4 rounded-2xl shadow-sm border border-outline-variant/30 flex flex-col justify-between hover:shadow-md transition-shadow">
+            <div class="flex items-center justify-between mb-2">
+                <span class="font-label-sm text-xs font-bold text-on-surface-variant">پزشکان</span>
+                <div class="w-8 h-8 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                    <span class="material-symbols-outlined text-base">stethoscope</span>
+                </div>
             </div>
+            <p class="font-headline-md text-xl font-black text-emerald-600"><?= number_format($doctorUsers) ?></p>
+        </a>
+
+        <a href="?role=organization" class="bg-white p-4 rounded-2xl shadow-sm border border-outline-variant/30 flex flex-col justify-between hover:shadow-md transition-shadow">
+            <div class="flex items-center justify-between mb-2">
+                <span class="font-label-sm text-xs font-bold text-on-surface-variant">مراکز درمانی</span>
+                <div class="w-8 h-8 rounded-full bg-teal-50 text-teal-600 flex items-center justify-center">
+                    <span class="material-symbols-outlined text-base">apartment</span>
+                </div>
+            </div>
+            <p class="font-headline-md text-xl font-black text-teal-600"><?= number_format($orgUsers) ?></p>
+        </a>
+
+        <a href="?role=seller" class="bg-white p-4 rounded-2xl shadow-sm border border-outline-variant/30 flex flex-col justify-between hover:shadow-md transition-shadow">
+            <div class="flex items-center justify-between mb-2">
+                <span class="font-label-sm text-xs font-bold text-on-surface-variant">فروشنده/داروخانه</span>
+                <div class="w-8 h-8 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center">
+                    <span class="material-symbols-outlined text-base">storefront</span>
+                </div>
+            </div>
+            <p class="font-headline-md text-xl font-black text-amber-600"><?= number_format($sellerUsers + $pharmacistUsers) ?></p>
         </a>
         
-        <a href="?role=admin" class="bg-white p-6 rounded-2xl shadow-sm border border-outline-variant/30 flex items-center gap-4 hover:shadow-md transition-shadow">
-            <div class="w-12 h-12 rounded-full bg-tertiary-fixed flex items-center justify-center text-tertiary">
-                <span class="material-symbols-outlined">verified_user</span>
+        <a href="?role=admin" class="bg-white p-4 rounded-2xl shadow-sm border border-outline-variant/30 flex flex-col justify-between hover:shadow-md transition-shadow">
+            <div class="flex items-center justify-between mb-2">
+                <span class="font-label-sm text-xs font-bold text-on-surface-variant">مدیران</span>
+                <div class="w-8 h-8 rounded-full bg-rose-50 text-rose-600 flex items-center justify-center">
+                    <span class="material-symbols-outlined text-base">verified_user</span>
+                </div>
             </div>
-            <div>
-                <p class="font-label-sm text-label-sm text-on-surface-variant">تعداد مدیران</p>
-                <p class="font-headline-md text-headline-md text-tertiary"><?= number_format($adminUsers) ?></p>
-            </div>
-        </a>
-        
-        <a href="?role=user" class="bg-white p-6 rounded-2xl shadow-sm border border-outline-variant/30 flex items-center gap-4 hover:shadow-md transition-shadow">
-            <div class="w-12 h-12 rounded-full bg-surface-container-high flex items-center justify-center text-on-surface">
-                <span class="material-symbols-outlined">person</span>
-            </div>
-            <div>
-                <p class="font-label-sm text-label-sm text-on-surface-variant">کاربران عادی</p>
-                <p class="font-headline-md text-headline-md text-on-surface"><?= number_format($regularUsers) ?></p>
-            </div>
+            <p class="font-headline-md text-xl font-black text-rose-600"><?= number_format($adminUsers) ?></p>
         </a>
     </div>
 
@@ -160,26 +190,35 @@ function timeAgo($timestamp) {
             <!-- Table Header Controls: Search & Filter Tabs -->
             <div class="p-6 border-b border-outline-variant/20 flex flex-col md:flex-row justify-between items-stretch md:items-center gap-4 bg-surface-container-lowest">
                 
-                <!-- Role Filter Tabs (admin-doctor-user) -->
-                <div class="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1 md:pb-0">
+                <!-- Role Filter Tabs -->
+                <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1 md:pb-0">
                     <a href="?role=all<?= !empty($search) ? '&search=' . urlencode($search) : '' ?>" 
-                       class="px-3.5 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap <?= $role_filter === 'all' ? 'bg-primary text-white shadow-md' : 'bg-surface-container hover:bg-surface-container-high text-on-surface-variant' ?>">
+                       class="px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap <?= $role_filter === 'all' ? 'bg-primary text-white shadow-md' : 'bg-surface-container hover:bg-surface-container-high text-on-surface-variant' ?>">
                         همه (<?= $totalUsers ?>)
                     </a>
-                    <a href="?role=admin<?= !empty($search) ? '&search=' . urlencode($search) : '' ?>" 
-                       class="px-3.5 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5 <?= $role_filter === 'admin' ? 'bg-primary text-white shadow-md' : 'bg-surface-container hover:bg-surface-container-high text-on-surface-variant' ?>">
-                        <span>مدیران (<?= $adminUsers ?>)</span>
-                        <span>🛡️</span>
+                    <a href="?role=user<?= !empty($search) ? '&search=' . urlencode($search) : '' ?>" 
+                       class="px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1 <?= $role_filter === 'user' ? 'bg-primary text-white shadow-md' : 'bg-surface-container hover:bg-surface-container-high text-on-surface-variant' ?>">
+                        <span>کاربران (<?= $regularUsers ?>)</span>
                     </a>
                     <a href="?role=doctor<?= !empty($search) ? '&search=' . urlencode($search) : '' ?>" 
-                       class="px-3.5 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5 <?= $role_filter === 'doctor' ? 'bg-primary text-white shadow-md' : 'bg-surface-container hover:bg-surface-container-high text-on-surface-variant' ?>">
+                       class="px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1 <?= $role_filter === 'doctor' ? 'bg-primary text-white shadow-md' : 'bg-surface-container hover:bg-surface-container-high text-on-surface-variant' ?>">
                         <span>پزشکان (<?= $doctorUsers ?>)</span>
-                        <span>🩺</span>
                     </a>
-                    <a href="?role=user<?= !empty($search) ? '&search=' . urlencode($search) : '' ?>" 
-                       class="px-3.5 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5 <?= $role_filter === 'user' ? 'bg-primary text-white shadow-md' : 'bg-surface-container hover:bg-surface-container-high text-on-surface-variant' ?>">
-                        <span>کاربران عادی (<?= $regularUsers ?>)</span>
-                        <span>👤</span>
+                    <a href="?role=organization<?= !empty($search) ? '&search=' . urlencode($search) : '' ?>" 
+                       class="px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1 <?= $role_filter === 'organization' ? 'bg-primary text-white shadow-md' : 'bg-surface-container hover:bg-surface-container-high text-on-surface-variant' ?>">
+                        <span>مراکز (<?= $orgUsers ?>)</span>
+                    </a>
+                    <a href="?role=seller<?= !empty($search) ? '&search=' . urlencode($search) : '' ?>" 
+                       class="px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1 <?= $role_filter === 'seller' ? 'bg-primary text-white shadow-md' : 'bg-surface-container hover:bg-surface-container-high text-on-surface-variant' ?>">
+                        <span>فروشندگان (<?= $sellerUsers ?>)</span>
+                    </a>
+                    <a href="?role=pharmacist<?= !empty($search) ? '&search=' . urlencode($search) : '' ?>" 
+                       class="px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1 <?= $role_filter === 'pharmacist' ? 'bg-primary text-white shadow-md' : 'bg-surface-container hover:bg-surface-container-high text-on-surface-variant' ?>">
+                        <span>داروسازان (<?= $pharmacistUsers ?>)</span>
+                    </a>
+                    <a href="?role=admin<?= !empty($search) ? '&search=' . urlencode($search) : '' ?>" 
+                       class="px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1 <?= $role_filter === 'admin' ? 'bg-primary text-white shadow-md' : 'bg-surface-container hover:bg-surface-container-high text-on-surface-variant' ?>">
+                        <span>مدیران (<?= $adminUsers ?>)</span>
                     </a>
                 </div>
 

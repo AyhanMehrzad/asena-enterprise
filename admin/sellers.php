@@ -69,7 +69,7 @@ require_once __DIR__ . '/includes/admin_header.php';
         <div class="flex items-center gap-2">
             <span class="px-3.5 py-1.5 rounded-xl bg-amber-50 text-amber-800 border border-amber-200 text-xs font-bold flex items-center gap-1.5">
                 <span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
-                <span>کارمزد پلتفرم: ۵٪ (۹۵٪ سهم فروشنده)</span>
+                <span>کارمزد پلتفرم: ۱۵٪ (۸۵٪ سهم فروشنده)</span>
             </span>
         </div>
     </div>

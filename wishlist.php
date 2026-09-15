@@ -1,10 +1,14 @@
 <?php
-require_once 'includes/header.php';
+require_once __DIR__ . '/includes/db.php';
 
 if (!isset($_SESSION['user_id'])) {
-    header('Location: login.php');
+    header('Location: login.php?return_url=' . urlencode('wishlist.php'));
     exit;
 }
+
+$page_title = 'علاقه‌مندی‌های من | سامانه آسنا';
+$page_desc  = 'مشاهده و مدیریت محصولات و ملزومات نشان‌شده در حساب کاربری آسنا.';
+require_once __DIR__ . '/includes/header.php';
 
 $user_id = $_SESSION['user_id'];
 

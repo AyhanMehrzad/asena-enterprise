@@ -182,6 +182,14 @@
 
         if (!productId || productId <= 0) return;
 
+        // Auto-detect purchase_type (standard vs autoship) if not explicitly set
+        if (type === 'standard') {
+            const selectedRadio = document.querySelector('input[name="purchase_type"]:checked');
+            if (selectedRadio && selectedRadio.value) {
+                type = selectedRadio.value;
+            }
+        }
+
         // Save original button appearance
         const originalHtml = btn ? btn.innerHTML : '';
         if (btn) {
@@ -270,5 +278,7 @@
             window.showCartToast('خطا در برقراری ارتباط با سرور', 'error');
         });
     };
+
+    window.cartManagerAddToCart = window.addToCart;
 
 })();

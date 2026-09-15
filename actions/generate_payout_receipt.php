@@ -311,7 +311,7 @@ $viewMode = $_GET['view'] ?? 'beneficiary'; // 'beneficiary' or 'master'
             </td>
             <th>کارمزد پلتفرم:</th>
             <td style="color: #475569; font-weight: bold;">
-                ۵٪ کارمزد بازاریابی و زیرساخت پلتفرم آسنا کسر گردید
+                ۱۵٪ کارمزد بازاریابی و زیرساخت پلتفرم آسنا کسر گردید
             </td>
         </tr>
     </table>
@@ -352,7 +352,7 @@ $viewMode = $_GET['view'] ?? 'beneficiary'; // 'beneficiary' or 'master'
                     <th style="width: 18%;">شناسه مرجع</th>
                     <th style="width: 24%;">کد رهگیری / شرح</th>
                     <th style="width: 14%;">مبلغ ناخالص</th>
-                    <th style="width: 12%;">کارمزد (۵٪)</th>
+                    <th style="width: 12%;">کارمزد (۱۵٪)</th>
                     <th style="width: 16%;">مبلغ خالص واریزی</th>
                 </tr>
             </thead>

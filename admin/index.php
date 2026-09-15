@@ -131,7 +131,7 @@ $recentShipments = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     <span class="text-2xl font-black text-emerald-600 group-hover:text-emerald-700 transition-colors"><?= number_format($totalClearedPayouts) ?></span>
                     <span class="text-xs text-slate-400 font-bold">تومان</span>
                 </div>
-                <p class="text-[11px] text-slate-400">محاسبه‌شده با کسر ۵٪ کارمزد پلتفرم</p>
+                <p class="text-[11px] text-slate-400">محاسبه‌شده با کسر ۱۵٪ کارمزد پلتفرم</p>
             </div>
             <div class="w-12 h-12 rounded-2xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center">
                 <span class="material-symbols-outlined text-2xl">account_balance_wallet</span>
@@ -422,7 +422,7 @@ $recentShipments = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     <a href="payouts.php" class="w-full py-2.5 px-3.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-bold flex items-center justify-between transition-colors">
                         <span class="flex items-center gap-2">
                             <span class="material-symbols-outlined text-sm text-emerald-400">payments</span>
-                            <span>صدور حواله‌های تسویه پایا (۵٪ کارمزد)</span>
+                            <span>صدور حواله‌های تسویه پایا (۱۵٪ کارمزد)</span>
                         </span>
                         <span class="material-symbols-outlined text-xs">arrow_back</span>
                     </a>

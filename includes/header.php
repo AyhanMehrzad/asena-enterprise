@@ -1,4 +1,10 @@
 <?php
+// Prevent direct execution of template include
+if (basename($_SERVER['SCRIPT_FILENAME'] ?? '') === basename(__FILE__)) {
+    http_response_code(403);
+    exit('Direct access forbidden');
+}
+
 require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/functions.php';
 require_once __DIR__ . '/App.php';
@@ -52,47 +58,47 @@ $current_page = basename($_SERVER['PHP_SELF']);
 // Smart SEO title & description fallbacks based on active page
 $seo_defaults = [
     'index.php' => [
-        'title' => 'آسنا | ASENA',
+        'title' => 'آسنا | سامانه جامع خدمات دامپزشکی، داروخانه و پت‌شاپ آنلاین',
         'desc'  => 'سامانه جامع خدمات حیوانات خانگی آسنا؛ نوبت‌دهی آنلاین کلینیک دامپزشکی، پت‌شاپ تخصصی سگ و گربه و تحویل دوره‌ای خودکار (Autoship).'
     ],
     'shop.php' => [
-        'title' => 'فروشگاه',
+        'title' => 'فروشگاه ملزومات و غذای پت | آسنا',
         'desc'  => 'خرید اینترنتی انواع غذای سگ و گربه، لوازم بهداشتی، خاک گربه، تشویقی و مکمل‌های درمانی پت با ضمانت اصالت کالا و ارسال سریع در آسنا.'
     ],
     'booking.php' => [
-        'title' => 'کلینیک',
+        'title' => 'رزرو آنلاین نوبت دکتر دامپزشک و خدمات پت | آسنا',
         'desc'  => 'رزرو آنلاین نوبت دکتر دامپزشک؛ ویزیت عمومی و تخصصی، واکسیناسیون، جراحی، دندانپزشکی و چکاپ دوره‌ای پت با مجرب‌ترین کادر دامپزشکی.'
     ],
     'pharmacy.php' => [
-        'title' => 'داروخانه',
+        'title' => 'داروخانه تخصصی دامپزشکی و ارسال زنجیره سرد | آسنا',
         'desc'  => 'داروخانه آنلاین داروهای دام، طیور و پت با آپلود نسخه الکترونیک و ارسال زنجیره سرد.'
     ],
     'subscriptions.php' => [
-        'title' => 'اشتراک',
+        'title' => 'سفارش دوره‌ای و تحویل خودکار (Autoship) | آسنا',
         'desc'  => 'سفارش دوره‌ای و ارسال خودکار ملزومات حیوانات خانگی با تخفیف ویژه در آسنا.'
     ],
     'charity.php' => [
-        'title' => 'خیریه',
+        'title' => 'پویش‌های درمانی و امداد حیوانات بی‌سرپرست | آسنا',
         'desc'  => 'پویش‌های درمانی و حمایتی حیوانات بی‌سرپرست با گزارش شفاف.'
     ],
     'login.php' => [
-        'title' => 'ورود',
-        'desc'  => 'ورود به حساب کاربری سامانه آسنا.'
+        'title' => 'ورود به حساب کاربری | سامانه آسنا',
+        'desc'  => 'ورود امن به حساب کاربری سامانه خدمات دامپزشکی و پت‌شاپ آسنا.'
     ],
     'register.php' => [
-        'title' => 'ثبت‌نام',
-        'desc'  => 'ثبت‌نام در سامانه آسنا.'
+        'title' => 'ثبت‌نام و عضویت در سامانه تخصصی | آسنا',
+        'desc'  => 'عضویت سریع و ایجاد حساب کاربری در سامانه جامع دامپزشکی، داروخانه و پت‌شاپ آنلاین آسنا.'
     ],
     'cart.php' => [
-        'title' => 'سبد',
-        'desc'  => 'سبد خرید ملزومات پت.'
+        'title' => 'سبد خرید ملزومات و داروهای پت | فروشگاه آسنا',
+        'desc'  => 'سبد خرید و تسویه حساب آنلاین ملزومات حیوانات خانگی، مکمل‌ها، داروهای دامپزشکی و تحویل دوره‌ای در آسنا.'
     ],
     'profile.php' => [
-        'title' => 'پروفایل',
-        'desc'  => 'مدیریت حساب کاربری و پرونده حیوانات خانگی.'
+        'title' => 'داشبورد کاربری و پرونده سلامت پت | آسنا',
+        'desc'  => 'مدیریت حساب کاربری، سفارشات، نوبت‌های درمان و پرونده الکترونیک سلامت حیوانات خانگی.'
     ],
     'knowledge_base.php' => [
-        'title' => 'دانشنامه',
+        'title' => 'دانشنامه و مقالات تخصصی سلامت و بهداشت پت | آسنا',
         'desc'  => 'مقالات تخصصی دامپزشکی و راهنمای سلامت حیوانات.'
     ],
     'organizations.php' => [
@@ -496,17 +502,21 @@ if (function_exists('get_curated_recommendations')) {
                             <a href="doctor/index.php" class="bg-white text-primary px-4 py-2 rounded-xl text-xs font-bold shadow-md hover:shadow-lg transition-all flex items-center gap-1.5">
                                 <span class="material-symbols-outlined text-sm">stethoscope</span> پنل پزشک
                             </a>
-                        <?php elseif(isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'organization'): ?>
+                        <?php elseif(isset($_SESSION['user_role']) && in_array($_SESSION['user_role'], ['organization', 'organization_manager'])): ?>
                             <a href="organization/index.php" class="bg-teal-600 text-white px-4 py-2 rounded-xl text-xs font-bold shadow-md hover:shadow-lg transition-all flex items-center gap-1.5">
                                 <span class="material-symbols-outlined text-sm">domain</span> پنل مرکز درمانی
                             </a>
-                        <?php elseif(isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'pharmacist'): ?>
+                        <?php elseif(isset($_SESSION['user_role']) && in_array($_SESSION['user_role'], ['pharmacist', 'pharmacy'])): ?>
                             <a href="pharmacist/index.php" class="bg-indigo-600 text-white px-4 py-2 rounded-xl text-xs font-bold shadow-md hover:shadow-lg transition-all flex items-center gap-1.5">
                                 <span class="material-symbols-outlined text-sm">medication</span> پنل داروساز
                             </a>
                         <?php elseif(isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'seller'): ?>
                             <a href="seller/index.php" class="bg-amber-600 text-white px-4 py-2 rounded-xl text-xs font-bold shadow-md hover:shadow-lg transition-all flex items-center gap-1.5">
                                 <span class="material-symbols-outlined text-sm">storefront</span> پنل فروشنده
+                            </a>
+                        <?php else: ?>
+                            <a href="profile.php" class="bg-white/15 hover:bg-white/25 text-white px-4 py-2 rounded-xl text-xs font-bold shadow-sm transition-all flex items-center gap-1.5">
+                                <span class="material-symbols-outlined text-sm">person</span> حساب کاربری
                             </a>
                         <?php endif; ?>
 
@@ -627,11 +637,11 @@ if (function_exists('get_curated_recommendations')) {
                             <a href="doctor/index.php" class="flex items-center justify-center gap-2 bg-secondary-container text-white px-6 py-3.5 rounded-xl text-sm font-bold shadow-md">
                                 <span class="material-symbols-outlined text-sm">stethoscope</span> پنل پزشک
                             </a>
-                        <?php elseif(isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'organization'): ?>
+                        <?php elseif(isset($_SESSION['user_role']) && in_array($_SESSION['user_role'], ['organization', 'organization_manager'])): ?>
                             <a href="organization/index.php" class="flex items-center justify-center gap-2 bg-teal-600 text-white px-6 py-3.5 rounded-xl text-sm font-bold shadow-md">
                                 <span class="material-symbols-outlined text-sm">domain</span> پنل مرکز درمانی
                             </a>
-                        <?php elseif(isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'pharmacist'): ?>
+                        <?php elseif(isset($_SESSION['user_role']) && in_array($_SESSION['user_role'], ['pharmacist', 'pharmacy'])): ?>
                             <a href="pharmacist/index.php" class="flex items-center justify-center gap-2 bg-indigo-600 text-white px-6 py-3.5 rounded-xl text-sm font-bold shadow-md">
                                 <span class="material-symbols-outlined text-sm">medication</span> پنل داروساز
                             </a>

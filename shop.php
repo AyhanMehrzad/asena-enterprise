@@ -1294,7 +1294,9 @@ function toggleAutoshipParam(isChecked) {
 
 // Add to Cart with Universal Optimistic Cart Manager (0ms latency live counter)
 function addToCart(btn, productId, type = 'standard') {
-    if (typeof window.addToCart === 'function') {
+    if (typeof window.cartManagerAddToCart === 'function') {
+        window.cartManagerAddToCart(btn, productId, type);
+    } else if (typeof window.addToCart === 'function' && window.addToCart !== addToCart) {
         window.addToCart(btn, productId, type);
     }
 }
