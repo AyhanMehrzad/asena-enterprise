@@ -131,6 +131,12 @@
     - اضافه کردن مقدار `'pharmacy'` به تعریف فیلد `role` در جدول `users` دامپ پایگاه داده.
 11. **سئو و عناوین داینامیک صفحات (M-5):**
     - افزودن تایتل‌های بهینه‌سازی شده فارسی به `$seo_defaults` در [`includes/header.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/includes/header.php) برای کلیه صفحات داخلی.
+12. **پاکسازی فایل‌های زائد و منسوخ پروژه (Clean-up):**
+    - حذف فایل‌های متنی سرگردان (`5162730.txt`, `5271122.txt`).
+    - حذف اسکریپت‌های تست و موقت روت (`test_uri.php`, `setup_db.php`, `server_ip.php`, `test_sms.php`, `actions/test_sms.php`).
+    - حذف اسکریپت‌های مایگریشن مجزای قدیمی در پوشه اکشن‌ها (`actions/migrate_tickets.php`, `actions/migrate_pharmacy_features.php`, `actions/migrate_charity.php`, `bin/apply_migration_12.php`, `bin/apply_migration_13.php`) به دلیل تجمیع رسمی در مایگریشن‌های چهارده‌گانه [`database/migrations/`](file:///opt/lampp/htdocs/asena/asena-enterprise/database/migrations/).
+    - حذف اسلایدهای قدیمی ارائه (`presentation.html`).
+    - حذف دامپ‌های قدیمی دیتابیس (`asena_database.sql`, `petshop_db.sql`) و ارجاع مستقیم ستاپ اولیه در [`includes/db.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/includes/db.php) به دامپ جامع اینترپرایز [`asena_enterprise_host_ready.sql`](file:///opt/lampp/htdocs/asena/asena-enterprise/asena_enterprise_host_ready.sql).
 
 ---
 

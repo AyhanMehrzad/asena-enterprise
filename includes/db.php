@@ -108,7 +108,7 @@ if (!$connected) {
         ]);
         $pdo->exec("CREATE DATABASE IF NOT EXISTS `$dbname` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
         $pdo->exec("USE `$dbname`");
-        $sqlFile = __DIR__ . '/../petshop_db.sql';
+        $sqlFile = __DIR__ . '/../asena_enterprise_host_ready.sql';
         if (file_exists($sqlFile)) {
             $sql = file_get_contents($sqlFile);
             if (!empty(trim($sql))) {
