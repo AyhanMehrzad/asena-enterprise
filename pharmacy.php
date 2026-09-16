@@ -61,6 +61,8 @@ $has_animal_col = false;
 $has_tag_col = false;
 $has_autoship_col = false;
 $has_rating_col = false;
+$has_org_col = false;
+$has_seller_col = false;
 
 try {
     $col_check = $pdo->query("SHOW COLUMNS FROM pharmacy_medicines");
@@ -69,7 +71,14 @@ try {
     $has_tag_col = in_array('pharmacy_tag', $columns);
     $has_autoship_col = in_array('is_autoship', $columns);
     $has_rating_col = in_array('rating_cache', $columns);
+    $has_org_col = in_array('organization_id', $columns);
+    $has_seller_col = in_array('seller_id', $columns);
 } catch (Exception $e) {}
+
+$joinOrg = $has_org_col ? "LEFT JOIN organizations o ON p.organization_id = o.id" : "";
+$selectOrg = $has_org_col ? "o.name as org_name, o.type as org_type, o.id as org_id," : "NULL as org_name, NULL as org_type, NULL as org_id,";
+$joinSeller = $has_seller_col ? "LEFT JOIN users u ON p.seller_id = u.id" : "";
+$selectSeller = $has_seller_col ? "u.name as seller_name" : "NULL as seller_name";
 
 $where = [];
 $params = [];
@@ -138,35 +147,46 @@ $countStmt->execute($params);
 $total = $countStmt->fetchColumn();
 
 // Fallback: If no medicines found for default view, load all so the page is never blank
-if ($total == 0 && empty($search) && empty($pharmacy_tag) && empty($animal) && empty($selected_brands)) {
-    $countStmt = $pdo->query("SELECT COUNT(*) FROM pharmacy_medicines");
-    $total = $countStmt->fetchColumn();
-    $totalPages = ceil($total / $limit);
-    $stmt = $pdo->prepare("
-        SELECT p.*, 
-               o.name as org_name, o.type as org_type, o.id as org_id,
-               u.name as seller_name
-        FROM pharmacy_medicines p
-        LEFT JOIN organizations o ON p.organization_id = o.id
-        LEFT JOIN users u ON p.seller_id = u.id
-        $orderBy LIMIT $limit OFFSET $offset
-    ");
-    $stmt->execute();
-    $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
-} else {
-    $totalPages = ceil($total / $limit);
-    $stmt = $pdo->prepare("
-        SELECT p.*, 
-               o.name as org_name, o.type as org_type, o.id as org_id,
-               u.name as seller_name
-        FROM pharmacy_medicines p
-        LEFT JOIN organizations o ON p.organization_id = o.id
-        LEFT JOIN users u ON p.seller_id = u.id
-        $whereClause 
-        $orderBy LIMIT $limit OFFSET $offset
-    ");
-    $stmt->execute($params);
-    $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
+$products = [];
+try {
+    if ($total == 0 && empty($search) && empty($pharmacy_tag) && empty($animal) && empty($selected_brands)) {
+        $countStmt = $pdo->query("SELECT COUNT(*) FROM pharmacy_medicines");
+        $total = $countStmt->fetchColumn();
+        $totalPages = ceil($total / $limit);
+        $stmt = $pdo->prepare("
+            SELECT p.*, 
+                   {$selectOrg}
+                   {$selectSeller}
+            FROM pharmacy_medicines p
+            {$joinOrg}
+            {$joinSeller}
+            $orderBy LIMIT $limit OFFSET $offset
+        ");
+        $stmt->execute();
+        $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } else {
+        $totalPages = ceil($total / $limit);
+        $stmt = $pdo->prepare("
+            SELECT p.*, 
+                   {$selectOrg}
+                   {$selectSeller}
+            FROM pharmacy_medicines p
+            {$joinOrg}
+            {$joinSeller}
+            $whereClause 
+            $orderBy LIMIT $limit OFFSET $offset
+        ");
+        $stmt->execute($params);
+        $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+} catch (Throwable $e) {
+    try {
+        $stmt = $pdo->prepare("SELECT * FROM pharmacy_medicines $whereClause $orderBy LIMIT $limit OFFSET $offset");
+        $stmt->execute($params);
+        $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (Throwable $e2) {
+        $products = [];
+    }
 }
 
 // Distinct pharmacy brands

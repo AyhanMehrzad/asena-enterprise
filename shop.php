@@ -60,6 +60,9 @@ $has_animal_col = false;
 $has_tag_col = false;
 $has_autoship_col = false;
 $has_rating_col = false;
+$has_org_col = false;
+$has_seller_col = false;
+$has_autoship_stock_col = false;
 
 try {
     $col_check = $pdo->query("SHOW COLUMNS FROM products");
@@ -68,9 +71,17 @@ try {
     $has_tag_col = in_array('pharmacy_tag', $columns);
     $has_autoship_col = in_array('is_autoship', $columns);
     $has_rating_col = in_array('rating_cache', $columns);
+    $has_org_col = in_array('organization_id', $columns);
+    $has_seller_col = in_array('seller_id', $columns);
+    $has_autoship_stock_col = in_array('autoship_min_months_stock', $columns);
 } catch (Exception $e) {
     // Silently continue if check fails
 }
+
+$joinOrg = $has_org_col ? "LEFT JOIN organizations o ON p.organization_id = o.id" : "";
+$selectOrg = $has_org_col ? "o.name as org_name, o.type as org_type, o.id as org_id," : "NULL as org_name, NULL as org_type, NULL as org_id,";
+$joinSeller = $has_seller_col ? "LEFT JOIN users u ON p.seller_id = u.id" : "";
+$selectSeller = $has_seller_col ? "u.name as seller_name" : "NULL as seller_name";
 
 // Build query - Exclude pharmacy products from the general pet shop
 $where = [
@@ -169,40 +180,59 @@ $total = $countStmt->fetchColumn();
 $totalPages = ceil($total / $limit);
 
 // Get products with provider organizations and sellers
-$stmt = $pdo->prepare("
-    SELECT p.*, 
-           o.name as org_name, o.type as org_type, o.id as org_id,
-           u.name as seller_name
-    FROM products p
-    LEFT JOIN organizations o ON p.organization_id = o.id
-    LEFT JOIN users u ON p.seller_id = u.id
-    $whereClause 
-    $orderBy 
-    LIMIT $limit OFFSET $offset
-");
-$stmt->execute($params);
-$products = $stmt->fetchAll(PDO::FETCH_ASSOC);
+$products = [];
+try {
+    $stmt = $pdo->prepare("
+        SELECT p.*, 
+               {$selectOrg}
+               {$selectSeller}
+        FROM products p
+        {$joinOrg}
+        {$joinSeller}
+        $whereClause 
+        $orderBy 
+        LIMIT $limit OFFSET $offset
+    ");
+    $stmt->execute($params);
+    $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (Throwable $e) {
+    try {
+        $stmt = $pdo->prepare("SELECT * FROM products $whereClause $orderBy LIMIT $limit OFFSET $offset");
+        $stmt->execute($params);
+        $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (Throwable $e2) {
+        $products = [];
+    }
+}
 
 // Fetch all available unique brands for the sidebar
-$brandsStmt = $pdo->query("SELECT DISTINCT brand FROM products WHERE brand IS NOT NULL AND brand != '' ORDER BY brand ASC");
-$all_brands = $brandsStmt->fetchAll(PDO::FETCH_COLUMN);
+$all_brands = [];
+try {
+    $brandsStmt = $pdo->query("SELECT DISTINCT brand FROM products WHERE brand IS NOT NULL AND brand != '' ORDER BY brand ASC");
+    $all_brands = $brandsStmt->fetchAll(PDO::FETCH_COLUMN);
+} catch (Throwable $e) {}
 
 // Fetch Suggested Autoship Offers (Enforce Inventory Authentication: >= 5 units & autoship buffer)
 $autoship_offers = [];
 if ($has_autoship_col) {
-    $autoStmt = $pdo->query("
-        SELECT p.*, 
-               o.name as org_name, o.type as org_type,
-               u.name as seller_name
-        FROM products p
-        LEFT JOIN organizations o ON p.organization_id = o.id
-        LEFT JOIN users u ON p.seller_id = u.id
-        WHERE p.is_autoship = 1 AND p.stock >= IFNULL(p.autoship_min_months_stock, 5) AND p.stock >= 5
-        GROUP BY p.name 
-        ORDER BY (p.price - IFNULL(p.discount_price, p.price)) DESC, p.rating_cache DESC 
-        LIMIT 4
-    ");
-    $autoship_offers = $autoStmt->fetchAll(PDO::FETCH_ASSOC);
+    try {
+        $stockCond = $has_autoship_stock_col ? "p.stock >= IFNULL(p.autoship_min_months_stock, 5) AND p.stock >= 5" : "p.stock >= 5";
+        $autoStmt = $pdo->query("
+            SELECT p.*, 
+                   {$selectOrg}
+                   {$selectSeller}
+            FROM products p
+            {$joinOrg}
+            {$joinSeller}
+            WHERE p.is_autoship = 1 AND {$stockCond}
+            GROUP BY p.name 
+            ORDER BY (p.price - IFNULL(p.discount_price, p.price)) DESC 
+            LIMIT 4
+        ");
+        $autoship_offers = $autoStmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (Throwable $e) {
+        $autoship_offers = [];
+    }
 }
 
 // Fetch Automatic Best Offers (Highest discounts across distinct product categories/lines)

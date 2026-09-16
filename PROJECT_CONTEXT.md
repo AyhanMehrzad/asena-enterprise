@@ -155,6 +155,12 @@
     - **رفع خطای ۵۰۰ و قفل سراسری پنل‌های نقشی در گیت قرارداد ([`includes/ContractService.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/includes/ContractService.php) & [`includes/AuthGuard.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/includes/AuthGuard.php)):** افزودن متد خودترمیم `ensureSchema()` جهت ایجاد جدول `contract_acceptances`؛ ایمن‌سازی کوئری کش با `try/catch` روی ستون `contract_accepted_version`؛ بای‌پس امن سشن و رفتار Fail-Open در محیط‌های آزمایشی.
     - **همگام‌سازی ورود خودکار سریع ([`auto_login.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/auto_login.php)):** ثبت فوری مقدار نسخه قرارداد در نشست سشن کاربر و ایمن‌سازی دستورات درج در جدول `users`.
     - **تزریق مکانیسم خودترمیم خودکار پایگاه داده در داشبورد مدیریت ([`admin/index.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/admin/index.php)):** افزودن روال خودکار ایجاد جدول `contract_acceptances` و افزودن تک‌تک ۱۱ ستون ضروری پایگاه داده به محض ورود مدیر به پیشخوان، بدون نیاز به اجرای دستی یا بروز خطای سینتکس در phpMyAdmin.
+17. **رفع سفیدی صفحه فروشگاه و داروخانه و خطای ۵۰۰ تیکت‌های کاربر (Fix Blank Pages & 500 in Shop, Pharmacy, and Tickets):**
+    - **رفع سفیدی بادی فروشگاه ([`shop.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/shop.php)):** تشخیص پویا و اتصال شرطی ستون‌های `organization_id` و `seller_id` در محصولات؛ اجرای کوئری در بلوک ایمن `try/catch` با بازگشت امن به کوئری ساده در صورت تفاوت اسکیما، تا صفحه کالاها هیچ‌گاه سفید نشود.
+    - **رفع سفیدی بادی داروخانه تخصصی ([`pharmacy.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/pharmacy.php)):** حذف جوین اجباری روی `organization_id` و `seller_id` در جدول `pharmacy_medicines` و جایگزینی با جوین‌های شرطی و بلوک `try/catch`.
+    - **رفع خطای ۵۰۰ صفحه تیکت‌های کاربر ([`user_tickets.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/user_tickets.php)):** ایمن‌سازی جوین جدول `organizations` با بررسی وجود ستون `organization_id` در جدول `tickets`، ایمن‌سازی دستورات بروزرسانی خودکار وضعیت و شمارنده تب‌ها با `try/catch`.
+    - **سخت‌سازی تله‌هلث و چت ([`chat.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/chat.php)):** ایمن‌سازی مشابه برای جوین اطلاعات مرکز درمانی با جدول تیکت‌ها.
+    - **خودترمیم سراسری در لحظه اتصال دیتابیس ([`includes/db.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/includes/db.php)):** فعال‌سازی بررسی و اضافه کردن آنی ۱۲ ستون کسری اسکیما در اولین درخواست به هسته با کش فایل `.schema_aligned_v2`.
 
 ---
 

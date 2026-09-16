@@ -15,17 +15,38 @@ if (!$ticket_id) {
 }
 
 // Auto-close tickets inactive for 24 hours
-$pdo->exec("UPDATE tickets SET status = 'closed' WHERE status = 'open' AND updated_at < DATE_SUB(NOW(), INTERVAL 24 HOUR)");
+try {
+    $pdo->exec("UPDATE tickets SET status = 'closed' WHERE status = 'open' AND updated_at < DATE_SUB(NOW(), INTERVAL 24 HOUR)");
+} catch (Throwable $e) {}
+
+// Check if organization_id exists in tickets
+$has_org_in_tickets = false;
+try {
+    $col_check = $pdo->query("SHOW COLUMNS FROM tickets LIKE 'organization_id'");
+    $has_org_in_tickets = (bool)$col_check->fetch();
+} catch (Throwable $e) {}
+
+$joinOrg = $has_org_in_tickets ? "LEFT JOIN organizations o ON t.organization_id = o.id" : "";
+$selectOrg = $has_org_in_tickets ? "o.name AS organization_name, o.logo_url AS organization_logo" : "NULL AS organization_name, NULL AS organization_logo";
 
 // Verify ticket ownership & fetch details
-$stmt = $pdo->prepare("
-    SELECT t.*, o.name AS organization_name, o.logo_url AS organization_logo 
-    FROM tickets t 
-    LEFT JOIN organizations o ON t.organization_id = o.id 
-    WHERE t.id = ? AND t.user_id = ?
-");
-$stmt->execute([$ticket_id, $user_id]);
-$ticket = $stmt->fetch(PDO::FETCH_ASSOC);
+$ticket = null;
+try {
+    $stmt = $pdo->prepare("
+        SELECT t.*, {$selectOrg}
+        FROM tickets t 
+        {$joinOrg}
+        WHERE t.id = ? AND t.user_id = ?
+    ");
+    $stmt->execute([$ticket_id, $user_id]);
+    $ticket = $stmt->fetch(PDO::FETCH_ASSOC);
+} catch (Throwable $e) {
+    try {
+        $stmt = $pdo->prepare("SELECT t.*, NULL as organization_name, NULL as organization_logo FROM tickets t WHERE t.id = ? AND t.user_id = ?");
+        $stmt->execute([$ticket_id, $user_id]);
+        $ticket = $stmt->fetch(PDO::FETCH_ASSOC);
+    } catch (Throwable $e2) {}
+}
 
 if (!$ticket) {
     header('Location: user_tickets.php');
@@ -36,15 +57,26 @@ $mode = $ticket['mode'] ?? 'admin';
 $orgName = $ticket['organization_name'] ?? 'مرکز درمانی';
 
 // Fetch all tickets for sidebar with organization name
-$stmt = $pdo->prepare("
-    SELECT t.*, o.name AS organization_name 
-    FROM tickets t 
-    LEFT JOIN organizations o ON t.organization_id = o.id 
-    WHERE t.user_id = ? 
-    ORDER BY t.updated_at DESC
-");
-$stmt->execute([$user_id]);
-$all_tickets = $stmt->fetchAll(PDO::FETCH_ASSOC);
+$all_tickets = [];
+try {
+    $stmt = $pdo->prepare("
+        SELECT t.*, {$selectOrg}
+        FROM tickets t 
+        {$joinOrg}
+        WHERE t.user_id = ? 
+        ORDER BY t.updated_at DESC
+    ");
+    $stmt->execute([$user_id]);
+    $all_tickets = $stmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (Throwable $e) {
+    try {
+        $stmt = $pdo->prepare("SELECT t.*, NULL as organization_name FROM tickets t WHERE t.user_id = ? ORDER BY t.id DESC");
+        $stmt->execute([$user_id]);
+        $all_tickets = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (Throwable $e2) {
+        $all_tickets = [];
+    }
+}
 
 require_once 'includes/header.php';
 ?>

@@ -38,7 +38,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 }
 
 // Auto-close tickets inactive for 48 hours
-$pdo->exec("UPDATE tickets SET status = 'closed' WHERE status = 'open' AND updated_at < DATE_SUB(NOW(), INTERVAL 48 HOUR)");
+try {
+    $pdo->exec("UPDATE tickets SET status = 'closed' WHERE status = 'open' AND updated_at < DATE_SUB(NOW(), INTERVAL 48 HOUR)");
+} catch (Throwable $e) {}
 
 // Active Tab Filter: 'admin', 'organization', 'ai', 'all'
 $activeTab = trim($_GET['tab'] ?? 'admin');
@@ -55,23 +57,43 @@ if ($activeTab === 'admin') {
     $tabCondition = "AND t.mode = 'ai'";
 }
 
-// Fetch tickets for this user with last message preview and organization details
-$stmt = $pdo->prepare("
-    SELECT t.*, 
-           o.name as organization_name, o.logo_url as organization_logo,
-           COALESCE(
-               (SELECT message FROM ticket_messages WHERE ticket_id = t.id ORDER BY id DESC LIMIT 1),
-               'پیامی ثبت نشده است'
-           ) as last_message,
-           (SELECT sender_type FROM ticket_messages WHERE ticket_id = t.id ORDER BY id DESC LIMIT 1) as last_sender,
-           (SELECT created_at FROM ticket_messages WHERE ticket_id = t.id ORDER BY id DESC LIMIT 1) as last_message_time
-    FROM tickets t 
-    LEFT JOIN organizations o ON t.organization_id = o.id
-    WHERE t.user_id = ? {$tabCondition}
-    ORDER BY (t.status = 'open') DESC, t.updated_at DESC, t.created_at DESC
-");
-$stmt->execute([$user_id]);
-$tickets = $stmt->fetchAll(PDO::FETCH_ASSOC);
+// Check if organization_id exists in tickets
+$has_org_in_tickets = false;
+try {
+    $col_check = $pdo->query("SHOW COLUMNS FROM tickets LIKE 'organization_id'");
+    $has_org_in_tickets = (bool)$col_check->fetch();
+} catch (Throwable $e) {}
+
+$joinOrg = $has_org_in_tickets ? "LEFT JOIN organizations o ON t.organization_id = o.id" : "";
+$selectOrg = $has_org_in_tickets ? "o.name as organization_name, o.logo_url as organization_logo," : "NULL as organization_name, NULL as organization_logo,";
+
+$tickets = [];
+try {
+    $stmt = $pdo->prepare("
+        SELECT t.*, 
+               {$selectOrg}
+               COALESCE(
+                   (SELECT message FROM ticket_messages WHERE ticket_id = t.id ORDER BY id DESC LIMIT 1),
+                   'پیامی ثبت نشده است'
+               ) as last_message,
+               (SELECT sender_type FROM ticket_messages WHERE ticket_id = t.id ORDER BY id DESC LIMIT 1) as last_sender,
+               (SELECT created_at FROM ticket_messages WHERE ticket_id = t.id ORDER BY id DESC LIMIT 1) as last_message_time
+        FROM tickets t 
+        {$joinOrg}
+        WHERE t.user_id = ? {$tabCondition}
+        ORDER BY (t.status = 'open') DESC, t.updated_at DESC, t.created_at DESC
+    ");
+    $stmt->execute([$user_id]);
+    $tickets = $stmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (Throwable $e) {
+    try {
+        $stmt = $pdo->prepare("SELECT t.*, NULL as organization_name, NULL as organization_logo, 'پیامی ثبت نشده است' as last_message FROM tickets t WHERE t.user_id = ? ORDER BY t.id DESC");
+        $stmt->execute([$user_id]);
+        $tickets = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (Throwable $e2) {
+        $tickets = [];
+    }
+}
 
 // Counts for tabs
 $counts = [
@@ -81,14 +103,18 @@ $counts = [
     'ai'           => 0,
 ];
 
-$stmtCounts = $pdo->prepare("SELECT mode, COUNT(*) as c FROM tickets WHERE user_id = ? GROUP BY mode");
-$stmtCounts->execute([$user_id]);
-while ($r = $stmtCounts->fetch(PDO::FETCH_ASSOC)) {
-    if (isset($counts[$r['mode']])) {
-        $counts[$r['mode']] = (int)$r['c'];
+try {
+    $stmtCounts = $pdo->prepare("SELECT mode, COUNT(*) as c FROM tickets WHERE user_id = ? GROUP BY mode");
+    $stmtCounts->execute([$user_id]);
+    $modeRows = $stmtCounts->fetchAll(PDO::FETCH_ASSOC);
+    foreach ($modeRows as $mr) {
+        $m = $mr['mode'] ?? '';
+        if (isset($counts[$m])) {
+            $counts[$m] = (int)$mr['c'];
+        }
+        $counts['all'] += (int)$mr['c'];
     }
-}
-$counts['all'] = $counts['admin'] + $counts['organization'] + $counts['ai'];
+} catch (Throwable $e) {}
 
 require_once 'includes/header.php';
 $fmtDateTime = new IntlDateFormatter('fa_IR@calendar=persian', IntlDateFormatter::FULL, IntlDateFormatter::FULL, 'Asia/Tehran', IntlDateFormatter::TRADITIONAL, 'd MMMM YYYY - HH:mm');

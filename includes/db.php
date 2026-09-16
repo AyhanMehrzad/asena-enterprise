@@ -130,6 +130,53 @@ if (!$connected || !isset($pdo)) {
     die("خطا در برقراری ارتباط با پایگاه‌داده. لطفاً تنظیمات پیکربندی سیستم را بررسی فرمایید.");
 }
 $GLOBALS['pdo'] = $pdo;
+
+// Automated schema alignment: runs once and self-heals any missing columns/tables on production
+if (!file_exists(__DIR__ . '/.schema_aligned_v2')) {
+    try {
+        $pdo->exec("
+            CREATE TABLE IF NOT EXISTS `contract_acceptances` (
+                `id` INT AUTO_INCREMENT PRIMARY KEY,
+                `user_id` INT NOT NULL,
+                `role` VARCHAR(50) NOT NULL,
+                `contract_version` VARCHAR(20) NOT NULL,
+                `contract_title` VARCHAR(255) NOT NULL,
+                `signature_hash` VARCHAR(64) NOT NULL,
+                `ip_address` VARCHAR(50) NOT NULL,
+                `user_agent` TEXT NOT NULL,
+                `accepted_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                INDEX `idx_user_contract` (`user_id`, `contract_version`),
+                INDEX `idx_role_accepted` (`role`, `accepted_at`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+        ");
+
+        $colsToAdd = [
+            "ALTER TABLE `users` ADD COLUMN `contract_accepted_version` VARCHAR(20) NULL AFTER `verification_status`",
+            "ALTER TABLE `users` ADD COLUMN `contract_accepted_at` DATETIME NULL AFTER `contract_accepted_version`",
+            "ALTER TABLE `products` ADD COLUMN `organization_id` INT NULL AFTER `seller_id`",
+            "ALTER TABLE `products` ADD COLUMN `autoship_min_months_stock` INT NOT NULL DEFAULT 5 AFTER `stock`",
+            "ALTER TABLE `pharmacy_medicines` ADD COLUMN `organization_id` INT NULL AFTER `brand`",
+            "ALTER TABLE `pharmacy_medicines` ADD COLUMN `seller_id` INT NULL AFTER `organization_id`",
+            "ALTER TABLE `pharmacy_medicines` ADD COLUMN `autoship_min_months_stock` INT NOT NULL DEFAULT 5 AFTER `stock`",
+            "ALTER TABLE `prescriptions` ADD COLUMN `organization_id` INT NULL AFTER `doctor_id`",
+            "ALTER TABLE `prescriptions` ADD COLUMN `pharmacy_id` INT NULL AFTER `organization_id`",
+            "ALTER TABLE `prescriptions` ADD COLUMN `bpms_state` VARCHAR(50) DEFAULT 'broadcasted' AFTER `status`",
+            "ALTER TABLE `prescriptions` ADD COLUMN `dispensing_status` VARCHAR(50) DEFAULT 'pending_review' AFTER `status`",
+            "ALTER TABLE `doctors` ADD COLUMN `license_number` VARCHAR(100) NULL AFTER `clinic_name`",
+            "ALTER TABLE `tickets` ADD COLUMN `organization_id` INT NULL AFTER `user_id`",
+            "ALTER TABLE `tickets` MODIFY COLUMN `mode` VARCHAR(50) DEFAULT 'admin'",
+            "ALTER TABLE `users` MODIFY COLUMN `role` enum('user','admin','doctor','organization','pharmacist','seller','pharmacy') DEFAULT 'user'"
+        ];
+
+        foreach ($colsToAdd as $sql) {
+            try {
+                $pdo->exec($sql);
+            } catch (Throwable $ignore) {}
+        }
+        @touch(__DIR__ . '/.schema_aligned_v2');
+    } catch (Throwable $e) {}
+}
+
 require_once __DIR__ . '/Feature.php';
 require_once __DIR__ . '/functions.php';
 ?>
