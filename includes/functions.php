@@ -60,20 +60,51 @@ function validate_upload(array $file, array $allowed_mimes, int $max_bytes = 5_2
 }
 
 /**
- * Sliding-window rate limiter for authentication endpoints.
- * Limits login attempts to 5 per 2 minutes per IP address.
+ * Universal Client IP Resolver with Cloudflare, CDN & Reverse Proxy Awareness
  */
-function check_rate_limit(PDO $pdo, string $ip, string $username = ''): ?string {
+function get_client_ip(): string {
+    $headers = [
+        'HTTP_CF_CONNECTING_IP',
+        'HTTP_TRUE_CLIENT_IP',
+        'HTTP_X_REAL_IP',
+        'HTTP_X_FORWARDED_FOR',
+        'REMOTE_ADDR'
+    ];
+
+    foreach ($headers as $header) {
+        if (!empty($_SERVER[$header])) {
+            $ips = explode(',', $_SERVER[$header]);
+            foreach ($ips as $ipCandidate) {
+                $candidate = trim($ipCandidate);
+                if (filter_var($candidate, FILTER_VALIDATE_IP)) {
+                    return $candidate;
+                }
+            }
+        }
+    }
+
+    return $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1';
+}
+
+/**
+ * Sliding-window rate limiter for authentication endpoints.
+ * Cloudflare-aware with CGNAT resilience for Iranian mobile networks (MCI/Irancell).
+ */
+function check_rate_limit(PDO $pdo, string $ip = '', string $username = ''): ?string {
+    if (empty($ip)) {
+        $ip = get_client_ip();
+    }
+
     // 1. Clean up old entries (older than 2 minutes)
     $pdo->query("DELETE FROM login_attempts WHERE attempt_time < DATE_SUB(NOW(), INTERVAL 2 MINUTE)");
 
-    // 2. Check IP rate limit (max 5 hits per 2 minutes)
+    // 2. Check IP rate limit (15 hits per 2 minutes - accommodates cellular CGNAT in Iran)
     $stmt = $pdo->prepare("SELECT COUNT(*) as count, MIN(attempt_time) as first_attempt FROM login_attempts WHERE ip_address = ?");
     $stmt->execute([$ip]);
     $row = $stmt->fetch(PDO::FETCH_ASSOC);
     $ipAttempts = (int)($row['count'] ?? 0);
 
-    if ($ipAttempts >= 5) {
+    if ($ipAttempts >= 15) {
         $first_attempt_time = strtotime($row['first_attempt'] ?? date('Y-m-d H:i:s'));
         $unblock_time = $first_attempt_time + 120; // 2 minutes
         $remaining = max(1, $unblock_time - time());
@@ -85,14 +116,14 @@ function check_rate_limit(PDO $pdo, string $ip, string $username = ''): ?string 
         return "تعداد دفعات مجاز از این اینترنت به پایان رسیده است. لطفاً $time_str دیگر تلاش کنید.";
     }
 
-    // 3. Check Phone rate limit (max 3 SMS per 2 minutes to prevent distributed botnet flooding)
+    // 3. Check Phone rate limit (max 5 SMS per 2 minutes to prevent distributed botnet flooding)
     if (!empty($username)) {
         $stmtUser = $pdo->prepare("SELECT COUNT(*) as count, MIN(attempt_time) as first_attempt FROM login_attempts WHERE username = ?");
         $stmtUser->execute([$username]);
         $rowUser = $stmtUser->fetch(PDO::FETCH_ASSOC);
         $phoneAttempts = (int)($rowUser['count'] ?? 0);
 
-        if ($phoneAttempts >= 3) {
+        if ($phoneAttempts >= 5) {
             $first_attempt_time = strtotime($rowUser['first_attempt'] ?? date('Y-m-d H:i:s'));
             $unblock_time = $first_attempt_time + 120;
             $remaining = max(1, $unblock_time - time());

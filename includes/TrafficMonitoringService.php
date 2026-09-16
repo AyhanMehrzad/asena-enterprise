@@ -14,9 +14,9 @@ class TrafficMonitoringService {
     private PDO $db;
     private SecurityAuditService $audit;
 
-    // L7 DDoS Flood thresholds
-    public const BURST_WINDOW_10S_THRESHOLD = 50;   // 50 requests in 10s = L7 flood
-    public const SUSTAINED_WINDOW_60S_THRESHOLD = 150; // 150 requests in 60s = sustained attack
+    // L7 DDoS Flood thresholds (Calibrated for modern browser multi-asset concurrent loading & CDN)
+    public const BURST_WINDOW_10S_THRESHOLD = 120;     // 120 requests in 10s
+    public const SUSTAINED_WINDOW_60S_THRESHOLD = 300; // 300 requests in 60s
 
     // Malicious vulnerability scanner patterns
     private static array $scannerPatterns = [
@@ -233,9 +233,37 @@ class TrafficMonitoringService {
     }
 
     /**
+     * Check if given IP belongs to known reverse proxy / Cloudflare / CDN IP ranges
+     */
+    public static function isCdnProxyIp(string $ip): bool {
+        if ($ip === '127.0.0.1' || $ip === '::1') {
+            return true;
+        }
+        $cfPrefixes = [
+            '173.245.', '103.21.', '103.22.', '103.31.', '141.101.', '108.162.',
+            '190.93.', '188.114.', '197.234.', '198.41.', '162.158.', '104.16.',
+            '104.17.', '104.18.', '104.19.', '104.20.', '104.21.', '104.22.',
+            '104.23.', '104.24.', '104.25.', '104.26.', '104.27.', '104.28.',
+            '172.64.', '172.65.', '172.66.', '172.67.', '172.68.', '172.69.',
+            '172.70.', '172.71.', '131.0.72.'
+        ];
+        foreach ($cfPrefixes as $prefix) {
+            if (str_starts_with($ip, $prefix)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
      * Automatically restrict an IP for a specific duration with threat classification
      */
     public function autoRestrictIp(string $ip, int $durationMinutes, string $threatType, string $reason, ?string $cfRay = null): bool {
+        // Never restrict reverse proxy or CDN edge IPs
+        if (self::isCdnProxyIp($ip)) {
+            return false;
+        }
+
         try {
             $stmt = $this->db->prepare("
                 INSERT INTO security_banned_ips (ip_address, reason, threat_type, cf_ray, banned_until, created_at)
@@ -274,6 +302,11 @@ class TrafficMonitoringService {
      * Get remaining ban seconds for an IP
      */
     public function getBanRemainingSeconds(string $ip): int {
+        // Never report restriction for reverse proxy or CDN edge IPs
+        if (self::isCdnProxyIp($ip)) {
+            return 0;
+        }
+
         try {
             $stmt = $this->db->prepare("
                 SELECT TIMESTAMPDIFF(SECOND, NOW(), banned_until) as sec 

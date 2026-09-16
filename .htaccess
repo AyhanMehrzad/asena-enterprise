@@ -58,7 +58,7 @@ Options -Indexes
     ExpiresByType application/xml "access plus 1 hour"
 </IfModule>
 
-# 7. Security Headers for Search Quality & User Trust
+# 7. Security Headers for Search Quality & User Trust & CDN Iran Compatibility
 <IfModule mod_headers.c>
     Header set X-Content-Type-Options "nosniff"
     Header set X-Frame-Options "SAMEORIGIN"
@@ -68,6 +68,10 @@ Options -Indexes
     Header always unset X-Powered-By
     Header unset X-XSS-Protection
     Header always unset X-XSS-Protection
+    
+    # Suppress Alt-Svc to prevent browsers from attempting blocked HTTP/3 (UDP 443) inside Iran
+    Header unset Alt-Svc
+    Header always unset Alt-Svc
 </IfModule>
 
 # 8. PWA Service Worker Header Rules
@@ -83,10 +87,10 @@ Options -Indexes
     Require all denied
 </FilesMatch>
 
-# 10. Custom Branded Error Documents
-ErrorDocument 403 /asena/asena-enterprise/403.php
-ErrorDocument 404 /asena/asena-enterprise/404.php
-ErrorDocument 500 /asena/asena-enterprise/500.php
-ErrorDocument 502 /asena/asena-enterprise/502.php
-ErrorDocument 503 /asena/asena-enterprise/503.php
-ErrorDocument 504 /asena/asena-enterprise/504.php
+# 10. Custom Branded Error Documents (Root Production Compatible)
+ErrorDocument 403 /403.php
+ErrorDocument 404 /404.php
+ErrorDocument 500 /500.php
+ErrorDocument 502 /502.php
+ErrorDocument 503 /503.php
+ErrorDocument 504 /504.php

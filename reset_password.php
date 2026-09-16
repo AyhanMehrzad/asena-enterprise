@@ -16,7 +16,7 @@ if (empty($phone)) {
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['action']) && $_POST['action'] === 'resend') {
-        $rate_error = check_rate_limit($pdo, $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1', $phone);
+        $rate_error = check_rate_limit($pdo, get_client_ip(), $phone);
         if ($rate_error) {
             $error = $rate_error;
         } else {
@@ -50,7 +50,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } elseif (strlen($password) < 6) {
             $error = 'رمز عبور جدید باید حداقل ۶ کاراکتر باشد.';
         } else {
-            $rate_error = check_rate_limit($pdo, $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1', $phone);
+            $rate_error = check_rate_limit($pdo, get_client_ip(), $phone);
             if ($rate_error) {
                 $error = $rate_error;
             } else {

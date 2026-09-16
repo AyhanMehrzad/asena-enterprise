@@ -50,7 +50,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $error = 'این شماره موبایل قبلاً در سامانه ثبت شده است. لطفاً وارد شوید.';
                 $step = 2;
             } else {
-                $rate_error = check_rate_limit($pdo, $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1', $phone);
+                $rate_error = check_rate_limit($pdo, get_client_ip(), $phone);
                 if ($rate_error) {
                     $error = $rate_error;
                     $step = 2;

@@ -13,6 +13,7 @@ if (!empty($returnUrl)) {
     }
 }
 $returnQuery = !empty($returnUrl) ? '&return_url=' . urlencode($returnUrl) : '';
+$clientIp = get_client_ip();
 
 // Generate OAuth URLs
 $google_oauth_url = "https://accounts.google.com/o/oauth2/v2/auth?" . http_build_query([
@@ -101,7 +102,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (empty($phone) || empty($password)) {
             $error = 'لطفاً شماره موبایل و رمز عبور خود را وارد کنید.';
         } else {
-            $rate_error = check_rate_limit($pdo, $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1', $phone);
+            $rate_error = check_rate_limit($pdo, $clientIp, $phone);
             if ($rate_error) {
                 $error = $rate_error;
             } else {
@@ -119,7 +120,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $_SESSION['password_hash'] = hash('sha256', $user['password']);
                     $_SESSION['contract_accepted_version'] = 'v2.0-2026';
                     
-                    $pdo->prepare("DELETE FROM login_attempts WHERE ip_address = ?")->execute([$_SERVER['REMOTE_ADDR'] ?? '127.0.0.1']);
+                    $pdo->prepare("DELETE FROM login_attempts WHERE ip_address = ?")->execute([$clientIp]);
                     
                     redirectAfterLogin($user, $returnUrl);
                 } else {
@@ -140,7 +141,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (empty($phone) || strlen($phone) < 10) {
             $error = 'لطفاً یک شماره موبایل معتبر ۱۱ رقمی وارد کنید.';
         } else {
-            $rate_error = check_rate_limit($pdo, $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1', $phone);
+            $rate_error = check_rate_limit($pdo, $clientIp, $phone);
             if ($rate_error) {
                 $error = $rate_error;
             } else {
@@ -212,7 +213,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $_SESSION['password_hash'] = hash('sha256', $user['password'] ?? '');
                 $_SESSION['contract_accepted_version'] = 'v2.0-2026';
                 
-                $pdo->prepare("DELETE FROM login_attempts WHERE ip_address = ?")->execute([$_SERVER['REMOTE_ADDR'] ?? '127.0.0.1']);
+                $pdo->prepare("DELETE FROM login_attempts WHERE ip_address = ?")->execute([$clientIp]);
                 
                 redirectAfterLogin($user, $returnUrl);
             }
@@ -239,7 +240,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($stmt->fetchColumn()) {
                 $error = 'این شماره موبایل قبلاً در آسنا ثبت‌نام شده است. لطفاً وارد شوید.';
             } else {
-                $rate_error = check_rate_limit($pdo, $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1', $phone);
+                $rate_error = check_rate_limit($pdo, $clientIp, $phone);
                 if ($rate_error) {
                     $error = $rate_error;
                 } else {

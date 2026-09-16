@@ -60,7 +60,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif (empty($_POST['confirm_agreement'])) {
         $errorMsg = 'جهت ادامه و استفاده از امکانات سامانه، علامت‌زدن کادر پذیرش کلیه شرایط و قوانین قرارداد الزامی است.';
     } else {
-        $ip = $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1';
+        $ip = get_client_ip();
         $ua = $_SERVER['HTTP_USER_AGENT'] ?? 'Unknown Device';
 
         $signResult = $contractService->recordAcceptance($userId, $userRole, $ip, $ua);
@@ -234,7 +234,7 @@ require_once __DIR__ . '/includes/header.php';
 
                     <div>
                         <span class="block text-[11px] text-slate-500">نشانی آی‌پی ثبت دیجیتال:</span>
-                        <span class="text-amber-400 font-mono"><?= htmlspecialchars($_SERVER['REMOTE_ADDR'] ?? '127.0.0.1') ?></span>
+                        <span class="text-amber-400 font-mono"><?= htmlspecialchars(get_client_ip()) ?></span>
                     </div>
 
                     <div>

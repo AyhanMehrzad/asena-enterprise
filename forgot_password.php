@@ -13,7 +13,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (empty($phone)) {
         $error = 'لطفاً شماره موبایل معتبر خود را وارد کنید.';
     } else {
-        $rate_error = check_rate_limit($pdo, $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1', $phone);
+        $rate_error = check_rate_limit($pdo, get_client_ip(), $phone);
         if ($rate_error) {
             $error = $rate_error;
         } else {

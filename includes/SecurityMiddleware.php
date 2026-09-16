@@ -14,24 +14,32 @@ class SecurityMiddleware {
             return;
         }
 
+        // Suppress Alt-Svc (HTTP/3 over UDP port 443 is blocked across Iranian ISPs, causing hangs/timeouts)
+        if (function_exists('header_remove')) {
+            header_remove('Alt-Svc');
+        }
+        header("Alt-Svc: clear");
+
         // 1. Content Security Policy (CSP)
-        // Accommodates Tailwind CDN, Google Fonts, Material Symbols, and inline app scripts
+        // Accommodates local assets, maps, and domestic payment gateways
         $csp = [
             "default-src 'self'",
             "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.tailwindcss.com https://cdn.jsdelivr.net",
             "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net",
             "font-src 'self' data: https://fonts.gstatic.com",
             "img-src 'self' data: blob: https:",
-            "connect-src 'self'",
+            "connect-src 'self' https://api.neshan.org https://*.tile.openstreetmap.org https://*.zarinpal.com https://*.shaparak.ir",
             "frame-ancestors 'self'",
-            "form-action 'self'",
+            "form-action 'self' https://*.zarinpal.com https://*.shaparak.ir",
             "base-uri 'self'"
         ];
         header("Content-Security-Policy: " . implode('; ', $csp));
 
-        // 2. Strict-Transport-Security (HSTS - 1 Year)
-        if (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') {
-            header("Strict-Transport-Security: max-age=31536000; includeSubDomains; preload");
+        // 2. Strict-Transport-Security (Cloudflare-aware HTTPS)
+        $isHttps = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') ||
+                   (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https');
+        if ($isHttps) {
+            header("Strict-Transport-Security: max-age=31536000");
         }
 
         // 3. X-Content-Type-Options (MIME sniffing prevention)
