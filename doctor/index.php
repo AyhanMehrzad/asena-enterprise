@@ -17,12 +17,26 @@ if (isset($_GET['action']) && $_GET['action'] === 'emr_search' && !empty($_SERVE
     exit;
 }
 
-// Auto-ensure clinical & reschedule columns exist in appointments
+// Auto-ensure clinical & reschedule columns exist in appointments & pharmacy_stores exists
 try {
     $pdo->exec("ALTER TABLE appointments ADD COLUMN IF NOT EXISTS doctor_diagnosis TEXT NULL");
     $pdo->exec("ALTER TABLE appointments ADD COLUMN IF NOT EXISTS doctor_prescription TEXT NULL");
     $pdo->exec("ALTER TABLE appointments ADD COLUMN IF NOT EXISTS reschedule_reason VARCHAR(500) NULL");
     $pdo->exec("ALTER TABLE appointments ADD COLUMN IF NOT EXISTS rescheduled_at DATETIME NULL");
+    $pdo->exec("
+        CREATE TABLE IF NOT EXISTS `pharmacy_stores` (
+          `id` int(11) NOT NULL AUTO_INCREMENT,
+          `user_id` int(11) NOT NULL,
+          `name` varchar(255) NOT NULL,
+          `license_number` varchar(100) DEFAULT NULL,
+          `status` enum('active','inactive') DEFAULT 'active',
+          `phone` varchar(50) DEFAULT NULL,
+          `address` text DEFAULT NULL,
+          `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+          PRIMARY KEY (`id`),
+          KEY `idx_pharmacy_user` (`user_id`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+    ");
 } catch (Exception $e) {}
 
 // Handle POST actions
@@ -467,15 +481,20 @@ $stmt->execute([$doctorId]);
 $historyAppts = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Fetch All Documents for Pet Archive (grouped by pet_id and user_id)
-$docsStmt = $pdo->prepare("
-    SELECT d.*, DATE(d.uploaded_at) as upload_date 
-    FROM pet_documents d 
-    WHERE d.pet_id IN (SELECT DISTINCT pet_id FROM appointments WHERE doctor_id = ? AND pet_id IS NOT NULL)
-       OR d.user_id IN (SELECT DISTINCT user_id FROM appointments WHERE doctor_id = ?)
-    ORDER BY d.uploaded_at DESC
-");
-$docsStmt->execute([$doctorId, $doctorId]);
-$allDoctorPetDocs = $docsStmt->fetchAll(PDO::FETCH_ASSOC);
+$allDoctorPetDocs = [];
+try {
+    $docsStmt = $pdo->prepare("
+        SELECT d.*, DATE(d.uploaded_at) as upload_date 
+        FROM pet_documents d 
+        WHERE d.pet_id IN (SELECT DISTINCT pet_id FROM appointments WHERE doctor_id = ? AND pet_id IS NOT NULL)
+           OR d.user_id IN (SELECT DISTINCT user_id FROM appointments WHERE doctor_id = ?)
+        ORDER BY d.uploaded_at DESC
+    ");
+    $docsStmt->execute([$doctorId, $doctorId]);
+    $allDoctorPetDocs = $docsStmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (Throwable $e) {
+    $allDoctorPetDocs = [];
+}
 
 // Group docs by user_id and pet_id for quick client retrieval
 $groupedDocs = [];
@@ -486,15 +505,20 @@ foreach ($allDoctorPetDocs as $d) {
 }
 
 // Fetch Doctor Reviews & Ratings
-$reviewsStmt = $pdo->prepare("
-    SELECT r.*, u.name as user_name, u.phone 
-    FROM reviews r 
-    JOIN users u ON r.user_id = u.id 
-    WHERE r.target_type = 'doctor' AND r.target_id = ? 
-    ORDER BY r.created_at DESC
-");
-$reviewsStmt->execute([$doctorId]);
-$doctorReviews = $reviewsStmt->fetchAll(PDO::FETCH_ASSOC);
+$doctorReviews = [];
+try {
+    $reviewsStmt = $pdo->prepare("
+        SELECT r.*, u.name as user_name, u.phone 
+        FROM reviews r 
+        JOIN users u ON r.user_id = u.id 
+        WHERE r.target_type = 'doctor' AND r.target_id = ? 
+        ORDER BY r.created_at DESC
+    ");
+    $reviewsStmt->execute([$doctorId]);
+    $doctorReviews = $reviewsStmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (Throwable $e) {
+    $doctorReviews = [];
+}
 
 $fmtDate = new IntlDateFormatter('fa_IR@calendar=persian', IntlDateFormatter::FULL, IntlDateFormatter::NONE, 'Asia/Tehran', IntlDateFormatter::TRADITIONAL, 'yyyy/MM/dd');
 
@@ -544,13 +568,33 @@ try {
 // Patient search (called via AJAX but pre-seed empty)
 $emrSearchResults = [];
 
-// Pharmacies (for dropdown when issuing prescription)
-$pharmacyUsersStmt = $pdo->query("SELECT u.id, u.name, ps.name as store_name, ps.license_number FROM users u JOIN pharmacy_stores ps ON ps.user_id = u.id WHERE u.role = 'pharmacy' AND ps.status = 'active' ORDER BY ps.name ASC LIMIT 50");
-$pharmacyUsers = $pharmacyUsersStmt ? $pharmacyUsersStmt->fetchAll(PDO::FETCH_ASSOC) : [];
+// Pharmacies (for dropdown when issuing prescription) - fail-safe with fallbacks
+$pharmacyUsers = [];
+try {
+    $pharmacyUsersStmt = $pdo->query("SELECT u.id, u.name, ps.name as store_name, ps.license_number FROM users u JOIN pharmacy_stores ps ON ps.user_id = u.id WHERE u.role IN ('pharmacy', 'pharmacist') AND ps.status = 'active' ORDER BY ps.name ASC LIMIT 50");
+    $pharmacyUsers = $pharmacyUsersStmt ? $pharmacyUsersStmt->fetchAll(PDO::FETCH_ASSOC) : [];
+} catch (Throwable $e) {
+    try {
+        $pharmacyUsersStmt = $pdo->query("SELECT u.id, u.name, u.name as store_name, '' as license_number FROM users u WHERE u.role IN ('pharmacy', 'pharmacist') ORDER BY u.name ASC LIMIT 50");
+        $pharmacyUsers = $pharmacyUsersStmt ? $pharmacyUsersStmt->fetchAll(PDO::FETCH_ASSOC) : [];
+    } catch (Throwable $e2) {
+        $pharmacyUsers = [];
+    }
+}
 
-// Organizations for dropdown
-$orgsStmt = $pdo->query("SELECT id, name, city FROM organizations WHERE is_verified = 1 ORDER BY name ASC LIMIT 100");
-$orgsList = $orgsStmt ? $orgsStmt->fetchAll(PDO::FETCH_ASSOC) : [];
+// Organizations for dropdown - fail-safe
+$orgsList = [];
+try {
+    $orgsStmt = $pdo->query("SELECT id, name, city FROM organizations WHERE is_verified = 1 ORDER BY name ASC LIMIT 100");
+    $orgsList = $orgsStmt ? $orgsStmt->fetchAll(PDO::FETCH_ASSOC) : [];
+} catch (Throwable $e) {
+    try {
+        $orgsStmt = $pdo->query("SELECT id, name, city FROM organizations ORDER BY name ASC LIMIT 100");
+        $orgsList = $orgsStmt ? $orgsStmt->fetchAll(PDO::FETCH_ASSOC) : [];
+    } catch (Throwable $e2) {
+        $orgsList = [];
+    }
+}
 ?>
 
 <div class="p-4 md:p-8 max-w-[1440px] mx-auto space-y-6 md:space-y-8">

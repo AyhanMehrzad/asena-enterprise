@@ -5,6 +5,15 @@ require_once __DIR__ . '/includes/functions.php';
 require_once __DIR__ . '/includes/SmsService.php';
 require_once __DIR__ . '/includes/SecurityMiddleware.php';
 
+// Capture and sanitize return URL
+$returnUrl = trim($_GET['return_url'] ?? $_POST['return_url'] ?? '');
+if (!empty($returnUrl)) {
+    if (preg_match('#^(https?:)?//#i', $returnUrl) || !preg_match('#^[a-zA-Z0-9_\-\./\?=&%]+$#', $returnUrl)) {
+        $returnUrl = '';
+    }
+}
+$returnQuery = !empty($returnUrl) ? '&return_url=' . urlencode($returnUrl) : '';
+
 // Generate OAuth URLs
 $google_oauth_url = "https://accounts.google.com/o/oauth2/v2/auth?" . http_build_query([
     'response_type' => 'code',
@@ -25,13 +34,13 @@ $apple_oauth_url = "https://appleid.apple.com/auth/authorize?" . http_build_quer
 // Cancel handlers
 if (isset($_GET['cancel_signup'])) {
     unset($_SESSION['signup_data']);
-    header("Location: login.php?tab=signup");
+    header("Location: login.php?tab=signup" . (!empty($returnUrl) ? '&return_url=' . urlencode($returnUrl) : ''));
     exit;
 }
 
 if (isset($_GET['cancel_otp'])) {
     unset($_SESSION['otp_login_data']);
-    header("Location: login.php?tab=otp");
+    header("Location: login.php?tab=otp" . (!empty($returnUrl) ? '&return_url=' . urlencode($returnUrl) : ''));
     exit;
 }
 
@@ -51,6 +60,29 @@ if (isset($_SESSION['otp_login_data'])) {
 }
 if (!in_array($activeTab, ['password', 'otp', 'signup'])) {
     $activeTab = 'password';
+}
+
+// Helper: redirect authenticated user based on role or returnUrl
+function redirectAfterLogin(?array $user, string $returnUrl = ''): void {
+    if (!empty($returnUrl)) {
+        header("Location: " . $returnUrl);
+        exit;
+    }
+    $role = $user['role'] ?? 'user';
+    if (in_array($role, ['organization', 'organization_manager'])) {
+        header("Location: organization/index.php");
+    } elseif ($role === 'seller') {
+        header("Location: seller/index.php");
+    } elseif ($role === 'doctor') {
+        header("Location: doctor/index.php");
+    } elseif (in_array($role, ['pharmacist', 'pharmacy'])) {
+        header("Location: pharmacist/index.php");
+    } elseif ($role === 'admin') {
+        header("Location: admin/index.php");
+    } else {
+        header("Location: index.php");
+    }
+    exit;
 }
 
 // Handle Form Submissions
@@ -79,27 +111,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 
                 if ($user && !empty($user['password']) && password_verify($password, $user['password'])) {
                     session_regenerate_id(true);
-                    $_SESSION['user_id'] = $user['id'];
-                    $_SESSION['user_role'] = $user['role'];
+                    $_SESSION['user_id'] = (int)$user['id'];
+                    $_SESSION['user_role'] = $user['role'] ?: 'user';
+                    $_SESSION['role'] = $user['role'] ?: 'user';
+                    $_SESSION['name'] = $user['name'];
                     $_SESSION['user_name'] = $user['name'];
                     $_SESSION['password_hash'] = hash('sha256', $user['password']);
+                    $_SESSION['contract_accepted_version'] = 'v2.0-2026';
                     
                     $pdo->prepare("DELETE FROM login_attempts WHERE ip_address = ?")->execute([$_SERVER['REMOTE_ADDR'] ?? '127.0.0.1']);
                     
-                    if (in_array($user['role'], ['organization', 'organization_manager'])) {
-                        header("Location: organization/index.php");
-                    } elseif ($user['role'] === 'seller') {
-                        header("Location: seller/index.php");
-                    } elseif ($user['role'] === 'doctor') {
-                        header("Location: doctor/index.php");
-                    } elseif ($user['role'] === 'pharmacist') {
-                        header("Location: pharmacist/index.php");
-                    } elseif ($user['role'] === 'admin') {
-                        header("Location: admin/index.php");
-                    } else {
-                        header("Location: index.php");
-                    }
-                    exit;
+                    redirectAfterLogin($user, $returnUrl);
                 } else {
                     $error = 'شماره موبایل یا رمز عبور وارد شده نادرست است.';
                 }
@@ -140,7 +162,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
     
     // ----------------------------------------------------
-    // 3. OTP SMS Login - Verify Code & Instant Login / Auto-Register
+    // 3. OTP SMS Login - Verify Code & Login/Register
     // ----------------------------------------------------
     elseif ($action === 'verify_otp') {
         $activeTab = 'otp';
@@ -173,34 +195,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 session_regenerate_id(true);
                 $_SESSION['user_id'] = $newUserId;
                 $_SESSION['user_role'] = 'user';
+                $_SESSION['role'] = 'user';
+                $_SESSION['name'] = 'کاربر آسنا';
                 $_SESSION['user_name'] = 'کاربر آسنا';
                 $_SESSION['password_hash'] = hash('sha256', $dummyPassword);
+                $_SESSION['contract_accepted_version'] = 'v2.0-2026';
                 
-                header("Location: index.php");
-                exit;
+                redirectAfterLogin(['id' => $newUserId, 'role' => 'user'], $returnUrl);
             } else {
                 session_regenerate_id(true);
-                $_SESSION['user_id'] = $user['id'];
-                $_SESSION['user_role'] = $user['role'];
+                $_SESSION['user_id'] = (int)$user['id'];
+                $_SESSION['user_role'] = $user['role'] ?: 'user';
+                $_SESSION['role'] = $user['role'] ?: 'user';
+                $_SESSION['name'] = $user['name'];
                 $_SESSION['user_name'] = $user['name'];
                 $_SESSION['password_hash'] = hash('sha256', $user['password'] ?? '');
+                $_SESSION['contract_accepted_version'] = 'v2.0-2026';
                 
                 $pdo->prepare("DELETE FROM login_attempts WHERE ip_address = ?")->execute([$_SERVER['REMOTE_ADDR'] ?? '127.0.0.1']);
                 
-                if (in_array($user['role'], ['organization', 'organization_manager'])) {
-                    header("Location: organization/index.php");
-                } elseif ($user['role'] === 'seller') {
-                    header("Location: seller/index.php");
-                } elseif ($user['role'] === 'doctor') {
-                    header("Location: doctor/index.php");
-                } elseif ($user['role'] === 'pharmacist') {
-                    header("Location: pharmacist/index.php");
-                } elseif ($user['role'] === 'admin') {
-                    header("Location: admin/index.php");
-                } else {
-                    header("Location: index.php");
-                }
-                exit;
+                redirectAfterLogin($user, $returnUrl);
             }
         }
     }
@@ -278,11 +292,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 session_regenerate_id(true);
                 $_SESSION['user_id'] = $userId;
                 $_SESSION['user_role'] = 'user';
+                $_SESSION['role'] = 'user';
+                $_SESSION['name'] = $name;
                 $_SESSION['user_name'] = $name;
                 $_SESSION['password_hash'] = hash('sha256', $hash);
+                $_SESSION['contract_accepted_version'] = 'v2.0-2026';
                 
-                header("Location: index.php");
-                exit;
+                redirectAfterLogin(['id' => $userId, 'role' => 'user'], $returnUrl);
             } else {
                 $error = 'خطایی در ایجاد حساب رخ داد. لطفاً مجدداً تلاش کنید.';
             }
@@ -310,7 +326,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         var tabs = document.querySelectorAll('.tab-btn');
         for (var j = 0; j < tabs.length; j++) {
-            tabs[j].classList.remove('bg-white', 'text-teal-900', 'shadow-sm', 'font-extrabold');
+            tabs[j].classList.remove('bg-white', 'text-primary', 'shadow-sm', 'font-black');
             tabs[j].classList.add('text-slate-500', 'font-medium');
         }
         var targetPane = document.getElementById('pane-' + tabId);
@@ -320,7 +336,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             targetPane.classList.add('active');
         }
         if (targetBtn) {
-            targetBtn.classList.add('bg-white', 'text-teal-900', 'shadow-sm', 'font-extrabold');
+            targetBtn.classList.add('bg-white', 'text-primary', 'shadow-sm', 'font-black');
             targetBtn.classList.remove('text-slate-500', 'font-medium');
         }
         try {
@@ -363,60 +379,67 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 if (btnEl) {
                     btnEl.disabled = false;
                     btnEl.classList.remove('opacity-50', 'cursor-not-allowed');
-                    btnEl.classList.add('text-teal-700', 'hover:underline', 'cursor-pointer');
+                    btnEl.classList.add('text-primary', 'hover:text-secondary-container', 'hover:underline', 'cursor-pointer');
                 }
             }
         }, 1000);
     }
+
+    function toggleQuickLogin() {
+        var drawer = document.getElementById('quick-login-drawer');
+        if (drawer) {
+            drawer.classList.toggle('hidden');
+        }
+    }
     </script>
 </head>
-<body class="bg-slate-50 min-h-screen text-slate-800 antialiased selection:bg-teal-500 selection:text-white">
+<body class="bg-slate-50 min-h-screen text-slate-800 antialiased selection:bg-secondary-container selection:text-white">
 <main class="min-h-screen w-full flex flex-row items-stretch">
 
-    <!-- Left Brand Showcase (Desktop) -->
-    <section class="hidden lg:flex lg:w-6/12 xl:w-7/12 relative overflow-hidden bg-gradient-to-br from-teal-900 via-teal-800 to-emerald-900 items-center justify-center p-12 text-white">
+    <!-- Left Brand Showcase (Desktop) - Styled in ASENA Deep Navy & Amber/Orange Accents -->
+    <section class="hidden lg:flex lg:w-6/12 xl:w-7/12 relative overflow-hidden bg-gradient-to-br from-[#00102e] via-[#001a48] to-[#002d72] items-center justify-center p-12 text-white">
         <!-- Background Ambient Glow -->
-        <div class="absolute -top-32 -right-32 w-96 h-96 bg-teal-500/20 rounded-full blur-3xl pointer-events-none"></div>
-        <div class="absolute -bottom-32 -left-32 w-96 h-96 bg-emerald-500/20 rounded-full blur-3xl pointer-events-none"></div>
+        <div class="absolute -top-32 -right-32 w-96 h-96 bg-primary-container/40 rounded-full blur-3xl pointer-events-none"></div>
+        <div class="absolute -bottom-32 -left-32 w-96 h-96 bg-secondary-container/15 rounded-full blur-3xl pointer-events-none"></div>
 
         <div class="relative z-10 max-w-xl">
             <!-- Brand Badge -->
-            <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-teal-200 text-xs font-bold mb-8">
-                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                <span>اکوسیستم جامع سلامت و خدمات حیوانات خانگی</span>
+            <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-amber-300 text-xs font-bold mb-8 shadow-sm">
+                <span class="w-2 h-2 rounded-full bg-secondary-container animate-pulse"></span>
+                <span>اکوسیستم جامع سلامت و خدمات حیوانات خانگی آسنا</span>
             </div>
 
-            <h1 class="text-4xl xl:text-5xl font-extrabold leading-tight mb-6">
+            <h1 class="text-4xl xl:text-5xl font-extrabold leading-tight mb-6 text-white tracking-tight">
                 مراقبتی هوشمندانه و آسوده برای همراهان همیشگی شما
             </h1>
 
-            <p class="text-base xl:text-lg text-teal-100/90 leading-relaxed mb-10 font-normal">
+            <p class="text-base xl:text-lg text-blue-100/85 leading-relaxed mb-10 font-normal">
                 در آسنا، برترین متخصصین دامپزشکی، کلینیک‌ها، داروخانه‌ها و تأمین‌کنندگان ملزومات حیوانات گرد هم آمده‌اند تا بهترین تجربه درمانی و نگهداری را فراهم آورند.
             </p>
 
             <!-- Feature Bento Highlights -->
             <div class="grid grid-cols-2 gap-4">
                 <div class="bg-white/10 backdrop-blur-md p-5 rounded-2xl border border-white/15 hover:bg-white/15 transition-all">
-                    <div class="w-10 h-10 rounded-xl bg-teal-500/30 flex items-center justify-center mb-3 text-teal-200">
+                    <div class="w-10 h-10 rounded-xl bg-primary-container/60 flex items-center justify-center mb-3 text-blue-200 border border-blue-400/20">
                         <span class="material-symbols-outlined text-2xl">medical_services</span>
                     </div>
                     <h3 class="font-bold text-white text-base mb-1">پرونده پزشکی یکپارچه</h3>
-                    <p class="text-xs text-teal-100/75 leading-relaxed">دسترسی دائم به سوابق واکسیناسیون، نسخ الکترونیک و آزمایش‌ها</p>
+                    <p class="text-xs text-blue-100/75 leading-relaxed">دسترسی دائم به سوابق واکسیناسیون، نسخ الکترونیک و آزمایش‌ها</p>
                 </div>
 
                 <div class="bg-white/10 backdrop-blur-md p-5 rounded-2xl border border-white/15 hover:bg-white/15 transition-all">
-                    <div class="w-10 h-10 rounded-xl bg-emerald-500/30 flex items-center justify-center mb-3 text-emerald-200">
+                    <div class="w-10 h-10 rounded-xl bg-secondary-container/20 flex items-center justify-center mb-3 text-secondary-container border border-secondary-container/30">
                         <span class="material-symbols-outlined text-2xl">event_available</span>
                     </div>
                     <h3 class="font-bold text-white text-base mb-1">نوبت‌دهی آنلاین ۲۴/۷</h3>
-                    <p class="text-xs text-teal-100/75 leading-relaxed">رزرو سریع ویزیت حضوری یا آنلاین با برترین دامپزشکان کشور</p>
+                    <p class="text-xs text-blue-100/75 leading-relaxed">رزرو سریع ویزیت حضوری یا آنلاین با برترین دامپزشکان کشور</p>
                 </div>
             </div>
 
             <!-- Stats Bar -->
-            <div class="mt-10 pt-6 border-t border-white/10 flex items-center justify-between text-xs text-teal-200/80">
+            <div class="mt-10 pt-6 border-t border-white/10 flex items-center justify-between text-xs text-blue-200/80">
                 <div class="flex items-center gap-2">
-                    <span class="material-symbols-outlined text-base text-emerald-400">verified_user</span>
+                    <span class="material-symbols-outlined text-base text-secondary-container">verified_user</span>
                     <span>ضمانت پرداخت امن و تسویه رسمی پایا</span>
                 </div>
                 <div>پشتیبانی برخط ۲۴ ساعته</div>
@@ -431,9 +454,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <div class="flex items-center justify-between mb-8">
             <a href="index.php" class="flex items-center gap-2.5 group" title="بازگشت به صفحه اصلی آسنا">
                 <img src="assets/images/logo.png" alt="لوگوی آسنا" class="w-9 h-9 object-contain group-hover:scale-105 transition-transform">
-                <span class="text-teal-900 font-extrabold text-xl tracking-tight">ASENA</span>
+                <span class="text-primary font-black text-xl tracking-tight">ASENA</span>
             </a>
-            <a href="index.php" class="text-xs font-bold text-slate-500 hover:text-teal-700 flex items-center gap-1 transition-colors">
+            <a href="<?= !empty($returnUrl) ? htmlspecialchars($returnUrl) : 'index.php' ?>" class="text-xs font-bold text-slate-500 hover:text-primary flex items-center gap-1 transition-colors">
                 <span>بازگشت به سایت</span>
                 <span class="material-symbols-outlined text-sm">arrow_back</span>
             </a>
@@ -444,7 +467,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
             <!-- Heading -->
             <div class="mb-6 text-center">
-                <h2 class="text-2xl sm:text-3xl font-extrabold text-slate-900 mb-2">ورود به آسنا</h2>
+                <h2 class="text-2xl sm:text-3xl font-black text-primary mb-2 tracking-tight">ورود به آسنا</h2>
                 <p class="text-xs sm:text-sm text-slate-500">برای دسترسی به پنل و خدمات خود، یکی از روش‌های زیر را انتخاب کنید</p>
             </div>
 
@@ -465,15 +488,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             <!-- Segmented Tab Navigation -->
             <div class="p-1 bg-slate-100/90 rounded-2xl flex items-center gap-1 mb-6 text-xs border border-slate-200/60 select-none">
-                <a href="login.php?tab=password" role="button" data-tab="password" onclick="switchAuthTab('password'); return false;" id="tab-password" class="tab-btn flex-1 py-2.5 rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer <?= $activeTab === 'password' ? 'bg-white text-teal-900 shadow-sm font-extrabold' : 'text-slate-500 font-medium hover:text-slate-900' ?>">
+                <a href="login.php?tab=password<?= $returnQuery ?>" role="button" data-tab="password" onclick="switchAuthTab('password'); return false;" id="tab-password" class="tab-btn flex-1 py-2.5 rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer <?= $activeTab === 'password' ? 'bg-white text-primary shadow-sm font-black' : 'text-slate-500 font-medium hover:text-primary' ?>">
                     <span class="material-symbols-outlined text-base pointer-events-none">lock</span>
                     <span class="pointer-events-none">ورود با رمز</span>
                 </a>
-                <a href="login.php?tab=otp" role="button" data-tab="otp" onclick="switchAuthTab('otp'); return false;" id="tab-otp" class="tab-btn flex-1 py-2.5 rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer <?= $activeTab === 'otp' ? 'bg-white text-teal-900 shadow-sm font-extrabold' : 'text-slate-500 font-medium hover:text-slate-900' ?>">
+                <a href="login.php?tab=otp<?= $returnQuery ?>" role="button" data-tab="otp" onclick="switchAuthTab('otp'); return false;" id="tab-otp" class="tab-btn flex-1 py-2.5 rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer <?= $activeTab === 'otp' ? 'bg-white text-primary shadow-sm font-black' : 'text-slate-500 font-medium hover:text-primary' ?>">
                     <span class="material-symbols-outlined text-base pointer-events-none">sms</span>
                     <span class="pointer-events-none">ورود پیامکی (OTP)</span>
                 </a>
-                <a href="login.php?tab=signup" role="button" data-tab="signup" onclick="switchAuthTab('signup'); return false;" id="tab-signup" class="tab-btn flex-1 py-2.5 rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer <?= $activeTab === 'signup' ? 'bg-white text-teal-900 shadow-sm font-extrabold' : 'text-slate-500 font-medium hover:text-slate-900' ?>">
+                <a href="login.php?tab=signup<?= $returnQuery ?>" role="button" data-tab="signup" onclick="switchAuthTab('signup'); return false;" id="tab-signup" class="tab-btn flex-1 py-2.5 rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer <?= $activeTab === 'signup' ? 'bg-white text-primary shadow-sm font-black' : 'text-slate-500 font-medium hover:text-primary' ?>">
                     <span class="material-symbols-outlined text-base pointer-events-none">person_add</span>
                     <span class="pointer-events-none">ثبت‌نام سریع</span>
                 </a>
@@ -483,13 +506,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <!-- TAB PANE 1: Password Login                              -->
             <!-- ======================================================= -->
             <div id="pane-password" class="tab-pane <?= $activeTab === 'password' ? 'active' : 'hidden' ?>">
-                <form method="POST" action="login.php?tab=password" class="space-y-4">
+                <form method="POST" action="login.php?tab=password<?= $returnQuery ?>" class="space-y-4">
                     <input type="hidden" name="action" value="login_password">
+                    <?php if (!empty($returnUrl)): ?>
+                        <input type="hidden" name="return_url" value="<?= htmlspecialchars($returnUrl) ?>">
+                    <?php endif; ?>
 
                     <div>
                         <label class="block text-xs font-bold text-slate-700 mb-1.5">شماره موبایل</label>
                         <div class="relative">
-                            <input type="text" name="phone" value="<?= htmlspecialchars($_POST['phone'] ?? '') ?>" placeholder="۰۹۱۲۳۴۵۶۷۸۹" required class="w-full h-11 pr-10 pl-4 rounded-xl border border-slate-200 text-sm focus:border-teal-600 focus:ring-2 focus:ring-teal-500/20 bg-slate-50/50 hover:bg-white transition-all text-left dir-ltr">
+                            <input type="text" name="phone" value="<?= htmlspecialchars($_POST['phone'] ?? '') ?>" placeholder="۰۹۱۲۳۴۵۶۷۸۹" required class="w-full h-11 pr-10 pl-4 rounded-xl border border-slate-200 text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 bg-slate-50/50 hover:bg-white transition-all text-left dir-ltr font-mono">
                             <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg">smartphone</span>
                         </div>
                     </div>
@@ -497,10 +523,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <div>
                         <div class="flex items-center justify-between mb-1.5">
                             <label class="block text-xs font-bold text-slate-700">رمز عبور</label>
-                            <a href="forgot_password.php" class="text-xs text-teal-700 hover:text-teal-800 font-bold transition-colors">فراموشی رمز عبور؟</a>
+                            <a href="forgot_password.php" class="text-xs text-primary hover:text-secondary-container font-bold transition-colors">فراموشی رمز عبور؟</a>
                         </div>
                         <div class="relative">
-                            <input type="password" id="input-password" name="password" placeholder="••••••••" required class="w-full h-11 pr-10 pl-10 rounded-xl border border-slate-200 text-sm focus:border-teal-600 focus:ring-2 focus:ring-teal-500/20 bg-slate-50/50 hover:bg-white transition-all text-left dir-ltr">
+                            <input type="password" id="input-password" name="password" placeholder="••••••••" required class="w-full h-11 pr-10 pl-10 rounded-xl border border-slate-200 text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 bg-slate-50/50 hover:bg-white transition-all text-left dir-ltr">
                             <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg">key</span>
                             <button type="button" onclick="togglePasswordVisibility('input-password', this)" class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors">
                                 <span class="material-symbols-outlined text-lg">visibility</span>
@@ -510,12 +536,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                     <div class="flex items-center justify-between py-1">
                         <label class="flex items-center gap-2 cursor-pointer select-none">
-                            <input type="checkbox" name="remember" class="w-4 h-4 rounded border-slate-300 text-teal-700 focus:ring-teal-500">
+                            <input type="checkbox" name="remember" class="w-4 h-4 rounded border-slate-300 text-primary focus:ring-primary">
                             <span class="text-xs text-slate-600 font-medium">مرا به خاطر بسپار</span>
                         </label>
                     </div>
 
-                    <button type="submit" class="w-full h-11 bg-teal-800 hover:bg-teal-900 text-white rounded-xl text-sm font-bold shadow-lg shadow-teal-900/15 hover:shadow-teal-900/25 active:scale-[0.99] transition-all flex items-center justify-center gap-2">
+                    <button type="submit" class="w-full h-11 bg-gradient-to-r from-primary to-primary-container hover:from-[#001437] hover:to-primary text-white rounded-xl text-sm font-bold shadow-lg shadow-primary/20 hover:shadow-primary/30 active:scale-[0.99] transition-all flex items-center justify-center gap-2">
                         <span>ورود به حساب کاربری</span>
                         <span class="material-symbols-outlined text-base">login</span>
                     </button>
@@ -528,39 +554,44 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <div id="pane-otp" class="tab-pane <?= $activeTab === 'otp' ? 'active' : 'hidden' ?>">
                 <?php if (!empty($_SESSION['otp_login_data'])): ?>
                     <!-- Step 2: Verify OTP Code -->
-                    <form method="POST" action="login.php?tab=otp" class="space-y-4">
+                    <form method="POST" action="login.php?tab=otp<?= $returnQuery ?>" class="space-y-4">
                         <input type="hidden" name="action" value="verify_otp">
+                        <?php if (!empty($returnUrl)): ?>
+                            <input type="hidden" name="return_url" value="<?= htmlspecialchars($returnUrl) ?>">
+                        <?php endif; ?>
 
                         <div class="p-3.5 bg-emerald-50 border border-emerald-200/80 rounded-xl text-xs text-emerald-900 flex items-center justify-between shadow-2xs">
                             <div class="flex items-center gap-2 min-w-0">
                                 <span class="material-symbols-outlined text-emerald-600 text-base shrink-0">check_circle</span>
                                 <span class="truncate">کد تأیید ورود به شماره <strong class="font-mono text-xs dir-ltr"><?= htmlspecialchars($_SESSION['otp_login_data']['phone']) ?></strong> ارسال شد</span>
                             </div>
-                            <a href="login.php?cancel_otp=1" class="text-emerald-700 hover:text-emerald-800 underline font-bold shrink-0 text-xs mr-2">تغییر شماره</a>
+                            <a href="login.php?cancel_otp=1<?= $returnQuery ?>" class="text-emerald-700 hover:text-emerald-800 underline font-bold shrink-0 text-xs mr-2">تغییر شماره</a>
                         </div>
-
 
                         <div>
                             <label class="block text-xs font-bold text-slate-700 mb-1.5 text-center">کد تأیید ۶ رقمی را وارد کنید</label>
-                            <input type="text" name="otp" maxlength="6" autofocus placeholder="------" required class="w-full h-12 rounded-xl border border-slate-200 text-xl font-bold tracking-[0.6em] text-center focus:border-teal-600 focus:ring-2 focus:ring-teal-500/20 bg-slate-50/50 hover:bg-white transition-all font-mono">
+                            <input type="text" name="otp" maxlength="6" autofocus placeholder="------" required class="w-full h-12 rounded-xl border border-slate-200 text-xl font-bold tracking-[0.6em] text-center focus:border-primary focus:ring-2 focus:ring-primary/20 bg-slate-50/50 hover:bg-white transition-all font-mono">
                         </div>
 
                         <div class="flex items-center justify-between text-xs pt-1">
                             <span class="text-slate-500">زمان باقی‌مانده تا دریافت مجدد:</span>
-                            <span id="otp-login-countdown" class="font-bold font-mono text-teal-800">02:00</span>
+                            <span id="otp-login-countdown" class="font-bold font-mono text-secondary-container">02:00</span>
                         </div>
 
-                        <button type="submit" class="w-full h-11 bg-teal-800 hover:bg-teal-900 text-white rounded-xl text-sm font-bold shadow-lg shadow-teal-900/15 hover:shadow-teal-900/25 active:scale-[0.99] transition-all flex items-center justify-center gap-2">
+                        <button type="submit" class="w-full h-11 bg-gradient-to-r from-primary to-primary-container hover:from-[#001437] hover:to-primary text-white rounded-xl text-sm font-bold shadow-lg shadow-primary/20 hover:shadow-primary/30 active:scale-[0.99] transition-all flex items-center justify-center gap-2">
                             <span>تأیید و ورود به سامانه</span>
                             <span class="material-symbols-outlined text-base">verified</span>
                         </button>
                     </form>
 
                     <!-- Resend form -->
-                    <form method="POST" action="login.php?tab=otp" class="mt-2 text-center">
+                    <form method="POST" action="login.php?tab=otp<?= $returnQuery ?>" class="mt-2 text-center">
                         <input type="hidden" name="action" value="send_otp">
                         <input type="hidden" name="phone" value="<?= htmlspecialchars($_SESSION['otp_login_data']['phone']) ?>">
-                        <button type="submit" id="btn-resend-otp" disabled class="text-xs opacity-50 cursor-not-allowed font-medium transition-all inline-flex items-center gap-1">
+                        <?php if (!empty($returnUrl)): ?>
+                            <input type="hidden" name="return_url" value="<?= htmlspecialchars($returnUrl) ?>">
+                        <?php endif; ?>
+                        <button type="submit" id="btn-resend-otp" disabled class="text-xs opacity-50 cursor-not-allowed font-medium transition-all inline-flex items-center gap-1 text-primary">
                             <span class="material-symbols-outlined text-sm">refresh</span>
                             <span>ارسال مجدد پیامک کد تأیید</span>
                         </button>
@@ -572,13 +603,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </script>
                 <?php else: ?>
                     <!-- Step 1: Enter Phone Number -->
-                    <form method="POST" action="login.php?tab=otp" class="space-y-4">
+                    <form method="POST" action="login.php?tab=otp<?= $returnQuery ?>" class="space-y-4">
                         <input type="hidden" name="action" value="send_otp">
+                        <?php if (!empty($returnUrl)): ?>
+                            <input type="hidden" name="return_url" value="<?= htmlspecialchars($returnUrl) ?>">
+                        <?php endif; ?>
 
                         <div>
                             <label class="block text-xs font-bold text-slate-700 mb-1.5">شماره موبایل جهت دریافت پیامک</label>
                             <div class="relative">
-                                <input type="text" name="phone" value="<?= htmlspecialchars($_POST['phone'] ?? '') ?>" placeholder="۰۹۱۲۳۴۵۶۷۸۹" required class="w-full h-11 pr-10 pl-4 rounded-xl border border-slate-200 text-sm focus:border-teal-600 focus:ring-2 focus:ring-teal-500/20 bg-slate-50/50 hover:bg-white transition-all text-left dir-ltr">
+                                <input type="text" name="phone" value="<?= htmlspecialchars($_POST['phone'] ?? '') ?>" placeholder="۰۹۱۲۳۴۵۶۷۸۹" required class="w-full h-11 pr-10 pl-4 rounded-xl border border-slate-200 text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 bg-slate-50/50 hover:bg-white transition-all text-left dir-ltr font-mono">
                                 <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg">smartphone</span>
                             </div>
                             <p class="text-[11px] text-slate-500 mt-2 leading-relaxed">
@@ -586,7 +620,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             </p>
                         </div>
 
-                        <button type="submit" class="w-full h-11 bg-teal-800 hover:bg-teal-900 text-white rounded-xl text-sm font-bold shadow-lg shadow-teal-900/15 hover:shadow-teal-900/25 active:scale-[0.99] transition-all flex items-center justify-center gap-2">
+                        <button type="submit" class="w-full h-11 bg-gradient-to-r from-primary to-primary-container hover:from-[#001437] hover:to-primary text-white rounded-xl text-sm font-bold shadow-lg shadow-primary/20 hover:shadow-primary/30 active:scale-[0.99] transition-all flex items-center justify-center gap-2">
                             <span>ارسال کد تأیید یک‌بار مصرف (OTP)</span>
                             <span class="material-symbols-outlined text-base">sms</span>
                         </button>
@@ -600,29 +634,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <div id="pane-signup" class="tab-pane <?= $activeTab === 'signup' ? 'active' : 'hidden' ?>">
                 <?php if (!empty($_SESSION['signup_data'])): ?>
                     <!-- Verify Registration OTP -->
-                    <form method="POST" action="login.php?tab=signup" class="space-y-4">
+                    <form method="POST" action="login.php?tab=signup<?= $returnQuery ?>" class="space-y-4">
                         <input type="hidden" name="action" value="verify_signup">
+                        <?php if (!empty($returnUrl)): ?>
+                            <input type="hidden" name="return_url" value="<?= htmlspecialchars($returnUrl) ?>">
+                        <?php endif; ?>
 
                         <div class="p-3.5 bg-emerald-50 border border-emerald-200/80 rounded-xl text-xs text-emerald-900 flex items-center justify-between shadow-2xs">
                             <div class="flex items-center gap-2 min-w-0">
                                 <span class="material-symbols-outlined text-emerald-600 text-base shrink-0">check_circle</span>
                                 <span class="truncate">کد عضویت به شماره <strong class="font-mono text-xs dir-ltr"><?= htmlspecialchars($_SESSION['signup_data']['phone']) ?></strong> ارسال شد</span>
                             </div>
-                            <a href="login.php?cancel_signup=1" class="text-emerald-700 hover:text-emerald-800 underline font-bold shrink-0 text-xs mr-2">تغییر شماره</a>
+                            <a href="login.php?cancel_signup=1<?= $returnQuery ?>" class="text-emerald-700 hover:text-emerald-800 underline font-bold shrink-0 text-xs mr-2">تغییر شماره</a>
                         </div>
-
 
                         <div>
                             <label class="block text-xs font-bold text-slate-700 mb-1.5 text-center">کد تأیید ۶ رقمی</label>
-                            <input type="text" name="otp" maxlength="6" autofocus placeholder="------" required class="w-full h-12 rounded-xl border border-slate-200 text-xl font-bold tracking-[0.6em] text-center focus:border-teal-600 focus:ring-2 focus:ring-teal-500/20 bg-slate-50/50 hover:bg-white transition-all font-mono">
+                            <input type="text" name="otp" maxlength="6" autofocus placeholder="------" required class="w-full h-12 rounded-xl border border-slate-200 text-xl font-bold tracking-[0.6em] text-center focus:border-primary focus:ring-2 focus:ring-primary/20 bg-slate-50/50 hover:bg-white transition-all font-mono">
                         </div>
 
                         <div class="flex items-center justify-between text-xs pt-1">
                             <span class="text-slate-500">زمان باقی‌مانده:</span>
-                            <span id="signup-countdown" class="font-bold font-mono text-teal-800">02:00</span>
+                            <span id="signup-countdown" class="font-bold font-mono text-secondary-container">02:00</span>
                         </div>
 
-                        <button type="submit" class="w-full h-11 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-sm font-bold shadow-lg shadow-emerald-800/15 hover:shadow-emerald-800/25 active:scale-[0.99] transition-all flex items-center justify-center gap-2">
+                        <button type="submit" class="w-full h-11 bg-gradient-to-r from-primary to-primary-container hover:from-[#001437] hover:to-primary text-white rounded-xl text-sm font-bold shadow-lg shadow-primary/20 hover:shadow-primary/30 active:scale-[0.99] transition-all flex items-center justify-center gap-2">
                             <span>تکمیل ثبت‌نام و ورود</span>
                             <span class="material-symbols-outlined text-base">how_to_reg</span>
                         </button>
@@ -634,13 +670,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </script>
                 <?php else: ?>
                     <!-- Registration Fields -->
-                    <form method="POST" action="login.php?tab=signup" class="space-y-3.5">
+                    <form method="POST" action="login.php?tab=signup<?= $returnQuery ?>" class="space-y-3.5">
                         <input type="hidden" name="action" value="signup">
+                        <?php if (!empty($returnUrl)): ?>
+                            <input type="hidden" name="return_url" value="<?= htmlspecialchars($returnUrl) ?>">
+                        <?php endif; ?>
 
                         <div>
                             <label class="block text-xs font-bold text-slate-700 mb-1.5">نام و نام خانوادگی</label>
                             <div class="relative">
-                                <input type="text" name="name" value="<?= htmlspecialchars($_POST['name'] ?? '') ?>" placeholder="مثال: علی احمدی" required class="w-full h-11 pr-10 pl-4 rounded-xl border border-slate-200 text-sm focus:border-teal-600 focus:ring-2 focus:ring-teal-500/20 bg-slate-50/50 hover:bg-white transition-all">
+                                <input type="text" name="name" value="<?= htmlspecialchars($_POST['name'] ?? '') ?>" placeholder="مثال: علی احمدی" required class="w-full h-11 pr-10 pl-4 rounded-xl border border-slate-200 text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 bg-slate-50/50 hover:bg-white transition-all">
                                 <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg">person</span>
                             </div>
                         </div>
@@ -648,7 +687,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <div>
                             <label class="block text-xs font-bold text-slate-700 mb-1.5">شماره موبایل</label>
                             <div class="relative">
-                                <input type="text" name="phone" value="<?= htmlspecialchars($_POST['phone'] ?? '') ?>" placeholder="۰۹۱۲۳۴۵۶۷۸۹" required class="w-full h-11 pr-10 pl-4 rounded-xl border border-slate-200 text-sm focus:border-teal-600 focus:ring-2 focus:ring-teal-500/20 bg-slate-50/50 hover:bg-white transition-all text-left dir-ltr">
+                                <input type="text" name="phone" value="<?= htmlspecialchars($_POST['phone'] ?? '') ?>" placeholder="۰۹۱۲۳۴۵۶۷۸۹" required class="w-full h-11 pr-10 pl-4 rounded-xl border border-slate-200 text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 bg-slate-50/50 hover:bg-white transition-all text-left dir-ltr font-mono">
                                 <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg">smartphone</span>
                             </div>
                         </div>
@@ -656,7 +695,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <div>
                             <label class="block text-xs font-bold text-slate-700 mb-1.5">رمز عبور دلخواه (حداقل ۶ نویسه)</label>
                             <div class="relative">
-                                <input type="password" id="input-signup-password" name="password" placeholder="••••••••" required class="w-full h-11 pr-10 pl-10 rounded-xl border border-slate-200 text-sm focus:border-teal-600 focus:ring-2 focus:ring-teal-500/20 bg-slate-50/50 hover:bg-white transition-all text-left dir-ltr">
+                                <input type="password" id="input-signup-password" name="password" placeholder="••••••••" required class="w-full h-11 pr-10 pl-10 rounded-xl border border-slate-200 text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 bg-slate-50/50 hover:bg-white transition-all text-left dir-ltr">
                                 <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg">lock</span>
                                 <button type="button" onclick="togglePasswordVisibility('input-signup-password', this)" class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors">
                                     <span class="material-symbols-outlined text-lg">visibility</span>
@@ -664,7 +703,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             </div>
                         </div>
 
-                        <button type="submit" class="w-full h-11 bg-teal-800 hover:bg-teal-900 text-white rounded-xl text-sm font-bold shadow-lg shadow-teal-900/15 hover:shadow-teal-900/25 active:scale-[0.99] transition-all flex items-center justify-center gap-2 mt-2">
+                        <button type="submit" class="w-full h-11 bg-gradient-to-r from-primary to-primary-container hover:from-[#001437] hover:to-primary text-white rounded-xl text-sm font-bold shadow-lg shadow-primary/20 hover:shadow-primary/30 active:scale-[0.99] transition-all flex items-center justify-center gap-2 mt-2">
                             <span>ثبت‌نام و دریافت کد تأیید</span>
                             <span class="material-symbols-outlined text-base">arrow_forward</span>
                         </button>
@@ -673,12 +712,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
 
             <!-- Partner Registration Note -->
-            <div class="mt-6 p-3 bg-gradient-to-r from-sky-50 to-teal-50 border border-teal-100 rounded-2xl flex items-center justify-between">
-                <div class="flex items-center gap-2">
-                    <span class="material-symbols-outlined text-teal-700 text-lg">stethoscope</span>
-                    <span class="text-xs font-bold text-slate-700">پزشک، کلینیک، داروخانه یا فروشگاه هستید؟</span>
+            <div class="mt-6 p-3.5 bg-gradient-to-r from-blue-50/80 to-amber-50/60 border border-blue-100 rounded-2xl flex items-center justify-between shadow-2xs">
+                <div class="flex items-center gap-2.5">
+                    <span class="material-symbols-outlined text-primary text-xl">stethoscope</span>
+                    <span class="text-xs font-bold text-slate-800">پزشک، کلینیک، داروخانه یا فروشگاه هستید؟</span>
                 </div>
-                <a href="register.php" class="px-3 py-1.5 bg-teal-800 hover:bg-teal-900 text-white rounded-xl text-xs font-bold transition-all shadow-sm shrink-0">
+                <a href="register.php<?= !empty($returnUrl) ? '?return_url=' . urlencode($returnUrl) : '' ?>" class="px-3.5 py-1.5 bg-primary hover:bg-primary-container text-white rounded-xl text-xs font-bold transition-all shadow-sm shrink-0">
                     پنل همکاران
                 </a>
             </div>
@@ -708,23 +747,63 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </a>
             </div>
 
-            <!-- Developer Quick Switch Pill (Subtle & Non-Intrusive) -->
-            <div class="mt-8 text-center">
-                <a href="auto_login.php" class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 text-[11px] font-medium transition-colors border border-slate-200/60 shadow-2xs">
-                    <span class="material-symbols-outlined text-[15px] text-amber-600">bolt</span>
-                    <span>سوییچ سریع توسعه‌دهندگان (Auto-Login Hub)</span>
-                </a>
+            <!-- Developer Quick Switch Pill & 1-Click Role Switcher -->
+            <div class="mt-8 text-center space-y-3">
+                <div class="flex items-center justify-center gap-2">
+                    <a href="auto_login.php<?= !empty($returnUrl) ? '?return_url=' . urlencode($returnUrl) : '' ?>" class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 hover:text-primary text-[11px] font-bold transition-all border border-slate-200/80 shadow-2xs">
+                        <span class="material-symbols-outlined text-[15px] text-amber-500">bolt</span>
+                        <span>سوئیچ سریع توسعه‌دهندگان (Auto-Login Hub)</span>
+                    </a>
+                    <button type="button" onclick="toggleQuickLogin()" class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-amber-50 hover:bg-amber-100 text-amber-800 text-[11px] font-bold border border-amber-200 transition-colors shadow-2xs cursor-pointer">
+                        <span class="material-symbols-outlined text-[14px]">flash_on</span>
+                        <span>ورود ۱-کلیک</span>
+                    </button>
+                </div>
+
+                <!-- Quick Role Drawer Tray -->
+                <div id="quick-login-drawer" class="hidden animate-fade-in bg-slate-50/90 border border-slate-200 rounded-2xl p-3 text-right shadow-sm">
+                    <div class="flex items-center justify-between mb-2">
+                        <p class="text-[11px] font-black text-slate-700">انتخاب سریع نقش (بدون پسورد):</p>
+                        <a href="auto_login.php<?= !empty($returnUrl) ? '?return_url=' . urlencode($returnUrl) : '' ?>" class="text-[10px] text-primary hover:text-secondary-container font-bold">میزکار کامل &larr;</a>
+                    </div>
+                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                        <a href="auto_login.php?role=doctor<?= !empty($returnUrl) ? '&return_url=' . urlencode($returnUrl) : '' ?>" class="p-2 rounded-xl bg-white border border-slate-200 hover:border-emerald-500 hover:bg-emerald-50/50 transition-all text-xs font-bold text-slate-800 flex items-center gap-1.5 shadow-2xs">
+                            <span class="material-symbols-outlined text-emerald-600 text-sm">stethoscope</span>
+                            <span>دکتر دامپزشک</span>
+                        </a>
+                        <a href="auto_login.php?role=pharmacist<?= !empty($returnUrl) ? '&return_url=' . urlencode($returnUrl) : '' ?>" class="p-2 rounded-xl bg-white border border-slate-200 hover:border-purple-500 hover:bg-purple-50/50 transition-all text-xs font-bold text-slate-800 flex items-center gap-1.5 shadow-2xs">
+                            <span class="material-symbols-outlined text-purple-600 text-sm">prescriptions</span>
+                            <span>دکتر داروساز</span>
+                        </a>
+                        <a href="auto_login.php?role=organization<?= !empty($returnUrl) ? '&return_url=' . urlencode($returnUrl) : '' ?>" class="p-2 rounded-xl bg-white border border-slate-200 hover:border-indigo-500 hover:bg-indigo-50/50 transition-all text-xs font-bold text-slate-800 flex items-center gap-1.5 shadow-2xs">
+                            <span class="material-symbols-outlined text-indigo-600 text-sm">domain</span>
+                            <span>مرکز درمانی</span>
+                        </a>
+                        <a href="auto_login.php?role=seller<?= !empty($returnUrl) ? '&return_url=' . urlencode($returnUrl) : '' ?>" class="p-2 rounded-xl bg-white border border-slate-200 hover:border-amber-500 hover:bg-amber-50/50 transition-all text-xs font-bold text-slate-800 flex items-center gap-1.5 shadow-2xs">
+                            <span class="material-symbols-outlined text-amber-600 text-sm">storefront</span>
+                            <span>فروشنده</span>
+                        </a>
+                        <a href="auto_login.php?role=admin<?= !empty($returnUrl) ? '&return_url=' . urlencode($returnUrl) : '' ?>" class="p-2 rounded-xl bg-white border border-slate-200 hover:border-rose-500 hover:bg-rose-50/50 transition-all text-xs font-bold text-slate-800 flex items-center gap-1.5 shadow-2xs">
+                            <span class="material-symbols-outlined text-rose-600 text-sm">shield_person</span>
+                            <span>مدیر ارشد</span>
+                        </a>
+                        <a href="auto_login.php?role=user<?= !empty($returnUrl) ? '&return_url=' . urlencode($returnUrl) : '' ?>" class="p-2 rounded-xl bg-white border border-slate-200 hover:border-sky-500 hover:bg-sky-50/50 transition-all text-xs font-bold text-slate-800 flex items-center gap-1.5 shadow-2xs">
+                            <span class="material-symbols-outlined text-sky-600 text-sm">pets</span>
+                            <span>کاربر عادی</span>
+                        </a>
+                    </div>
+                </div>
             </div>
         </div>
 
         <!-- Footer Legal Links -->
         <footer class="mt-8 pt-4 border-t border-slate-100 text-center">
             <div class="flex items-center justify-center gap-4 text-xs text-slate-400 font-medium">
-                <a href="#" class="hover:text-teal-700 transition-colors">قوانین و شرایط</a>
+                <a href="terms.php" class="hover:text-primary transition-colors">قوانین و شرایط</a>
                 <span>•</span>
-                <a href="#" class="hover:text-teal-700 transition-colors">حریم خصوصی</a>
+                <a href="privacy.php" class="hover:text-primary transition-colors">حریم خصوصی</a>
                 <span>•</span>
-                <a href="#" class="hover:text-teal-700 transition-colors">پشتیبانی</a>
+                <a href="user_tickets.php" class="hover:text-primary transition-colors">پشتیبانی</a>
             </div>
             <p class="text-[10px] text-slate-400 mt-2">© <?= date('Y') ?> سامانه هوشمند حیوانات خانگی آسنا. کلیه حقوق محفوظ است.</p>
         </footer>

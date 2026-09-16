@@ -1,5 +1,6 @@
 /**
  * ASENA Enterprise - Tabbed Authentication Manager (Mobile & Android Optimized)
+ * Follows ASENA Brand Design Standards (Primary: #001a48, Accent: #fd8100)
  */
 function switchAuthTab(tabId) {
     if (!tabId) return;
@@ -14,7 +15,7 @@ function switchAuthTab(tabId) {
     // 2. Reset all tab buttons
     var tabs = document.querySelectorAll('.tab-btn');
     for (var j = 0; j < tabs.length; j++) {
-        tabs[j].classList.remove('bg-white', 'text-teal-900', 'shadow-sm', 'font-extrabold');
+        tabs[j].classList.remove('bg-white', 'text-primary', 'shadow-sm', 'font-black');
         tabs[j].classList.add('text-slate-500', 'font-medium');
     }
 
@@ -26,7 +27,7 @@ function switchAuthTab(tabId) {
         targetPane.classList.add('active');
     }
     if (targetBtn) {
-        targetBtn.classList.add('bg-white', 'text-teal-900', 'shadow-sm', 'font-extrabold');
+        targetBtn.classList.add('bg-white', 'text-primary', 'shadow-sm', 'font-black');
         targetBtn.classList.remove('text-slate-500', 'font-medium');
     }
 
@@ -76,7 +77,7 @@ function initOtpCountdown(timerId, btnId, seconds) {
             if (btnEl) {
                 btnEl.disabled = false;
                 btnEl.classList.remove('opacity-50', 'cursor-not-allowed');
-                btnEl.classList.add('text-teal-700', 'hover:underline', 'cursor-pointer');
+                btnEl.classList.add('text-primary', 'hover:text-secondary-container', 'hover:underline', 'cursor-pointer');
             }
         }
     }, 1000);

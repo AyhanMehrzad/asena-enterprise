@@ -111,6 +111,24 @@ $rolesConfig = [
     ]
 ];
 
+// Auto-ensure pharmacy_stores table exists for clinical compatibility
+try {
+    $pdo->exec("
+        CREATE TABLE IF NOT EXISTS `pharmacy_stores` (
+          `id` int(11) NOT NULL AUTO_INCREMENT,
+          `user_id` int(11) NOT NULL,
+          `name` varchar(255) NOT NULL,
+          `license_number` varchar(100) DEFAULT NULL,
+          `status` enum('active','inactive') DEFAULT 'active',
+          `phone` varchar(50) DEFAULT NULL,
+          `address` text DEFAULT NULL,
+          `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+          PRIMARY KEY (`id`),
+          KEY `idx_pharmacy_user` (`user_id`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+    ");
+} catch (Throwable $e) {}
+
 // Helper: authenticate a given role
 function loginAsRole($pdo, $role, $cfg) {
     // 1. Map role safely for database compatibility (pharmacy maps to pharmacist in user role)
@@ -128,7 +146,7 @@ function loginAsRole($pdo, $role, $cfg) {
         $user = $stmtRole->fetch(PDO::FETCH_ASSOC);
     }
 
-    // 3. Fallback: create demo user if not existing
+    // 4. Fallback: create demo user if not existing
     if (!$user) {
         $hash = password_hash('Asena1234!', PASSWORD_DEFAULT);
         try {
@@ -155,12 +173,59 @@ function loginAsRole($pdo, $role, $cfg) {
         }
     }
 
-    // Set authenticated session
+    // 5. Ensure existing user has valid role and approved verification in DB
+    if ($user) {
+        $needsRoleUpdate = empty($user['role']) || 
+            ($user['role'] !== $mappedDbRole && $user['role'] !== $role && $user['role'] !== 'admin');
+
+        if ($needsRoleUpdate || ($user['verification_status'] ?? '') !== 'approved') {
+            try {
+                $upd = $pdo->prepare("UPDATE users SET role = ?, verification_status = 'approved' WHERE id = ?");
+                $upd->execute([$mappedDbRole, $user['id']]);
+                $user['role'] = $mappedDbRole;
+                $user['verification_status'] = 'approved';
+            } catch (Throwable $e) {
+                try {
+                    $fallbackRole = ($mappedDbRole === 'pharmacy') ? 'pharmacist' : $mappedDbRole;
+                    $upd = $pdo->prepare("UPDATE users SET role = ?, verification_status = 'approved' WHERE id = ?");
+                    $upd->execute([$fallbackRole, $user['id']]);
+                    $user['role'] = $fallbackRole;
+                    $user['verification_status'] = 'approved';
+                } catch (Throwable $e2) {}
+            }
+        }
+
+        // Additional profile setups
+        if (($role === 'doctor' || $user['role'] === 'doctor')) {
+            try {
+                $docStmt = $pdo->prepare("SELECT id FROM doctors WHERE user_id = ? LIMIT 1");
+                $docStmt->execute([$user['id']]);
+                if (!$docStmt->fetchColumn()) {
+                    $insDoc = $pdo->prepare("INSERT INTO doctors (user_id, name, specialty, price, clinic_name) VALUES (?, ?, 'متخصص جراحی و داخلی', 180000, 'کلینیک تخصصی آسنا')");
+                    $insDoc->execute([$user['id'], $user['name'] ?: $cfg['default_name']]);
+                }
+            } catch (Throwable $e) {}
+        }
+
+        if (in_array($role, ['pharmacist', 'pharmacy']) || in_array($user['role'], ['pharmacist', 'pharmacy'])) {
+            try {
+                $psStmt = $pdo->prepare("SELECT id FROM pharmacy_stores WHERE user_id = ? LIMIT 1");
+                $psStmt->execute([$user['id']]);
+                if (!$psStmt->fetchColumn()) {
+                    $insPs = $pdo->prepare("INSERT INTO pharmacy_stores (user_id, name, license_number, status, phone) VALUES (?, ?, 'PH-1403-8871', 'active', ?)");
+                    $insPs->execute([$user['id'], $user['name'] ?: $cfg['default_name'], $user['phone'] ?: $cfg['phone']]);
+                }
+            } catch (Throwable $e) {}
+        }
+    }
+
+    // Set authenticated session with all unified variables
     session_regenerate_id(true);
     $_SESSION['user_id']   = (int)$user['id'];
-    $_SESSION['user_role'] = $user['role'];
-    $_SESSION['role']      = $user['role'];
+    $_SESSION['user_role'] = $user['role'] ?: $mappedDbRole;
+    $_SESSION['role']      = $user['role'] ?: $mappedDbRole;
     $_SESSION['name']      = $user['name'] ?: $cfg['default_name'];
+    $_SESSION['user_name'] = $user['name'] ?: $cfg['default_name'];
     $_SESSION['phone']     = $user['phone'] ?? $cfg['phone'];
     if (!empty($user['password'])) {
         $_SESSION['password_hash'] = hash('sha256', $user['password']);
@@ -171,14 +236,23 @@ function loginAsRole($pdo, $role, $cfg) {
 }
 
 // ── Check Query Actions ───────────────────────────────────────────────────────
-$action = strtolower(trim($_GET['action'] ?? ''));
-$reqRole = strtolower(trim($_GET['role'] ?? ''));
+$action    = strtolower(trim($_GET['action'] ?? ''));
+$reqRole   = strtolower(trim($_GET['role'] ?? ''));
+$returnUrl = trim($_GET['return_url'] ?? $_POST['return_url'] ?? '');
+
+// Sanitize returnUrl (relative path only, no open redirect)
+if (!empty($returnUrl)) {
+    if (preg_match('#^(https?:)?//#i', $returnUrl) || !preg_match('#^[a-zA-Z0-9_\-\./\?=&%]+$#', $returnUrl)) {
+        $returnUrl = '';
+    }
+}
 
 // Handle Logout
 if ($action === 'logout' || $reqRole === 'logout' || $reqRole === 'guest') {
-    unset($_SESSION['user_id'], $_SESSION['user_role'], $_SESSION['role'], $_SESSION['name'], $_SESSION['phone']);
+    unset($_SESSION['user_id'], $_SESSION['user_role'], $_SESSION['role'], $_SESSION['name'], $_SESSION['user_name'], $_SESSION['phone'], $_SESSION['password_hash']);
     session_regenerate_id(true);
-    header("Location: auto_login.php?logged_out=1");
+    $logoutRedirect = "auto_login.php?logged_out=1" . (!empty($returnUrl) ? '&return_url=' . urlencode($returnUrl) : '');
+    header("Location: " . $logoutRedirect);
     exit;
 }
 
@@ -187,8 +261,9 @@ if (!empty($reqRole) && isset($rolesConfig[$reqRole])) {
     $cfg = $rolesConfig[$reqRole];
     $loggedUser = loginAsRole($pdo, $reqRole, $cfg);
     
-    // Redirect straight to panel
-    header("Location: " . $cfg['target']);
+    // Redirect straight to return_url or default target panel
+    $destination = !empty($returnUrl) ? $returnUrl : $cfg['target'];
+    header("Location: " . $destination);
     exit;
 }
 
@@ -398,7 +473,7 @@ foreach ($rolesConfig as $rKey => $cfg) {
                     <!-- Card Actions -->
                     <div class="pt-2 border-t border-slate-100 flex flex-col gap-2">
                         <!-- 1-Click Login Button -->
-                        <a href="auto_login.php?role=<?= urlencode($rKey) ?>" class="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r <?= $cfg['gradient'] ?> hover:opacity-95 text-white text-xs font-black flex items-center justify-center gap-2 shadow-md hover:shadow-lg transition-all active:scale-[0.98]">
+                        <a href="auto_login.php?role=<?= urlencode($rKey) ?><?= !empty($returnUrl) ? '&return_url=' . urlencode($returnUrl) : '' ?>" class="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r <?= $cfg['gradient'] ?> hover:opacity-95 text-white text-xs font-black flex items-center justify-center gap-2 shadow-md hover:shadow-lg transition-all active:scale-[0.98]">
                             <span class="material-symbols-outlined text-base">login</span>
                             <span>ورود فوری با ۱ کلیک</span>
                             <span class="material-symbols-outlined text-sm">arrow_back</span>

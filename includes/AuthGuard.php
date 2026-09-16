@@ -62,6 +62,11 @@ class AuthGuard {
                 }
 
                 unset($u['password']);
+                if (empty($u['role']) && !empty($_SESSION['user_role'])) {
+                    $u['role'] = $_SESSION['user_role'];
+                } elseif (empty($u['role']) && !empty($_SESSION['role'])) {
+                    $u['role'] = $_SESSION['role'];
+                }
                 self::$cachedUser = $u;
                 return self::$cachedUser;
             }
@@ -130,8 +135,27 @@ class AuthGuard {
         if (in_array('organization_manager', $allowedRoles, true) && !in_array('organization', $allowedRoles, true)) {
             $allowedRoles[] = 'organization';
         }
+        if (in_array('pharmacist', $allowedRoles, true) && !in_array('pharmacy', $allowedRoles, true)) {
+            $allowedRoles[] = 'pharmacy';
+        }
+        if (in_array('pharmacy', $allowedRoles, true) && !in_array('pharmacist', $allowedRoles, true)) {
+            $allowedRoles[] = 'pharmacist';
+        }
 
-        $currentRole = $u['role'] ?? 'user';
+        $currentRole = !empty($u['role']) ? $u['role'] : (!empty($_SESSION['user_role']) ? $_SESSION['user_role'] : (!empty($_SESSION['role']) ? $_SESSION['role'] : 'user'));
+
+        // Self-heal empty role in DB if authenticated session has defined role
+        if (empty($u['role']) && !empty($currentRole) && !empty($u['id'])) {
+            $db = $pdo ?? ($GLOBALS['pdo'] ?? null);
+            if ($db) {
+                try {
+                    $stmtFix = $db->prepare("UPDATE users SET role = ? WHERE id = ?");
+                    $stmtFix->execute([$currentRole, (int)$u['id']]);
+                    $u['role'] = $currentRole;
+                } catch (Throwable $e) {}
+            }
+        }
+
         if (!in_array($currentRole, $allowedRoles, true)) {
             // Privilege escalation attempt: log event
             $audit = new SecurityAuditService($pdo);
