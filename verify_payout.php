@@ -107,7 +107,7 @@ $auditHash = strtoupper(substr(hash('sha256', $batchCode . $totalSettled . $asen
     <link rel="stylesheet" href="assets/css/enterprise-ui.css">
     <link href="assets/css/material-symbols.css" rel="stylesheet"/>
     <link href="assets/css/geist.css" rel="stylesheet"/>
-    <script src="assets/js/tailwindcss-cdn.js"></script>
+    <link rel="stylesheet" href="assets/css/tailwind.output.css?v=<?= time() ?>">
     <style>
         body { font-family: Tahoma, 'Vazirmatn', sans-serif; background: #f1f5f9; color: #0f172a; }
         .cert-card { max-width: 860px; margin: 30px auto; background: #fff; border-radius: 20px; box-shadow: 0 10px 30px rgba(0, 26, 72, 0.08); border: 1px solid #cbd5e1; overflow: hidden; }

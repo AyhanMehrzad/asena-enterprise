@@ -160,7 +160,11 @@
     - **رفع سفیدی بادی داروخانه تخصصی ([`pharmacy.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/pharmacy.php)):** حذف جوین اجباری روی `organization_id` و `seller_id` در جدول `pharmacy_medicines` و جایگزینی با جوین‌های شرطی و بلوک `try/catch`.
     - **رفع خطای ۵۰۰ صفحه تیکت‌های کاربر ([`user_tickets.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/user_tickets.php)):** ایمن‌سازی جوین جدول `organizations` با بررسی وجود ستون `organization_id` در جدول `tickets`، ایمن‌سازی دستورات بروزرسانی خودکار وضعیت و شمارنده تب‌ها با `try/catch`.
     - **سخت‌سازی تله‌هلث و چت ([`chat.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/chat.php)):** ایمن‌سازی مشابه برای جوین اطلاعات مرکز درمانی با جدول تیکت‌ها.
-    - **خودترمیم سراسری در لحظه اتصال دیتابیس ([`includes/db.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/includes/db.php)):** فعال‌سازی بررسی و اضافه کردن آنی ۱۲ ستون کسری اسکیما در اولین درخواست به هسته با کش فایل `.schema_aligned_v2`.
+18. **رفع یافته‌های گزارش ممیزی کدهای سیستمی و مالی (Audit Report Fixes - Sections 4 & 5):**
+    - **رفع هشدار ارسال هدر در لیست علاقه‌مندی‌ها ([`wishlist.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/wishlist.php)):** افزودن بافر خروجی صریح `ob_start()` در خط نخست جهت پیشگیری از خطای هدر در ریدایرکت سشن لاگین.
+    - **همگام‌سازی کارمزد پلتفرم مارکت‌پلیس ([`includes/MarketplaceEscrowService.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/includes/MarketplaceEscrowService.php)):** افزایش نرخ ثابت `DEFAULT_COMMISSION_RATE` از ۵.۰۰ به ۱۵.۰۰ درصد (۱۵٪) جهت تطابق کامل با پنل مالی و تسویه حساب فروشندگان.
+    - **حذف اسکریپت ران‌تایم CDN تیلویند در پروداکشن ([`includes/header.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/includes/header.php) و صفحات احراز هویت):** حذف اسکریپت تفسیری `assets/js/tailwindcss-cdn.js` و جایگزینی آن با باندل سبک کامپایل‌شده استاتیک [`assets/css/tailwind.output.css`](file:///opt/lampp/htdocs/asena/asena-enterprise/assets/css/tailwind.output.css) در هدر سراسری، لاگین، ثبت‌نام، بازیابی رمز و صفحات تعاملی؛ اجرای مجدد اسکریپت کامپایل [`bin/build-css`](file:///opt/lampp/htdocs/asena/asena-enterprise/bin/build-css).
+    - **ورود خودکار ([`auto_login.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/auto_login.php)):** مطابق درخواست اختصاصی کاربر دست‌نخورده باقی ماند.
 
 ---
 

@@ -94,10 +94,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <title>گذرواژه</title>
-<script src="assets/js/tailwindcss-cdn.js"></script>
+<link rel="stylesheet" href="assets/css/tailwind.output.css?v=<?= time() ?>">
 <link href="assets/css/material-symbols.css" rel="stylesheet"/>
 <link href="assets/css/geist.css" rel="stylesheet"/>
-<script src="assets/js/tailwind-config.js"></script>
 <link rel="stylesheet" href="assets/css/login.css">
 </head>
 <body class="bg-surface-container-lowest overflow-hidden">

@@ -295,8 +295,7 @@ $effective_geo_icbm = $geo_icbm ?? '35.7350, 51.4110';
     <link href="assets/css/geist.css" rel="stylesheet">
     
     <!-- Custom & Tailwind CSS -->
-    <script src="assets/js/tailwindcss-cdn.js"></script>
-    <script src="assets/js/tailwind-config.js?v=<?php echo time(); ?>"></script>
+    <link rel="stylesheet" href="assets/css/tailwind.output.css?v=<?php echo time(); ?>">
     <link rel="stylesheet" href="assets/css/style.css?v=<?php echo time(); ?>">
     <link rel="stylesheet" href="assets/css/enterprise-ui.css?v=<?php echo time(); ?>">
     <link rel="stylesheet" href="assets/css/paw-loader.css?v=<?php echo time(); ?>">

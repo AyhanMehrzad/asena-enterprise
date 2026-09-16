@@ -277,7 +277,7 @@ if (!in_array($activeTab, ['overview', 'debits', 'payouts', 'sms', 'tickets'])) 
     <link rel="stylesheet" href="assets/css/enterprise-ui.css">
     <link href="assets/css/material-symbols.css" rel="stylesheet"/>
     <link href="assets/css/geist.css" rel="stylesheet"/>
-    <script src="assets/js/tailwindcss-cdn.js"></script>
+    <link rel="stylesheet" href="assets/css/tailwind.output.css?v=<?= time() ?>">
     <style>
         body { font-family: Tahoma, 'Vazirmatn', sans-serif; background: #f8fafc; color: #0f172a; }
         .tab-btn.active { background: #001a48; color: #fff; box-shadow: 0 4px 12px rgba(0, 26, 72, 0.15); }
