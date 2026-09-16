@@ -23,3 +23,6 @@ This document establishes the foundational architectural rules, coding standards
 
 5. **Context Maintenance & Change Log**:
    - Whenever any feature or file is modified/added, immediately append a concise summary of the changes to Section 3 (Change Log) of [`PROJECT_CONTEXT.md`](file:///PROJECT_CONTEXT.md) to keep context lightweight, persistent, and synchronized.
+
+6. **Git Branch & Production Deployment (`master`)**:
+   - Always commit and push changes to `master` (in `asena.company` to `origin master`, and in `asena-enterprise` to `origin master` and `origin main`). cPanel automated production deployment runs off the `master` branch of `asena.company`.
