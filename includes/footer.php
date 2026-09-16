@@ -528,6 +528,17 @@ if (basename($_SERVER['SCRIPT_FILENAME'] ?? '') === basename(__FILE__)) {
 
     function displayPwaBanner() {
         if (isPwaStandalone() || isPwaDismissed()) return;
+
+        // M-1 UX Guard: Prevent layer collision on mobile.
+        // Postpone PWA banner if cookie consent is still active/unanswered.
+        try {
+            const cookieSettled = localStorage.getItem('asena_cookie_consent');
+            const cookieBanner = document.getElementById('asena-cookie-banner');
+            if (!cookieSettled && cookieBanner && cookieBanner.style.display !== 'none') {
+                return; // Will be displayed via asena:cookie-consent-settled event
+            }
+        } catch (e) {}
+
         const banner = document.getElementById('pwaInstallBanner');
         if (banner) {
             banner.classList.remove('hidden', 'closing');
@@ -654,8 +665,15 @@ if (basename($_SERVER['SCRIPT_FILENAME'] ?? '') === basename(__FILE__)) {
         dismissPwaBanner();
     });
 
-    // Initial page load check
+    // Initial page load check with polite queueing
     document.addEventListener('DOMContentLoaded', () => {
+        if (!isPwaStandalone() && !isPwaDismissed()) {
+            setTimeout(displayPwaBanner, 4000);
+        }
+    });
+
+    // Listen for cookie consent settlement to show PWA banner without collision
+    window.addEventListener('asena:cookie-consent-settled', () => {
         if (!isPwaStandalone() && !isPwaDismissed()) {
             setTimeout(displayPwaBanner, 3000);
         }

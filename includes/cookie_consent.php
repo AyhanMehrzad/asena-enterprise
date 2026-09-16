@@ -274,6 +274,7 @@ function hideCookieBanner() {
             banner.style.display = 'none';
         }, 300);
     }
+    window.dispatchEvent(new CustomEvent('asena:cookie-consent-settled'));
 }
 
 function openCookieSettings(e) {

@@ -67,13 +67,13 @@ function check_rate_limit(PDO $pdo, string $ip, string $username = ''): ?string 
     // 1. Clean up old entries (older than 2 minutes)
     $pdo->query("DELETE FROM login_attempts WHERE attempt_time < DATE_SUB(NOW(), INTERVAL 2 MINUTE)");
 
-    // 2. Count recent attempts for this IP
+    // 2. Check IP rate limit (max 5 hits per 2 minutes)
     $stmt = $pdo->prepare("SELECT COUNT(*) as count, MIN(attempt_time) as first_attempt FROM login_attempts WHERE ip_address = ?");
     $stmt->execute([$ip]);
     $row = $stmt->fetch(PDO::FETCH_ASSOC);
-    $attempts = (int)($row['count'] ?? 0);
+    $ipAttempts = (int)($row['count'] ?? 0);
 
-    if ($attempts >= 5) {
+    if ($ipAttempts >= 5) {
         $first_attempt_time = strtotime($row['first_attempt'] ?? date('Y-m-d H:i:s'));
         $unblock_time = $first_attempt_time + 120; // 2 minutes
         $remaining = max(1, $unblock_time - time());
@@ -82,10 +82,29 @@ function check_rate_limit(PDO $pdo, string $ip, string $username = ''): ?string 
         $seconds = $remaining % 60;
         $time_str = ($minutes > 0 ? $minutes . ' دقیقه و ' : '') . $seconds . ' ثانیه';
         
-        return "تعداد دفعات مجاز به پایان رسیده است. لطفاً $time_str دیگر تلاش کنید.";
+        return "تعداد دفعات مجاز از این اینترنت به پایان رسیده است. لطفاً $time_str دیگر تلاش کنید.";
     }
 
-    // 3. Log this attempt
+    // 3. Check Phone rate limit (max 3 SMS per 2 minutes to prevent distributed botnet flooding)
+    if (!empty($username)) {
+        $stmtUser = $pdo->prepare("SELECT COUNT(*) as count, MIN(attempt_time) as first_attempt FROM login_attempts WHERE username = ?");
+        $stmtUser->execute([$username]);
+        $rowUser = $stmtUser->fetch(PDO::FETCH_ASSOC);
+        $phoneAttempts = (int)($rowUser['count'] ?? 0);
+
+        if ($phoneAttempts >= 3) {
+            $first_attempt_time = strtotime($rowUser['first_attempt'] ?? date('Y-m-d H:i:s'));
+            $unblock_time = $first_attempt_time + 120;
+            $remaining = max(1, $unblock_time - time());
+            $minutes = floor($remaining / 60);
+            $seconds = $remaining % 60;
+            $time_str = ($minutes > 0 ? $minutes . ' دقیقه و ' : '') . $seconds . ' ثانیه';
+
+            return "کد تأیید برای این شماره موبایل اخیراً ارسال شده است. لطفاً $time_str دیگر مجدداً تلاش فرمایید.";
+        }
+    }
+
+    // 4. Log this attempt
     $stmt = $pdo->prepare("INSERT INTO login_attempts (ip_address, username, attempt_time) VALUES (?, ?, NOW())");
     $stmt->execute([$ip, $username]);
     
