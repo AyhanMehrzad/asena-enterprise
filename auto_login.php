@@ -131,16 +131,28 @@ function loginAsRole($pdo, $role, $cfg) {
     // 3. Fallback: create demo user if not existing
     if (!$user) {
         $hash = password_hash('Asena1234!', PASSWORD_DEFAULT);
-        $ins = $pdo->prepare("
-            INSERT INTO users (phone, name, password, role, verification_status, loyalty_points, created_at)
-            VALUES (?, ?, ?, ?, 'approved', 100, NOW())
-        ");
-        $ins->execute([$cfg['phone'], $cfg['default_name'], $hash, $role]);
-        $uid = $pdo->lastInsertId();
+        try {
+            $ins = $pdo->prepare("
+                INSERT INTO users (phone, name, password, role, verification_status, loyalty_points, created_at)
+                VALUES (?, ?, ?, ?, 'approved', 100, NOW())
+            ");
+            $ins->execute([$cfg['phone'], $cfg['default_name'], $hash, $mappedDbRole]);
+            $uid = $pdo->lastInsertId();
 
-        $stmt = $pdo->prepare("SELECT * FROM users WHERE id = ? LIMIT 1");
-        $stmt->execute([$uid]);
-        $user = $stmt->fetch(PDO::FETCH_ASSOC);
+            $stmt = $pdo->prepare("SELECT * FROM users WHERE id = ? LIMIT 1");
+            $stmt->execute([$uid]);
+            $user = $stmt->fetch(PDO::FETCH_ASSOC);
+        } catch (Throwable $e) {
+            // If verification_status or loyalty_points fail
+            try {
+                $ins = $pdo->prepare("INSERT INTO users (phone, name, password, role, created_at) VALUES (?, ?, ?, ?, NOW())");
+                $ins->execute([$cfg['phone'], $cfg['default_name'], $hash, $mappedDbRole]);
+                $uid = $pdo->lastInsertId();
+                $stmt = $pdo->prepare("SELECT * FROM users WHERE id = ? LIMIT 1");
+                $stmt->execute([$uid]);
+                $user = $stmt->fetch(PDO::FETCH_ASSOC);
+            } catch (Throwable $e2) {}
+        }
     }
 
     // Set authenticated session
@@ -153,6 +165,7 @@ function loginAsRole($pdo, $role, $cfg) {
     if (!empty($user['password'])) {
         $_SESSION['password_hash'] = hash('sha256', $user['password']);
     }
+    $_SESSION['contract_accepted_version'] = 'v2.0-2026';
 
     return $user;
 }

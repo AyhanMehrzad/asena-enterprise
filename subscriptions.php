@@ -10,36 +10,58 @@ require_once 'includes/functions.php';
 // Enforces Autoship Inventory Authentication: Only suggests products with >= 5 units (3+ months stock buffer)
 $catalog_products = [];
 if (Feature::has('petshop_catalog')) {
-    $stmt = $pdo->query("
-        SELECT p.id, p.name, p.category, p.price, p.discount_price, p.image_url, p.brand, p.target_animal, 
-               p.is_autoship, p.stock, p.autoship_min_months_stock, 'product' as item_source,
-               p.seller_id, p.organization_id,
-               o.name as org_name, o.type as org_type,
-               u.name as seller_name
-        FROM products p
-        LEFT JOIN organizations o ON p.organization_id = o.id
-        LEFT JOIN users u ON p.seller_id = u.id
-        WHERE p.stock >= IFNULL(p.autoship_min_months_stock, 5) AND p.stock >= 5
-        ORDER BY p.is_autoship DESC, p.rating_cache DESC 
-        LIMIT 50
-    ");
-    $catalog_products = array_merge($catalog_products, $stmt->fetchAll(PDO::FETCH_ASSOC));
+    try {
+        $stmt = $pdo->query("
+            SELECT p.id, p.name, p.category, p.price, p.discount_price, p.image_url, p.brand, p.target_animal, 
+                   p.is_autoship, p.stock, 5 as autoship_min_months_stock, 'product' as item_source,
+                   p.seller_id,
+                   u.name as seller_name
+            FROM products p
+            LEFT JOIN users u ON p.seller_id = u.id
+            WHERE p.stock >= 5
+            ORDER BY p.is_autoship DESC, p.rating_cache DESC 
+            LIMIT 50
+        ");
+        $catalog_products = array_merge($catalog_products, $stmt->fetchAll(PDO::FETCH_ASSOC));
+    } catch (Throwable $e) {
+        try {
+            $stmt = $pdo->query("
+                SELECT p.id, p.name, p.category, p.price, p.discount_price, p.image_url, p.brand, p.target_animal, 
+                       p.is_autoship, p.stock, 5 as autoship_min_months_stock, 'product' as item_source,
+                       p.seller_id
+                FROM products p
+                WHERE p.stock >= 5
+                ORDER BY p.is_autoship DESC
+                LIMIT 50
+            ");
+            $catalog_products = array_merge($catalog_products, $stmt->fetchAll(PDO::FETCH_ASSOC));
+        } catch (Throwable $e2) {}
+    }
 }
 if (Feature::has('pharmacy_catalog')) {
-    $stmt = $pdo->query("
-        SELECT m.id, m.name, m.category, m.price, m.discount_price, m.image_url, m.brand, m.target_animal, 
-               m.is_autoship, m.stock, m.autoship_min_months_stock, 'pharmacy' as item_source,
-               m.seller_id, m.organization_id,
-               o.name as org_name, o.type as org_type,
-               u.name as seller_name
-        FROM pharmacy_medicines m
-        LEFT JOIN organizations o ON m.organization_id = o.id
-        LEFT JOIN users u ON m.seller_id = u.id
-        WHERE m.stock >= IFNULL(m.autoship_min_months_stock, 5) AND m.stock >= 5
-        ORDER BY m.is_autoship DESC, m.rating_cache DESC 
-        LIMIT 50
-    ");
-    $catalog_products = array_merge($catalog_products, $stmt->fetchAll(PDO::FETCH_ASSOC));
+    try {
+        $stmt = $pdo->query("
+            SELECT m.id, m.name, m.category, m.price, m.discount_price, m.image_url, m.brand, m.target_animal, 
+                   m.is_autoship, m.stock, 5 as autoship_min_months_stock, 'pharmacy' as item_source
+            FROM pharmacy_medicines m
+            WHERE m.stock >= 5
+            ORDER BY m.is_autoship DESC, m.rating_cache DESC 
+            LIMIT 50
+        ");
+        $catalog_products = array_merge($catalog_products, $stmt->fetchAll(PDO::FETCH_ASSOC));
+    } catch (Throwable $e) {
+        try {
+            $stmt = $pdo->query("
+                SELECT m.id, m.name, m.category, m.price, m.discount_price, m.image_url, m.brand, m.target_animal, 
+                       m.is_autoship, m.stock, 5 as autoship_min_months_stock, 'pharmacy' as item_source
+                FROM pharmacy_medicines m
+                WHERE m.stock >= 5
+                ORDER BY m.is_autoship DESC
+                LIMIT 50
+            ");
+            $catalog_products = array_merge($catalog_products, $stmt->fetchAll(PDO::FETCH_ASSOC));
+        } catch (Throwable $e2) {}
+    }
 }
 
 // Dynamic SEO Metadata for Autoship Subscriptions

@@ -3,6 +3,48 @@ $currentPage = 'dashboard';
 require_once 'includes/admin_header.php';
 require_once '../includes/functions.php';
 
+// Auto-schema self-healing for missing columns and tables
+try {
+    // 1. contract_acceptances table
+    $pdo->exec("
+        CREATE TABLE IF NOT EXISTS `contract_acceptances` (
+            `id` INT AUTO_INCREMENT PRIMARY KEY,
+            `user_id` INT NOT NULL,
+            `role` VARCHAR(50) NOT NULL,
+            `contract_version` VARCHAR(20) NOT NULL,
+            `contract_title` VARCHAR(255) NOT NULL,
+            `signature_hash` VARCHAR(64) NOT NULL,
+            `ip_address` VARCHAR(50) NOT NULL,
+            `user_agent` TEXT NOT NULL,
+            `accepted_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            INDEX `idx_user_contract` (`user_id`, `contract_version`),
+            INDEX `idx_role_accepted` (`role`, `accepted_at`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+    ");
+
+    // 2. Resilient column additions (handled safely per-column)
+    $schemaFixes = [
+        "ALTER TABLE `users` ADD COLUMN `contract_accepted_version` VARCHAR(20) NULL AFTER `verification_status`",
+        "ALTER TABLE `users` ADD COLUMN `contract_accepted_at` DATETIME NULL AFTER `contract_accepted_version`",
+        "ALTER TABLE `products` ADD COLUMN `organization_id` INT NULL AFTER `seller_id`",
+        "ALTER TABLE `products` ADD COLUMN `autoship_min_months_stock` INT NOT NULL DEFAULT 5 AFTER `stock`",
+        "ALTER TABLE `pharmacy_medicines` ADD COLUMN `seller_id` INT NULL AFTER `organization_id`",
+        "ALTER TABLE `pharmacy_medicines` ADD COLUMN `autoship_min_months_stock` INT NOT NULL DEFAULT 5 AFTER `stock`",
+        "ALTER TABLE `prescriptions` ADD COLUMN `organization_id` INT NULL AFTER `doctor_id`",
+        "ALTER TABLE `prescriptions` ADD COLUMN `pharmacy_id` INT NULL AFTER `organization_id`",
+        "ALTER TABLE `prescriptions` ADD COLUMN `bpms_state` VARCHAR(50) DEFAULT 'broadcasted' AFTER `status`",
+        "ALTER TABLE `prescriptions` ADD COLUMN `dispensing_status` VARCHAR(50) DEFAULT 'pending_review' AFTER `status`",
+        "ALTER TABLE `doctors` ADD COLUMN `license_number` VARCHAR(100) NULL AFTER `clinic_name`",
+        "ALTER TABLE `users` MODIFY COLUMN `role` enum('user','admin','doctor','organization','pharmacist','seller','pharmacy') DEFAULT 'user'"
+    ];
+
+    foreach ($schemaFixes as $sql) {
+        try {
+            $pdo->exec($sql);
+        } catch (Throwable $ignore) {}
+    }
+} catch (Throwable $e) {}
+
 // Fetch Macro Ecosystem Metrics
 $orgCount = (int)$pdo->query("SELECT COUNT(*) FROM organizations")->fetchColumn();
 $docCount = (int)$pdo->query("SELECT COUNT(*) FROM doctors")->fetchColumn();

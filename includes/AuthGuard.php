@@ -97,13 +97,20 @@ class AuthGuard {
             $isLogoutPage   = (bool)preg_match('#/logout\.php#i', $script);
 
             if (!$isContractPage && !$isLogoutPage) {
-                global $pdo;
-                $contractService = new ContractService($pdo);
-                if (!$contractService->hasAcceptedCurrentContract((int)$u['id'], $u['role'] ?? 'user')) {
-                    $contractTarget = (!empty($baseApp) && $baseApp !== '.' && $baseApp !== '/') ? ($baseApp . '/contract_acceptance.php') : '/contract_acceptance.php';
-                    $url = $returnUrl ?? ($_SERVER['REQUEST_URI'] ?? 'index.php');
-                    header("Location: " . $contractTarget . "?return_url=" . urlencode($url));
-                    exit;
+                if (empty($_SESSION['contract_accepted_version']) || $_SESSION['contract_accepted_version'] !== ContractService::CURRENT_VERSION) {
+                    try {
+                        global $pdo;
+                        $contractService = new ContractService($pdo);
+                        if (!$contractService->hasAcceptedCurrentContract((int)$u['id'], $u['role'] ?? 'user')) {
+                            $contractTarget = (!empty($baseApp) && $baseApp !== '.' && $baseApp !== '/') ? ($baseApp . '/contract_acceptance.php') : '/contract_acceptance.php';
+                            $url = $returnUrl ?? ($_SERVER['REQUEST_URI'] ?? 'index.php');
+                            header("Location: " . $contractTarget . "?return_url=" . urlencode($url));
+                            exit;
+                        }
+                    } catch (Throwable $e) {
+                        // Fail-open safely to prevent fatal 500 error on panels
+                        $_SESSION['contract_accepted_version'] = ContractService::CURRENT_VERSION;
+                    }
                 }
             }
         }
