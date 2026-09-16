@@ -1,5 +1,6 @@
 -- Migration 14: User Notifications, PWA Subscriptions, Social Proof & Prescriptions Alignment
 -- Resolves C-2, C-3, C-4 missing database tables and column alignment
+-- Universal MySQL 5.7+ and MySQL 8.0+ compatible syntax
 
 -- 1. Create user_notifications table if not exists
 CREATE TABLE IF NOT EXISTS `user_notifications` (
@@ -52,15 +53,15 @@ CREATE TABLE IF NOT EXISTS `live_social_proof_events` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- 4. Align prescriptions table columns
-ALTER TABLE `prescriptions` ADD COLUMN IF NOT EXISTS `organization_id` int(11) DEFAULT NULL AFTER `doctor_id`;
-ALTER TABLE `prescriptions` ADD COLUMN IF NOT EXISTS `pharmacy_id` int(11) DEFAULT NULL AFTER `organization_id`;
-ALTER TABLE `prescriptions` ADD COLUMN IF NOT EXISTS `bpms_state` varchar(50) DEFAULT 'broadcasted' AFTER `status`;
-ALTER TABLE `prescriptions` ADD COLUMN IF NOT EXISTS `dispensing_status` varchar(50) DEFAULT 'pending_review' AFTER `status`;
-ALTER TABLE `prescriptions` ADD INDEX IF NOT EXISTS `idx_rx_org` (`organization_id`);
-ALTER TABLE `prescriptions` ADD INDEX IF NOT EXISTS `idx_rx_pharmacy` (`pharmacy_id`);
+ALTER TABLE `prescriptions` ADD COLUMN `organization_id` int(11) DEFAULT NULL AFTER `doctor_id`;
+ALTER TABLE `prescriptions` ADD COLUMN `pharmacy_id` int(11) DEFAULT NULL AFTER `organization_id`;
+ALTER TABLE `prescriptions` ADD COLUMN `bpms_state` varchar(50) DEFAULT 'broadcasted' AFTER `status`;
+ALTER TABLE `prescriptions` ADD COLUMN `dispensing_status` varchar(50) DEFAULT 'pending_review' AFTER `status`;
+ALTER TABLE `prescriptions` ADD INDEX `idx_rx_org` (`organization_id`);
+ALTER TABLE `prescriptions` ADD INDEX `idx_rx_pharmacy` (`pharmacy_id`);
 
 -- 5. Align doctors table columns
-ALTER TABLE `doctors` ADD COLUMN IF NOT EXISTS `license_number` varchar(100) DEFAULT NULL AFTER `clinic_name`;
+ALTER TABLE `doctors` ADD COLUMN `license_number` varchar(100) DEFAULT NULL AFTER `clinic_name`;
 
 -- 6. Align users table role enum to support pharmacy
 ALTER TABLE `users` MODIFY COLUMN `role` enum('user','admin','doctor','organization','pharmacist','seller','pharmacy') DEFAULT 'user';
