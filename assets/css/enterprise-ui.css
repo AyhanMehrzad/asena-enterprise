@@ -4,18 +4,20 @@
  */
 
 :root {
-    --asena-primary: #002d72;
-    --asena-primary-hover: #001f4d;
-    --asena-secondary: #0066cc;
+    --asena-primary: #001a48;
+    --asena-primary-container: #002d72;
+    --asena-primary-hover: #001333;
+    --asena-secondary: #fd8100;
+    --asena-accent-royal: #1e40af;
     --asena-accent-emerald: #10b981;
-    --asena-accent-crimson: #ef394e; /* Digikala Flash Red */
+    --asena-accent-crimson: #ba1a1a;
     --asena-accent-amber: #f59e0b;
     --asena-surface: #ffffff;
-    --asena-bg: #f8fafc;
+    --asena-bg: #f9f9f9;
     --asena-border: rgba(226, 232, 240, 0.8);
-    --asena-shadow-sm: 0 2px 8px -2px rgba(0, 45, 114, 0.06);
-    --asena-shadow-md: 0 12px 24px -8px rgba(0, 45, 114, 0.1);
-    --asena-shadow-lg: 0 20px 35px -10px rgba(0, 45, 114, 0.15);
+    --asena-shadow-sm: 0 2px 8px -2px rgba(0, 26, 72, 0.06);
+    --asena-shadow-md: 0 12px 24px -8px rgba(0, 26, 72, 0.1);
+    --asena-shadow-lg: 0 20px 35px -10px rgba(0, 26, 72, 0.15);
 }
 
 /* Persian Font & Tabular Digit Rendering */

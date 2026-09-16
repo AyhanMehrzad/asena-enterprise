@@ -4,68 +4,68 @@ try {
         theme: {
             extend: {
                 "colors": {
-                    /* --- Veterinary Pharmacy Natural Harmony Palette (Teal + Emerald + Cyan) --- */
-                    "primary": "#0f766e",             /* Deep Rich Teal */
-                    "primary-container": "#115e59",   /* Dark Teal Container */
-                    "primary-light": "#0d9488",       /* Vibrant Medium Teal */
-                    "primary-fixed": "#ccfbf1",       /* Soft Fresh Mint */
-                    "primary-fixed-dim": "#99f6e4",
+                    /* --- ASENA Premium Corporate Navy Blue & Royal Palette --- */
+                    "primary": "#001a48",                  /* Dark Navy Blue */
+                    "primary-container": "#002d72",        /* Deep Royal Navy Container */
+                    "primary-light": "#1e40af",            /* Vibrant Royal Blue */
+                    "primary-fixed": "#dae2ff",            /* Soft Ice Blue */
+                    "primary-fixed-dim": "#b1c5ff",
                     "on-primary": "#ffffff",
-                    "on-primary-container": "#ccfbf1",
-                    "on-primary-fixed": "#042f2e",
-                    "on-primary-fixed-variant": "#115e59",
-                    "inverse-primary": "#99f6e4",
+                    "on-primary-container": "#7a97e2",
+                    "on-primary-fixed": "#001946",
+                    "on-primary-fixed-variant": "#224489",
+                    "inverse-primary": "#b1c5ff",
                     
-                    /* Complementary Emerald Accents (Replaces Orange for Pharmacy) */
-                    "secondary": "#047857",           /* Deep Forest Emerald */
-                    "secondary-container": "#059669", /* Vibrant Emerald Green CTA */
-                    "secondary-fixed": "#d1fae5",     /* Soft Mint Background */
-                    "secondary-fixed-dim": "#a7f3d0",
+                    /* Signature ASENA Sunset Orange Accents */
+                    "secondary": "#954a00",
+                    "secondary-container": "#fd8100",      /* Vibrant Orange CTA */
+                    "secondary-fixed": "#ffdcc6",          /* Warm Orange Tint */
+                    "secondary-fixed-dim": "#ffb785",
                     "on-secondary": "#ffffff",
-                    "on-secondary-container": "#ffffff",
-                    "on-secondary-fixed": "#064e3b",
-                    "on-secondary-fixed-variant": "#047857",
+                    "on-secondary-container": "#5d2c00",
+                    "on-secondary-fixed": "#301400",
+                    "on-secondary-fixed-variant": "#723700",
                     
-                    /* Medical Cyan / Aqua Complement */
-                    "tertiary": "#0284c7",
-                    "tertiary-container": "#0369a1",
-                    "tertiary-fixed": "#e0f2fe",
-                    "tertiary-fixed-dim": "#bae6fd",
+                    /* Deep Ocean Slate / Medical Blue Accent */
+                    "tertiary": "#001f31",
+                    "tertiary-container": "#133449",
+                    "tertiary-fixed": "#cae6ff",
+                    "tertiary-fixed-dim": "#abcae5",
                     "on-tertiary": "#ffffff",
-                    "on-tertiary-container": "#e0f2fe",
-                    "on-tertiary-fixed": "#082f49",
-                    "on-tertiary-fixed-variant": "#0369a1",
+                    "on-tertiary-container": "#7f9db6",
+                    "on-tertiary-fixed": "#001e2f",
+                    "on-tertiary-fixed-variant": "#2c4a60",
                     
-                    /* Clean Fresh Canvases */
-                    "surface-tint": "#0f766e",
-                    "surface": "#f8fafc",
-                    "surface-bright": "#ffffff",
-                    "surface-dim": "#e2e8f0",
-                    "surface-alt": "#f0fdfa",
-                    "surface-variant": "#e6fffa",
-                    "surface-container": "#f1f5f9",
-                    "surface-container-low": "#f8fafc",
-                    "surface-container-high": "#e2e8f0",
-                    "surface-container-highest": "#cbd5e1",
+                    /* Clean Premium Canvases */
+                    "surface-tint": "#002d72",
+                    "surface": "#f9f9f9",
+                    "surface-bright": "#f9f9f9",
+                    "surface-dim": "#dadada",
+                    "surface-alt": "#F8F9FA",
+                    "surface-variant": "#e2e2e2",
+                    "surface-container": "#eeeeee",
+                    "surface-container-low": "#f3f3f4",
+                    "surface-container-high": "#e8e8e8",
+                    "surface-container-highest": "#e2e2e2",
                     "surface-container-lowest": "#ffffff",
-                    "background": "#f8fafc",
+                    "background": "#f9f9f9",
                     
-                    "on-background": "#0f172a",
-                    "on-surface": "#0f172a",
-                    "on-surface-variant": "#334155",
-                    "inverse-surface": "#1e293b",
-                    "inverse-on-surface": "#f8fafc",
+                    "on-background": "#1a1c1c",
+                    "on-surface": "#1a1c1c",
+                    "on-surface-variant": "#444651",
+                    "inverse-surface": "#2f3131",
+                    "inverse-on-surface": "#f0f1f1",
                     
-                    "outline": "#64748b",
-                    "outline-variant": "#cbd5e1",
+                    "outline": "#747782",
+                    "outline-variant": "#c4c6d2",
                     
-                    "status-active": "#059669",
-                    "status-warning": "#d97706",
-                    "status-paused": "#64748b",
-                    "error": "#dc2626",
-                    "error-container": "#fee2e2",
+                    "status-active": "#2E7D32",
+                    "status-warning": "#FFC60A",
+                    "status-paused": "#757575",
+                    "error": "#ba1a1a",
+                    "error-container": "#ffdad6",
                     "on-error": "#ffffff",
-                    "on-error-container": "#7f1d1d"
+                    "on-error-container": "#93000a"
                 },
                 "borderRadius": {
                     "DEFAULT": "0.25rem",
