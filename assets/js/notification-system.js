@@ -408,7 +408,7 @@
 
         stack = document.createElement('div');
         stack.id = 'asenaInAppToastStack';
-        stack.className = 'fixed top-4 right-3 left-3 md:left-auto md:right-6 md:w-[390px] z-[100060] flex flex-col gap-2.5 pointer-events-none transition-all rtl text-right select-none';
+        stack.className = 'fixed top-[76px] md:top-6 right-3 left-3 md:left-auto md:right-6 md:w-[390px] z-[100060] flex flex-col gap-2.5 pointer-events-none transition-all rtl text-right select-none';
         document.body.appendChild(stack);
         return stack;
     }
