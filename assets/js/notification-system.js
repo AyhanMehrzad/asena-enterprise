@@ -383,26 +383,11 @@
     function createInAppToastStack() {
         let stack = document.getElementById('asenaInAppToastStack');
         if (stack) return stack;
-        stack = document.createElement('div');
-        stack.id = 'asenaInAppToastStack';
-        stack.className = 'fixed z-[100060] flex flex-col gap-2.5 pointer-events-none transition-all rtl text-right select-none';
-        stack.innerHTML = `
-            <style>
-                #asenaInAppToastStack {
-                    top: 20px;
-                    right: 24px;
-                    max-width: 390px;
-                    width: calc(100vw - 32px);
-                }
-                @media (max-width: 768px) {
-                    #asenaInAppToastStack {
-                        top: 14px;
-                        right: 12px;
-                        left: 12px;
-                        width: auto;
-                        max-width: none;
-                    }
-                }
+
+        if (!document.getElementById('asenaInAppToastStyles')) {
+            const style = document.createElement('style');
+            style.id = 'asenaInAppToastStyles';
+            style.textContent = `
                 .asena-inapp-toast {
                     pointer-events: auto;
                     transform: translateY(-24px) scale(0.95);
@@ -417,11 +402,20 @@
                     transform: translateY(-20px) scale(0.92);
                     opacity: 0;
                 }
-            </style>
-        `;
+            `;
+            document.head.appendChild(style);
+        }
+
+        stack = document.createElement('div');
+        stack.id = 'asenaInAppToastStack';
+        stack.className = 'fixed top-4 right-3 left-3 md:left-auto md:right-6 md:w-[390px] z-[100060] flex flex-col gap-2.5 pointer-events-none transition-all rtl text-right select-none';
         document.body.appendChild(stack);
         return stack;
     }
+
+    window.showInAppNotificationToast = function (notif) {
+        showInAppNotificationToast(notif);
+    };
 
     function showInAppNotificationToast(notif) {
         if (!notif || !notif.title) return;
