@@ -270,7 +270,15 @@
       - بازطراحی دراور اعلان‌ها با تب‌های ۵‌گانه مدرن («همه»، «سفارشات»، «نوبت و سلامت»، «پیام‌ها»، «باشگاه مشتریان»)، سوئیچ خاموش/روشن کردن صدای اعلان در هدر دراور با ذخیره در `localStorage`، به‌روزرسانی آپتیمیستیک (Optimistic UI) و خواندن همه بدون لودینگ.
       - اتصال زنگوله اعلان به پنل پزشکان در [`doctor/includes/doctor_header.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/doctor/includes/doctor_header.php) و [`doctor/includes/doctor_footer.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/doctor/includes/doctor_footer.php).
 
+36. **تدوین و استقرار قانون استانداردهای طراحی لندینگ‌پیج در سطح انترپرایز ([`.agents/rules/enterprise_landing_page_ui_ux.md`](file:///.agents/rules/enterprise_landing_page_ui_ux.md)):**
+    - تحلیل و بنچ‌مارک پلتفرم‌های جهانی (Stripe, Linear, Chewy, Apple) و استخراج الگوی ۷ پرده‌ای روایت بصری (The 7-Beat Narrative).
+    - تبدیل بخش هیرو از تبلیغ یک محصول منفرد به ارزش پیشنهادی مقتدر پلتفرم جامع سلامت و درمان با دو دکمه اقدام هدفمند، ویجت تعاملی زنده و نوار اثبات اجتماعی (Social Proof Strip).
+    - معماری شبکه نامتقارن Bento Grid جهت معرفی تفکیک‌شده ۳ رکن اصلی آسنا (دامپزشکی و تله‌هلث، داروخانه زنجیره سرد و اشتراک خودکار Autoship مدل Chewy).
+    - به‌روزرسانی رفرنس‌های حاکمیتی در [`AGENTS.md`](file:///opt/lampp/htdocs/asena/asena-enterprise/AGENTS.md) و [`PROJECT_GUIDELINES.md`](file:///opt/lampp/htdocs/asena/asena-enterprise/PROJECT_GUIDELINES.md).
+
 ---
+
+
 
 
 ## ۴. پروتکل ثبت تغییرات آینده (Maintenance Rule)

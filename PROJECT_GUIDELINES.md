@@ -19,6 +19,7 @@ The project uses a custom Material Design 3 inspired Tailwind CSS configuration 
 *   **Spacing**: 
     *   Maximum Container Width: `max-w-container-max` (1280px).
     *   Standard Desktop Padding: `px-margin-desktop` (24px).
+    *   Landing & Showcase Hierarchy: For landing surfaces, strictly follow [`.agents/rules/enterprise_landing_page_ui_ux.md`](file:///.agents/rules/enterprise_landing_page_ui_ux.md).
 
 ## 2. Standard Page Structure
 

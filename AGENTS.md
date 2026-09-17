@@ -10,6 +10,7 @@ This document establishes the foundational architectural rules, coding standards
 
 2. **Project Guidelines & Aesthetics**:
    - Review [`PROJECT_GUIDELINES.md`](file:///PROJECT_GUIDELINES.md) for brand colors (`#001a48`, `#fd8100`), typography (`Geist` & `Vazirmatn`), and component design patterns.
+   - For all landing and public surfaces, follow [`.agents/rules/enterprise_landing_page_ui_ux.md`](file:///.agents/rules/enterprise_landing_page_ui_ux.md) for 7-beat narrative hierarchy and bento grid layout.
    - All client-facing surfaces must be RTL (`dir="rtl" lang="fa"`).
    - Use Optimistic UI updates with micro-animations and non-blocking floating glass toasts.
 
