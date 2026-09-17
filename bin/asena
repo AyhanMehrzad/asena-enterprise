@@ -252,10 +252,16 @@ if (\$_SERVER['REQUEST_METHOD'] === 'POST') {
             PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION
         ]);
 
-        \$sqlFile = __DIR__ . '/petshop_db.sql';
-        if (file_exists(\$sqlFile)) {
-            \$sql = file_get_contents(\$sqlFile);
-            \$pdo->exec(\$sql);
+        \$sqlCandidates = [
+            __DIR__ . '/asena_enterprise_host_ready.sql',
+            __DIR__ . '/petshop_db.sql',
+        ];
+        foreach (\$sqlCandidates as \$sqlFile) {
+            if (file_exists(\$sqlFile)) {
+                \$sql = file_get_contents(\$sqlFile);
+                \$pdo->exec(\$sql);
+                break;
+            }
         }
 
         \$configContent = "<?php\\ndefine('DB_HOST', '{\$host}');\\ndefine('DB_NAME', '{\$dbname}');\\ndefine('DB_USER', '{\$user}');\\ndefine('DB_PASS', '{\$pass}');\\n";

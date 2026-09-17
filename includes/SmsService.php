@@ -388,6 +388,19 @@ class SmsService {
     }
 
     /**
+     * Send Telehealth Message Notification to Doctor
+     */
+    public function sendDoctorTelehealthAlert($phone, $doctorName, $patientName) {
+        $phone = self::normalizePhone($phone);
+        if (empty($phone) || strlen($phone) !== 11) return false;
+
+        $doctorName = !empty($doctorName) ? $doctorName : 'پزشک گرامی';
+        $patientName = !empty($patientName) ? $patientName : 'مراجع';
+        $text = "دکتر {$doctorName} گرامی،\nپیام جدیدی از بیمار {$patientName} در سامانه تله‌هلث آسنا ثبت شد.\nورود و پاسخگویی:\nhttps://asena.company/doctor/telehealth.php";
+        return $this->sendDirectSms($phone, $text, 'DOCTOR_TELEHEALTH');
+    }
+
+    /**
      * Get effective username for Melipayamak web services (strips leading 0 for mobile numbers)
      */
     public function getEffectiveUsername(): string {

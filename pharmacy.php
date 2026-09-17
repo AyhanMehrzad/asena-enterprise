@@ -40,6 +40,15 @@ if (!Feature::has('pharmacy_catalog')) {
 }
 require_once 'includes/header.php';
 
+$userPets = [];
+if (!empty($_SESSION['user_id'])) {
+    try {
+        $pStmt = $pdo->prepare("SELECT id, name, animal_type FROM user_pets WHERE user_id = ? ORDER BY name ASC");
+        $pStmt->execute([$_SESSION['user_id']]);
+        $userPets = $pStmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (Throwable $e) {}
+}
+
 // Pagination variables
 $limit = 12;
 $page = isset($_GET['page']) && is_numeric($_GET['page']) ? (int)$_GET['page'] : 1;
@@ -707,8 +716,8 @@ function buildUrl($updates) {
 
     <!-- Prescription Upload Modal -->
     <div id="prescriptionModal" class="fixed inset-0 bg-black/60 z-50 hidden backdrop-blur-sm flex items-center justify-center p-4">
-        <div class="bg-white rounded-3xl p-8 max-w-lg w-full shadow-2xl relative">
-            <button onclick="document.getElementById('prescriptionModal').classList.add('hidden')" class="absolute top-6 left-6 text-on-surface-variant hover:text-error">
+        <div class="bg-white rounded-3xl p-6 md:p-8 max-w-lg w-full shadow-2xl relative">
+            <button onclick="document.getElementById('prescriptionModal').classList.add('hidden')" class="absolute top-6 left-6 text-on-surface-variant hover:text-error transition-colors">
                 <span class="material-symbols-outlined">close</span>
             </button>
             <div class="flex items-center gap-3 mb-6">
@@ -716,27 +725,85 @@ function buildUrl($updates) {
                     <span class="material-symbols-outlined text-2xl">medical_information</span>
                 </div>
                 <div>
-                    <h3 class="text-xl font-bold text-primary">ارسال نسخه پزشک</h3>
-                    <p class="text-xs text-on-surface-variant">بررسی رایگان نسخه توسط داروسازان آسنا</p>
+                    <h3 class="text-lg md:text-xl font-bold text-primary">ارسال نسخه به داروساز</h3>
+                    <p class="text-xs text-on-surface-variant">بررسی رایگان نسخه و صدور کد رهگیری توسط آسنا</p>
                 </div>
             </div>
-            <form onsubmit="alert('نسخه شما با موفقیت دریافت شد. همکاران ما در اسرع وقت با شما تماس خواهند گرفت.'); document.getElementById('prescriptionModal').classList.add('hidden'); return false;" class="space-y-4">
-                <div>
-                    <label class="block text-xs font-bold mb-2">نام و نام خانوادگی:</label>
-                    <input type="text" required class="w-full text-sm p-3 border border-outline-variant rounded-xl outline-none focus:border-primary">
+
+            <?php if (empty($_SESSION['user_id'])): ?>
+            <div class="p-6 bg-surface-container-low rounded-2xl text-center space-y-3">
+                <span class="material-symbols-outlined text-4xl text-amber-500">lock</span>
+                <h4 class="text-sm font-bold text-primary">نیاز به ورود به حساب کاربری</h4>
+                <p class="text-xs text-on-surface-variant leading-relaxed">
+                    جهت پیگیری وضعیت نسخه، صدور کد رهگیری و دریافت تأییدیه داروساز، لطفاً ابتدا وارد حساب کاربری خود شوید.
+                </p>
+                <a href="login.php?redirect=pharmacy.php" class="w-full bg-primary text-white py-3 rounded-xl font-bold hover:bg-primary-container transition-all block text-xs shadow-md">
+                    ورود یا ثبت‌نام در آسنا
+                </a>
+            </div>
+            <?php else: ?>
+            <div id="rxUploadSuccessCard" class="hidden p-6 bg-emerald-50 border border-emerald-200 rounded-2xl text-center space-y-4">
+                <div class="w-12 h-12 rounded-full bg-emerald-500 text-white flex items-center justify-center mx-auto shadow-md">
+                    <span class="material-symbols-outlined text-2xl">verified</span>
                 </div>
                 <div>
-                    <label class="block text-xs font-bold mb-2">شماره تماس همراه:</label>
-                    <input type="tel" required placeholder="۰۹۱۲..." class="w-full text-sm p-3 border border-outline-variant rounded-xl outline-none focus:border-primary">
+                    <h4 class="text-base font-bold text-emerald-900">نسخه با موفقیت بارگذاری شد!</h4>
+                    <p class="text-xs text-emerald-800 mt-1">نسخه شما در صف بررسی و آماده‌سازی داروساز قرار گرفت.</p>
                 </div>
+                <div class="bg-white p-3 rounded-xl border border-emerald-200 inline-block font-mono font-black text-emerald-900 text-sm" id="rxTrackingCodeDisplay">
+                    کد رهگیری: RX-XXXXXX
+                </div>
+                <div class="space-y-2 pt-2">
+                    <a href="profile.php?tab=prescriptions" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-xl font-bold transition-all block text-xs shadow-md flex items-center justify-center gap-1.5">
+                        <span class="material-symbols-outlined text-sm">assignment</span>
+                        <span>پیگیری در حساب کاربری من</span>
+                    </a>
+                    <button type="button" onclick="document.getElementById('prescriptionModal').classList.add('hidden'); resetRxForm();" class="text-xs font-bold text-on-surface-variant hover:text-primary">
+                        بستن پنجره
+                    </button>
+                </div>
+            </div>
+
+            <form id="rxUploadForm" onsubmit="submitPrescription(event)" class="space-y-4">
+                <?= csrf_field() ?>
+                
+                <?php if (!empty($userPets)): ?>
                 <div>
-                    <label class="block text-xs font-bold mb-2">تصویر نسخه پزشک:</label>
-                    <input type="file" required class="w-full text-xs p-2 border border-outline-variant rounded-xl">
+                    <label class="block text-xs font-bold text-primary mb-1.5">انتخاب پت (اختیاری):</label>
+                    <select name="pet_id" class="w-full text-xs p-3 bg-surface-container-low border border-outline-variant/30 rounded-xl outline-none focus:ring-2 focus:ring-secondary-container">
+                        <option value="">بدون انتساب به پت خاص</option>
+                        <?php foreach($userPets as $pet): ?>
+                        <option value="<?= (int)$pet['id'] ?>"><?= htmlspecialchars($pet['name']) ?> (<?= htmlspecialchars($pet['animal_type'] ?? '') ?>)</option>
+                        <?php endforeach; ?>
+                    </select>
                 </div>
-                <button type="submit" class="w-full bg-primary text-white py-3.5 rounded-xl font-bold hover:bg-primary-container transition-all">
-                    ثبت و ارسال نسخه
+                <?php endif; ?>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-primary mb-1.5">نام درمانگاه / کلینیک:</label>
+                        <input type="text" name="clinic_name" placeholder="مثال: کلینیک تخصصی آسنا" class="w-full text-xs p-3 bg-surface-container-low border border-outline-variant/30 rounded-xl outline-none focus:ring-2 focus:ring-secondary-container">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-primary mb-1.5">نام پزشک معالج:</label>
+                        <input type="text" name="vet_name" placeholder="مثال: دکتر رادمهر" class="w-full text-xs p-3 bg-surface-container-low border border-outline-variant/30 rounded-xl outline-none focus:ring-2 focus:ring-secondary-container">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-primary mb-1.5">تصویر نسخه یا فایل PDF:</label>
+                    <input type="file" name="rx_file" id="rx_file_input" required accept="image/jpeg,image/png,image/webp,application/pdf" class="w-full text-xs p-2 bg-surface-container-low border border-outline-variant/30 rounded-xl file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-secondary-container file:text-white hover:file:bg-secondary-container/80">
+                    <span class="text-[10px] text-on-surface-variant mt-1 block">فرمت‌های مجاز: JPG, PNG, WEBP, PDF (حداکثر ۱۰ مگابایت)</span>
+                </div>
+
+                <div id="rxUploadError" class="hidden p-3 bg-rose-50 text-rose-700 text-xs font-bold rounded-xl border border-rose-200"></div>
+
+                <button type="submit" id="rxSubmitBtn" class="w-full bg-secondary-container text-white py-3.5 rounded-xl font-bold hover:bg-[#ea580c] transition-all flex items-center justify-center gap-2 shadow-lg">
+                    <span class="material-symbols-outlined text-lg">cloud_upload</span>
+                    <span>ثبت و ارسال نسخه به داروساز</span>
                 </button>
             </form>
+            <?php endif; ?>
         </div>
     </div>
 
@@ -936,6 +1003,65 @@ function addToCart(btn, productId, type = 'standard') {
         window.addToCart(btn, productId, type);
     }
 }
+
+function submitPrescription(e) {
+    e.preventDefault();
+    const form = document.getElementById('rxUploadForm');
+    const errDiv = document.getElementById('rxUploadError');
+    const btn = document.getElementById('rxSubmitBtn');
+    if (errDiv) {
+        errDiv.classList.add('hidden');
+        errDiv.textContent = '';
+    }
+
+    btn.disabled = true;
+    btn.innerHTML = '<span class="material-symbols-outlined text-lg animate-spin">sync</span><span>در حال بارگذاری و رمزنگاری نسخه...</span>';
+
+    const fd = new FormData(form);
+
+    fetch('actions/prescription_action.php', {
+        method: 'POST',
+        body: fd
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            form.classList.add('hidden');
+            const successCard = document.getElementById('rxUploadSuccessCard');
+            document.getElementById('rxTrackingCodeDisplay').textContent = 'کد رهگیری: ' + (data.tracking_code || 'RX-' + data.prescription_id);
+            successCard.classList.remove('hidden');
+        } else {
+            errDiv.textContent = data.message || 'خطا در ثبت نسخه.';
+            errDiv.classList.remove('hidden');
+            btn.disabled = false;
+            btn.innerHTML = '<span class="material-symbols-outlined text-lg">cloud_upload</span><span>ثبت و ارسال نسخه به داروساز</span>';
+        }
+    })
+    .catch(err => {
+        errDiv.textContent = 'خطای ارتباط با سرور داروخانه. لطفاً مجدداً تلاش فرمایید.';
+        errDiv.classList.remove('hidden');
+        btn.disabled = false;
+        btn.innerHTML = '<span class="material-symbols-outlined text-lg">cloud_upload</span><span>ثبت و ارسال نسخه به داروساز</span>';
+    });
+}
+
+function resetRxForm() {
+    const form = document.getElementById('rxUploadForm');
+    if (form) {
+        form.reset();
+        form.classList.remove('hidden');
+    }
+    const successCard = document.getElementById('rxUploadSuccessCard');
+    if (successCard) successCard.classList.add('hidden');
+    const errDiv = document.getElementById('rxUploadError');
+    if (errDiv) errDiv.classList.add('hidden');
+    const btn = document.getElementById('rxSubmitBtn');
+    if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = '<span class="material-symbols-outlined text-lg">cloud_upload</span><span>ثبت و ارسال نسخه به داروساز</span>';
+    }
+}
 </script>
+
 
 <?php include 'includes/footer.php'; ?>

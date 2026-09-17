@@ -29,20 +29,24 @@ try {
 $joinOrg = $has_org_in_tickets ? "LEFT JOIN organizations o ON t.organization_id = o.id" : "";
 $selectOrg = $has_org_in_tickets ? "o.name AS organization_name, o.logo_url AS organization_logo" : "NULL AS organization_name, NULL AS organization_logo";
 
+$joinDoc = "LEFT JOIN doctors d ON t.doctor_id = d.id";
+$selectDoc = ", d.name AS doctor_name, d.specialty AS doctor_specialty, d.image_url AS doctor_image";
+
 // Verify ticket ownership & fetch details
 $ticket = null;
 try {
     $stmt = $pdo->prepare("
-        SELECT t.*, {$selectOrg}
+        SELECT t.*, {$selectOrg} {$selectDoc}
         FROM tickets t 
         {$joinOrg}
+        {$joinDoc}
         WHERE t.id = ? AND t.user_id = ?
     ");
     $stmt->execute([$ticket_id, $user_id]);
     $ticket = $stmt->fetch(PDO::FETCH_ASSOC);
 } catch (Throwable $e) {
     try {
-        $stmt = $pdo->prepare("SELECT t.*, NULL as organization_name, NULL as organization_logo FROM tickets t WHERE t.id = ? AND t.user_id = ?");
+        $stmt = $pdo->prepare("SELECT t.*, NULL as organization_name, NULL as organization_logo, NULL as doctor_name, NULL as doctor_specialty, NULL as doctor_image FROM tickets t WHERE t.id = ? AND t.user_id = ?");
         $stmt->execute([$ticket_id, $user_id]);
         $ticket = $stmt->fetch(PDO::FETCH_ASSOC);
     } catch (Throwable $e2) {}
@@ -56,13 +60,14 @@ if (!$ticket) {
 $mode = $ticket['mode'] ?? 'admin';
 $orgName = $ticket['organization_name'] ?? 'مرکز درمانی';
 
-// Fetch all tickets for sidebar with organization name
+// Fetch all tickets for sidebar with organization name and doctor name
 $all_tickets = [];
 try {
     $stmt = $pdo->prepare("
-        SELECT t.*, {$selectOrg}
+        SELECT t.*, {$selectOrg} {$selectDoc}
         FROM tickets t 
         {$joinOrg}
+        {$joinDoc}
         WHERE t.user_id = ? 
         ORDER BY t.updated_at DESC
     ");
@@ -70,7 +75,7 @@ try {
     $all_tickets = $stmt->fetchAll(PDO::FETCH_ASSOC);
 } catch (Throwable $e) {
     try {
-        $stmt = $pdo->prepare("SELECT t.*, NULL as organization_name FROM tickets t WHERE t.user_id = ? ORDER BY t.id DESC");
+        $stmt = $pdo->prepare("SELECT t.*, NULL as organization_name, NULL as doctor_name FROM tickets t WHERE t.user_id = ? ORDER BY t.id DESC");
         $stmt->execute([$user_id]);
         $all_tickets = $stmt->fetchAll(PDO::FETCH_ASSOC);
     } catch (Throwable $e2) {
@@ -95,7 +100,7 @@ require_once 'includes/header.php';
             </div>
             <div class="p-6 border-b border-outline-variant/20 bg-surface-container-lowest flex items-center justify-between">
                 <h3 class="font-bold text-primary">گفتگوهای من</h3>
-                <a href="index.php#support-section" class="w-8 h-8 rounded-full bg-primary-container/10 text-primary-container flex items-center justify-center hover:bg-primary-container hover:text-white transition-colors" title="گفتگوی جدید">
+                <a href="booking.php" class="w-8 h-8 rounded-full bg-primary-container/10 text-primary-container flex items-center justify-center hover:bg-primary-container hover:text-white transition-colors" title="رزرو و مشاوره جدید">
                     <span class="material-symbols-outlined text-sm">add</span>
                 </a>
             </div>
@@ -113,6 +118,10 @@ require_once 'includes/header.php';
                         $icon = 'apartment';
                         $badgeClass = 'bg-sky-600 text-white';
                         $tTitle = !empty($t['organization_name']) ? $t['organization_name'] : 'مرکز درمانی';
+                    } elseif ($tMode === 'doctor') {
+                        $icon = 'medical_services';
+                        $badgeClass = 'bg-emerald-600 text-white';
+                        $tTitle = !empty($t['doctor_name']) ? ('دکتر ' . $t['doctor_name']) : 'مشاوره تله‌هلث';
                     }
                 ?>
                 <a href="chat.php?ticket_id=<?php echo $t['id']; ?>" class="block w-full text-right p-3 rounded-xl hover:bg-surface-container transition-colors flex items-center gap-3 <?php echo $t['id'] == $ticket_id ? 'bg-primary-container/10 border border-primary-container/20 shadow-sm' : ''; ?>">
@@ -125,7 +134,9 @@ require_once 'includes/header.php';
                         </div>
                         <p class="text-[10px] text-on-surface-variant truncate flex justify-between">
                             <span>تیکت #<?php echo $t['id']; ?></span>
-                            <span class="<?php echo $t['status'] == 'open' ? 'text-emerald-500 font-bold' : 'text-outline'; ?>"><?php echo $t['status'] == 'open' ? 'باز' : 'بسته'; ?></span>
+                            <span class="<?php echo $t['status'] == 'open' ? 'text-emerald-500 font-bold' : ($t['status'] == 'resolved' ? 'text-blue-500 font-bold' : 'text-outline'); ?>">
+                                <?php echo $t['status'] == 'open' ? 'فعال' : ($t['status'] == 'resolved' ? 'خاتمه یافته' : 'بسته'); ?>
+                            </span>
                         </p>
                     </div>
                 </a>
@@ -148,20 +159,31 @@ require_once 'includes/header.php';
                 <?php
                 $headerTitle = 'پشتیبانی مدیریت آسنا';
                 $headerIcon = 'support_agent';
+                $headerSub = 'آماده پاسخگویی';
                 if ($mode === 'ai') {
                     $headerTitle = 'لئو (دستیار هوشمند آسنا)';
                     $headerIcon = 'cruelty_free';
+                    $headerSub = 'هوش مصنوعی دامپزشکی';
                 } elseif ($mode === 'organization') {
                     $headerTitle = !empty($ticket['organization_name']) ? $ticket['organization_name'] : 'گفتگو با مرکز درمانی';
                     $headerIcon = 'apartment';
+                    $headerSub = 'مرکز درمانی آسنا';
+                } elseif ($mode === 'doctor') {
+                    $headerTitle = !empty($ticket['doctor_name']) ? ('دکتر ' . $ticket['doctor_name']) : 'مشاوره آنلاین تله‌هلث';
+                    $headerIcon = 'medical_services';
+                    $headerSub = !empty($ticket['doctor_specialty']) ? $ticket['doctor_specialty'] : 'دامپزشک معالج';
                 }
                 ?>
                 <div class="relative">
+                    <?php if($mode === 'doctor' && !empty($ticket['doctor_image'])): ?>
+                    <img src="<?= htmlspecialchars($ticket['doctor_image']) ?>" alt="پزشک" class="w-14 h-14 rounded-full object-cover border-2 border-emerald-500 shadow-sm" onerror="this.onerror=null; this.src='assets/images/doc-placeholder.webp';">
+                    <?php else: ?>
                     <div class="w-14 h-14 rounded-full bg-primary-container/10 flex items-center justify-center text-primary-container border-2 border-primary-container">
                         <span class="material-symbols-outlined text-3xl"><?php echo $headerIcon; ?></span>
                     </div>
+                    <?php endif; ?>
                     <?php if($ticket['status'] === 'open'): ?>
-                    <div class="absolute bottom-0 right-0 w-4 h-4 bg-emerald-500 rounded-full border-2 border-white"></div>
+                    <div class="absolute bottom-0 right-0 w-4 h-4 bg-emerald-500 rounded-full border-2 border-white" title="جلسه فعال"></div>
                     <?php endif; ?>
                 </div>
                 <div>
@@ -169,7 +191,10 @@ require_once 'includes/header.php';
                     <p class="text-xs text-on-surface-variant flex items-center gap-1">
                         <?php if($ticket['status'] === 'open'): ?>
                         <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                        آنلاین و آماده پاسخگویی
+                        <?= htmlspecialchars($headerSub) ?> • آنلاین
+                        <?php elseif($ticket['status'] === 'resolved'): ?>
+                        <span class="material-symbols-outlined text-xs text-blue-500">task_alt</span>
+                        جلسه بالینی پایان یافته است
                         <?php else: ?>
                         بسته شده
                         <?php endif; ?>
@@ -177,12 +202,34 @@ require_once 'includes/header.php';
                 </div>
             </div>
             <div class="flex items-center gap-3">
+                <?php if($mode === 'doctor'): ?>
+                <span class="hidden sm:inline-flex items-center gap-1 text-[11px] font-bold px-3 py-1 bg-emerald-50 text-emerald-700 rounded-full border border-emerald-200">
+                    <span class="material-symbols-outlined text-xs">verified</span>
+                    تله‌هلث بالینی
+                </span>
+                <?php endif; ?>
                 <span class="text-xs font-bold text-outline-variant">تیکت #<?php echo $ticket_id; ?></span>
             </div>
         </div>
         
         <!-- Chat Body -->
         <div class="flex-1 p-6 space-y-6 overflow-y-auto custom-scrollbar bg-surface-container-lowest relative" id="chat-messages">
+            <?php if($mode === 'doctor' && !empty($ticket['resolution_notes'])): ?>
+            <!-- Clinical Discharge / Resolution Card -->
+            <div class="bg-gradient-to-l from-emerald-50 to-teal-50 border border-emerald-200 rounded-3xl p-5 text-xs text-emerald-950 shadow-sm flex items-start gap-3.5 mb-4">
+                <div class="w-9 h-9 rounded-xl bg-emerald-500 text-white flex items-center justify-center shrink-0 shadow-sm">
+                    <span class="material-symbols-outlined text-xl">medical_services</span>
+                </div>
+                <div class="flex-1">
+                    <div class="font-bold text-sm text-emerald-900 mb-1 flex items-center justify-between">
+                        <span>دستورات و توصیه‌های نهایی پزشک</span>
+                        <span class="text-[10px] bg-emerald-100 text-emerald-800 px-2.5 py-0.5 rounded-full font-medium">پایان ویزیت آنلاین</span>
+                    </div>
+                    <p class="leading-relaxed text-emerald-900/90 whitespace-pre-line"><?= htmlspecialchars($ticket['resolution_notes']) ?></p>
+                </div>
+            </div>
+            <?php endif; ?>
+
             <div class="flex justify-center mb-8">
                 <div class="bg-surface-container px-4 py-1 rounded-full text-[10px] text-on-surface-variant font-bold shadow-sm">تاریخچه مکالمه</div>
             </div>
@@ -196,7 +243,7 @@ require_once 'includes/header.php';
                 <div class="w-1.5 h-1.5 bg-primary-container rounded-full animate-bounce" style="animation-delay: 150ms"></div>
                 <div class="w-1.5 h-1.5 bg-primary-container rounded-full animate-bounce" style="animation-delay: 300ms"></div>
             </div>
-            <span><?php echo $mode === 'ai' ? 'لئو در حال تایپ است...' : 'پشتیبان در حال پاسخگویی است...'; ?></span>
+            <span><?php echo $mode === 'ai' ? 'لئو در حال تایپ است...' : ($mode === 'doctor' ? 'پزشک در حال بررسی است...' : 'پشتیبان در حال پاسخگویی است...'); ?></span>
         </div>
 
         <!-- Image Preview Overlay -->
@@ -212,31 +259,51 @@ require_once 'includes/header.php';
 
         <!-- Chat Footer (Input Bar) -->
         <?php if($ticket['status'] === 'open'): ?>
-        <div class="p-4 bg-white border-t border-outline-variant/20 z-10">
-            <form id="chat-form" class="flex items-center gap-3 relative" onsubmit="sendChatMessage(event)">
+        <div class="p-3 md:p-4 bg-white border-t border-outline-variant/20 z-10 space-y-2">
+            <!-- Quick Chips for Clinical Care -->
+            <?php if($mode === 'doctor'): ?>
+            <div class="flex items-center gap-2 overflow-x-auto pb-1 text-[11px] custom-scrollbar">
+                <button type="button" onclick="setQuickChip('وضعیت بهبود و تغییرات علائم پت:')" class="whitespace-nowrap px-3 py-1 bg-surface-container hover:bg-primary-container/10 hover:text-primary rounded-full font-medium transition-all">
+                    🩺 گزارش روند بهبودی
+                </button>
+                <button type="button" onclick="setQuickChip('سؤال در مورد نحوه و زمان مصرف داروها:')" class="whitespace-nowrap px-3 py-1 bg-surface-container hover:bg-primary-container/10 hover:text-primary rounded-full font-medium transition-all">
+                    💊 دوز و مصرف دارو
+                </button>
+                <button type="button" onclick="document.getElementById('chat-image-input').click()" class="whitespace-nowrap px-3 py-1 bg-surface-container hover:bg-primary-container/10 hover:text-primary rounded-full font-medium transition-all">
+                    📷 ارسال عکس نسخه/آزمایش
+                </button>
+            </div>
+            <?php endif; ?>
+
+            <form id="chat-form" class="flex items-center gap-2 md:gap-3 relative" onsubmit="sendChatMessage(event)">
                 <input type="file" id="chat-image-input" class="hidden" accept="image/*" onchange="handleImageSelect(this)">
-                <button type="button" onclick="document.getElementById('chat-image-input').click()" class="w-12 h-12 rounded-full hover:bg-primary-container/10 text-on-surface-variant hover:text-primary-container flex items-center justify-center transition-colors shrink-0">
+                <button type="button" onclick="document.getElementById('chat-image-input').click()" class="w-11 h-11 md:w-12 md:h-12 rounded-full hover:bg-primary-container/10 text-on-surface-variant hover:text-primary-container flex items-center justify-center transition-colors shrink-0" title="افزودن تصویر یا آزمایش">
                     <span class="material-symbols-outlined text-2xl">attach_file</span>
                 </button>
                 
                 <div class="flex-1 relative">
-                    <input id="chat-input" dir="auto" class="w-full bg-surface-container-low border-none rounded-full pl-14 pr-6 py-4 focus:ring-2 focus:ring-primary-container transition-all text-sm font-medium" placeholder="پیام خود را بنویسید..." type="text" autocomplete="off" />
-                    <button type="button" class="absolute left-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full hover:bg-black/5 flex items-center justify-center text-on-surface-variant transition-colors">
-                        <span class="material-symbols-outlined">sentiment_satisfied</span>
-                    </button>
+                    <input id="chat-input" dir="auto" class="w-full bg-surface-container-low border-none rounded-full px-5 py-3 md:py-3.5 focus:ring-2 focus:ring-primary-container transition-all text-sm font-medium" placeholder="<?= $mode === 'doctor' ? 'پیام یا گزارش بالینی خود را برای پزشک بنویسید...' : 'پیام خود را بنویسید...' ?>" type="text" autocomplete="off" />
                 </div>
                 
-                <button type="submit" id="chat-send-btn" class="w-14 h-14 bg-primary-container text-white rounded-full hover:scale-105 hover:bg-primary transition-all flex items-center justify-center shadow-lg shrink-0">
-                    <span class="material-symbols-outlined text-2xl -ml-1">send</span>
+                <button type="submit" id="chat-send-btn" class="w-11 h-11 md:w-12 md:h-12 bg-primary text-white rounded-full hover:scale-105 hover:bg-primary-container transition-all flex items-center justify-center shadow-lg shrink-0" title="ارسال پیام">
+                    <span class="material-symbols-outlined text-xl -ml-0.5">send</span>
                 </button>
             </form>
         </div>
         <?php else: ?>
-        <div class="p-6 bg-surface-container-low border-t border-outline-variant/20 z-10 text-center flex flex-col items-center gap-4">
+        <div class="p-6 bg-surface-container-low border-t border-outline-variant/20 z-10 text-center flex flex-col items-center gap-3">
+            <?php if($mode === 'doctor'): ?>
+            <p class="text-xs md:text-sm font-bold text-on-surface-variant">این جلسه مشاوره توسط پزشک پایان یافته است. جهت مشاوره بالینی مجدد، لطفاً نوبت جدید ثبت فرمایید.</p>
+            <a href="booking.php<?= !empty($ticket['doctor_id']) ? '?doctor_id=' . (int)$ticket['doctor_id'] : '' ?>" class="bg-primary text-white px-6 py-2.5 rounded-xl font-bold hover:bg-primary-container hover:scale-105 transition-all shadow-md inline-flex items-center gap-2 text-xs">
+                <span class="material-symbols-outlined text-sm">calendar_month</span>
+                رزرو نوبت جدید ویزیت با پزشک
+            </a>
+            <?php else: ?>
             <p class="text-sm font-bold text-on-surface-variant">این گفتگو بسته شده است.</p>
             <button type="button" onclick="reopenTicket()" class="bg-primary text-white px-6 py-2 rounded-xl font-bold hover:bg-primary-container hover:scale-105 transition-all shadow-md">
                 باز کردن مجدد گفتگو
             </button>
+            <?php endif; ?>
         </div>
         <?php endif; ?>
         </div>
@@ -248,6 +315,13 @@ const currentTicketId = <?php echo $ticket_id; ?>;
 const chatMode = '<?php echo $mode; ?>';
 let lastMessageId = 0;
 let chatPollingInterval = null;
+
+function setQuickChip(text) {
+    const input = document.getElementById('chat-input');
+    if (!input) return;
+    input.value = text + ' ';
+    input.focus();
+}
 
 function fetchMessages() {
     const fd = new FormData();
@@ -279,16 +353,27 @@ function renderMessages(messages) {
     messages.forEach(msg => {
         const isUser = msg.sender_type === 'user';
         let avatar = 'support_agent';
-        if (chatMode === 'ai') {
+        let badgeColor = 'bg-primary-container';
+        let badgeLabel = 'پشتیبان';
+
+        if (chatMode === 'ai' || msg.sender_type === 'ai') {
             avatar = 'cruelty_free';
-        } else if (chatMode === 'organization') {
+            badgeColor = 'bg-primary-container';
+            badgeLabel = 'لئو (هوش مصنوعی)';
+        } else if (chatMode === 'organization' || msg.sender_type === 'organization') {
             avatar = 'apartment';
+            badgeColor = 'bg-sky-600';
+            badgeLabel = 'مرکز درمانی';
+        } else if (chatMode === 'doctor' || msg.sender_type === 'doctor') {
+            avatar = 'medical_services';
+            badgeColor = 'bg-emerald-600';
+            badgeLabel = 'پزشک معالج';
         }
         
         let imgHtml = '';
         if (msg.image_url) {
             const safeImgUrl = escapeHtml(msg.image_url);
-            imgHtml = `<img src="${safeImgUrl}" class="rounded-xl mb-3 max-w-[200px] h-auto cursor-pointer border border-outline-variant/20" alt="ضمیمه چت">`;
+            imgHtml = `<a href="${safeImgUrl}" target="_blank" class="block"><img src="${safeImgUrl}" class="rounded-xl mb-3 max-w-[220px] max-h-[220px] object-cover cursor-pointer border border-outline-variant/20 hover:scale-105 transition-transform" alt="ضمیمه چت"></a>`;
         }
 
         const safeMessage = escapeHtml(msg.message).replace(/\n/g, '<br>');
@@ -297,29 +382,33 @@ function renderMessages(messages) {
         if (isUser) {
             container.insertAdjacentHTML('beforeend', `
                 <div class="flex gap-4 max-w-[85%] flex-row-reverse ml-auto group">
-                    <div class="bg-primary text-white px-5 py-4 rounded-3xl rounded-tl-sm shadow-md text-sm leading-relaxed">
+                    <div class="bg-primary text-white px-5 py-3.5 rounded-3xl rounded-tl-sm shadow-md text-sm leading-relaxed">
                         ${imgHtml}
                         <div dir="auto" class="chat-message-text" style="unicode-bidi: plaintext; text-align: start;">${safeMessage}</div>
-                        <div class="text-[9px] text-white/70 mt-2 text-left w-full block">${time} <span class="material-symbols-outlined text-[10px] ml-0.5" style="vertical-align: middle">done_all</span></div>
+                        <div class="text-[9px] text-white/70 mt-1.5 text-left w-full block">${time} <span class="material-symbols-outlined text-[10px] ml-0.5" style="vertical-align: middle">done_all</span></div>
                     </div>
                 </div>
             `);
         } else {
             container.insertAdjacentHTML('beforeend', `
-                <div class="flex gap-4 max-w-[85%]">
-                    <div class="w-10 h-10 rounded-full bg-primary-container text-white flex items-center justify-center shrink-0 border-2 border-white shadow-sm mt-auto">
+                <div class="flex gap-3 max-w-[85%]">
+                    <div class="w-10 h-10 rounded-full ${badgeColor} text-white flex items-center justify-center shrink-0 border-2 border-white shadow-sm mt-auto" title="${badgeLabel}">
                         <span class="material-symbols-outlined text-lg">${avatar}</span>
                     </div>
-                    <div class="bg-white px-5 py-4 rounded-3xl rounded-br-sm shadow-md text-sm border border-outline-variant/10 leading-relaxed text-on-surface">
+                    <div class="bg-white px-5 py-3.5 rounded-3xl rounded-br-sm shadow-md text-sm border border-outline-variant/10 leading-relaxed text-on-surface">
+                        <div class="text-[10px] font-bold text-primary mb-1 flex items-center gap-1">
+                            <span>${badgeLabel}</span>
+                        </div>
                         ${imgHtml}
                         <div dir="auto" class="chat-message-text markdown-body" style="unicode-bidi: plaintext; text-align: start;">${safeMessage}</div>
-                        <div class="text-[9px] text-on-surface-variant/70 mt-2 text-right w-full block">${time}</div>
+                        <div class="text-[9px] text-on-surface-variant/70 mt-1.5 text-right w-full block">${time}</div>
                     </div>
                 </div>
             `);
         }
     });
 }
+
 
 function scrollToBottom() {
     const container = document.getElementById('chat-messages');
@@ -411,10 +500,18 @@ function sendChatMessage(e) {
     fetch('actions/chat_action.php', { method: 'POST', body: fd })
         .then(res => res.json())
         .then(data => {
+            document.getElementById('temp-msg')?.remove();
             if(data.status === 'success') {
-                document.getElementById('temp-msg')?.remove();
-                fetchMessages(); // will clear typing indicator
+                fetchMessages();
+            } else {
+                alert(data.message || 'خطا در ارسال پیام');
+                if (chatMode === 'ai') document.getElementById('chat-typing').style.display = 'none';
             }
+        })
+        .catch(err => {
+            document.getElementById('temp-msg')?.remove();
+            if (chatMode === 'ai') document.getElementById('chat-typing').style.display = 'none';
+            alert('خطای اتصال به سرور.');
         });
 }
 

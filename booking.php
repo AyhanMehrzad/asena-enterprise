@@ -371,6 +371,13 @@ $booked_slots_json = json_encode($booked_slots);
                             <span class="material-symbols-outlined text-sm"><?= $isGroomer ? 'content_cut' : 'event_available' ?></span>
                             <span><?= $isGroomer ? 'انتخاب گرومر و رزرو اصلاح' : 'انتخاب پزشک و رزرو نوبت' ?></span>
                         </button>
+
+                        <?php if (!$isGroomer && Feature::has('telehealth_chat')): ?>
+                        <button type="button" onclick="event.stopPropagation(); startDoctorTelehealth(<?= (int)$doctor['id'] ?>)" class="w-full mt-2 border border-emerald-200 bg-emerald-50 text-emerald-800 py-2 rounded-xl text-xs font-bold hover:bg-emerald-600 hover:text-white transition-all shadow-sm flex items-center justify-center gap-1.5" title="مشاوره آنلاین برای مراجعین ۷ روز گذشته">
+                            <span class="material-symbols-outlined text-sm">medical_services</span>
+                            <span>مشاوره آنلاین (تله‌هلث)</span>
+                        </button>
+                        <?php endif; ?>
                     </div>
                     <?php endforeach; ?>
 
@@ -1055,6 +1062,30 @@ $booked_slots_json = json_encode($booked_slots);
         }
     });
     <?php endif; ?>
+
+    function startDoctorTelehealth(doctorId) {
+        const fd = new FormData();
+        fd.append('action', 'init');
+        fd.append('mode', 'doctor');
+        fd.append('doctor_id', doctorId);
+        fd.append('is_ajax', '1');
+
+        fetch('actions/chat_action.php', { method: 'POST', body: fd })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    window.location.href = 'chat.php?ticket_id=' + data.ticket_id;
+                } else if (data.code === 'VISIT_REQUIRED') {
+                    alert(data.message);
+                } else {
+                    alert(data.message || 'جهت استفاده از تله‌هلث لطفاً ابتدا وارد حساب کاربری خود شوید.');
+                    if (data.message === 'Not authenticated') {
+                        window.location.href = 'login.php?redirect=' + encodeURIComponent('booking.php?doctor_id=' + doctorId);
+                    }
+                }
+            })
+            .catch(err => alert('خطا در برقراری ارتباط با سامانه تله‌هلث.'));
+    }
 </script>
 
 <script src="assets/js/booking.js"></script>

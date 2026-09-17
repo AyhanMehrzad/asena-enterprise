@@ -100,6 +100,24 @@ $stmt = $pdo->prepare("
 $stmt->execute([$_SESSION['user_id']]);
 $user_subscriptions = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
+// Fetch user prescriptions
+$prescriptions = [];
+try {
+    $stmt = $pdo->prepare("
+        SELECT p.*, d.name as doctor_name, d.specialty as doctor_specialty, pt.name as pet_name
+        FROM prescriptions p
+        LEFT JOIN doctors d ON p.doctor_id = d.id
+        LEFT JOIN user_pets pt ON p.pet_id = pt.id
+        WHERE p.user_id = ?
+        ORDER BY p.id DESC
+    ");
+    $stmt->execute([$user_id]);
+    $prescriptions = $stmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (Throwable $e) {
+    error_log("[Profile] Prescriptions query error: " . $e->getMessage());
+    $prescriptions = [];
+}
+
 // Attach deliveries to each subscription
 if (!empty($user_subscriptions)) {
     $sub_ids   = array_column($user_subscriptions, 'id');
@@ -350,6 +368,13 @@ $nextPayoutFormatted = $fmtDateText->format($nextThursday) . ' ساعت ۲۲:۰�
         <span class="material-symbols-outlined text-indigo-600">receipt_long</span>
         <span class="text-sm">تاریخچه سفارشات</span>
     </a>
+    <a id="sidebar-btn-prescriptions" class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-low rounded-xl transition-all cursor-pointer font-bold" onclick="switchCustomerView('prescriptions')">
+        <span class="material-symbols-outlined text-emerald-600">medical_services</span>
+        <span class="text-sm">نسخه‌های من</span>
+        <?php if(!empty($prescriptions)): ?>
+        <span class="mr-auto text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full font-black"><?= count($prescriptions) ?></span>
+        <?php endif; ?>
+    </a>
     <a id="sidebar-btn-subscriptions" class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-low rounded-xl transition-all cursor-pointer font-bold" onclick="switchCustomerView('subscriptions')">
         <span class="material-symbols-outlined text-orange-600">autorenew</span>
         <span class="text-sm">اشتراک‌های فعال</span>
@@ -459,6 +484,10 @@ $nextPayoutFormatted = $fmtDateText->format($nextThursday) . ' ساعت ۲۲:۰�
         <button type="button" id="mob-tab-btn-orders" onclick="switchCustomerView('orders')" class="px-3.5 py-2 rounded-xl bg-white border border-slate-200 text-slate-700 hover:border-primary shrink-0 flex items-center gap-1.5 cursor-pointer">
             <span class="material-symbols-outlined text-sm text-indigo-600">receipt_long</span>
             <span>سفارشات</span>
+        </button>
+        <button type="button" id="mob-tab-btn-prescriptions" onclick="switchCustomerView('prescriptions')" class="px-3.5 py-2 rounded-xl bg-white border border-slate-200 text-slate-700 hover:border-primary shrink-0 flex items-center gap-1.5 cursor-pointer">
+            <span class="material-symbols-outlined text-sm text-emerald-600">medical_services</span>
+            <span>نسخه‌ها</span>
         </button>
         <button type="button" id="mob-tab-btn-wallet" onclick="switchCustomerView('wallet')" class="px-3.5 py-2 rounded-xl bg-white border border-slate-200 text-slate-700 hover:border-primary shrink-0 flex items-center gap-1.5 cursor-pointer">
             <span class="material-symbols-outlined text-sm text-emerald-600">account_balance_wallet</span>
@@ -2741,10 +2770,142 @@ function updateShebaPreview(input) {
 
     </div>
 
+    <!-- ═══════════════════════════════════════════════════════════════════════ -->
+    <!-- VIEW: Prescriptions (نسخه‌های دارویی و پیگیری تایید داروساز)           -->
+    <!-- ═══════════════════════════════════════════════════════════════════════ -->
+    <div id="view-prescriptions" class="customer-view space-y-6 hidden">
+        <div class="bg-surface-container-lowest rounded-3xl border border-outline-variant shadow-sm overflow-hidden">
+            <div class="px-6 py-4 border-b border-outline-variant flex flex-wrap items-center justify-between gap-3 bg-gradient-to-r from-surface-container-low to-transparent">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-9 h-9 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center">
+                        <span class="material-symbols-outlined text-xl">medical_services</span>
+                    </div>
+                    <div>
+                        <h3 class="text-sm font-bold text-primary">نسخه‌های من و تأییدیه داروساز</h3>
+                        <p class="text-[11px] text-on-surface-variant">پیگیری مراحل بررسی، قیمت‌گذاری و ارسال داروهای تجویزی</p>
+                    </div>
+                </div>
+                <a href="pharmacy.php#prescriptionModal" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm">
+                    <span class="material-symbols-outlined text-sm">add_circle</span>
+                    <span>ارسال نسخه جدید</span>
+                </a>
+            </div>
+
+            <div class="p-4 md:p-6 space-y-4">
+                <?php if(empty($prescriptions)): ?>
+                    <div class="text-center py-12 space-y-4">
+                        <div class="w-16 h-16 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto shadow-inner">
+                            <span class="material-symbols-outlined text-3xl">prescriptions</span>
+                        </div>
+                        <div>
+                            <h4 class="text-sm font-bold text-primary">تاکنون نسخه‌ای ثبت نکرده‌اید</h4>
+                            <p class="text-xs text-on-surface-variant max-w-md mx-auto mt-1 leading-relaxed">
+                                تصویر یا فایل نسخه پزشک را در داروخانه آنلاین آسنا بارگذاری فرمایید تا پس از تأیید داروسازان، اقلام دارویی آماده تحویل یا ارسال با زنجیره سرد گردند.
+                            </p>
+                        </div>
+                        <a href="pharmacy.php" class="inline-flex items-center gap-2 px-5 py-2.5 bg-secondary-container text-white rounded-xl text-xs font-bold hover:bg-[#ea580c] transition-all shadow-md">
+                            <span class="material-symbols-outlined text-sm">local_pharmacy</span>
+                            <span>ورود به داروخانه و ارسال نسخه</span>
+                        </a>
+                    </div>
+                <?php else: ?>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <?php foreach($prescriptions as $rx): 
+                            $rxDispensing = $rx['dispensing_status'] ?? 'pending_review';
+                            $rxStatus = $rx['status'] ?? 'pending';
+                            
+                            $badgeLabel = 'در انتظار بررسی داروساز';
+                            $badgeStyle = 'bg-amber-50 text-amber-800 border-amber-200';
+                            $badgeIcon = 'schedule';
+
+                            if ($rxDispensing === 'preparing') {
+                                $badgeLabel = 'در حال آماده‌سازی دارو';
+                                $badgeStyle = 'bg-blue-50 text-blue-800 border-blue-200';
+                                $badgeIcon = 'inventory';
+                            } elseif ($rxDispensing === 'ready_for_pickup') {
+                                $badgeLabel = 'آماده تحویل / پیک';
+                                $badgeStyle = 'bg-purple-50 text-purple-800 border-purple-200';
+                                $badgeIcon = 'local_shipping';
+                            } elseif ($rxDispensing === 'dispensed' || $rxStatus === 'approved') {
+                                $badgeLabel = 'تأیید و تحویل شده';
+                                $badgeStyle = 'bg-emerald-50 text-emerald-800 border-emerald-200';
+                                $badgeIcon = 'check_circle';
+                            } elseif ($rxDispensing === 'cancelled' || $rxStatus === 'rejected') {
+                                $badgeLabel = 'رد شده / لغو شده';
+                                $badgeStyle = 'bg-rose-50 text-rose-800 border-rose-200';
+                                $badgeIcon = 'cancel';
+                            }
+                        ?>
+                        <div class="bg-white rounded-2xl border border-outline-variant/40 p-4 md:p-5 shadow-sm space-y-3 hover:border-emerald-300 transition-all">
+                            <div class="flex items-start justify-between gap-2">
+                                <div>
+                                    <span class="font-mono font-black text-xs text-primary bg-surface-container px-2.5 py-1 rounded-lg">
+                                        <?= htmlspecialchars($rx['tracking_code'] ?: ('RX-' . $rx['id'])) ?>
+                                    </span>
+                                    <span class="text-[10px] text-on-surface-variant block mt-1">
+                                        ثبت: <?= htmlspecialchars(substr($rx['created_at'], 0, 10)) ?>
+                                    </span>
+                                </div>
+                                <span class="px-2.5 py-1 rounded-full text-[10px] font-bold border flex items-center gap-1 <?= $badgeStyle ?>">
+                                    <span class="material-symbols-outlined text-xs"><?= $badgeIcon ?></span>
+                                    <span><?= $badgeLabel ?></span>
+                                </span>
+                            </div>
+
+                            <div class="text-xs space-y-1 text-slate-700 bg-surface-container-lowest p-3 rounded-xl border border-outline-variant/20">
+                                <?php if (!empty($rx['pet_name'])): ?>
+                                <div class="flex justify-between">
+                                    <span class="text-on-surface-variant">حیوان خانگی:</span>
+                                    <span class="font-bold text-primary"><?= htmlspecialchars($rx['pet_name']) ?></span>
+                                </div>
+                                <?php endif; ?>
+                                <?php if (!empty($rx['clinic_name'])): ?>
+                                <div class="flex justify-between">
+                                    <span class="text-on-surface-variant">کلینیک / بیمارستان:</span>
+                                    <span class="font-medium"><?= htmlspecialchars($rx['clinic_name']) ?></span>
+                                </div>
+                                <?php endif; ?>
+                                <?php if (!empty($rx['vet_name'])): ?>
+                                <div class="flex justify-between">
+                                    <span class="text-on-surface-variant">پزشک صادرکننده:</span>
+                                    <span class="font-medium"><?= htmlspecialchars($rx['vet_name']) ?></span>
+                                </div>
+                                <?php endif; ?>
+                            </div>
+
+                            <?php if (!empty($rx['pharmacist_notes'])): ?>
+                            <div class="p-3 bg-emerald-50/80 border border-emerald-200 rounded-xl text-[11px] text-emerald-950">
+                                <span class="font-bold text-emerald-900 block mb-0.5 flex items-center gap-1">
+                                    <span class="material-symbols-outlined text-xs">notes</span>
+                                    دستور دکتر داروساز:
+                                </span>
+                                <p class="leading-relaxed"><?= nl2br(htmlspecialchars($rx['pharmacist_notes'])) ?></p>
+                            </div>
+                            <?php endif; ?>
+
+                            <div class="pt-2 flex items-center gap-2 border-t border-outline-variant/20">
+                                <?php if (!empty($rx['rx_file_url'])): ?>
+                                <a href="<?= htmlspecialchars($rx['rx_file_url']) ?>" target="_blank" class="flex-1 py-2 px-3 bg-surface-container hover:bg-surface-container-high rounded-xl text-center text-xs font-bold text-primary transition-all flex items-center justify-center gap-1">
+                                    <span class="material-symbols-outlined text-sm">visibility</span>
+                                    <span>مشاهده تصویر نسخه</span>
+                                </a>
+                                <?php endif; ?>
+                                <a href="pharmacy.php" class="py-2 px-3 bg-secondary-container/10 hover:bg-secondary-container hover:text-white rounded-xl text-center text-xs font-bold text-secondary-container transition-all flex items-center justify-center gap-1" title="داروخانه">
+                                    <span class="material-symbols-outlined text-sm">storefront</span>
+                                </a>
+                            </div>
+                        </div>
+                        <?php endforeach; ?>
+                    </div>
+                <?php endif; ?>
+            </div>
+        </div>
+    </div>
     
     <!-- ═══════════════════════════════════════════════════════════════════════ -->
     <!-- VIEW 7: Subscriptions (برنامه‌های اشتراک هوشمند و اتوشیپ)               -->
     <!-- ═══════════════════════════════════════════════════════════════════════ -->
+
     <div id="view-subscriptions" class="customer-view space-y-6 hidden">
         <!-- Subscriptions (Visual Autoship Widget) -->
 <div class="bg-surface-container-lowest rounded-3xl border border-outline-variant shadow-sm overflow-hidden">
@@ -3758,7 +3919,7 @@ function updateShebaPreview(input) {
 
 
     // ─── Digikala-Grade Customer View Switcher ─────────────────────────────────────
-    const validCustomerTabs = ['overview', 'personal-info', 'addresses', 'pets', 'appointments', 'orders', 'subscriptions', 'wallet'];
+    const validCustomerTabs = ['overview', 'personal-info', 'addresses', 'pets', 'appointments', 'orders', 'prescriptions', 'subscriptions', 'wallet'];
 
     function switchCustomerView(tabName) {
         if (!validCustomerTabs.includes(tabName)) {
@@ -4119,11 +4280,14 @@ function updateShebaPreview(input) {
         }
     }
 
-    // Auto-detect view from URL Hash on page load and hashchange
+    // Auto-detect view from URL Param (tab) or URL Hash on page load and hashchange
     window.addEventListener('DOMContentLoaded', () => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const urlTab = urlParams.get('tab');
         const rawHash = window.location.hash.replace('#', '').trim();
-        if (rawHash && validCustomerTabs.includes(rawHash)) {
-            switchCustomerView(rawHash);
+        const activeTab = urlTab || rawHash;
+        if (activeTab && validCustomerTabs.includes(activeTab)) {
+            switchCustomerView(activeTab);
         }
     });
 

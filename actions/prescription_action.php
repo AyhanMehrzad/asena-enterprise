@@ -77,14 +77,16 @@ if (!move_uploaded_file($_FILES['rx_file']['tmp_name'], $destPath)) {
 
 $fileUrl = 'uploads/prescriptions/' . $fileName;
 
+$trackingCode = 'RX-' . strtoupper(substr(bin2hex(random_bytes(4)), 0, 6));
+
 try {
     $stmt = $pdo->prepare("
         INSERT INTO prescriptions 
-            (user_id, pet_id, rx_file_url, clinic_name, vet_name, vet_phone, vet_license_number, status)
-        VALUES (?, ?, ?, ?, ?, ?, ?, 'pending')
+            (tracking_code, user_id, pet_id, rx_file_url, clinic_name, vet_name, vet_phone, vet_license_number, status, dispensing_status, bpms_state)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending', 'pending_review', 'broadcasted')
     ");
     $stmt->execute([
-        $userId, $petId, $fileUrl, $clinicName, $vetName, $vetPhone, $vetLicense
+        $trackingCode, $userId, $petId, $fileUrl, $clinicName, $vetName, $vetPhone, $vetLicense
     ]);
     $rxId = (int)$pdo->lastInsertId();
 
@@ -93,8 +95,9 @@ try {
 
     echo json_encode([
         'success'         => true,
-        'message'         => 'نسخه دیجیتال با موفقیت بارگذاری شد و در صف بررسی داروساز قرار گرفت.',
+        'message'         => 'نسخه شما با موفقیت بارگذاری شد و کد رهگیری اختصاص یافت.',
         'prescription_id' => $rxId,
+        'tracking_code'   => $trackingCode,
         'file_url'        => $fileUrl
     ]);
 } catch (Exception $e) {

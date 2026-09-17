@@ -80,10 +80,11 @@ if (!$doctorProfile) {
 
     <nav class="flex-1 px-3 mt-2 space-y-1">
         <?php 
-        $activeTabKey = $_GET['tab'] ?? (basename($_SERVER['PHP_SELF']) === 'blogs.php' ? 'blogs' : 'calendar');
+        $activeTabKey = $_GET['tab'] ?? (basename($_SERVER['PHP_SELF']) === 'blogs.php' ? 'blogs' : (basename($_SERVER['PHP_SELF']) === 'telehealth.php' ? 'telehealth' : 'calendar'));
         
         $navItems = [
             'calendar' => ['icon' => 'calendar_month', 'title' => 'نوبت‌ها و تقویم روزانه', 'tab' => 'calendar-tab'],
+            'telehealth' => ['icon' => 'medical_services', 'title' => 'مشاوره آنلاین و تله‌هلث', 'url' => 'telehealth.php', 'feature' => 'telehealth_chat'],
             'blocks'   => ['icon' => 'event_busy', 'title' => 'نوبت‌های تلفنی و مسدودی‌ها', 'tab' => 'blocks-tab'],
             'schedule' => ['icon' => 'schedule', 'title' => 'برنامه کاری هفتگی', 'tab' => 'schedule-tab'],
             'blogs'    => ['icon' => 'edit_note', 'title' => 'نگارش و مقالات وبلاگ', 'url' => 'blogs.php', 'feature' => 'blog_engine'],

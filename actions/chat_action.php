@@ -86,14 +86,88 @@ function can_user_access_ticket(PDO $pdo, int $userId, array $ticket): bool {
         return $isAdmin;
     }
 
+    // 3. Doctor Telehealth Tickets: The assigned doctor or platform admin has access
+    if ($mode === 'doctor' && !empty($ticket['doctor_id'])) {
+        $docId = (int)$ticket['doctor_id'];
+        $dStmt = $pdo->prepare("SELECT id FROM doctors WHERE id = ? AND user_id = ?");
+        $dStmt->execute([$docId, $userId]);
+        if ($dStmt->fetchColumn()) {
+            return true;
+        }
+        $uStmt = $pdo->prepare("SELECT role FROM users WHERE id = ?");
+        $uStmt->execute([$userId]);
+        if (in_array($uStmt->fetchColumn(), ['admin', 'superadmin'])) {
+            return true;
+        }
+        return false;
+    }
+
     return false;
 }
 
 if ($action === 'init') {
-    $mode = $_POST['mode'] ?? 'ai'; // 'ai', 'admin', or 'organization'
+    $mode = $_POST['mode'] ?? 'ai'; // 'ai', 'admin', 'organization', or 'doctor'
     $org_id = !empty($_POST['organization_id']) ? (int)$_POST['organization_id'] : null;
+    $doc_id = !empty($_POST['doctor_id']) ? (int)$_POST['doctor_id'] : null;
 
-    if ($mode === 'organization' && $org_id) {
+    $isAjax = (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest')
+              || (isset($_SERVER['HTTP_ACCEPT']) && str_contains($_SERVER['HTTP_ACCEPT'], 'application/json'))
+              || (isset($_POST['is_ajax']) && $_POST['is_ajax'] == 1);
+
+    if ($mode === 'doctor') {
+        if (!$doc_id) {
+            echo json_encode(['status' => 'error', 'message' => 'شناسه پزشک مشخص نشده است.']);
+            exit;
+        }
+
+        // CLINICAL RULE: Gatekeeper - Only patients with appointment in the last 7 days can message doctors!
+        $apptStmt = $pdo->prepare("
+            SELECT id, appointment_date, status 
+            FROM appointments 
+            WHERE user_id = ? 
+              AND doctor_id = ? 
+              AND appointment_date >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
+              AND status NOT IN ('cancelled')
+            ORDER BY appointment_date DESC 
+            LIMIT 1
+        ");
+        $apptStmt->execute([$user_id, $doc_id]);
+        $validAppointment = $apptStmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$validAppointment) {
+            $gatekeeperMsg = 'مشاوره آنلاین تله‌هلث اختصاصی مراجعینی است که طی ۷ روز گذشته ویزیت شده‌اند یا نوبت فعال دارند. جهت آغاز گفتگو، لطفاً ابتدا نوبت خود را رزرو فرمایید.';
+            if ($isAjax) {
+                echo json_encode([
+                    'status' => 'error',
+                    'code' => 'VISIT_REQUIRED',
+                    'message' => $gatekeeperMsg,
+                    'booking_url' => 'booking.php?doctor_id=' . $doc_id
+                ]);
+            } else {
+                $_SESSION['flash_error'] = $gatekeeperMsg;
+                header("Location: ../booking.php?doctor_id=" . $doc_id);
+            }
+            exit;
+        }
+
+        // Find active open ticket with this doctor
+        $stmt = $pdo->prepare("SELECT id FROM tickets WHERE user_id = ? AND mode = 'doctor' AND doctor_id = ? AND status = 'open' ORDER BY created_at DESC LIMIT 1");
+        $stmt->execute([$user_id, $doc_id]);
+        $ticket_id = $stmt->fetchColumn();
+
+        if (!$ticket_id) {
+            $docNameStmt = $pdo->prepare("SELECT name FROM doctors WHERE id = ?");
+            $docNameStmt->execute([$doc_id]);
+            $docName = $docNameStmt->fetchColumn() ?: 'پزشک گرامی';
+
+            $stmt = $pdo->prepare("INSERT INTO tickets (user_id, mode, doctor_id, subject, status, created_at, updated_at) VALUES (?, 'doctor', ?, ?, 'open', NOW(), NOW())");
+            $stmt->execute([$user_id, $doc_id, "مشاوره آنلاین با " . $docName]);
+            $ticket_id = $pdo->lastInsertId();
+
+            $welcome = "سلام و درود. من {$docName} هستم. نشست مشاوره آنلاین جهت پیگیری روند بهبودی پت شما فعال گردید. لطفاً شرح حال دقیق و در صورت نیاز مدارک یا تصاویر را ارسال فرمایید.";
+            $pdo->prepare("INSERT INTO ticket_messages (ticket_id, sender_type, message, created_at) VALUES (?, 'doctor', ?, NOW())")->execute([$ticket_id, $welcome]);
+        }
+    } elseif ($mode === 'organization' && $org_id) {
         // Find active open ticket for this user and this specific organization
         $stmt = $pdo->prepare("SELECT id FROM tickets WHERE user_id = ? AND mode = 'organization' AND organization_id = ? AND status = 'open' ORDER BY created_at DESC LIMIT 1");
         $stmt->execute([$user_id, $org_id]);
@@ -132,11 +206,6 @@ if ($action === 'init') {
             }
         }
     }
-
-    // Check if client expects JSON or standard redirect
-    $isAjax = (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest')
-              || (isset($_SERVER['HTTP_ACCEPT']) && str_contains($_SERVER['HTTP_ACCEPT'], 'application/json'))
-              || (isset($_POST['is_ajax']) && $_POST['is_ajax'] == 1);
 
     if ($isAjax) {
         echo json_encode(['status' => 'success', 'ticket_id' => $ticket_id]);
@@ -178,7 +247,7 @@ if ($action === 'send') {
     $message = trim($_POST['message'] ?? '');
 
     // Verify ticket belongs to user
-    $stmt = $pdo->prepare("SELECT mode, user_id FROM tickets WHERE id = ? AND user_id = ?");
+    $stmt = $pdo->prepare("SELECT mode, user_id, doctor_id, status FROM tickets WHERE id = ? AND user_id = ?");
     $stmt->execute([$ticket_id, $user_id]);
     $ticketRow = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -186,6 +255,13 @@ if ($action === 'send') {
         echo json_encode(['status' => 'error', 'message' => 'Ticket not found or unauthorized']);
         exit;
     }
+
+    // Gatekeeper: if doctor has closed or resolved the session, prevent further patient messaging
+    if ($ticketRow['status'] !== 'open') {
+        echo json_encode(['status' => 'error', 'message' => 'این جلسه مشاوره توسط پزشک خاتمه یافته است. برای شروع مشاوره جدید نیاز به ثبت نوبت جدید دارید.']);
+        exit;
+    }
+
     $mode = $ticketRow['mode'];
     
     $image_url = null;
@@ -205,7 +281,7 @@ if ($action === 'send') {
         
         if (isset($allowed_mime_map[$mime_type]) && $_FILES['image']['size'] <= 5 * 1024 * 1024) {
             $ext = $allowed_mime_map[$mime_type];
-            if ($mode === 'admin' || $mode === 'organization') {
+            if ($mode === 'admin' || $mode === 'organization' || $mode === 'doctor') {
                 // Save safely with random hash and strict verified extension
                 $filename = 'ticket_' . bin2hex(random_bytes(10)) . '.' . $ext;
                 $filepath = '../uploads/' . $filename;
@@ -366,6 +442,37 @@ if ($action === 'send') {
     // Update ticket timestamp & keep open
     $pdo->prepare("UPDATE tickets SET updated_at = NOW(), status = 'open' WHERE id = ?")->execute([$ticket_id]);
 
+    // Anti-Spam Doctor Notification: Send SMS alert to doctor upon patient message (throttled to once per 15 min)
+    if ($mode === 'doctor' && !empty($ticketRow['doctor_id'])) {
+        $docId = (int)$ticketRow['doctor_id'];
+        $docStmt = $pdo->prepare("
+            SELECT d.name, d.phone, u.phone AS user_phone, u.name AS doc_user_name 
+            FROM doctors d 
+            LEFT JOIN users u ON d.user_id = u.id 
+            WHERE d.id = ?
+        ");
+        $docStmt->execute([$docId]);
+        $docInfo = $docStmt->fetch(PDO::FETCH_ASSOC);
+        
+        $targetPhone = !empty($docInfo['phone']) ? $docInfo['phone'] : ($docInfo['user_phone'] ?? '');
+        
+        // Check cooldown from tickets.last_notified_at
+        $notifStmt = $pdo->prepare("SELECT last_notified_at FROM tickets WHERE id = ?");
+        $notifStmt->execute([$ticket_id]);
+        $lastNotified = $notifStmt->fetchColumn();
+        
+        $cooldownPassed = empty($lastNotified) || (strtotime($lastNotified) < (time() - 900));
+        
+        if ($cooldownPassed && !empty($targetPhone)) {
+            require_once __DIR__ . '/../includes/SmsService.php';
+            $sms = new SmsService();
+            $patientName = $_SESSION['name'] ?? ($_SESSION['user_name'] ?? 'بیمار محترم');
+            $docName = !empty($docInfo['name']) ? $docInfo['name'] : ($docInfo['doc_user_name'] ?? 'پزشک گرامی');
+            $sms->sendDoctorTelehealthAlert($targetPhone, $docName, $patientName);
+            $pdo->prepare("UPDATE tickets SET last_notified_at = NOW() WHERE id = ?")->execute([$ticket_id]);
+        }
+    }
+
     echo json_encode(['status' => 'success']);
     exit;
 }
@@ -430,13 +537,144 @@ if ($action === 'admin_send') {
     exit;
 }
 
+if ($action === 'doctor_send') {
+    $ticket_id = (int)($_POST['ticket_id'] ?? 0);
+    $message = trim($_POST['message'] ?? '');
+
+    // Verify current user is the doctor of this ticket or an admin
+    $chk = $pdo->prepare("
+        SELECT t.id, t.doctor_id, t.status 
+        FROM tickets t 
+        JOIN doctors d ON t.doctor_id = d.id 
+        WHERE t.id = ? AND d.user_id = ?
+    ");
+    $chk->execute([$ticket_id, $user_id]);
+    $tRow = $chk->fetch(PDO::FETCH_ASSOC);
+
+    if (!$tRow) {
+        $uRole = $pdo->query("SELECT role FROM users WHERE id = {$user_id}")->fetchColumn();
+        if (!in_array($uRole, ['admin', 'superadmin'])) {
+            echo json_encode(['status' => 'error', 'message' => 'دسترسی غیرمجاز: تنها پزشک مربوطه امکان ارسال پیام در این گفتگو را دارد.']);
+            exit;
+        }
+    }
+
+    $image_url = null;
+    if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
+        $file_tmp = $_FILES['image']['tmp_name'];
+        $mime_type = mime_content_type($file_tmp);
+        $allowed_mime_map = [
+            'image/jpeg' => 'jpg',
+            'image/png'  => 'png',
+            'image/webp' => 'webp',
+        ];
+        if (isset($allowed_mime_map[$mime_type]) && $_FILES['image']['size'] <= 5 * 1024 * 1024) {
+            $ext = $allowed_mime_map[$mime_type];
+            $filename = 'rx_advice_' . bin2hex(random_bytes(10)) . '.' . $ext;
+            $filepath = '../uploads/' . $filename;
+            if (!is_dir('../uploads/')) mkdir('../uploads/', 0755, true);
+            if (move_uploaded_file($file_tmp, $filepath)) {
+                $image_url = 'uploads/' . $filename;
+            }
+        }
+    }
+
+    if (empty($message) && empty($image_url)) {
+        echo json_encode(['status' => 'error', 'message' => 'متن پیام یا تصویر ضمیمه نمی‌تواند خالی باشد.']);
+        exit;
+    }
+
+    $stmt = $pdo->prepare("INSERT INTO ticket_messages (ticket_id, sender_type, message, image_url, created_at) VALUES (?, 'doctor', ?, ?, NOW())");
+    if ($stmt->execute([$ticket_id, $message, $image_url])) {
+        $pdo->prepare("UPDATE tickets SET updated_at = NOW(), status = 'open' WHERE id = ?")->execute([$ticket_id]);
+        echo json_encode(['status' => 'success']);
+    } else {
+        echo json_encode(['status' => 'error', 'message' => 'خطا در ثبت پیام']);
+    }
+    exit;
+}
+
+if ($action === 'doctor_end_chat') {
+    $ticket_id = (int)($_POST['ticket_id'] ?? 0);
+    $notes = trim($_POST['resolution_notes'] ?? '');
+
+    // Verify current user is the doctor of this ticket or admin
+    $chk = $pdo->prepare("
+        SELECT t.id, t.doctor_id 
+        FROM tickets t 
+        JOIN doctors d ON t.doctor_id = d.id 
+        WHERE t.id = ? AND d.user_id = ?
+    ");
+    $chk->execute([$ticket_id, $user_id]);
+    if (!$chk->fetchColumn()) {
+        $uRole = $pdo->query("SELECT role FROM users WHERE id = {$user_id}")->fetchColumn();
+        if (!in_array($uRole, ['admin', 'superadmin'])) {
+            echo json_encode(['status' => 'error', 'message' => 'دسترسی غیرمجاز']);
+            exit;
+        }
+    }
+
+    $pdo->prepare("
+        UPDATE tickets 
+        SET status = 'resolved', closed_by = ?, resolution_notes = ?, updated_at = NOW() 
+        WHERE id = ?
+    ")->execute([$user_id, $notes, $ticket_id]);
+
+    $summaryMsg = "🩺 پایان مشاوره بالینی توسط پزشک.";
+    if (!empty($notes)) {
+        $summaryMsg .= "\n\n📋 توصیه‌ها و دستورات پزشک:\n" . $notes;
+    }
+    $pdo->prepare("INSERT INTO ticket_messages (ticket_id, sender_type, message, created_at) VALUES (?, 'doctor', ?, NOW())")->execute([$ticket_id, $summaryMsg]);
+
+    echo json_encode(['status' => 'success', 'message' => 'جلسه مشاوره بالینی با موفقیت خاتمه یافت.']);
+    exit;
+}
+
+if ($action === 'fetch_doctor_chats') {
+    $dStmt = $pdo->prepare("SELECT id FROM doctors WHERE user_id = ?");
+    $dStmt->execute([$user_id]);
+    $docId = (int)$dStmt->fetchColumn();
+
+    if (!$docId) {
+        $uRole = $pdo->query("SELECT role FROM users WHERE id = {$user_id}")->fetchColumn();
+        if (!in_array($uRole, ['admin', 'superadmin'])) {
+            echo json_encode(['status' => 'error', 'message' => 'پروفایل پزشک برای این کاربر یافت نشد.']);
+            exit;
+        }
+        $docId = (int)($pdo->query("SELECT id FROM doctors ORDER BY id ASC LIMIT 1")->fetchColumn() ?: 0);
+    }
+
+    $stmt = $pdo->prepare("
+        SELECT t.id, t.user_id, t.status, t.created_at, t.updated_at, t.resolution_notes,
+               u.name AS patient_name, u.phone AS patient_phone,
+               (SELECT message FROM ticket_messages WHERE ticket_id = t.id ORDER BY id DESC LIMIT 1) AS last_message,
+               (SELECT sender_type FROM ticket_messages WHERE ticket_id = t.id ORDER BY id DESC LIMIT 1) AS last_sender,
+               (SELECT created_at FROM ticket_messages WHERE ticket_id = t.id ORDER BY id DESC LIMIT 1) AS last_message_at
+        FROM tickets t
+        JOIN users u ON t.user_id = u.id
+        WHERE t.doctor_id = ? AND t.mode = 'doctor'
+        ORDER BY t.updated_at DESC
+    ");
+    $stmt->execute([$docId]);
+    $chats = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    echo json_encode(['status' => 'success', 'chats' => $chats]);
+    exit;
+}
+
 if ($action === 'reopen') {
     $ticket_id = (int)($_POST['ticket_id'] ?? 0);
     
     // Verify user
-    $stmt = $pdo->prepare("SELECT user_id FROM tickets WHERE id = ?");
+    $stmt = $pdo->prepare("SELECT user_id, mode, doctor_id, status FROM tickets WHERE id = ?");
     $stmt->execute([$ticket_id]);
-    if ($stmt->fetchColumn() == $user_id) {
+    $t = $stmt->fetch(PDO::FETCH_ASSOC);
+    if ($t && (int)$t['user_id'] === $user_id) {
+        // CLINICAL RULE: Doctors end chat permanently; patient cannot reopen doctor chat without new visit
+        if ($t['mode'] === 'doctor') {
+            echo json_encode(['status' => 'error', 'message' => 'این جلسه مشاوره توسط پزشک پایان یافته است. جهت مشاوره جدید، لطفاً نوبت جدید ثبت فرمایید.']);
+            exit;
+        }
         $stmt = $pdo->prepare("UPDATE tickets SET status = 'open', updated_at = NOW() WHERE id = ?");
         $stmt->execute([$ticket_id]);
         echo json_encode(['status' => 'success']);
@@ -446,3 +684,4 @@ if ($action === 'reopen') {
     exit;
 }
 ?>
+
