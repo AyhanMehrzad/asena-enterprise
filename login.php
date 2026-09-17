@@ -106,7 +106,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($rate_error) {
                 $error = $rate_error;
             } else {
-                $stmt = $pdo->prepare("SELECT id, role, password, name FROM users WHERE phone = ?");
+                $stmt = $pdo->prepare("SELECT id, phone, role, password, name FROM users WHERE phone = ?");
                 $stmt->execute([$phone]);
                 $user = $stmt->fetch(PDO::FETCH_ASSOC);
                 
@@ -122,7 +122,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     
                     if (!empty($_POST['remember'])) {
                         require_once __DIR__ . '/includes/AuthGuard.php';
-                        AuthGuard::setRememberCookie((int)$user['id'], $user['phone'], $user['password'] ?? '', 30);
+                        AuthGuard::setRememberCookie((int)$user['id'], $user['phone'] ?? $phone, $user['password'] ?? '', 30);
                     }
 
                     $pdo->prepare("DELETE FROM login_attempts WHERE ip_address = ?")->execute([$clientIp]);
@@ -136,33 +136,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
     
     // ----------------------------------------------------
-    // 2. OTP SMS Login - Request Code
+    // 2. OTP SMS Login - Send OTP Code
     // ----------------------------------------------------
     elseif ($action === 'send_otp') {
         $activeTab = 'otp';
         $rawPhone = trim($_POST['phone'] ?? '');
         $phone = SmsService::normalizePhone($rawPhone);
+        $remember = !empty($_POST['remember']) ? 1 : 0;
         
-        if (empty($phone) || strlen($phone) < 10) {
-            $error = 'لطفاً یک شماره موبایل معتبر ۱۱ رقمی وارد کنید.';
+        if (empty($phone) || strlen($phone) !== 11) {
+            $error = 'شماره موبایل وارد شده نامعتبر است (مثال: 09123456789).';
         } else {
             $rate_error = check_rate_limit($pdo, $clientIp, $phone);
             if ($rate_error) {
                 $error = $rate_error;
             } else {
-                $otp = sprintf("%06d", mt_rand(100000, 999999));
                 $sms = new SmsService();
+                $otp = $sms->generateOtp();
                 $sent = $sms->sendOtp($phone, $otp);
-
-                if (!$sent) {
-                    $error = 'خطا در ارسال پیامک مخابراتی: ' . ($sms->getLastError() ?: 'عدم دسترسی به درگاه پیامک.');
-                } else {
+                
+                if ($sent) {
                     $_SESSION['otp_login_data'] = [
                         'phone'      => $phone,
-                        'otp'        => $otp,
-                        'expires_at' => time() + 180,
-                        'remember'   => !empty($_POST['remember'])
+                        'otp'        => (string)$otp,
+                        'expires_at' => time() + 180, // 3 minutes validity
+                        'remember'   => $remember
                     ];
+                    $success = 'کد تأیید ۶ رقمی با موفقیت برای شماره ' . htmlspecialchars($phone) . ' پیامک شد.';
+                } else {
+                    $error = 'خطا در ارسال پیامک: ' . ($sms->getLastError() ?: 'لطفاً دقایقی دیگر مجدداً تلاش نمایید.');
                 }
             }
         }
@@ -186,53 +188,71 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $isRemember = !empty($_POST['remember']) || !empty($_SESSION['otp_login_data']['remember']);
             unset($_SESSION['otp_login_data']);
             
-            $stmt = $pdo->prepare("SELECT id, role, password, name FROM users WHERE phone = ?");
-            $stmt->execute([$phone]);
-            $user = $stmt->fetch(PDO::FETCH_ASSOC);
-            
-            if (!$user) {
-                // Seamlessly auto-register regular pet parent user
-                $dummyPassword = password_hash(bin2hex(random_bytes(16)), PASSWORD_DEFAULT);
-                $ins = $pdo->prepare("
-                    INSERT INTO users (phone, name, password, role, verification_status, loyalty_points, created_at)
-                    VALUES (?, 'کاربر آسنا', ?, 'user', 'approved', 50, NOW())
-                ");
-                $ins->execute([$phone, $dummyPassword]);
-                $newUserId = (int)$pdo->lastInsertId();
+            try {
+                $stmt = $pdo->prepare("SELECT id, phone, role, password, name FROM users WHERE phone = ?");
+                $stmt->execute([$phone]);
+                $user = $stmt->fetch(PDO::FETCH_ASSOC);
                 
-                session_regenerate_id(true);
-                $_SESSION['user_id'] = $newUserId;
-                $_SESSION['user_role'] = 'user';
-                $_SESSION['role'] = 'user';
-                $_SESSION['name'] = 'کاربر آسنا';
-                $_SESSION['user_name'] = 'کاربر آسنا';
-                $_SESSION['password_hash'] = hash('sha256', $dummyPassword);
-                $_SESSION['contract_accepted_version'] = 'v2.0-2026';
+                if (!$user) {
+                    // Seamlessly auto-register regular pet parent user
+                    $dummyPassword = password_hash(bin2hex(random_bytes(16)), PASSWORD_DEFAULT);
+                    $newUserId = 0;
+                    try {
+                        $ins = $pdo->prepare("
+                            INSERT INTO users (phone, name, password, role, verification_status, loyalty_points, created_at)
+                            VALUES (?, 'کاربر آسنا', ?, 'user', 'approved', 50, NOW())
+                        ");
+                        $ins->execute([$phone, $dummyPassword]);
+                        $newUserId = (int)$pdo->lastInsertId();
+                    } catch (Throwable $insErr) {
+                        // Resilient fallback with minimal required columns
+                        $ins = $pdo->prepare("
+                            INSERT INTO users (phone, name, password, role)
+                            VALUES (?, 'کاربر آسنا', ?, 'user')
+                        ");
+                        $ins->execute([$phone, $dummyPassword]);
+                        $newUserId = (int)$pdo->lastInsertId();
+                    }
+                    
+                    session_regenerate_id(true);
+                    $_SESSION['user_id'] = $newUserId;
+                    $_SESSION['user_role'] = 'user';
+                    $_SESSION['role'] = 'user';
+                    $_SESSION['name'] = 'کاربر آسنا';
+                    $_SESSION['user_name'] = 'کاربر آسنا';
+                    $_SESSION['password_hash'] = hash('sha256', $dummyPassword);
+                    $_SESSION['contract_accepted_version'] = 'v2.0-2026';
 
-                if ($isRemember) {
-                    require_once __DIR__ . '/includes/AuthGuard.php';
-                    AuthGuard::setRememberCookie($newUserId, $phone, $dummyPassword, 30);
-                }
-                
-                redirectAfterLogin(['id' => $newUserId, 'role' => 'user'], $returnUrl);
-            } else {
-                session_regenerate_id(true);
-                $_SESSION['user_id'] = (int)$user['id'];
-                $_SESSION['user_role'] = $user['role'] ?: 'user';
-                $_SESSION['role'] = $user['role'] ?: 'user';
-                $_SESSION['name'] = $user['name'];
-                $_SESSION['user_name'] = $user['name'];
-                $_SESSION['password_hash'] = hash('sha256', $user['password'] ?? '');
-                $_SESSION['contract_accepted_version'] = 'v2.0-2026';
+                    if ($isRemember) {
+                        require_once __DIR__ . '/includes/AuthGuard.php';
+                        AuthGuard::setRememberCookie($newUserId, $phone, $dummyPassword, 30);
+                    }
+                    
+                    redirectAfterLogin(['id' => $newUserId, 'phone' => $phone, 'role' => 'user'], $returnUrl);
+                } else {
+                    session_regenerate_id(true);
+                    $_SESSION['user_id'] = (int)$user['id'];
+                    $_SESSION['user_role'] = $user['role'] ?: 'user';
+                    $_SESSION['role'] = $user['role'] ?: 'user';
+                    $_SESSION['name'] = $user['name'] ?: 'کاربر آسنا';
+                    $_SESSION['user_name'] = $user['name'] ?: 'کاربر آسنا';
+                    $_SESSION['password_hash'] = hash('sha256', $user['password'] ?? '');
+                    $_SESSION['contract_accepted_version'] = 'v2.0-2026';
 
-                if ($isRemember) {
-                    require_once __DIR__ . '/includes/AuthGuard.php';
-                    AuthGuard::setRememberCookie((int)$user['id'], $user['phone'], $user['password'] ?? '', 30);
+                    if ($isRemember) {
+                        require_once __DIR__ . '/includes/AuthGuard.php';
+                        AuthGuard::setRememberCookie((int)$user['id'], $user['phone'] ?? $phone, $user['password'] ?? '', 30);
+                    }
+                    
+                    try {
+                        $pdo->prepare("DELETE FROM login_attempts WHERE ip_address = ?")->execute([$clientIp]);
+                    } catch (Throwable $ignored) {}
+                    
+                    redirectAfterLogin($user, $returnUrl);
                 }
-                
-                $pdo->prepare("DELETE FROM login_attempts WHERE ip_address = ?")->execute([$clientIp]);
-                
-                redirectAfterLogin($user, $returnUrl);
+            } catch (Throwable $e) {
+                error_log('[verify_otp error] ' . $e->getMessage());
+                $error = 'خطایی در ورود به سامانه رخ داد: ' . htmlspecialchars($e->getMessage());
             }
         }
     }

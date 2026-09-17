@@ -346,27 +346,33 @@ HTML;
     /**
      * Set secure signed persistent cookie and extend session cookie to 30 days
      */
-    public static function setRememberCookie(int $userId, string $phone, ?string $password, int $days = 30): void {
-        $secretKey = getenv('APP_KEY') ?: 'ASENA_REMEMBER_SECRET_2026_@&^!';
-        $expires = time() + ($days * 86400);
-        $pwdHash = !empty($password) ? hash('sha256', $password) : 'NO_PASSWORD';
-        $sig = hash_hmac('sha256', $userId . '|' . $expires . '|' . $phone . '|' . $pwdHash, $secretKey);
-        $payload = base64_encode(json_encode(['id' => $userId, 'expires' => $expires, 'sig' => $sig]));
+    public static function setRememberCookie(int $userId, ?string $phone = null, ?string $password = null, int $days = 30): void {
+        try {
+            $userId = (int)$userId;
+            if ($userId <= 0) {
+                return;
+            }
 
-        $isHttps = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') ||
-                   (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https');
+            $phoneStr = trim((string)($phone ?? ''));
+            if (empty($phoneStr)) {
+                global $pdo;
+                if ($pdo instanceof PDO) {
+                    $q = $pdo->prepare("SELECT phone FROM users WHERE id = ?");
+                    $q->execute([$userId]);
+                    $phoneStr = trim((string)$q->fetchColumn());
+                }
+            }
 
-        setcookie('asena_remember', $payload, [
-            'expires'  => $expires,
-            'path'     => '/',
-            'domain'   => '',
-            'secure'   => $isHttps,
-            'httponly' => true,
-            'samesite' => 'Lax'
-        ]);
+            $secretKey = getenv('APP_KEY') ?: 'ASENA_REMEMBER_SECRET_2026_@&^!';
+            $expires = time() + ($days * 86400);
+            $pwdHash = !empty($password) ? hash('sha256', $password) : 'NO_PASSWORD';
+            $sig = hash_hmac('sha256', $userId . '|' . $expires . '|' . $phoneStr . '|' . $pwdHash, $secretKey);
+            $payload = base64_encode(json_encode(['id' => $userId, 'expires' => $expires, 'sig' => $sig]));
 
-        if (session_status() === PHP_SESSION_ACTIVE) {
-            setcookie(session_name(), session_id(), [
+            $isHttps = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') ||
+                       (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https');
+
+            setcookie('asena_remember', $payload, [
                 'expires'  => $expires,
                 'path'     => '/',
                 'domain'   => '',
@@ -374,6 +380,19 @@ HTML;
                 'httponly' => true,
                 'samesite' => 'Lax'
             ]);
+
+            if (session_status() === PHP_SESSION_ACTIVE) {
+                setcookie(session_name(), session_id(), [
+                    'expires'  => $expires,
+                    'path'     => '/',
+                    'domain'   => '',
+                    'secure'   => $isHttps,
+                    'httponly' => true,
+                    'samesite' => 'Lax'
+                ]);
+            }
+        } catch (Throwable $e) {
+            error_log('[AuthGuard::setRememberCookie error] ' . $e->getMessage());
         }
     }
 
