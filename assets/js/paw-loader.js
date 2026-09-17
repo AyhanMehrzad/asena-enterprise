@@ -155,9 +155,16 @@
     document.addEventListener('submit', function(e) {
         const form = e.target;
         if (!form || form.target === '_blank') return;
-        AsenaProgress.start();
+        // Never hijack AJAX chat forms or forms marked with data-ajax / data-no-spinner
+        if (e.defaultPrevented || form.id === 'chat-form' || form.dataset.ajax === 'true' || form.getAttribute('data-ajax') === 'true') {
+            return;
+        }
         const submitBtn = form.querySelector('button[type="submit"]');
-        if (submitBtn && !submitBtn.dataset.noSpinner) {
+        if (submitBtn && submitBtn.dataset.noSpinner !== undefined) {
+            return;
+        }
+        AsenaProgress.start();
+        if (submitBtn) {
             submitBtn.disabled = true;
             submitBtn.style.opacity = '0.85';
             const spinner = document.createElement('span');

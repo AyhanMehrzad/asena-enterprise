@@ -32,7 +32,13 @@ class AuthGuard {
 
         $userId = (int)($_SESSION['user_id'] ?? 0);
         if ($userId <= 0) {
-            return null;
+            if (!empty($_COOKIE['asena_remember'])) {
+                self::attemptRememberLogin($pdo);
+                $userId = (int)($_SESSION['user_id'] ?? 0);
+            }
+            if ($userId <= 0) {
+                return null;
+            }
         }
 
         $db = $pdo ?? ($GLOBALS['pdo'] ?? null);
@@ -259,5 +265,132 @@ class AuthGuard {
 </html>
 HTML;
         exit;
+    }
+
+    /**
+     * Attempt automatic authentication using secure signed persistent cookie
+     */
+    public static function attemptRememberLogin(?PDO $pdo = null): ?array {
+        if (session_status() === PHP_SESSION_NONE) {
+            self::ensureSession();
+        }
+
+        if (!empty($_SESSION['user_id'])) {
+            return self::user($pdo);
+        }
+
+        if (empty($_COOKIE['asena_remember'])) {
+            return null;
+        }
+
+        $cookieRaw = base64_decode((string)$_COOKIE['asena_remember'], true);
+        if (!$cookieRaw) {
+            self::clearRememberCookie();
+            return null;
+        }
+
+        $data = json_decode($cookieRaw, true);
+        if (!is_array($data) || empty($data['id']) || empty($data['expires']) || empty($data['sig'])) {
+            self::clearRememberCookie();
+            return null;
+        }
+
+        if ($data['expires'] < time()) {
+            self::clearRememberCookie();
+            return null;
+        }
+
+        $db = $pdo ?? ($GLOBALS['pdo'] ?? null);
+        if (!$db) {
+            return null;
+        }
+
+        try {
+            $stmt = $db->prepare("SELECT id, phone, name, role, password FROM users WHERE id = ?");
+            $stmt->execute([(int)$data['id']]);
+            $user = $stmt->fetch(PDO::FETCH_ASSOC);
+            if (!$user) {
+                self::clearRememberCookie();
+                return null;
+            }
+
+            $secretKey = getenv('APP_KEY') ?: 'ASENA_REMEMBER_SECRET_2026_@&^!';
+            $pwdHash = !empty($user['password']) ? hash('sha256', $user['password']) : 'NO_PASSWORD';
+            $expectedSig = hash_hmac('sha256', $user['id'] . '|' . $data['expires'] . '|' . $user['phone'] . '|' . $pwdHash, $secretKey);
+
+            if (!hash_equals($expectedSig, $data['sig'])) {
+                self::clearRememberCookie();
+                return null;
+            }
+
+            // Valid persistent login! Populate session
+            $_SESSION['user_id'] = (int)$user['id'];
+            $_SESSION['user_role'] = $user['role'] ?: 'user';
+            $_SESSION['role'] = $user['role'] ?: 'user';
+            $_SESSION['name'] = $user['name'];
+            $_SESSION['user_name'] = $user['name'];
+            if (!empty($user['password'])) {
+                $_SESSION['password_hash'] = hash('sha256', $user['password']);
+            }
+            $_SESSION['contract_accepted_version'] = 'v2.0-2026';
+
+            // Re-extend cookie for another 30 days
+            self::setRememberCookie((int)$user['id'], $user['phone'], $user['password'] ?? '', 30);
+
+            return self::user($db);
+        } catch (Throwable $e) {
+            return null;
+        }
+    }
+
+    /**
+     * Set secure signed persistent cookie and extend session cookie to 30 days
+     */
+    public static function setRememberCookie(int $userId, string $phone, ?string $password, int $days = 30): void {
+        $secretKey = getenv('APP_KEY') ?: 'ASENA_REMEMBER_SECRET_2026_@&^!';
+        $expires = time() + ($days * 86400);
+        $pwdHash = !empty($password) ? hash('sha256', $password) : 'NO_PASSWORD';
+        $sig = hash_hmac('sha256', $userId . '|' . $expires . '|' . $phone . '|' . $pwdHash, $secretKey);
+        $payload = base64_encode(json_encode(['id' => $userId, 'expires' => $expires, 'sig' => $sig]));
+
+        $isHttps = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') ||
+                   (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https');
+
+        setcookie('asena_remember', $payload, [
+            'expires'  => $expires,
+            'path'     => '/',
+            'domain'   => '',
+            'secure'   => $isHttps,
+            'httponly' => true,
+            'samesite' => 'Lax'
+        ]);
+
+        if (session_status() === PHP_SESSION_ACTIVE) {
+            setcookie(session_name(), session_id(), [
+                'expires'  => $expires,
+                'path'     => '/',
+                'domain'   => '',
+                'secure'   => $isHttps,
+                'httponly' => true,
+                'samesite' => 'Lax'
+            ]);
+        }
+    }
+
+    /**
+     * Clear persistent remember cookie
+     */
+    public static function clearRememberCookie(): void {
+        $isHttps = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') ||
+                   (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https');
+
+        setcookie('asena_remember', '', [
+            'expires'  => time() - 86400,
+            'path'     => '/',
+            'domain'   => '',
+            'secure'   => $isHttps,
+            'httponly' => true,
+            'samesite' => 'Lax'
+        ]);
     }
 }

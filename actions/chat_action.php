@@ -21,10 +21,14 @@ $avalai_url = 'https://api.avalai.ir/v1/chat/completions';
 $gemini_api_key = getenv('GEMINI_API_KEY') ?: 'YOUR_GEMINI_API_KEY_HERE';
 $gemini_url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=" . $gemini_api_key;
 
-$leo_system_prompt = "نام تو لئو (Leo the Lion) است. تو یک دستیار هوشمند دامپزشکی در پت‌شاپ ASENA هستی. 
-فقط و فقط درباره حیوانات خانگی، مشکلات جسمی آنها، و محصولات پت‌شاپ صحبت می‌کنی. 
-اگر کاربر سوالی نامربوط به حیوانات پرسید، فقط بگو: 'من لئو هستم و فقط می‌توانم درباره حیوانات خانگی به شما کمک کنم.' 
-توضیحاتت باید کوتاه، دقیق و با لحنی صمیمی اما حرفه‌ای باشد. اگر تصویری ارسال شد، مشکلات جسمی یا بیماری حیوان را تشخیص بده.";
+$leo_system_prompt = "تو «لئو» (Leo)، دستیار هوشمند، مهربان و متخصص دامپزشکی و نگهداری از حیوانات خانگی در پلتفرم آسنا (ASENA) هستی.
+اصول مکالمه و همراهی با کاربر:
+۱. همواره لحنی گرم، دوستانه، همدلانه و پیوسته داشته باش تا کاربر بتواند آزادانه و پیوسته با تو گفتگو کند.
+۲. در احوالپرسی‌ها، سلام، تشکر و گفتگوهای صمیمانه (فارسی یا انگلیسی مثل Hi, Hello, How are you)، بسیار خوش‌رو باش، سلام کن، حال کاربر و پت او را بپرس و بگو امروز چطور می‌توانی به او و حیوان خانگی‌اش کمک کنی.
+۳. تخصص تو پاسخ به سوالات سلامت، تغذیه، واکسن، دوز دارو، رفتارشناسی و محصولات پت‌شاپ آسنا برای انواع حیوانات خانگی (سگ، گربه، پرندگان، جوندگان و...) است.
+۴. زبان پاسخگویی تو متناسب با زبان کاربر (فارسی یا انگلیسی) باشد.
+۵. پاسخ‌ها را شمرده، مختصر، کاربردی و با پاراگراف‌بندی خوانا بنویس و در پایان در صورت نیاز یک سوال پیگیرانه کوتاه درباره وضعیت پت بپرس تا رشته گفتگو قطع نشود.
+۶. در موارد اورژانسی (مسمومیت، تشنج، خونریزی شدید، تنگی نفس) کاربر را به مراجعه حضوری فوری به نزدیک‌ترین کلینیک یا رزرو نوبت اورژانس راهنمایی کن.";
 
 function get_smart_veterinary_fallback($userMessage) {
     $msg = mb_strtolower((string)$userMessage);
@@ -38,8 +42,8 @@ function get_smart_veterinary_fallback($userMessage) {
         return "داروهای ضدانگل برای سگ و گربه معمولاً هر ۳ ماه یک‌بار تکرار می‌شوند. جهت انتخاب دوز مناسب با توجه به وزن دقیق حیوان، پیشنهاد می‌شود با دامپزشک کلینیک مشورت فرمایید.";
     } elseif (str_contains($msg, 'استفراغ') || str_contains($msg, 'اسهال') || str_contains($msg, 'بی‌حال') || str_contains($msg, 'بیحال') || str_contains($msg, 'خون')) {
         return "هشدار فوری: علائمی مثل بی‌حالی شدید، استفراغ مکرر یا اسهال ممکن است نیاز به مداخله فوری پزشکی داشته باشد. لطفاً هر چه سریع‌تر به صورت حضوری به کلینیک مراجعه نمایید یا از طریق گفتگوی آنلاین با پزشک پیام بگذارید.";
-    } elseif (str_contains($msg, 'سلام') || str_contains($msg, 'درود') || str_contains($msg, 'صبح') || str_contains($msg, 'عصر')) {
-        return "سلام دوست عزیز! من لئو، دستیار هوشمند دامپزشکی آسنا هستم. خوشحال می‌شوم در زمینه سلامت، نگهداری، تغذیه و راهنمایی خدمات به شما و پت دوست‌داشتنی‌تان کمک کنم.";
+    } elseif (str_contains($msg, 'سلام') || str_contains($msg, 'درود') || str_contains($msg, 'صبح') || str_contains($msg, 'عصر') || str_contains($msg, 'hi') || str_contains($msg, 'hello') || str_contains($msg, 'how are you') || str_contains($msg, 'how re you') || str_contains($msg, 'hey')) {
+        return "سلام دوست عزیز! من لئو، دستیار تخصصی دامپزشکی و سلامت پت شما در آسنا هستم. حال پت دوست‌داشتنی‌تون چطوره و امروز چطور می‌تونم کمکتون کنم؟";
     }
     return "سلام! من لئو دستیار تخصصی کلینیک آسنا هستم. پیام شما دریافت شد. در صورت نیاز به بررسی تخصصی یا سوالات پزشکی دقیق، می‌توانید از بخش «رزرو نوبت» یک وقت معاینه ثبت کنید یا از طریق پشتیبانی با کارشناسان ما در ارتباط باشید.";
 }
@@ -437,6 +441,7 @@ if ($action === 'send') {
         
         $stmt = $pdo->prepare("INSERT INTO ticket_messages (ticket_id, sender_type, message) VALUES (?, 'ai', ?)");
         $stmt->execute([$ticket_id, $ai_reply]);
+        $ai_msg_id = (int)$pdo->lastInsertId();
     }
     
     // Update ticket timestamp & keep open
@@ -473,7 +478,31 @@ if ($action === 'send') {
         }
     }
 
-    echo json_encode(['status' => 'success']);
+    $outMessages = [
+        [
+            'id' => (int)$user_msg_id,
+            'sender_type' => 'user',
+            'message' => $message,
+            'image_url' => $image_url,
+            'created_at' => date('Y-m-d H:i:s')
+        ]
+    ];
+    if ($mode === 'ai' && !empty($ai_reply)) {
+        $outMessages[] = [
+            'id' => (int)($ai_msg_id ?? ($user_msg_id + 1)),
+            'sender_type' => 'ai',
+            'message' => $ai_reply,
+            'image_url' => null,
+            'created_at' => date('Y-m-d H:i:s')
+        ];
+    }
+
+    echo json_encode([
+        'status' => 'success',
+        'message_id' => $user_msg_id,
+        'mode' => $mode,
+        'messages' => $outMessages
+    ]);
     exit;
 }
 

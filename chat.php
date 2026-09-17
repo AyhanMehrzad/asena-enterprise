@@ -275,7 +275,7 @@ require_once 'includes/header.php';
             </div>
             <?php endif; ?>
 
-            <form id="chat-form" class="flex items-center gap-2 md:gap-3 relative" onsubmit="sendChatMessage(event)">
+            <form id="chat-form" data-ajax="true" class="flex items-center gap-2 md:gap-3 relative" onsubmit="sendChatMessage(event)">
                 <input type="file" id="chat-image-input" class="hidden" accept="image/*" onchange="handleImageSelect(this)">
                 <button type="button" onclick="document.getElementById('chat-image-input').click()" class="w-11 h-11 md:w-12 md:h-12 rounded-full hover:bg-primary-container/10 text-on-surface-variant hover:text-primary-container flex items-center justify-center transition-colors shrink-0" title="افزودن تصویر یا آزمایش">
                     <span class="material-symbols-outlined text-2xl">attach_file</span>
@@ -285,7 +285,7 @@ require_once 'includes/header.php';
                     <input id="chat-input" dir="auto" class="w-full bg-surface-container-low border-none rounded-full px-5 py-3 md:py-3.5 focus:ring-2 focus:ring-primary-container transition-all text-sm font-medium" placeholder="<?= $mode === 'doctor' ? 'پیام یا گزارش بالینی خود را برای پزشک بنویسید...' : 'پیام خود را بنویسید...' ?>" type="text" autocomplete="off" />
                 </div>
                 
-                <button type="submit" id="chat-send-btn" class="w-11 h-11 md:w-12 md:h-12 bg-primary text-white rounded-full hover:scale-105 hover:bg-primary-container transition-all flex items-center justify-center shadow-lg shrink-0" title="ارسال پیام">
+                <button type="submit" id="chat-send-btn" data-no-spinner="true" class="w-11 h-11 md:w-12 md:h-12 bg-primary text-white rounded-full hover:scale-105 hover:bg-primary-container transition-all flex items-center justify-center shadow-lg shrink-0" title="ارسال پیام">
                     <span class="material-symbols-outlined text-xl -ml-0.5">send</span>
                 </button>
             </form>
@@ -451,42 +451,61 @@ function clearImage() {
     document.getElementById('image-preview').src = '';
 }
 
+let pendingAiRequests = 0;
+
 function sendChatMessage(e) {
-    e.preventDefault();
+    if (e) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
     
     const input = document.getElementById('chat-input');
     const imageInput = document.getElementById('chat-image-input');
+    const sendBtn = document.getElementById('chat-send-btn');
     const msg = input.value.trim();
     
     if (!msg && imageInput.files.length === 0) return;
     
+    // Always ensure send button stays enabled and unblocked for continuous speaking
+    if (sendBtn) {
+        sendBtn.disabled = false;
+        sendBtn.querySelectorAll('.animate-spin').forEach(el => el.remove());
+    }
+
+    // Unique temp ID for this specific outgoing message bubble
+    const tempId = 'temp-msg-' + Date.now() + '-' + Math.random().toString(36).substr(2, 6);
+
     // Show Optimistic UI for User Message
     const container = document.getElementById('chat-messages');
     let imgHtml = '';
-    if (imageInput.files.length > 0) {
+    if (imageInput.files.length > 0 && document.getElementById('image-preview').src) {
         imgHtml = `<img src="${document.getElementById('image-preview').src}" class="rounded-xl mb-3 max-w-[200px] opacity-70">`;
     }
     
     const time = new Date().toLocaleTimeString('fa-IR', { hour: '2-digit', minute: '2-digit' });
     
     container.insertAdjacentHTML('beforeend', `
-        <div class="flex gap-4 max-w-[85%] flex-row-reverse ml-auto opacity-70" id="temp-msg">
+        <div class="flex gap-4 max-w-[85%] flex-row-reverse ml-auto opacity-70" id="${tempId}">
             <div class="bg-primary text-white px-5 py-4 rounded-3xl rounded-tl-sm shadow-md text-sm leading-relaxed">
                 ${imgHtml}
-                <div>${msg.replace(/\n/g, '<br>')}</div>
+                <div>${escapeHtml(msg).replace(/\n/g, '<br>')}</div>
                 <div class="text-[9px] text-white/70 mt-2 text-left w-full block"><span class="material-symbols-outlined text-[10px] animate-spin">sync</span></div>
             </div>
         </div>
     `);
     scrollToBottom();
     
-    // Clear Inputs
+    // Clear Inputs immediately and keep focus so user can continuously speak!
     input.value = '';
     const file = imageInput.files[0];
     clearImage();
+    input.focus();
     
     // Show Typing Indicator
-    if(chatMode === 'ai') document.getElementById('chat-typing').style.display = 'flex';
+    if (chatMode === 'ai') {
+        pendingAiRequests++;
+        document.getElementById('chat-typing').style.display = 'flex';
+    }
     scrollToBottom();
     
     const fd = new FormData();
@@ -500,18 +519,41 @@ function sendChatMessage(e) {
     fetch('actions/chat_action.php', { method: 'POST', body: fd })
         .then(res => res.json())
         .then(data => {
-            document.getElementById('temp-msg')?.remove();
-            if(data.status === 'success') {
-                fetchMessages();
+            // Remove this specific temporary placeholder
+            document.getElementById(tempId)?.remove();
+
+            if (data.status === 'success') {
+                if (data.messages && data.messages.length > 0) {
+                    // Instantly render returned messages (user message & AI response)
+                    const newOnes = data.messages.filter(m => m.id > lastMessageId);
+                    if (newOnes.length > 0) {
+                        renderMessages(newOnes);
+                        lastMessageId = Math.max(...data.messages.map(m => m.id), lastMessageId);
+                        scrollToBottom();
+                    }
+                } else {
+                    fetchMessages();
+                }
             } else {
                 alert(data.message || 'خطا در ارسال پیام');
-                if (chatMode === 'ai') document.getElementById('chat-typing').style.display = 'none';
             }
         })
         .catch(err => {
-            document.getElementById('temp-msg')?.remove();
-            if (chatMode === 'ai') document.getElementById('chat-typing').style.display = 'none';
-            alert('خطای اتصال به سرور.');
+            document.getElementById(tempId)?.remove();
+            console.error('Chat send error:', err);
+        })
+        .finally(() => {
+            if (chatMode === 'ai') {
+                pendingAiRequests = Math.max(0, pendingAiRequests - 1);
+                if (pendingAiRequests === 0) {
+                    document.getElementById('chat-typing').style.display = 'none';
+                }
+            }
+            if (sendBtn) {
+                sendBtn.disabled = false;
+                sendBtn.querySelectorAll('.animate-spin').forEach(el => el.remove());
+            }
+            input.focus();
         });
 }
 

@@ -179,4 +179,10 @@ if (!file_exists(__DIR__ . '/.schema_aligned_v2')) {
 
 require_once __DIR__ . '/Feature.php';
 require_once __DIR__ . '/functions.php';
+
+// Check persistent remember-me login if session not active
+if (empty($_SESSION['user_id']) && !empty($_COOKIE['asena_remember'])) {
+    require_once __DIR__ . '/AuthGuard.php';
+    AuthGuard::attemptRememberLogin($pdo);
+}
 ?>

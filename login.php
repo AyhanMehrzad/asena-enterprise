@@ -120,6 +120,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $_SESSION['password_hash'] = hash('sha256', $user['password']);
                     $_SESSION['contract_accepted_version'] = 'v2.0-2026';
                     
+                    if (!empty($_POST['remember'])) {
+                        require_once __DIR__ . '/includes/AuthGuard.php';
+                        AuthGuard::setRememberCookie((int)$user['id'], $user['phone'], $user['password'] ?? '', 30);
+                    }
+
                     $pdo->prepare("DELETE FROM login_attempts WHERE ip_address = ?")->execute([$clientIp]);
                     
                     redirectAfterLogin($user, $returnUrl);
@@ -155,7 +160,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $_SESSION['otp_login_data'] = [
                         'phone'      => $phone,
                         'otp'        => $otp,
-                        'expires_at' => time() + 180
+                        'expires_at' => time() + 180,
+                        'remember'   => !empty($_POST['remember'])
                     ];
                 }
             }
@@ -177,6 +183,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $error = 'کد تأیید وارد شده اشتباه است. لطفاً دوباره بررسی کنید.';
         } else {
             $phone = $_SESSION['otp_login_data']['phone'];
+            $isRemember = !empty($_POST['remember']) || !empty($_SESSION['otp_login_data']['remember']);
             unset($_SESSION['otp_login_data']);
             
             $stmt = $pdo->prepare("SELECT id, role, password, name FROM users WHERE phone = ?");
@@ -201,6 +208,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $_SESSION['user_name'] = 'کاربر آسنا';
                 $_SESSION['password_hash'] = hash('sha256', $dummyPassword);
                 $_SESSION['contract_accepted_version'] = 'v2.0-2026';
+
+                if ($isRemember) {
+                    require_once __DIR__ . '/includes/AuthGuard.php';
+                    AuthGuard::setRememberCookie($newUserId, $phone, $dummyPassword, 30);
+                }
                 
                 redirectAfterLogin(['id' => $newUserId, 'role' => 'user'], $returnUrl);
             } else {
@@ -212,6 +224,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $_SESSION['user_name'] = $user['name'];
                 $_SESSION['password_hash'] = hash('sha256', $user['password'] ?? '');
                 $_SESSION['contract_accepted_version'] = 'v2.0-2026';
+
+                if ($isRemember) {
+                    require_once __DIR__ . '/includes/AuthGuard.php';
+                    AuthGuard::setRememberCookie((int)$user['id'], $user['phone'], $user['password'] ?? '', 30);
+                }
                 
                 $pdo->prepare("DELETE FROM login_attempts WHERE ip_address = ?")->execute([$clientIp]);
                 
@@ -256,7 +273,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             'phone'      => $phone,
                             'password'   => $password,
                             'otp'        => $otp,
-                            'expires_at' => time() + 180
+                            'expires_at' => time() + 180,
+                            'remember'   => !empty($_POST['remember'])
                         ];
                     }
                 }
@@ -281,6 +299,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $name = $_SESSION['signup_data']['name'];
             $phone = $_SESSION['signup_data']['phone'];
             $password = $_SESSION['signup_data']['password'];
+            $isRemember = !empty($_POST['remember']) || !empty($_SESSION['signup_data']['remember']);
             $hash = password_hash($password, PASSWORD_DEFAULT);
             unset($_SESSION['signup_data']);
             
@@ -298,6 +317,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $_SESSION['user_name'] = $name;
                 $_SESSION['password_hash'] = hash('sha256', $hash);
                 $_SESSION['contract_accepted_version'] = 'v2.0-2026';
+
+                if ($isRemember) {
+                    require_once __DIR__ . '/includes/AuthGuard.php';
+                    AuthGuard::setRememberCookie($userId, $phone, $password, 30);
+                }
                 
                 redirectAfterLogin(['id' => $userId, 'role' => 'user'], $returnUrl);
             } else {
@@ -579,6 +603,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <span id="otp-login-countdown" class="font-bold font-mono text-secondary-container">02:00</span>
                         </div>
 
+                        <div class="flex items-center justify-between py-1">
+                            <label class="flex items-center gap-2 cursor-pointer select-none">
+                                <input type="checkbox" name="remember" value="1" <?= (!isset($_SESSION['otp_login_data']) || !empty($_SESSION['otp_login_data']['remember'])) ? 'checked' : '' ?> class="w-4 h-4 rounded border-slate-300 text-primary focus:ring-primary">
+                                <span class="text-xs text-slate-600 font-medium">مرا به خاطر بسپار (ماندن در حساب تا ۳۰ روز)</span>
+                            </label>
+                        </div>
+
                         <button type="submit" class="w-full h-11 bg-gradient-to-r from-primary to-primary-container hover:from-[#001437] hover:to-primary text-white rounded-xl text-sm font-bold shadow-lg shadow-primary/20 hover:shadow-primary/30 active:scale-[0.99] transition-all flex items-center justify-center gap-2">
                             <span>تأیید و ورود به سامانه</span>
                             <span class="material-symbols-outlined text-base">verified</span>
@@ -621,6 +652,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             </p>
                         </div>
 
+                        <div class="flex items-center justify-between py-1">
+                            <label class="flex items-center gap-2 cursor-pointer select-none">
+                                <input type="checkbox" name="remember" value="1" checked class="w-4 h-4 rounded border-slate-300 text-primary focus:ring-primary">
+                                <span class="text-xs text-slate-600 font-medium">مرا به خاطر بسپار (ورود پایدار تا ۳۰ روز)</span>
+                            </label>
+                        </div>
+
                         <button type="submit" class="w-full h-11 bg-gradient-to-r from-primary to-primary-container hover:from-[#001437] hover:to-primary text-white rounded-xl text-sm font-bold shadow-lg shadow-primary/20 hover:shadow-primary/30 active:scale-[0.99] transition-all flex items-center justify-center gap-2">
                             <span>ارسال کد تأیید یک‌بار مصرف (OTP)</span>
                             <span class="material-symbols-outlined text-base">sms</span>
@@ -657,6 +695,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <div class="flex items-center justify-between text-xs pt-1">
                             <span class="text-slate-500">زمان باقی‌مانده:</span>
                             <span id="signup-countdown" class="font-bold font-mono text-secondary-container">02:00</span>
+                        </div>
+
+                        <div class="flex items-center justify-between py-1">
+                            <label class="flex items-center gap-2 cursor-pointer select-none">
+                                <input type="checkbox" name="remember" value="1" <?= (!isset($_SESSION['signup_data']) || !empty($_SESSION['signup_data']['remember'])) ? 'checked' : '' ?> class="w-4 h-4 rounded border-slate-300 text-primary focus:ring-primary">
+                                <span class="text-xs text-slate-600 font-medium">مرا به خاطر بسپار (ماندن در حساب تا ۳۰ روز)</span>
+                            </label>
                         </div>
 
                         <button type="submit" class="w-full h-11 bg-gradient-to-r from-primary to-primary-container hover:from-[#001437] hover:to-primary text-white rounded-xl text-sm font-bold shadow-lg shadow-primary/20 hover:shadow-primary/30 active:scale-[0.99] transition-all flex items-center justify-center gap-2">
@@ -702,6 +747,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     <span class="material-symbols-outlined text-lg">visibility</span>
                                 </button>
                             </div>
+                        </div>
+
+                        <div class="flex items-center justify-between py-1">
+                            <label class="flex items-center gap-2 cursor-pointer select-none">
+                                <input type="checkbox" name="remember" value="1" checked class="w-4 h-4 rounded border-slate-300 text-primary focus:ring-primary">
+                                <span class="text-xs text-slate-600 font-medium">مرا به خاطر بسپار (ماندن در حساب تا ۳۰ روز)</span>
+                            </label>
                         </div>
 
                         <button type="submit" class="w-full h-11 bg-gradient-to-r from-primary to-primary-container hover:from-[#001437] hover:to-primary text-white rounded-xl text-sm font-bold shadow-lg shadow-primary/20 hover:shadow-primary/30 active:scale-[0.99] transition-all flex items-center justify-center gap-2 mt-2">

@@ -3,6 +3,9 @@ require_once __DIR__ . '/includes/db.php';
 
 $_SESSION = [];
 
+require_once __DIR__ . '/includes/AuthGuard.php';
+AuthGuard::clearRememberCookie();
+
 if (ini_get("session.use_cookies")) {
     $params = session_get_cookie_params();
     setcookie(
