@@ -176,7 +176,9 @@ try {
     $smsMessage = "نوبت ویزیت شما در سامانه آسنا با موفقیت ثبت شد.\nپزشک: {$doctor['name']}\nتاریخ: {$date} ساعت: {$time}\nکد رهگیری: {$trackingCode}\nمرکز: {$clinicName}";
 
     try {
-        if (class_exists('SmsService')) {
+        if (class_exists('App')) {
+            $smsSent = App::sms()->sendDirectSms($phone, $smsMessage);
+        } elseif (class_exists('SmsService')) {
             $smsSent = SmsService::send($phone, $smsMessage);
         } else {
             // Log to local SMS log file
@@ -185,7 +187,7 @@ try {
             @file_put_contents($logFile, $logEntry, FILE_APPEND);
             $smsSent = true;
         }
-    } catch (Exception $smsErr) {
+    } catch (\Throwable $smsErr) {
         error_log("SMS dispatch error: " . $smsErr->getMessage());
     }
 

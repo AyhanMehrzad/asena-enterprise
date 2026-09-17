@@ -8,6 +8,9 @@ $currentPage = 'organizations';
 
 // Handle Organization Actions (Status Toggle & Banking Details Update)
 if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POST['action'])) {
+    if (function_exists('csrf_verify')) {
+        csrf_verify();
+    }
     if ($_POST['action'] === 'toggle_status') {
         $targetOrgId = (int)($_POST['org_id'] ?? 0);
         $newStatus = trim($_POST['status'] ?? 'approved');
@@ -393,6 +396,7 @@ require_once __DIR__ . '/includes/admin_header.php';
                                     <?= ($org['status'] ?? 'approved') === 'approved' ? 'فعال / تایید شده' : 'معلق / بررسی' ?>
                                 </span>
                                 <form method="POST" class="inline" onsubmit="return confirm('آیا از تغییر وضعیت این مرکز اطمینان دارید؟');">
+                                    <?= csrf_field() ?>
                                     <input type="hidden" name="action" value="toggle_status">
                                     <input type="hidden" name="org_id" value="<?= $org['id'] ?>">
                                     <input type="hidden" name="status" value="<?= ($org['status'] ?? 'approved') === 'approved' ? 'suspended' : 'approved' ?>">
@@ -505,6 +509,7 @@ require_once __DIR__ . '/includes/admin_header.php';
                         <div class="text-[11px] text-emerald-700 mt-0.5">تسویه این مرکز به صورت انفرادی یا تجمیعی در میز کار پایا امکان‌پذیر است.</div>
                     </div>
                     <form method="POST" action="" class="inline shrink-0" onsubmit="return confirm('آیا از صدور حواله تسویه پایا برای این مرکز درمانی اطمینان دارید؟');">
+                        <?= csrf_field() ?>
                         <input type="hidden" name="action" value="single_payout">
                         <input type="hidden" id="payoutOrgId" name="org_id" value="">
                         <button type="submit" class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs inline-flex items-center gap-1.5 shadow-sm transition-all">
@@ -536,6 +541,7 @@ require_once __DIR__ . '/includes/admin_header.php';
 
             <!-- Inline Bank Details Edit Form (Collapsible) -->
             <form id="formEditBank" method="POST" action="" class="hidden p-4 rounded-2xl bg-amber-50/50 border border-amber-200/80 space-y-3">
+                <?= csrf_field() ?>
                 <input type="hidden" name="action" value="update_banking">
                 <input type="hidden" id="editOrgId" name="org_id" value="">
                 

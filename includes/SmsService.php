@@ -751,10 +751,15 @@ class SmsService {
     }
 
     /**
-     * General send alias pointing to sendDirectSms
+     * General send alias pointing to sendDirectSms.
+     * Declared static so it can be safely called as SmsService::send(...) or $sms->send(...)
      */
-    public function send($phone, $text) {
-        return $this->sendDirectSms($phone, $text);
+    public static function send($phone, $text) {
+        if (class_exists('App') && method_exists('App', 'sms')) {
+            return App::sms()->sendDirectSms($phone, $text);
+        }
+        $instance = new self();
+        return $instance->sendDirectSms($phone, $text);
     }
 
     /**

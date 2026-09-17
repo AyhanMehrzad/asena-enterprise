@@ -223,7 +223,7 @@ require_once 'includes/header.php';
                     </div>
                 <?php endif; ?>
 
-                <img loading="lazy" src="<?php echo htmlspecialchars($product['image_url']); ?>" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt="<?php echo htmlspecialchars($product['name']); ?>">
+                <img loading="lazy" src="<?php echo htmlspecialchars($product['image_url']); ?>" onerror="this.onerror=null;this.src='assets/images/default-product.png'" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt="<?php echo htmlspecialchars($product['name']); ?>">
             </div>
             
             <!-- Quick Features Banner -->
@@ -533,18 +533,18 @@ require_once 'includes/header.php';
                     <p class="text-xs text-on-surface-variant">پیشنهادات تخصصی برای <?php echo $animal_display; ?></p>
                 </div>
             </div>
-            <a href="shop.php?animal=<?php echo $product['target_animal'] ?? ''; ?>" class="text-xs font-bold text-primary hover:underline">مشاهده همه محصولات این دسته ></a>
+            <a href="<?php echo ($item_source === 'pharmacy') ? 'pharmacy.php' : 'shop.php?animal=' . urlencode($product['target_animal'] ?? ''); ?>" class="text-xs font-bold text-primary hover:underline">مشاهده همه محصولات این دسته ></a>
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             <?php foreach($related_products as $rel): ?>
             <div class="bg-white rounded-3xl p-5 shadow-md hover:shadow-xl transition-all duration-300 border border-outline-variant/15 flex flex-col justify-between group">
                 <div class="aspect-square bg-surface-container-lowest rounded-2xl mb-4 overflow-hidden relative">
-                    <img loading="lazy" src="<?php echo htmlspecialchars($rel['image_url']); ?>" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" alt="<?php echo htmlspecialchars($rel['name']); ?>">
+                    <img loading="lazy" src="<?php echo htmlspecialchars($rel['image_url']); ?>" onerror="this.onerror=null;this.src='assets/images/default-product.png'" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" alt="<?php echo htmlspecialchars($rel['name']); ?>">
                 </div>
                 <div>
                     <span class="text-[11px] text-on-surface-variant font-bold"><?php echo htmlspecialchars($rel['brand'] ?? 'آسنا'); ?></span>
-                    <a href="product_details.php?id=<?php echo $rel['id']; ?>">
+                    <a href="product_details.php?id=<?php echo $rel['id']; ?><?php echo ($item_source === 'pharmacy') ? '&type=pharmacy' : ''; ?>">
                         <h3 class="text-sm font-bold text-on-surface mb-3 line-clamp-2 hover:text-primary transition-colors cursor-pointer">
                             <?php echo htmlspecialchars($rel['name']); ?>
                         </h3>

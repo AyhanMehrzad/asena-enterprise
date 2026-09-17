@@ -17,7 +17,7 @@ $sellerWallet = $walletStmt->fetch(PDO::FETCH_ASSOC);
 if (!$sellerWallet) {
     // Initialize seller wallet
     $pdo->prepare("
-        INSERT INTO seller_wallets (seller_id, cleared_balance, in_escrow_balance, bank_account_holder, created_at, updated_at)
+        INSERT INTO seller_wallets (seller_id, balance_pending_escrow, balance_available_for_payout, bank_account_holder, created_at, updated_at)
         VALUES (?, 0, 0, ?, NOW(), NOW())
     ")->execute([$sellerId, $sellerName]);
     

@@ -17,8 +17,8 @@ $query = "
         u.email as user_email,
         u.vet_council_number,
         u.is_verified_vet,
-        o.name as organization_name,
-        o.city as organization_city,
+        GROUP_CONCAT(DISTINCT o.name SEPARATOR '، ') as organization_name,
+        GROUP_CONCAT(DISTINCT o.city SEPARATOR '، ') as organization_city,
         (SELECT COUNT(*) FROM appointments a WHERE a.doctor_id = d.id) as total_appointments,
         (SELECT COUNT(*) FROM appointments a WHERE a.doctor_id = d.id AND a.status = 'completed') as completed_appointments,
         COALESCE((SELECT COUNT(*) FROM prescriptions p WHERE (p.doctor_id IS NOT NULL AND p.doctor_id = d.id) OR (p.vet_phone IS NOT NULL AND p.vet_phone != '' AND p.vet_phone = d.phone)), 0) as total_prescriptions,
@@ -42,7 +42,7 @@ if (!empty($specialtyFilter)) {
     $params[] = $specialtyFilter;
 }
 
-$query .= " ORDER BY completed_appointments DESC, d.id DESC";
+$query .= " GROUP BY d.id ORDER BY completed_appointments DESC, d.id DESC";
 
 $stmt = $pdo->prepare($query);
 $stmt->execute($params);

@@ -90,17 +90,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 if ($flow['role'] === 'customer') {
                     $hash = password_hash($flow['password'], PASSWORD_DEFAULT);
                     $stmt = $pdo->prepare("
-                        INSERT INTO users (phone, name, password, role, loyalty_points, verification_status, created_at)
-                        VALUES (?, ?, ?, 'customer', 50, 'approved', NOW())
+                        INSERT INTO users (phone, name, password, role, loyalty_points, verification_status, contract_accepted_version, contract_accepted_at, created_at)
+                        VALUES (?, ?, ?, 'user', 50, 'approved', 'v2.0-2026', NOW(), NOW())
                     ");
                     if ($stmt->execute([$flow['phone'], $flow['name'], $hash])) {
                         $newUserId = (int)$pdo->lastInsertId();
                         session_regenerate_id(true);
                         $_SESSION['user_id'] = $newUserId;
-                        $_SESSION['user_role'] = 'customer';
+                        $_SESSION['user_role'] = 'user';
+                        $_SESSION['role'] = 'user';
+                        $_SESSION['name'] = $flow['name'];
                         $_SESSION['user_name'] = $flow['name'];
                         $_SESSION['password_hash'] = hash('sha256', $hash);
+                        $_SESSION['contract_accepted_version'] = 'v2.0-2026';
                         unset($_SESSION['reg_flow']);
+
+                        // Record contract acceptance ledger
+                        try {
+                            App::contract()->recordAcceptance($newUserId, 'user', get_client_ip(), $_SERVER['HTTP_USER_AGENT'] ?? 'User Registration');
+                        } catch (\Throwable $ignore) {}
+
                         $_SESSION['login_success'] = 'ثبت‌نام شما با موفقیت انجام شد و ۵۰ امتیاز باشگاه مشتریان دریافت نمودید!';
                         header("Location: index.php");
                         exit;

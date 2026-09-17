@@ -22,12 +22,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $hashed_password = password_hash($password, PASSWORD_DEFAULT);
                 $stmt = $pdo->prepare("UPDATE users SET name = ?, email = ?, password = ? WHERE id = ?");
                 $stmt->execute([$name, $email, $hashed_password, $user_id]);
+
+                // 1. Regenerate session ID and synchronize session password hash to prevent revocation
+                session_regenerate_id(true);
+                $_SESSION['password_hash'] = hash('sha256', $hashed_password);
+
+                // 2. Refresh remember-me cookie if active
+                if (!empty($_COOKIE['asena_remember'])) {
+                    require_once __DIR__ . '/../includes/AuthGuard.php';
+                    $uStmt = $pdo->prepare("SELECT phone FROM users WHERE id = ?");
+                    $uStmt->execute([$user_id]);
+                    $userPhone = $uStmt->fetchColumn() ?: '';
+                    AuthGuard::setRememberCookie($user_id, $userPhone, $hashed_password, 30);
+                }
             } else {
                 $stmt = $pdo->prepare("UPDATE users SET name = ?, email = ? WHERE id = ?");
                 $stmt->execute([$name, $email, $user_id]);
             }
             if (!empty($name)) {
                 $_SESSION['user_name'] = $name;
+                $_SESSION['name'] = $name;
             }
             $_SESSION['settings_success'] = "اطلاعات حساب با موفقیت بروزرسانی شد.";
             $_SESSION['profile_success'] = "اطلاعات حساب با موفقیت بروزرسانی شد.";

@@ -12,7 +12,7 @@ if (!isset($_SESSION['user_id'])) {
 $user_id = $_SESSION['user_id'];
 $action = $_POST['action'] ?? '';
 
-$userRole = $_SESSION['role'] ?? '';
+$userRole = $_SESSION['user_role'] ?? $_SESSION['role'] ?? '';
 if (empty($userRole)) {
     $uStmt = $pdo->prepare("SELECT role FROM users WHERE id = ?");
     $uStmt->execute([$user_id]);
@@ -434,10 +434,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         // 7. Seller wallet balance check
         if (($uData['role'] ?? '') === 'seller') {
-            $swStmt = $pdo->prepare("SELECT in_escrow_balance, cleared_balance FROM seller_wallets WHERE seller_id = ?");
+            $swStmt = $pdo->prepare("SELECT balance_pending_escrow, balance_available_for_payout FROM seller_wallets WHERE seller_id = ?");
             $swStmt->execute([$user_id]);
             $sw = $swStmt->fetch(PDO::FETCH_ASSOC);
-            if ($sw && ((float)$sw['in_escrow_balance'] > 0 || (float)$sw['cleared_balance'] > 0)) {
+            if ($sw && ((float)$sw['balance_pending_escrow'] > 0 || (float)$sw['balance_available_for_payout'] > 0)) {
                 $_SESSION['profile_error'] = "امکان حذف حساب فروشگاه به دلیل وجود موجودی فعال یا در حال امانت در کیف پول وجود ندارد. لطفاً ابتدا تسویه حساب نمایید.";
                 header("Location: ../profile.php?view=seller");
                 exit;
