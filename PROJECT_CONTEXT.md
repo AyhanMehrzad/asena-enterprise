@@ -239,6 +239,10 @@
     - **ریشه‌یابی و رفع Fatal TypeError در `login.php` و `includes/AuthGuard.php`:** در فرآیند ورود پیامکی (`verify_otp`) و ورود با رمز عبور (`login_password`)، پرس‌وجوی دریافت اطلاعات کاربر ستون `phone` را واکشی نمی‌کرد. در نتیجه `$user['phone']` برابر `null` شده و ارسال آن به پارامتر نوع‌داده‌دار `string $phone` در متد `AuthGuard::setRememberCookie()` در محیط PHP 8.1 سرور خطای مرگبار `TypeError` و در نتیجه خطای HTTP 500 را ایجاد می‌کرد.
     - **ایمن‌سازی و تاب‌آوری کوکی ورود پایدار ([`includes/AuthGuard.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/includes/AuthGuard.php)):** تبدیل پارامتر `$phone` به حالت نال‌پذیر `?string $phone = null`، افزودن استعلام خودکار شماره از دیتابیس در صورت فقدان و قرار دادن کل فرآیند ایجاد کوکی در بلوک محافظتی `try ... catch`.
     - **تاب‌آوری فرم ورود پیامکی و ثبت‌نام خودکار ([`login.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/login.php)):** افزودن ستون `phone` به کوئری‌های کاربری، تزریق فال‌بک امن `$user['phone'] ?? $phone`، ایمن‌سازی کوئری درج کاربر جدید و قرارگیری کل بلوک ورود در `try ... catch` جهت تضمین صددرصدی عدم بروز خطای ۵۰۰.
+33. **رفع کامل خطای ۵۰۰ در مرحله ارسال کد پیامکی (Resolve Undefined Method 500 in send_otp):**
+    - **ریشه‌یابی و رفع Fatal Error فراخوانی متد تعریف‌نشده:** در اکشن `send_otp`، متد `generateOtp()` از شیء `SmsService` فراخوانی شده بود که وجود نداشت و منجر به خطای `Fatal error: Call to undefined method SmsService::generateOtp()` و در نتیجه خطای HTTP 500 می‌شد.
+    - **پیاده‌سازی متد و تاب‌آوری امنیتی ([`includes/SmsService.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/includes/SmsService.php) و [`login.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/login.php)):** متد رسمی و ایمن `SmsService::generateOtp(int $length = 6)` به کلاس اضافه گردید و در `login.php` تولید کد با `random_int(100000, 999999)` انجام و کل بلوک `send_otp` در `try ... catch` ایمن‌سازی شد.
+    - **راستی‌آزمایی زنده در تب کروم کاربر با شماره 09146676978:** شماره موبایل کاربر در تب زنده کروم وارد و دکمه ارسال پیامک زده شد؛ کد ۶ رقمی بلافاصله پیامک گردید و صفحه به زیبایی به فرم ورود کد ۶ رقمی با تایمر شمارش معکوس و فوکوس خودکار هدایت شد.
 
 ---
 
