@@ -518,7 +518,7 @@ $top_donors = $donor_stmt->fetchAll(PDO::FETCH_ASSOC);
                     <div class="flex items-center gap-3.5 mb-3.5">
                         <div class="relative w-16 h-16 rounded-2xl bg-indigo-50 border-2 border-indigo-100 overflow-hidden shrink-0 flex items-center justify-center text-indigo-600 group-hover:scale-105 transition-transform shadow-inner">
                             <?php if (!empty($doc['image_url'])): ?>
-                                <img src="<?= htmlspecialchars($doc['image_url']) ?>" alt="<?= htmlspecialchars($doc['name']) ?>" class="w-full h-full object-cover">
+                                <img src="<?= htmlspecialchars($doc['image_url']) ?>" alt="<?= htmlspecialchars($doc['name']) ?>" onerror="this.onerror=null; this.src='assets/images/vet-hero.webp';" class="w-full h-full object-cover">
                             <?php else: ?>
                                 <span class="material-symbols-outlined text-3xl">stethoscope</span>
                             <?php endif; ?>
@@ -744,7 +744,7 @@ $top_donors = $donor_stmt->fetchAll(PDO::FETCH_ASSOC);
                                     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3" id="reservationDoctorPicker">
                                         <?php foreach ($top_doctors as $idx => $d): ?>
                                         <div onclick="selectReservationDoctor(<?= (int)$d['id'] ?>)" class="reservation-doc-opt <?= $idx === 0 ? 'selected ring-2 ring-primary border-primary bg-primary/5' : 'border-slate-200 bg-white hover:border-slate-300' ?> border rounded-2xl p-3.5 flex items-center gap-3 cursor-pointer transition-all relative" data-id="<?= (int)$d['id'] ?>">
-                                            <img src="<?= htmlspecialchars($d['image_url'] ?: 'assets/images/logo.png') ?>" alt="<?= htmlspecialchars($d['name'] ?? 'دامپزشک متخصص') ?>" class="w-12 h-12 rounded-xl object-cover border border-slate-200 shrink-0 bg-slate-100">
+                                            <img src="<?= htmlspecialchars($d['image_url'] ?: 'assets/images/vet-hero.webp') ?>" alt="<?= htmlspecialchars($d['name'] ?? 'دامپزشک متخصص') ?>" onerror="this.onerror=null; this.src='assets/images/vet-hero.webp';" class="w-12 h-12 rounded-xl object-cover border border-slate-200 shrink-0 bg-slate-100">
                                             <div class="overflow-hidden flex-1">
                                                 <div class="text-xs font-black text-slate-900 truncate"><?= htmlspecialchars($d['name']) ?></div>
                                                 <div class="text-[10px] text-slate-500 truncate"><?= htmlspecialchars($d['specialty']) ?></div>

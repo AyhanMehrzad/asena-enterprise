@@ -94,6 +94,10 @@ require_once __DIR__ . '/includes/admin_header.php';
                 <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
                 <span>تسویه ویزیت‌ها: متمرکز در کلینیک‌ها</span>
             </span>
+            <a href="clinic_management.php" class="px-3.5 py-1.5 rounded-xl bg-primary hover:bg-primary/90 text-white text-xs font-bold transition-all shadow-sm flex items-center gap-1.5">
+                <span class="material-symbols-outlined text-base">person_add</span>
+                <span>مدیریت و افزودن متخصص</span>
+            </a>
         </div>
     </div>
 

@@ -103,7 +103,7 @@ $init_status = $post['status'] ?? 'published';
     <link rel="stylesheet" href="assets/css/style.css">
     <link href="assets/css/material-symbols.css" rel="stylesheet">
     <link href="assets/css/vazirmatn.css" rel="stylesheet">
-    <script src="assets/js/tailwindcss-cdn.js"></script>
+    <link rel="stylesheet" href="assets/css/tailwind.output.css">
     <style>
         body { font-family: 'Vazirmatn', sans-serif; }
         .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }

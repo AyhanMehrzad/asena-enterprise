@@ -335,6 +335,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 } else {
                     $stmt = $pdo->prepare("UPDATE users SET name = ?, email = ?, national_id = ? WHERE id = ?");
                     $stmt->execute([$name, $email, $nationalId, $user_id]);
+                    if (!empty($name)) {
+                        $_SESSION['user_name'] = $name;
+                    }
                     $_SESSION['profile_success'] = "اطلاعات حساب کاربری با موفقیت ذخیره گردید.";
                 }
             } catch (PDOException $e) {

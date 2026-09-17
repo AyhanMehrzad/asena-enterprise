@@ -293,7 +293,7 @@ foreach ($rolesConfig as $rKey => $cfg) {
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
     <meta name="robots" content="noindex, nofollow, noarchive"/>
     <title>ورود خودکار و انتخاب سریع نقش | سامانه جامع آسنا</title>
-    <script src="assets/js/tailwindcss-cdn.js"></script>
+    <link rel="stylesheet" href="assets/css/tailwind.output.css">
     <link href="assets/css/material-symbols.css" rel="stylesheet"/>
     <link href="assets/css/geist.css" rel="stylesheet"/>
     <link rel="stylesheet" href="assets/css/style.css">

@@ -101,6 +101,8 @@ try {
         }
         
         $order_id = $sub_id; // For the success message below
+    } elseif ($is_booking) {
+        $order_id = 0; // Clinical appointment booking handled specifically below
     } else {
         // Fetch snapshot of buyer address
         $userAddrStmt = $pdo->prepare("SELECT city, address, postal_code FROM users WHERE id = ?");
@@ -236,8 +238,8 @@ try {
 
     if ($is_booking && !empty($pending['booking_id'])) {
         $bookingId = (int)$pending['booking_id'];
-        $pdo->prepare("UPDATE appointments SET status = 'approved', settlement_status = 'held_in_escrow' WHERE id = ?")
-            ->execute([$bookingId]);
+        $pdo->prepare("UPDATE appointments SET status = 'approved', settlement_status = 'held_in_escrow', tracking_code = ? WHERE id = ?")
+            ->execute([$ref_id, $bookingId]);
         $pdo->prepare("UPDATE users SET loyalty_points = loyalty_points + 20 WHERE id = ?")
             ->execute([$user_id]);
             

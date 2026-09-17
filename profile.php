@@ -241,8 +241,8 @@ $nextPayoutFormatted = $fmtDateText->format($nextThursday) . ' ساعت ۲۲:۰�
 
 <?php require_once 'includes/header.php'; ?>
 <!-- Leaflet Map Assets for Address Pinpointing -->
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<link rel="stylesheet" href="assets/vendor/leaflet/leaflet.css" />
+<script src="assets/vendor/leaflet/leaflet.js"></script>
 <style>
     .persian-number {
         font-feature-settings: "ss01", "ss02", "ss03", "ss04";

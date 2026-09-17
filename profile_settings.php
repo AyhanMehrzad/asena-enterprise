@@ -261,7 +261,7 @@ exit;
 <textarea name="address" class="w-full bg-surface-container-low border border-outline-variant rounded-lg p-4 font-body-md focus:ring-2 focus:ring-primary-container outline-none transition-all" placeholder="نام محله، خیابان اصلی، کوچه، پلاک، واحد..." rows="3"><?php echo htmlspecialchars($user['address'] ?? ''); ?></textarea>
 </div>
 <!-- Map Integration -->
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<link rel="stylesheet" href="assets/vendor/leaflet/leaflet.css" />
 <div class="relative rounded-xl overflow-hidden border border-outline-variant h-64 bg-surface-container z-0" id="map"></div>
 <input type="hidden" name="latitude" id="latitude" value="<?php echo htmlspecialchars($user['latitude'] ?? ''); ?>">
 <input type="hidden" name="longitude" id="longitude" value="<?php echo htmlspecialchars($user['longitude'] ?? ''); ?>">
@@ -276,24 +276,24 @@ exit;
 </main>
 <!-- BottomNavBar (Mobile Only) -->
 <nav class="md:hidden fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 pb-4 pt-2 bg-surface-container-lowest shadow-[0px_-4px_12px_rgba(0,45,114,0.08)] rounded-t-xl">
-<a class="flex flex-col items-center justify-center text-on-surface-variant px-3 py-1" href="#">
+<a class="flex flex-col items-center justify-center text-on-surface-variant px-3 py-1" href="index.php">
 <span class="material-symbols-outlined">home</span>
 <span class="font-label-sm text-label-sm">خانه</span>
 </a>
-<a class="flex flex-col items-center justify-center text-on-surface-variant px-3 py-1" href="#">
+<a class="flex flex-col items-center justify-center text-on-surface-variant px-3 py-1" href="shop.php">
 <span class="material-symbols-outlined">storefront</span>
 <span class="font-label-sm text-label-sm">فروشگاه</span>
 </a>
-<a class="flex flex-col items-center justify-center text-on-surface-variant px-3 py-1" href="#">
+<a class="flex flex-col items-center justify-center text-on-surface-variant px-3 py-1" href="booking.php">
 <span class="material-symbols-outlined">medical_services</span>
 <span class="font-label-sm text-label-sm">کلینیک</span>
 </a>
-<a class="flex flex-col items-center justify-center bg-secondary-container text-on-secondary-container rounded-xl px-4 py-2 scale-105 shadow-md" href="#">
+<a class="flex flex-col items-center justify-center bg-secondary-container text-on-secondary-container rounded-xl px-4 py-2 scale-105 shadow-md" href="profile.php">
 <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">person</span>
 <span class="font-label-sm text-label-sm">پروفایل</span>
 </a>
 </nav>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="assets/vendor/leaflet/leaflet.js"></script>
 <script>
         // Map Initialization
         document.addEventListener("DOMContentLoaded", function() {

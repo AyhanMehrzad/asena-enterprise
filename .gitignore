@@ -1,5 +1,6 @@
 # Dependencies & Environment
-vendor/
+/vendor/
+!assets/vendor/
 node_modules/
 .env
 accounts_credentials.txt
@@ -32,3 +33,4 @@ dist/*.zip
 dist/*_*
 !dist/.gitkeep
 
+demo/*/uploads/

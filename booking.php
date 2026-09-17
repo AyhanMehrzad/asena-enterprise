@@ -10,9 +10,36 @@ $page_description = "سامانه نوبت‌دهی اینترنتی پزشکا�
 
 require_once 'includes/header.php';
 
-// Fetch doctors
+// Fetch selected organization if org_id is provided
+$selectedOrgId = (int)($_GET['org_id'] ?? 0);
+$selectedOrg = null;
+if ($selectedOrgId > 0) {
+    try {
+        $oStmt = $pdo->prepare("SELECT * FROM organizations WHERE id = ?");
+        $oStmt->execute([$selectedOrgId]);
+        $selectedOrg = $oStmt->fetch(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {
+        $selectedOrg = null;
+    }
+}
+
+// Fetch doctors with organization affiliation priority
 try {
-    $stmt = $pdo->query("SELECT * FROM doctors ORDER BY rating DESC");
+    if ($selectedOrgId > 0) {
+        $stmt = $pdo->prepare("
+            SELECT d.*, 
+                   CASE 
+                       WHEN d.organization_id = :orgId THEN 1
+                       WHEN EXISTS (SELECT 1 FROM organization_doctors od WHERE od.organization_id = :orgId AND od.doctor_id = d.id) THEN 1
+                       ELSE 0 
+                   END as is_facility_member
+            FROM doctors d
+            ORDER BY is_facility_member DESC, d.rating DESC
+        ");
+        $stmt->execute([':orgId' => $selectedOrgId]);
+    } else {
+        $stmt = $pdo->query("SELECT d.*, 0 as is_facility_member FROM doctors d ORDER BY d.rating DESC");
+    }
     $doctors = $stmt->fetchAll(PDO::FETCH_ASSOC);
 } catch (PDOException $e) {
     $doctors = [];
@@ -30,18 +57,7 @@ if (isset($_SESSION['user_id'])) {
     }
 }
 
-// Fetch selected organization if org_id is provided
-$selectedOrgId = (int)($_GET['org_id'] ?? 0);
-$selectedOrg = null;
-if ($selectedOrgId > 0) {
-    try {
-        $oStmt = $pdo->prepare("SELECT * FROM organizations WHERE id = ?");
-        $oStmt->execute([$selectedOrgId]);
-        $selectedOrg = $oStmt->fetch(PDO::FETCH_ASSOC);
-    } catch (PDOException $e) {
-        $selectedOrg = null;
-    }
-}
+
 
 // Fetch booked and blocked slots for the next 14 days
 $booked_slots = [];
@@ -280,7 +296,7 @@ $booked_slots_json = json_encode($booked_slots);
                         
                         <div>
                             <div class="relative mb-3.5 overflow-hidden rounded-xl">
-                                <img class="w-full h-44 object-cover transform group-hover:scale-105 transition-transform duration-500" src="<?php echo htmlspecialchars($doctor['image_url'] ?: 'assets/images/presentation-dog.jpg'); ?>" alt="<?php echo htmlspecialchars($doctor['name']); ?>"/>
+                                <img class="w-full h-44 object-cover transform group-hover:scale-105 transition-transform duration-500" src="<?php echo htmlspecialchars($doctor['image_url'] ?: 'assets/images/vet-hero.webp'); ?>" alt="<?php echo htmlspecialchars($doctor['name']); ?>" onerror="this.onerror=null; this.src='assets/images/vet-hero.webp';"/>
                                 <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                                 
                                 <!-- Role Badge -->
@@ -303,8 +319,13 @@ $booked_slots_json = json_encode($booked_slots);
                                     <?php endif; ?>
                                 </div>
 
-                                <!-- Clinic Badge -->
-                                <?php if (!empty($doctor['clinic_name'])): ?>
+                                <!-- Facility Member Badge or Clinic Badge -->
+                                <?php if (!empty($doctor['is_facility_member'])): ?>
+                                    <div class="absolute bottom-2 right-2 bg-sky-600/90 backdrop-blur-md text-white text-[10px] font-black px-2.5 py-1 rounded-lg flex items-center gap-1 shadow-sm border border-sky-400/40">
+                                        <span class="material-symbols-outlined text-xs">verified</span>
+                                        <span>پزشک مستقر در <?= htmlspecialchars($selectedOrg['name'] ?? 'این مرکز') ?></span>
+                                    </div>
+                                <?php elseif (!empty($doctor['clinic_name'])): ?>
                                     <div class="absolute bottom-2 right-2 bg-black/60 backdrop-blur-md text-white text-[10px] font-bold px-2 py-0.5 rounded-lg flex items-center gap-1">
                                         <span class="material-symbols-outlined text-xs text-sky-400">local_hospital</span>
                                         <span><?= htmlspecialchars($doctor['clinic_name']) ?></span>

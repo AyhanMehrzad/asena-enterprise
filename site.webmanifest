@@ -1,14 +1,17 @@
 {
-  "name": "ASENA Company - Veterinary Clinic & Pet Care Platform",
-  "short_name": "ASENA",
-  "description": "پلتفرم یکپارچه کلینیک دامپزشکی، پت‌شاپ و داروخانه تخصصی آنلاین آسنا",
+  "name": "آسنا | سامانه جامع خدمات دامپزشکی و پت‌شاپ",
+  "short_name": "آسنا",
+  "description": "پلتفرم یکپارچه کلینیک دامپزشکی، پت‌شاپ آنلاین و داروخانه تخصصی دام و طیور آسنا",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#f8fafc",
+  "background_color": "#001a48",
   "theme_color": "#002d72",
   "lang": "fa-IR",
   "dir": "rtl",
+  "categories": ["medical", "shopping", "lifestyle"],
+  "prefer_related_applications": false,
   "icons": [
     {
       "src": "/assets/images/favicon-48x48.png",
@@ -36,6 +39,36 @@
       "src": "/apple-touch-icon.png",
       "sizes": "180x180",
       "type": "image/png"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "رزرو نوبت کلینیک",
+      "short_name": "نوبت‌دهی",
+      "description": "رزرو آنلاین وقت ویزیت متخصص دامپزشک",
+      "url": "/booking.php",
+      "icons": [{ "src": "/assets/images/favicon-96x96.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "فروشگاه پت‌شاپ",
+      "short_name": "فروشگاه",
+      "description": "خرید آنلاین ملزومات و غذای سگ، گربه و پرندگان",
+      "url": "/shop.php",
+      "icons": [{ "src": "/assets/images/favicon-96x96.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "داروخانه تخصصی",
+      "short_name": "داروخانه",
+      "description": "داروهای دامپزشکی، مکمل‌ها و ارسال زنجیره سرد",
+      "url": "/pharmacy.php",
+      "icons": [{ "src": "/assets/images/favicon-96x96.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "پروفایل و حیوانات من",
+      "short_name": "پروفایل",
+      "description": "مدیریت نوبت‌ها، سفارشات و پرونده پت‌ها",
+      "url": "/profile.php",
+      "icons": [{ "src": "/assets/images/favicon-96x96.png", "sizes": "96x96" }]
     }
   ]
 }

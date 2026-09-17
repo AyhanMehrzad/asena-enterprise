@@ -37,40 +37,7 @@ $activeTab = $_GET['tab'] ?? 'orders';
     <link rel="stylesheet" href="../assets/css/enterprise-ui.css">
     <link href="../assets/css/material-symbols.css" rel="stylesheet"/>
     <link href="../assets/css/geist.css" rel="stylesheet"/>
-    <script src="../assets/js/tailwindcss-cdn.js"></script>
-    <script id="tailwind-config">
-      tailwind.config = {
-        darkMode: "class",
-        theme: {
-          extend: {
-            colors: {
-              "surface-variant": "#e2e2e2",
-              "surface-container-high": "#e8e8e8",
-              "secondary-container": "#fd8100",
-              "tertiary": "#001f31",
-              "on-primary-container": "#7a97e2",
-              "on-tertiary-fixed": "#001e2f",
-              "primary": "#001a48",
-              "on-error": "#ffffff",
-              "outline-variant": "#c4c6d2",
-              "outline": "#747782",
-              "primary-fixed-dim": "#b1c5ff",
-              "tertiary-fixed": "#cae6ff",
-              "surface-tint": "#3d5ca2",
-              "surface-container-lowest": "#ffffff",
-              "error": "#ba1a1a",
-              "tertiary-container": "#133449",
-              "surface": "#f9f9f9",
-              "secondary": "#954a00",
-              "primary-container": "#002d72",
-              "on-surface-variant": "#444651",
-              "on-surface": "#1a1c1c",
-              "on-tertiary-container": "#7f9db6"
-            }
-          }
-        }
-      }
-    </script>
+    <link rel="stylesheet" href="../assets/css/tailwind.output.css">
     <style>
         body { font-family: 'Geist', sans-serif; }
         .stat-card-shadow { box-shadow: 0px 4px 12px rgba(0, 45, 114, 0.08); }

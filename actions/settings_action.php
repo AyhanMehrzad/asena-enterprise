@@ -26,6 +26,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $stmt = $pdo->prepare("UPDATE users SET name = ?, email = ? WHERE id = ?");
                 $stmt->execute([$name, $email, $user_id]);
             }
+            if (!empty($name)) {
+                $_SESSION['user_name'] = $name;
+            }
             $_SESSION['settings_success'] = "اطلاعات حساب با موفقیت بروزرسانی شد.";
             $_SESSION['profile_success'] = "اطلاعات حساب با موفقیت بروزرسانی شد.";
             header("Location: ../profile.php#personal-info");

@@ -1990,6 +1990,106 @@ LOCK TABLES `wishlist` WRITE;
 INSERT INTO `wishlist` VALUES (1,6,31,'2026-07-25 01:58:06'),(2,6,2,'2026-07-25 02:31:06'),(3,7,31,'2026-07-25 12:08:41');
 /*!40000 ALTER TABLE `wishlist` ENABLE KEYS */;
 UNLOCK TABLES;
+-- --------------------------------------------------------
+-- Table structure for table `contract_acceptances` (Migration 12)
+-- --------------------------------------------------------
+
+CREATE TABLE IF NOT EXISTS `contract_acceptances` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `user_id` int(11) NOT NULL,
+  `role` varchar(50) NOT NULL,
+  `contract_version` varchar(20) NOT NULL,
+  `contract_title` varchar(255) NOT NULL,
+  `signature_hash` varchar(64) NOT NULL,
+  `ip_address` varchar(50) NOT NULL,
+  `user_agent` text NOT NULL,
+  `accepted_at` datetime NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `idx_user_contract` (`user_id`,`contract_version`),
+  KEY `idx_role_accepted` (`role`,`accepted_at`),
+  CONSTRAINT `fk_contract_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+-- Table structure for table `user_notifications` (Migration 14)
+-- --------------------------------------------------------
+
+CREATE TABLE IF NOT EXISTS `user_notifications` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `user_id` int(11) DEFAULT NULL,
+  `type` varchar(50) NOT NULL DEFAULT 'system',
+  `title` varchar(255) NOT NULL,
+  `message` text NOT NULL,
+  `link_url` varchar(500) DEFAULT NULL,
+  `icon` varchar(50) DEFAULT 'notifications',
+  `image_url` varchar(500) DEFAULT NULL,
+  `target_audience` varchar(50) DEFAULT 'all',
+  `is_read` tinyint(1) NOT NULL DEFAULT 0,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `idx_user_notif_user` (`user_id`),
+  KEY `idx_user_notif_read` (`is_read`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+-- Table structure for table `pwa_subscriptions` (Migration 14)
+-- --------------------------------------------------------
+
+CREATE TABLE IF NOT EXISTS `pwa_subscriptions` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `user_id` int(11) DEFAULT NULL,
+  `endpoint` text NOT NULL,
+  `p256dh` text DEFAULT NULL,
+  `auth` varchar(255) DEFAULT NULL,
+  `device_type` varchar(50) DEFAULT 'unknown',
+  `is_active` tinyint(1) NOT NULL DEFAULT 1,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `idx_pwa_user` (`user_id`),
+  KEY `idx_pwa_endpoint` (`endpoint`(191))
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+-- Table structure for table `live_social_proof_events` (Migration 14)
+-- --------------------------------------------------------
+
+CREATE TABLE IF NOT EXISTS `live_social_proof_events` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `user_name` varchar(150) NOT NULL,
+  `city` varchar(100) DEFAULT 'تهران',
+  `event_type` varchar(50) NOT NULL DEFAULT 'purchase',
+  `item_title` varchar(255) NOT NULL,
+  `item_link` varchar(500) DEFAULT 'shop.php',
+  `item_image` varchar(500) DEFAULT 'assets/images/cat-hero.jpg',
+  `minutes_ago` int(11) DEFAULT 5,
+  `is_active` tinyint(1) NOT NULL DEFAULT 1,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `idx_sp_active` (`is_active`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+-- Table structure for table `pharmacy_stores` (Migration 15)
+-- --------------------------------------------------------
+
+CREATE TABLE IF NOT EXISTS `pharmacy_stores` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `user_id` int(11) NOT NULL,
+  `name` varchar(255) NOT NULL,
+  `license_number` varchar(100) DEFAULT NULL,
+  `status` enum('active','inactive') DEFAULT 'active',
+  `phone` varchar(50) DEFAULT NULL,
+  `address` text DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `idx_pharmacy_user` (`user_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+INSERT INTO `pharmacy_stores` (`id`, `user_id`, `name`, `license_number`, `status`, `phone`, `address`, `created_at`)
+VALUES (1, 8, 'داروخانه تخصصی دامپزشکی حکیم', 'PH-1403-8871', 'active', '09120000004', 'تهران، خیابان ولیعصر، جنب مرکز درمانی آسنا', NOW())
+ON DUPLICATE KEY UPDATE `status` = 'active';
+
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
