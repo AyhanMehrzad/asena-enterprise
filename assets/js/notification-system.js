@@ -35,10 +35,10 @@
             return;
         }
 
-        fetch('actions/notification_action.php?action=fetch_live_feed')
-            .then(res => res.json())
+        fetch('actions/notification_action.php?action=fetch_live_feed&_t=' + Date.now())
+            .then(res => res.ok ? res.json() : null)
             .then(data => {
-                if (data.success && Array.isArray(data.feed) && data.feed.length > 0) {
+                if (data && data.success && Array.isArray(data.feed) && data.feed.length > 0) {
                     liveFeed = data.feed;
                     // Start first toast after 4 seconds
                     setTimeout(showNextSocialProofToast, 4000);
@@ -318,10 +318,10 @@
     }
 
     function updateUnreadBadge() {
-        fetch(`actions/notification_action.php?action=fetch_user_notifications&is_pwa=${isPwaMode ? 1 : 0}`)
-            .then(res => res.json())
+        fetch(`actions/notification_action.php?action=fetch_user_notifications&is_pwa=${isPwaMode ? 1 : 0}&_t=` + Date.now())
+            .then(res => res.ok ? res.json() : null)
             .then(data => {
-                if (data.success) {
+                if (data && data.success) {
                     applyBadgeCount(data.unread_count);
                     window.asenaCachedNotifications = data.notifications;
                 }
@@ -416,10 +416,10 @@
             document.body.style.overflow = 'hidden';
             renderDrawerNotifications(window.asenaCachedNotifications || []);
             // Refresh live
-            fetch(`actions/notification_action.php?action=fetch_user_notifications&is_pwa=${isPwaMode ? 1 : 0}`)
-                .then(res => res.json())
+            fetch(`actions/notification_action.php?action=fetch_user_notifications&is_pwa=${isPwaMode ? 1 : 0}&_t=` + Date.now())
+                .then(res => res.ok ? res.json() : null)
                 .then(data => {
-                    if (data.success) {
+                    if (data && data.success) {
                         window.asenaCachedNotifications = data.notifications;
                         renderDrawerNotifications(data.notifications);
                         applyBadgeCount(data.unread_count);
