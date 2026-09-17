@@ -120,6 +120,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                     'type' => 'هشدار نوبت جدید به پزشک',
                     'message' => $res ? "پیامک نوبت ویزیت با موفقیت به شماره پزشک $testPhone ارسال شد." : ("خطا در ارسال پیامک نوبت پزشک: " . ($sms->getLastError() ?: 'پاسخ ناموفق درگاه'))
                 ];
+            } elseif ($testType === 'seller_order') {
+                $fakeOrderId = rand(1050, 1999);
+                $res = $sms->sendSellerNewOrderAlert($testPhone, $fakeOrderId);
+                $testResult = [
+                    'ok' => (bool)$res,
+                    'type' => 'هشدار سفارش جدید به فروشنده پت‌شاپ',
+                    'message' => $res ? "پیامک سفارش جدید به فروشنده (#PC-$fakeOrderId) با موفقیت به شماره $testPhone ارسال شد." : ("خطا در ارسال پیامک فروشنده: " . ($sms->getLastError() ?: 'پاسخ ناموفق درگاه'))
+                ];
             } else {
                 $text = "تست موفقیت‌آمیز ارتباط پنل پیامک با سامانه آسنا.\nasena.company\nزمان: " . date('H:i:s');
                 $res = $sms->sendDirectSms($testPhone, $text);
@@ -219,6 +227,14 @@ $patterns = [
         'body_id' => SmsService::getBodyId('shipping'),
         'vars'    => '{0} = شماره سفارش',
         'sample'  => "سفارش شما به شماره {0} در آسنا پردازش و تحویل واحد ارسال شد.\nasena.company"
+    ],
+    [
+        'key'     => 'seller_order',
+        'name'    => 'اطلاع‌رسانی سفارش جدید به فروشنده (پت‌شاپ)',
+        'target'  => 'فروشندگان مارکت‌پلیس',
+        'body_id' => SmsService::getBodyId('seller_order'),
+        'vars'    => '{0} = شماره سفارش',
+        'sample'  => "فروشنده گرامی، سفارش جدید با شماره {0} در آسنا ثبت گردید."
     ],
     [
         'key'     => 'subscription',
@@ -571,6 +587,7 @@ $patterns = [
                             <option value="otp">کد تایید اعتبارسنجی ورود (OTP)</option>
                             <option value="doctor_telehealth">پیامک هشدار تله‌هلث به پزشک</option>
                             <option value="user_chat">پیامک هشدار پیام جدید به کاربر/بیمار</option>
+                            <option value="seller_order">هشدار سفارش جدید به فروشنده (پت‌شاپ)</option>
                             <option value="admin_order">هشدار ثبت سفارش جدید به مدیر</option>
                             <option value="doctor_booking">هشدار ثبت نوبت جدید به پزشک</option>
                         </select>

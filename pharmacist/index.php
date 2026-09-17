@@ -26,9 +26,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 WHERE id = ?
             ");
             if ($stmt->execute([$newStatus, $newStatus, $notes, $notes, $currentUser['id'], $rxId])) {
+                // Dispatch SMS to customer when prescription is ready for pickup
+                if ($newStatus === 'ready_for_pickup') {
+                    try {
+                        require_once dirname(__DIR__) . '/includes/SmsService.php';
+                        $rxUserStmt = $pdo->prepare("
+                            SELECT p.id, u.name as customer_name, u.phone as customer_phone
+                            FROM prescriptions p
+                            JOIN users u ON p.user_id = u.id
+                            WHERE p.id = ?
+                        ");
+                        $rxUserStmt->execute([$rxId]);
+                        $rxUser = $rxUserStmt->fetch(PDO::FETCH_ASSOC);
+                        if (!empty($rxUser['customer_phone'])) {
+                            $sms = new SmsService();
+                            $sms->sendPrescriptionReadyAlert(
+                                $rxUser['customer_phone'],
+                                $rxUser['customer_name'] ?? 'مراجع گرامی',
+                                "RX-{$rxId}",
+                                $orgName
+                            );
+                        }
+                    } catch (Throwable $tRx) {
+                        error_log("Prescription ready SMS error: " . $tRx->getMessage());
+                    }
+                }
+
                 $statusLabels = [
                     'preparing' => 'نسخه به وضعیت «در حال آماده‌سازی و بسته‌بندی» تغییر یافت.',
-                    'ready_for_pickup' => 'دارو آماده شد و به صف «آماده تحویل / پیک» منتقل گردید.',
+                    'ready_for_pickup' => 'دارو آماده شد و به صف «آماده تحویل / پیک» منتقل گردید و پیامک اطلاع‌رسانی به بیمار ارسال شد.',
                     'dispensed' => 'دارو با موفقیت به مراجعه‌کننده تحویل و ثبت گردید.',
                     'cancelled' => 'نسخه لغو یا مرجوع شد.'
                 ];
@@ -104,6 +130,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             } else {
                 $error = "خطا در رد نسخه.";
             }
+        }
+    } elseif ($action === 'update_profile' || $action === 'update_pharmacist_phone') {
+        require_once dirname(__DIR__) . '/includes/SmsService.php';
+        $phone = trim($_POST['phone'] ?? '');
+        $name = trim($_POST['name'] ?? '');
+        $cleanPhone = SmsService::normalizePhone($phone);
+
+        if (!empty($cleanPhone) && strlen($cleanPhone) === 11) {
+            $updStmt = $pdo->prepare("UPDATE users SET phone = ?, name = COALESCE(NULLIF(?, ''), name) WHERE id = ?");
+            $updStmt->execute([$cleanPhone, $name, $currentUser['id']]);
+            $currentUser['phone'] = $cleanPhone;
+            if (!empty($name)) {
+                $currentUser['name'] = $name;
+                $pharmacistName = $name;
+            }
+            $success = 'اطلاعات تماس و شماره همراه دریافت پیامک داروساز با موفقیت بروزرسانی شد.';
+        } else {
+            $error = 'شماره موبایل وارد شده نامعتبر است. لطفاً یک شماره ۱۱ رقمی معتبر ایران (مانند ۰۹۱۲۳۴۵۶۷۸۹) وارد فرمایید.';
         }
     }
 }
@@ -773,6 +817,53 @@ $fmtDate = new IntlDateFormatter('fa_IR@calendar=persian', IntlDateFormatter::FU
         </div>
     </div>
 
+    <!-- Tab 7: Pharmacist Contact & SMS Settings -->
+    <div id="settings-tab" class="tab-content space-y-4 hidden">
+        <form method="POST" action="index.php?tab=settings" class="bg-surface-container-lowest p-6 rounded-2xl stat-card-shadow border border-outline-variant/10 space-y-4 max-w-2xl">
+            <input type="hidden" name="action" value="update_pharmacist_phone">
+            <?= csrf_field() ?>
+            <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+                <h2 class="text-base font-black text-on-surface flex items-center gap-2">
+                    <span class="material-symbols-outlined text-secondary-container">contact_phone</span>
+                    <span>اطلاعات تماس و شماره پیامک داروخانه</span>
+                </h2>
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                    <span>سامانه اعلان پیامکی فعال</span>
+                </span>
+            </div>
+
+            <div class="p-3.5 bg-blue-50/80 border border-blue-200 rounded-xl text-blue-950 text-xs flex items-start gap-2.5">
+                <span class="material-symbols-outlined text-blue-600 shrink-0 text-lg mt-0.5">info</span>
+                <p class="leading-relaxed">
+                    شماره همراه ثبت‌شده در این بخش جهت دریافت اعلان‌های فوری نسخه‌های جدید ارجاعی، گزارش‌های کارتابل داروساز و هماهنگی‌های سیستمی مورد استفاده قرار می‌گیرد.
+                </p>
+            </div>
+
+            <div class="space-y-3.5 text-xs">
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">نام و نام‌خانوادگی مسئول فنی / داروساز</label>
+                    <input type="text" name="name" value="<?= htmlspecialchars($currentUser['name'] ?? '') ?>" class="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-200 focus:border-secondary-container focus:ring-1 focus:ring-secondary-container text-slate-800 font-bold transition-all">
+                </div>
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">شماره همراه تماس و دریافت پیامک *</label>
+                    <input type="text" name="phone" dir="ltr" value="<?= htmlspecialchars($currentUser['phone'] ?? '') ?>" placeholder="مثال: 09123456789" class="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-200 focus:border-secondary-container focus:ring-1 focus:ring-secondary-container text-slate-800 font-mono text-left font-bold transition-all">
+                </div>
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">داروخانه / مرکز درمانی وابسته</label>
+                    <input type="text" value="<?= htmlspecialchars($orgName) ?>" disabled class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-500 font-bold cursor-not-allowed">
+                </div>
+
+                <div class="pt-2">
+                    <button type="submit" class="w-full sm:w-auto bg-gradient-to-r from-primary to-blue-700 hover:from-blue-700 hover:to-primary text-white font-bold px-6 py-2.5 rounded-xl flex items-center justify-center gap-2 shadow-sm active:scale-95 transition-all text-xs">
+                        <span class="material-symbols-outlined text-base">save</span>
+                        <span>ذخیره شماره همراه و مشخصات</span>
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+
 </div>
 
 <!-- Modal: Add Medicine -->
@@ -878,14 +969,26 @@ function switchTab(tabId) {
         'inventory': { title: 'انبار دارویی و کنترل موجودی', desc: 'مدیریت موجودی داروها، تاریخ انقضا، شماره بچ و قیمت‌گذاری', icon: 'medication' },
         'autoship': { title: 'تکرار دارو و اتوشیپ مزمن', desc: 'توزیع دوره‌ای داروهای بیماران مبتلا به بیماری‌های مزمن و پایش زنجیره سرد', icon: 'autorenew' },
         'interactions': { title: 'راهنمای بالینی و تداخلات دارویی', desc: 'راهنمای مرجع فارماکولوژی، دوزهای مجاز و منع مصرف در سگ و گربه', icon: 'sync_problem' },
-        'history': { title: 'آرشیو تحویل و سوابق دارویی', desc: 'سوابق نسخه‌های ترخیص و تحویل داده شده به تفکیک بیمار و پزشک', icon: 'history' }
+        'history': { title: 'آرشیو تحویل و سوابق دارویی', desc: 'سوابق نسخه‌های ترخیص و تحویل داده شده به تفکیک بیمار و پزشک', icon: 'history' },
+        'settings': { title: 'اطلاعات تماس و شماره پیامک داروخانه', desc: 'مدیریت شماره تلفن همراه جهت دریافت اعلان‌ها و هماهنگی‌های سیستمی داروساز', icon: 'contact_phone' }
     };
     if (headers[navKey]) {
-        document.getElementById('active-section-title').innerText = headers[navKey].title;
-        document.getElementById('active-section-desc').innerText = headers[navKey].desc;
-        document.getElementById('active-section-icon').innerText = headers[navKey].icon;
+        const titleEl = document.getElementById('active-section-title');
+        const descEl = document.getElementById('active-section-desc');
+        const iconEl = document.getElementById('active-section-icon');
+        if (titleEl) titleEl.innerText = headers[navKey].title;
+        if (descEl) descEl.innerText = headers[navKey].desc;
+        if (iconEl) iconEl.innerText = headers[navKey].icon;
     }
 }
+
+document.addEventListener('DOMContentLoaded', () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const tabParam = urlParams.get('tab');
+    if (tabParam) {
+        switchTab(tabParam.endsWith('-tab') ? tabParam : tabParam + '-tab');
+    }
+});
 </script>
 
 <?php require_once 'includes/pharmacist_footer.php'; ?>

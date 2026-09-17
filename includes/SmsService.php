@@ -28,8 +28,9 @@ class SmsService {
     const BODY_ID_CHARITY           = '528865'; // قدردانی خیریه
     const BODY_ID_ADMIN_ORDER       = '528866'; // اطلاع‌رسانی سفارش جدید به مدیر
     const BODY_ID_DOCTOR_BOOKING    = '528867'; // اطلاع‌رسانی نوبت جدید به پزشک
-    const BODY_ID_DOCTOR_TELEHEALTH = '528867'; // اطلاع‌رسانی پیام جدید تله‌هلث به پزشک
-    const BODY_ID_USER_CHAT         = '518597'; // اطلاع‌رسانی پیام جدید به کاربر/بیمار
+    const BODY_ID_SELLER_ORDER      = '535286'; // اطلاع‌رسانی سفارش جدید به فروشنده (تایید شده در پنل)
+    const BODY_ID_DOCTOR_TELEHEALTH = '538904'; // اطلاع‌رسانی پیام جدید تله‌هلث به پزشک (تایید شده در پنل)
+    const BODY_ID_USER_CHAT         = '538924'; // اطلاع‌رسانی پیام جدید به کاربر/بیمار (ثبت‌شده در پنل)
 
     public function __construct() {
         self::loadEnv();
@@ -176,6 +177,7 @@ class SmsService {
             'reschedule'        => 'MELIPAYAMAK_BODY_ID_RESCHEDULE',
             'admin_order'       => 'MELIPAYAMAK_BODY_ID_ADMIN_ORDER',
             'doctor_booking'    => 'MELIPAYAMAK_BODY_ID_DOCTOR_BOOKING',
+            'seller_order'      => 'MELIPAYAMAK_BODY_ID_SELLER_ORDER',
             'doctor_telehealth' => 'MELIPAYAMAK_BODY_ID_DOCTOR_TELEHEALTH',
             'user_chat'         => 'MELIPAYAMAK_BODY_ID_USER_CHAT',
         ];
@@ -189,6 +191,7 @@ class SmsService {
             'reschedule'        => self::BODY_ID_RESCHEDULE,
             'admin_order'       => self::BODY_ID_ADMIN_ORDER,
             'doctor_booking'    => self::BODY_ID_DOCTOR_BOOKING,
+            'seller_order'      => self::BODY_ID_SELLER_ORDER,
             'doctor_telehealth' => self::BODY_ID_DOCTOR_TELEHEALTH,
             'user_chat'         => self::BODY_ID_USER_CHAT,
         ];
@@ -458,6 +461,54 @@ class SmsService {
         // Direct fallback
         $text = "{$userName} گرامی،\nپیام جدیدی از طرف «{$senderName}» در سامانه آسنا دریافت شد.\nمشاهده و پاسخ:\n{$url}";
         return $this->sendDirectSms($phone, $text, 'USER_CHAT_FALLBACK');
+    }
+
+    /**
+     * Send New Order Notification to Marketplace Seller
+     * Pattern 535286: فروشنده گرامی، سفارش جدید با شماره {0} در آسنا ثبت گردید.
+     */
+    public function sendSellerNewOrderAlert($phone, $orderId) {
+        $phone = self::normalizePhone($phone);
+        if (empty($phone) || strlen($phone) !== 11) return false;
+
+        $bodyId = self::getBodyId('seller_order');
+        if (!empty($bodyId) && $bodyId !== '12345') {
+            $sent = $this->sendPatternRequest($phone, $bodyId, [(string)$orderId], 'SELLER_ORDER');
+            if ($sent) return true;
+        }
+
+        // Direct fallback
+        $text = "فروشنده گرامی،\nسفارش جدید با شماره {$orderId} در سامانه آسنا برای فروشگاه شما ثبت شد.\nورود به پنل و پردازش:\nasena.company/seller";
+        return $this->sendDirectSms($phone, $text, 'SELLER_ORDER_FALLBACK');
+    }
+
+    /**
+     * Send New Appointment Alert to Clinic / Organization Manager
+     */
+    public function sendClinicNewAppointmentAlert($phone, $clinicName, $doctorName, $date, $time) {
+        $phone = self::normalizePhone($phone);
+        if (empty($phone) || strlen($phone) !== 11) return false;
+
+        $clinicName = !empty($clinicName) ? $clinicName : 'مرکز درمانی';
+        $doctorName = !empty($doctorName) ? $doctorName : 'پزشک معالج';
+
+        $text = "مدیریت گرامی کلینیک {$clinicName}،\nنوبت جدیدی برای دکتر {$doctorName} در تاریخ {$date} ساعت {$time} در سامانه آسنا ثبت شد.\nasena.company/organization";
+        return $this->sendDirectSms($phone, $text, 'CLINIC_BOOKING');
+    }
+
+    /**
+     * Send Prescription Ready Notification to Patient / User
+     */
+    public function sendPrescriptionReadyAlert($phone, $patientName, $trackingCode = '', $pharmacyName = '') {
+        $phone = self::normalizePhone($phone);
+        if (empty($phone) || strlen($phone) !== 11) return false;
+
+        $patientName = !empty($patientName) ? $patientName : 'کاربر گرامی';
+        $pharmacyName = !empty($pharmacyName) ? $pharmacyName : 'داروخانه آسنا';
+        $trackText = !empty($trackingCode) ? "\nکد پیگیری: {$trackingCode}" : "";
+
+        $text = "{$patientName} گرامی،\nاقلام نسخه دارویی شما در «{$pharmacyName}» آماده تحویل / ارسال گردید.{$trackText}\nasena.company";
+        return $this->sendDirectSms($phone, $text, 'RX_READY');
     }
 
     /**

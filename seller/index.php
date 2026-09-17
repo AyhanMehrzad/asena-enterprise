@@ -150,6 +150,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $msg = 'حداقل موجودی قابل تسویه ۵۰,۰۰۰ تومان می‌باشد.';
             $msgType = 'error';
         }
+    } elseif ($action === 'update_profile' || $action === 'update_seller_phone') {
+        require_once __DIR__ . '/../includes/SmsService.php';
+        $phone = trim($_POST['phone'] ?? '');
+        $sellerShopName = trim($_POST['shop_name'] ?? '');
+        $cleanPhone = SmsService::normalizePhone($phone);
+
+        if (!empty($cleanPhone) && strlen($cleanPhone) === 11) {
+            $updUser = $pdo->prepare("UPDATE users SET phone = ?, name = COALESCE(NULLIF(?, ''), name) WHERE id = ?");
+            $updUser->execute([$cleanPhone, $sellerShopName, $sellerId]);
+
+            try {
+                $pdo->prepare("UPDATE seller_profiles SET phone = ?, shop_name = COALESCE(NULLIF(?, ''), shop_name) WHERE user_id = ?")->execute([$cleanPhone, $sellerShopName, $sellerId]);
+            } catch (Throwable $t) {}
+
+            $currentUser['phone'] = $cleanPhone;
+            if (!empty($sellerShopName)) {
+                $currentUser['name'] = $sellerShopName;
+                $sellerName = $sellerShopName;
+            }
+            $msg = 'شماره تلفن دریافت پیامک سفارشات و مشخصات فروشگاه با موفقیت ذخیره گردید.';
+            $msgType = 'success';
+        } else {
+            $msg = 'شماره موبایل نامعتبر است. لطفاً یک شماره ۱۱ رقمی معتبر ایران (مانند ۰۹۱۲۳۴۵۶۷۸۹) وارد نمایید.';
+            $msgType = 'error';
+        }
     }
 }
 
@@ -851,27 +876,51 @@ foreach ($sellerProducts as $p) {
 
     <!-- ── TAB 5: SETTINGS ─────────────────────────────────────────────────── -->
     <section id="settings-tab" class="seller-tab-content hidden space-y-4">
-        <div class="bg-surface-container-lowest p-6 rounded-2xl stat-card-shadow border border-outline-variant/10 space-y-4 max-w-2xl">
-            <h2 class="text-base font-black text-on-surface flex items-center gap-2">
-                <span class="material-symbols-outlined text-secondary-container">store</span>
-                <span>مشخصات فروشگاه و پت‌شاپ</span>
-            </h2>
-            <div class="space-y-3 text-xs">
-                <div>
-                    <label class="block font-bold text-slate-700 mb-1">نام پت‌شاپ</label>
-                    <input type="text" value="<?= htmlspecialchars($sellerName) ?>" disabled class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-500 font-bold">
-                </div>
-                <div>
-                    <label class="block font-bold text-slate-700 mb-1">شماره تماس مدیر فروشگاه</label>
-                    <input type="text" value="<?= htmlspecialchars($currentUser['phone'] ?? '-') ?>" disabled class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-500 font-mono">
-                </div>
-                <div>
-                    <label class="block font-bold text-slate-700 mb-1">کد ملی / شناسه مالیاتی</label>
-                    <input type="text" value="<?= htmlspecialchars($currentUser['national_id'] ?? '-') ?>" disabled class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-500 font-mono">
-                </div>
-                <p class="text-[11px] text-slate-400 mt-2">برای تغییر اطلاعات رسمی و پروانه کسب پت‌شاپ، لطفاً با پشتیبانی مرکزی آسنا ارتباط برقرار فرمایید.</p>
+        <form method="POST" action="index.php?tab=settings" class="bg-surface-container-lowest p-6 rounded-2xl stat-card-shadow border border-outline-variant/10 space-y-4 max-w-2xl">
+            <input type="hidden" name="action" value="update_seller_phone">
+            <?= csrf_field() ?>
+            <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+                <h2 class="text-base font-black text-on-surface flex items-center gap-2">
+                    <span class="material-symbols-outlined text-secondary-container">store</span>
+                    <span>مشخصات پت‌شاپ و تنظیمات پیامک</span>
+                </h2>
+                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                    <span>دریافت پیامک سفارشات فعال</span>
+                </span>
             </div>
-        </div>
+
+            <div class="p-3 bg-amber-50/70 border border-amber-200/70 rounded-xl text-amber-900 text-xs flex items-start gap-2.5">
+                <span class="material-symbols-outlined text-amber-600 shrink-0 text-base mt-0.5">sms</span>
+                <p class="leading-relaxed">
+                    با ثبت و تایید شماره همراه معتبر، به محض نهایی‌شدن هر خرید آنلاین از محصولات شما در آسنا، پیامک فوری حاوی شماره سفارش و جزئیات به شماره شما ارسال می‌گردد.
+                </p>
+            </div>
+
+            <div class="space-y-3.5 text-xs">
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">نام پت‌شاپ / عنوان فروشگاه</label>
+                    <input type="text" name="shop_name" value="<?= htmlspecialchars($sellerName) ?>" class="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-200 focus:border-secondary-container focus:ring-1 focus:ring-secondary-container text-slate-800 font-bold transition-all">
+                </div>
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">شماره همراه دریافت پیامک سفارش‌ها (تلفن مدیر فروشگاه) *</label>
+                    <input type="text" name="phone" dir="ltr" value="<?= htmlspecialchars($currentUser['phone'] ?? '') ?>" placeholder="مثال: 09123456789" class="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-200 focus:border-secondary-container focus:ring-1 focus:ring-secondary-container text-slate-800 font-mono text-left font-bold transition-all">
+                </div>
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">کد ملی / شناسه مالیاتی ثبت‌شده</label>
+                    <input type="text" value="<?= htmlspecialchars($currentUser['national_id'] ?? '-') ?>" disabled class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-400 font-mono cursor-not-allowed">
+                </div>
+
+                <div class="pt-2">
+                    <button type="submit" class="w-full sm:w-auto bg-gradient-to-r from-primary to-blue-700 hover:from-blue-700 hover:to-primary text-white font-bold px-6 py-2.5 rounded-xl flex items-center justify-center gap-2 shadow-sm active:scale-95 transition-all text-xs">
+                        <span class="material-symbols-outlined text-base">save</span>
+                        <span>ذخیره شماره همراه و مشخصات</span>
+                    </button>
+                </div>
+
+                <p class="text-[11px] text-slate-400 pt-1">برای تغییر اطلاعات رسمی، مدارک مالیاتی و پروانه کسب پت‌شاپ، لطفاً با پشتیبانی مرکزی آسنا ارتباط برقرار فرمایید.</p>
+            </div>
+        </form>
     </section>
 
 </div>

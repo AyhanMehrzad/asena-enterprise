@@ -87,6 +87,7 @@ $orgId = (int)($linkedOrg['id'] ?? 1);
             'autoship'      => ['icon' => 'autorenew', 'title' => 'تکرار دارو و اتوشیپ مزمن', 'tab' => 'autoship-tab'],
             'interactions'  => ['icon' => 'sync_problem', 'title' => 'راهنمای تداخلات و هشدارها', 'tab' => 'interactions-tab'],
             'history'       => ['icon' => 'history', 'title' => 'آرشیو تحویل و سوابق دارویی', 'tab' => 'history-tab'],
+            'settings'      => ['icon' => 'contact_phone', 'title' => 'اطلاعات تماس و پیامک', 'tab' => 'settings-tab'],
         ];
 
         foreach ($navItems as $key => $item):

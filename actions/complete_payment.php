@@ -288,6 +288,21 @@ try {
                     }
                 }
             }
+
+            // 4. Send SMS to Organization / Clinic Manager if linked to a clinic
+            if (!empty($apptDoc['organization_id'])) {
+                try {
+                    $orgStmt = $pdo->prepare("SELECT name, phone, emergency_phone FROM organizations WHERE id = ?");
+                    $orgStmt->execute([(int)$apptDoc['organization_id']]);
+                    $orgRow = $orgStmt->fetch(PDO::FETCH_ASSOC);
+                    $clinicPhone = !empty($orgRow['phone']) ? $orgRow['phone'] : ($orgRow['emergency_phone'] ?? '');
+                    if (!empty($clinicPhone)) {
+                        $sms->sendClinicNewAppointmentAlert($clinicPhone, $orgRow['name'] ?? 'کلینیک', $apptDoc['doctor_name'], $apptDoc['appointment_date'], $apptDoc['appointment_time']);
+                    }
+                } catch (Throwable $orgEx) {
+                    error_log("Clinic new booking SMS alert error: " . $orgEx->getMessage());
+                }
+            }
         }
     } else {
         $pdo->prepare("UPDATE users SET loyalty_points = loyalty_points + 50 WHERE id = ?")
