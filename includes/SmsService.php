@@ -267,6 +267,15 @@ class SmsService {
     }
 
     /**
+     * Generate secure numeric OTP code
+     */
+    public static function generateOtp(int $length = 6): string {
+        $min = 10 ** ($length - 1);
+        $max = (10 ** $length) - 1;
+        return sprintf("%0" . $length . "d", random_int($min, $max));
+    }
+
+    /**
      * Send OTP / Verification code
      * Pattern expects {0} = verification code
      */

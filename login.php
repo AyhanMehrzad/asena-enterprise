@@ -147,25 +147,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (empty($phone) || strlen($phone) !== 11) {
             $error = 'شماره موبایل وارد شده نامعتبر است (مثال: 09123456789).';
         } else {
-            $rate_error = check_rate_limit($pdo, $clientIp, $phone);
-            if ($rate_error) {
-                $error = $rate_error;
-            } else {
-                $sms = new SmsService();
-                $otp = $sms->generateOtp();
-                $sent = $sms->sendOtp($phone, $otp);
-                
-                if ($sent) {
-                    $_SESSION['otp_login_data'] = [
-                        'phone'      => $phone,
-                        'otp'        => (string)$otp,
-                        'expires_at' => time() + 180, // 3 minutes validity
-                        'remember'   => $remember
-                    ];
-                    $success = 'کد تأیید ۶ رقمی با موفقیت برای شماره ' . htmlspecialchars($phone) . ' پیامک شد.';
+            try {
+                $rate_error = check_rate_limit($pdo, $clientIp, $phone);
+                if ($rate_error) {
+                    $error = $rate_error;
                 } else {
-                    $error = 'خطا در ارسال پیامک: ' . ($sms->getLastError() ?: 'لطفاً دقایقی دیگر مجدداً تلاش نمایید.');
+                    $sms = new SmsService();
+                    $otp = sprintf("%06d", random_int(100000, 999999));
+                    $sent = $sms->sendOtp($phone, $otp);
+                    
+                    if ($sent) {
+                        $_SESSION['otp_login_data'] = [
+                            'phone'      => $phone,
+                            'otp'        => (string)$otp,
+                            'expires_at' => time() + 180, // 3 minutes validity
+                            'remember'   => $remember
+                        ];
+                        $success = 'کد تأیید ۶ رقمی با موفقیت برای شماره ' . htmlspecialchars($phone) . ' پیامک شد.';
+                    } else {
+                        $error = 'خطا در ارسال پیامک: ' . ($sms->getLastError() ?: 'لطفاً دقایقی دیگر مجدداً تلاش نمایید.');
+                    }
                 }
+            } catch (Throwable $e) {
+                error_log('[send_otp error] ' . $e->getMessage());
+                $error = 'خطایی در ارسال پیامک رخ داد. لطفاً مجدداً تلاش فرمایید.';
             }
         }
     }
