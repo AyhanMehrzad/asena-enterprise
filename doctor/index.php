@@ -195,9 +195,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
 
                 if ($updSuccess) {
                     // Fetch user phone & pet name
-                    $uStmt = $pdo->prepare("SELECT a.pet_name, a.pet_type, u.phone, u.name as user_name FROM appointments a JOIN users u ON a.user_id = u.id WHERE a.id = ?");
+                    $uStmt = $pdo->prepare("SELECT a.user_id, a.pet_name, a.pet_type, u.phone, u.name as user_name FROM appointments a JOIN users u ON a.user_id = u.id WHERE a.id = ?");
                     $uStmt->execute([$apptId]);
                     $patientInfo = $uStmt->fetch(PDO::FETCH_ASSOC);
+
+                    // Send In-App & Web Push Notification
+                    if ($patientInfo && !empty($patientInfo['user_id'])) {
+                        try {
+                            require_once '../includes/App.php';
+                            App::notifications()->notifyAppointmentRescheduled(
+                                (int)$patientInfo['user_id'],
+                                $apptId,
+                                $doctorName,
+                                $newDate,
+                                $newTime,
+                                $reason
+                            );
+                        } catch (Throwable $t) {
+                            error_log("Failed to send in-app reschedule notif: " . $t->getMessage());
+                        }
+                    }
                     
                     $smsNotice = "";
                     if ($sendSms && $patientInfo && !empty($patientInfo['phone'])) {
@@ -305,6 +322,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 }
             } else {
                 $success = "پرونده بالینی، تشخیص و نسخه دارویی با موفقیت ثبت شد.";
+            }
+
+            if ($status === 'completed' && !empty($apptData['user_id'])) {
+                try {
+                    require_once '../includes/App.php';
+                    App::notifications()->notifyAppointmentCompleted(
+                        (int)$apptData['user_id'],
+                        $apptId,
+                        $doctorProfile['name'] ?? 'دامپزشک معالج'
+                    );
+                } catch (Throwable $t) {
+                    error_log("Failed to send in-app appointment complete notif: " . $t->getMessage());
+                }
             }
         } else {
             $error = "خطا در ثبت اطلاعات بالینی.";

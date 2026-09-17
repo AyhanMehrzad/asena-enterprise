@@ -26,6 +26,15 @@
         isPwaMode = true;
     }
 
+    // Helper: Resolve dynamic path to notification action endpoint (supporting sub-portals like /doctor/, /admin/)
+    function getNotificationApiUrl(query = '') {
+        const isSubdir = window.location.pathname.includes('/doctor/') || 
+                         window.location.pathname.includes('/pharmacist/') || 
+                         window.location.pathname.includes('/admin/');
+        const base = isSubdir ? '../actions/notification_action.php' : 'actions/notification_action.php';
+        return query ? `${base}?${query}` : base;
+    }
+
     // -----------------------------------------------------------------
     // 1. Live Interaction & Purchase Social Proof Ticker
     // -----------------------------------------------------------------
@@ -35,7 +44,7 @@
             return;
         }
 
-        fetch('actions/notification_action.php?action=fetch_live_feed&_t=' + Date.now())
+        fetch(getNotificationApiUrl('action=fetch_live_feed&_t=' + Date.now()))
             .then(res => res.ok ? res.json() : null)
             .then(data => {
                 if (data && data.success && Array.isArray(data.feed) && data.feed.length > 0) {
@@ -202,7 +211,7 @@
 
     function handlePwaInstalledCelebration() {
         // Notify backend
-        fetch('actions/notification_action.php', {
+        fetch(getNotificationApiUrl(), {
             method: 'POST',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
             body: 'action=pwa_installed'
@@ -256,7 +265,7 @@
         }).then(subscription => {
             if (subscription) {
                 const subJson = subscription.toJSON();
-                fetch('actions/notification_action.php', {
+                fetch(getNotificationApiUrl(), {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -302,11 +311,196 @@
     }
 
     // -----------------------------------------------------------------
-    // 3. Interactive Notification Bell Center & Drawer
+    // 3. Synthesized Web Audio Notification Chime & Haptics
     // -----------------------------------------------------------------
+    function playNotificationChime() {
+        try {
+            if (localStorage.getItem('asena_notif_sound') === 'disabled') return;
+            const AudioCtx = window.AudioContext || window.webkitAudioContext;
+            if (!AudioCtx) return;
+            const ctx = new AudioCtx();
+            if (ctx.state === 'suspended') {
+                ctx.resume();
+            }
+            const now = ctx.currentTime;
+
+            // Note 1: 784 Hz (G5)
+            const osc1 = ctx.createOscillator();
+            const gain1 = ctx.createGain();
+            osc1.type = 'sine';
+            osc1.frequency.setValueAtTime(784, now);
+            gain1.gain.setValueAtTime(0, now);
+            gain1.gain.linearRampToValueAtTime(0.12, now + 0.04);
+            gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
+            osc1.connect(gain1);
+            gain1.connect(ctx.destination);
+            osc1.start(now);
+            osc1.stop(now + 0.23);
+
+            // Note 2: 1046.5 Hz (C6)
+            const osc2 = ctx.createOscillator();
+            const gain2 = ctx.createGain();
+            osc2.type = 'sine';
+            osc2.frequency.setValueAtTime(1046.5, now + 0.12);
+            gain2.gain.setValueAtTime(0, now + 0.12);
+            gain2.gain.linearRampToValueAtTime(0.14, now + 0.16);
+            gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.42);
+            osc2.connect(gain2);
+            gain2.connect(ctx.destination);
+            osc2.start(now + 0.12);
+            osc2.stop(now + 0.43);
+
+            // Haptic vibration feedback (mobile devices)
+            if (navigator.vibrate) {
+                navigator.vibrate([40, 50, 40]);
+            }
+        } catch (e) {
+            // Autoplay restrictions or unsupported audio context
+        }
+    }
+
+    window.toggleNotificationSound = function () {
+        const current = localStorage.getItem('asena_notif_sound');
+        const next = (current === 'disabled') ? 'enabled' : 'disabled';
+        localStorage.setItem('asena_notif_sound', next);
+        updateSoundIcon();
+        if (next === 'enabled') {
+            playNotificationChime();
+        }
+    };
+
+    function updateSoundIcon() {
+        const iconEl = document.getElementById('notifSoundIcon');
+        if (!iconEl) return;
+        const isDisabled = localStorage.getItem('asena_notif_sound') === 'disabled';
+        iconEl.textContent = isDisabled ? 'volume_off' : 'volume_up';
+        iconEl.className = isDisabled ? 'material-symbols-outlined text-lg text-rose-500' : 'material-symbols-outlined text-lg text-slate-400 hover:text-slate-700';
+    }
+
+    // -----------------------------------------------------------------
+    // 4. Real-World In-App Floating Glassmorphism Toasts
+    // -----------------------------------------------------------------
+    function createInAppToastStack() {
+        let stack = document.getElementById('asenaInAppToastStack');
+        if (stack) return stack;
+        stack = document.createElement('div');
+        stack.id = 'asenaInAppToastStack';
+        stack.className = 'fixed z-[100060] flex flex-col gap-2.5 pointer-events-none transition-all rtl text-right select-none';
+        stack.innerHTML = `
+            <style>
+                #asenaInAppToastStack {
+                    top: 20px;
+                    right: 24px;
+                    max-width: 390px;
+                    width: calc(100vw - 32px);
+                }
+                @media (max-width: 768px) {
+                    #asenaInAppToastStack {
+                        top: 14px;
+                        right: 12px;
+                        left: 12px;
+                        width: auto;
+                        max-width: none;
+                    }
+                }
+                .asena-inapp-toast {
+                    pointer-events: auto;
+                    transform: translateY(-24px) scale(0.95);
+                    opacity: 0;
+                    transition: all 0.38s cubic-bezier(0.16, 1, 0.3, 1);
+                }
+                .asena-inapp-toast.active {
+                    transform: translateY(0) scale(1);
+                    opacity: 1;
+                }
+                .asena-inapp-toast.leave {
+                    transform: translateY(-20px) scale(0.92);
+                    opacity: 0;
+                }
+            </style>
+        `;
+        document.body.appendChild(stack);
+        return stack;
+    }
+
+    function showInAppNotificationToast(notif) {
+        if (!notif || !notif.title) return;
+        const stack = createInAppToastStack();
+
+        const toast = document.createElement('div');
+        toast.className = 'asena-inapp-toast bg-[#001a48]/95 dark:bg-slate-900/95 text-white backdrop-blur-xl border border-white/10 rounded-2xl p-3.5 shadow-2xl shadow-blue-950/40 flex items-start gap-3 relative overflow-hidden group';
+
+        const iconName = notif.icon || 'notifications';
+        const linkUrl = notif.link_url || 'profile.php';
+
+        toast.innerHTML = `
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-500 to-[#fd8100] text-white flex items-center justify-center shrink-0 shadow-md shadow-orange-500/20 mt-0.5">
+                <span class="material-symbols-outlined text-xl">${iconName}</span>
+            </div>
+            <div class="flex-1 min-w-0">
+                <div class="flex items-center justify-between gap-1 mb-0.5">
+                    <span class="text-[10px] font-black tracking-wide text-orange-400">اعلان اختصاصی آسنا</span>
+                    <span class="text-[10px] text-white/50">${notif.time_ago || 'هم‌اکنون'}</span>
+                </div>
+                <h4 class="text-xs font-black text-white line-clamp-1 mb-1">${notif.title}</h4>
+                <p class="text-[11px] text-slate-200 line-clamp-2 leading-relaxed mb-2">${notif.message}</p>
+                <div class="flex items-center gap-2">
+                    <a href="${linkUrl}" onclick="window.markNotificationRead(${notif.id})" class="inline-flex items-center gap-1 text-[11px] font-bold text-[#fd8100] hover:text-orange-300 transition-colors">
+                        <span>مشاهده و اقدام</span>
+                        <span class="material-symbols-outlined text-xs">arrow_back</span>
+                    </a>
+                </div>
+            </div>
+            <button type="button" class="w-6 h-6 rounded-full flex items-center justify-center text-white/40 hover:text-white hover:bg-white/10 transition-colors shrink-0 -mt-1 -ml-1 cursor-pointer" title="بستن">
+                <span class="material-symbols-outlined text-sm">close</span>
+            </button>
+        `;
+
+        const closeBtn = toast.querySelector('button');
+        const dismiss = () => {
+            toast.classList.remove('active');
+            toast.classList.add('leave');
+            setTimeout(() => {
+                toast.remove();
+            }, 380);
+        };
+        closeBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            dismiss();
+        });
+
+        if (notif.link_url) {
+            toast.addEventListener('click', (e) => {
+                if (e.target.closest('button') || e.target.closest('a')) return;
+                window.markNotificationRead(notif.id);
+                window.location.href = notif.link_url;
+            });
+            toast.style.cursor = 'pointer';
+        }
+
+        stack.appendChild(toast);
+        // Trigger CSS transition
+        void toast.offsetHeight;
+        toast.classList.add('active');
+
+        // Chime audio & haptic vibration
+        playNotificationChime();
+
+        // Auto dismiss after 7 seconds
+        setTimeout(dismiss, 7000);
+    }
+
+    // -----------------------------------------------------------------
+    // 5. Interactive Notification Center Drawer & Categorized Tabs
+    // -----------------------------------------------------------------
+    let lastSeenNotificationId = parseInt(sessionStorage.getItem('asena_last_notif_id') || '0', 10);
+    let pollTimer = null;
+    let isInitialLoad = true;
+
     function initNotificationBellCenter() {
-        // Poll unread count on startup and update badge
-        updateUnreadBadge();
+        // Initial fetch and badge update
+        pollNotifications();
+        schedulePolling(25000);
 
         // Hook click on notification bell icons
         document.querySelectorAll('a[href*="notifications"], a[title*="اعلان"], .notification-bell-btn').forEach(btn => {
@@ -315,15 +509,54 @@
                 toggleNotificationDrawer();
             });
         });
+
+        // Visibility-aware smart poller
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                schedulePolling(90000);
+            } else {
+                pollNotifications();
+                schedulePolling(25000);
+            }
+        });
     }
 
-    function updateUnreadBadge() {
-        fetch(`actions/notification_action.php?action=fetch_user_notifications&is_pwa=${isPwaMode ? 1 : 0}&_t=` + Date.now())
+    function schedulePolling(intervalMs) {
+        if (pollTimer) clearInterval(pollTimer);
+        pollTimer = setInterval(pollNotifications, intervalMs);
+    }
+
+    function pollNotifications() {
+        const sinceParam = (lastSeenNotificationId > 0 && !isInitialLoad) ? `&since_id=${lastSeenNotificationId}` : '';
+        fetch(getNotificationApiUrl(`action=fetch_user_notifications&is_pwa=${isPwaMode ? 1 : 0}${sinceParam}&_t=` + Date.now()))
             .then(res => res.ok ? res.json() : null)
             .then(data => {
                 if (data && data.success) {
                     applyBadgeCount(data.unread_count);
-                    window.asenaCachedNotifications = data.notifications;
+
+                    if (data.latest_id && data.latest_id > lastSeenNotificationId) {
+                        // Pop toasts for newly arrived notifications (not on first cold page boot)
+                        if (!isInitialLoad && Array.isArray(data.notifications)) {
+                            const newUnreads = data.notifications.filter(n => n.is_read == 0 && n.id > lastSeenNotificationId);
+                            newUnreads.slice(0, 2).forEach((n, idx) => {
+                                setTimeout(() => showInAppNotificationToast(n), idx * 750);
+                            });
+                        }
+                        lastSeenNotificationId = data.latest_id;
+                        sessionStorage.setItem('asena_last_notif_id', String(lastSeenNotificationId));
+                    }
+
+                    if (Array.isArray(data.notifications) && data.notifications.length > 0) {
+                        if (!window.asenaCachedNotifications) window.asenaCachedNotifications = [];
+                        const existingIds = new Set(window.asenaCachedNotifications.map(n => n.id));
+                        data.notifications.forEach(n => {
+                            if (!existingIds.has(n.id)) {
+                                window.asenaCachedNotifications.unshift(n);
+                            }
+                        });
+                    }
+
+                    isInitialLoad = false;
                 }
             })
             .catch(() => {});
@@ -348,52 +581,60 @@
 
         drawer = document.createElement('div');
         drawer.id = 'asenaNotificationDrawer';
-        drawer.className = 'fixed inset-0 z-[100020] hidden items-center justify-center p-4 bg-black/50 backdrop-blur-xs rtl text-right';
+        drawer.className = 'fixed inset-0 z-[100020] hidden items-center justify-center p-4 bg-black/60 backdrop-blur-xs rtl text-right select-none';
         drawer.innerHTML = `
-            <div class="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-md max-h-[82vh] flex flex-col overflow-hidden border border-slate-200 dark:border-slate-800 animate-fade-in" onclick="event.stopPropagation()">
+            <div class="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-md max-h-[84vh] flex flex-col overflow-hidden border border-slate-200 dark:border-slate-800 animate-fade-in" onclick="event.stopPropagation()">
                 <!-- Header -->
-                <div class="p-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/60 dark:bg-slate-800/40">
+                <div class="p-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/70 dark:bg-slate-800/40">
                     <div class="flex items-center gap-2.5">
-                        <div class="w-9 h-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
-                            <span class="material-symbols-outlined text-xl">notifications</span>
+                        <div class="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
+                            <span class="material-symbols-outlined text-2xl">notifications</span>
                         </div>
                         <div>
-                            <h3 class="font-black text-sm text-slate-900 dark:text-white">اعلان‌ها و پیام‌های سیستم</h3>
-                            <p class="text-[10px] text-slate-400">آخرین رویدادهای خرید، سلامت و تخفیف‌ها</p>
+                            <h3 class="font-black text-sm text-slate-900 dark:text-white">مرکز اعلان‌های آسنا</h3>
+                            <p class="text-[10px] text-slate-400">سفارشات، سلامت، گفتگو و جوایز وفاداری</p>
                         </div>
                     </div>
-                    <div class="flex items-center gap-1">
+                    <div class="flex items-center gap-1.5">
+                        <!-- Sound Toggle -->
+                        <button type="button" id="notifSoundToggleBtn" onclick="window.toggleNotificationSound()" class="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" title="تنظیمات صدای اعلان">
+                            <span class="material-symbols-outlined text-lg" id="notifSoundIcon">volume_up</span>
+                        </button>
+                        <!-- Mark all read -->
                         <button type="button" onclick="window.markAllNotificationsRead()" class="text-[11px] font-bold text-primary hover:underline px-2 py-1 rounded-lg hover:bg-primary/5 transition-colors" title="خواندن همه">
                             خواندن همه
                         </button>
+                        <!-- Close drawer -->
                         <button type="button" onclick="window.toggleNotificationDrawer(false)" class="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
                             <span class="material-symbols-outlined text-lg">close</span>
                         </button>
                     </div>
                 </div>
 
-                <!-- Tabs -->
-                <div class="flex border-b border-slate-100 dark:border-slate-800 bg-slate-50/30 px-3 pt-2 gap-2 text-xs font-bold">
-                    <button type="button" onclick="window.filterDrawerNotifs('all', this)" class="drawer-tab active flex-1 pb-2 border-b-2 border-primary text-primary">همه</button>
-                    <button type="button" onclick="window.filterDrawerNotifs('purchase_offer', this)" class="drawer-tab flex-1 pb-2 border-b-2 border-transparent text-slate-400 hover:text-slate-700">پیشنهادات خرید</button>
-                    <button type="button" onclick="window.filterDrawerNotifs('order_status', this)" class="drawer-tab flex-1 pb-2 border-b-2 border-transparent text-slate-400 hover:text-slate-700">سفارشات</button>
+                <!-- Categorized Tabs -->
+                <div class="flex items-center border-b border-slate-100 dark:border-slate-800 bg-slate-50/40 px-3 pt-2 gap-2 text-xs font-bold overflow-x-auto no-scrollbar">
+                    <button type="button" onclick="window.filterDrawerNotifs('all', this)" class="drawer-tab active pb-2 border-b-2 border-primary text-primary whitespace-nowrap">همه</button>
+                    <button type="button" onclick="window.filterDrawerNotifs('orders', this)" class="drawer-tab pb-2 border-b-2 border-transparent text-slate-400 hover:text-slate-700 whitespace-nowrap">سفارشات</button>
+                    <button type="button" onclick="window.filterDrawerNotifs('health', this)" class="drawer-tab pb-2 border-b-2 border-transparent text-slate-400 hover:text-slate-700 whitespace-nowrap">نوبت و سلامت</button>
+                    <button type="button" onclick="window.filterDrawerNotifs('messages', this)" class="drawer-tab pb-2 border-b-2 border-transparent text-slate-400 hover:text-slate-700 whitespace-nowrap">پیام‌ها</button>
+                    <button type="button" onclick="window.filterDrawerNotifs('rewards', this)" class="drawer-tab pb-2 border-b-2 border-transparent text-slate-400 hover:text-slate-700 whitespace-nowrap">باشگاه مشتریان</button>
                 </div>
 
-                <!-- List Container -->
-                <div id="drawerNotifList" class="p-4 overflow-y-auto flex-1 space-y-3 custom-scrollbar min-h-[220px]">
-                    <div class="flex flex-col items-center justify-center py-10 text-slate-400 gap-2">
+                <!-- Notification List Container -->
+                <div id="drawerNotifList" class="p-4 overflow-y-auto flex-1 space-y-3 custom-scrollbar min-h-[240px]">
+                    <div class="flex flex-col items-center justify-center py-12 text-slate-400 gap-2">
                         <span class="material-symbols-outlined text-4xl animate-spin">sync</span>
-                        <span class="text-xs">در حال دریافت اعلان‌ها...</span>
+                        <span class="text-xs">در حال بارگذاری رویدادها...</span>
                     </div>
                 </div>
 
                 <!-- Footer -->
                 <div class="p-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-800/40 flex items-center justify-between text-[11px] text-slate-500">
-                    <div class="flex items-center gap-1">
-                        <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
-                        <span>اعلان‌های آنی فعال است</span>
+                    <div class="flex items-center gap-1.5">
+                        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
+                        <span class="font-medium text-slate-600 dark:text-slate-300">سرویس همگام‌سازی آنی فعال است</span>
                     </div>
-                    <a href="profile.php" class="text-primary font-bold hover:underline">مشاهده پنل کاربری</a>
+                    <a href="profile.php" class="text-primary font-bold hover:underline">پنل کاربری</a>
                 </div>
             </div>
         `;
@@ -403,6 +644,7 @@
         });
 
         document.body.appendChild(drawer);
+        updateSoundIcon();
         return drawer;
     }
 
@@ -414,9 +656,11 @@
             drawer.classList.remove('hidden');
             drawer.classList.add('flex');
             document.body.style.overflow = 'hidden';
+            updateSoundIcon();
             renderDrawerNotifications(window.asenaCachedNotifications || []);
-            // Refresh live
-            fetch(`actions/notification_action.php?action=fetch_user_notifications&is_pwa=${isPwaMode ? 1 : 0}&_t=` + Date.now())
+
+            // Refresh latest from backend
+            fetch(getNotificationApiUrl(`action=fetch_user_notifications&is_pwa=${isPwaMode ? 1 : 0}&_t=` + Date.now()))
                 .then(res => res.ok ? res.json() : null)
                 .then(data => {
                     if (data && data.success) {
@@ -432,78 +676,121 @@
         }
     };
 
+    function resolveNotificationCategory(type) {
+        switch (type) {
+            case 'order_status':
+                return 'orders';
+            case 'appointment':
+            case 'pet_health':
+            case 'prescription':
+                return 'health';
+            case 'chat_message':
+                return 'messages';
+            case 'loyalty_reward':
+            case 'purchase_offer':
+            case 'pwa_welcome':
+            case 'financial':
+                return 'rewards';
+            default:
+                return 'all';
+        }
+    }
+
     function renderDrawerNotifications(items, filter = 'all') {
         const listEl = document.getElementById('drawerNotifList');
         if (!listEl) return;
 
-        let filtered = items;
+        let filtered = items || [];
         if (filter !== 'all') {
-            filtered = items.filter(i => i.type === filter || (filter === 'purchase_offer' && i.type === 'pwa_welcome'));
+            filtered = filtered.filter(i => {
+                const cat = i.category || resolveNotificationCategory(i.type);
+                return cat === filter;
+            });
         }
 
         if (!filtered.length) {
             listEl.innerHTML = `
-                <div class="text-center py-12 text-slate-400 space-y-2">
-                    <span class="material-symbols-outlined text-4xl text-slate-300">notifications_off</span>
-                    <p class="text-xs font-bold">هیچ اعلانی در این بخش وجود ندارد.</p>
+                <div class="text-center py-14 text-slate-400 space-y-2">
+                    <div class="w-14 h-14 rounded-2xl bg-slate-100 dark:bg-slate-800/60 flex items-center justify-center mx-auto text-slate-400">
+                        <span class="material-symbols-outlined text-3xl">notifications_off</span>
+                    </div>
+                    <p class="text-xs font-bold text-slate-600 dark:text-slate-300">اعلانی در این دسته‌بندی یافت نشد</p>
+                    <p class="text-[10px] text-slate-400">تمام رویدادهای جدید بلافاصله در این بخش نمایش داده می‌شوند.</p>
                 </div>
             `;
             return;
         }
 
-        listEl.innerHTML = filtered.map(n => `
-            <div class="p-3.5 rounded-2xl border transition-all ${n.is_read == 0 ? 'bg-primary/5 border-primary/20 dark:bg-primary/10' : 'bg-slate-50 dark:bg-slate-800/40 border-slate-100 dark:border-slate-800'} flex items-start gap-3 relative group">
-                <div class="w-10 h-10 rounded-xl ${n.type === 'purchase_offer' ? 'bg-amber-500 text-white' : 'bg-primary text-white'} flex items-center justify-center shrink-0 shadow-sm mt-0.5">
-                    <span class="material-symbols-outlined text-xl">${n.icon || 'notifications'}</span>
-                </div>
-                <div class="flex-1 min-w-0">
-                    <div class="flex items-center justify-between gap-1 mb-1">
-                        <h4 class="text-xs font-black text-slate-900 dark:text-white truncate">${n.title}</h4>
-                        <span class="text-[10px] text-slate-400 shrink-0">${formatTimePersian(n.created_at)}</span>
+        listEl.innerHTML = filtered.map(n => {
+            const isUnread = n.is_read == 0;
+            const category = n.category || resolveNotificationCategory(n.type);
+
+            let iconColorClass = 'bg-primary/10 text-primary';
+            if (category === 'orders') iconColorClass = 'bg-blue-50 text-blue-600 dark:bg-blue-950/50 dark:text-blue-400';
+            else if (category === 'health') iconColorClass = 'bg-teal-50 text-teal-600 dark:bg-teal-950/50 dark:text-teal-400';
+            else if (category === 'messages') iconColorClass = 'bg-indigo-50 text-indigo-600 dark:bg-indigo-950/50 dark:text-indigo-400';
+            else if (category === 'rewards') iconColorClass = 'bg-amber-50 text-amber-600 dark:bg-amber-950/50 dark:text-amber-400';
+
+            return `
+                <div class="p-3.5 rounded-2xl border transition-all ${isUnread ? 'bg-primary/5 border-primary/20 dark:bg-primary/10 shadow-xs' : 'bg-slate-50 dark:bg-slate-800/40 border-slate-100 dark:border-slate-800'} flex items-start gap-3 relative group">
+                    <div class="w-10 h-10 rounded-xl ${iconColorClass} flex items-center justify-center shrink-0 shadow-xs mt-0.5">
+                        <span class="material-symbols-outlined text-xl">${n.icon || 'notifications'}</span>
                     </div>
-                    <p class="text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed">${n.message}</p>
-                    ${n.link_url ? `
-                        <div class="mt-2 flex items-center gap-2">
-                            <a href="${n.link_url}" onclick="window.markNotificationRead(${n.id})" class="inline-flex items-center gap-1 text-[11px] font-bold text-primary hover:underline">
-                                <span>مشاهده و اقدام</span>
-                                <span class="material-symbols-outlined text-xs">arrow_back</span>
-                            </a>
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-center justify-between gap-1 mb-1">
+                            <h4 class="text-xs font-black text-slate-900 dark:text-white truncate">${n.title}</h4>
+                            <span class="text-[10px] text-slate-400 shrink-0">${n.time_ago || formatTimePersian(n.created_at)}</span>
                         </div>
-                    ` : ''}
+                        <p class="text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed">${n.message}</p>
+                        ${n.link_url ? `
+                            <div class="mt-2 flex items-center gap-2">
+                                <a href="${n.link_url}" onclick="window.markNotificationRead(${n.id})" class="inline-flex items-center gap-1 text-[11px] font-bold text-primary hover:underline">
+                                    <span>مشاهده جزئیات</span>
+                                    <span class="material-symbols-outlined text-xs">arrow_back</span>
+                                </a>
+                            </div>
+                        ` : ''}
+                    </div>
+                    ${isUnread ? `<span class="w-2.5 h-2.5 rounded-full bg-primary shrink-0 mt-1" title="خوانده‌نشده"></span>` : ''}
                 </div>
-                ${n.is_read == 0 ? `<span class="w-2 h-2 rounded-full bg-primary shrink-0 mt-1" title="خوانده‌نشده"></span>` : ''}
-            </div>
-        `).join('');
+            `;
+        }).join('');
     }
 
-    window.filterDrawerNotifs = function (type, btn) {
+    window.filterDrawerNotifs = function (category, btn) {
         document.querySelectorAll('.drawer-tab').forEach(b => {
-            b.className = 'drawer-tab flex-1 pb-2 border-b-2 border-transparent text-slate-400 hover:text-slate-700';
+            b.className = 'drawer-tab pb-2 border-b-2 border-transparent text-slate-400 hover:text-slate-700 whitespace-nowrap';
         });
-        btn.className = 'drawer-tab active flex-1 pb-2 border-b-2 border-primary text-primary font-bold';
-        renderDrawerNotifications(window.asenaCachedNotifications || [], type);
+        btn.className = 'drawer-tab active pb-2 border-b-2 border-primary text-primary font-bold whitespace-nowrap';
+        renderDrawerNotifications(window.asenaCachedNotifications || [], category);
     };
 
     window.markNotificationRead = function (id) {
-        fetch('actions/notification_action.php', {
+        // Optimistic UI update
+        if (window.asenaCachedNotifications) {
+            const found = window.asenaCachedNotifications.find(n => n.id == id);
+            if (found) found.is_read = 1;
+        }
+        fetch(getNotificationApiUrl(), {
             method: 'POST',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
             body: `action=mark_read&id=${id}`
-        }).then(() => updateUnreadBadge());
+        }).then(() => pollNotifications());
     };
 
     window.markAllNotificationsRead = function () {
-        fetch('actions/notification_action.php', {
+        // Optimistic UI update
+        if (window.asenaCachedNotifications) {
+            window.asenaCachedNotifications.forEach(n => n.is_read = 1);
+            renderDrawerNotifications(window.asenaCachedNotifications);
+        }
+        applyBadgeCount(0);
+
+        fetch(getNotificationApiUrl(), {
             method: 'POST',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
             body: 'action=mark_all_read'
-        }).then(() => {
-            if (window.asenaCachedNotifications) {
-                window.asenaCachedNotifications.forEach(n => n.is_read = 1);
-                renderDrawerNotifications(window.asenaCachedNotifications);
-            }
-            applyBadgeCount(0);
-        });
+        }).then(() => pollNotifications());
     };
 
     function formatTimePersian(dateStr) {

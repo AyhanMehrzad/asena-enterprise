@@ -12,5 +12,6 @@
         });
     }
 </script>
+<script src="../assets/js/notification-system.js?v=<?php echo time(); ?>"></script>
 </body>
 </html>

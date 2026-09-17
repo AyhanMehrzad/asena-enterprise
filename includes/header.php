@@ -42,6 +42,11 @@ if (isset($_SESSION['user_id'])) {
             $update_stmt = $pdo->prepare("UPDATE users SET loyalty_points = loyalty_points + 20, last_monthly_points_date = CURDATE() WHERE id = ?");
             $update_stmt->execute([$_SESSION['user_id']]);
             $user_points_balance += 20;
+
+            try {
+                require_once __DIR__ . '/App.php';
+                App::notifications()->notifyLoyaltyPointsEarned((int)$_SESSION['user_id'], 20, "پاداش وفاداری ماهانه ورود به سامانه آسنا");
+            } catch (Throwable $tNotif) {}
         }
     }
 }

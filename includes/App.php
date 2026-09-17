@@ -53,6 +53,7 @@ class App {
     private static ?DataSecurityService $crypto = null;
     private static ?BpmsService $bpms = null;
     private static ?ContractService $contract = null;
+    private static ?PushNotificationService $notifications = null;
 
 
 
@@ -212,6 +213,14 @@ class App {
             self::$contract = new ContractService(self::db());
         }
         return self::$contract;
+    }
+
+    public static function notifications(): PushNotificationService {
+        if (self::$notifications === null) {
+            require_once __DIR__ . '/PushNotificationService.php';
+            self::$notifications = new PushNotificationService(self::db(), self::sms());
+        }
+        return self::$notifications;
     }
 
     /**

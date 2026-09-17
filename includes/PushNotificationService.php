@@ -112,16 +112,18 @@ class PushNotificationService {
     /**
      * Fetch user notifications (User specific + Target Broadcasts)
      */
-    public function getUserNotifications(?int $userId, int $limit = 25, bool $isPwa = false): array {
+    public function getUserNotifications(?int $userId, int $limit = 25, bool $isPwa = false, int $sinceId = 0): array {
         if (!$this->pdo) return [];
 
         try {
             $audienceFilter = $isPwa ? "('all', 'pwa_only')" : "('all')";
+            $sinceFilter = $sinceId > 0 ? "AND id > " . (int)$sinceId : "";
 
             if ($userId) {
                 $stmt = $this->pdo->prepare("
                     SELECT * FROM user_notifications 
                     WHERE (user_id = ? OR (user_id IS NULL AND target_audience IN {$audienceFilter}))
+                    {$sinceFilter}
                     ORDER BY created_at DESC 
                     LIMIT ?
                 ");
@@ -133,6 +135,7 @@ class PushNotificationService {
                 $stmt = $this->pdo->prepare("
                     SELECT * FROM user_notifications 
                     WHERE user_id IS NULL AND target_audience IN {$audienceFilter}
+                    {$sinceFilter}
                     ORDER BY created_at DESC 
                     LIMIT ?
                 ");
@@ -140,7 +143,17 @@ class PushNotificationService {
                 $stmt->execute();
             }
 
-            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+            $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            foreach ($rows as &$r) {
+                $r['category'] = self::resolveCategory($r['type'] ?? '');
+                $r['time_ago'] = $this->timeAgoString($r['created_at'] ?? 'now');
+                if (empty($r['icon'])) {
+                    $r['icon'] = $this->resolveIcon($r['type'] ?? '');
+                }
+            }
+            unset($r);
+
+            return $rows;
         } catch (Throwable $e) {
             return [];
         }
@@ -323,21 +336,226 @@ class PushNotificationService {
         if ($diff < 60) return 'هم‌اکنون';
         if ($diff < 3600) return round($diff / 60) . ' دقیقه پیش';
         if ($diff < 86400) return round($diff / 3600) . ' ساعت پیش';
-        return round($diff / 86400) . ' روز پیش';
+        if ($diff < 604800) return round($diff / 86400) . ' روز پیش';
+        return date('Y/m/d', $timestamp);
     }
 
     /**
      * Helper: Resolve Material Symbol Icon from Notification Type
      */
-    private function resolveIcon(string $type): string {
+    public function resolveIcon(string $type): string {
         return match ($type) {
             'purchase_offer' => 'local_fire_department',
             'order_status'   => 'local_shipping',
             'pwa_welcome'    => 'celebration',
             'pet_health'     => 'health_and_safety',
             'appointment'    => 'calendar_month',
+            'prescription'   => 'medication',
+            'chat_message'   => 'forum',
+            'loyalty_reward' => 'stars',
+            'financial'      => 'payments',
             default          => 'notifications'
         };
+    }
+
+    /**
+     * Helper: Resolve high-level category for drawer tabs
+     */
+    public static function resolveCategory(string $type): string {
+        return match ($type) {
+            'order_status'                    => 'orders',
+            'appointment', 'pet_health'       => 'health',
+            'prescription'                    => 'prescriptions',
+            'chat_message'                    => 'messages',
+            'loyalty_reward', 'purchase_offer', 'pwa_welcome' => 'rewards',
+            default                           => 'all'
+        };
+    }
+
+    // -------------------------------------------------------------
+    // Real-World Domain Event Dispatchers
+    // -------------------------------------------------------------
+
+    public function notifyOrderPlaced(int $userId, int $orderId, int $totalAmount): int {
+        return $this->createNotification(
+            $userId,
+            'order_status',
+            "سفارش #{$orderId} با موفقیت ثبت شد",
+            "سفارش شما به ارزش " . number_format($totalAmount) . " تومان با موفقیت پرداخت شد و در صف آماده‌سازی قرار گرفت.",
+            "profile.php#orders",
+            'shopping_bag',
+            'user'
+        );
+    }
+
+    public function notifyOrderStatusChanged(int $userId, int $orderId, string $status, ?string $carrier = null, ?string $trackingCode = null): int {
+        $meta = [
+            'confirmed' => [
+                'title' => "سفارش #{$orderId} تأیید انبارداری شد",
+                'msg'   => "اقلام سفارش شما توسط انبار تأیید گردیده و وارد فرآیند جمع‌آوری و بسته‌بندی شد.",
+                'icon'  => 'inventory_2'
+            ],
+            'picking' => [
+                'title' => "جمع‌آوری اقلام سفارش #{$orderId}",
+                'msg'   => "کالاهای سفارش شما در حال آماده‌سازی و کنترل فیزیکی نهایی است.",
+                'icon'  => 'inventory'
+            ],
+            'packed' => [
+                'title' => "سفارش #{$orderId} بسته‌بندی شد",
+                'msg'   => "بسته‌بندی مرسوله تکمیل شده و بارکد ارسال بر روی بسته الصاق گردید.",
+                'icon'  => 'package_2'
+            ],
+            'handed_over' => [
+                'title' => "سفارش #{$orderId} تحویل ناوگان ارسال شد",
+                'msg'   => "مرسوله شما تحویل " . ($carrier ?: 'ناوگان پستی') . " گردید." . (!empty($trackingCode) ? " کد رهگیری: {$trackingCode}" : ""),
+                'icon'  => 'local_shipping'
+            ],
+            'shipped' => [
+                'title' => "سفارش #{$orderId} ارسال گردید",
+                'msg'   => "مرسوله شما با موفقیت ارسال شد." . (!empty($trackingCode) ? " کد رهگیری " . ($carrier ?: 'پست') . ": {$trackingCode}" : ""),
+                'icon'  => 'local_shipping'
+            ],
+            'out_for_delivery' => [
+                'title' => "مرسوله در مسیر تحویل",
+                'msg'   => "سفارش #{$orderId} توسط مأمور توزیع در مسیر تحویل به نشانی شما می‌باشد.",
+                'icon'  => 'near_me'
+            ],
+            'delivered' => [
+                'title' => "سفارش #{$orderId} تحویل داده شد",
+                'msg'   => "مرسوله با موفقیت به شما تحویل شد. با ثبت نظر در مورد کالاها، ۵ امتیاز وفاداری هدیه بگیرید!",
+                'icon'  => 'task_alt'
+            ],
+            'cancelled' => [
+                'title' => "سفارش #{$orderId} لغو گردید",
+                'msg'   => "سفارش شما لغو شد. در صورت کسر وجه از حساب، وجه پرداختی طی ۴۸ ساعت کاری عودت خواهد شد.",
+                'icon'  => 'cancel'
+            ]
+        ];
+
+        $info = $meta[$status] ?? [
+            'title' => "به‌روزرسانی وضعیت سفارش #{$orderId}",
+            'msg'   => "وضعیت سفارش شما به روزرسانی گردید.",
+            'icon'  => 'local_shipping'
+        ];
+
+        return $this->createNotification(
+            $userId,
+            'order_status',
+            $info['title'],
+            $info['msg'],
+            "profile.php#orders",
+            $info['icon'],
+            'user'
+        );
+    }
+
+    public function notifyAppointmentBooked(int $userId, int $appointmentId, string $doctorName, string $date, string $time): int {
+        return $this->createNotification(
+            $userId,
+            'appointment',
+            "رزرو موفقیت‌آمیز نوبت ویزیت",
+            "نوبت شما نزد {$doctorName} برای تاریخ {$date} ساعت {$time} با موفقیت ثبت شد. لطفاً در ساعت مقرر حضور به هم رسانید.",
+            "profile.php#appointments",
+            'calendar_month',
+            'user'
+        );
+    }
+
+    public function notifyAppointmentRescheduled(int $userId, int $appointmentId, string $doctorName, string $newDate, string $newTime, ?string $reason = null): int {
+        $reasonText = !empty($reason) ? " (علت: {$reason})" : "";
+        return $this->createNotification(
+            $userId,
+            'appointment',
+            "تغییر زمان نوبت ویزیت با پزشک",
+            "زمان نوبت شما نزد {$doctorName} به تاریخ {$newDate} ساعت {$newTime} تغییر یافت.{$reasonText}",
+            "profile.php#appointments",
+            'edit_calendar',
+            'user'
+        );
+    }
+
+    public function notifyAppointmentCompleted(int $userId, int $appointmentId, string $doctorName): int {
+        return $this->createNotification(
+            $userId,
+            'pet_health',
+            "ثبت پرونده ویزیت و معاینه بالینی",
+            "ویزیت شما نزد {$doctorName} به پایان رسید. شرح معاینات و پرونده بالینی حیوان در سامانه ثبت گردید.",
+            "profile.php#appointments",
+            'medical_services',
+            'user'
+        );
+    }
+
+    public function notifyPrescriptionStatus(int $userId, int $rxId, string $status, ?string $pharmacyName = null, ?string $notes = null): int {
+        $pharmacy = $pharmacyName ?: 'داروخانه مرجع آسنا';
+        $meta = [
+            'ready_for_pickup' => [
+                'title' => "داروهای نسخه #{$rxId} آماده تحویل است",
+                'msg'   => "اقلام دارویی نسخه شما توسط {$pharmacy} آماده‌سازی شده و آماده تحویل حضوری یا ارسال با پیک می‌باشد." . (!empty($notes) ? " (یادداشت داروساز: {$notes})" : "")
+            ],
+            'preparing' => [
+                'title' => "نسخه در حال آماده‌سازی در داروخانه",
+                'msg'   => "مسئول فنی {$pharmacy} در حال بررسی و آماده‌سازی اقلام نسخه #{$rxId} است."
+            ],
+            'dispensed' => [
+                'title' => "نسخه #{$rxId} با موفقیت تحویل گردید",
+                'msg'   => "داروهای نسخه به بیمار تحویل داده شد. آرزوی بهبودی کامل برای پت دلبندتان داریم."
+            ]
+        ];
+
+        $info = $meta[$status] ?? [
+            'title' => "به‌روزرسانی نسخه الکترونیک #{$rxId}",
+            'msg'   => "وضعیت نسخه دارویی شما تغییر یافت."
+        ];
+
+        return $this->createNotification(
+            $userId,
+            'prescription',
+            $info['title'],
+            $info['msg'],
+            "profile.php#prescriptions",
+            'medication',
+            'user'
+        );
+    }
+
+    public function notifyChatMessageReceived(int $userId, string $senderName, string $senderRole, string $snippet, ?string $chatUrl = null): int {
+        $cleanSnippet = mb_substr(strip_tags($snippet), 0, 95, 'UTF-8');
+        if (mb_strlen($snippet, 'UTF-8') > 95) $cleanSnippet .= '...';
+
+        return $this->createNotification(
+            $userId,
+            'chat_message',
+            "پیام جدید از طرف {$senderName}",
+            $cleanSnippet,
+            $chatUrl ?: "chat.php",
+            'forum',
+            'user'
+        );
+    }
+
+    public function notifyLoyaltyPointsEarned(int $userId, int $points, string $reason): int {
+        return $this->createNotification(
+            $userId,
+            'loyalty_reward',
+            "🎉 دریافت +{$points} امتیاز باشگاه مشتریان!",
+            "به دلیل «{$reason}»، تعداد {$points} امتیاز وفاداری به کیف پول شما اضافه شد.",
+            "rewards.php",
+            'stars',
+            'user'
+        );
+    }
+
+    public function notifyPayoutIssued(int $userId, int $amount, string $sheba, string $batchRef): int {
+        return $this->createNotification(
+            $userId,
+            'financial',
+            "حواله تسویه پایا صادر گردید",
+            "مبلغ " . number_format($amount) . " تومان جهت تسویه به حساب شبای {$sheba} واریز شد (شماره پیگیری پایا: {$batchRef}).",
+            "profile.php?view=seller",
+            'payments',
+            'user'
+        );
     }
 
     // -------------------------------------------------------------

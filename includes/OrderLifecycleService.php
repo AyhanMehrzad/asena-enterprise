@@ -149,6 +149,14 @@ class OrderLifecycleService
 
             $this->pdo->commit();
 
+            // Send in-app and web push notification
+            try {
+                require_once __DIR__ . '/App.php';
+                App::notifications()->notifyOrderStatusChanged((int)$order['user_id'], $orderId, $newStatus, $carrierName, $trackingCode);
+            } catch (Throwable $t) {
+                error_log("Failed to dispatch in-app order notification: " . $t->getMessage());
+            }
+
             // Send SMS notification if relevant
             $this->dispatchStatusSms($orderId, (int)$order['user_id'], $newStatus, $carrierName, $trackingCode);
 

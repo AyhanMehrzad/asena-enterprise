@@ -26,6 +26,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 WHERE id = ?
             ");
             if ($stmt->execute([$newStatus, $newStatus, $notes, $notes, $currentUser['id'], $rxId])) {
+                // Dispatch In-App Notification & Push
+                try {
+                    $rxOwnerStmt = $pdo->prepare("SELECT user_id FROM prescriptions WHERE id = ?");
+                    $rxOwnerStmt->execute([$rxId]);
+                    $rxOwnerId = (int)$rxOwnerStmt->fetchColumn();
+                    if ($rxOwnerId > 0) {
+                        require_once dirname(__DIR__) . '/includes/App.php';
+                        App::notifications()->notifyPrescriptionStatus($rxOwnerId, $rxId, $newStatus, $orgName, $notes);
+                    }
+                } catch (Throwable $tNotif) {
+                    error_log("Prescription in-app notification error: " . $tNotif->getMessage());
+                }
+
                 // Dispatch SMS to customer when prescription is ready for pickup
                 if ($newStatus === 'ready_for_pickup') {
                     try {

@@ -348,26 +348,14 @@ try {
 
             // In-app Notification for User
             try {
-                require_once __DIR__ . '/../includes/PushNotificationService.php';
-                $notifService = new PushNotificationService($pdo);
+                require_once __DIR__ . '/../includes/App.php';
                 if (!empty($order_id)) {
-                    $notifService->createNotification(
-                        (int)$user_id,
-                        'order_status',
-                        "سفارش #{$order_id} با موفقیت ثبت شد",
-                        "سفارش شما با موفقیت تایید شد و هم‌اکنون در صف بسته‌بندی و تحویل به ناوگان پستی قرار گرفت.",
-                        "profile.php",
-                        "local_shipping"
-                    );
+                    App::notifications()->notifyOrderPlaced((int)$user_id, (int)$order_id, (int)$total_amount);
                 } elseif ($is_booking && !empty($bookingId)) {
-                    $notifService->createNotification(
-                        (int)$user_id,
-                        'order_status',
-                        "رزرو نوبت ویزیت با موفقیت ثبت شد",
-                        "نوبت پزشکی شما در سامانه آسنا با موفقیت تایید گردید. لطفا در زمان مقرر در کلینیک حاضر باشید.",
-                        "profile.php#appointments",
-                        "calendar_month"
-                    );
+                    $docName = !empty($apptDoc['doctor_name']) ? $apptDoc['doctor_name'] : 'دامپزشک معالج';
+                    $apptDate = !empty($apptDoc['appointment_date']) ? $apptDoc['appointment_date'] : '';
+                    $apptTime = !empty($apptDoc['appointment_time']) ? $apptDoc['appointment_time'] : '';
+                    App::notifications()->notifyAppointmentBooked((int)$user_id, (int)$bookingId, $docName, $apptDate, $apptTime);
                 }
             } catch (Throwable $notifEx) {
                 error_log("In-app notification creation error: " . $notifEx->getMessage());

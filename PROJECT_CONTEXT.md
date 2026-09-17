@@ -253,6 +253,23 @@
     - **جلوگیری از تکثیر کارت‌های پزشکان چندمرکزی در پنل ادمین ([`admin/doctors.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/admin/doctors.php)):** افزودن `GROUP BY d.id` و تجمیع اسامی مراکز با `GROUP_CONCAT` جهت جلوگیری از تکرار پزشکانی که در چند کلینیک یا بیمارستان فعالیت دارند و اصلاح آمار ماکرو.
     - **سخت‌سازی امنیتی و افزودن توکن ضد جعل CSRF در مدیریت سازمان‌ها ([`admin/organizations.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/admin/organizations.php)):** اعمال اعتبارسنجی `csrf_verify()` و تزریق فیلدهای پنهان `csrf_field()` به هر ۳ فرم تغییر وضعیت مرکز، تسویه فوری پایا و ویرایش اطلاعات بانکی.
 
+35. **ارتقای جامع و استانداردسازی سیستم اعلان‌های واقعی پلتفرم (Real-World Multi-Channel Notification Architecture):**
+    - **سرویس سینگلتون اعلان‌ها و رویدادهای دامنه ([`includes/PushNotificationService.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/includes/PushNotificationService.php) و [`includes/App.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/includes/App.php)):** افزودن متد سینگلتون `App::notifications()` و متدهای اختصاصی انتشار رویدادهای کسب‌وکار واقعی شامل `notifyOrderPlaced`, `notifyOrderStatusChanged`, `notifyAppointmentBooked`, `notifyAppointmentRescheduled`, `notifyAppointmentCompleted`, `notifyPrescriptionStatus`, `notifyChatMessageReceived`, `notifyLoyaltyPointsEarned` و `notifyPayoutIssued` با فرمت‌دهی فارسی و تعیین آیکون‌ها و دسته‌بندی‌های استاندارد.
+    - **اتصال رویدادهای واقعی دامنه در فرآیندهای سیستم:**
+      - تغییر وضعیت سفارشات و کد رهگیری مرسولات در [`includes/OrderLifecycleService.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/includes/OrderLifecycleService.php).
+      - تغییر زمان نوبت (Reschedule) و ثبت پرونده سلامت/خاتمه ویزیت توسط پزشک در [`doctor/index.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/doctor/index.php).
+      - تغییر وضعیت و آماده‌سازی نسخه توسط داروساز در [`pharmacist/index.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/pharmacist/index.php).
+      - ارسال پیام در تله‌هلث و چت پشتیبانی توسط پزشک، مدیریت یا بیمار در [`actions/chat_action.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/actions/chat_action.php).
+      - پرداخت موفق سفارش و رزرو نوبت در [`actions/complete_payment.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/actions/complete_payment.php).
+      - پاداش ماهانه ورود به سامانه و امتیاز وفاداری در [`includes/header.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/includes/header.php).
+    - **بهبود API نوتیفیکیشن‌ها ([`actions/notification_action.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/actions/notification_action.php)):** پشتیبانی از پارامتر `since_id`، بازگردانی `latest_id` و الصاق خودکار دسته‌بندی موضوعی (`category`) و زمان‌سنج فارسی (`time_ago`) به تک‌تک اعلان‌ها.
+    - **توست‌های شیشه‌ای شناور اختصاصی با صوت ترکیبی Web Audio ([`assets/js/notification-system.js`](file:///opt/lampp/htdocs/asena/asena-enterprise/assets/js/notification-system.js)):**
+      - پیاده‌سازی متد `playNotificationChime()` با سنتز امواج سینوسی هارمونیک دولایه (G5: 784Hz سپس C6: 1046.5Hz) با استفاده از `AudioContext` بدون نیاز به دانلود هیچ‌گونه فایل MP3 خارجی و کارکرد در حالت آفلاین؛ به همراه پالس ویبره لمسی هپتیک (`navigator.vibrate`).
+      - ایجاد توست شناور گلس‌مورفیسم `showInAppNotificationToast()` اختصاصی برای اعلان‌های شخصی کاربر (سفارشات، پیام‌ها، نسخه‌ها) تفکیک‌شده از تیکر سوشال‌پروف عمومی.
+      - پولینگ هوشمند باتری‌محور (۲۵ ثانیه در تب فعال، ۹۰ ثانیه در تب پس‌زمینه و رفرش آنی با فعال‌شدن تب).
+      - بازطراحی دراور اعلان‌ها با تب‌های ۵‌گانه مدرن («همه»، «سفارشات»، «نوبت و سلامت»، «پیام‌ها»، «باشگاه مشتریان»)، سوئیچ خاموش/روشن کردن صدای اعلان در هدر دراور با ذخیره در `localStorage`، به‌روزرسانی آپتیمیستیک (Optimistic UI) و خواندن همه بدون لودینگ.
+      - اتصال زنگوله اعلان به پنل پزشکان در [`doctor/includes/doctor_header.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/doctor/includes/doctor_header.php) و [`doctor/includes/doctor_footer.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/doctor/includes/doctor_footer.php).
+
 ---
 
 

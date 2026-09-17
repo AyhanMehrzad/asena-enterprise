@@ -29,13 +29,22 @@ switch ($action) {
     case 'fetch_user_notifications':
         // Return user notifications & unread badge count
         $isPwa = !empty($_REQUEST['is_pwa']) && $_REQUEST['is_pwa'] === '1';
-        $notifications = $service->getUserNotifications($userId, 25, $isPwa);
+        $sinceId = (int)($_REQUEST['since_id'] ?? 0);
+        $notifications = $service->getUserNotifications($userId, 30, $isPwa, $sinceId);
         $unreadCount = $service->getUnreadCount($userId, $isPwa);
+
+        $latestId = 0;
+        foreach ($notifications as $n) {
+            if ((int)$n['id'] > $latestId) {
+                $latestId = (int)$n['id'];
+            }
+        }
 
         echo json_encode([
             'success' => true,
             'notifications' => $notifications,
             'unread_count' => $unreadCount,
+            'latest_id' => $latestId,
             'logged_in' => !empty($userId)
         ], JSON_UNESCAPED_UNICODE);
         exit;

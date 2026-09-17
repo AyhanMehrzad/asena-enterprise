@@ -523,6 +523,27 @@ if ($action === 'send') {
         }
     }
 
+    if ($mode === 'doctor' && !empty($ticketRow['doctor_id'])) {
+        try {
+            $docUserStmt = $pdo->prepare("SELECT user_id FROM doctors WHERE id = ?");
+            $docUserStmt->execute([(int)$ticketRow['doctor_id']]);
+            $docUserId = (int)$docUserStmt->fetchColumn();
+            if ($docUserId > 0 && $docUserId !== $user_id) {
+                require_once __DIR__ . '/../includes/App.php';
+                $pName = $_SESSION['name'] ?? ($_SESSION['user_name'] ?? 'بیمار محترم');
+                App::notifications()->notifyChatMessageReceived(
+                    $docUserId,
+                    $pName,
+                    'patient',
+                    !empty($message) ? $message : 'تصویر یا آزمایش ضمیمه',
+                    "doctor/index.php"
+                );
+            }
+        } catch (Throwable $tNotif) {
+            error_log("Patient chat notif to doctor error: " . $tNotif->getMessage());
+        }
+    }
+
     $outMessages = [
         [
             'id' => (int)$user_msg_id,
@@ -677,6 +698,25 @@ if ($action === 'admin_send') {
             error_log("Admin send SMS user notif note: " . $eNotif->getMessage());
         }
 
+        // In-app real-world notification to user
+        try {
+            $tUserStmt = $pdo->prepare("SELECT user_id FROM tickets WHERE id = ?");
+            $tUserStmt->execute([$ticket_id]);
+            $targetUserId = (int)$tUserStmt->fetchColumn();
+            if ($targetUserId > 0 && $targetUserId !== $user_id) {
+                require_once __DIR__ . '/../includes/App.php';
+                App::notifications()->notifyChatMessageReceived(
+                    $targetUserId,
+                    'پشتیبانی مدیریت آسنا',
+                    'admin',
+                    $message,
+                    "chat.php?ticket_id={$ticket_id}"
+                );
+            }
+        } catch (Throwable $tNotif) {
+            error_log("In-app chat notif error (admin): " . $tNotif->getMessage());
+        }
+
         echo json_encode(['status' => 'success']);
     } else {
         echo json_encode(['status' => 'error']);
@@ -765,6 +805,27 @@ if ($action === 'doctor_send') {
             }
         } catch (Throwable $eNotif) {
             error_log("Doctor send SMS user notif note: " . $eNotif->getMessage());
+        }
+
+        // In-app real-world notification to patient
+        try {
+            $tUserStmt = $pdo->prepare("SELECT t.user_id, d.name as doc_name FROM tickets t LEFT JOIN doctors d ON t.doctor_id = d.id WHERE t.id = ?");
+            $tUserStmt->execute([$ticket_id]);
+            $tUserData = $tUserStmt->fetch(PDO::FETCH_ASSOC);
+            $targetUserId = (int)($tUserData['user_id'] ?? 0);
+            if ($targetUserId > 0 && $targetUserId !== $user_id) {
+                $docSender = !empty($tUserData['doc_name']) ? ('دکتر ' . $tUserData['doc_name']) : 'پزشک معالج شما';
+                require_once __DIR__ . '/../includes/App.php';
+                App::notifications()->notifyChatMessageReceived(
+                    $targetUserId,
+                    $docSender,
+                    'doctor',
+                    !empty($message) ? $message : 'یک پیوست جدید برای شما ارسال شد',
+                    "chat.php?ticket_id={$ticket_id}"
+                );
+            }
+        } catch (Throwable $tNotif) {
+            error_log("In-app chat notif error (doctor): " . $tNotif->getMessage());
         }
 
         echo json_encode(['status' => 'success']);

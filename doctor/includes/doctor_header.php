@@ -170,6 +170,11 @@ if (!$doctorProfile) {
                 <span class="material-symbols-outlined text-base">help_outline</span>
                 <span>راهنما</span>
             </a>
+            <!-- Notification Bell -->
+            <button type="button" class="notification-bell-btn relative w-9 h-9 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200 transition-colors flex items-center justify-center cursor-pointer" title="اعلان‌های سیستم">
+                <span class="material-symbols-outlined text-lg">notifications</span>
+                <span class="notification-badge-count hidden absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 bg-rose-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center border-2 border-white dark:border-slate-900 shadow-xs"></span>
+            </button>
             <div class="h-8 w-[1px] bg-outline-variant mx-1"></div>
             <div class="flex items-center gap-3 pl-2">
                 <div class="text-left">
