@@ -33,6 +33,9 @@ if (!function_exists('ensure_chat_telehealth_schema')) {
             if (!in_array('last_notified_at', $cols)) {
                 $pdo->exec("ALTER TABLE `tickets` ADD `last_notified_at` DATETIME NULL");
             }
+            if (!in_array('last_user_notified_at', $cols)) {
+                $pdo->exec("ALTER TABLE `tickets` ADD `last_user_notified_at` DATETIME NULL");
+            }
 
             try {
                 $pdo->exec("ALTER TABLE `ticket_messages` MODIFY COLUMN `sender_type` ENUM('user', 'ai', 'admin', 'doctor', 'organization') NOT NULL");
@@ -489,7 +492,8 @@ if ($action === 'send') {
     $pdo->prepare("UPDATE tickets SET updated_at = NOW(), status = 'open' WHERE id = ?")->execute([$ticket_id]);
 
     // Anti-Spam Doctor Notification: Send SMS alert to doctor upon patient message (throttled to once per 15 min)
-    if ($mode === 'doctor' && !empty($ticketRow['doctor_id'])) {
+    $doctorSmsEnabled = get_setting($pdo, 'doctor_sms_on_telehealth', '1');
+    if ($doctorSmsEnabled === '1' && $mode === 'doctor' && !empty($ticketRow['doctor_id'])) {
         $docId = (int)$ticketRow['doctor_id'];
         $docStmt = $pdo->prepare("
             SELECT d.name, d.phone, u.phone AS user_phone, u.name AS doc_user_name 
@@ -514,7 +518,7 @@ if ($action === 'send') {
             $sms = new SmsService();
             $patientName = $_SESSION['name'] ?? ($_SESSION['user_name'] ?? 'بیمار محترم');
             $docName = !empty($docInfo['name']) ? $docInfo['name'] : ($docInfo['doc_user_name'] ?? 'پزشک گرامی');
-            $sms->sendDoctorTelehealthAlert($targetPhone, $docName, $patientName);
+            $sms->sendDoctorTelehealthAlert($targetPhone, $docName, $patientName, $ticket_id);
             $pdo->prepare("UPDATE tickets SET last_notified_at = NOW() WHERE id = ?")->execute([$ticket_id]);
         }
     }
@@ -578,6 +582,39 @@ if ($action === 'org_send') {
     $stmt = $pdo->prepare("INSERT INTO ticket_messages (ticket_id, sender_type, message, created_at) VALUES (?, 'admin', ?, NOW())");
     if ($stmt->execute([$ticket_id, $message])) {
         $pdo->prepare("UPDATE tickets SET updated_at = NOW() WHERE id = ?")->execute([$ticket_id]);
+
+        // Anti-Spam User Notification: Send SMS alert to user upon clinic/org response (throttled to once per 15 min)
+        try {
+            $userSmsEnabled = get_setting($pdo, 'user_sms_on_chat', '1');
+            if ($userSmsEnabled === '1') {
+                $uStmt = $pdo->prepare("
+                    SELECT u.name, u.phone, t.last_user_notified_at, o.name AS org_name
+                    FROM tickets t
+                    JOIN users u ON t.user_id = u.id
+                    LEFT JOIN organizations o ON t.organization_id = o.id
+                    WHERE t.id = ?
+                ");
+                $uStmt->execute([$ticket_id]);
+                $uInfo = $uStmt->fetch(PDO::FETCH_ASSOC);
+
+                if (!empty($uInfo['phone'])) {
+                    $lastUserNotified = $uInfo['last_user_notified_at'] ?? null;
+                    $cooldownPassed = empty($lastUserNotified) || (strtotime($lastUserNotified) < (time() - 900));
+
+                    if ($cooldownPassed) {
+                        require_once __DIR__ . '/../includes/SmsService.php';
+                        $sms = new SmsService();
+                        $orgSender = !empty($uInfo['org_name']) ? ('کلینیک ' . $uInfo['org_name']) : 'مرکز درمانی';
+                        $chatUrl = "https://asena.company/chat.php?ticket_id=" . (int)$ticket_id;
+                        $sms->sendUserChatMessageAlert($uInfo['phone'], $uInfo['name'], $orgSender, $chatUrl);
+                        $pdo->prepare("UPDATE tickets SET last_user_notified_at = NOW() WHERE id = ?")->execute([$ticket_id]);
+                    }
+                }
+            }
+        } catch (Throwable $eNotif) {
+            error_log("Org send SMS user notif note: " . $eNotif->getMessage());
+        }
+
         echo json_encode(['status' => 'success']);
     } else {
         echo json_encode(['status' => 'error', 'message' => 'Failed to save message']);
@@ -609,6 +646,37 @@ if ($action === 'admin_send') {
     $stmt = $pdo->prepare("INSERT INTO ticket_messages (ticket_id, sender_type, message, created_at) VALUES (?, 'admin', ?, NOW())");
     if ($stmt->execute([$ticket_id, $message])) {
         $pdo->prepare("UPDATE tickets SET updated_at = NOW() WHERE id = ?")->execute([$ticket_id]);
+
+        // Anti-Spam User Notification: Send SMS alert to user upon admin response (throttled to once per 15 min)
+        try {
+            $userSmsEnabled = get_setting($pdo, 'user_sms_on_chat', '1');
+            if ($userSmsEnabled === '1') {
+                $uStmt = $pdo->prepare("
+                    SELECT u.name, u.phone, t.last_user_notified_at
+                    FROM tickets t
+                    JOIN users u ON t.user_id = u.id
+                    WHERE t.id = ?
+                ");
+                $uStmt->execute([$ticket_id]);
+                $uInfo = $uStmt->fetch(PDO::FETCH_ASSOC);
+
+                if (!empty($uInfo['phone'])) {
+                    $lastUserNotified = $uInfo['last_user_notified_at'] ?? null;
+                    $cooldownPassed = empty($lastUserNotified) || (strtotime($lastUserNotified) < (time() - 900));
+
+                    if ($cooldownPassed) {
+                        require_once __DIR__ . '/../includes/SmsService.php';
+                        $sms = new SmsService();
+                        $chatUrl = "https://asena.company/chat.php?ticket_id=" . (int)$ticket_id;
+                        $sms->sendUserChatMessageAlert($uInfo['phone'], $uInfo['name'], 'پشتیبانی مدیریت آسنا', $chatUrl);
+                        $pdo->prepare("UPDATE tickets SET last_user_notified_at = NOW() WHERE id = ?")->execute([$ticket_id]);
+                    }
+                }
+            }
+        } catch (Throwable $eNotif) {
+            error_log("Admin send SMS user notif note: " . $eNotif->getMessage());
+        }
+
         echo json_encode(['status' => 'success']);
     } else {
         echo json_encode(['status' => 'error']);
@@ -666,6 +734,39 @@ if ($action === 'doctor_send') {
     $stmt = $pdo->prepare("INSERT INTO ticket_messages (ticket_id, sender_type, message, image_url, created_at) VALUES (?, 'doctor', ?, ?, NOW())");
     if ($stmt->execute([$ticket_id, $message, $image_url])) {
         $pdo->prepare("UPDATE tickets SET updated_at = NOW(), status = 'open' WHERE id = ?")->execute([$ticket_id]);
+
+        // Anti-Spam User Notification: Send SMS alert to patient upon doctor response (throttled to once per 15 min)
+        try {
+            $userSmsEnabled = get_setting($pdo, 'user_sms_on_chat', '1');
+            if ($userSmsEnabled === '1') {
+                $uStmt = $pdo->prepare("
+                    SELECT u.name AS patient_name, u.phone AS patient_phone, t.last_user_notified_at, d.name AS doc_name
+                    FROM tickets t
+                    JOIN users u ON t.user_id = u.id
+                    LEFT JOIN doctors d ON t.doctor_id = d.id
+                    WHERE t.id = ?
+                ");
+                $uStmt->execute([$ticket_id]);
+                $uInfo = $uStmt->fetch(PDO::FETCH_ASSOC);
+
+                if (!empty($uInfo['patient_phone'])) {
+                    $lastUserNotified = $uInfo['last_user_notified_at'] ?? null;
+                    $cooldownPassed = empty($lastUserNotified) || (strtotime($lastUserNotified) < (time() - 900));
+
+                    if ($cooldownPassed) {
+                        require_once __DIR__ . '/../includes/SmsService.php';
+                        $sms = new SmsService();
+                        $docSender = !empty($uInfo['doc_name']) ? ('دکتر ' . $uInfo['doc_name']) : 'پزشک معالج شما';
+                        $chatUrl = "https://asena.company/chat.php?ticket_id=" . (int)$ticket_id;
+                        $sms->sendUserChatMessageAlert($uInfo['patient_phone'], $uInfo['patient_name'], $docSender, $chatUrl);
+                        $pdo->prepare("UPDATE tickets SET last_user_notified_at = NOW() WHERE id = ?")->execute([$ticket_id]);
+                    }
+                }
+            }
+        } catch (Throwable $eNotif) {
+            error_log("Doctor send SMS user notif note: " . $eNotif->getMessage());
+        }
+
         echo json_encode(['status' => 'success']);
     } else {
         echo json_encode(['status' => 'error', 'message' => 'خطا در ثبت پیام']);

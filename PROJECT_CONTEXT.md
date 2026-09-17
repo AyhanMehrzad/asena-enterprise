@@ -216,6 +216,14 @@
     - **اصلاح سازگاری سینتکس مایگریشن ۱۶ ([`database/migrations/16_telehealth_and_doctor_chat.sql`](file:///opt/lampp/htdocs/asena/asena-enterprise/database/migrations/16_telehealth_and_doctor_chat.sql)):** حذف `IF NOT EXISTS` از دستورات `ALTER TABLE` که در مای‌اس‌کیوال ۸.۰ سرور باعث خطای سینتکس ۱۰۶۴ و عدم ایجاد ستون‌های ضروری تله‌هلث می‌شد.
     - **مکانیزم خودترمیمی اسکیما در رانتایم ([`actions/chat_action.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/actions/chat_action.php)):** افزودن تابع `ensure_chat_telehealth_schema()` جهت بررسی خودکار ستون‌های `doctor_id`, `closed_by`, `resolution_notes`, `last_notified_at` در جدول `tickets`، ستون `tracking_code` در `prescriptions` و Enum های `ticket_messages`، به همراه استفاده از `SELECT *` منعطف و قرار دادن پردازش ارسال پیام در بلوک `try ... catch` برای جلوگیری کامل از هرگونه خطای ۵۰۰ سرور.
 
+29. **بازطراحی اصولی پنل پیامک و پیاده‌سازی اعلان‌های پیامکی تله‌هلث پزشکان و پیام‌های کاربران (SMS Operations Dashboard & Dual-Way Chat Notifications):**
+    - **حذف منطق نامربوط فروش پکیج و سود پیامکی در پنل ادمین ([`admin/sms_settings.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/admin/sms_settings.php)):** اصلاح بنیادین صفحه به عنوان داشبورد عملیاتی و پایش رویدادها (نه فروشگاه بسته پیامک به خود سیستم)؛ حذف فیلدهای نامربوط پکیج‌های ۱۰۰/۵۰۰/۱۰۰۰ عددی، قیمت هر پیامک و جدول تحلیل حاشیه سود.
+    - **افزودن کارت‌های وضعیت و متغیرهای عملیاتی:** اتصال مستقیم به API Key، نام کاربری، رمز، خط اختصاصی و سوئیچ حالت شبیه‌ساز (Sandbox)؛ نمایش مانده اعتبار ریالی ملی‌پیامک؛ تنظیمات اعلان‌های پیامکی تله‌هلث و چت با دکمه‌های فعال/غیرفعال‌سازی.
+    - **مدیریت داینامیک شناسه‌های الگو (Body IDs):** امکان ویرایش و ذخیره مستقیم شناسه‌های الگو در پایگاه‌داده بدون نیاز به تغییر کد در ۱۰ سناریوی حیاتی از جمله تله‌هلث و چت کاربر.
+    - **سیستم پیامک اعلان تله‌هلث به پزشک ([`includes/SmsService.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/includes/SmsService.php) و [`actions/chat_action.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/actions/chat_action.php)):** ارسال پیامک اطلاع‌رسانی پیام جدید بیمار به شماره پزشک معالج از طریق پترن با فال‌بک خط مستقیم با لینک مستقیم ورود به تله‌هلث و تراتل ۱۵ دقیقه‌ای (`last_notified_at`).
+    - **سیستم پیامک اعلان پیام به همه کاربران ([`includes/SmsService.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/includes/SmsService.php) و [`actions/chat_action.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/actions/chat_action.php)):** متد جدید `sendUserChatMessageAlert()` جهت ارسال پیامک به بیمار/کاربر هنگام دریافت پاسخ از پزشک معالج (`doctor_send`)، مدیریت سیستم (`admin_send`) یا کلینیک/سازمان (`org_send`) با تراتل آنتی‌اسپم ۱۵ دقیقه‌ای (`last_user_notified_at`).
+    - **ابزار تست زنده پیامک:** پشتیبانی از تست ۶ سناریوی پیامکی شامل تله‌هلث، چت کاربر، کد OTP، سفارش و نوبت.
+
 ---
 
 

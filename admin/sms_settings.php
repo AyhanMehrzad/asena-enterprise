@@ -13,11 +13,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     csrf_verify();
     $action = $_POST['action'];
 
-    if ($action === 'save_settings') {
-        $adminPhones = trim($_POST['admin_notification_phones'] ?? '');
-        $smsOnOrder  = isset($_POST['admin_sms_on_order']) ? '1' : '0';
-        $smsOnBooking = isset($_POST['admin_sms_on_booking']) ? '1' : '0';
-        $doctorSmsOnBooking = isset($_POST['doctor_sms_on_booking']) ? '1' : '0';
+    if ($action === 'save_notifications') {
+        $adminPhones             = trim($_POST['admin_notification_phones'] ?? '');
+        $smsOnOrder              = isset($_POST['admin_sms_on_order']) ? '1' : '0';
+        $smsOnBooking            = isset($_POST['admin_sms_on_booking']) ? '1' : '0';
+        $doctorSmsOnBooking      = isset($_POST['doctor_sms_on_booking']) ? '1' : '0';
+        $doctorSmsOnTelehealth   = isset($_POST['doctor_sms_on_telehealth']) ? '1' : '0';
+        $userSmsOnChat           = isset($_POST['user_sms_on_chat']) ? '1' : '0';
 
         // Clean and normalize phones
         $phoneArray = preg_split('/[,\s;]+/', $adminPhones);
@@ -34,30 +36,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         set_setting($pdo, 'admin_sms_on_order', $smsOnOrder);
         set_setting($pdo, 'admin_sms_on_booking', $smsOnBooking);
         set_setting($pdo, 'doctor_sms_on_booking', $doctorSmsOnBooking);
+        set_setting($pdo, 'doctor_sms_on_telehealth', $doctorSmsOnTelehealth);
+        set_setting($pdo, 'user_sms_on_chat', $userSmsOnChat);
 
-        $success = "تنظیمات پیامک و اعلان‌های مدیران با موفقیت ذخیره شد.";
+        $success = "تنظیمات رویدادها، هشدارهای تله‌هلث و اعلان‌های پیامکی با موفقیت به‌روزرسانی شد.";
     } elseif ($action === 'save_gateway_credentials') {
         $apiKey   = trim($_POST['melipayamak_api_key'] ?? '');
         $username = trim($_POST['melipayamak_username'] ?? '');
         $password = trim($_POST['melipayamak_password'] ?? '');
         $fromNum  = trim($_POST['melipayamak_from'] ?? '');
         $sandbox  = isset($_POST['melipayamak_sandbox']) ? '1' : '0';
-        $smsPrice = max(100, (int)($_POST['sms_price_per_unit'] ?? 850));
-        $pack100  = max(1000, (int)($_POST['sms_pack_100_price'] ?? 85000));
-        $pack500  = max(1000, (int)($_POST['sms_pack_500_price'] ?? 375000));
-        $pack1000 = max(1000, (int)($_POST['sms_pack_1000_price'] ?? 680000));
 
         set_setting($pdo, 'melipayamak_api_key', $apiKey);
         set_setting($pdo, 'melipayamak_username', $username);
         set_setting($pdo, 'melipayamak_password', $password);
         set_setting($pdo, 'melipayamak_from', $fromNum);
         set_setting($pdo, 'melipayamak_sandbox', $sandbox);
-        set_setting($pdo, 'sms_price_per_unit', $smsPrice);
-        set_setting($pdo, 'sms_pack_100_price', $pack100);
-        set_setting($pdo, 'sms_pack_500_price', $pack500);
-        set_setting($pdo, 'sms_pack_1000_price', $pack1000);
 
-        $success = "اطلاعات وب‌سرویس، تعرفه هر پیامک و قیمت بسته‌های پیامک با حاشیه سود آسنا به‌روزرسانی شد.";
+        $success = "مشخصات وب‌سرویس ملی‌پیامک و خط اختصاصی ارسال با موفقیت ذخیره شد.";
+    } elseif ($action === 'save_pattern_ids') {
+        $patternKeys = [
+            'otp', 'doctor_telehealth', 'user_chat', 'booking',
+            'reschedule', 'shipping', 'subscription', 'charity',
+            'admin_order', 'doctor_booking'
+        ];
+        foreach ($patternKeys as $key) {
+            if (isset($_POST['body_id_' . $key])) {
+                $val = trim((string)$_POST['body_id_' . $key]);
+                set_setting($pdo, 'melipayamak_body_id_' . $key, $val);
+            }
+        }
+        $success = "شناسه‌های الگوهای خدماتی (Body IDs) با موفقیت ذخیره گردید.";
     } elseif ($action === 'test_sms') {
         $testPhone = trim($_POST['test_phone'] ?? '');
         $testType  = $_POST['test_type'] ?? 'direct';
@@ -71,15 +80,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 $testResult = [
                     'ok' => false,
                     'type' => 'حالت شبیه‌ساز (Sandbox / Mock)',
-                    'message' => "⚠️ درگاه در حالت شبیه‌ساز قرار دارد و پیامک مخابراتی واقعی ارسال نمی‌شود. جهت دریافت پیامک روی سیم‌کارت، لطفاً کلید API Key یا نام کاربری و رمز عبور ملی‌پیامک را در فرم زیر وارد نموده و دکمه ذخیره را بزنید."
+                    'message' => "⚠️ درگاه در حالت شبیه‌ساز (Sandbox) قرار دارد و پیامک واقعی به مخابرات ارسال نمی‌شود. جهت فعال‌سازی ارسال واقعی، حالت شبیه‌ساز را در تنظیمات وب‌سرویس غیرفعال نمایید."
                 ];
             } elseif ($testType === 'otp') {
                 $code = rand(100000, 999999);
                 $res = $sms->sendOtp($testPhone, $code);
                 $testResult = [
                     'ok' => (bool)$res,
-                    'type' => 'کد تایید اعتبارسنجی (OTP)',
-                    'message' => $res ? "کد تایید ($code) به درگاه ملی‌پیامک ارسال گردید و به شماره $testPhone تحویل داده شد." : ("خطا در ارسال کد تایید از طریق درگاه: " . ($sms->getLastError() ?: 'پاسخ ناموفق درگاه'))
+                    'type' => 'کد تایید ورود/ثبت‌نام (OTP)',
+                    'message' => $res ? "کد تایید اعتبارسنجی ($code) با موفقیت به شماره $testPhone ارسال شد." : ("خطا در ارسال کد تایید: " . ($sms->getLastError() ?: 'پاسخ ناموفق درگاه'))
+                ];
+            } elseif ($testType === 'doctor_telehealth') {
+                $res = $sms->sendDoctorTelehealthAlert($testPhone, 'دکتر رضایی', 'میلو (کاربر آزمایشی)', 1);
+                $testResult = [
+                    'ok' => (bool)$res,
+                    'type' => 'هشدار پیام تله‌هلث به پزشک',
+                    'message' => $res ? "پیامک هشدار دریافت پیام بیمار در تله‌هلث با موفقیت به شماره پزشک $testPhone ارسال شد." : ("خطا در ارسال پیامک پزشک: " . ($sms->getLastError() ?: 'پاسخ ناموفق درگاه'))
+                ];
+            } elseif ($testType === 'user_chat') {
+                $res = $sms->sendUserChatMessageAlert($testPhone, 'کاربر محترم', 'دکتر رضایی (متخصص داخلی)', 'https://asena.company/chat.php');
+                $testResult = [
+                    'ok' => (bool)$res,
+                    'type' => 'هشدار پیام جدید به کاربر/بیمار',
+                    'message' => $res ? "پیامک اطلاع‌رسانی پیام جدید با موفقیت به شماره کاربر $testPhone ارسال شد." : ("خطا در ارسال پیامک کاربر: " . ($sms->getLastError() ?: 'پاسخ ناموفق درگاه'))
                 ];
             } elseif ($testType === 'admin_order') {
                 $fakeOrderId = rand(1050, 1999);
@@ -88,21 +111,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 $testResult = [
                     'ok' => (bool)$res,
                     'type' => 'هشدار سفارش جدید به مدیر',
-                    'message' => $res ? "پیامک هشدار سفارش (#PC-$fakeOrderId) با موفقیت به درگاه ارسال شد." : ("خطا در ارسال هشدار مدیر: " . ($sms->getLastError() ?: 'پاسخ ناموفق درگاه'))
+                    'message' => $res ? "پیامک هشدار سفارش (#PC-$fakeOrderId) با موفقیت به شماره مدیر $testPhone ارسال شد." : ("خطا در ارسال هشدار مدیر: " . ($sms->getLastError() ?: 'پاسخ ناموفق درگاه'))
                 ];
             } elseif ($testType === 'doctor_booking') {
-                $res = $sms->sendDoctorNewAppointmentAlert($testPhone, 'دکتر نامی', 'میلو', '1404/06/20', '17:30');
+                $res = $sms->sendDoctorNewAppointmentAlert($testPhone, 'دکتر رضایی', 'میلو', '1404/06/25', '18:00');
                 $testResult = [
                     'ok' => (bool)$res,
-                    'type' => 'هشدار رزرو نوبت به پزشک',
-                    'message' => $res ? "پیامک نوبت با موفقیت به درگاه ارسال شد." : ("خطا در ارسال هشدار پزشک: " . ($sms->getLastError() ?: 'پاسخ ناموفق درگاه'))
+                    'type' => 'هشدار نوبت جدید به پزشک',
+                    'message' => $res ? "پیامک نوبت ویزیت با موفقیت به شماره پزشک $testPhone ارسال شد." : ("خطا در ارسال پیامک نوبت پزشک: " . ($sms->getLastError() ?: 'پاسخ ناموفق درگاه'))
                 ];
             } else {
                 $text = "تست موفقیت‌آمیز ارتباط پنل پیامک با سامانه آسنا.\nasena.company\nزمان: " . date('H:i:s');
                 $res = $sms->sendDirectSms($testPhone, $text);
                 $testResult = [
                     'ok' => (bool)$res,
-                    'type' => 'پیامک مستقیم',
+                    'type' => 'پیامک مستقیم عمومی',
                     'message' => $res ? "پیامک مستقیم با موفقیت به شماره $testPhone ارسال شد." : ("خطا در ارسال پیامک مستقیم: " . ($sms->getLastError() ?: 'پاسخ ناموفق درگاه'))
                 ];
             }
@@ -116,91 +139,110 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     }
 }
 
-// Retrieve current settings
+// Retrieve current notification settings
 $adminNotificationPhones = get_setting($pdo, 'admin_notification_phones', '09146676978');
 $adminSmsOnOrder         = get_setting($pdo, 'admin_sms_on_order', '1');
 $adminSmsOnBooking       = get_setting($pdo, 'admin_sms_on_booking', '1');
 $doctorSmsOnBooking      = get_setting($pdo, 'doctor_sms_on_booking', '1');
+$doctorSmsOnTelehealth   = get_setting($pdo, 'doctor_sms_on_telehealth', '1');
+$userSmsOnChat           = get_setting($pdo, 'user_sms_on_chat', '1');
 
-$mApiKey      = get_setting($pdo, 'melipayamak_api_key', getenv('MELIPAYAMAK_API_KEY') ?: '');
-$mUsername    = get_setting($pdo, 'melipayamak_username', getenv('MELIPAYAMAK_USERNAME') ?: '');
-$mPassword    = get_setting($pdo, 'melipayamak_password', getenv('MELIPAYAMAK_PASSWORD') ?: '');
-$mFrom        = get_setting($pdo, 'melipayamak_from', getenv('MELIPAYAMAK_FROM') ?: '50004001');
-$smsUnitPrice = (int)get_setting($pdo, 'sms_price_per_unit', 850);
-$pack100Price = (int)get_setting($pdo, 'sms_pack_100_price', 85000);
-$pack500Price = (int)get_setting($pdo, 'sms_pack_500_price', 375000);
-$pack1000Price = (int)get_setting($pdo, 'sms_pack_1000_price', 680000);
+// Retrieve gateway settings
+$mApiKey   = get_setting($pdo, 'melipayamak_api_key', getenv('MELIPAYAMAK_API_KEY') ?: '');
+$mUsername = get_setting($pdo, 'melipayamak_username', getenv('MELIPAYAMAK_USERNAME') ?: '');
+$mPassword = get_setting($pdo, 'melipayamak_password', getenv('MELIPAYAMAK_PASSWORD') ?: '');
+$mFrom     = get_setting($pdo, 'melipayamak_from', getenv('MELIPAYAMAK_FROM') ?: '2170002198');
+$mSandbox  = get_setting($pdo, 'melipayamak_sandbox', '0');
 
 $smsInstance = new SmsService();
-$liveCredit = $smsInstance->getCredit();
+$liveCredit = null;
+try {
+    $liveCredit = $smsInstance->getCredit();
+} catch (Throwable $e) {}
 
 $phoneList = array_filter(array_map('trim', explode(',', $adminNotificationPhones)));
 
-// Patterns list for display
+// Patterns catalog list
 $patterns = [
     [
-        'id' => 'otp',
-        'name' => 'کد تایید OTP (ورود / بازیابی)',
-        'vars' => '{0} = کد تایید',
+        'key'     => 'otp',
+        'name'    => 'کد تایید OTP (ورود / ثبت‌نام / فراموشی رمز)',
+        'target'  => 'کاربران و مشتریان',
         'body_id' => SmsService::getBodyId('otp'),
-        'sample' => "کد تایید ورود به آسنا:\n{0}\nasena.company",
-        'target' => 'کاربر / مشتری'
+        'vars'    => '{0} = کد تایید عددی',
+        'sample'  => "کد تایید ورود به سامانه آسنا:\n{0}\nasena.company"
     ],
     [
-        'id' => 'booking',
-        'name' => 'تایید رزرو نوبت ویزیت',
-        'vars' => '{0} = تاریخ, {1} = ساعت',
+        'key'     => 'doctor_telehealth',
+        'name'    => 'اطلاع‌رسانی پیام تله‌هلث به پزشک',
+        'target'  => 'پزشک معالج',
+        'body_id' => SmsService::getBodyId('doctor_telehealth'),
+        'vars'    => '{0} = نام پزشک, {1} = نام بیمار/پت',
+        'sample'  => "دکتر {0} گرامی،\nپیام جدیدی از بیمار {1} در سامانه تله‌هلث آسنا ثبت شد.\nورود و پاسخگویی:\nhttps://asena.company/doctor/telehealth.php"
+    ],
+    [
+        'key'     => 'user_chat',
+        'name'    => 'اطلاع‌رسانی پیام جدید به کاربر / بیمار',
+        'target'  => 'کاربران و بیماران',
+        'body_id' => SmsService::getBodyId('user_chat'),
+        'vars'    => '{0} = نام کاربر, {1} = نام فرستنده',
+        'sample'  => "{0} گرامی،\nپیام جدیدی از طرف «{1}» در سامانه آسنا دریافت شد.\nمشاهده و پاسخ:\nhttps://asena.company/chat.php"
+    ],
+    [
+        'key'     => 'booking',
+        'name'    => 'تایید رزرو نوبت ویزیت به کاربر',
+        'target'  => 'کاربر / بیمار',
         'body_id' => SmsService::getBodyId('booking'),
-        'sample' => "کاربر گرامی، نوبت ویزیت شما در آسنا برای تاریخ {0} ساعت {1} با موفقیت تایید شد.\nasena.company",
-        'target' => 'کاربر / بیمار'
+        'vars'    => '{0} = تاریخ, {1} = ساعت',
+        'sample'  => "کاربر گرامی، نوبت ویزیت شما در آسنا برای تاریخ {0} ساعت {1} با موفقیت تایید شد.\nasena.company"
     ],
     [
-        'id' => 'reschedule',
-        'name' => 'تغییر زمان نوبت ویزیت',
-        'vars' => '{0} = نام پزشک, {1} = نام پت, {2} = تاریخ جدید, {3} = ساعت جدید',
+        'key'     => 'reschedule',
+        'name'    => 'تغییر زمان نوبت ویزیت',
+        'target'  => 'کاربر / بیمار',
         'body_id' => SmsService::getBodyId('reschedule'),
-        'sample' => "کاربر گرامی آسنا، زمان نوبت ویزیت پت شما ({1}) با دکتر {0} به تاریخ {2} ساعت {3} تغییر یافت.\nasena.company",
-        'target' => 'کاربر / بیمار'
+        'vars'    => '{0} = نام پزشک, {1} = نام پت, {2} = تاریخ جدید, {3} = ساعت جدید',
+        'sample'  => "کاربر گرامی آسنا، زمان نوبت ویزیت پت شما ({1}) با دکتر {0} به تاریخ {2} ساعت {3} تغییر یافت.\nasena.company"
     ],
     [
-        'id' => 'shipping',
-        'name' => 'ارسال سفارش فروشگاه / داروخانه',
-        'vars' => '{0} = شماره سفارش',
-        'body_id' => SmsService::getBodyId('shipping'),
-        'sample' => "سفارش شما به شماره {0} در آسنا پردازش و تحویل واحد ارسال شد.\nasena.company",
-        'target' => 'خریدار'
-    ],
-    [
-        'id' => 'subscription',
-        'name' => 'فعال‌سازی بسته اشتراک',
-        'vars' => '{0} = نام اشتراک (ماهانه/طلایی)',
-        'body_id' => SmsService::getBodyId('subscription'),
-        'sample' => "اشتراک {0} شما در سامانه آسنا با موفقیت فعال گردید.\nasena.company",
-        'target' => 'مشترک'
-    ],
-    [
-        'id' => 'charity',
-        'name' => 'تشکر واریز خیریه حیوانات',
-        'vars' => '{0} = مبلغ واریزی به تومان',
-        'body_id' => SmsService::getBodyId('charity'),
-        'sample' => "کاربر گرامی، از حمایت ارزشمند شما به مبلغ {0} تومان به پویش خیریه حیوانات آسنا سپاسگزاریم.\nasena.company",
-        'target' => 'نیکوکار'
-    ],
-    [
-        'id' => 'admin_order',
-        'name' => 'اطلاع‌رسانی سفارش جدید به مدیر',
-        'vars' => '{0} = شماره سفارش, {1} = مبلغ کل به تومان',
-        'body_id' => SmsService::getBodyId('admin_order'),
-        'sample' => "مدیر گرامی، سفارش جدید به شماره {0} با مبلغ {1} تومان در سامانه آسنا ثبت شد.\nasena.company",
-        'target' => 'مدیران سیستم'
-    ],
-    [
-        'id' => 'doctor_booking',
-        'name' => 'اطلاع‌رسانی نوبت جدید به پزشک',
-        'vars' => '{0} = نام پزشک, {1} = نام پت, {2} = تاریخ, {3} = ساعت',
+        'key'     => 'doctor_booking',
+        'name'    => 'اطلاع‌رسانی نوبت جدید به پزشک',
+        'target'  => 'پزشک معالج',
         'body_id' => SmsService::getBodyId('doctor_booking'),
-        'sample' => "دکتر {0} گرامی، نوبت جدید برای پت ({1}) در تاریخ {2} ساعت {3} در آسنا ثبت شد.\nasena.company",
-        'target' => 'پزشک معالج'
+        'vars'    => '{0} = نام پزشک, {1} = نام پت, {2} = تاریخ, {3} = ساعت',
+        'sample'  => "دکتر {0} گرامی، نوبت جدید برای پت ({1}) در تاریخ {2} ساعت {3} در آسنا ثبت شد.\nasena.company"
+    ],
+    [
+        'key'     => 'shipping',
+        'name'    => 'ارسال سفارش و کد رهگیری پستی',
+        'target'  => 'خریدار / مشتری',
+        'body_id' => SmsService::getBodyId('shipping'),
+        'vars'    => '{0} = شماره سفارش',
+        'sample'  => "سفارش شما به شماره {0} در آسنا پردازش و تحویل واحد ارسال شد.\nasena.company"
+    ],
+    [
+        'key'     => 'subscription',
+        'name'    => 'فعال‌سازی بسته اشتراک دوره ای',
+        'target'  => 'مشترک',
+        'body_id' => SmsService::getBodyId('subscription'),
+        'vars'    => '{0} = نام اشتراک',
+        'sample'  => "اشتراک {0} شما در سامانه آسنا با موفقیت فعال گردید.\nasena.company"
+    ],
+    [
+        'key'     => 'admin_order',
+        'name'    => 'اطلاع‌رسانی سفارش جدید به مدیر',
+        'target'  => 'مدیران سیستم',
+        'body_id' => SmsService::getBodyId('admin_order'),
+        'vars'    => '{0} = شماره سفارش, {1} = مبلغ کل',
+        'sample'  => "مدیر گرامی، سفارش جدید به شماره {0} با مبلغ {1} تومان در سامانه آسنا ثبت شد.\nasena.company"
+    ],
+    [
+        'key'     => 'charity',
+        'name'    => 'تشکر واریز خیریه و حمایت حیوانات',
+        'target'  => 'نیکوکار',
+        'body_id' => SmsService::getBodyId('charity'),
+        'vars'    => '{0} = مبلغ واریزی',
+        'sample'  => "کاربر گرامی، از حمایت ارزشمند شما به مبلغ {0} تومان به پویش خیریه حیوانات آسنا سپاسگزاریم.\nasena.company"
     ],
 ];
 ?>
@@ -210,18 +252,18 @@ $patterns = [
     <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
         <div>
             <div class="flex items-center gap-3">
-                <div class="w-12 h-12 rounded-xl bg-secondary-container/10 text-secondary-container flex items-center justify-center">
+                <div class="w-12 h-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center shadow-inner">
                     <span class="material-symbols-outlined text-[30px]" style="font-variation-settings: 'FILL' 1;">sms</span>
                 </div>
                 <div>
-                    <h2 class="font-headline-lg text-headline-lg text-primary font-bold">تنظیمات پیامک و اعلان‌های سیستم</h2>
-                    <p class="font-body-md text-body-md text-on-surface-variant">مدیریت خطوط خدماتی ملی‌پیامک، شماره‌های مدیران و اعلان‌های خودکار</p>
+                    <h2 class="font-headline-lg text-headline-lg text-primary font-bold">تنظیمات وب‌سرویس پیامک و اعلان‌های سیستم</h2>
+                    <p class="font-body-md text-body-md text-on-surface-variant">مرکز پایش، مدیریت خطوط خدماتی ملی‌پیامک، اعلان‌های تله‌هلث و پیام‌های کاربران</p>
                 </div>
             </div>
         </div>
         <div class="flex items-center gap-3">
-            <a href="https://login.melipayamak.com/?module=ShareService" target="_blank" rel="noopener noreferrer" class="flex items-center gap-2 bg-surface-container-lowest border border-outline-variant hover:border-secondary-container px-4 py-2.5 rounded-xl font-bold text-sm text-primary shadow-sm hover:shadow transition-all">
-                <span class="material-symbols-outlined text-[20px] text-secondary-container">open_in_new</span>
+            <a href="https://login.melipayamak.com/?module=ShareService" target="_blank" rel="noopener noreferrer" class="flex items-center gap-2 bg-surface-container-lowest border border-outline-variant hover:border-primary/50 px-4 py-2.5 rounded-xl font-bold text-xs text-primary shadow-sm hover:shadow transition-all">
+                <span class="material-symbols-outlined text-[18px] text-primary">open_in_new</span>
                 <span>پنل خطوط اشتراکی ملی‌پیامک</span>
             </a>
         </div>
@@ -242,229 +284,171 @@ $patterns = [
         </div>
     <?php endif; ?>
 
-    <!-- Stats Row -->
+    <!-- System Status & Metrics Row -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
+        <!-- 1. Gateway Status -->
         <div class="bg-surface-container-lowest p-5 rounded-2xl border border-outline-variant/40 stat-card-shadow flex items-center justify-between">
             <div>
-                <p class="text-xs font-bold text-on-surface-variant mb-1">شماره‌های مدیران متصل</p>
-                <p class="text-2xl font-black text-primary"><?= count($phoneList) ?> <span class="text-xs font-normal text-on-surface-variant">شماره</span></p>
+                <p class="text-xs font-bold text-on-surface-variant mb-1">وضعیت درگاه پیامک</p>
+                <div class="flex items-center gap-2">
+                    <span class="w-2.5 h-2.5 rounded-full <?= $mSandbox === '1' ? 'bg-amber-500' : 'bg-emerald-500 animate-pulse' ?>"></span>
+                    <p class="text-sm font-black text-primary">
+                        <?= $mSandbox === '1' ? 'شبیه‌ساز (Sandbox)' : 'عملیاتی مستقیم (Live)' ?>
+                    </p>
+                </div>
             </div>
-            <div class="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center text-primary">
-                <span class="material-symbols-outlined text-[28px]">contact_phone</span>
+            <div class="w-12 h-12 <?= $mSandbox === '1' ? 'bg-amber-50 text-amber-600' : 'bg-emerald-50 text-emerald-600' ?> rounded-xl flex items-center justify-center">
+                <span class="material-symbols-outlined text-[26px]">cell_tower</span>
             </div>
         </div>
 
+        <!-- 2. Melipayamak Credit -->
         <div class="bg-surface-container-lowest p-5 rounded-2xl border border-outline-variant/40 stat-card-shadow flex items-center justify-between">
             <div>
-                <p class="text-xs font-bold text-on-surface-variant mb-1">پیامک سفارشات جدید</p>
-                <p class="text-lg font-black <?= $adminSmsOnOrder === '1' ? 'text-emerald-600' : 'text-slate-400' ?>">
-                    <?= $adminSmsOnOrder === '1' ? 'فعال (ارسال آنی)' : 'غیرفعال' ?>
-                </p>
-            </div>
-            <div class="w-12 h-12 <?= $adminSmsOnOrder === '1' ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-400' ?> rounded-xl flex items-center justify-center">
-                <span class="material-symbols-outlined text-[28px]">shopping_cart_checkout</span>
-            </div>
-        </div>
-
-        <div class="bg-surface-container-lowest p-5 rounded-2xl border border-outline-variant/40 stat-card-shadow flex items-center justify-between">
-            <div>
-                <p class="text-xs font-bold text-on-surface-variant mb-1">پیامک نوبت به پزشکان</p>
-                <p class="text-lg font-black <?= $doctorSmsOnBooking === '1' ? 'text-secondary-container' : 'text-slate-400' ?>">
-                    <?= $doctorSmsOnBooking === '1' ? 'فعال (پیامک به دکتر)' : 'غیرفعال' ?>
-                </p>
-            </div>
-            <div class="w-12 h-12 <?= $doctorSmsOnBooking === '1' ? 'bg-secondary-container/10 text-secondary-container' : 'bg-slate-100 text-slate-400' ?> rounded-xl flex items-center justify-center">
-                <span class="material-symbols-outlined text-[28px]">medical_information</span>
-            </div>
-        </div>
-
-        <div class="bg-surface-container-lowest p-5 rounded-2xl border border-outline-variant/40 stat-card-shadow flex items-center justify-between">
-            <div>
-                <p class="text-xs font-bold text-on-surface-variant mb-1">مانده شارژ پنل ملی‌پیامک</p>
-                <p class="text-lg font-black <?= ($liveCredit !== null) ? 'text-emerald-600 font-mono' : 'text-amber-600' ?>">
-                    <?= ($liveCredit !== null) ? number_format($liveCredit) . ' ریال' : ($mSandbox === '1' ? 'حالت سندباکس' : 'متصل / بدون پاسخ مانده') ?>
+                <p class="text-xs font-bold text-on-surface-variant mb-1">مانده اعتبار ملی‌پیامک</p>
+                <p class="text-base font-black <?= ($liveCredit !== null) ? 'text-emerald-700 font-mono' : 'text-slate-600' ?>">
+                    <?= ($liveCredit !== null) ? number_format($liveCredit) . ' ریال' : ($mSandbox === '1' ? 'حالت شبیه‌ساز' : 'متصل به وب‌سرویس') ?>
                 </p>
             </div>
             <div class="w-12 h-12 bg-emerald-50 rounded-xl flex items-center justify-center text-emerald-600">
-                <span class="material-symbols-outlined text-[28px]">account_balance_wallet</span>
+                <span class="material-symbols-outlined text-[26px]">account_balance_wallet</span>
+            </div>
+        </div>
+
+        <!-- 3. Telehealth Alerts Status -->
+        <div class="bg-surface-container-lowest p-5 rounded-2xl border border-outline-variant/40 stat-card-shadow flex items-center justify-between">
+            <div>
+                <p class="text-xs font-bold text-on-surface-variant mb-1">پیامک تله‌هلث به پزشک</p>
+                <p class="text-sm font-black <?= $doctorSmsOnTelehealth === '1' ? 'text-emerald-600' : 'text-slate-400' ?>">
+                    <?= $doctorSmsOnTelehealth === '1' ? 'فعال (تراتل ۱۵ دقیقه)' : 'غیرفعال' ?>
+                </p>
+            </div>
+            <div class="w-12 h-12 <?= $doctorSmsOnTelehealth === '1' ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-400' ?> rounded-xl flex items-center justify-center">
+                <span class="material-symbols-outlined text-[26px]">medical_services</span>
+            </div>
+        </div>
+
+        <!-- 4. User Chat Alerts Status -->
+        <div class="bg-surface-container-lowest p-5 rounded-2xl border border-outline-variant/40 stat-card-shadow flex items-center justify-between">
+            <div>
+                <p class="text-xs font-bold text-on-surface-variant mb-1">پیامک پیام جدید به کاربر</p>
+                <p class="text-sm font-black <?= $userSmsOnChat === '1' ? 'text-emerald-600' : 'text-slate-400' ?>">
+                    <?= $userSmsOnChat === '1' ? 'فعال (پاسخ دکتر/مدیر)' : 'غیرفعال' ?>
+                </p>
+            </div>
+            <div class="w-12 h-12 <?= $userSmsOnChat === '1' ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-400' ?> rounded-xl flex items-center justify-center">
+                <span class="material-symbols-outlined text-[26px]">chat</span>
             </div>
         </div>
     </div>
 
-    <!-- Administrative Gateway Credentials Card (Exclusive to Admin) -->
-    <div class="bg-surface-container-lowest border-2 border-primary/20 rounded-2xl p-6 lg:p-8 stat-card-shadow mb-8 relative overflow-hidden">
-        <div class="absolute top-0 left-0 bg-primary text-white text-[10px] font-bold px-3 py-1 rounded-br-xl">
-            اختصاصی مدیر ارشد آسنا
-        </div>
-        <div class="flex items-center gap-3 mb-6 pb-4 border-b border-outline-variant/30">
-            <span class="material-symbols-outlined text-primary text-[28px]">key</span>
-            <div>
-                <h3 class="font-bold text-primary text-lg">پیکربندی وب‌سرویس و API Key ملی‌پیامک (خزانه‌داری آسنا)</h3>
-                <p class="text-xs text-on-surface-variant">تنظیمات اتصال مستقیم به درگاه ملی‌پیامک، کلید اختصاصی و تعیین تعرفه فروش پیامک به فروشندگان و پزشکان</p>
+    <!-- Section 1: Gateway Connection Credentials -->
+    <div class="bg-surface-container-lowest border border-outline-variant/40 rounded-2xl p-6 lg:p-8 stat-card-shadow mb-8">
+        <div class="flex items-center justify-between gap-3 mb-6 pb-4 border-b border-outline-variant/30">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
+                    <span class="material-symbols-outlined text-[24px]">vpn_key</span>
+                </div>
+                <div>
+                    <h3 class="font-bold text-primary text-base">پیکربندی اتصال مستقیم به وب‌سرویس ملی‌پیامک</h3>
+                    <p class="text-xs text-on-surface-variant">تنظیمات اعتبارسنجی درگاه، کلید API Key کنسول و شماره خط اختصاصی شرکت آسنا</p>
+                </div>
             </div>
+            <span class="text-[11px] font-mono bg-surface-container px-3 py-1 rounded-lg text-outline">
+                Gateway Engine: REST + SOAP
+            </span>
         </div>
 
         <form method="POST" action="sms_settings.php" class="space-y-6">
             <?= csrf_field() ?>
             <input type="hidden" name="action" value="save_gateway_credentials">
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                 <!-- API Key -->
-                <div class="sm:col-span-2 lg:col-span-1">
-                    <label class="block text-xs font-bold text-primary mb-2">کلید وب‌سرویس (API Key):</label>
-                    <input type="text" name="melipayamak_api_key" value="<?= htmlspecialchars($mApiKey) ?>" placeholder="e.g. 5ab7... یا خالی بگذارید" class="w-full px-4 py-3 rounded-xl border border-outline-variant bg-surface text-xs font-mono focus:border-primary focus:ring-1 focus:ring-primary outline-none dir-ltr text-left">
-                    <p class="text-[10px] text-on-surface-variant mt-1.5">کلید API ایجاد شده در کنسول ملی‌پیامک</p>
+                <div class="sm:col-span-2">
+                    <label class="block text-xs font-bold text-primary mb-2">کلید وب‌سرویس کنسول (API Key):</label>
+                    <input type="text" name="melipayamak_api_key" value="<?= htmlspecialchars($mApiKey) ?>" placeholder="efaec6c8-2daf-4473-9080-df7ac67eea89" class="w-full px-4 py-3 rounded-xl border border-outline-variant bg-surface text-xs font-mono focus:border-primary focus:ring-1 focus:ring-primary outline-none dir-ltr text-left">
+                    <p class="text-[10px] text-on-surface-variant mt-1.5">کلید REST API صادرشده از پنل جدید console.melipayamak.com</p>
                 </div>
 
                 <!-- Username -->
                 <div>
-                    <label class="block text-xs font-bold text-primary mb-2">نام کاربری پنل ملی‌پیامک (شماره موبایل/یوزر):</label>
-                    <input type="text" name="melipayamak_username" value="<?= htmlspecialchars($mUsername) ?>" placeholder="0914... یا نام کاربری" class="w-full px-4 py-3 rounded-xl border border-outline-variant bg-surface text-xs font-mono focus:border-primary focus:ring-1 focus:ring-primary outline-none dir-ltr text-left">
-                    <p class="text-[10px] text-on-surface-variant mt-1.5">شماره موبایل یا شناسه کاربری ثبت‌شده در ملی‌پیامک</p>
+                    <label class="block text-xs font-bold text-primary mb-2">نام کاربری / شماره همراه پنل:</label>
+                    <input type="text" name="melipayamak_username" value="<?= htmlspecialchars($mUsername) ?>" placeholder="9146676978" class="w-full px-4 py-3 rounded-xl border border-outline-variant bg-surface text-xs font-mono focus:border-primary focus:ring-1 focus:ring-primary outline-none dir-ltr text-left">
+                    <p class="text-[10px] text-on-surface-variant mt-1.5">شناسه کاربری ورود به پنل ملی‌پیامک</p>
                 </div>
 
                 <!-- Password -->
                 <div>
                     <label class="block text-xs font-bold text-primary mb-2">رمز عبور / توکن وب‌سرویس:</label>
                     <input type="password" name="melipayamak_password" value="<?= htmlspecialchars($mPassword) ?>" placeholder="••••••••" class="w-full px-4 py-3 rounded-xl border border-outline-variant bg-surface text-xs font-mono focus:border-primary focus:ring-1 focus:ring-primary outline-none dir-ltr text-left">
-                    <p class="text-[10px] text-on-surface-variant mt-1.5">رمز ورود به وب‌سرویس ارسال پیامک</p>
+                    <p class="text-[10px] text-on-surface-variant mt-1.5">رمز وب‌سرویس یا رمز ورود به حساب کاربری</p>
                 </div>
 
-                <!-- Dedicated From Number -->
-                <div>
+                <!-- From Number -->
+                <div class="sm:col-span-2">
                     <label class="block text-xs font-bold text-primary mb-2">شماره خط اختصاصی ارسال‌کننده (From):</label>
-                    <input type="text" name="melipayamak_from" value="<?= htmlspecialchars($mFrom) ?>" placeholder="50004001..." class="w-full px-4 py-3 rounded-xl border border-outline-variant bg-surface text-xs font-mono focus:border-primary focus:ring-1 focus:ring-primary outline-none dir-ltr text-left">
-                    <p class="text-[10px] text-on-surface-variant mt-1.5">خط خدماتی یا تبلیغاتی شرکت آسنا</p>
-                </div>
-
-                <!-- SMS Price Per Unit for Roles -->
-                <div>
-                    <label class="block text-xs font-bold text-primary mb-2">تعرفه پایه هر پیامک آزاد (تومان):</label>
-                    <input type="number" name="sms_price_per_unit" value="<?= $smsUnitPrice ?>" min="100" step="50" class="w-full px-4 py-3 rounded-xl border border-outline-variant bg-surface text-xs font-bold focus:border-primary focus:ring-1 focus:ring-primary outline-none">
-                    <p class="text-[10px] text-on-surface-variant mt-1.5">مبلغ کسر شده به ازای هر پیامک ارسالی مستقیم</p>
-                </div>
-
-                <!-- Package 100 Price -->
-                <div>
-                    <label class="block text-xs font-bold text-primary mb-2">قیمت بسته ۱۰۰ پیامک (تومان):</label>
-                    <input type="number" name="sms_pack_100_price" value="<?= $pack100Price ?>" min="5000" step="1000" class="w-full px-4 py-3 rounded-xl border border-outline-variant bg-surface text-xs font-bold focus:border-primary focus:ring-1 focus:ring-primary outline-none">
-                    <p class="text-[10px] text-emerald-700 font-bold mt-1.5">هر پیامک <?= number_format(round($pack100Price/100)) ?> ت — سود آسنا: <?= number_format($pack100Price - 15000) ?> ت</p>
-                </div>
-
-                <!-- Package 500 Price -->
-                <div>
-                    <label class="block text-xs font-bold text-primary mb-2">قیمت بسته ۵۰۰ پیامک (تومان):</label>
-                    <input type="number" name="sms_pack_500_price" value="<?= $pack500Price ?>" min="20000" step="5000" class="w-full px-4 py-3 rounded-xl border border-outline-variant bg-surface text-xs font-bold focus:border-primary focus:ring-1 focus:ring-primary outline-none">
-                    <p class="text-[10px] text-emerald-700 font-bold mt-1.5">هر پیامک <?= number_format(round($pack500Price/500)) ?> ت — سود آسنا: <?= number_format($pack500Price - 75000) ?> ت</p>
-                </div>
-
-                <!-- Package 1000 Price -->
-                <div>
-                    <label class="block text-xs font-bold text-primary mb-2">قیمت بسته ۱۰۰۰ پیامک طلایی (تومان):</label>
-                    <input type="number" name="sms_pack_1000_price" value="<?= $pack1000Price ?>" min="50000" step="5000" class="w-full px-4 py-3 rounded-xl border border-outline-variant bg-surface text-xs font-bold focus:border-primary focus:ring-1 focus:ring-primary outline-none">
-                    <p class="text-[10px] text-emerald-700 font-bold mt-1.5">هر پیامک <?= number_format(round($pack100Price/1000 * 0.8)) ?> ت — سود آسنا: <?= number_format($pack1000Price - 150000) ?> ت</p>
+                    <input type="text" name="melipayamak_from" value="<?= htmlspecialchars($mFrom) ?>" placeholder="2170002198 یا 50004001" class="w-full px-4 py-3 rounded-xl border border-outline-variant bg-surface text-xs font-mono focus:border-primary focus:ring-1 focus:ring-primary outline-none dir-ltr text-left">
+                    <p class="text-[10px] text-on-surface-variant mt-1.5">خط پیامکی اختصاصی شرکت آسنا جهت ارسال پیام‌های مستقیم</p>
                 </div>
 
                 <!-- Sandbox Mode Toggle -->
-                <div class="flex items-center gap-3 pt-6">
+                <div class="sm:col-span-2 flex items-center gap-3 pt-2">
                     <label class="relative inline-flex items-center cursor-pointer">
                         <input type="checkbox" name="melipayamak_sandbox" value="1" <?= $mSandbox === '1' ? 'checked' : '' ?> class="sr-only peer">
                         <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500"></div>
                     </label>
                     <div>
-                        <span class="text-xs font-bold text-slate-800 block">حالت شبیه‌ساز (Sandbox / Mock)</span>
-                        <span class="text-[10px] text-slate-500">در صورت فعال بودن، پیامک به صورت آزمایشی در لاگ ثبت می‌شود.</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Profit & Revenue Margin Analytics Box -->
-            <div class="mt-6 bg-gradient-to-r from-emerald-50 via-teal-50 to-blue-50 border border-emerald-200/80 rounded-2xl p-5">
-                <div class="flex items-center justify-between gap-3 mb-3 pb-2 border-b border-emerald-200/60">
-                    <div class="flex items-center gap-2">
-                        <span class="material-symbols-outlined text-emerald-700 text-lg">monetization_on</span>
-                        <h4 class="text-xs font-black text-emerald-900">تحلیل حاشیه سود اختصاصی پلتفرم آسنا از فروش پیامک به مراکز و پزشکان</h4>
-                    </div>
-                    <span class="text-[10px] font-extrabold bg-emerald-600 text-white px-2.5 py-0.5 rounded-full">سود ناخالص تا ۵۰۰٪+</span>
-                </div>
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
-                    <div class="bg-white/80 p-3 rounded-xl border border-emerald-100 shadow-2xs">
-                        <div class="text-[11px] text-slate-500 font-bold mb-1">بسته ۱۰۰ پیامک (<?= number_format($pack100Price) ?> ت)</div>
-                        <div class="flex justify-between items-center text-[10px] text-slate-600 mb-1">
-                            <span>هزینه خرید ملی‌پیامک:</span>
-                            <span class="font-mono">۱۵,۰۰۰ ت</span>
-                        </div>
-                        <div class="flex justify-between items-center font-bold text-emerald-700 pt-1 border-t border-slate-100">
-                            <span>سود خالص آسنا:</span>
-                            <span class="font-mono text-sm">+<?= number_format($pack100Price - 15000) ?> ت</span>
-                        </div>
-                    </div>
-                    <div class="bg-white/80 p-3 rounded-xl border border-emerald-100 shadow-2xs">
-                        <div class="text-[11px] text-slate-500 font-bold mb-1">بسته ۵۰۰ پیامک (<?= number_format($pack500Price) ?> ت)</div>
-                        <div class="flex justify-between items-center text-[10px] text-slate-600 mb-1">
-                            <span>هزینه خرید ملی‌پیامک:</span>
-                            <span class="font-mono">۷۵,۰۰۰ ت</span>
-                        </div>
-                        <div class="flex justify-between items-center font-bold text-emerald-700 pt-1 border-t border-slate-100">
-                            <span>سود خالص آسنا:</span>
-                            <span class="font-mono text-sm">+<?= number_format($pack500Price - 75000) ?> ت</span>
-                        </div>
-                    </div>
-                    <div class="bg-white/80 p-3 rounded-xl border border-emerald-100 shadow-2xs">
-                        <div class="text-[11px] text-slate-500 font-bold mb-1">بسته ۱۰۰۰ پیامک طلایی (<?= number_format($pack1000Price) ?> ت)</div>
-                        <div class="flex justify-between items-center text-[10px] text-slate-600 mb-1">
-                            <span>هزینه خرید ملی‌پیامک:</span>
-                            <span class="font-mono">۱۵۰,۰۰۰ ت</span>
-                        </div>
-                        <div class="flex justify-between items-center font-bold text-emerald-700 pt-1 border-t border-slate-100">
-                            <span>سود خالص آسنا:</span>
-                            <span class="font-mono text-sm">+<?= number_format($pack1000Price - 150000) ?> ت</span>
-                        </div>
+                        <span class="text-xs font-bold text-slate-800 block">حالت شبیه‌ساز (Sandbox / Mock Mode)</span>
+                        <span class="text-[10px] text-slate-500">در صورت فعال بودن، پیامک‌ها در لاگ سیستم ثبت می‌شوند اما به مخابرات ارسال نمی‌گردند (مناسب تست محلی).</span>
                     </div>
                 </div>
             </div>
 
             <div class="pt-4 border-t border-outline-variant/30 flex justify-between items-center">
-                <span class="text-xs text-slate-500">اطلاعات در جدول تنظیمات پایگاه‌داده با اولویت بالاتر از .env ذخیره می‌شوند.</span>
-                <button type="submit" class="bg-primary hover:bg-primary-container text-white px-6 py-2.5 rounded-xl font-bold text-xs shadow-md transition-all flex items-center gap-2">
+                <span class="text-xs text-on-surface-variant">تنظیمات در جدول settings دیتابیس با اولویت بالاتر از .env ذخیره می‌شوند.</span>
+                <button type="submit" class="bg-primary hover:bg-primary/90 text-white px-6 py-2.5 rounded-xl font-bold text-xs shadow transition-all flex items-center gap-2">
                     <span class="material-symbols-outlined text-sm">save</span>
-                    <span>ذخیره مشخصات وب‌سرویس ملی‌پیامک</span>
+                    <span>ذخیره مشخصات درگاه پیامک</span>
                 </button>
             </div>
         </form>
     </div>
 
-    <!-- Main 2-Column Grid -->
+    <!-- Section 2: Main 2-Column Grid (Notification Policies + Live Tester) -->
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 mb-8">
-        <!-- Configuration Form (Col 7) -->
+        <!-- Notification Events Form (Col 7) -->
         <div class="lg:col-span-7 bg-surface-container-lowest border border-outline-variant/40 rounded-2xl p-6 lg:p-8 stat-card-shadow">
             <div class="flex items-center gap-3 mb-6 pb-4 border-b border-outline-variant/30">
-                <span class="material-symbols-outlined text-secondary-container text-[26px]">manage_accounts</span>
+                <div class="w-10 h-10 rounded-xl bg-secondary/10 text-secondary flex items-center justify-center">
+                    <span class="material-symbols-outlined text-[24px]">notifications_active</span>
+                </div>
                 <div>
-                    <h3 class="font-bold text-primary text-lg">شماره‌های اعلان و تنظیمات خودکار</h3>
-                    <p class="text-xs text-on-surface-variant">تعیین شماره مدیران برای دریافت پیامک سفارشات و نوبت‌ها</p>
+                    <h3 class="font-bold text-primary text-base">رویدادها و اعلان‌های پیامکی خودکار</h3>
+                    <p class="text-xs text-on-surface-variant">فعال‌سازی یا غیرفعال‌سازی پیامک‌های خودکار سیستم برای پزشکان، کاربران و مدیران</p>
                 </div>
             </div>
 
             <form method="POST" action="sms_settings.php" class="space-y-6">
                 <?= csrf_field() ?>
-                <input type="hidden" name="action" value="save_settings">
+                <input type="hidden" name="action" value="save_notifications">
 
+                <!-- Admin Notification Numbers -->
                 <div>
-                    <label class="block text-sm font-bold text-primary mb-2">
-                        شماره‌های موبایل مدیران جهت دریافت پیامک:
+                    <label class="block text-xs font-bold text-primary mb-2">
+                        شماره‌های همراه مدیران جهت دریافت پیامک‌های پلتفرم:
                     </label>
-                    <textarea name="admin_notification_phones" rows="2" class="w-full p-3.5 bg-surface-container-low border border-outline-variant rounded-xl text-sm font-mono text-left focus:ring-2 focus:ring-secondary-container outline-none transition-all" placeholder="09146676978, 09123456789" dir="ltr"><?= htmlspecialchars($adminNotificationPhones) ?></textarea>
-                    <p class="text-xs text-on-surface-variant mt-1.5 leading-relaxed">
-                        می‌توانید چند شماره موبایل را با کاما (,) یا فاصله جدا کنید. هنگام ثبت سفارش یا نوبت جدید، به همه این شماره‌ها پیامک ارسال خواهد شد.
+                    <textarea name="admin_notification_phones" rows="2" class="w-full p-3 bg-surface-container-low border border-outline-variant rounded-xl text-xs font-mono text-left focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all" placeholder="09146676978, 09123456789" dir="ltr"><?= htmlspecialchars($adminNotificationPhones) ?></textarea>
+                    <p class="text-[11px] text-on-surface-variant mt-1 leading-relaxed">
+                        شماره‌های مدیران را با کاما (,) یا فاصله جدا کنید. هشدارهای سفارشات و نوبت‌ها به تمام این شماره‌ها ارسال خواهد شد.
                     </p>
 
                     <!-- Active Phone Chips -->
                     <?php if (!empty($phoneList)): ?>
-                    <div class="flex flex-wrap gap-2 mt-3">
+                    <div class="flex flex-wrap gap-2 mt-2.5">
                         <?php foreach ($phoneList as $p): ?>
-                            <span class="inline-flex items-center gap-1.5 bg-primary/5 text-primary text-xs font-bold px-3 py-1.5 rounded-lg border border-primary/10" dir="ltr">
-                                <span class="material-symbols-outlined text-[14px]">phone_iphone</span>
+                            <span class="inline-flex items-center gap-1.5 bg-primary/5 text-primary text-[11px] font-bold px-3 py-1 rounded-lg border border-primary/10" dir="ltr">
+                                <span class="material-symbols-outlined text-[13px]">phone_iphone</span>
                                 <span><?= htmlspecialchars($p) ?></span>
                             </span>
                         <?php endforeach; ?>
@@ -472,56 +456,84 @@ $patterns = [
                     <?php endif; ?>
                 </div>
 
-                <div class="pt-4 border-t border-outline-variant/30 space-y-4">
-                    <p class="text-xs font-bold text-on-surface-variant uppercase tracking-wider">رویدادهای ارسال پیامک خودکار</p>
+                <div class="pt-4 border-t border-outline-variant/30 space-y-3.5">
+                    <p class="text-xs font-bold text-on-surface-variant uppercase tracking-wider">سیاست‌های ارسال اعلان پیامکی</p>
 
-                    <!-- Toggle 1: Order Alert to Admin -->
-                    <label class="flex items-center justify-between p-4 rounded-xl bg-surface-container-low border border-outline-variant/30 hover:border-secondary-container/50 cursor-pointer transition-all">
+                    <!-- Toggle 1: Telehealth SMS to Doctor -->
+                    <label class="flex items-center justify-between p-3.5 rounded-xl bg-surface-container-low border border-outline-variant/30 hover:border-primary/50 cursor-pointer transition-all">
                         <div class="flex items-center gap-3">
-                            <div class="w-9 h-9 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center">
-                                <span class="material-symbols-outlined text-[20px]">shopping_bag</span>
+                            <div class="w-9 h-9 rounded-lg bg-emerald-100 text-emerald-800 flex items-center justify-center">
+                                <span class="material-symbols-outlined text-[20px]">medical_services</span>
                             </div>
                             <div>
-                                <p class="text-sm font-bold text-primary">ارسال پیامک به مدیر هنگام سفارش جدید</p>
-                                <p class="text-xs text-on-surface-variant">به محض پرداخت موفق هر سبد خرید، شماره سفارش و مبلغ به مدیر پیامک می‌شود.</p>
+                                <p class="text-xs font-bold text-primary">ارسال پیامک به پزشک معالج هنگام پیام جدید بیمار در تله‌هلث</p>
+                                <p class="text-[11px] text-on-surface-variant">به محض ارسال پیام بیمار، پیامک اطلاع‌رسانی با تراتل آنتی‌اسپم ۱۵ دقیقه‌ای به موبایل پزشک ارسال می‌شود.</p>
                             </div>
                         </div>
-                        <input type="checkbox" name="admin_sms_on_order" value="1" <?= $adminSmsOnOrder === '1' ? 'checked' : '' ?> class="w-5 h-5 accent-secondary-container rounded cursor-pointer">
+                        <input type="checkbox" name="doctor_sms_on_telehealth" value="1" <?= $doctorSmsOnTelehealth === '1' ? 'checked' : '' ?> class="w-5 h-5 accent-primary rounded cursor-pointer">
                     </label>
 
-                    <!-- Toggle 2: Booking Alert to Admin -->
-                    <label class="flex items-center justify-between p-4 rounded-xl bg-surface-container-low border border-outline-variant/30 hover:border-secondary-container/50 cursor-pointer transition-all">
+                    <!-- Toggle 2: User SMS on reply from Doctor/Admin/Org -->
+                    <label class="flex items-center justify-between p-3.5 rounded-xl bg-surface-container-low border border-outline-variant/30 hover:border-primary/50 cursor-pointer transition-all">
                         <div class="flex items-center gap-3">
-                            <div class="w-9 h-9 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
-                                <span class="material-symbols-outlined text-[20px]">calendar_month</span>
+                            <div class="w-9 h-9 rounded-lg bg-blue-100 text-blue-800 flex items-center justify-center">
+                                <span class="material-symbols-outlined text-[20px]">mark_chat_unread</span>
                             </div>
                             <div>
-                                <p class="text-sm font-bold text-primary">ارسال پیامک به مدیر هنگام رزرو نوبت</p>
-                                <p class="text-xs text-on-surface-variant">اطلاع‌رسانی به مدیر سیستم در هنگام ثبت ویزیت جدید کلینیک.</p>
+                                <p class="text-xs font-bold text-primary">ارسال پیامک به کاربر هنگام پاسخ پزشک، مدیریت یا کلینیک</p>
+                                <p class="text-[11px] text-on-surface-variant">اطلاع‌رسانی پیام جدید در چت با تراتل هوشمند ۱۵ دقیقه‌ای به بیمار جهت پاسخگویی سریع.</p>
                             </div>
                         </div>
-                        <input type="checkbox" name="admin_sms_on_booking" value="1" <?= $adminSmsOnBooking === '1' ? 'checked' : '' ?> class="w-5 h-5 accent-secondary-container rounded cursor-pointer">
+                        <input type="checkbox" name="user_sms_on_chat" value="1" <?= $userSmsOnChat === '1' ? 'checked' : '' ?> class="w-5 h-5 accent-primary rounded cursor-pointer">
                     </label>
 
-                    <!-- Toggle 3: Booking Alert to Doctor -->
-                    <label class="flex items-center justify-between p-4 rounded-xl bg-surface-container-low border border-outline-variant/30 hover:border-secondary-container/50 cursor-pointer transition-all">
+                    <!-- Toggle 3: Doctor SMS on new booking -->
+                    <label class="flex items-center justify-between p-3.5 rounded-xl bg-surface-container-low border border-outline-variant/30 hover:border-primary/50 cursor-pointer transition-all">
                         <div class="flex items-center gap-3">
-                            <div class="w-9 h-9 rounded-lg bg-secondary-container/10 text-secondary-container flex items-center justify-center">
+                            <div class="w-9 h-9 rounded-lg bg-secondary/10 text-secondary flex items-center justify-center">
                                 <span class="material-symbols-outlined text-[20px]">stethoscope</span>
                             </div>
                             <div>
-                                <p class="text-sm font-bold text-primary">ارسال پیامک مستقیم به پزشک معالج</p>
-                                <p class="text-xs text-on-surface-variant">هنگامی که بیماری نوبتی با پزشک ثبت می‌کند، پیامک حاوی ساعت و تاریخ به شماره پزشک ارسال می‌شود.</p>
+                                <p class="text-xs font-bold text-primary">ارسال پیامک به پزشک هنگام رزرو نوبت جدید</p>
+                                <p class="text-[11px] text-on-surface-variant">ارسال جزئیات تاریخ، ساعت و نام پت به شماره موبایل پزشک معالج.</p>
                             </div>
                         </div>
-                        <input type="checkbox" name="doctor_sms_on_booking" value="1" <?= $doctorSmsOnBooking === '1' ? 'checked' : '' ?> class="w-5 h-5 accent-secondary-container rounded cursor-pointer">
+                        <input type="checkbox" name="doctor_sms_on_booking" value="1" <?= $doctorSmsOnBooking === '1' ? 'checked' : '' ?> class="w-5 h-5 accent-primary rounded cursor-pointer">
+                    </label>
+
+                    <!-- Toggle 4: Admin SMS on new order -->
+                    <label class="flex items-center justify-between p-3.5 rounded-xl bg-surface-container-low border border-outline-variant/30 hover:border-primary/50 cursor-pointer transition-all">
+                        <div class="flex items-center gap-3">
+                            <div class="w-9 h-9 rounded-lg bg-amber-100 text-amber-800 flex items-center justify-center">
+                                <span class="material-symbols-outlined text-[20px]">shopping_bag</span>
+                            </div>
+                            <div>
+                                <p class="text-xs font-bold text-primary">ارسال پیامک به مدیران هنگام ثبت سفارش جدید</p>
+                                <p class="text-[11px] text-on-surface-variant">اطلاع‌رسانی آنی شماره سفارش و مبلغ به مدیران پس از پرداخت موفق سبد خرید.</p>
+                            </div>
+                        </div>
+                        <input type="checkbox" name="admin_sms_on_order" value="1" <?= $adminSmsOnOrder === '1' ? 'checked' : '' ?> class="w-5 h-5 accent-primary rounded cursor-pointer">
+                    </label>
+
+                    <!-- Toggle 5: Admin SMS on new booking -->
+                    <label class="flex items-center justify-between p-3.5 rounded-xl bg-surface-container-low border border-outline-variant/30 hover:border-primary/50 cursor-pointer transition-all">
+                        <div class="flex items-center gap-3">
+                            <div class="w-9 h-9 rounded-lg bg-purple-100 text-purple-800 flex items-center justify-center">
+                                <span class="material-symbols-outlined text-[20px]">calendar_month</span>
+                            </div>
+                            <div>
+                                <p class="text-xs font-bold text-primary">ارسال پیامک به مدیران هنگام ثبت نوبت کلینیک</p>
+                                <p class="text-[11px] text-on-surface-variant">اطلاع‌رسانی به مدیران سیستم هنگام ثبت وقت ملاقات حضوری یا آنلاین.</p>
+                            </div>
+                        </div>
+                        <input type="checkbox" name="admin_sms_on_booking" value="1" <?= $adminSmsOnBooking === '1' ? 'checked' : '' ?> class="w-5 h-5 accent-primary rounded cursor-pointer">
                     </label>
                 </div>
 
                 <div class="pt-4">
-                    <button type="submit" class="w-full bg-secondary-container hover:bg-secondary-container/90 text-white font-bold py-3.5 px-6 rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-secondary-container/20 active:scale-[0.99] transition-all">
-                        <span class="material-symbols-outlined">save</span>
-                        <span>ذخیره تغییرات تنظیمات پیامک</span>
+                    <button type="submit" class="w-full bg-primary hover:bg-primary/90 text-white font-bold py-3.5 px-6 rounded-xl flex items-center justify-center gap-2 shadow-md active:scale-[0.99] transition-all text-xs">
+                        <span class="material-symbols-outlined text-sm">save</span>
+                        <span>ذخیره تنظیمات اعلان‌های خودکار</span>
                     </button>
                 </div>
             </form>
@@ -531,10 +543,12 @@ $patterns = [
         <div class="lg:col-span-5 bg-surface-container-lowest border border-outline-variant/40 rounded-2xl p-6 lg:p-8 stat-card-shadow flex flex-col justify-between">
             <div>
                 <div class="flex items-center gap-3 mb-6 pb-4 border-b border-outline-variant/30">
-                    <span class="material-symbols-outlined text-emerald-600 text-[26px]">send_to_mobile</span>
+                    <div class="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                        <span class="material-symbols-outlined text-[24px]">send_to_mobile</span>
+                    </div>
                     <div>
-                        <h3 class="font-bold text-primary text-lg">ابزار تست زنده ارسال پیامک</h3>
-                        <p class="text-xs text-on-surface-variant">بررسی صحت اتصال به خطوط خدماتی ملی‌پیامک</p>
+                        <h3 class="font-bold text-primary text-base">ابزار تست زنده ارسال پیامک</h3>
+                        <p class="text-xs text-on-surface-variant">بررسی صحت اتصال به خطوط خدماتی و تحویل پیامک روی سیم‌کارت</p>
                     </div>
                 </div>
 
@@ -543,100 +557,112 @@ $patterns = [
                     <input type="hidden" name="action" value="test_sms">
 
                     <div>
-                        <label class="block text-sm font-bold text-primary mb-2">شماره موبایل گیرنده تست:</label>
+                        <label class="block text-xs font-bold text-primary mb-2">شماره موبایل گیرنده تست:</label>
                         <div class="relative">
-                            <input type="text" name="test_phone" value="<?= htmlspecialchars($phoneList[0] ?? '09146676978') ?>" class="w-full p-3 pl-10 bg-surface-container-low border border-outline-variant rounded-xl text-sm font-mono text-left focus:ring-2 focus:ring-emerald-500 outline-none transition-all" placeholder="09123456789" dir="ltr" required>
-                            <span class="material-symbols-outlined absolute left-3 top-3 text-outline text-[20px]">phone_android</span>
+                            <input type="text" name="test_phone" value="<?= htmlspecialchars($phoneList[0] ?? '09146676978') ?>" class="w-full p-3 pl-10 bg-surface-container-low border border-outline-variant rounded-xl text-xs font-mono text-left focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 outline-none transition-all" placeholder="09123456789" dir="ltr" required>
+                            <span class="material-symbols-outlined absolute left-3 top-2.5 text-outline text-[20px]">phone_android</span>
                         </div>
                     </div>
 
                     <div>
-                        <label class="block text-sm font-bold text-primary mb-2">نوع پیامک تستی:</label>
-                        <select name="test_type" class="w-full p-3 bg-surface-container-low border border-outline-variant rounded-xl text-sm font-bold text-primary focus:ring-2 focus:ring-emerald-500 outline-none transition-all">
+                        <label class="block text-xs font-bold text-primary mb-2">نوع سناریوی پیامک تستی:</label>
+                        <select name="test_type" class="w-full p-3 bg-surface-container-low border border-outline-variant rounded-xl text-xs font-bold text-primary focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 outline-none transition-all">
                             <option value="direct">پیامک مستقیم عمومی (Direct SMS)</option>
-                            <option value="otp">تست کد اعتبارسنجی OTP</option>
-                            <option value="admin_order">تست پیامک هشدار سفارش جدید مدیر</option>
-                            <option value="doctor_booking">تست پیامک رزرو نوبت به پزشک</option>
+                            <option value="otp">کد تایید اعتبارسنجی ورود (OTP)</option>
+                            <option value="doctor_telehealth">پیامک هشدار تله‌هلث به پزشک</option>
+                            <option value="user_chat">پیامک هشدار پیام جدید به کاربر/بیمار</option>
+                            <option value="admin_order">هشدار ثبت سفارش جدید به مدیر</option>
+                            <option value="doctor_booking">هشدار ثبت نوبت جدید به پزشک</option>
                         </select>
                     </div>
 
-                    <button type="submit" class="w-full bg-primary hover:bg-primary/90 text-white font-bold py-3.5 px-6 rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-primary/20 active:scale-[0.99] transition-all">
-                        <span class="material-symbols-outlined">rocket_launch</span>
+                    <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 px-6 rounded-xl flex items-center justify-center gap-2 shadow-md active:scale-[0.99] transition-all text-xs">
+                        <span class="material-symbols-outlined text-sm">rocket_launch</span>
                         <span>ارسال پیامک آزمایشی فوری</span>
                     </button>
                 </form>
 
                 <!-- Help Tip Box -->
-                <div class="mt-6 p-4 rounded-xl bg-amber-50/70 border border-amber-200/80 text-amber-900 text-xs leading-relaxed">
-                    <div class="flex items-center gap-1.5 font-bold mb-1 text-amber-800">
-                        <span class="material-symbols-outlined text-[16px]">info</span>
-                        <span>نکته مهم خطوط خدماتی اشتراکی:</span>
+                <div class="mt-6 p-4 rounded-xl bg-surface-container-low border border-outline-variant/30 text-xs leading-relaxed">
+                    <div class="flex items-center gap-1.5 font-bold mb-1 text-primary">
+                        <span class="material-symbols-outlined text-[16px] text-emerald-600">verified</span>
+                        <span>مزیت خطوط خدماتی اشتراکی (BaseService):</span>
                     </div>
-                    چنانچه شناسه‌های پترن (Body ID) در پنل ملی‌پیامک در انتظار تایید باشند، سامانه به طور خودکار پیامک را از طریق متد خط مستقیم ارسال خواهد کرد تا هیچ اعلانی در سیستم متوقف نماند.
+                    پیامک‌های ارسالی از طریق الگوهای خدماتی، حتی به شماره‌هایی که دریافت پیامک‌های تبلیغاتی را مسدود کرده‌اند (بلک‌لیست مخابرات) به صورت آنی تحویل داده می‌شوند.
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Patterns & Variables Directory Table -->
-    <div class="bg-surface-container-lowest border border-outline-variant/40 rounded-2xl p-6 lg:p-8 stat-card-shadow">
-        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6 pb-4 border-b border-outline-variant/30">
-            <div>
-                <h3 class="font-bold text-primary text-lg">کاتالوگ الگوها و پترن‌های سامانه (Melipayamak Patterns)</h3>
-                <p class="text-xs text-on-surface-variant">قالب‌های استاندارد خط خدماتی اشتراکی ثبت‌شده جهت عبور از بلک‌لیست مخابرات</p>
-            </div>
-            <a href="https://login.melipayamak.com/?module=ShareService" target="_blank" class="text-xs font-bold text-secondary-container hover:underline flex items-center gap-1">
-                <span>ثبت پترن در سامانه ملی‌پیامک</span>
-                <span class="material-symbols-outlined text-[14px]">arrow_forward</span>
-            </a>
-        </div>
+    <!-- Section 3: Patterns Catalog & Inline Body ID Management -->
+    <div class="bg-surface-container-lowest border border-outline-variant/40 rounded-2xl p-6 lg:p-8 stat-card-shadow mb-8">
+        <form method="POST" action="sms_settings.php">
+            <?= csrf_field() ?>
+            <input type="hidden" name="action" value="save_pattern_ids">
 
-        <div class="overflow-x-auto">
-            <table class="w-full text-right text-xs">
-                <thead>
-                    <tr class="bg-surface-container-low text-on-surface-variant font-bold border-b border-outline-variant/40">
-                        <th class="p-3.5 rounded-r-xl">عنوان الگو</th>
-                        <th class="p-3.5">مخاطب</th>
-                        <th class="p-3.5">شناسه پترن (Body ID)</th>
-                        <th class="p-3.5">متغیرها</th>
-                        <th class="p-3.5 rounded-l-xl">متن مصوب / نمونه</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-outline-variant/20">
-                    <?php foreach ($patterns as $pat): ?>
-                    <tr class="hover:bg-surface-container-low/50 transition-colors">
-                        <td class="p-3.5 font-bold text-primary"><?= htmlspecialchars($pat['name']) ?></td>
-                        <td class="p-3.5">
-                            <span class="bg-primary/5 text-primary font-bold px-2.5 py-1 rounded-md text-[11px]">
-                                <?= htmlspecialchars($pat['target']) ?>
-                            </span>
-                        </td>
-                        <td class="p-3.5 font-mono text-left" dir="ltr">
-                            <span class="<?= $pat['body_id'] !== '12345' ? 'bg-emerald-100 text-emerald-800 font-bold' : 'bg-slate-100 text-slate-500' ?> px-2.5 py-1 rounded text-[11px]">
-                                <?= htmlspecialchars($pat['body_id']) ?>
-                            </span>
-                        </td>
-                        <td class="p-3.5 font-mono text-slate-600" dir="ltr"><?= htmlspecialchars($pat['vars']) ?></td>
-                        <td class="p-3.5 text-slate-700 leading-relaxed font-sans max-w-md">
-                            <div class="bg-surface-container-low p-2 rounded-lg text-[11px] border border-outline-variant/20 whitespace-pre-line">
-                                <?= htmlspecialchars($pat['sample']) ?>
-                            </div>
-                        </td>
-                    </tr>
-                    <?php endforeach; ?>
-                </tbody>
-            </table>
-        </div>
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 pb-4 border-b border-outline-variant/30">
+                <div>
+                    <h3 class="font-bold text-primary text-base flex items-center gap-2">
+                        <span class="material-symbols-outlined text-primary text-[22px]">format_list_bulleted</span>
+                        <span>کاتالوگ الگوها و شناسه‌های خدماتی اشتراکی (Melipayamak Body IDs)</span>
+                    </h3>
+                    <p class="text-xs text-on-surface-variant">می‌توانید کدهای الگوهای تأییدشده در پنل ملی‌پیامک را مستقیماً در این جدول ویرایش و ذخیره فرمایید.</p>
+                </div>
+                <button type="submit" class="bg-primary hover:bg-primary/90 text-white px-5 py-2 rounded-xl font-bold text-xs shadow transition-all flex items-center gap-1.5 shrink-0">
+                    <span class="material-symbols-outlined text-sm">save</span>
+                    <span>ذخیره شناسه‌های پترن</span>
+                </button>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-right text-xs">
+                    <thead>
+                        <tr class="bg-surface-container-low text-on-surface-variant font-bold border-b border-outline-variant/40">
+                            <th class="p-3.5 rounded-r-xl">عنوان الگو و سناریو</th>
+                            <th class="p-3.5">مخاطب</th>
+                            <th class="p-3.5 w-44">شناسه الگو (Body ID)</th>
+                            <th class="p-3.5">متغیرهای الگو</th>
+                            <th class="p-3.5 rounded-l-xl">متن مصوب / نمونه قالب</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-outline-variant/20">
+                        <?php foreach ($patterns as $pat): ?>
+                        <tr class="hover:bg-surface-container-low/40 transition-colors">
+                            <td class="p-3.5 font-bold text-primary">
+                                <?= htmlspecialchars($pat['name']) ?>
+                            </td>
+                            <td class="p-3.5">
+                                <span class="bg-primary/5 text-primary font-bold px-2.5 py-1 rounded-md text-[11px] whitespace-nowrap">
+                                    <?= htmlspecialchars($pat['target']) ?>
+                                </span>
+                            </td>
+                            <td class="p-3.5">
+                                <input type="text" name="body_id_<?= $pat['key'] ?>" value="<?= htmlspecialchars($pat['body_id']) ?>" class="w-36 px-3 py-1.5 bg-surface rounded-lg border border-outline-variant text-xs font-mono font-bold text-center focus:border-primary outline-none" dir="ltr" placeholder="12345">
+                            </td>
+                            <td class="p-3.5 font-mono text-slate-600 text-[11px]" dir="ltr">
+                                <?= htmlspecialchars($pat['vars']) ?>
+                            </td>
+                            <td class="p-3.5 text-slate-700 leading-relaxed font-sans max-w-md">
+                                <div class="bg-surface-container-low p-2 rounded-lg text-[11px] border border-outline-variant/20 whitespace-pre-line font-sans">
+                                    <?= htmlspecialchars($pat['sample']) ?>
+                                </div>
+                            </td>
+                        </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+        </form>
     </div>
 
-    <!-- Diagnostic Logs Section -->
+    <!-- Section 4: Live Diagnostic Logs & Monitoring -->
     <?php
     $logFile = dirname(__DIR__, 2) . '/logs/sms.log';
     $recentLogs = [];
     if (file_exists($logFile) && is_readable($logFile)) {
         $lines = file($logFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
         if ($lines) {
-            $slice = array_slice($lines, -15);
+            $slice = array_slice($lines, -20);
             $slice = array_reverse($slice);
             foreach ($slice as $l) {
                 $decoded = json_decode($l, true);
@@ -645,35 +671,35 @@ $patterns = [
         }
     }
     ?>
-    <div class="bg-surface-container-lowest p-6 rounded-2xl shadow-sm border border-outline-variant/30 mt-6">
+    <div class="bg-surface-container-lowest p-6 lg:p-8 rounded-2xl shadow-sm border border-outline-variant/30">
         <div class="flex items-center justify-between mb-4 border-b border-outline-variant/20 pb-4">
             <div>
-                <h3 class="font-bold text-primary text-lg flex items-center gap-2">
-                    <span class="material-symbols-outlined text-secondary">history_edu</span>
-                    لاگ‌های تشخیصی ارسال پیامک (SMS Diagnostic Logs)
+                <h3 class="font-bold text-primary text-base flex items-center gap-2">
+                    <span class="material-symbols-outlined text-secondary text-[22px]">history_edu</span>
+                    <span>مانیتورینگ و لاگ‌های تشخیصی ارسال پیامک (SMS Diagnostic Logs)</span>
                 </h3>
-                <p class="text-xs text-on-surface-variant">رهگیری زنده پاسخ درگاه، کدهای خطا، متغیرهای ارسالی و وضعیت تحویل</p>
+                <p class="text-xs text-on-surface-variant">رهگیری زنده کدهای وضعیت مخابراتی، متغیرهای ارسالی و پاسخ‌های درگاه ملی‌پیامک</p>
             </div>
             <span class="text-xs font-mono bg-surface-container-low px-3 py-1 rounded-full text-outline">
-                <?= count($recentLogs) ?> رویداد اخیر
+                <?= count($recentLogs) ?> رویداد ثبت‌شده اخیر
             </span>
         </div>
 
         <?php if (empty($recentLogs)): ?>
-            <div class="p-8 text-center text-on-surface-variant text-sm bg-surface-container-low/50 rounded-xl">
-                هنوز رویدادی در فایل لاگ ثبت نشده است. با ارسال تست از فرم بالا، اولین لاگ ایجاد خواهد شد.
+            <div class="p-8 text-center text-on-surface-variant text-xs bg-surface-container-low/50 rounded-xl">
+                هنوز رویدادی در فایل لاگ ثبت نشده است. با ارسال یک پیامک تستی از فرم بالا، اولین لاگ ایجاد خواهد شد.
             </div>
         <?php else: ?>
             <div class="overflow-x-auto">
                 <table class="w-full text-right text-xs">
                     <thead>
                         <tr class="bg-surface-container-low text-on-surface-variant font-bold border-b border-outline-variant/40">
-                            <th class="p-3 rounded-r-xl">زمان</th>
-                            <th class="p-3">عملیات</th>
+                            <th class="p-3 rounded-r-xl">زمان ثبت</th>
+                            <th class="p-3">نوع عملیات</th>
                             <th class="p-3">شماره گیرنده</th>
                             <th class="p-3">وضعیت HTTP</th>
-                            <th class="p-3">تحلیل و تفسیر درگاه</th>
-                            <th class="p-3 rounded-l-xl">جزئیات فنی</th>
+                            <th class="p-3">تحلیل و وضعیت تحویل</th>
+                            <th class="p-3 rounded-l-xl">پاسخ فنی درگاه</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-outline-variant/20">
@@ -690,7 +716,7 @@ $patterns = [
                             </td>
                             <td class="p-3 font-mono font-bold" dir="ltr"><?= htmlspecialchars($toPhone) ?></td>
                             <td class="p-3">
-                                <span class="px-2 py-0.5 rounded text-[11px] font-mono <?= ($log['http_code'] ?? 0) === 200 ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800' ?>">
+                                <span class="px-2 py-0.5 rounded text-[11px] font-mono <?= ($log['http_code'] ?? 0) === 200 ? 'bg-emerald-100 text-emerald-800 font-bold' : 'bg-red-100 text-red-800' ?>">
                                     HTTP <?= htmlspecialchars((string)($log['http_code'] ?? '—')) ?>
                                 </span>
                             </td>

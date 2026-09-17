@@ -19,15 +19,17 @@ class SmsService {
     private $lastError = '';
     private $lastLog = [];
 
-    // Pattern Body IDs from Melipayamak panel (Can be overridden via .env or constants)
-    const BODY_ID_OTP            = '518597'; // کد تایید ورود/ثبت نام/فراموشی رمز (تایید شده)
-    const BODY_ID_BOOKING        = '528861'; // تایید رزرو نوبت به کاربر
-    const BODY_ID_RESCHEDULE     = '528862'; // تغییر زمان نوبت
-    const BODY_ID_SHIPPING       = '528863'; // ارسال سفارش به خریدار
-    const BODY_ID_SUBSCRIPTION   = '528864'; // فعال‌سازی بسته اشتراک
-    const BODY_ID_CHARITY        = '528865'; // قدردانی خیریه
-    const BODY_ID_ADMIN_ORDER    = '528866'; // اطلاع‌رسانی سفارش جدید به مدیر
-    const BODY_ID_DOCTOR_BOOKING = '528867'; // اطلاع‌رسانی نوبت جدید به پزشک
+    // Pattern Body IDs from Melipayamak panel (Can be overridden via .env or DB settings)
+    const BODY_ID_OTP               = '518597'; // کد تایید ورود/ثبت نام/فراموشی رمز (تایید شده)
+    const BODY_ID_BOOKING           = '528861'; // تایید رزرو نوبت به کاربر
+    const BODY_ID_RESCHEDULE        = '528862'; // تغییر زمان نوبت
+    const BODY_ID_SHIPPING          = '528863'; // ارسال سفارش به خریدار
+    const BODY_ID_SUBSCRIPTION      = '528864'; // فعال‌سازی بسته اشتراک
+    const BODY_ID_CHARITY           = '528865'; // قدردانی خیریه
+    const BODY_ID_ADMIN_ORDER       = '528866'; // اطلاع‌رسانی سفارش جدید به مدیر
+    const BODY_ID_DOCTOR_BOOKING    = '528867'; // اطلاع‌رسانی نوبت جدید به پزشک
+    const BODY_ID_DOCTOR_TELEHEALTH = '528867'; // اطلاع‌رسانی پیام جدید تله‌هلث به پزشک
+    const BODY_ID_USER_CHAT         = '518597'; // اطلاع‌رسانی پیام جدید به کاربر/بیمار
 
     public function __construct() {
         self::loadEnv();
@@ -141,38 +143,63 @@ class SmsService {
     }
 
     /**
-     * Get effective body ID for a pattern type (reads .env first, then constant)
+     * Get effective body ID for a pattern type (reads DB settings first, then .env, then constant)
      */
     public static function getBodyId($type) {
         self::loadEnv();
+        require_once __DIR__ . '/functions.php';
+
+        global $pdo;
+        if (!($pdo instanceof PDO)) {
+            $dbFile = __DIR__ . '/db.php';
+            if (file_exists($dbFile)) {
+                require_once $dbFile;
+            }
+        }
+
+        // 1. Priority 1: Dynamic settings configured in Admin Panel
+        if ($pdo instanceof PDO) {
+            try {
+                $dbVal = get_setting($pdo, "melipayamak_body_id_{$type}", '');
+                if (!empty($dbVal) && is_numeric($dbVal)) {
+                    return trim((string)$dbVal);
+                }
+            } catch (Throwable $e) {}
+        }
 
         $envMap = [
-            'otp'            => 'MELIPAYAMAK_BODY_ID_OTP',
-            'booking'        => 'MELIPAYAMAK_BODY_ID_BOOKING',
-            'shipping'       => 'MELIPAYAMAK_BODY_ID_SHIPPING',
-            'subscription'   => 'MELIPAYAMAK_BODY_ID_SUBSCRIPTION',
-            'charity'        => 'MELIPAYAMAK_BODY_ID_CHARITY',
-            'reschedule'     => 'MELIPAYAMAK_BODY_ID_RESCHEDULE',
-            'admin_order'    => 'MELIPAYAMAK_BODY_ID_ADMIN_ORDER',
-            'doctor_booking' => 'MELIPAYAMAK_BODY_ID_DOCTOR_BOOKING',
+            'otp'               => 'MELIPAYAMAK_BODY_ID_OTP',
+            'booking'           => 'MELIPAYAMAK_BODY_ID_BOOKING',
+            'shipping'          => 'MELIPAYAMAK_BODY_ID_SHIPPING',
+            'subscription'      => 'MELIPAYAMAK_BODY_ID_SUBSCRIPTION',
+            'charity'           => 'MELIPAYAMAK_BODY_ID_CHARITY',
+            'reschedule'        => 'MELIPAYAMAK_BODY_ID_RESCHEDULE',
+            'admin_order'       => 'MELIPAYAMAK_BODY_ID_ADMIN_ORDER',
+            'doctor_booking'    => 'MELIPAYAMAK_BODY_ID_DOCTOR_BOOKING',
+            'doctor_telehealth' => 'MELIPAYAMAK_BODY_ID_DOCTOR_TELEHEALTH',
+            'user_chat'         => 'MELIPAYAMAK_BODY_ID_USER_CHAT',
         ];
 
         $constMap = [
-            'otp'            => self::BODY_ID_OTP,
-            'booking'        => self::BODY_ID_BOOKING,
-            'shipping'       => self::BODY_ID_SHIPPING,
-            'subscription'   => self::BODY_ID_SUBSCRIPTION,
-            'charity'        => self::BODY_ID_CHARITY,
-            'reschedule'     => self::BODY_ID_RESCHEDULE,
-            'admin_order'    => self::BODY_ID_ADMIN_ORDER,
-            'doctor_booking' => self::BODY_ID_DOCTOR_BOOKING,
+            'otp'               => self::BODY_ID_OTP,
+            'booking'           => self::BODY_ID_BOOKING,
+            'shipping'          => self::BODY_ID_SHIPPING,
+            'subscription'      => self::BODY_ID_SUBSCRIPTION,
+            'charity'           => self::BODY_ID_CHARITY,
+            'reschedule'        => self::BODY_ID_RESCHEDULE,
+            'admin_order'       => self::BODY_ID_ADMIN_ORDER,
+            'doctor_booking'    => self::BODY_ID_DOCTOR_BOOKING,
+            'doctor_telehealth' => self::BODY_ID_DOCTOR_TELEHEALTH,
+            'user_chat'         => self::BODY_ID_USER_CHAT,
         ];
 
+        // 2. Priority 2: Root .env configuration
         if (isset($envMap[$type])) {
-            $envVal = getenv($envMap[$type]);
+            $envVal = getenv($envMap[$type]) ?: ($_ENV[$envMap[$type]] ?? null);
             if (!empty($envVal)) return trim((string)$envVal);
         }
 
+        // 3. Priority 3: Fallback class constant
         return $constMap[$type] ?? '12345';
     }
 
@@ -389,15 +416,48 @@ class SmsService {
 
     /**
      * Send Telehealth Message Notification to Doctor
+     * Pattern: {0} = Doctor Name, {1} = Patient Name
      */
-    public function sendDoctorTelehealthAlert($phone, $doctorName, $patientName) {
+    public function sendDoctorTelehealthAlert($phone, $doctorName, $patientName, $ticketId = 0) {
         $phone = self::normalizePhone($phone);
         if (empty($phone) || strlen($phone) !== 11) return false;
 
         $doctorName = !empty($doctorName) ? $doctorName : 'پزشک گرامی';
         $patientName = !empty($patientName) ? $patientName : 'مراجع';
-        $text = "دکتر {$doctorName} گرامی،\nپیام جدیدی از بیمار {$patientName} در سامانه تله‌هلث آسنا ثبت شد.\nورود و پاسخگویی:\nhttps://asena.company/doctor/telehealth.php";
-        return $this->sendDirectSms($phone, $text, 'DOCTOR_TELEHEALTH');
+        $bodyId = self::getBodyId('doctor_telehealth');
+
+        if (!empty($bodyId) && $bodyId !== '12345') {
+            $sent = $this->sendPatternRequest($phone, $bodyId, [(string)$doctorName, (string)$patientName], 'DOCTOR_TELEHEALTH');
+            if ($sent) return true;
+        }
+
+        // Direct fallback
+        $url = 'https://asena.company/doctor/telehealth.php' . ($ticketId ? "?ticket_id=" . (int)$ticketId : "");
+        $text = "دکتر {$doctorName} گرامی،\nپیام جدیدی از بیمار {$patientName} در سامانه تله‌هلث آسنا ثبت شد.\nورود و پاسخگویی:\n{$url}";
+        return $this->sendDirectSms($phone, $text, 'DOCTOR_TELEHEALTH_FALLBACK');
+    }
+
+    /**
+     * Send New Chat / Consultation Message Notification to User / Patient
+     * Pattern: {0} = User Name, {1} = Sender Name
+     */
+    public function sendUserChatMessageAlert($phone, $userName, $senderName, $chatUrl = '') {
+        $phone = self::normalizePhone($phone);
+        if (empty($phone) || strlen($phone) !== 11) return false;
+
+        $userName = !empty($userName) ? $userName : 'کاربر گرامی';
+        $senderName = !empty($senderName) ? $senderName : 'پشتیبانی آسنا';
+        $url = !empty($chatUrl) ? $chatUrl : 'https://asena.company/chat.php';
+        $bodyId = self::getBodyId('user_chat');
+
+        if (!empty($bodyId) && $bodyId !== '12345') {
+            $sent = $this->sendPatternRequest($phone, $bodyId, [(string)$userName, (string)$senderName], 'USER_CHAT');
+            if ($sent) return true;
+        }
+
+        // Direct fallback
+        $text = "{$userName} گرامی،\nپیام جدیدی از طرف «{$senderName}» در سامانه آسنا دریافت شد.\nمشاهده و پاسخ:\n{$url}";
+        return $this->sendDirectSms($phone, $text, 'USER_CHAT_FALLBACK');
     }
 
     /**
