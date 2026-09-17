@@ -12,6 +12,45 @@ if (!isset($_SESSION['user_id'])) {
 $user_id = $_SESSION['user_id'];
 $action = $_POST['action'] ?? '';
 
+// Dynamic Telehealth Schema Alignment (Self-healing for MySQL 8.0 & MariaDB)
+if (!function_exists('ensure_chat_telehealth_schema')) {
+    function ensure_chat_telehealth_schema(PDO $pdo): void {
+        static $checked = false;
+        if ($checked) return;
+        $checked = true;
+
+        try {
+            $cols = $pdo->query("SHOW COLUMNS FROM `tickets`")->fetchAll(PDO::FETCH_COLUMN);
+            if (!in_array('doctor_id', $cols)) {
+                $pdo->exec("ALTER TABLE `tickets` ADD `doctor_id` INT(11) NULL");
+            }
+            if (!in_array('closed_by', $cols)) {
+                $pdo->exec("ALTER TABLE `tickets` ADD `closed_by` INT(11) NULL");
+            }
+            if (!in_array('resolution_notes', $cols)) {
+                $pdo->exec("ALTER TABLE `tickets` ADD `resolution_notes` TEXT NULL");
+            }
+            if (!in_array('last_notified_at', $cols)) {
+                $pdo->exec("ALTER TABLE `tickets` ADD `last_notified_at` DATETIME NULL");
+            }
+
+            try {
+                $pdo->exec("ALTER TABLE `ticket_messages` MODIFY COLUMN `sender_type` ENUM('user', 'ai', 'admin', 'doctor', 'organization') NOT NULL");
+            } catch (Throwable $e) {}
+
+            try {
+                $rxCols = $pdo->query("SHOW COLUMNS FROM `prescriptions`")->fetchAll(PDO::FETCH_COLUMN);
+                if (!in_array('tracking_code', $rxCols)) {
+                    $pdo->exec("ALTER TABLE `prescriptions` ADD `tracking_code` VARCHAR(50) NULL");
+                }
+            } catch (Throwable $e) {}
+        } catch (Throwable $ignore) {
+            error_log("Schema auto-alignment note: " . $ignore->getMessage());
+        }
+    }
+}
+ensure_chat_telehealth_schema($pdo);
+
 // AvalAI Multi-Model Configuration (Iranian ultra-low cost AI provider)
 $avalai_api_key = getenv('AVALAI_API_KEY') ?: 'aa-OYnaadEq49DVrgUetouRgFRhmNjSuS7ZknCL5FdEQqHAehsl';
 $avalai_model = getenv('AVALAI_MODEL_CHAT') ?: 'gemini-3.5-flash-lite';
@@ -20,6 +59,7 @@ $avalai_url = 'https://api.avalai.ir/v1/chat/completions';
 // GEMINI API Configuration
 $gemini_api_key = getenv('GEMINI_API_KEY') ?: 'YOUR_GEMINI_API_KEY_HERE';
 $gemini_url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=" . $gemini_api_key;
+
 
 $leo_system_prompt = "تو «لئو» (Leo)، دستیار هوشمند، مهربان و متخصص دامپزشکی و نگهداری از حیوانات خانگی در پلتفرم آسنا (ASENA) هستی.
 اصول مکالمه و همراهی با کاربر:
@@ -247,24 +287,25 @@ if ($action === 'fetch') {
 }
 
 if ($action === 'send') {
-    $ticket_id = (int)($_POST['ticket_id'] ?? 0);
-    $message = trim($_POST['message'] ?? '');
+    try {
+        $ticket_id = (int)($_POST['ticket_id'] ?? 0);
+        $message = trim($_POST['message'] ?? '');
 
-    // Verify ticket belongs to user
-    $stmt = $pdo->prepare("SELECT mode, user_id, doctor_id, status FROM tickets WHERE id = ? AND user_id = ?");
-    $stmt->execute([$ticket_id, $user_id]);
-    $ticketRow = $stmt->fetch(PDO::FETCH_ASSOC);
+        // Verify ticket belongs to user (resilient SELECT *)
+        $stmt = $pdo->prepare("SELECT * FROM tickets WHERE id = ? AND user_id = ?");
+        $stmt->execute([$ticket_id, $user_id]);
+        $ticketRow = $stmt->fetch(PDO::FETCH_ASSOC);
 
-    if (!$ticketRow) {
-        echo json_encode(['status' => 'error', 'message' => 'Ticket not found or unauthorized']);
-        exit;
-    }
+        if (!$ticketRow) {
+            echo json_encode(['status' => 'error', 'message' => 'Ticket not found or unauthorized']);
+            exit;
+        }
 
-    // Gatekeeper: if doctor has closed or resolved the session, prevent further patient messaging
-    if ($ticketRow['status'] !== 'open') {
-        echo json_encode(['status' => 'error', 'message' => 'این جلسه مشاوره توسط پزشک خاتمه یافته است. برای شروع مشاوره جدید نیاز به ثبت نوبت جدید دارید.']);
-        exit;
-    }
+        // Gatekeeper: if doctor has closed or resolved the session, prevent further patient messaging
+        if (!empty($ticketRow['status']) && $ticketRow['status'] !== 'open') {
+            echo json_encode(['status' => 'error', 'message' => 'این جلسه مشاوره توسط پزشک خاتمه یافته است. برای شروع مشاوره جدید نیاز به ثبت نوبت جدید دارید.']);
+            exit;
+        }
 
     $mode = $ticketRow['mode'];
     
@@ -497,14 +538,23 @@ if ($action === 'send') {
         ];
     }
 
-    echo json_encode([
-        'status' => 'success',
-        'message_id' => $user_msg_id,
-        'mode' => $mode,
-        'messages' => $outMessages
-    ]);
-    exit;
+        echo json_encode([
+            'status' => 'success',
+            'message_id' => $user_msg_id,
+            'mode' => $mode,
+            'messages' => $outMessages
+        ]);
+        exit;
+    } catch (Throwable $e) {
+        error_log("Chat send error: " . $e->getMessage() . " at " . $e->getFile() . ":" . $e->getLine());
+        echo json_encode([
+            'status' => 'error',
+            'message' => 'خطا در ثبت و پردازش پیام: ' . $e->getMessage()
+        ]);
+        exit;
+    }
 }
+
 
 if ($action === 'org_send') {
     $ticket_id = (int)($_POST['ticket_id'] ?? 0);
