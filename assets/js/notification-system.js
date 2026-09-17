@@ -388,19 +388,44 @@
             const style = document.createElement('style');
             style.id = 'asenaInAppToastStyles';
             style.textContent = `
+                #asenaInAppToastStack {
+                    position: fixed !important;
+                    top: 76px !important;
+                    right: 12px !important;
+                    left: 12px !important;
+                    z-index: 100060 !important;
+                    display: flex !important;
+                    flex-direction: column !important;
+                    gap: 10px !important;
+                    pointer-events: none !important;
+                }
+                @media (min-width: 768px) {
+                    #asenaInAppToastStack {
+                        top: 24px !important;
+                        right: 24px !important;
+                        left: auto !important;
+                        width: 390px !important;
+                    }
+                }
                 .asena-inapp-toast {
-                    pointer-events: auto;
+                    pointer-events: auto !important;
+                    background: #001a48 !important;
+                    color: #ffffff !important;
+                    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+                    box-shadow: 0 16px 36px rgba(0, 26, 72, 0.45) !important;
+                    border-radius: 1rem !important;
+                    padding: 0.875rem !important;
                     transform: translateY(-24px) scale(0.95);
                     opacity: 0;
-                    transition: all 0.38s cubic-bezier(0.16, 1, 0.3, 1);
+                    transition: all 0.38s cubic-bezier(0.16, 1, 0.3, 1) !important;
                 }
                 .asena-inapp-toast.active {
-                    transform: translateY(0) scale(1);
-                    opacity: 1;
+                    transform: translateY(0) scale(1) !important;
+                    opacity: 1 !important;
                 }
                 .asena-inapp-toast.leave {
-                    transform: translateY(-20px) scale(0.92);
-                    opacity: 0;
+                    transform: translateY(-20px) scale(0.92) !important;
+                    opacity: 0 !important;
                 }
             `;
             document.head.appendChild(style);
