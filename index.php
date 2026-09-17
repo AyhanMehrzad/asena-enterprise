@@ -197,10 +197,10 @@ $top_donors = $donor_stmt->fetchAll(PDO::FETCH_ASSOC);
             </div>
             <!-- Pagination Pills -->
             <div class="absolute bottom-12 left-1/2 -translate-x-1/2 z-30 flex items-center gap-3" id="hero-pills">
-                <button onclick="goToSlide(0)" class="w-8 h-2 rounded-full bg-primary-container scale-125 transition-all cursor-pointer"></button>
-                <button onclick="goToSlide(1)" class="w-3 h-2 rounded-full bg-primary-container/20 hover:bg-primary-container/40 transition-all cursor-pointer"></button>
-                <button onclick="goToSlide(2)" class="w-3 h-2 rounded-full bg-primary-container/20 hover:bg-primary-container/40 transition-all cursor-pointer"></button>
-                <button onclick="goToSlide(3)" class="w-3 h-2 rounded-full bg-primary-container/20 hover:bg-primary-container/40 transition-all cursor-pointer"></button>
+                <button onclick="goToSlide(0)" aria-label="اسلاید ۱: خدمات نوبت‌دهی و پزشکی" class="w-8 h-2 rounded-full bg-primary-container scale-125 transition-all cursor-pointer"></button>
+                <button onclick="goToSlide(1)" aria-label="اسلاید ۲: پت‌شاپ و تغذیه اختصاصی" class="w-3 h-2 rounded-full bg-primary-container/20 hover:bg-primary-container/40 transition-all cursor-pointer"></button>
+                <button onclick="goToSlide(2)" aria-label="اسلاید ۳: داروخانه و ارسال نسخه" class="w-3 h-2 rounded-full bg-primary-container/20 hover:bg-primary-container/40 transition-all cursor-pointer"></button>
+                <button onclick="goToSlide(3)" aria-label="اسلاید ۴: دانشنامه و سلامت پت" class="w-3 h-2 rounded-full bg-primary-container/20 hover:bg-primary-container/40 transition-all cursor-pointer"></button>
             </div>
         </section>
         
@@ -799,8 +799,8 @@ $top_donors = $donor_stmt->fetchAll(PDO::FETCH_ASSOC);
                                     </label>
                                     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
                                         <div>
-                                            <label class="block text-[11px] font-bold text-slate-500 mb-1">نوع حیوان خانگی</label>
-                                            <select name="pet_type" id="landingPetType" required class="w-full h-11 px-3 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:border-primary focus:ring-1 focus:ring-primary outline-none">
+                                            <label for="landingPetType" class="block text-[11px] font-bold text-slate-500 mb-1">نوع حیوان خانگی</label>
+                                            <select name="pet_type" id="landingPetType" aria-label="نوع حیوان خانگی" required class="w-full h-11 px-3 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:border-primary focus:ring-1 focus:ring-primary outline-none">
                                                 <option value="سگ">سگ (Dog)</option>
                                                 <option value="گربه" selected>گربه (Cat)</option>
                                                 <option value="پرنده">پرنده زینتی (Bird)</option>
@@ -1635,7 +1635,7 @@ $top_donors = $donor_stmt->fetchAll(PDO::FETCH_ASSOC);
                                     <span class="text-xs text-white/70">کیلوگرم</span>
                                 </div>
                             </div>
-                            <input type="range" id="calcWeightSlider" min="0.5" max="60" step="0.5" value="8.5" oninput="updateWeightFromSlider(this.value)" class="w-full accent-emerald-400 cursor-pointer h-2 bg-white/20 rounded-lg">
+                            <input type="range" id="calcWeightSlider" aria-label="تعیین وزن حیوان خانگی بر حسب کیلوگرم" min="0.5" max="60" step="0.5" value="8.5" oninput="updateWeightFromSlider(this.value)" class="w-full accent-emerald-400 cursor-pointer h-2 bg-white/20 rounded-lg">
                             <div class="flex justify-between text-[11px] text-white/50 font-mono">
                                 <span>۰.۵ کیلو (خیلی کوچک)</span>
                                 <span>۱۵ کیلو</span>

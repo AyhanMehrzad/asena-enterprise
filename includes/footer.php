@@ -158,7 +158,7 @@ if (basename($_SERVER['SCRIPT_FILENAME'] ?? '') === basename(__FILE__)) {
         </a>
 
         <!-- 2. دسته‌بندی‌ها (Categories Sheet) -->
-        <a href="javascript:void(0)" onclick="openMobileCategoriesSheet()" class="bottom-nav-link <?php echo in_array($current_page, ['shop.php', 'pharmacy.php']) ? 'active' : ''; ?>">
+        <a href="shop.php" onclick="openMobileCategoriesSheet(); return false;" aria-label="دسته‌بندی‌های محصولات و خدمات" class="bottom-nav-link <?php echo in_array($current_page, ['shop.php', 'pharmacy.php']) ? 'active' : ''; ?>">
             <span class="material-symbols-outlined">grid_view</span>
             <span>دسته‌بندی‌ها</span>
         </a>

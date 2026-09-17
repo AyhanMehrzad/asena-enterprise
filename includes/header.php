@@ -371,16 +371,16 @@ if (function_exists('get_curated_recommendations')) {
     <!-- Digikala-Style Mobile Top App Bar (Sleek Minimalist Search & Notification Bar) -->
     <div class="lg:hidden sticky top-0 z-50 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md px-3 py-2 border-b border-slate-200/80 dark:border-slate-800 flex items-center gap-2.5 shadow-sm transition-all" id="digikalaMobileHeader">
         <!-- Notifications Bell Button (Left side in RTL) -->
-        <a href="javascript:void(0)" onclick="toggleNotificationDrawer()" class="notification-bell-btn w-10 h-10 rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-200 flex items-center justify-center shrink-0 border border-slate-200/60 dark:border-slate-700 transition-colors relative cursor-pointer" title="اعلان‌ها و یادآوری‌ها">
+        <button type="button" onclick="toggleNotificationDrawer()" aria-label="اعلان‌ها و یادآوری‌ها" class="notification-bell-btn w-10 h-10 rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-200 flex items-center justify-center shrink-0 border border-slate-200/60 dark:border-slate-700 transition-colors relative cursor-pointer" title="اعلان‌ها و یادآوری‌ها">
             <span class="material-symbols-outlined text-[22px]">notifications</span>
             <span class="notification-badge-count hidden absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-rose-500 text-white text-[10px] font-black flex items-center justify-center border-2 border-white dark:border-slate-900 shadow-xs">0</span>
-        </a>
+        </button>
 
         <!-- Digikala Search Pill Bar (Filling remaining width) -->
         <div class="relative flex-1" id="mobileHeaderSearchWrapper">
             <form action="shop.php" method="GET" class="relative flex items-center bg-slate-100 dark:bg-slate-800/90 border border-slate-200/90 dark:border-slate-700 rounded-full px-3.5 py-1.5 text-slate-800 dark:text-slate-100 hover:border-primary/40 focus-within:border-primary focus-within:bg-white dark:focus-within:bg-slate-900 focus-within:shadow-md transition-all" id="mobileHeaderSearchForm">
                 <span class="material-symbols-outlined text-[20px] text-slate-400 shrink-0 ml-1.5 focus-within:text-primary">search</span>
-                <input type="text" name="q" id="mobileHeaderSearchInput" value="<?= htmlspecialchars($_GET['q'] ?? '') ?>" oninput="toggleDigikalaPlaceholder(this)" onfocus="toggleDigikalaPlaceholder(this)" onblur="toggleDigikalaPlaceholder(this)" class="w-full bg-transparent border-none outline-none text-xs sm:text-sm font-medium text-slate-800 dark:text-slate-100 placeholder-transparent" placeholder="جستجو در" autocomplete="off">
+                <input type="text" name="q" id="mobileHeaderSearchInput" aria-label="جستجو در محصولات و خدمات آسنا" value="<?= htmlspecialchars($_GET['q'] ?? '') ?>" oninput="toggleDigikalaPlaceholder(this)" onfocus="toggleDigikalaPlaceholder(this)" onblur="toggleDigikalaPlaceholder(this)" class="w-full bg-transparent border-none outline-none text-xs sm:text-sm font-medium text-slate-800 dark:text-slate-100 placeholder-transparent" placeholder="جستجو در" autocomplete="off">
                 
                 <!-- Digikala Styled Placeholder Badge -->
                 <span id="digikalaSearchPlaceholder" class="absolute right-9 pointer-events-none text-xs flex items-center gap-1 font-bold text-slate-400 select-none transition-opacity duration-200 <?= !empty($_GET['q']) ? 'opacity-0' : 'opacity-100' ?>">
@@ -534,10 +534,10 @@ if (function_exists('get_curated_recommendations')) {
                 
                 <div class="flex items-center gap-1 lg:gap-2">
                     <!-- Notification Bell (Desktop) -->
-                    <a href="javascript:void(0)" onclick="toggleNotificationDrawer()" class="notification-bell-btn relative material-symbols-outlined text-white p-1.5 lg:p-2 hover:bg-white/10 rounded-full transition-colors flex text-xl lg:text-2xl cursor-pointer" title="اعلان‌ها و رویدادها">
+                    <button type="button" onclick="toggleNotificationDrawer()" aria-label="اعلان‌ها و رویدادها" class="notification-bell-btn relative material-symbols-outlined text-white p-1.5 lg:p-2 hover:bg-white/10 rounded-full transition-colors flex text-xl lg:text-2xl cursor-pointer" title="اعلان‌ها و رویدادها">
                         notifications
                         <span class="notification-badge-count hidden absolute top-0.5 right-0.5 bg-rose-500 text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-black shadow-sm">0</span>
-                    </a>
+                    </button>
 
                     <a href="<?php echo isset($_SESSION['user_id']) ? 'profile.php' : 'login.php'; ?>" class="material-symbols-outlined text-white p-1.5 lg:p-2 hover:bg-white/10 rounded-full transition-colors flex text-xl lg:text-2xl" title="حساب کاربری">person</a>
                     
