@@ -212,7 +212,12 @@
     - **مکالمه پیوسته بدون وقفه ([`chat.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/chat.php)):** تخصیص شناسه یکتای پیام موقت (`tempId`)، رندر فوری پاسخ دریافتی هوش مصنوعی بدون نیاز به وقفه، فوکوس آنی مجدد روی فیلد متن جهت ادامه تایپ سریع و باز ماندن کیبورد موبایل، و عدم قفل دکمه ارسال برای پیام‌های رگباری کاربر.
     - **ارتقای لحن و استمرار مکالمه هوش مصنوعی لئو ([`actions/chat_action.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/actions/chat_action.php)):** اصلاح پرامپت سیستمی لئو جهت پاسخگویی صمیمانه، همدلانه و پیوسته به احوالپرسی‌ها و زبان‌های مختلف (فارسی و انگلیسی مثل Hi how re you) به جای تکرار پیام رباتیک مسدودکننده.
 
+28. **همگام‌سازی خودکار و منعطف پایگاه‌داده با مای‌اس‌کیوال ۸ و رفع خطای ۵۰۰ اکشن چت (MySQL 8.0 Compatible Self-Healing Schema Alignment):**
+    - **اصلاح سازگاری سینتکس مایگریشن ۱۶ ([`database/migrations/16_telehealth_and_doctor_chat.sql`](file:///opt/lampp/htdocs/asena/asena-enterprise/database/migrations/16_telehealth_and_doctor_chat.sql)):** حذف `IF NOT EXISTS` از دستورات `ALTER TABLE` که در مای‌اس‌کیوال ۸.۰ سرور باعث خطای سینتکس ۱۰۶۴ و عدم ایجاد ستون‌های ضروری تله‌هلث می‌شد.
+    - **مکانیزم خودترمیمی اسکیما در رانتایم ([`actions/chat_action.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/actions/chat_action.php)):** افزودن تابع `ensure_chat_telehealth_schema()` جهت بررسی خودکار ستون‌های `doctor_id`, `closed_by`, `resolution_notes`, `last_notified_at` در جدول `tickets`، ستون `tracking_code` در `prescriptions` و Enum های `ticket_messages`، به همراه استفاده از `SELECT *` منعطف و قرار دادن پردازش ارسال پیام در بلوک `try ... catch` برای جلوگیری کامل از هرگونه خطای ۵۰۰ سرور.
+
 ---
+
 
 ## ۴. پروتکل ثبت تغییرات آینده (Maintenance Rule)
 > **دستورالعمل برای هوش مصنوعی در ادامه کار:**  
