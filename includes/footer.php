@@ -705,6 +705,26 @@ if (basename($_SERVER['SCRIPT_FILENAME'] ?? '') === basename(__FILE__)) {
         }
     });
 
+    // PWA update notification listener
+    window.addEventListener('pwa:update-available', (e) => {
+        const reg = e.detail;
+        const toast = document.getElementById('pwaToast');
+        if (!toast) return;
+        toast.innerHTML = `
+            <span class="material-symbols-outlined text-amber-400 text-lg">system_update</span>
+            <span>نسخه جدید آسنا آماده است!</span>
+            <button onclick="updatePwaApp()" class="mr-2 px-2.5 py-1 bg-white text-slate-900 rounded-lg text-[11px] font-black hover:bg-amber-100 transition-colors pointer-events-auto cursor-pointer">به‌روزرسانی</button>
+        `;
+        toast.classList.remove('hidden');
+        toast.style.pointerEvents = 'auto';
+        window.updatePwaApp = function() {
+            if (reg && reg.waiting) {
+                reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+            }
+            window.location.reload();
+        };
+    });
+
     // Close guide on ESC key
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
@@ -714,6 +734,7 @@ if (basename($_SERVER['SCRIPT_FILENAME'] ?? '') === basename(__FILE__)) {
             }
         }
     });
+
     </script>
     
     <!-- Universal Wishlist Manager (Instant Optimistic UI + Micro-Animations + Toast Alerts) -->

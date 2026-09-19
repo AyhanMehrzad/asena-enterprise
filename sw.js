@@ -3,7 +3,7 @@
  * Version: 1.0.0
  */
 
-const CACHE_NAME = 'asena-enterprise-v1.0.5';
+const CACHE_NAME = 'asena-enterprise-v1.2.0';
 const STATIC_ASSETS = [
     './offline.html',
     './assets/css/style.css',
@@ -25,9 +25,13 @@ const STATIC_ASSETS = [
     './assets/images/presentation-dog.webp',
     './assets/images/vet-hero.png',
     './assets/images/vet-hero.webp',
+    './assets/images/tool-calculator-3d.webp',
+    './assets/images/tool-drug-3d.webp',
+    './assets/images/tool-autoship-3d.webp',
     './favicon.ico',
     './site.webmanifest'
 ];
+
 
 
 // 1. Install Event - Pre-cache critical application shell
@@ -163,9 +167,10 @@ self.addEventListener('notificationclick', (event) => {
                     return client.focus();
                 }
             }
-            if (clients.openWindow) {
-                return clients.openWindow(targetUrl);
-            }
-        })
-    );
+// 6. Message Event (Skip Waiting on update)
+self.addEventListener('message', (event) => {
+    if (event.data && event.data.type === 'SKIP_WAITING') {
+        self.skipWaiting();
+    }
 });
+

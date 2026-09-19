@@ -334,6 +334,19 @@ $effective_geo_icbm = $geo_icbm ?? '35.7350, 51.4110';
             
             navigator.serviceWorker.register(swUrl, { scope: basePath }).then(function(reg) {
                 console.log('[PWA] ServiceWorker registered with scope:', reg.scope);
+                if (reg.waiting) {
+                    window.dispatchEvent(new CustomEvent('pwa:update-available', { detail: reg }));
+                }
+                reg.addEventListener('updatefound', function() {
+                    const newWorker = reg.installing;
+                    if (newWorker) {
+                        newWorker.addEventListener('statechange', function() {
+                            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                window.dispatchEvent(new CustomEvent('pwa:update-available', { detail: reg }));
+                            }
+                        });
+                    }
+                });
             }).catch(function(err) {
                 navigator.serviceWorker.register('sw.js').catch(function(e) {
                     console.warn('[PWA] ServiceWorker fallback error:', e);
@@ -341,6 +354,7 @@ $effective_geo_icbm = $geo_icbm ?? '35.7350, 51.4110';
             });
         });
     }
+
     </script>
 </head>
 <body class="bg-background text-on-background overflow-x-hidden">

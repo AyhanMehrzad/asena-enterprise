@@ -2,9 +2,11 @@
   "name": "آسنا | سامانه جامع خدمات دامپزشکی و پت‌شاپ",
   "short_name": "آسنا",
   "description": "پلتفرم یکپارچه کلینیک دامپزشکی، پت‌شاپ آنلاین و داروخانه تخصصی دام و طیور آسنا",
+  "id": "/",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
   "orientation": "portrait",
   "background_color": "#001a48",
   "theme_color": "#002d72",
@@ -12,6 +14,7 @@
   "dir": "rtl",
   "categories": ["medical", "shopping", "lifestyle"],
   "prefer_related_applications": false,
+
   "icons": [
     {
       "src": "/assets/images/favicon-48x48.png",
@@ -43,7 +46,15 @@
   ],
   "shortcuts": [
     {
+      "name": "محاسبه‌گر کالری و تغذیه پت",
+      "short_name": "تغذیه پت",
+      "description": "محاسبه آنلاین جیره غذایی و سلامت وزنی بر اساس استانداردهای بالینی",
+      "url": "/calculator.php",
+      "icons": [{ "src": "/assets/images/favicon-96x96.png", "sizes": "96x96" }]
+    },
+    {
       "name": "رزرو نوبت کلینیک",
+
       "short_name": "نوبت‌دهی",
       "description": "رزرو آنلاین وقت ویزیت متخصص دامپزشک",
       "url": "/booking.php",

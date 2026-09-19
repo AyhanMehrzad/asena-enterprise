@@ -462,19 +462,20 @@ try {
                     <!-- Micro Feature Tags -->
                     <div class="flex flex-wrap gap-1.5 pt-1 text-[11px]">
                         <span class="px-2.5 py-1 rounded-md bg-white/10 text-emerald-200 border border-white/10">سگ و گربه</span>
-                        <span class="px-2.5 py-1 rounded-md bg-white/10 text-emerald-200 border border-white/10">تخمین آب روزانه</span>
-                        <span class="px-2.5 py-1 rounded-md bg-white/10 text-emerald-200 border border-white/10">رایگان و بدون لاگین</span>
+                        <span class="px-2.5 py-1 rounded-md bg-white/10 text-emerald-200 border border-white/10">کارنامه بالینی رسمی</span>
+                        <span class="px-2.5 py-1 rounded-md bg-white/10 text-emerald-200 border border-white/10">سنجش شاخص BCS</span>
                     </div>
                 </div>
 
                 <a href="calculator.php" class="relative z-10 mt-6 px-5 py-3 rounded-2xl bg-emerald-400 hover:bg-emerald-300 text-slate-950 text-xs font-black transition-all duration-200 flex items-center justify-between shadow-[0_6px_20px_rgba(52,211,153,0.4)] hover:shadow-[0_8px_25px_rgba(52,211,153,0.6)] active:translate-y-0.5 cursor-pointer">
                     <span class="flex items-center gap-1.5">
-                        <span class="material-symbols-outlined text-base">calculate</span>
-                        <span>شروع محاسبه رایگان کالری</span>
+                        <span class="material-symbols-outlined text-base">clinical_notes</span>
+                        <span>محاسبه کالری و کارنامه بالینی پت</span>
                     </span>
                     <span class="material-symbols-outlined text-base transition-transform group-hover:-translate-x-1">arrow_back</span>
                 </a>
             </div>
+
 
             <!-- Tool 2: Drug Interaction Checker 3D Card -->
             <div class="asena-3d-card group rounded-3xl p-6 text-white shadow-xl flex flex-col justify-between relative overflow-hidden transition-all duration-500 hover:-translate-y-2"

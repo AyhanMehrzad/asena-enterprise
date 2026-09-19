@@ -91,6 +91,61 @@ $stmt = $pdo->prepare("
 $stmt->execute([$_SESSION['user_id']]);
 $orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
+// ── Financial Transcript Aggregations (Customer Purchases & Savings) ───────────
+$userFinancialTranscript = [
+    'week' => ['total_spent' => 0, 'total_discount' => 0, 'count' => 0],
+    'month' => ['total_spent' => 0, 'total_discount' => 0, 'count' => 0],
+    'six_months' => ['total_spent' => 0, 'total_discount' => 0, 'count' => 0],
+    'year' => ['total_spent' => 0, 'total_discount' => 0, 'count' => 0],
+];
+try {
+    $finStmt = $pdo->prepare("
+        SELECT 
+            SUM(CASE WHEN created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY) THEN total_amount ELSE 0 END) as week_spent,
+            SUM(CASE WHEN created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY) THEN COALESCE(discount_amount, 0) ELSE 0 END) as week_discount,
+            COUNT(CASE WHEN created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY) THEN 1 END) as week_count,
+
+            SUM(CASE WHEN created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY) THEN total_amount ELSE 0 END) as month_spent,
+            SUM(CASE WHEN created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY) THEN COALESCE(discount_amount, 0) ELSE 0 END) as month_discount,
+            COUNT(CASE WHEN created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY) THEN 1 END) as month_count,
+
+            SUM(CASE WHEN created_at >= DATE_SUB(NOW(), INTERVAL 180 DAY) THEN total_amount ELSE 0 END) as six_months_spent,
+            SUM(CASE WHEN created_at >= DATE_SUB(NOW(), INTERVAL 180 DAY) THEN COALESCE(discount_amount, 0) ELSE 0 END) as six_months_discount,
+            COUNT(CASE WHEN created_at >= DATE_SUB(NOW(), INTERVAL 180 DAY) THEN 1 END) as six_months_count,
+
+            SUM(CASE WHEN created_at >= DATE_SUB(NOW(), INTERVAL 365 DAY) THEN total_amount ELSE 0 END) as year_spent,
+            SUM(CASE WHEN created_at >= DATE_SUB(NOW(), INTERVAL 365 DAY) THEN COALESCE(discount_amount, 0) ELSE 0 END) as year_discount,
+            COUNT(CASE WHEN created_at >= DATE_SUB(NOW(), INTERVAL 365 DAY) THEN 1 END) as year_count
+        FROM orders
+        WHERE user_id = ? AND status NOT IN ('cancelled', 'failed')
+    ");
+    $finStmt->execute([$user_id]);
+    $finRow = $finStmt->fetch(PDO::FETCH_ASSOC);
+    if ($finRow) {
+        $userFinancialTranscript['week'] = [
+            'total_spent' => (int)($finRow['week_spent'] ?? 0),
+            'total_discount' => (int)($finRow['week_discount'] ?? 0),
+            'count' => (int)($finRow['week_count'] ?? 0)
+        ];
+        $userFinancialTranscript['month'] = [
+            'total_spent' => (int)($finRow['month_spent'] ?? 0),
+            'total_discount' => (int)($finRow['month_discount'] ?? 0),
+            'count' => (int)($finRow['month_count'] ?? 0)
+        ];
+        $userFinancialTranscript['six_months'] = [
+            'total_spent' => (int)($finRow['six_months_spent'] ?? 0),
+            'total_discount' => (int)($finRow['six_months_discount'] ?? 0),
+            'count' => (int)($finRow['six_months_count'] ?? 0)
+        ];
+        $userFinancialTranscript['year'] = [
+            'total_spent' => (int)($finRow['year_spent'] ?? 0),
+            'total_discount' => (int)($finRow['year_discount'] ?? 0),
+            'count' => (int)($finRow['year_count'] ?? 0)
+        ];
+    }
+} catch (Exception $e) {}
+
+
 // Fetch user subscriptions
 $stmt = $pdo->prepare("
     SELECT * FROM user_subscriptions 
@@ -239,6 +294,61 @@ $outcomeStmt = $pdo->prepare("
 ");
 $outcomeStmt->execute([$user_id]);
 $walletOutcomes = $outcomeStmt->fetchAll(PDO::FETCH_ASSOC);
+
+// ── Seller / Provider Financial Transcript Aggregations ─────────────────────────
+$sellerFinancialTranscript = [
+    'week' => ['gross_amount' => 0, 'net_earnings' => 0, 'count' => 0],
+    'month' => ['gross_amount' => 0, 'net_earnings' => 0, 'count' => 0],
+    'six_months' => ['gross_amount' => 0, 'net_earnings' => 0, 'count' => 0],
+    'year' => ['gross_amount' => 0, 'net_earnings' => 0, 'count' => 0],
+];
+try {
+    $sFinStmt = $pdo->prepare("
+        SELECT 
+            SUM(CASE WHEN created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY) THEN gross_amount ELSE 0 END) as week_gross,
+            SUM(CASE WHEN created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY) THEN net_seller_amount ELSE 0 END) as week_net,
+            COUNT(CASE WHEN created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY) THEN 1 END) as week_count,
+
+            SUM(CASE WHEN created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY) THEN gross_amount ELSE 0 END) as month_gross,
+            SUM(CASE WHEN created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY) THEN net_seller_amount ELSE 0 END) as month_net,
+            COUNT(CASE WHEN created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY) THEN 1 END) as month_count,
+
+            SUM(CASE WHEN created_at >= DATE_SUB(NOW(), INTERVAL 180 DAY) THEN gross_amount ELSE 0 END) as six_months_gross,
+            SUM(CASE WHEN created_at >= DATE_SUB(NOW(), INTERVAL 180 DAY) THEN net_seller_amount ELSE 0 END) as six_months_net,
+            COUNT(CASE WHEN created_at >= DATE_SUB(NOW(), INTERVAL 180 DAY) THEN 1 END) as six_months_count,
+
+            SUM(CASE WHEN created_at >= DATE_SUB(NOW(), INTERVAL 365 DAY) THEN gross_amount ELSE 0 END) as year_gross,
+            SUM(CASE WHEN created_at >= DATE_SUB(NOW(), INTERVAL 365 DAY) THEN net_seller_amount ELSE 0 END) as year_net,
+            COUNT(CASE WHEN created_at >= DATE_SUB(NOW(), INTERVAL 365 DAY) THEN 1 END) as year_count
+        FROM seller_escrow_ledger
+        WHERE seller_id = ?
+    ");
+    $sFinStmt->execute([$user_id]);
+    $sFinRow = $sFinStmt->fetch(PDO::FETCH_ASSOC);
+    if ($sFinRow) {
+        $sellerFinancialTranscript['week'] = [
+            'gross_amount' => (int)($sFinRow['week_gross'] ?? 0),
+            'net_earnings' => (int)($sFinRow['week_net'] ?? 0),
+            'count' => (int)($sFinRow['week_count'] ?? 0)
+        ];
+        $sellerFinancialTranscript['month'] = [
+            'gross_amount' => (int)($sFinRow['month_gross'] ?? 0),
+            'net_earnings' => (int)($sFinRow['month_net'] ?? 0),
+            'count' => (int)($sFinRow['month_count'] ?? 0)
+        ];
+        $sellerFinancialTranscript['six_months'] = [
+            'gross_amount' => (int)($sFinRow['six_months_gross'] ?? 0),
+            'net_earnings' => (int)($sFinRow['six_months_net'] ?? 0),
+            'count' => (int)($sFinRow['six_months_count'] ?? 0)
+        ];
+        $sellerFinancialTranscript['year'] = [
+            'gross_amount' => (int)($sFinRow['year_gross'] ?? 0),
+            'net_earnings' => (int)($sFinRow['year_net'] ?? 0),
+            'count' => (int)($sFinRow['year_count'] ?? 0)
+        ];
+    }
+} catch (Exception $e) {}
+
 
 // Calculate Next Weekly Payout Date (Every Thursday at 22:00)
 $nowTz = new DateTime('now', new DateTimeZone('Asia/Tehran'));
@@ -1140,8 +1250,90 @@ function updateShebaPreview(input) {
 <!-- COMMERCIAL SELLER SUITE: Orders & Product Catalog Management              -->
 <!-- ═══════════════════════════════════════════════════════════════════════════ -->
 
+<!-- FINANCIAL TRANSCRIPT & SETTLEMENT CLARIFICATION (همکاران / فروشندگان / کلینیک‌ها) -->
+<div class="bg-surface-container-lowest rounded-3xl border border-outline-variant p-6 shadow-sm space-y-5 mb-6">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-outline-variant/40">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-2xl bg-indigo-900 text-white flex items-center justify-center shadow-sm">
+                <span class="material-symbols-outlined text-xl text-amber-300">analytics</span>
+            </div>
+            <div>
+                <h3 class="text-sm sm:text-base font-black text-slate-800 flex items-center gap-2">
+                    <span>شفافیت مالی و کارنامه درآمد همکار</span>
+                    <span class="text-[10px] font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded-full">سهم خالص ۸۵٪ همکار</span>
+                </h3>
+                <p class="text-[11px] text-slate-500">گزارش حجم فروش ناخالص، کارمزد و دریافتی خالص شما در بازه‌های زمانی مختلف</p>
+            </div>
+        </div>
+
+        <!-- Period Toggle -->
+        <div class="inline-flex p-1 bg-slate-100 rounded-2xl text-xs font-bold self-start sm:self-auto" id="sellerFinTabs">
+            <button type="button" onclick="switchSellerFin('week')" id="sellerFinTab_week" class="seller-fin-tab px-3 py-1.5 rounded-xl transition-all cursor-pointer bg-white text-slate-900 shadow-xs font-black">۱ هفته</button>
+            <button type="button" onclick="switchSellerFin('month')" id="sellerFinTab_month" class="seller-fin-tab px-3 py-1.5 rounded-xl transition-all cursor-pointer text-slate-600 hover:text-slate-900 font-bold">۱ ماه</button>
+            <button type="button" onclick="switchSellerFin('six_months')" id="sellerFinTab_six_months" class="seller-fin-tab px-3 py-1.5 rounded-xl transition-all cursor-pointer text-slate-600 hover:text-slate-900 font-bold">۶ ماه</button>
+            <button type="button" onclick="switchSellerFin('year')" id="sellerFinTab_year" class="seller-fin-tab px-3 py-1.5 rounded-xl transition-all cursor-pointer text-slate-600 hover:text-slate-900 font-bold">۱ سال</button>
+        </div>
+    </div>
+
+    <!-- 4 Metrics Grid -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
+        <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-1">
+            <span class="text-[11px] text-slate-500 font-medium block">کل فروش ناخالص:</span>
+            <div class="text-base sm:text-lg font-black font-mono text-slate-900" id="sellerGross">
+                <?= number_format($sellerFinancialTranscript['week']['gross_amount']) ?> <span class="text-xs font-normal text-slate-500 font-sans">تومان</span>
+            </div>
+            <span class="text-[10px] text-slate-400 block">ارزش ناخالص اقلام سفارش</span>
+        </div>
+
+        <div class="p-4 rounded-2xl bg-emerald-50/70 border border-emerald-200 space-y-1">
+            <span class="text-[11px] text-emerald-800 font-bold block">سهم خالص همکار (۸۵٪):</span>
+            <div class="text-base sm:text-lg font-black font-mono text-emerald-700" id="sellerNet">
+                <?= number_format($sellerFinancialTranscript['week']['net_earnings']) ?> <span class="text-xs font-normal text-emerald-600 font-sans">تومان</span>
+            </div>
+            <span class="text-[10px] text-emerald-600/80 block">واریز قطعی پس از کسر کارمزد</span>
+        </div>
+
+        <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-1">
+            <span class="text-[11px] text-slate-500 font-medium block">اقلام سفارشات:</span>
+            <div class="text-base sm:text-lg font-black font-mono text-slate-900" id="sellerCount">
+                <?= number_format($sellerFinancialTranscript['week']['count']) ?> <span class="text-xs font-normal text-slate-500 font-sans">قلم</span>
+            </div>
+            <span class="text-[10px] text-slate-400 block">تراکنش‌های فروش ثبت‌شده</span>
+        </div>
+
+        <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-1">
+            <span class="text-[11px] text-slate-500 font-medium block">تسویه بعدی پایا:</span>
+            <div class="text-xs sm:text-sm font-black text-indigo-800 pt-1">
+                پنج‌شنبه ساعت ۲۲:۰۰
+            </div>
+            <span class="text-[10px] text-slate-400 block">واریز خودکار به شماره شبا</span>
+        </div>
+    </div>
+</div>
+
+<script>
+const sellerFinData = <?= json_encode($sellerFinancialTranscript, JSON_UNESCAPED_UNICODE) ?>;
+function switchSellerFin(period) {
+    ['week', 'month', 'six_months', 'year'].forEach(p => {
+        const btn = document.getElementById('sellerFinTab_' + p);
+        if (btn) {
+            if (p === period) {
+                btn.className = 'seller-fin-tab px-3 py-1.5 rounded-xl transition-all cursor-pointer bg-white text-slate-900 shadow-xs font-black';
+            } else {
+                btn.className = 'seller-fin-tab px-3 py-1.5 rounded-xl transition-all cursor-pointer text-slate-600 hover:text-slate-900 font-bold';
+            }
+        }
+    });
+    const d = sellerFinData[period] || { gross_amount: 0, net_earnings: 0, count: 0 };
+    document.getElementById('sellerGross').innerHTML = d.gross_amount.toLocaleString('fa-IR') + ' <span class="text-xs font-normal text-slate-500 font-sans">تومان</span>';
+    document.getElementById('sellerNet').innerHTML = d.net_earnings.toLocaleString('fa-IR') + ' <span class="text-xs font-normal text-emerald-600 font-sans">تومان</span>';
+    document.getElementById('sellerCount').innerHTML = d.count.toLocaleString('fa-IR') + ' <span class="text-xs font-normal text-slate-500 font-sans">قلم</span>';
+}
+</script>
+
 <!-- SECTION 1: Incoming Customer Sales Orders (سفارشات دریافتی مشتریان) -->
 <section id="seller-orders-section" class="bg-surface-container-lowest rounded-3xl border border-outline-variant shadow-sm overflow-hidden p-6 md:p-8 space-y-6 scroll-mt-24">
+
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-outline-variant/60 pb-5">
         <div>
             <div class="flex items-center gap-2 flex-wrap">
@@ -1482,7 +1674,91 @@ function updateShebaPreview(input) {
             </div>
         </div>
 
+        <!-- 1.5. Financial Transcript Clarification Widget (شفافیت گردش مالی خریدهای من) -->
+        <div class="bg-surface-container-lowest rounded-3xl border border-outline-variant p-6 shadow-sm space-y-5">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-outline-variant/40">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-2xl bg-[#001a48] text-white flex items-center justify-center shadow-sm">
+                        <span class="material-symbols-outlined text-xl text-amber-300">receipt_long</span>
+                    </div>
+                    <div>
+                        <h3 class="text-sm sm:text-base font-black text-slate-800 flex items-center gap-2">
+                            <span>شفافیت و کارنامه گردش مالی خریدهای من</span>
+                            <span class="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">محرمانگی مالی تضمین‌شده</span>
+                        </h3>
+                        <p class="text-[11px] text-slate-500">گزارش شفاف مبالغ پرداختی سفارشات و سود حاصل از تخفیف‌ها در بازه‌های زمانی مختلف</p>
+                    </div>
+                </div>
+
+                <!-- Time Interval Tabs -->
+                <div class="inline-flex p-1 bg-slate-100 rounded-2xl text-xs font-bold self-start sm:self-auto" id="custFinTabs">
+                    <button type="button" onclick="switchCustFin('week')" id="custFinTab_week" class="cust-fin-tab px-3 py-1.5 rounded-xl transition-all cursor-pointer bg-white text-slate-900 shadow-xs font-black">۱ هفته</button>
+                    <button type="button" onclick="switchCustFin('month')" id="custFinTab_month" class="cust-fin-tab px-3 py-1.5 rounded-xl transition-all cursor-pointer text-slate-600 hover:text-slate-900 font-bold">۱ ماه</button>
+                    <button type="button" onclick="switchCustFin('six_months')" id="custFinTab_six_months" class="cust-fin-tab px-3 py-1.5 rounded-xl transition-all cursor-pointer text-slate-600 hover:text-slate-900 font-bold">۶ ماه</button>
+                    <button type="button" onclick="switchCustFin('year')" id="custFinTab_year" class="cust-fin-tab px-3 py-1.5 rounded-xl transition-all cursor-pointer text-slate-600 hover:text-slate-900 font-bold">۱ سال</button>
+                </div>
+            </div>
+
+            <!-- 4 Metrics Grid -->
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
+                <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-1">
+                    <span class="text-[11px] text-slate-500 font-medium block">مجموع پرداختی:</span>
+                    <div class="text-base sm:text-lg font-black font-mono text-slate-900" id="custFinSpent">
+                        <?= number_format($userFinancialTranscript['week']['total_spent']) ?> <span class="text-xs font-normal text-slate-500 font-sans">تومان</span>
+                    </div>
+                    <span class="text-[10px] text-slate-400 block">فاکتور نهایی پس از تخفیف</span>
+                </div>
+
+                <div class="p-4 rounded-2xl bg-emerald-50/70 border border-emerald-200 space-y-1">
+                    <span class="text-[11px] text-emerald-800 font-bold block">سود از تخفیف‌های آسنا:</span>
+                    <div class="text-base sm:text-lg font-black font-mono text-emerald-700" id="custFinDiscount">
+                        <?= number_format($userFinancialTranscript['week']['total_discount']) ?> <span class="text-xs font-normal text-emerald-600 font-sans">تومان</span>
+                    </div>
+                    <span class="text-[10px] text-emerald-600/80 block">صرفه‌جویی خالص پرداختی</span>
+                </div>
+
+                <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-1">
+                    <span class="text-[11px] text-slate-500 font-medium block">سفارشات موفق:</span>
+                    <div class="text-base sm:text-lg font-black font-mono text-slate-900" id="custFinCount">
+                        <?= number_format($userFinancialTranscript['week']['count']) ?> <span class="text-xs font-normal text-slate-500 font-sans">سفارش</span>
+                    </div>
+                    <span class="text-[10px] text-slate-400 block">کالا و خدمات تحویل‌شده</span>
+                </div>
+
+                <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-1">
+                    <span class="text-[11px] text-slate-500 font-medium block">میانگین هر سفارش:</span>
+                    <div class="text-base sm:text-lg font-black font-mono text-slate-900" id="custFinAvg">
+                        <?= number_format($userFinancialTranscript['week']['count'] > 0 ? round($userFinancialTranscript['week']['total_spent'] / $userFinancialTranscript['week']['count']) : 0) ?> <span class="text-xs font-normal text-slate-500 font-sans">تومان</span>
+                    </div>
+                    <span class="text-[10px] text-slate-400 block">میانگین ارزش سبد خرید</span>
+                </div>
+            </div>
+        </div>
+
+        <script>
+        const custFinData = <?= json_encode($userFinancialTranscript, JSON_UNESCAPED_UNICODE) ?>;
+        function switchCustFin(period) {
+            ['week', 'month', 'six_months', 'year'].forEach(p => {
+                const btn = document.getElementById('custFinTab_' + p);
+                if (btn) {
+                    if (p === period) {
+                        btn.className = 'cust-fin-tab px-3 py-1.5 rounded-xl transition-all cursor-pointer bg-white text-slate-900 shadow-xs font-black';
+                    } else {
+                        btn.className = 'cust-fin-tab px-3 py-1.5 rounded-xl transition-all cursor-pointer text-slate-600 hover:text-slate-900 font-bold';
+                    }
+                }
+            });
+            const d = custFinData[period] || { total_spent: 0, total_discount: 0, count: 0 };
+            document.getElementById('custFinSpent').innerHTML = d.total_spent.toLocaleString('fa-IR') + ' <span class="text-xs font-normal text-slate-500 font-sans">تومان</span>';
+            document.getElementById('custFinDiscount').innerHTML = d.total_discount.toLocaleString('fa-IR') + ' <span class="text-xs font-normal text-emerald-600 font-sans">تومان</span>';
+            document.getElementById('custFinCount').innerHTML = d.count.toLocaleString('fa-IR') + ' <span class="text-xs font-normal text-slate-500 font-sans">سفارش</span>';
+            const avg = d.count > 0 ? Math.round(d.total_spent / d.count) : 0;
+            document.getElementById('custFinAvg').innerHTML = avg.toLocaleString('fa-IR') + ' <span class="text-xs font-normal text-slate-500 font-sans">تومان</span>';
+        }
+        </script>
+
         <!-- 2. Digikala-Style Quick Summary Bento (Personal Info & Address) -->
+
         <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
             <!-- Card 1: اطلاعات فردی و شناسنامه کاربری -->
             <div class="bg-surface-container-lowest rounded-3xl border border-outline-variant p-6 shadow-sm flex flex-col justify-between hover:shadow-md transition-all">
