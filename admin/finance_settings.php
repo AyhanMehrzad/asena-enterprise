@@ -49,11 +49,52 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             set_setting($pdo, 'auto_payout_day', $autoPayoutDay);
             set_setting($pdo, 'auto_payout_time', $autoPayoutTime);
 
+            // Payment Gateway & Zero-Tax Card Engine Settings
+            $activeGateway = trim($_POST['active_payment_gateway'] ?? 'card_to_card');
+            set_setting($pdo, 'active_payment_gateway', $activeGateway);
+
+            $cardGatewayNum = preg_replace('/[^\d]/', '', $_POST['card_gateway_number'] ?? '');
+            if (!empty($cardGatewayNum)) set_setting($pdo, 'card_gateway_number', $cardGatewayNum);
+
+            $cardGatewayHolder = trim($_POST['card_gateway_holder'] ?? '');
+            if (!empty($cardGatewayHolder)) set_setting($pdo, 'card_gateway_holder', $cardGatewayHolder);
+
+            $cardGatewayBank = trim($_POST['card_gateway_bank'] ?? '');
+            if (!empty($cardGatewayBank)) set_setting($pdo, 'card_gateway_bank', $cardGatewayBank);
+
+            $cardGatewayShaba = strtoupper(preg_replace('/[^A-Z0-9]/', '', $_POST['card_gateway_shaba'] ?? ''));
+            if (!empty($cardGatewayShaba)) set_setting($pdo, 'card_gateway_shaba', $cardGatewayShaba);
+
+            $cardAutoThreshold = max(0, (int)($_POST['card_auto_verify_threshold'] ?? 0));
+            set_setting($pdo, 'card_auto_verify_threshold', $cardAutoThreshold);
+
+            $cryptoWallet = trim($_POST['crypto_usdt_trc20_wallet'] ?? '');
+            if (!empty($cryptoWallet)) set_setting($pdo, 'crypto_usdt_trc20_wallet', $cryptoWallet);
+
+            $cryptoRate = max(1000, (int)($_POST['crypto_usdt_toman_rate'] ?? 65000));
+            set_setting($pdo, 'crypto_usdt_toman_rate', $cryptoRate);
+
             $enamadCode = trim($_POST['enamad_html_code'] ?? '');
             set_setting($pdo, 'enamad_html_code', $enamadCode);
 
-            $success = "تنظیمات حساب بانکی، مالیات، زمان‌بندی تسویه و کد نماد اعتماد با موفقیت ذخیره شد.";
+            $success = "تنظیمات حساب بانکی، مالیات، درگاه پرداخت (کارت به کارت / تتر)، زمان‌بندی تسویه و نماد اعتماد با موفقیت ذخیره شد.";
         }
+    } elseif ($action === 'approve_receipt') {
+        $subId = (int)$_POST['submission_id'];
+        require_once __DIR__ . '/../includes/PaymentService.php';
+        $paymentService = new PaymentService($pdo);
+        $res = $paymentService->approveCardReceipt($subId, (int)$_SESSION['user_id'], 'تأیید دستی مدیریت سامانه');
+        if ($res['success']) {
+            $success = $res['message'];
+        } else {
+            $error = $res['message'];
+        }
+    } elseif ($action === 'reject_receipt') {
+        $subId = (int)$_POST['submission_id'];
+        $reason = trim($_POST['rejection_reason'] ?? 'اطلاعات واریزی همخوانی ندارد');
+        $pdo->prepare("UPDATE card_receipt_submissions SET status = 'rejected', rejection_reason = ?, reviewed_by = ?, reviewed_at = NOW() WHERE id = ?")
+            ->execute([$reason, (int)$_SESSION['user_id'], $subId]);
+        $success = "رسید واریز رد شد.";
     } elseif ($action === 'force_test_payout') {
         $res = $escrowService->checkAndExecuteScheduledWeeklyPayout(true, 'manual_admin');
         if ($res['executed']) {
@@ -71,13 +112,33 @@ $adminSheba     = get_setting($pdo, 'admin_bank_sheba', 'IR120560000000100000000
 $adminBank      = get_setting($pdo, 'admin_bank_name', 'بانک سامان');
 $adminHolder    = get_setting($pdo, 'admin_bank_holder', 'شرکت توسعه تجارت الکترونیک آسنا');
 
-$taxRate        = (float)get_setting($pdo, 'tax_rate_percent', 9);
+$activeGateway     = get_setting($pdo, 'active_payment_gateway', 'card_to_card');
+$cardGatewayNum    = get_setting($pdo, 'card_gateway_number', '6037997512345678');
+$cardGatewayHolder = get_setting($pdo, 'card_gateway_holder', 'آسنا — حساب متمرکز امانی');
+$cardGatewayBank   = get_setting($pdo, 'card_gateway_bank', 'بانک ملی ایران');
+$cardGatewayShaba  = get_setting($pdo, 'card_gateway_shaba', 'IR120170000000123456789012');
+$cardAutoThreshold = (int)get_setting($pdo, 'card_auto_verify_threshold', 0);
+$cryptoWallet      = get_setting($pdo, 'crypto_usdt_trc20_wallet', 'TYDskj3920sdfkJSHdf98234JHskfjh2');
+$cryptoRate        = (int)get_setting($pdo, 'crypto_usdt_toman_rate', 65000);
+
+$taxRate        = (float)get_setting($pdo, 'tax_rate_percent', 10.0);
 $commissionRate = (float)get_setting($pdo, 'platform_commission_percent', 15);
 $taxOnAppts     = get_setting($pdo, 'tax_on_appointments_enabled', '1');
 
 $autoPayoutEnabled = get_setting($pdo, 'auto_payout_enabled', '1');
 $autoPayoutDay     = (int)get_setting($pdo, 'auto_payout_day', 4);
 $autoPayoutTime    = get_setting($pdo, 'auto_payout_time', '09:00');
+
+// Pending Card Receipts Queue
+$pendingSubmissionsStmt = $pdo->query("
+    SELECT s.*, t.authority_or_ref, u.name as user_name, u.phone as user_phone 
+    FROM card_receipt_submissions s
+    JOIN payment_transactions t ON s.payment_transaction_id = t.id
+    JOIN users u ON s.user_id = u.id
+    WHERE s.status = 'pending'
+    ORDER BY s.id DESC
+");
+$pendingSubmissions = $pendingSubmissionsStmt->fetchAll(PDO::FETCH_ASSOC);
 $defaultEnamadCode = "<a referrerpolicy='origin' target='_blank' href='https://trustseal.enamad.ir/?id=7706608&Code=qBmonKZeAe36PvBvs1zpTGrrRb7uFJs8'><img referrerpolicy='origin' src='https://trustseal.enamad.ir/logo.aspx?id=7706608&Code=qBmonKZeAe36PvBvs1zpTGrrRb7uFJs8' alt='' style='cursor:pointer' code='qBmonKZeAe36PvBvs1zpTGrrRb7uFJs8'></a>";
 $enamadCode        = get_setting($pdo, 'enamad_html_code', $defaultEnamadCode);
 if (empty(trim((string)$enamadCode))) {
@@ -161,6 +222,98 @@ require_once __DIR__ . '/includes/admin_header.php';
     <?php endif; ?>
 
     <!-- Visual Asena Card Preview & Stats -->
+    <?php if (!empty($pendingSubmissions)): ?>
+        <!-- Pending Card Receipts Queue -->
+        <div class="bg-white dark:bg-[#1E293B] border-2 border-amber-500/50 rounded-3xl p-6 shadow-md">
+            <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-4 mb-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center font-black">
+                        <span class="material-symbols-outlined text-xl">receipt_long</span>
+                    </div>
+                    <div>
+                        <h2 class="text-base font-black text-slate-900 dark:text-white flex items-center gap-2">
+                            رسیدهای واریز کارت به کارت در انتظار تأیید مالی
+                            <span class="bg-amber-500 text-white text-xs px-2.5 py-0.5 rounded-full font-mono"><?= count($pendingSubmissions) ?></span>
+                        </h2>
+                        <p class="text-xs text-slate-400">تأیید فوری واریزی‌های مشتریان (بدون نیاز به درگاه مالیاتی و کد مالیاتی)</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-right text-xs">
+                    <thead>
+                        <tr class="bg-slate-50 dark:bg-slate-900 text-slate-500 border-b border-slate-200 dark:border-slate-800">
+                            <th class="p-3">کاربر</th>
+                            <th class="p-3">مبلغ</th>
+                            <th class="p-3">شماره پیگیری بانک</th>
+                            <th class="p-3">۴ رقم آخر کارت</th>
+                            <th class="p-3">تصویر فیش</th>
+                            <th class="p-3">زمان ثبت</th>
+                            <th class="p-3 text-center">عملیات</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+                        <?php foreach ($pendingSubmissions as $sub): ?>
+                            <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/50">
+                                <td class="p-3 font-bold text-slate-900 dark:text-white">
+                                    <?= htmlspecialchars($sub['user_name']) ?>
+                                    <span class="block text-[10px] text-slate-400 font-mono"><?= htmlspecialchars($sub['user_phone']) ?></span>
+                                </td>
+                                <td class="p-3 font-black text-emerald-600 font-mono text-sm">
+                                    <?= number_format($sub['amount']) ?> تومان
+                                </td>
+                                <td class="p-3">
+                                    <span class="font-mono font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 px-2 py-1 rounded">
+                                        <?= htmlspecialchars($sub['bank_tracking_code']) ?>
+                                    </span>
+                                </td>
+                                <td class="p-3 font-mono text-slate-500">
+                                    <?= $sub['sender_card_last4'] ? htmlspecialchars($sub['sender_card_last4']) : '—' ?>
+                                </td>
+                                <td class="p-3">
+                                    <?php if ($sub['receipt_image_url']): ?>
+                                        <a href="../<?= htmlspecialchars($sub['receipt_image_url']) ?>" target="_blank" class="inline-flex items-center gap-1 text-blue-500 hover:underline font-bold text-[11px]">
+                                            <span class="material-symbols-outlined text-sm">image</span>
+                                            مشاهده فیش
+                                        </a>
+                                    <?php else: ?>
+                                        <span class="text-slate-400 text-[10px]">بدون تصویر</span>
+                                    <?php endif; ?>
+                                </td>
+                                <td class="p-3 text-[10px] text-slate-400 font-mono">
+                                    <?= htmlspecialchars($sub['created_at']) ?>
+                                </td>
+                                <td class="p-3 text-center">
+                                    <div class="flex items-center justify-center gap-2">
+                                        <form method="POST" action="finance_settings.php" class="inline">
+                                            <?= csrf_field() ?>
+                                            <input type="hidden" name="action" value="approve_receipt">
+                                            <input type="hidden" name="submission_id" value="<?= $sub['id'] ?>">
+                                            <button type="submit" class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-1 shadow-sm transition">
+                                                <span class="material-symbols-outlined text-sm">check</span>
+                                                تأیید واریز
+                                            </button>
+                                        </form>
+                                        <form method="POST" action="finance_settings.php" class="inline">
+                                            <?= csrf_field() ?>
+                                            <input type="hidden" name="action" value="reject_receipt">
+                                            <input type="hidden" name="submission_id" value="<?= $sub['id'] ?>">
+                                            <button type="submit" onclick="return confirm('آیا از رد این رسید اطمینان دارید؟');" class="px-2.5 py-1.5 rounded-lg bg-rose-50 dark:bg-rose-900/20 text-rose-600 hover:bg-rose-100 font-bold text-xs flex items-center gap-1 transition">
+                                                <span class="material-symbols-outlined text-sm">close</span>
+                                                رد
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    <?php endif; ?>
+
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
         <!-- Visual Corporate Debit Card (Col 5) -->
         <div class="lg:col-span-5 flex flex-col justify-between">
@@ -228,6 +381,68 @@ require_once __DIR__ . '/includes/admin_header.php';
                 <?= csrf_field() ?>
                 <input type="hidden" name="action" value="save_finance_settings">
 
+                <!-- Section 0: Gateway Driver Selection -->
+                <div class="p-5 rounded-2xl bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-slate-900 dark:to-slate-800 border border-blue-200 dark:border-slate-700">
+                    <h3 class="font-bold text-slate-900 dark:text-white text-base flex items-center gap-2 border-b border-blue-200 dark:border-slate-700 pb-3 mb-4">
+                        <span class="material-symbols-outlined text-blue-600 text-xl">payments</span>
+                        انتخاب درگاه پرداخت فعال پلتفرم
+                    </h3>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+                        <label class="p-3.5 rounded-xl border-2 cursor-pointer transition-all flex items-start gap-3 <?= $activeGateway === 'card_to_card' ? 'border-blue-600 bg-white dark:bg-slate-800 shadow-sm' : 'border-slate-200 dark:border-slate-700 opacity-70' ?>">
+                            <input type="radio" name="active_payment_gateway" value="card_to_card" <?= $activeGateway === 'card_to_card' ? 'checked' : '' ?> class="mt-1 text-blue-600 focus:ring-blue-500">
+                            <div>
+                                <span class="text-xs font-black text-slate-900 dark:text-white block">کارت به کارت هوشمند متمرکز (پیشنهادی)</span>
+                                <span class="text-[10px] text-slate-500 block mt-0.5">۱۰۰٪ بدون نیاز به کد مالیاتی، بدون اینماد و بدون نظارت شاپرک.</span>
+                            </div>
+                        </label>
+
+                        <label class="p-3.5 rounded-xl border-2 cursor-pointer transition-all flex items-start gap-3 <?= $activeGateway === 'crypto_usdt' ? 'border-emerald-600 bg-white dark:bg-slate-800 shadow-sm' : 'border-slate-200 dark:border-slate-700 opacity-70' ?>">
+                            <input type="radio" name="active_payment_gateway" value="crypto_usdt" <?= $activeGateway === 'crypto_usdt' ? 'checked' : '' ?> class="mt-1 text-emerald-600 focus:ring-emerald-500">
+                            <div>
+                                <span class="text-xs font-black text-slate-900 dark:text-white block">رمزارز تتر (USDT TRC20)</span>
+                                <span class="text-[10px] text-slate-500 block mt-0.5">پرداخت بین‌المللی غیرمتمرکز، کاملاً خارج از شبکه مالیاتی ایران.</span>
+                            </div>
+                        </label>
+
+                        <label class="p-3.5 rounded-xl border-2 cursor-pointer transition-all flex items-start gap-3 <?= $activeGateway === 'zarinpal' ? 'border-amber-600 bg-white dark:bg-slate-800 shadow-sm' : 'border-slate-200 dark:border-slate-700 opacity-70' ?>">
+                            <input type="radio" name="active_payment_gateway" value="zarinpal" <?= $activeGateway === 'zarinpal' ? 'checked' : '' ?> class="mt-1 text-amber-600 focus:ring-amber-500">
+                            <div>
+                                <span class="text-xs font-black text-slate-900 dark:text-white block">درگاه اینترنتی زرین‌پال (IPG)</span>
+                                <span class="text-[10px] text-slate-500 block mt-0.5">اتصال مستقیم شاپرک (نیازمند پرونده مالیاتی فعال).</span>
+                            </div>
+                        </label>
+
+                        <label class="p-3.5 rounded-xl border-2 cursor-pointer transition-all flex items-start gap-3 <?= $activeGateway === 'mock' ? 'border-slate-600 bg-white dark:bg-slate-800 shadow-sm' : 'border-slate-200 dark:border-slate-700 opacity-70' ?>">
+                            <input type="radio" name="active_payment_gateway" value="mock" <?= $activeGateway === 'mock' ? 'checked' : '' ?> class="mt-1 text-slate-600 focus:ring-slate-500">
+                            <div>
+                                <span class="text-xs font-black text-slate-900 dark:text-white block">شبیه‌ساز تستی (Sandbox Mock)</span>
+                                <span class="text-[10px] text-slate-500 block mt-0.5">تست پرداخت بدون تراکنش واقعی پول.</span>
+                            </div>
+                        </label>
+                    </div>
+
+                    <!-- Card-to-Card Specific Config -->
+                    <div class="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                        <div>
+                            <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">شماره کارت درگاه خریدار:</label>
+                            <input type="text" name="card_gateway_number" value="<?= htmlspecialchars($cardGatewayNum) ?>" maxlength="16" class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 font-mono text-center">
+                        </div>
+                        <div>
+                            <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">نام صاحب کارت درگاه:</label>
+                            <input type="text" name="card_gateway_holder" value="<?= htmlspecialchars($cardGatewayHolder) ?>" class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900">
+                        </div>
+                        <div>
+                            <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">نام بانک:</label>
+                            <input type="text" name="card_gateway_bank" value="<?= htmlspecialchars($cardGatewayBank) ?>" class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900">
+                        </div>
+                        <div>
+                            <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">شماره شبا:</label>
+                            <input type="text" name="card_gateway_shaba" value="<?= htmlspecialchars($cardGatewayShaba) ?>" class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 font-mono text-left">
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Section 1: Bank Card & Shaba -->
                 <div>
                     <h3 class="font-bold text-slate-900 dark:text-white text-base flex items-center gap-2 border-b border-slate-100 dark:border-slate-800 pb-3 mb-4">
@@ -281,7 +496,7 @@ require_once __DIR__ . '/includes/admin_header.php';
                                 <input type="number" name="tax_rate_percent" value="<?= $taxRate ?>" step="0.5" min="0" max="25" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-xs font-mono font-bold focus:border-primary focus:bg-white outline-none pl-8">
                                 <span class="absolute left-3 top-2.5 text-slate-400 text-xs font-bold">٪</span>
                             </div>
-                            <p class="text-[10px] text-slate-400 mt-1">پیش‌فرض ۹٪ یا نرخ قانونی ۱۰٪ سال ۱۴۰۳؛ این مبلغ در سبد خرید خریدار اضافه و نمایش داده می‌شود.</p>
+                            <p class="text-[10px] text-slate-400 mt-1">نرخ مصوب قانونی مالیات بر ارزش افزوده در سال ۱۴۰۳ (۱۰٪)؛ این مبلغ در فاکتور و سبد خرید خریدار به صورت تفکیک‌شده محاسبه و اعمال می‌گردد.</p>
                         </div>
 
                         <!-- Platform Commission -->

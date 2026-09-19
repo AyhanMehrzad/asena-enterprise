@@ -103,6 +103,30 @@ class MarketplaceEscrowService {
             // Update seller wallet pending escrow balance
             $this->creditPendingEscrow($sellerId, $netSellerAmount);
 
+            // Record in double-entry platform ledger
+            try {
+                $this->db->prepare("
+                    INSERT INTO platform_ledger_entries 
+                    (provider_id, order_id, type, amount, description, created_at)
+                    VALUES (?, ?, 'escrow_hold', ?, ?, NOW())
+                ")->execute([
+                    $sellerId,
+                    $orderId,
+                    $netSellerAmount,
+                    "نگهداری امانی ۷ روزه تضمین سفارش #{$orderId} (قلم {$item['id']})"
+                ]);
+
+                $this->db->prepare("
+                    INSERT INTO platform_ledger_entries 
+                    (provider_id, order_id, type, amount, description, created_at)
+                    VALUES (NULL, ?, 'platform_commission', ?, ?, NOW())
+                ")->execute([
+                    $orderId,
+                    $commissionAmount,
+                    "کارمزد واسطه‌گری پلتفرم آسنا از سفارش #{$orderId}"
+                ]);
+            } catch (Throwable $e) {}
+
             $totalDeposited += $netSellerAmount;
             $totalCommission += $commissionAmount;
             $ledgerEntries[] = [
@@ -323,6 +347,20 @@ class MarketplaceEscrowService {
                 'settled_add' => $settledAmount,
                 'seller_id' => $sellerId
             ]);
+
+            // Record payout debit in immutable platform ledger
+            try {
+                $this->db->prepare("
+                    INSERT INTO platform_ledger_entries 
+                    (provider_id, settlement_batch_id, type, amount, description, created_at)
+                    VALUES (?, ?, 'payout_settlement', ?, ?, NOW())
+                ")->execute([
+                    $sellerId,
+                    $batchCode,
+                    -$settledAmount,
+                    "تسویه هفتگی پنج‌شنبه‌ها (دسته: {$batchCode})"
+                ]);
+            } catch (Throwable $e) {}
 
             // Update ledger records
             $updateLedger = $this->db->prepare("

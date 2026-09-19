@@ -75,7 +75,7 @@ if (!empty($cart_items)) {
     }
 }
 
-$tax_rate_pct = (float)get_setting($pdo, 'tax_rate_percent', 9);
+$tax_rate_pct = (float)get_setting($pdo, 'tax_rate_percent', 10.0);
 
 $std_subtotal = $std_total_price - $std_total_discount;
 $std_tax_amount = (int)round($std_subtotal * ($tax_rate_pct / 100.0));

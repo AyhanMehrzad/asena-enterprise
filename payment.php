@@ -114,8 +114,8 @@ if ($isBooking) {
         exit;
     }
 
-    // Add 9% VAT
-    $tax_rate_pct = (float)get_setting($pdo, 'tax_rate_percent', 9);
+    // Add 10% VAT (مصوب بودجه ۱۴۰۳ کل کشور)
+    $tax_rate_pct = (float)get_setting($pdo, 'tax_rate_percent', 10.0);
     $tax_amount   = (int)round($subtotal * ($tax_rate_pct / 100.0));
     $final_total  = $subtotal + $tax_amount;
 
@@ -125,38 +125,41 @@ if ($isBooking) {
 
     if ($checkout_type === 'autoship' && $payment_model === 'upfront') {
         $payable_today = round(($final_total * $duration_months) * 0.95);
-        $order_desc = "خرید یک‌جا اشتراک {$duration_months} ماهه تحویل خودکار آسنا (" . count($pending_items) . " قلم با احتساب مالیات ارزش افزوده)";
+        $order_desc = "خرید یک‌جا اشتراک {$duration_months} ماهه تحویل خودکار آسنا (" . count($pending_items) . " قلم با احتساب ۱۰٪ مالیات ارزش افزوده)";
     } elseif ($checkout_type === 'autoship') {
         $payable_today = $final_total;
-        $order_desc = "پرداخت نوبت ۱ از اشتراک {$duration_months} ماهه تحویل خودکار آسنا (" . count($pending_items) . " قلم با احتساب مالیات ارزش افزوده)";
+        $order_desc = "پرداخت نوبت ۱ از اشتراک {$duration_months} ماهه تحویل خودکار آسنا (" . count($pending_items) . " قلم با احتساب ۱۰٪ مالیات ارزش افزوده)";
     } else {
         $payable_today = $final_total;
-        $order_desc = "خرید از فروشگاه آسنا — " . count($pending_items) . " محصول (با احتساب مالیات ارزش افزوده)";
+        $order_desc = "خرید از فروشگاه آسنا — " . count($pending_items) . " محصول (با احتساب ۱۰٪ مالیات ارزش افزوده)";
     }
 }
 
-// ── Request payment authority from ZarinPal / Mock Gateway ────────────────────
-$gateway      = new ZarinPalGateway();
-$callback_url = get_app_base_url() . '/actions/complete_payment.php';
+// ── Multi-Driver Payment Service Routing ──────────────────────────────────────
+require_once __DIR__ . '/includes/PaymentService.php';
+$paymentService = new PaymentService($pdo);
 
-$metadata = [];
-if (!empty($currentUser['email'])) {
-    $metadata['email'] = $currentUser['email'];
-}
-if (!empty($currentUser['phone'])) {
-    $metadata['mobile'] = (string)$currentUser['phone'];
-}
+$orderType = $isBooking ? 'booking' : ($isSmsPackage ? 'sms_package' : 'cart');
+$orderMetadata = [
+    'email' => $currentUser['email'] ?? '',
+    'mobile' => (string)($currentUser['phone'] ?? ''),
+    'checkout_type' => $checkout_type ?? 'standard',
+    'tax_amount' => $tax_amount ?? 0,
+    'tax_rate_pct' => $tax_rate_pct ?? 10.0
+];
 
-$result = $gateway->requestPayment(
+$result = $paymentService->requestPayment(
+    (int)$_SESSION['user_id'],
     $payable_today,
     $order_desc,
-    $callback_url,
-    $metadata
+    $orderType,
+    null,
+    $orderMetadata
 );
 
 if (!$result['success']) {
     $fallbackRedirect = $isBooking ? 'booking.php' : 'cart.php';
-    $_SESSION['profile_error'] = 'خطا در اتصال به درگاه پرداخت: ' . $result['error'];
+    $_SESSION['profile_error'] = 'خطا در ایجاد تراکنش پرداخت: ' . ($result['error'] ?? $result['message'] ?? 'خطای نامشخص');
     header("Location: {$fallbackRedirect}");
     exit;
 }
