@@ -926,6 +926,9 @@ function updateAutoshipCalculations() {
     // Update Payment Model UI Labels
     const labelMonthly = document.getElementById('label-pay-monthly');
     const labelUpfront = document.getElementById('label-pay-upfront');
+    if (!labelMonthly || !labelUpfront) {
+        return;
+    }
     if (paymentModel === 'monthly') {
         labelMonthly.className = 'flex items-start gap-2.5 p-3 rounded-2xl bg-white border-2 border-secondary-container shadow-sm cursor-pointer pay-model-label';
         labelUpfront.className = 'flex items-start gap-2.5 p-3 rounded-2xl bg-white border border-outline-variant/40 hover:border-secondary-container shadow-sm cursor-pointer pay-model-label';

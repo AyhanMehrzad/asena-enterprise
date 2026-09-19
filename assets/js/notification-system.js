@@ -523,6 +523,10 @@
 
         // Hook click on notification bell icons
         document.querySelectorAll('a[href*="notifications"], a[title*="اعلان"], .notification-bell-btn').forEach(btn => {
+            // Prevent duplicate handler if element already has inline onclick="toggleNotificationDrawer()"
+            if (btn.hasAttribute('onclick') && btn.getAttribute('onclick').includes('toggleNotificationDrawer')) {
+                return;
+            }
             btn.addEventListener('click', (e) => {
                 e.preventDefault();
                 toggleNotificationDrawer();
@@ -658,8 +662,10 @@
             </div>
         `;
 
-        drawer.addEventListener('click', () => {
-            window.toggleNotificationDrawer(false);
+        drawer.addEventListener('click', (e) => {
+            if (e.target === drawer) {
+                window.toggleNotificationDrawer(false);
+            }
         });
 
         document.body.appendChild(drawer);
@@ -667,13 +673,24 @@
         return drawer;
     }
 
+    let lastDrawerToggleMs = 0;
     window.toggleNotificationDrawer = function (forceState) {
+        const now = Date.now();
+        // Debounce rapid double triggers within 350ms
+        if (forceState === undefined && (now - lastDrawerToggleMs < 350)) {
+            return;
+        }
+        lastDrawerToggleMs = now;
+
         const drawer = createNotificationDrawer();
-        const shouldOpen = (forceState !== undefined) ? forceState : drawer.classList.contains('hidden');
+        const isCurrentlyOpen = !drawer.classList.contains('hidden') && drawer.style.display !== 'none';
+        const shouldOpen = (forceState !== undefined) ? forceState : !isCurrentlyOpen;
 
         if (shouldOpen) {
             drawer.classList.remove('hidden');
             drawer.classList.add('flex');
+            drawer.style.display = 'flex';
+            drawer.style.zIndex = '100020';
             document.body.style.overflow = 'hidden';
             updateSoundIcon();
             renderDrawerNotifications(window.asenaCachedNotifications || []);
@@ -687,10 +704,12 @@
                         renderDrawerNotifications(data.notifications);
                         applyBadgeCount(data.unread_count);
                     }
-                });
+                })
+                .catch(() => {});
         } else {
             drawer.classList.add('hidden');
             drawer.classList.remove('flex');
+            drawer.style.display = 'none';
             document.body.style.overflow = '';
         }
     };
