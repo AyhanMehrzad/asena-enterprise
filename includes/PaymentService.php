@@ -18,7 +18,7 @@ class PaymentService {
 
     public function __construct(?PDO $db = null) {
         $this->db = $db ?? $GLOBALS['pdo'];
-        $this->activeDriver = (string)get_setting($this->db, 'active_payment_gateway', 'card_to_card');
+        $this->activeDriver = (string)get_setting($this->db, 'active_payment_gateway', 'zarinpal');
     }
 
     public function getActiveDriver(): string {
@@ -58,27 +58,8 @@ class PaymentService {
         $appBase = get_app_base_url();
 
         switch ($this->activeDriver) {
-            case 'card_to_card':
-                return [
-                    'success'     => true,
-                    'transaction_id' => $txId,
-                    'authority'   => $authority,
-                    'driver'      => 'card_to_card',
-                    'payment_url' => $appBase . '/card_payment.php?tx=' . urlencode($authority),
-                    'amount'      => $amountTomans
-                ];
-
-            case 'crypto_usdt':
-                return [
-                    'success'     => true,
-                    'transaction_id' => $txId,
-                    'authority'   => $authority,
-                    'driver'      => 'crypto_usdt',
-                    'payment_url' => $appBase . '/crypto_payment.php?tx=' . urlencode($authority),
-                    'amount'      => $amountTomans
-                ];
-
             case 'zarinpal':
+            default:
                 require_once __DIR__ . '/gateway.php';
                 $zp = new ZarinPalGateway();
                 $callbackUrl = $appBase . '/actions/complete_payment.php?tx=' . urlencode($authority);
@@ -91,7 +72,6 @@ class PaymentService {
                 return $res;
 
             case 'mock':
-            default:
                 return [
                     'success'     => true,
                     'transaction_id' => $txId,

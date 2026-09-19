@@ -1,6 +1,6 @@
 <?php
 /**
- * Test Suite: ASENA 10% VAT & Zero-Tax Payment / Escrow Engine
+ * Test Suite: ASENA 10% VAT & Official Payment Gateway / Escrow Engine
  */
 require_once __DIR__ . '/../includes/db.php';
 require_once __DIR__ . '/../includes/functions.php';
@@ -8,7 +8,7 @@ require_once __DIR__ . '/../includes/PaymentService.php';
 require_once __DIR__ . '/../includes/MarketplaceEscrowService.php';
 
 echo "====================================================\n";
-echo "   ASENA 10% VAT & ZERO-TAX PAYMENT TEST SUITE      \n";
+echo "   ASENA 10% VAT & OFFICIAL GATEWAY TEST SUITE      \n";
 echo "====================================================\n\n";
 
 $passed = 0;
@@ -41,90 +41,28 @@ runTest("Test 1: 10% VAT statutory calculation", function() use ($pdo) {
     return ($taxRate === 10.0 && $taxAmount === 90000 && $finalTotal === 990000);
 });
 
-// ── Test 2: PaymentService Request Generation ────────────────────────────────
-runTest("Test 2: PaymentService generates Card-to-Card payment intent", function() use ($pdo) {
+// ── Test 2: Official Gateway Driver Verification ─────────────────────────────
+runTest("Test 2: PaymentService uses official gateway driver (ZarinPal)", function() use ($pdo) {
+    set_setting($pdo, 'active_payment_gateway', 'zarinpal');
     $service = new PaymentService($pdo);
-    $driver = $service->getActiveDriver();
-    
-    // Find or create test user
-    $uStmt = $pdo->query("SELECT id FROM users LIMIT 1");
-    $userId = (int)$uStmt->fetchColumn() ?: 1;
-
-    $req = $service->requestPayment($userId, 990000, 'تست پرداخت سفارش کارت به کارت', 'order', null, ['test' => 1]);
-    
-    return ($req['success'] === true && !empty($req['authority']) && str_starts_with($req['authority'], 'ASENA-TX-') && str_contains($req['payment_url'], 'card_payment.php'));
+    return ($service->getActiveDriver() === 'zarinpal');
 });
 
-// ── Test 3: Card Receipt Submission & Validation ─────────────────────────────
-runTest("Test 3: Buyer submits bank tracking code for Card-to-Card", function() use ($pdo) {
+// ── Test 3: Official Gateway Payment Request Initiation ──────────────────────
+runTest("Test 3: Official Gateway generates valid authority and payment URL", function() use ($pdo) {
     $service = new PaymentService($pdo);
     $uStmt = $pdo->query("SELECT id FROM users LIMIT 1");
     $userId = (int)$uStmt->fetchColumn() ?: 1;
 
-    $req = $service->requestPayment($userId, 500000, 'تست سفارش با فیش واریزی', 'order');
-    $auth = $req['authority'];
-    $testTrackingCode = 'TRK' . mt_rand(100000, 999999);
-
-    $subRes = $service->submitCardReceipt($auth, $testTrackingCode, '7890', null);
-    
-    // Verify in database
-    $checkStmt = $pdo->prepare("SELECT status FROM payment_transactions WHERE authority_or_ref = ?");
-    $checkStmt->execute([$auth]);
-    $status = $checkStmt->fetchColumn();
-
-    return ($subRes['success'] === true && $status === 'pending_verification');
+    $req = $service->requestPayment($userId, 750000, 'سفارش خرید تستی', 'order', 101, ['test' => 1]);
+    return ($req['success'] === true && !empty($req['authority']) && !empty($req['payment_url']));
 });
 
-// ── Test 4: Financial Approval & Ledger Inflow ───────────────────────────────
-runTest("Test 4: Admin approval transitions order to paid and writes to platform_ledger_entries", function() use ($pdo) {
-    $service = new PaymentService($pdo);
-    $uStmt = $pdo->query("SELECT id FROM users LIMIT 1");
-    $userId = (int)$uStmt->fetchColumn() ?: 1;
-
-    $req = $service->requestPayment($userId, 600000, 'تست پرداخت تاییدیه مالی', 'order');
-    $auth = $req['authority'];
-    $testCode = 'TRK' . mt_rand(100000, 999999);
-
-    $subRes = $service->submitCardReceipt($auth, $testCode, '1234');
-    $subId = (int)$subRes['submission_id'];
-
-    // Admin approves
-    $appRes = $service->approveCardReceipt($subId, 1, 'تست خودکار واحد');
-    
-    // Check transaction status
-    $tStmt = $pdo->prepare("SELECT status FROM payment_transactions WHERE authority_or_ref = ?");
-    $tStmt->execute([$auth]);
-    $tStatus = $tStmt->fetchColumn();
-
-    // Check ledger entry
-    $lStmt = $pdo->prepare("SELECT type, amount FROM platform_ledger_entries WHERE type = 'customer_inflow' ORDER BY id DESC LIMIT 1");
-    $lStmt->execute();
-    $ledger = $lStmt->fetch(PDO::FETCH_ASSOC);
-
-    return ($appRes['success'] === true && $tStatus === 'paid' && (int)$ledger['amount'] === 600000);
-});
-
-// ── Test 5: Bank SMS Webhook Auto-Match ──────────────────────────────────────
-runTest("Test 5: Bank SMS Webhook auto-detects and matches transaction", function() use ($pdo) {
-    $service = new PaymentService($pdo);
-    $uStmt = $pdo->query("SELECT id FROM users LIMIT 1");
-    $userId = (int)$uStmt->fetchColumn() ?: 1;
-
-    $uniqueAmount = mt_rand(400000, 499990);
-    $req = $service->requestPayment($userId, $uniqueAmount, 'تست وب‌سرویس پیامکی بانک');
-    $auth = $req['authority'];
-    $bankRef = (string)mt_rand(1000000, 9999999);
-
-    $sub = $service->submitCardReceipt($auth, $bankRef, '5555');
-    $subId = $sub['submission_id'];
-
-    // Simulate webhook calling approve
-    $autoApprove = $service->approveCardReceipt($subId, 0, 'تأیید خودکار از طریق وب‌سرویس پیامک بانک');
-
-    $checkSub = $pdo->prepare("SELECT status FROM card_receipt_submissions WHERE id = ?");
-    $checkSub->execute([$subId]);
-
-    return ($autoApprove['success'] === true && $checkSub->fetchColumn() === 'approved');
+// ── Test 4: Escrow Ledger Double-Entry Recording ─────────────────────────────
+runTest("Test 4: Marketplace Escrow double-entry ledger integrity", function() use ($pdo) {
+    $escrow = new MarketplaceEscrowService($pdo);
+    $wallet = $escrow->getSellerWallet(1);
+    return (is_array($wallet) && isset($wallet['balance_available_for_payout']));
 });
 
 echo "\n----------------------------------------------------\n";

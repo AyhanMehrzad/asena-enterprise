@@ -221,99 +221,6 @@ require_once __DIR__ . '/includes/admin_header.php';
         </div>
     <?php endif; ?>
 
-    <!-- Visual Asena Card Preview & Stats -->
-    <?php if (!empty($pendingSubmissions)): ?>
-        <!-- Pending Card Receipts Queue -->
-        <div class="bg-white dark:bg-[#1E293B] border-2 border-amber-500/50 rounded-3xl p-6 shadow-md">
-            <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-4 mb-4">
-                <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center font-black">
-                        <span class="material-symbols-outlined text-xl">receipt_long</span>
-                    </div>
-                    <div>
-                        <h2 class="text-base font-black text-slate-900 dark:text-white flex items-center gap-2">
-                            رسیدهای واریز کارت به کارت در انتظار تأیید مالی
-                            <span class="bg-amber-500 text-white text-xs px-2.5 py-0.5 rounded-full font-mono"><?= count($pendingSubmissions) ?></span>
-                        </h2>
-                        <p class="text-xs text-slate-400">تأیید فوری واریزی‌های مشتریان (بدون نیاز به درگاه مالیاتی و کد مالیاتی)</p>
-                    </div>
-                </div>
-            </div>
-
-            <div class="overflow-x-auto">
-                <table class="w-full text-right text-xs">
-                    <thead>
-                        <tr class="bg-slate-50 dark:bg-slate-900 text-slate-500 border-b border-slate-200 dark:border-slate-800">
-                            <th class="p-3">کاربر</th>
-                            <th class="p-3">مبلغ</th>
-                            <th class="p-3">شماره پیگیری بانک</th>
-                            <th class="p-3">۴ رقم آخر کارت</th>
-                            <th class="p-3">تصویر فیش</th>
-                            <th class="p-3">زمان ثبت</th>
-                            <th class="p-3 text-center">عملیات</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
-                        <?php foreach ($pendingSubmissions as $sub): ?>
-                            <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/50">
-                                <td class="p-3 font-bold text-slate-900 dark:text-white">
-                                    <?= htmlspecialchars($sub['user_name']) ?>
-                                    <span class="block text-[10px] text-slate-400 font-mono"><?= htmlspecialchars($sub['user_phone']) ?></span>
-                                </td>
-                                <td class="p-3 font-black text-emerald-600 font-mono text-sm">
-                                    <?= number_format($sub['amount']) ?> تومان
-                                </td>
-                                <td class="p-3">
-                                    <span class="font-mono font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 px-2 py-1 rounded">
-                                        <?= htmlspecialchars($sub['bank_tracking_code']) ?>
-                                    </span>
-                                </td>
-                                <td class="p-3 font-mono text-slate-500">
-                                    <?= $sub['sender_card_last4'] ? htmlspecialchars($sub['sender_card_last4']) : '—' ?>
-                                </td>
-                                <td class="p-3">
-                                    <?php if ($sub['receipt_image_url']): ?>
-                                        <a href="../<?= htmlspecialchars($sub['receipt_image_url']) ?>" target="_blank" class="inline-flex items-center gap-1 text-blue-500 hover:underline font-bold text-[11px]">
-                                            <span class="material-symbols-outlined text-sm">image</span>
-                                            مشاهده فیش
-                                        </a>
-                                    <?php else: ?>
-                                        <span class="text-slate-400 text-[10px]">بدون تصویر</span>
-                                    <?php endif; ?>
-                                </td>
-                                <td class="p-3 text-[10px] text-slate-400 font-mono">
-                                    <?= htmlspecialchars($sub['created_at']) ?>
-                                </td>
-                                <td class="p-3 text-center">
-                                    <div class="flex items-center justify-center gap-2">
-                                        <form method="POST" action="finance_settings.php" class="inline">
-                                            <?= csrf_field() ?>
-                                            <input type="hidden" name="action" value="approve_receipt">
-                                            <input type="hidden" name="submission_id" value="<?= $sub['id'] ?>">
-                                            <button type="submit" class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-1 shadow-sm transition">
-                                                <span class="material-symbols-outlined text-sm">check</span>
-                                                تأیید واریز
-                                            </button>
-                                        </form>
-                                        <form method="POST" action="finance_settings.php" class="inline">
-                                            <?= csrf_field() ?>
-                                            <input type="hidden" name="action" value="reject_receipt">
-                                            <input type="hidden" name="submission_id" value="<?= $sub['id'] ?>">
-                                            <button type="submit" onclick="return confirm('آیا از رد این رسید اطمینان دارید؟');" class="px-2.5 py-1.5 rounded-lg bg-rose-50 dark:bg-rose-900/20 text-rose-600 hover:bg-rose-100 font-bold text-xs flex items-center gap-1 transition">
-                                                <span class="material-symbols-outlined text-sm">close</span>
-                                                رد
-                                            </button>
-                                        </form>
-                                    </div>
-                                </td>
-                            </tr>
-                        <?php endforeach; ?>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    <?php endif; ?>
-
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
         <!-- Visual Corporate Debit Card (Col 5) -->
         <div class="lg:col-span-5 flex flex-col justify-between">
@@ -385,61 +292,25 @@ require_once __DIR__ . '/includes/admin_header.php';
                 <div class="p-5 rounded-2xl bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-slate-900 dark:to-slate-800 border border-blue-200 dark:border-slate-700">
                     <h3 class="font-bold text-slate-900 dark:text-white text-base flex items-center gap-2 border-b border-blue-200 dark:border-slate-700 pb-3 mb-4">
                         <span class="material-symbols-outlined text-blue-600 text-xl">payments</span>
-                        انتخاب درگاه پرداخت فعال پلتفرم
+                        تنظیم درگاه پرداخت اینترنتی رسمی شاپرک
                     </h3>
 
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
-                        <label class="p-3.5 rounded-xl border-2 cursor-pointer transition-all flex items-start gap-3 <?= $activeGateway === 'card_to_card' ? 'border-blue-600 bg-white dark:bg-slate-800 shadow-sm' : 'border-slate-200 dark:border-slate-700 opacity-70' ?>">
-                            <input type="radio" name="active_payment_gateway" value="card_to_card" <?= $activeGateway === 'card_to_card' ? 'checked' : '' ?> class="mt-1 text-blue-600 focus:ring-blue-500">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-2">
+                        <label class="p-3.5 rounded-xl border-2 cursor-pointer transition-all flex items-start gap-3 <?= $activeGateway === 'zarinpal' ? 'border-blue-600 bg-white dark:bg-slate-800 shadow-sm' : 'border-slate-200 dark:border-slate-700 opacity-70' ?>">
+                            <input type="radio" name="active_payment_gateway" value="zarinpal" <?= $activeGateway === 'zarinpal' ? 'checked' : '' ?> class="mt-1 text-blue-600 focus:ring-blue-500">
                             <div>
-                                <span class="text-xs font-black text-slate-900 dark:text-white block">کارت به کارت هوشمند متمرکز (پیشنهادی)</span>
-                                <span class="text-[10px] text-slate-500 block mt-0.5">۱۰۰٪ بدون نیاز به کد مالیاتی، بدون اینماد و بدون نظارت شاپرک.</span>
-                            </div>
-                        </label>
-
-                        <label class="p-3.5 rounded-xl border-2 cursor-pointer transition-all flex items-start gap-3 <?= $activeGateway === 'crypto_usdt' ? 'border-emerald-600 bg-white dark:bg-slate-800 shadow-sm' : 'border-slate-200 dark:border-slate-700 opacity-70' ?>">
-                            <input type="radio" name="active_payment_gateway" value="crypto_usdt" <?= $activeGateway === 'crypto_usdt' ? 'checked' : '' ?> class="mt-1 text-emerald-600 focus:ring-emerald-500">
-                            <div>
-                                <span class="text-xs font-black text-slate-900 dark:text-white block">رمزارز تتر (USDT TRC20)</span>
-                                <span class="text-[10px] text-slate-500 block mt-0.5">پرداخت بین‌المللی غیرمتمرکز، کاملاً خارج از شبکه مالیاتی ایران.</span>
-                            </div>
-                        </label>
-
-                        <label class="p-3.5 rounded-xl border-2 cursor-pointer transition-all flex items-start gap-3 <?= $activeGateway === 'zarinpal' ? 'border-amber-600 bg-white dark:bg-slate-800 shadow-sm' : 'border-slate-200 dark:border-slate-700 opacity-70' ?>">
-                            <input type="radio" name="active_payment_gateway" value="zarinpal" <?= $activeGateway === 'zarinpal' ? 'checked' : '' ?> class="mt-1 text-amber-600 focus:ring-amber-500">
-                            <div>
-                                <span class="text-xs font-black text-slate-900 dark:text-white block">درگاه اینترنتی زرین‌پال (IPG)</span>
-                                <span class="text-[10px] text-slate-500 block mt-0.5">اتصال مستقیم شاپرک (نیازمند پرونده مالیاتی فعال).</span>
+                                <span class="text-xs font-black text-slate-900 dark:text-white block">درگاه رسمی اینترنتی شاپرک (زرین‌پال / زیبال)</span>
+                                <span class="text-[10px] text-slate-500 block mt-0.5">اتصال رسمی به شبکه شاپرک با ارجاع به صفحه پرداخت الکترونیک بانکی.</span>
                             </div>
                         </label>
 
                         <label class="p-3.5 rounded-xl border-2 cursor-pointer transition-all flex items-start gap-3 <?= $activeGateway === 'mock' ? 'border-slate-600 bg-white dark:bg-slate-800 shadow-sm' : 'border-slate-200 dark:border-slate-700 opacity-70' ?>">
                             <input type="radio" name="active_payment_gateway" value="mock" <?= $activeGateway === 'mock' ? 'checked' : '' ?> class="mt-1 text-slate-600 focus:ring-slate-500">
                             <div>
-                                <span class="text-xs font-black text-slate-900 dark:text-white block">شبیه‌ساز تستی (Sandbox Mock)</span>
-                                <span class="text-[10px] text-slate-500 block mt-0.5">تست پرداخت بدون تراکنش واقعی پول.</span>
+                                <span class="text-xs font-black text-slate-900 dark:text-white block">شبیه‌ساز تستی (Sandbox Simulator)</span>
+                                <span class="text-[10px] text-slate-500 block mt-0.5">آزمایش فرآیند تکمیل سفارش و فاکتور بدون نیاز به تراکنش واقعی.</span>
                             </div>
                         </label>
-                    </div>
-
-                    <!-- Card-to-Card Specific Config -->
-                    <div class="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                        <div>
-                            <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">شماره کارت درگاه خریدار:</label>
-                            <input type="text" name="card_gateway_number" value="<?= htmlspecialchars($cardGatewayNum) ?>" maxlength="16" class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 font-mono text-center">
-                        </div>
-                        <div>
-                            <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">نام صاحب کارت درگاه:</label>
-                            <input type="text" name="card_gateway_holder" value="<?= htmlspecialchars($cardGatewayHolder) ?>" class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900">
-                        </div>
-                        <div>
-                            <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">نام بانک:</label>
-                            <input type="text" name="card_gateway_bank" value="<?= htmlspecialchars($cardGatewayBank) ?>" class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900">
-                        </div>
-                        <div>
-                            <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">شماره شبا:</label>
-                            <input type="text" name="card_gateway_shaba" value="<?= htmlspecialchars($cardGatewayShaba) ?>" class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 font-mono text-left">
-                        </div>
                     </div>
                 </div>
 
