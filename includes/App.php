@@ -29,6 +29,7 @@ require_once __DIR__ . '/LeaderboardService.php';
 require_once __DIR__ . '/DataSecurityService.php';
 require_once __DIR__ . '/BpmsService.php';
 require_once __DIR__ . '/ContractService.php';
+require_once __DIR__ . '/PromoCodeService.php';
 
 class App {
     private static ?PDO $db = null;
@@ -54,6 +55,7 @@ class App {
     private static ?BpmsService $bpms = null;
     private static ?ContractService $contract = null;
     private static ?PushNotificationService $notifications = null;
+    private static ?PromoCodeService $promo = null;
 
 
 
@@ -221,6 +223,13 @@ class App {
             self::$notifications = new PushNotificationService(self::db(), self::sms());
         }
         return self::$notifications;
+    }
+
+    public static function promo(): PromoCodeService {
+        if (self::$promo === null) {
+            self::$promo = new PromoCodeService(self::db());
+        }
+        return self::$promo;
     }
 
     /**

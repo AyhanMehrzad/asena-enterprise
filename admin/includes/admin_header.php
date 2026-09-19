@@ -136,6 +136,8 @@ $adminName = $adminCheck['name'] ?? 'مدیر سیستم';
             $activeKey = 'payouts';
         } elseif ($currentFile === 'finance_settings.php') {
             $activeKey = 'finance_settings';
+        } elseif ($currentFile === 'promo_codes.php') {
+            $activeKey = 'promo_codes';
         } elseif ($currentFile === 'reviews.php') {
             $activeKey = 'reviews';
         } elseif ($currentFile === 'guide.php') {
@@ -173,6 +175,7 @@ $adminName = $adminCheck['name'] ?? 'مدیر سیستم';
             ],
             'مالی و تسویه پایا' => [
                 'payouts'          => ['icon' => 'account_balance_wallet', 'title' => 'تسویه پایا و کارمزد ۱۵٪', 'url' => 'payouts.php'],
+                'promo_codes'      => ['icon' => 'confirmation_number', 'title' => 'کدهای تخفیف و پروموشن', 'url' => 'promo_codes.php'],
                 'finance_settings' => ['icon' => 'settings_suggest', 'title' => 'تنظیمات حساب آسنا و مالیات', 'url' => 'finance_settings.php'],
                 'analytics'        => ['icon' => 'analytics', 'title' => 'تحلیل و آمار کلان', 'url' => 'analytics.php'],
             ],

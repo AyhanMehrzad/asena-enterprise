@@ -78,8 +78,40 @@ if (!empty($cart_items)) {
 $tax_rate_pct = (float)get_setting($pdo, 'tax_rate_percent', 10.0);
 
 $std_subtotal = $std_total_price - $std_total_discount;
-$std_tax_amount = (int)round($std_subtotal * ($tax_rate_pct / 100.0));
-$std_final_price = $std_subtotal + $std_tax_amount;
+
+// Check applied promo code
+require_once __DIR__ . '/includes/App.php';
+$applied_promo = $_SESSION['applied_promo'] ?? null;
+
+// Check URL coupon parameter or session pending coupon
+if (empty($applied_promo)) {
+    $incomingCoupon = trim($_GET['coupon'] ?? $_GET['promo'] ?? $_SESSION['pending_coupon'] ?? '');
+    if (!empty($incomingCoupon)) {
+        $incomingCoupon = strtoupper($incomingCoupon);
+        $promoCheck = App::promo()->validatePromo($incomingCoupon, (int)($_SESSION['user_id'] ?? 0), $std_subtotal);
+        if (!empty($promoCheck['valid'])) {
+            $applied_promo = $promoCheck;
+            $_SESSION['applied_promo'] = $promoCheck;
+            unset($_SESSION['pending_coupon']);
+        } else {
+            $_SESSION['pending_coupon'] = $incomingCoupon;
+        }
+    }
+} elseif ($applied_promo && !empty($applied_promo['code'])) {
+    $promoCheck = App::promo()->validatePromo($applied_promo['code'], (int)($_SESSION['user_id'] ?? 0), $std_subtotal);
+    if (!empty($promoCheck['valid'])) {
+        $applied_promo = $promoCheck;
+        $_SESSION['applied_promo'] = $promoCheck;
+    } else {
+        $applied_promo = null;
+        unset($_SESSION['applied_promo']);
+    }
+}
+
+$std_promo_discount = (int)($applied_promo['discount_amount'] ?? 0);
+$std_taxable_subtotal = max(0, $std_subtotal - $std_promo_discount);
+$std_tax_amount = (int)round($std_taxable_subtotal * ($tax_rate_pct / 100.0));
+$std_final_price = $std_taxable_subtotal + $std_tax_amount;
 
 $auto_subtotal = $auto_total_price - $auto_total_discount;
 $auto_tax_amount = (int)round($auto_subtotal * ($tax_rate_pct / 100.0));
@@ -366,7 +398,26 @@ if (empty($wishlist_products)) {
                                     <span class="font-mono"><?= number_format($std_total_discount) ?> تومان</span>
                                 </div>
                                 <?php endif; ?>
-                                <div class="flex justify-between items-center text-slate-600 bg-slate-50 p-2 rounded-xl">
+
+                                <?php if($std_promo_discount > 0 && !empty($applied_promo)): ?>
+                                <div class="flex justify-between items-center text-emerald-800 bg-emerald-50 p-2.5 rounded-2xl border border-emerald-200 shadow-2xs">
+                                    <div class="flex items-center gap-1.5">
+                                        <span class="material-symbols-outlined text-base text-emerald-600">confirmation_number</span>
+                                        <div>
+                                            <span class="font-bold block">تخفیف کد <?= htmlspecialchars($applied_promo['code']) ?></span>
+                                            <span class="text-[10px] text-emerald-600 block"><?= htmlspecialchars($applied_promo['title']) ?></span>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <span class="font-bold font-mono text-sm text-emerald-700">-<?= number_format($std_promo_discount) ?> تومان</span>
+                                        <button type="button" onclick="removePromoCode()" class="text-rose-500 hover:text-rose-700 p-1 rounded-lg hover:bg-rose-50 transition cursor-pointer" title="حذف کد تخفیف">
+                                            <span class="material-symbols-outlined text-sm">close</span>
+                                        </button>
+                                    </div>
+                                </div>
+                                <?php endif; ?>
+
+                                <div class="flex justify-between items-center text-slate-600 bg-slate-50 p-2.5 rounded-xl border border-slate-200/60">
                                     <span class="flex items-center gap-1">
                                         <span class="material-symbols-outlined text-sm text-slate-400">account_balance</span>
                                         مالیات بر ارزش افزوده (<?= (int)$tax_rate_pct ?>٪):
@@ -378,11 +429,28 @@ if (empty($wishlist_products)) {
                                     <span class="text-status-active font-bold">رایگان</span>
                                 </div>
                             </div>
+
+                            <!-- Promo Code Input Form -->
+                            <?php if(empty($applied_promo)): ?>
+                            <div class="pt-2 border-t border-outline-variant/30">
+                                <label class="text-[11px] font-bold text-slate-700 mb-1.5 flex items-center gap-1">
+                                    <span class="material-symbols-outlined text-sm text-primary">sell</span>
+                                    <span>کد تخفیف دارید؟</span>
+                                </label>
+                                <div class="flex gap-2">
+                                    <input type="text" id="promo_code_input" value="<?= htmlspecialchars($_SESSION['pending_coupon'] ?? '') ?>" placeholder="مثال: WELCOME10" class="flex-1 px-3 py-2 text-xs uppercase font-mono tracking-wider rounded-xl border border-outline-variant/50 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition bg-white" dir="ltr">
+                                    <button type="button" id="promo_apply_btn" onclick="applyPromoCode()" class="px-4 py-2 bg-primary hover:bg-primary-container text-white text-xs font-bold rounded-xl transition shadow-sm active:scale-95 cursor-pointer">
+                                        اعمال
+                                    </button>
+                                </div>
+                                <div id="promo_feedback" class="text-[11px] mt-1.5 hidden font-medium"></div>
+                            </div>
+                            <?php endif; ?>
                             
                             <div class="border-t border-outline-variant/30 pt-4 flex justify-between items-center">
-                                <span class="text-xs font-bold">مبلغ قابل پرداخت</span>
+                                <span class="text-xs font-bold text-slate-700">مبلغ قابل پرداخت:</span>
                                 <span class="text-lg font-bold text-primary font-mono">
-                                    <span class="text-xl text-emerald-700"><?= number_format($std_final_price) ?></span> تومان
+                                    <span class="text-xl text-emerald-700" id="summary_final_total"><?= number_format($std_final_price) ?></span> تومان
                                 </span>
                             </div>
                             
@@ -1068,6 +1136,95 @@ function handleWishlistAddToCart(e, form, productId) {
     })
     .catch(() => {
         form.submit();
+    });
+}
+
+function applyPromoCode() {
+    const input = document.getElementById('promo_code_input');
+    const btn = document.getElementById('promo_apply_btn');
+    const feedback = document.getElementById('promo_feedback');
+    if (!input || !btn) return;
+
+    const code = input.value.trim();
+    if (!code) {
+        if (feedback) {
+            feedback.textContent = 'لطفاً کد تخفیف را وارد کنید.';
+            feedback.className = 'text-[11px] mt-1.5 font-bold text-rose-600 block';
+        }
+        input.focus();
+        return;
+    }
+
+    const csrfToken = document.querySelector('input[name="csrf_token"]')?.value || '<?= csrf_token() ?>';
+    btn.disabled = true;
+    btn.innerHTML = '<span class="material-symbols-outlined text-xs animate-spin">refresh</span>';
+
+    const formData = new FormData();
+    formData.append('action', 'apply');
+    formData.append('code', code);
+    formData.append('csrf_token', csrfToken);
+
+    fetch('actions/promo_action.php', {
+        method: 'POST',
+        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        body: formData
+    })
+    .then(r => r.json())
+    .then(data => {
+        btn.disabled = false;
+        btn.textContent = 'اعمال';
+        if (data.success) {
+            if (feedback) {
+                feedback.textContent = data.message;
+                feedback.className = 'text-[11px] mt-1.5 font-bold text-emerald-600 block';
+            }
+            if (typeof showWishlistToast === 'function') {
+                showWishlistToast('کد تخفیف اعمال شد ✨', 'added');
+            }
+            setTimeout(() => {
+                location.reload();
+            }, 400);
+        } else {
+            if (feedback) {
+                feedback.textContent = data.message || 'کد نامعتبر است.';
+                feedback.className = 'text-[11px] mt-1.5 font-bold text-rose-600 block';
+            }
+        }
+    })
+    .catch(err => {
+        btn.disabled = false;
+        btn.textContent = 'اعمال';
+        if (feedback) {
+            feedback.textContent = 'خطا در برقراری ارتباط با سرور.';
+            feedback.className = 'text-[11px] mt-1.5 font-bold text-rose-600 block';
+        }
+    });
+}
+
+function removePromoCode() {
+    const csrfToken = document.querySelector('input[name="csrf_token"]')?.value || '<?= csrf_token() ?>';
+    const formData = new FormData();
+    formData.append('action', 'remove');
+    formData.append('csrf_token', csrfToken);
+
+    fetch('actions/promo_action.php', {
+        method: 'POST',
+        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        body: formData
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            if (typeof showWishlistToast === 'function') {
+                showWishlistToast('کد تخفیف حذف شد', 'removed');
+            }
+            setTimeout(() => {
+                location.reload();
+            }, 300);
+        }
+    })
+    .catch(() => {
+        location.reload();
     });
 }
 </script>

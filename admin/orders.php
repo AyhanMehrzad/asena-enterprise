@@ -371,11 +371,15 @@ foreach ($orders as $ord) {
                                 <?php endif; ?>
                             </td>
 
-                            <!-- Tax Invoice -->
-                            <td class="px-4 py-4 align-top text-center">
-                                <a href="../actions/generate_invoice.php?order_id=<?= $order['id'] ?>" target="_blank" class="inline-flex items-center gap-1 bg-slate-100 hover:bg-primary hover:text-white text-slate-700 px-2.5 py-1.5 rounded-xl font-bold transition-all border border-slate-200 text-[10px] shadow-sm">
+                            <!-- Tax Invoice & Payment Receipt -->
+                            <td class="px-4 py-4 align-top text-center space-y-1">
+                                <a href="../order_receipt.php?order_id=<?= $order['id'] ?>" target="_blank" class="inline-flex items-center gap-1 bg-emerald-50 hover:bg-emerald-600 hover:text-white text-emerald-800 px-2.5 py-1 rounded-lg font-bold transition-all border border-emerald-200 text-[10px] shadow-xs">
+                                    <span class="material-symbols-outlined text-xs">verified</span>
+                                    رسید پرداخت
+                                </a>
+                                <a href="../actions/generate_invoice.php?order_id=<?= $order['id'] ?>" target="_blank" class="inline-flex items-center gap-1 bg-slate-100 hover:bg-primary hover:text-white text-slate-700 px-2.5 py-1 rounded-lg font-bold transition-all border border-slate-200 text-[10px] shadow-xs">
                                     <span class="material-symbols-outlined text-xs">receipt_long</span>
-                                    فاکتور رسمی
+                                    فاکتور
                                 </a>
                             </td>
                         </tr>

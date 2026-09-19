@@ -138,6 +138,23 @@ class MarketplaceEscrowService {
             ];
         }
 
+        // Platform-funded Promo Code Absorption: Deduct discount solely from ASENA platform commission
+        $orderDiscount = (int)($order['discount_amount'] ?? 0);
+        if ($orderDiscount > 0) {
+            $promoCodeUsed = !empty($order['promo_code']) ? $order['promo_code'] : 'کد تخفیف';
+            try {
+                $this->db->prepare("
+                    INSERT INTO platform_ledger_entries 
+                    (provider_id, order_id, type, amount, description, created_at)
+                    VALUES (NULL, ?, 'platform_commission', ?, ?, NOW())
+                ")->execute([
+                    $orderId,
+                    -$orderDiscount,
+                    "پوشش هزینه تخفیف کد {$promoCodeUsed} از کارمزد پلتفرم آسنا (حفظ ۱۰۰٪ سهم تأمین‌کنندگان)"
+                ]);
+            } catch (Throwable $e) {}
+        }
+
         // Update order escrow status
         $updateOrder = $this->db->prepare("
             UPDATE orders 

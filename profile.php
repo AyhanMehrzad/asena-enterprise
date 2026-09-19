@@ -2636,6 +2636,12 @@ function updateShebaPreview(input) {
                         </div>
 
                         <div class="flex items-center gap-3 self-end sm:self-auto">
+                            <!-- Official Digital Receipt Link -->
+                            <a href="order_receipt.php?order_id=<?= $order['id'] ?>" target="_blank" class="text-primary bg-primary/5 hover:bg-primary/10 px-3 py-1 rounded-full text-xs font-bold transition-all flex items-center gap-1 border border-primary/20 shadow-2xs">
+                                <span class="material-symbols-outlined text-[15px]">receipt_long</span>
+                                <span>رسید رسمی</span>
+                            </a>
+
                             <!-- Status Badge -->
                             <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border <?= $status_bg ?>">
                                 <span class="w-2 h-2 rounded-full <?= $status_dot ?> animate-pulse"></span>

@@ -113,28 +113,42 @@ try {
             $fullShippingAddress .= ' (کد پستی: ' . $uAddr['postal_code'] . ')';
         }
 
-        // 1. Create order with real amount, ref_id and shipping_address snapshot
+        // 1. Create order with real amount, discount, tax, promo_code, ref_id and shipping_address snapshot
+        $discountAmount = (int)($pending['discount_amount'] ?? 0);
+        $taxAmount      = (int)($pending['tax_amount'] ?? 0);
+        $promoCode      = !empty($pending['promo_code']) ? $pending['promo_code'] : null;
+        $promoId        = (int)($pending['promo_id'] ?? 0);
+
         $orderStmt = $pdo->prepare(
-            "INSERT INTO orders (user_id, total_amount, status, gateway_ref_id, shipping_address)
-             VALUES (?, ?, 'processing', ?, ?)"
+            "INSERT INTO orders (user_id, total_amount, discount_amount, tax_amount, promo_code, status, gateway_ref_id, shipping_address)
+             VALUES (?, ?, ?, ?, ?, 'processing', ?, ?)"
         );
-        // If gateway_ref_id or shipping_address column doesn't exist yet, fall back gracefully
         try {
-            $orderStmt->execute([$user_id, $total_amount, $ref_id, $fullShippingAddress]);
+            $orderStmt->execute([$user_id, $total_amount, $discountAmount, $taxAmount, $promoCode, $ref_id, $fullShippingAddress]);
         } catch (PDOException $colErr) {
             try {
                 $orderStmt = $pdo->prepare(
-                    "INSERT INTO orders (user_id, total_amount, status, shipping_address) VALUES (?, ?, 'processing', ?)"
+                    "INSERT INTO orders (user_id, total_amount, discount_amount, status, gateway_ref_id, shipping_address) VALUES (?, ?, ?, 'processing', ?, ?)"
                 );
-                $orderStmt->execute([$user_id, $total_amount, $fullShippingAddress]);
+                $orderStmt->execute([$user_id, $total_amount, $discountAmount, $ref_id, $fullShippingAddress]);
             } catch (PDOException $colErr2) {
                 $orderStmt = $pdo->prepare(
-                    "INSERT INTO orders (user_id, total_amount, status) VALUES (?, ?, 'processing')"
+                    "INSERT INTO orders (user_id, total_amount, status, gateway_ref_id, shipping_address) VALUES (?, ?, 'processing', ?, ?)"
                 );
-                $orderStmt->execute([$user_id, $total_amount]);
+                $orderStmt->execute([$user_id, $total_amount, $ref_id, $fullShippingAddress]);
             }
         }
         $order_id = $pdo->lastInsertId();
+
+        // 1.5 Record promo code usage ledger entry
+        if ($promoId > 0 && $discountAmount > 0) {
+            try {
+                require_once __DIR__ . '/../includes/App.php';
+                App::promo()->recordUsage($promoId, $user_id, (int)$order_id, $discountAmount);
+            } catch (Throwable $pe) {
+                error_log("Promo redemption ledger warning: " . $pe->getMessage());
+            }
+        }
 
     // 2. Insert order_items and decrement stock
     if (!$is_booking && !$is_subscription) {
@@ -366,7 +380,7 @@ try {
     $pdo->commit();
 
     // 4. Clean up session
-    unset($_SESSION['cart'], $_SESSION['cart_types'], $_SESSION['cart_frequency'], $_SESSION['active_cart_tab'], $_SESSION['pending_order']);
+    unset($_SESSION['cart'], $_SESSION['cart_types'], $_SESSION['cart_frequency'], $_SESSION['active_cart_tab'], $_SESSION['pending_order'], $_SESSION['applied_promo']);
     
     if ($is_sms_package) {
         $_SESSION['profile_success'] = "پرداخت موفق! {$pending['package_name']} با موفقیت به حساب شما افزوده شد. کد رهگیری: {$ref_id}";
@@ -375,15 +389,19 @@ try {
     } elseif ($is_subscription) {
         $_SESSION['profile_success'] =
             "پرداخت موفق! اشتراک «{$pending['plan_name']}» با موفقیت فعال شد. کد رهگیری: {$ref_id}";
+        header('Location: ../profile.php');
+        exit;
     } elseif ($is_booking) {
         $_SESSION['profile_success'] =
             "پرداخت موفق! نوبت ویزیت تخصصی شما در سامانه آسنا با موفقیت تایید شد. کد رهگیری: {$ref_id}";
+        header('Location: ../profile.php');
+        exit;
     } else {
         $_SESSION['profile_success'] =
-            "پرداخت موفق! سفارش #PC-{$order_id} ثبت شد. کد رهگیری: {$ref_id}";
+            "پرداخت موفق! سفارش #PC-{$order_id} ثبت شد. کد رهگیری زرین‌پال: {$ref_id}";
+        header("Location: ../order_receipt.php?order_id={$order_id}");
+        exit;
     }
-    header('Location: ../profile.php');
-    exit;
 
 } catch (RuntimeException $e) {
     if ($pdo->inTransaction()) $pdo->rollBack();

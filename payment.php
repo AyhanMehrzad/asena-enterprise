@@ -114,10 +114,31 @@ if ($isBooking) {
         exit;
     }
 
-    // Add 10% VAT (مصوب بودجه ۱۴۰۳ کل کشور)
+    // Incorporate applied promo code if standard cart checkout
+    require_once __DIR__ . '/includes/App.php';
+    $appliedPromo = $_SESSION['applied_promo'] ?? null;
+    $promoDiscount = 0;
+    $promoCode = null;
+    $promoId = null;
+
+    if ($appliedPromo && !empty($appliedPromo['code']) && $checkout_type !== 'autoship') {
+        $promoValidation = App::promo()->validatePromo($appliedPromo['code'], (int)$_SESSION['user_id'], $subtotal);
+        if ($promoValidation['valid']) {
+            $promoDiscount = (int)$promoValidation['discount_amount'];
+            $promoCode = $promoValidation['code'];
+            $promoId = (int)$promoValidation['promo_id'];
+        } else {
+            unset($_SESSION['applied_promo']);
+            $appliedPromo = null;
+        }
+    }
+
+    $taxable_subtotal = max(0, $subtotal - $promoDiscount);
+
+    // Add 10% VAT (مصوب قانونی کل کشور بر اساس مبلغ مشمول مالیات پس از کسر تخفیف)
     $tax_rate_pct = (float)get_setting($pdo, 'tax_rate_percent', 10.0);
-    $tax_amount   = (int)round($subtotal * ($tax_rate_pct / 100.0));
-    $final_total  = $subtotal + $tax_amount;
+    $tax_amount   = (int)round($taxable_subtotal * ($tax_rate_pct / 100.0));
+    $final_total  = $taxable_subtotal + $tax_amount;
 
     $duration_months = (int)($_GET['duration'] ?? 3);
     if (!in_array($duration_months, [3, 6, 12])) $duration_months = 3;
@@ -131,7 +152,8 @@ if ($isBooking) {
         $order_desc = "پرداخت نوبت ۱ از اشتراک {$duration_months} ماهه تحویل خودکار آسنا (" . count($pending_items) . " قلم با احتساب ۱۰٪ مالیات ارزش افزوده)";
     } else {
         $payable_today = $final_total;
-        $order_desc = "خرید از فروشگاه آسنا — " . count($pending_items) . " محصول (با احتساب ۱۰٪ مالیات ارزش افزوده)";
+        $promoDesc = $promoCode ? " [کد تخفیف: {$promoCode}]" : "";
+        $order_desc = "خرید از فروشگاه آسنا — " . count($pending_items) . " محصول (با احتساب ۱۰٪ مالیات ارزش افزوده){$promoDesc}";
     }
 }
 
@@ -145,7 +167,9 @@ $orderMetadata = [
     'mobile' => (string)($currentUser['phone'] ?? ''),
     'checkout_type' => $checkout_type ?? 'standard',
     'tax_amount' => $tax_amount ?? 0,
-    'tax_rate_pct' => $tax_rate_pct ?? 10.0
+    'tax_rate_pct' => $tax_rate_pct ?? 10.0,
+    'promo_code' => $promoCode ?? null,
+    'discount_amount' => $promoDiscount ?? 0
 ];
 
 $result = $paymentService->requestPayment(
@@ -175,6 +199,9 @@ if ($isBooking || $isSmsPackage) {
         'user_id'         => (int)$_SESSION['user_id'],
         'items'           => $pending_items,
         'subtotal'        => $subtotal,
+        'discount_amount' => $promoDiscount,
+        'promo_code'      => $promoCode,
+        'promo_id'        => $promoId,
         'tax_amount'      => $tax_amount,
         'total_amount'    => $payable_today,
         'per_delivery'    => $final_total,

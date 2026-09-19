@@ -27,3 +27,9 @@ This document establishes the foundational architectural rules, coding standards
 
 6. **Git Branch & Production Deployment (`master`)**:
    - Always commit and push changes to `master` (in `asena.company` to `origin master`, and in `asena-enterprise` to `origin master` and `origin main`). cPanel automated production deployment runs off the `master` branch of `asena.company`.
+
+7. **Marketplace Promo Code & Financial Privacy Standards**:
+   - Strictly follow [`.agents/rules/marketplace_promo_and_financial_rules.md`](file:///.agents/rules/marketplace_promo_and_financial_rules.md).
+   - Never expose the 15% platform commission to customers (display only item costs, promo discounts, and 10% statutory VAT).
+   - Platform coupons must be absorbed from ASENA's 15% commission margin, preserving 85% provider net earnings.
+   - Apply 10% VAT strictly on post-discount subtotals.

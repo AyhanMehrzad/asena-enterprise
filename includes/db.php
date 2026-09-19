@@ -53,6 +53,11 @@ foreach ([__DIR__ . '/../config.php', __DIR__ . '/../../config.php'] as $cfg) {
 require_once __DIR__ . '/Env.php';
 require_once __DIR__ . '/IntlDateFormatterFallback.php';
 
+// If PDO instance is already provided (e.g. in unit tests or CLI harness), reuse it
+if (isset($pdo) && $pdo instanceof PDO) {
+    return;
+}
+
 $host = defined('DB_HOST') ? DB_HOST : 'localhost';
 $dbname = defined('DB_NAME') ? DB_NAME : 'asencomp_asena_db';
 $user = defined('DB_USER') ? DB_USER : 'asencomp_admin';

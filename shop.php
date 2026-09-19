@@ -25,6 +25,11 @@ $price_ranges = isset($_GET['price_ranges']) && is_array($_GET['price_ranges']) 
 $in_stock = isset($_GET['in_stock']) ? $_GET['in_stock'] : '';
 $sort = isset($_GET['sort']) ? $_GET['sort'] : 'relevant';
 
+// Promotional coupon parameter capture
+if (!empty($_GET['coupon'])) {
+    $_SESSION['pending_coupon'] = strtoupper(trim($_GET['coupon']));
+}
+
 // Dynamic SEO Metadata for Shop Catalog
 $animal_fa_map = [
     'dog' => 'سگ',
@@ -371,6 +376,28 @@ function buildUrlRemoveArrayItem($arrayName, $valueToRemove) {
             </label>
         </div>
     </div>
+
+    <?php if (!empty($_SESSION['pending_coupon'])): ?>
+    <!-- Active Promo Code Notification Banner -->
+    <div class="mb-6 p-4 rounded-2xl bg-gradient-to-r from-amber-500/10 via-emerald-500/10 to-primary/10 border border-amber-300/60 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-sm backdrop-blur-xs animate-in fade-in slide-in-from-top-2 duration-300">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-[#001a48] text-[#fd8100] flex items-center justify-center shadow-xs shrink-0">
+                <span class="material-symbols-outlined text-xl">redeem</span>
+            </div>
+            <div>
+                <div class="flex items-center gap-2 flex-wrap">
+                    <span class="font-bold text-xs sm:text-sm text-slate-800">کد تخفیف ویژه برای شما فعال است:</span>
+                    <span class="font-mono font-bold text-xs bg-amber-100 text-amber-900 px-2.5 py-0.5 rounded-lg border border-amber-300" dir="ltr"><?= htmlspecialchars($_SESSION['pending_coupon']) ?></span>
+                </div>
+                <p class="text-[11px] text-slate-500 mt-0.5">این کد به صورت خودکار در مرحله سبد خرید روی سفارش شما اعمال خواهد شد.</p>
+            </div>
+        </div>
+        <a href="cart.php" class="px-4 py-2 bg-[#001a48] hover:bg-[#002d72] text-white text-xs font-bold rounded-xl transition shadow-xs flex items-center gap-1.5 whitespace-nowrap">
+            <span>مشاهده و اعمال در سبد خرید</span>
+            <span class="material-symbols-outlined text-sm">arrow_back</span>
+        </a>
+    </div>
+    <?php endif; ?>
 
     <!-- SECTION 1: PET SHOP SHOWCASE HERO BANNER -->
     <section class="bg-gradient-to-r from-primary via-primary-container to-[#001a48] text-white rounded-[2rem] p-6 lg:p-10 mb-10 shadow-xl relative overflow-hidden">
