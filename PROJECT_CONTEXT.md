@@ -308,6 +308,22 @@
     - **ساماندهی سراسری ناوبری و هدر و فوتر ([`includes/header.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/includes/header.php) و [`includes/footer.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/includes/footer.php)):**
       - ارتقای منوی دراپ‌داون دسکتاپ به **«ابزارها و خدمات»** شامل محاسبه‌گر کالری، تداخل‌سنج دارویی، مراکز درمانی، تحویل خودکار Autoship، دانشنامه، خیریه و باشگاه مشتریان (هیچ ابزاری پنهان نیست، اما دسته‌بندی‌شده است).
       - افزودن ابزارها به منوی باتم‌شیت موبایل و ساماندهی ستون‌های فوتر سراسری به همراه فال‌بک‌های داینامیک سئو.
+40. **طراحی و پیاده‌سازی سه‌بعدی جعبه‌ابزار سلامت، رندرهای اختصاصی ۳D و استقرار پروداکشن (3D Health Tools Suite, Interactive Perspective Tilt & Production Deployment):**
+    - **تولید دارایی‌های بصری رندر سه‌بعدی (3D Rendered Assets):**
+      - تولید و بهینه‌سازی ۳ تصویر سه‌بعدی فوق‌پیشرفته در فرمت کم‌حجم و پرسرعت WebP (هرکدام ~30KB) در [`assets/images/`](file:///opt/lampp/htdocs/asena/asena-enterprise/assets/images):
+        - [`assets/images/tool-calculator-3d.webp`](file:///opt/lampp/htdocs/asena/asena-enterprise/assets/images/tool-calculator-3d.webp): دستگاه دیجیتال سه‌بعدی محاسبه کالری با کاسه طلایی غذا و متر نواری.
+        - [`assets/images/tool-drug-3d.webp`](file:///opt/lampp/htdocs/asena/asena-enterprise/assets/images/tool-drug-3d.webp): شیشه داروی دامپزشکی، گوشی پزشکی، کپسول درخشان و سپر دارویی سبز ۳ بعدی.
+        - [`assets/images/tool-autoship-3d.webp`](file:///opt/lampp/htdocs/asena/asena-enterprise/assets/images/tool-autoship-3d.webp): جعبه هدیه سورپرایز دوره‌ای Autoship پر از بسته‌های غذا و رد دود موشکی.
+    - **ارتقای کارت‌های تعاملی با افکت زاویه و ژیروسکوپ سه‌بعدی ([`index.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/index.php)):**
+      - اعمال استایل‌های گلس‌مورفیسم غنی و گرادیان‌های باکنتراست عمیق با فونت‌های فوق‌واضح سفید (`#ffffff`) برای رفع کامل کم‌رنگی متون در نمایشگرهای باکیفیت.
+      - پیاده‌سازی تعامل چرخش سه‌بعدی با ماوس (`perspective(1000px) rotateX(...) rotateY(...) translateY(-8px)`) بدون هیچ کتابخانه سنگین جانبی.
+      - دکمه‌های ۳ بعدی برجسته با سایه‌های عمقی و نشان‌های تاییدیه معتبر جهانی (FEDIAF، پایش فارماکولوژی، و مدل Chewy).
+    - **ارتقای بخش نظرات و بنر تریاژ اورژانس ۲۴ ساعته:**
+      - ارتقای کارت‌های نظرات با بچ ستاره‌های طلایی متالیک و کنتراست فوق‌العاده بالا برای متن‌های نقل قول و آواتارهای برجسته ۳ بعدی.
+      - بازطراحی بنر تریاژ اورژانس با بیکن راداری پالسی و نورپردازی پس‌زمینه زرشکی-سرمه‌ای عمیق.
+    - **کامپایل سراسری Tailwind و استقرار سی‌پنل (cPanel Production Deployment):**
+      - کامپایل مجدد [`bin/build-css`](file:///opt/lampp/htdocs/asena/asena-enterprise/bin/build-css) و ثبت کامیت `0a60b23` در انترپرایز و `a648eef` در پروداکشن (`asena.company`).
+      - استقرار موفقیت‌آمیز HEAD Commit از طریق cPanel Git™ Version Control در کروم و تست بارگذاری زنده.
 
 ---
 
