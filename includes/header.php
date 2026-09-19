@@ -121,6 +121,14 @@ $seo_defaults = [
     'product_details.php' => [
         'title' => 'جزئیات محصول و خرید آنلاین | پت‌شاپ و داروخانه دامپزشکی آسنا',
         'desc'  => 'مشخصات فنی، نقد و بررسی تخصصی، تاریخ انقضا و خرید آنلاین محصول با ارسال سریع در آسنا.'
+    ],
+    'calculator.php' => [
+        'title' => 'محاسبه‌گر هوشمند کالری و رژیم غذایی پت | آسنا',
+        'desc'  => 'محاسبه دقیق کالری روزانه (MER)، مقدار گرم غذای خشک و آب مورد نیاز سگ و گربه بر اساس فرمول‌های بین‌المللی FEDIAF و WSAVA.'
+    ],
+    'interactions.php' => [
+        'title' => 'سامانه بررسی تداخلات دارویی دامپزشکی | آسنا',
+        'desc'  => 'پایش هوشمند سازگاری داروهای تجویزی و مکمل‌های حیوانات خانگی جهت پیشگیری از عوارض و مسمومیت‌های دارویی.'
     ]
 ];
 
@@ -424,58 +432,93 @@ if (function_exists('get_curated_recommendations')) {
                         <a class="text-white text-sm font-semibold hover:text-secondary-container transition-all duration-200 <?php echo $current_page == 'booking.php' ? 'border-b-2 border-white pb-1 opacity-100' : 'opacity-90'; ?>" href="booking.php">نوبت‌دهی</a>
                     <?php endif; ?>
 
-                    <!-- Dropdown for Other Services (Clean & Compact) -->
+                    <!-- Dropdown for Smart Tools & Services (Clean, Complete & Progressive) -->
                     <div class="relative group">
                         <button type="button" class="text-white text-sm font-semibold hover:text-secondary-container transition-all duration-200 flex items-center gap-1 opacity-90 group-hover:opacity-100 cursor-pointer py-2">
-                            <span>سایر خدمات</span>
+                            <span>ابزارها و خدمات</span>
                             <span class="material-symbols-outlined text-base transition-transform duration-200 group-hover:rotate-180">expand_more</span>
                         </button>
-                        <div class="absolute right-0 top-full pt-1 w-60 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 transform origin-top-right">
-                            <div class="bg-white rounded-2xl shadow-2xl border border-slate-100 py-2 overflow-hidden">
+                        <div class="absolute right-0 top-full pt-1 w-64 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 transform origin-top-right">
+                            <div class="bg-white rounded-2xl shadow-2xl border border-slate-100 py-2 overflow-hidden text-right">
+                                
+                                <a href="calculator.php" class="flex items-center gap-3 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 hover:text-emerald-600 transition-colors">
+                                    <div class="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+                                        <span class="material-symbols-outlined text-lg">calculate</span>
+                                    </div>
+                                    <div>
+                                        <div class="font-bold text-xs text-slate-800">محاسبه‌گر کالری و غذا</div>
+                                        <div class="text-[10px] text-slate-400">فرمول استاندارد FEDIAF</div>
+                                    </div>
+                                </a>
+
+                                <a href="interactions.php" class="flex items-center gap-3 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 hover:text-blue-600 transition-colors">
+                                    <div class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+                                        <span class="material-symbols-outlined text-lg">medication</span>
+                                    </div>
+                                    <div>
+                                        <div class="font-bold text-xs text-slate-800">تداخل‌سنج دارویی</div>
+                                        <div class="text-[10px] text-slate-400">پایش سازگاری داروهای پت</div>
+                                    </div>
+                                </a>
+
                                 <?php if (Feature::has('clinic_booking')): ?>
-                                    <a href="organizations.php" class="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 hover:text-primary transition-colors">
+                                    <a href="organizations.php" class="flex items-center gap-3 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 hover:text-primary transition-colors">
                                         <div class="w-8 h-8 rounded-lg bg-teal-50 text-teal-600 flex items-center justify-center shrink-0">
                                             <span class="material-symbols-outlined text-lg">domain</span>
                                         </div>
                                         <div>
-                                            <div class="font-bold text-xs text-slate-800">مراکز درمانی</div>
-                                            <div class="text-[10px] text-slate-400">کلینیک‌ها و بیمارستان‌ها</div>
+                                            <div class="font-bold text-xs text-slate-800">مراکز و بیمارستان‌ها</div>
+                                            <div class="text-[10px] text-slate-400">کلینیک‌ها و اورژانس کشور</div>
                                         </div>
                                     </a>
                                 <?php endif; ?>
+
                                 <?php if (Feature::has('autoship')): ?>
-                                    <a href="subscriptions.php" class="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 hover:text-secondary-container transition-colors">
+                                    <a href="subscriptions.php" class="flex items-center gap-3 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 hover:text-secondary-container transition-colors">
                                         <div class="w-8 h-8 rounded-lg bg-orange-50 text-secondary-container flex items-center justify-center shrink-0">
                                             <span class="material-symbols-outlined text-lg">autorenew</span>
                                         </div>
                                         <div>
-                                            <div class="font-bold text-xs text-slate-800">اشتراک خودکار</div>
-                                            <div class="text-[10px] text-slate-400">تحویل دوره‌ای با تخفیف</div>
+                                            <div class="font-bold text-xs text-slate-800">اشتراک خودکار (Autoship)</div>
+                                            <div class="text-[10px] text-slate-400">تحویل دوره‌ای با تخفیف دائمی</div>
                                         </div>
                                     </a>
                                 <?php endif; ?>
+
                                 <?php if (Feature::has('blog_engine')): ?>
-                                    <a href="knowledge_base.php" class="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 hover:text-blue-600 transition-colors">
-                                        <div class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+                                    <a href="knowledge_base.php" class="flex items-center gap-3 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 hover:text-indigo-600 transition-colors">
+                                        <div class="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">
                                             <span class="material-symbols-outlined text-lg">auto_stories</span>
                                         </div>
                                         <div>
                                             <div class="font-bold text-xs text-slate-800">دانشنامه و مقالات</div>
-                                            <div class="text-[10px] text-slate-400">مرجع سلامت و نگهداری پت</div>
+                                            <div class="text-[10px] text-slate-400">مرجع علمی نگهداری و درمان</div>
                                         </div>
                                     </a>
                                 <?php endif; ?>
+
                                 <?php if (Feature::has('charity_campaigns')): ?>
-                                    <a href="charity.php" class="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 hover:text-rose-600 transition-colors">
+                                    <a href="charity.php" class="flex items-center gap-3 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 hover:text-rose-600 transition-colors">
                                         <div class="w-8 h-8 rounded-lg bg-rose-50 text-rose-500 flex items-center justify-center shrink-0">
                                             <span class="material-symbols-outlined text-lg">volunteer_activism</span>
                                         </div>
                                         <div>
-                                            <div class="font-bold text-xs text-slate-800">خیریه و امداد</div>
-                                            <div class="text-[10px] text-slate-400">پویش‌های درمانی حیوانات</div>
+                                            <div class="font-bold text-xs text-slate-800">خیریه و امداد حیوانات</div>
+                                            <div class="text-[10px] text-slate-400">پویش‌های درمانی حیوانات بی‌سرپرست</div>
                                         </div>
                                     </a>
                                 <?php endif; ?>
+
+                                <a href="rewards.php" class="flex items-center gap-3 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 hover:text-amber-600 transition-colors border-t border-slate-100">
+                                    <div class="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
+                                        <span class="material-symbols-outlined text-lg">loyalty</span>
+                                    </div>
+                                    <div>
+                                        <div class="font-bold text-xs text-slate-800">باشگاه مشتریان و پاداش</div>
+                                        <div class="text-[10px] text-slate-400">تبدیل امتیاز خرید به تخفیف</div>
+                                    </div>
+                                </a>
+
                             </div>
                         </div>
                     </div>

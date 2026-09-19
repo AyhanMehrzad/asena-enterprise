@@ -33,3 +33,8 @@ This document establishes the foundational architectural rules, coding standards
    - Never expose the 15% platform commission to customers (display only item costs, promo discounts, and 10% statutory VAT).
    - Platform coupons must be absorbed from ASENA's 15% commission margin, preserving 85% provider net earnings.
    - Apply 10% VAT strictly on post-discount subtotals.
+
+8. **Progressive Disclosure & App Simplification Standards**:
+   - Strictly follow [`.agents/rules/progressive_disclosure_and_app_simplification.md`](file:///.agents/rules/progressive_disclosure_and_app_simplification.md).
+   - Keep landing page (`index.php`) as a concise showcase; never embed heavyweight multi-step interactive tools (calculators, full booking calendars) directly inline.
+   - Relocate tools to dedicated, single-purpose pages (`calculator.php`, `interactions.php`, `subscriptions.php`) and link to them prominently via Bento teasers and the global navigation bar.

@@ -45,18 +45,22 @@ if (basename($_SERVER['SCRIPT_FILENAME'] ?? '') === basename(__FILE__)) {
                     </nav>
                 </div>
                 <div class="flex flex-col gap-4">
-                    <h4 class="font-bold text-base text-primary">پایگاه دانش دامپزشکی</h4>
+                    <h4 class="font-bold text-base text-primary">ابزارهای سلامت و دانشنامه</h4>
                     <nav class="flex flex-col gap-2.5">
+                        <a class="text-xs text-on-surface-variant hover:text-secondary-container transition-colors flex items-center justify-center sm:justify-start gap-1" href="calculator.php">
+                            <span class="material-symbols-outlined text-[15px] text-emerald-600">calculate</span>
+                            محاسبه‌گر کالری و غذای پت
+                        </a>
+                        <a class="text-xs text-on-surface-variant hover:text-secondary-container transition-colors flex items-center justify-center sm:justify-start gap-1" href="interactions.php">
+                            <span class="material-symbols-outlined text-[15px] text-blue-600">medication</span>
+                            تداخل‌سنج دارویی دامپزشکی
+                        </a>
                         <a class="text-xs text-on-surface-variant hover:text-secondary-container transition-colors flex items-center justify-center sm:justify-start gap-1" href="knowledge_base.php">
                             <span class="material-symbols-outlined text-[15px] text-primary">auto_stories</span>
                             مقالات و راهنمای سلامت
                         </a>
-                        <a class="text-xs text-on-surface-variant hover:text-secondary-container transition-colors flex items-center justify-center sm:justify-start gap-1" href="knowledge_base.php?article=vaccination-schedule-dogs-cats">
-                            <span class="material-symbols-outlined text-[15px] text-primary">vaccines</span>
-                            جدول واکسیناسیون پت
-                        </a>
                         <a class="text-xs text-on-surface-variant hover:text-secondary-container transition-colors flex items-center justify-center sm:justify-start gap-1" href="charity.php">
-                            <span class="material-symbols-outlined text-[15px] text-emerald-600">volunteer_activism</span>
+                            <span class="material-symbols-outlined text-[15px] text-rose-500">volunteer_activism</span>
                             خیریه و درمان حیوانات
                         </a>
                     </nav>
@@ -290,6 +294,28 @@ if (basename($_SERVER['SCRIPT_FILENAME'] ?? '') === basename(__FILE__)) {
                     <div>
                         <div class="text-xs font-black text-slate-900 group-hover:text-emerald-700 transition-colors">خیریه و امداد حیوانات</div>
                         <div class="text-[10px] text-slate-500 line-clamp-1 mt-0.5">پویش درمان حیوانات بی‌پناه</div>
+                    </div>
+                </a>
+
+                <!-- 9. Calorie Calculator -->
+                <a href="calculator.php" onclick="closeMobileCategoriesSheet()" class="p-3.5 rounded-2xl bg-gradient-to-br from-emerald-50 to-green-50/60 border border-emerald-200/60 hover:shadow-md transition-all flex flex-col gap-2 group">
+                    <div class="w-10 h-10 rounded-xl bg-emerald-700 text-white flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform">
+                        <span class="material-symbols-outlined text-2xl">calculate</span>
+                    </div>
+                    <div>
+                        <div class="text-xs font-black text-slate-900 group-hover:text-emerald-800 transition-colors">محاسبه‌گر کالری و غذا</div>
+                        <div class="text-[10px] text-slate-500 line-clamp-1 mt-0.5">فرمول استاندارد FEDIAF/WSAVA</div>
+                    </div>
+                </a>
+
+                <!-- 10. Drug Interactions -->
+                <a href="interactions.php" onclick="closeMobileCategoriesSheet()" class="p-3.5 rounded-2xl bg-gradient-to-br from-sky-50 to-indigo-50/60 border border-sky-200/60 hover:shadow-md transition-all flex flex-col gap-2 group">
+                    <div class="w-10 h-10 rounded-xl bg-sky-700 text-white flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform">
+                        <span class="material-symbols-outlined text-2xl">medication</span>
+                    </div>
+                    <div>
+                        <div class="text-xs font-black text-slate-900 group-hover:text-sky-800 transition-colors">تداخل‌سنج دارویی</div>
+                        <div class="text-[10px] text-slate-500 line-clamp-1 mt-0.5">پایش سازگاری داروهای پت</div>
                     </div>
                 </a>
             </div>
