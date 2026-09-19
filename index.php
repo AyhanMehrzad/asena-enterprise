@@ -414,72 +414,151 @@ try {
     <?php endif; ?>
 
     <!-- ========================================================================= -->
-    <!-- BEAT 6: SMART PET HEALTH TOOLS BENTO (Decoupled Teasers)                  -->
+    <!-- BEAT 6: SMART PET HEALTH TOOLS BENTO (Interactive 3D Hub)                 -->
     <!-- ========================================================================= -->
-    <section class="space-y-6">
-        <div class="text-center max-w-2xl mx-auto space-y-2">
-            <div class="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-3 py-1 rounded-full">
-                <span class="material-symbols-outlined text-sm text-emerald-600">psychology</span>
-                <span>ابزارهای هوشمند محاسباتی</span>
+    <section class="space-y-8" id="health-tools">
+        <div class="text-center max-w-2xl mx-auto space-y-3">
+            <div class="inline-flex items-center gap-2 text-xs font-black text-emerald-800 bg-emerald-100/90 border border-emerald-300/80 px-4 py-1.5 rounded-full shadow-xs">
+                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                <span class="material-symbols-outlined text-base text-emerald-700">neurology</span>
+                <span>جعبه‌ابزار پیشرفته محاسباتی و هوشمند</span>
             </div>
-            <h2 class="text-xl sm:text-3xl font-black text-slate-800">
+            <h2 class="text-2xl sm:text-4xl font-black text-slate-900 tracking-tight">
                 جعبه‌ابزار سلامت و بهداشت حیوانات خانگی
             </h2>
-            <p class="text-xs sm:text-sm text-slate-500">
-                ابزارهای مستقل آنلاین برای محاسبه دقیق جیره غذایی، بررسی تداخلات دارویی و اشتراک تحویل خودکار
+            <p class="text-xs sm:text-sm text-slate-600 font-medium max-w-xl mx-auto leading-relaxed">
+                ابزارهای مستقل ۳ بعدی و آنلاین برای محاسبه دقیق جیره غذایی، بررسی تعاملی تداخلات دارویی و اشتراک تحویل دوره‌ای خودکار
             </p>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8 perspective-[1200px]">
             
-            <!-- Tool 1: Calorie Calculator -->
-            <div class="bg-gradient-to-br from-emerald-900 to-[#001a48] rounded-3xl p-7 text-white shadow-md flex flex-col justify-between space-y-6 relative overflow-hidden">
-                <div class="space-y-3 relative z-10">
-                    <div class="w-12 h-12 rounded-2xl bg-emerald-400/20 text-emerald-300 flex items-center justify-center border border-emerald-400/30">
-                        <span class="material-symbols-outlined text-2xl">calculate</span>
+            <!-- Tool 1: Calorie & Nutrition Calculator 3D Card -->
+            <div class="asena-3d-card group rounded-3xl p-6 text-white shadow-xl flex flex-col justify-between relative overflow-hidden transition-all duration-500 hover:-translate-y-2"
+                 style="background: linear-gradient(145deg, #022c22 0%, #064e3b 45%, #001a48 100%); border: 1px solid rgba(52, 211, 153, 0.4); box-shadow: 0 20px 40px -15px rgba(2, 44, 34, 0.5);">
+                <!-- Ambient Glow Behind 3D Image -->
+                <div class="absolute -top-12 -left-12 w-48 h-48 bg-emerald-400/20 rounded-full blur-3xl pointer-events-none group-hover:scale-150 transition-transform duration-700"></div>
+
+                <div class="space-y-4 relative z-10">
+                    <!-- 3D Render Asset Showcase -->
+                    <div class="w-full h-44 rounded-2xl bg-black/30 border border-emerald-500/20 overflow-hidden flex items-center justify-center p-2 relative shadow-inner">
+                        <img src="assets/images/tool-calculator-3d.webp" alt="محاسبه‌گر کالری و تغذیه پت ۳ بعدی" class="w-full h-full object-contain filter drop-shadow-[0_12px_20px_rgba(0,0,0,0.6)] group-hover:scale-110 group-hover:-rotate-2 transition-transform duration-500" onerror="this.src='assets/images/tool-calculator-3d.jpg'">
+                        <span class="absolute top-2.5 right-2.5 px-2.5 py-1 rounded-lg bg-emerald-500/90 text-slate-950 font-black text-[10px] tracking-wide shadow-md flex items-center gap-1">
+                            <span class="material-symbols-outlined text-xs">tune</span>
+                            <span>استاندارد FEDIAF</span>
+                        </span>
                     </div>
-                    <h3 class="text-base font-bold text-white">محاسبه‌گر کالری و مقدار غذای پت</h3>
-                    <p class="text-xs text-white/80 leading-relaxed">
-                        محاسبه انرژی متابولیک (MER)، حجم غذای خشک دقیق و آب مورد نیاز بر اساس استانداردهای بین‌المللی FEDIAF و WSAVA.
-                    </p>
+
+                    <div class="space-y-2">
+                        <h3 class="text-base sm:text-lg font-black text-white flex items-center justify-between">
+                            <span>محاسبه‌گر کالری و مقدار غذای پت</span>
+                            <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-[0_0_8px_#34d399]"></span>
+                        </h3>
+                        <p class="text-xs text-emerald-100/90 leading-relaxed font-normal">
+                            محاسبه دقیق انرژی متابولیک (MER)، گرم مصرفی غذای خشک بر حسب نژاد، وزن، عقیم‌سازی و سن بر اساس فرمول‌های معتبر جهانی.
+                        </p>
+                    </div>
+
+                    <!-- Micro Feature Tags -->
+                    <div class="flex flex-wrap gap-1.5 pt-1 text-[11px]">
+                        <span class="px-2.5 py-1 rounded-md bg-white/10 text-emerald-200 border border-white/10">سگ و گربه</span>
+                        <span class="px-2.5 py-1 rounded-md bg-white/10 text-emerald-200 border border-white/10">تخمین آب روزانه</span>
+                        <span class="px-2.5 py-1 rounded-md bg-white/10 text-emerald-200 border border-white/10">رایگان و بدون لاگین</span>
+                    </div>
                 </div>
-                <a href="calculator.php" class="relative z-10 px-4 py-2.5 rounded-xl bg-emerald-400 hover:bg-emerald-300 text-slate-900 text-xs font-black transition flex items-center justify-between shadow-md cursor-pointer">
-                    <span>شروع محاسبه رایگان</span>
-                    <span class="material-symbols-outlined text-base">arrow_back</span>
+
+                <a href="calculator.php" class="relative z-10 mt-6 px-5 py-3 rounded-2xl bg-emerald-400 hover:bg-emerald-300 text-slate-950 text-xs font-black transition-all duration-200 flex items-center justify-between shadow-[0_6px_20px_rgba(52,211,153,0.4)] hover:shadow-[0_8px_25px_rgba(52,211,153,0.6)] active:translate-y-0.5 cursor-pointer">
+                    <span class="flex items-center gap-1.5">
+                        <span class="material-symbols-outlined text-base">calculate</span>
+                        <span>شروع محاسبه رایگان کالری</span>
+                    </span>
+                    <span class="material-symbols-outlined text-base transition-transform group-hover:-translate-x-1">arrow_back</span>
                 </a>
             </div>
 
-            <!-- Tool 2: Drug Interaction Checker -->
-            <div class="bg-gradient-to-br from-blue-900 to-[#001a48] rounded-3xl p-7 text-white shadow-md flex flex-col justify-between space-y-6 relative overflow-hidden">
-                <div class="space-y-3 relative z-10">
-                    <div class="w-12 h-12 rounded-2xl bg-blue-400/20 text-blue-300 flex items-center justify-center border border-blue-400/30">
-                        <span class="material-symbols-outlined text-2xl">medication</span>
+            <!-- Tool 2: Drug Interaction Checker 3D Card -->
+            <div class="asena-3d-card group rounded-3xl p-6 text-white shadow-xl flex flex-col justify-between relative overflow-hidden transition-all duration-500 hover:-translate-y-2"
+                 style="background: linear-gradient(145deg, #0f172a 0%, #1e3a8a 45%, #001a48 100%); border: 1px solid rgba(96, 165, 250, 0.4); box-shadow: 0 20px 40px -15px rgba(15, 23, 42, 0.6);">
+                <!-- Ambient Glow Behind 3D Image -->
+                <div class="absolute -top-12 -left-12 w-48 h-48 bg-blue-400/20 rounded-full blur-3xl pointer-events-none group-hover:scale-150 transition-transform duration-700"></div>
+
+                <div class="space-y-4 relative z-10">
+                    <!-- 3D Render Asset Showcase -->
+                    <div class="w-full h-44 rounded-2xl bg-black/30 border border-blue-500/20 overflow-hidden flex items-center justify-center p-2 relative shadow-inner">
+                        <img src="assets/images/tool-drug-3d.webp" alt="سامانه پایش تداخلات دارویی ۳ بعدی" class="w-full h-full object-contain filter drop-shadow-[0_12px_20px_rgba(0,0,0,0.6)] group-hover:scale-110 group-hover:rotate-2 transition-transform duration-500" onerror="this.src='assets/images/tool-drug-3d.jpg'">
+                        <span class="absolute top-2.5 right-2.5 px-2.5 py-1 rounded-lg bg-blue-500/90 text-white font-black text-[10px] tracking-wide shadow-md flex items-center gap-1">
+                            <span class="material-symbols-outlined text-xs">verified</span>
+                            <span>پایش فارماکولوژی</span>
+                        </span>
                     </div>
-                    <h3 class="text-base font-bold text-white">سامانه پایش تداخلات دارویی</h3>
-                    <p class="text-xs text-white/80 leading-relaxed">
-                        بررسی سازگاری داروهای تجویزی با مکمل‌ها و داروهای همزمان مصرفی پت جهت پیشگیری از مسمومیت‌ها و عوارض جانبی.
-                    </p>
+
+                    <div class="space-y-2">
+                        <h3 class="text-base sm:text-lg font-black text-white flex items-center justify-between">
+                            <span>سامانه پایش تداخلات دارویی</span>
+                            <span class="w-2.5 h-2.5 rounded-full bg-blue-400 shadow-[0_0_8px_#60a5fa]"></span>
+                        </h3>
+                        <p class="text-xs text-blue-100/90 leading-relaxed font-normal">
+                            پایش هوشمند هم‌پوشانی داروها و مکمل‌های تجویزی جهت جلوگیری از سمیت دارویی، عوارض ناخواسته کبدی و کلیوی با رفرنس‌های دامپزشکی.
+                        </p>
+                    </div>
+
+                    <!-- Micro Feature Tags -->
+                    <div class="flex flex-wrap gap-1.5 pt-1 text-[11px]">
+                        <span class="px-2.5 py-1 rounded-md bg-white/10 text-blue-200 border border-white/10">۸۰۰+ قلم داروی حیوانی</span>
+                        <span class="px-2.5 py-1 rounded-md bg-white/10 text-blue-200 border border-white/10">سنجش سمیت و دوز</span>
+                        <span class="px-2.5 py-1 rounded-md bg-white/10 text-blue-200 border border-white/10">بررسی تداخل آنتی‌بیوتیک</span>
+                    </div>
                 </div>
-                <a href="interactions.php" class="relative z-10 px-4 py-2.5 rounded-xl bg-blue-400 hover:bg-blue-300 text-slate-900 text-xs font-black transition flex items-center justify-between shadow-md cursor-pointer">
-                    <span>بررسی تداخلات دارویی</span>
-                    <span class="material-symbols-outlined text-base">arrow_back</span>
+
+                <a href="interactions.php" class="relative z-10 mt-6 px-5 py-3 rounded-2xl bg-blue-400 hover:bg-blue-300 text-slate-950 text-xs font-black transition-all duration-200 flex items-center justify-between shadow-[0_6px_20px_rgba(96,165,250,0.4)] hover:shadow-[0_8px_25px_rgba(96,165,250,0.6)] active:translate-y-0.5 cursor-pointer">
+                    <span class="flex items-center gap-1.5">
+                        <span class="material-symbols-outlined text-base">medication</span>
+                        <span>بررسی آنلاین تداخلات دارویی</span>
+                    </span>
+                    <span class="material-symbols-outlined text-base transition-transform group-hover:-translate-x-1">arrow_back</span>
                 </a>
             </div>
 
-            <!-- Tool 3: Autoship Periodic Delivery -->
-            <div class="bg-gradient-to-br from-amber-900 to-[#001a48] rounded-3xl p-7 text-white shadow-md flex flex-col justify-between space-y-6 relative overflow-hidden">
-                <div class="space-y-3 relative z-10">
-                    <div class="w-12 h-12 rounded-2xl bg-[#fd8100]/20 text-[#fd8100] flex items-center justify-center border border-[#fd8100]/30">
-                        <span class="material-symbols-outlined text-2xl">autorenew</span>
+            <!-- Tool 3: Autoship Delivery 3D Card -->
+            <div class="asena-3d-card group rounded-3xl p-6 text-white shadow-xl flex flex-col justify-between relative overflow-hidden transition-all duration-500 hover:-translate-y-2"
+                 style="background: linear-gradient(145deg, #451a03 0%, #7c2d12 45%, #001a48 100%); border: 1px solid rgba(251, 146, 60, 0.45); box-shadow: 0 20px 40px -15px rgba(69, 26, 3, 0.6);">
+                <!-- Ambient Glow Behind 3D Image -->
+                <div class="absolute -top-12 -left-12 w-48 h-48 bg-[#fd8100]/25 rounded-full blur-3xl pointer-events-none group-hover:scale-150 transition-transform duration-700"></div>
+
+                <div class="space-y-4 relative z-10">
+                    <!-- 3D Render Asset Showcase -->
+                    <div class="w-full h-44 rounded-2xl bg-black/30 border border-orange-500/20 overflow-hidden flex items-center justify-center p-2 relative shadow-inner">
+                        <img src="assets/images/tool-autoship-3d.webp" alt="سرویس تحویل خودکار دوره‌ای ۳ بعدی" class="w-full h-full object-contain filter drop-shadow-[0_12px_20px_rgba(0,0,0,0.6)] group-hover:scale-110 group-hover:-rotate-2 transition-transform duration-500" onerror="this.src='assets/images/tool-autoship-3d.jpg'">
+                        <span class="absolute top-2.5 right-2.5 px-2.5 py-1 rounded-lg bg-[#fd8100] text-white font-black text-[10px] tracking-wide shadow-md flex items-center gap-1">
+                            <span class="material-symbols-outlined text-xs">rocket_launch</span>
+                            <span>مدل محبوب Chewy</span>
+                        </span>
                     </div>
-                    <h3 class="text-base font-bold text-white">سرویس تحویل خودکار (Autoship)</h3>
-                    <p class="text-xs text-white/80 leading-relaxed">
-                        برنامه‌ریزی ارسال دوره‌ای خاک، غذا و دارو بدون نیاز به ثبت مجدد سفارش با تخفیف دائمی ۱۰ تا ۱۵ درصدی (مدل Chewy).
-                    </p>
+
+                    <div class="space-y-2">
+                        <h3 class="text-base sm:text-lg font-black text-white flex items-center justify-between">
+                            <span>سرویس تحویل خودکار (Autoship)</span>
+                            <span class="w-2.5 h-2.5 rounded-full bg-[#fd8100] shadow-[0_0_8px_#fd8100]"></span>
+                        </h3>
+                        <p class="text-xs text-orange-100/90 leading-relaxed font-normal">
+                            برنامه‌ریزی هوشمند ارسال دوره‌ای غذای خشک، خاک بستر و داروهای مزمن پت بدون نیاز به خرید مجدد، با تخفیف دائمی تا ۱۵٪.
+                        </p>
+                    </div>
+
+                    <!-- Micro Feature Tags -->
+                    <div class="flex flex-wrap gap-1.5 pt-1 text-[11px]">
+                        <span class="px-2.5 py-1 rounded-md bg-white/10 text-orange-200 border border-white/10">۱۰٪ تا ۱۵٪ تخفیف ثابت</span>
+                        <span class="px-2.5 py-1 rounded-md bg-white/10 text-orange-200 border border-white/10">لغو یا ویرایش در هر زمان</span>
+                        <span class="px-2.5 py-1 rounded-md bg-white/10 text-orange-200 border border-white/10">ارسال اکسپرس در موعد</span>
+                    </div>
                 </div>
-                <a href="subscriptions.php" class="relative z-10 px-4 py-2.5 rounded-xl bg-[#fd8100] hover:bg-[#e07300] text-white text-xs font-black transition flex items-center justify-between shadow-md cursor-pointer">
-                    <span>مشاهده و فعال‌سازی اشتراک</span>
-                    <span class="material-symbols-outlined text-base">arrow_back</span>
+
+                <a href="subscriptions.php" class="relative z-10 mt-6 px-5 py-3 rounded-2xl bg-[#fd8100] hover:bg-[#e07300] text-white text-xs font-black transition-all duration-200 flex items-center justify-between shadow-[0_6px_20px_rgba(253,129,0,0.4)] hover:shadow-[0_8px_25px_rgba(253,129,0,0.6)] active:translate-y-0.5 cursor-pointer">
+                    <span class="flex items-center gap-1.5">
+                        <span class="material-symbols-outlined text-base">autorenew</span>
+                        <span>مشاهده و فعال‌سازی اشتراک</span>
+                    </span>
+                    <span class="material-symbols-outlined text-base transition-transform group-hover:-translate-x-1">arrow_back</span>
                 </a>
             </div>
 
@@ -489,63 +568,179 @@ try {
     <!-- ========================================================================= -->
     <!-- BEAT 7: VERIFIED REVIEWS, EMERGENCY HELPLINE & CLOSING                   -->
     <!-- ========================================================================= -->
-    <section class="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-3">
-            <div class="flex items-center gap-1 text-amber-400 text-sm font-bold">
-                <span>★★★★★</span>
-                <span class="text-slate-400 text-xs mr-2 font-normal">سرپرست هاسکی (تهران)</span>
-            </div>
-            <p class="text-xs text-slate-600 leading-relaxed">
-                «رزرو نوبت دکتر جراحی در کمتر از ۲ دقیقه انجام شد. سیستم پرونده سلامت آنلاین باعث شد همه آزمایش‌ها در دسترس پزشک باشد.»
+    <section class="space-y-8">
+        <div class="text-center max-w-xl mx-auto space-y-2">
+            <h3 class="text-xl sm:text-2xl font-black text-slate-800">
+                تجربه سرپرستان حیوانات خانگی در آسنا
+            </h3>
+            <p class="text-xs text-slate-500 font-medium">
+                نظرات واقعی و احراز هویت شده مراجعین درمانی، خریداران پت‌شاپ و داروخانه
             </p>
-            <span class="text-[11px] text-slate-400 font-bold block">مریم کاظمی - مراجع بیمارستان پایتخت</span>
         </div>
 
-        <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-3">
-            <div class="flex items-center gap-1 text-amber-400 text-sm font-bold">
-                <span>★★★★★</span>
-                <span class="text-slate-400 text-xs mr-2 font-normal">سرپرست گربه پرشین (کرج)</span>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <!-- Review 1 -->
+            <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1 space-y-4 flex flex-col justify-between"
+                 style="box-shadow: 0 10px 30px -5px rgba(0, 26, 72, 0.07);">
+                <div class="space-y-3">
+                    <div class="flex items-center justify-between">
+                        <div class="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold text-amber-900 border border-amber-200"
+                             style="background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);">
+                            <span class="text-amber-500 tracking-wider">★★★★★</span>
+                            <span class="text-[11px] font-bold mr-1">۵.۰</span>
+                        </div>
+                        <span class="text-[11px] font-bold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-lg">سرپرست هاسکی (تهران)</span>
+                    </div>
+                    <p class="text-xs sm:text-sm text-slate-800 font-medium leading-relaxed">
+                        «رزرو نوبت دکتر جراحی در کمتر از ۲ دقیقه انجام شد. سیستم پرونده سلامت آنلاین باعث شد همه آزمایش‌ها و عکس‌های رادیولوژی بلافاصله در دسترس پزشک باشد و معطلی کلینیک به صفر برسد.»
+                    </p>
+                </div>
+                <div class="pt-3 border-t border-slate-100 flex items-center justify-between">
+                    <div class="flex items-center gap-2.5">
+                        <div class="w-8 h-8 rounded-full bg-blue-100 text-[#001a48] font-bold text-xs flex items-center justify-center border border-blue-200">
+                            م.ک
+                        </div>
+                        <div>
+                            <span class="text-xs font-black text-slate-900 block">مریم کاظمی</span>
+                            <span class="text-[10px] text-slate-500 block">مراجع بیمارستان پایتخت</span>
+                        </div>
+                    </div>
+                    <span class="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+                        <span class="material-symbols-outlined text-xs">verified</span>
+                        <span>نوبت تأییدشده</span>
+                    </span>
+                </div>
             </div>
-            <p class="text-xs text-slate-600 leading-relaxed">
-                «داروی خاص کلیوی گربه‌ام را هیچ جا پیدا نمی‌کردم، در بخش داروخانه نسخه را بارگذاری کردم و با ارسال دمای کنترل‌شده به موقع به دستم رسید.»
-            </p>
-            <span class="text-[11px] text-slate-400 font-bold block">امیررضا فیاض - سفارش داروخانه</span>
-        </div>
 
-        <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-3">
-            <div class="flex items-center gap-1 text-amber-400 text-sm font-bold">
-                <span>★★★★★</span>
-                <span class="text-slate-400 text-xs mr-2 font-normal">سرپرست شیتزو (تبریز)</span>
+            <!-- Review 2 -->
+            <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1 space-y-4 flex flex-col justify-between"
+                 style="box-shadow: 0 10px 30px -5px rgba(0, 26, 72, 0.07);">
+                <div class="space-y-3">
+                    <div class="flex items-center justify-between">
+                        <div class="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold text-amber-900 border border-amber-200"
+                             style="background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);">
+                            <span class="text-amber-500 tracking-wider">★★★★★</span>
+                            <span class="text-[11px] font-bold mr-1">۵.۰</span>
+                        </div>
+                        <span class="text-[11px] font-bold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-lg">سرپرست گربه پرشین (کرج)</span>
+                    </div>
+                    <p class="text-xs sm:text-sm text-slate-800 font-medium leading-relaxed">
+                        «داروی خاص کلیوی گربه‌ام را هیچ جا پیدا نمی‌کردم، در بخش داروخانه آنلاین نسخه را بارگذاری کردم و ظرف چند ساعت با بسته‌بندی دمای کنترل‌شده و یخ به موقع به دستم رسید. واقعاً حیاتی بود.»
+                    </p>
+                </div>
+                <div class="pt-3 border-t border-slate-100 flex items-center justify-between">
+                    <div class="flex items-center gap-2.5">
+                        <div class="w-8 h-8 rounded-full bg-emerald-100 text-emerald-900 font-bold text-xs flex items-center justify-center border border-emerald-200">
+                            ا.ف
+                        </div>
+                        <div>
+                            <span class="text-xs font-black text-slate-900 block">امیررضا فیاض</span>
+                            <span class="text-[10px] text-slate-500 block">سفارش داروخانه زنجیره سرد</span>
+                        </div>
+                    </div>
+                    <span class="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+                        <span class="material-symbols-outlined text-xs">verified</span>
+                        <span>نسخه تأییدشده</span>
+                    </span>
+                </div>
             </div>
-            <p class="text-xs text-slate-600 leading-relaxed">
-                «اشتراک خودکار Autoship عالی است؛ هر ماه سر وقت غذای خشک و تشویقی با ۱۰٪ تخفیف ارسال می‌شود و دیگر نگران تمام شدن غذا نیستم.»
-            </p>
-            <span class="text-[11px] text-slate-400 font-bold block">سارا نوبخت - کاربر تحویل خودکار</span>
+
+            <!-- Review 3 -->
+            <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1 space-y-4 flex flex-col justify-between"
+                 style="box-shadow: 0 10px 30px -5px rgba(0, 26, 72, 0.07);">
+                <div class="space-y-3">
+                    <div class="flex items-center justify-between">
+                        <div class="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold text-amber-900 border border-amber-200"
+                             style="background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);">
+                            <span class="text-amber-500 tracking-wider">★★★★★</span>
+                            <span class="text-[11px] font-bold mr-1">۵.۰</span>
+                        </div>
+                        <span class="text-[11px] font-bold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-lg">سرپرست شیتزو (تبریز)</span>
+                    </div>
+                    <p class="text-xs sm:text-sm text-slate-800 font-medium leading-relaxed">
+                        «اشتراک خودکار Autoship عالی و بدون دردسر است؛ هر ماه دقیقاً سر موعد غذای خشک و تشویقی با ۱۰٪ تخفیف دائمی ارسال می‌شود و دیگر استرس تمام شدن جیره و نایاب شدن برند را ندارم.»
+                    </p>
+                </div>
+                <div class="pt-3 border-t border-slate-100 flex items-center justify-between">
+                    <div class="flex items-center gap-2.5">
+                        <div class="w-8 h-8 rounded-full bg-orange-100 text-[#fd8100] font-bold text-xs flex items-center justify-center border border-orange-200">
+                            س.ن
+                        </div>
+                        <div>
+                            <span class="text-xs font-black text-slate-900 block">سارا نوبخت</span>
+                            <span class="text-[10px] text-slate-500 block">مشترک فعال تحویل خودکار</span>
+                        </div>
+                    </div>
+                    <span class="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+                        <span class="material-symbols-outlined text-xs">verified</span>
+                        <span>مشترک دائمی</span>
+                    </span>
+                </div>
+            </div>
         </div>
     </section>
 
-    <!-- 24/7 Emergency Triage Banner -->
-    <section class="bg-gradient-to-r from-rose-900 via-rose-800 to-[#001a48] text-white p-6 sm:p-8 rounded-3xl shadow-lg border border-rose-700/50 flex flex-col md:flex-row items-center justify-between gap-6">
-        <div class="flex items-center gap-4">
-            <div class="w-14 h-14 rounded-2xl bg-white/10 flex items-center justify-center text-rose-300 text-3xl shrink-0 border border-white/15">
-                <span class="material-symbols-outlined animate-pulse">emergency</span>
+    <!-- 24/7 Emergency Triage Banner (3D Command Bar) -->
+    <section class="relative rounded-3xl lg:rounded-[2.5rem] p-6 sm:p-8 lg:p-10 shadow-2xl border overflow-hidden transition-all"
+             style="background: linear-gradient(135deg, #450a0a 0%, #881337 40%, #001a48 100%); border-color: rgba(244, 63, 94, 0.45); box-shadow: 0 25px 50px -12px rgba(69, 10, 10, 0.5);">
+        <!-- Ambient Glowing Core -->
+        <div class="absolute -right-20 -top-20 w-80 h-80 bg-rose-500/25 rounded-full blur-3xl pointer-events-none"></div>
+        <div class="absolute -left-20 -bottom-20 w-80 h-80 bg-[#fd8100]/20 rounded-full blur-3xl pointer-events-none"></div>
+
+        <div class="relative z-10 flex flex-col lg:flex-row items-center justify-between gap-6">
+            <div class="flex items-center gap-5">
+                <!-- 3D Emergency Radar Beacon -->
+                <div class="relative w-16 h-16 rounded-2xl bg-gradient-to-br from-rose-500 to-rose-700 flex items-center justify-center text-white text-3xl shrink-0 shadow-[0_0_30px_rgba(244,63,94,0.6)] border border-rose-300/40">
+                    <span class="material-symbols-outlined text-3xl animate-pulse">emergency</span>
+                    <span class="absolute inset-0 rounded-2xl border-2 border-rose-400/60 animate-ping pointer-events-none"></span>
+                </div>
+                <div class="space-y-1 text-right">
+                    <div class="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-rose-500/30 text-rose-200 text-[11px] font-bold border border-rose-400/40">
+                        <span class="w-1.5 h-1.5 rounded-full bg-rose-400 animate-ping"></span>
+                        <span>سامانه تریاژ فوری شبانه‌روزی</span>
+                    </div>
+                    <h3 class="text-lg sm:text-2xl font-black text-white tracking-tight">
+                        اورژانس دامپزشکی شبانه‌روزی و تله‌هلث ۲۴ ساعته
+                    </h3>
+                    <p class="text-xs sm:text-sm text-rose-100/90 max-w-2xl font-normal leading-relaxed">
+                        در شرایط اضطراری، بلع اجسام خارجی، مسمومیت‌ها یا تروما، بدون فوت وقت با پزشک تریاژ ارتباط بگیرید یا نزدیک‌ترین بیمارستان شبانه‌روزی را بیابید.
+                    </p>
+                </div>
             </div>
-            <div>
-                <h3 class="text-base sm:text-lg font-bold">اورژانس دامپزشکی شبانه‌روزی و تله‌هلث ۲۴ ساعته</h3>
-                <p class="text-xs text-white/80 mt-1">در شرایط اضطراری، بلع اجسام خارجی یا حوادث، فوراً با کادر تریاژ تماس بگیرید یا مراکز ۲۴ ساعته را بیابید.</p>
+
+            <div class="flex flex-wrap items-center gap-3 w-full lg:w-auto justify-end">
+                <a href="organizations.php" class="flex-1 sm:flex-initial px-5 py-3.5 rounded-2xl bg-white hover:bg-slate-100 text-rose-950 font-black text-xs transition shadow-lg hover:shadow-xl flex items-center justify-center gap-2 cursor-pointer whitespace-nowrap active:translate-y-0.5">
+                    <span class="material-symbols-outlined text-base text-rose-700">local_hospital</span>
+                    <span>مراکز اورژانس شبانه‌روزی</span>
+                </a>
+                <a href="tel:09146676978" class="flex-1 sm:flex-initial px-5 py-3.5 rounded-2xl bg-rose-500 hover:bg-rose-400 text-white font-black text-xs transition shadow-[0_6px_20px_rgba(244,63,94,0.4)] hover:shadow-[0_8px_25px_rgba(244,63,94,0.6)] border border-rose-300/40 flex items-center justify-center gap-2 cursor-pointer whitespace-nowrap active:translate-y-0.5">
+                    <span class="material-symbols-outlined text-base animate-bounce">call</span>
+                    <span>تماس فوری تریاژ: ۰۹۱۴۶۶۷۶۹۷۸</span>
+                </a>
             </div>
-        </div>
-        <div class="flex items-center gap-3">
-            <a href="organizations.php" class="px-5 py-3 rounded-xl bg-white text-rose-900 font-black text-xs hover:bg-white/90 transition shadow-sm whitespace-nowrap">
-                مراکز اورژانس شبانه‌روزی
-            </a>
-            <a href="tel:09146676978" class="px-4 py-3 rounded-xl bg-rose-600/40 hover:bg-rose-600 text-white font-bold text-xs transition border border-rose-400/40 whitespace-nowrap">
-                تماس فوری: ۰۹۱۴۶۶۷۶۹۷۸
-            </a>
         </div>
     </section>
 
 </main>
+
+<style>
+.perspective-\[1200px\] {
+    perspective: 1200px;
+}
+.asena-3d-card {
+    transform-style: preserve-3d;
+    transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.4, 1), box-shadow 0.3s ease, border-color 0.3s ease;
+    will-change: transform;
+}
+.asena-3d-card:hover {
+    box-shadow: 0 25px 50px -12px rgba(0, 26, 72, 0.45);
+}
+@keyframes beacon-ping {
+    0% { transform: scale(1); opacity: 0.8; }
+    50% { transform: scale(1.3); opacity: 0; }
+    100% { transform: scale(1); opacity: 0; }
+}
+</style>
 
 <script>
 function switchHeroTab(tab) {
@@ -562,6 +757,24 @@ function switchHeroTab(tab) {
         }
     });
 }
+
+// 3D Card Interactive Tilt Effect
+document.addEventListener('DOMContentLoaded', () => {
+    const cards = document.querySelectorAll('.asena-3d-card');
+    cards.forEach(card => {
+        card.addEventListener('mousemove', e => {
+            const rect = card.getBoundingClientRect();
+            const x = e.clientX - rect.left - rect.width / 2;
+            const y = e.clientY - rect.top - rect.height / 2;
+            const rotateX = -(y / (rect.height / 2)) * 5; // max 5 deg
+            const rotateY = (x / (rect.width / 2)) * 5;
+            card.style.transform = `perspective(1000px) rotateX(${rotateX.toFixed(2)}deg) rotateY(${rotateY.toFixed(2)}deg) translateY(-8px)`;
+        });
+        card.addEventListener('mouseleave', () => {
+            card.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg) translateY(0px)';
+        });
+    });
+});
 </script>
 
 <?php require_once 'includes/footer.php'; ?>
