@@ -22,6 +22,7 @@ Thumbs.db
 # Temporary uploads / cache
 uploads/tmp/
 uploads/.autoship_last_run
+includes/.schema_aligned*
 .tempmediaStorage/
 database/backups/
 *.cache
