@@ -214,10 +214,10 @@ try {
     <!-- ========================================================================= -->
     <section class="space-y-6">
         <div class="text-center max-w-2xl mx-auto space-y-2">
-            <h2 class="text-xl sm:text-3xl font-black text-slate-800">
+            <h2 class="text-xl sm:text-3xl font-black text-slate-800 leading-snug py-1">
                 سه ستون خدمت‌رسانی هوشمند آسنا
             </h2>
-            <p class="text-xs sm:text-sm text-slate-500">
+            <p class="text-xs sm:text-sm text-slate-500 font-medium">
                 دسته‌بندی جامع خدمات برای رفع سریع و بی‌دغدغه تمام نیازهای پزشکی و مراقبتی پت شما
             </p>
         </div>
@@ -298,7 +298,7 @@ try {
                     <span class="material-symbols-outlined text-sm">verified_user</span>
                     <span>کادر پزشکی تأیید شده</span>
                 </div>
-                <h2 class="text-xl sm:text-2xl font-black text-slate-800">
+                <h2 class="text-xl sm:text-2xl font-black text-slate-800 leading-snug py-1">
                     پزشکان و جراحان برتر دامپزشکی
                 </h2>
             </div>
@@ -358,7 +358,7 @@ try {
                     <span class="material-symbols-outlined text-sm">local_fire_department</span>
                     <span>پرفروش‌ترین‌های پت‌شاپ</span>
                 </div>
-                <h2 class="text-xl sm:text-2xl font-black text-slate-800">
+                <h2 class="text-xl sm:text-2xl font-black text-slate-800 leading-snug py-1">
                     غذای خشک و ملزومات برتر پت
                 </h2>
             </div>
@@ -416,14 +416,14 @@ try {
     <!-- ========================================================================= -->
     <!-- BEAT 6: SMART PET HEALTH TOOLS BENTO (Interactive 3D Hub)                 -->
     <!-- ========================================================================= -->
-    <section class="space-y-8" id="health-tools">
-        <div class="text-center max-w-2xl mx-auto space-y-3">
+    <section class="space-y-8 scroll-mt-28 lg:scroll-mt-32 pt-6" id="health-tools">
+        <div class="text-center max-w-3xl mx-auto space-y-3 px-4">
             <div class="inline-flex items-center gap-2 text-xs font-black text-emerald-800 bg-emerald-100/90 border border-emerald-300/80 px-4 py-1.5 rounded-full shadow-xs">
                 <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
                 <span class="material-symbols-outlined text-base text-emerald-700">neurology</span>
-                <span>جعبه‌ابزار پیشرفته محاسباتی و هوشمند</span>
+                <span>سامانه‌های هوشمند مراقبت و محاسبات بالینی</span>
             </div>
-            <h2 class="text-2xl sm:text-4xl font-black text-slate-900 tracking-tight">
+            <h2 class="text-2xl sm:text-4xl font-black text-slate-900 tracking-tight leading-snug py-1">
                 جعبه‌ابزار سلامت و بهداشت حیوانات خانگی
             </h2>
             <p class="text-xs sm:text-sm text-slate-600 font-medium max-w-xl mx-auto leading-relaxed">
@@ -450,8 +450,8 @@ try {
                     </div>
 
                     <div class="space-y-2">
-                        <h3 class="text-base sm:text-lg font-black text-white flex items-center justify-between">
-                            <span>محاسبه‌گر کالری و مقدار غذای پت</span>
+                        <h3 class="text-base sm:text-lg font-black text-white flex items-center justify-between leading-snug">
+                            <span>محاسبه‌گر کالری و تغذیه پت</span>
                             <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-[0_0_8px_#34d399]"></span>
                         </h3>
                         <p class="text-xs text-emerald-100/90 leading-relaxed font-normal">
@@ -493,8 +493,8 @@ try {
                     </div>
 
                     <div class="space-y-2">
-                        <h3 class="text-base sm:text-lg font-black text-white flex items-center justify-between">
-                            <span>سامانه پایش تداخلات دارویی</span>
+                        <h3 class="text-base sm:text-lg font-black text-white flex items-center justify-between leading-snug">
+                            <span>پایشگر هوشمند تداخلات دارویی</span>
                             <span class="w-2.5 h-2.5 rounded-full bg-blue-400 shadow-[0_0_8px_#60a5fa]"></span>
                         </h3>
                         <p class="text-xs text-blue-100/90 leading-relaxed font-normal">
@@ -536,8 +536,8 @@ try {
                     </div>
 
                     <div class="space-y-2">
-                        <h3 class="text-base sm:text-lg font-black text-white flex items-center justify-between">
-                            <span>سرویس تحویل خودکار (Autoship)</span>
+                        <h3 class="text-base sm:text-lg font-black text-white flex items-center justify-between leading-snug">
+                            <span>اشتراک تحویل خودکار <span dir="ltr" class="inline-block font-sans text-xs opacity-90">(Autoship)</span></span>
                             <span class="w-2.5 h-2.5 rounded-full bg-[#fd8100] shadow-[0_0_8px_#fd8100]"></span>
                         </h3>
                         <p class="text-xs text-orange-100/90 leading-relaxed font-normal">
@@ -570,9 +570,9 @@ try {
     <!-- ========================================================================= -->
     <section class="space-y-8">
         <div class="text-center max-w-xl mx-auto space-y-2">
-            <h3 class="text-xl sm:text-2xl font-black text-slate-800">
+            <h2 class="text-xl sm:text-2xl font-black text-slate-800 leading-snug py-1">
                 تجربه سرپرستان حیوانات خانگی در آسنا
-            </h3>
+            </h2>
             <p class="text-xs text-slate-500 font-medium">
                 نظرات واقعی و احراز هویت شده مراجعین درمانی، خریداران پت‌شاپ و داروخانه
             </p>
