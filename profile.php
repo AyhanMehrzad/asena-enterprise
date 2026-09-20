@@ -2738,73 +2738,497 @@ function switchSellerFin(period) {
     </script>
 </div>
 
-    <div class="bg-surface-container-lowest rounded-2xl border border-outline-variant shadow-sm overflow-hidden">
-        <div class="px-6 py-4 border-b border-outline-variant bg-white flex flex-wrap justify-between items-center gap-2">
-            <h3 class="text-base font-bold text-primary flex items-center gap-2">
-                <span class="material-symbols-outlined text-teal-700">description</span>
-                <span>سوابق پزشکی، برنامه‌های غذایی و کارنامه‌های سلامت <?php echo count($pets) > 0 ? htmlspecialchars(implode(' و ', array_column($pets, 'name'))) : ''; ?></span>
-            </h3>
-            <div class="flex items-center gap-2">
-                <a href="calculator.php" class="text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 px-3 py-1.5 rounded-xl border border-emerald-200 flex items-center gap-1 transition-all">
-                    <span class="material-symbols-outlined text-sm">calculate</span>
-                    <span>محاسبه‌گر تغذیه بالینی</span>
-                </a>
-                <button onclick="document.getElementById('addDocModal').classList.remove('hidden')" class="text-xs font-bold text-primary flex items-center gap-1 hover:underline px-2 py-1">
-                    <span class="material-symbols-outlined text-sm">add</span> آپلود مدرک
-                </button>
-            </div>
-        </div>
-        <div class="p-6 space-y-4">
-        <?php if(empty($documents)): ?>
-            <div class="text-center py-8 bg-slate-50 rounded-2xl border border-dashed border-slate-200 space-y-3">
-                <span class="material-symbols-outlined text-slate-400 text-3xl">folder_off</span>
-                <p class="text-sm font-bold text-on-surface-variant">هنوز سند یا کارنامه تغذیه‌ای در پرونده سلامت شما ثبت نشده است.</p>
-                <p class="text-xs text-slate-500">می‌توانید با استفاده از محاسبه‌گر تخصصی آسنا، رژیم غذایی علمی پت خود را با استاندارد WSAVA صادر فرمایید.</p>
-                <a href="calculator.php" class="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all shadow-md">
-                    <span class="material-symbols-outlined text-sm">calculate</span>
-                    <span>دریافت و صدور برنامه غذایی برای <?php echo count($pets) > 0 ? htmlspecialchars($pets[0]['name']) : 'پت شما'; ?></span>
-                </a>
-            </div>
-        <?php else: ?>
-            <?php foreach($documents as $doc): 
-                $isMealPlan = str_contains($doc['title'] ?? '', 'برنامه غذایی') || str_ends_with($doc['file_path'] ?? '', '.html');
-                $isDrugReport = str_contains($doc['title'] ?? '', 'تداخل') || str_contains($doc['file_path'] ?? '', 'drug_report');
-                $docUrl = $isMealPlan ? ('view_meal_plan.php?file=' . urlencode(basename($doc['file_path'] ?? ''))) : htmlspecialchars($doc['file_path'] ?? '#');
-                $targetAttr = ($isMealPlan || $isDrugReport) ? 'target="_blank" rel="noopener noreferrer"' : 'download';
-            ?>
-            <a href="<?php echo $docUrl; ?>" <?php echo $targetAttr; ?> class="group p-4 bg-surface-container-low rounded-2xl flex items-center justify-between cursor-pointer hover:bg-white hover:shadow-md border border-transparent hover:border-primary-container transition-all">
-                <div class="flex items-center gap-4">
-                    <div class="p-3 <?php echo $isMealPlan ? 'bg-emerald-500/15 text-emerald-600' : ($isDrugReport ? 'bg-amber-500/15 text-amber-600' : 'bg-status-active/10 text-status-active'); ?> rounded-xl group-hover:scale-105 transition-transform">
-                        <span class="material-symbols-outlined"><?php echo $isMealPlan ? 'restaurant' : ($isDrugReport ? 'medication' : 'description'); ?></span>
+    <?php
+    // ══════════════════════════════════════════════════════════════════════════════
+    // Unified Pet Medical & Clinical Health Hub Aggregator
+    // Combines Calculator Diet Plans, Drug Interactions, Doctor Reports,
+    // Pharmacy Prescriptions, and Pet Parent Uploads into an enterprise dashboard.
+    // ══════════════════════════════════════════════════════════════════════════════
+    $unifiedRecords = [];
+
+    // 1. Documents from pet_documents (Diet plans, Drug reports, Clinic docs, Lab results)
+    if (!empty($documents)) {
+        foreach ($documents as $doc) {
+            $title = $doc['title'] ?? '';
+            $path = $doc['file_path'] ?? '';
+            $petName = $doc['pet_name'] ?? (!empty($pets) ? $pets[0]['name'] : 'تدی');
+            $petId = (int)($doc['pet_id'] ?? 0);
+            $uploadedAt = $doc['uploaded_at'] ?? date('Y-m-d H:i:s');
+            
+            $isMealPlan = str_contains($title, 'برنامه غذایی') || str_ends_with($path, '.html');
+            $isDrugReport = str_contains($title, 'تداخل') || str_contains($path, 'drug_report');
+            $isDoctorClinicDoc = str_contains($path, 'clinical_docs');
+
+            if ($isMealPlan) {
+                $cat = 'nutrition';
+                $catLabel = 'رژیم غذایی بالینی';
+                $sourceType = 'calculator';
+                $sourceLabel = 'موتور هوش مصنوعی و محاسبه‌گر تغذیه بالینی آسنا (WSAVA & FEDIAF)';
+                $sourceBadge = '🤖 محاسبه‌گر تغذیه آسنا';
+                $sourceBadgeClass = 'bg-emerald-100 text-emerald-800 border-emerald-300';
+                $icon = 'restaurant';
+                $iconColor = 'text-emerald-600 bg-emerald-500/10 border-emerald-200';
+                $viewUrl = 'view_meal_plan.php?file=' . urlencode(basename($path));
+                $canDelete = false;
+            } elseif ($isDrugReport) {
+                $cat = 'drugs';
+                $catLabel = 'پایش تداخلات دارویی';
+                $sourceType = 'interactions';
+                $sourceLabel = 'سامانه فارماکولوژی بالینی و تداخل‌سنج دارویی آسنا';
+                $sourceBadge = '🔬 پایشگر دارویی';
+                $sourceBadgeClass = 'bg-amber-100 text-amber-800 border-amber-300';
+                $icon = 'medication';
+                $iconColor = 'text-amber-600 bg-amber-500/10 border-amber-200';
+                $viewUrl = htmlspecialchars($path);
+                $canDelete = false;
+            } elseif ($isDoctorClinicDoc) {
+                $cat = 'clinical';
+                $catLabel = 'پرونده کلینیک و بیمارستان';
+                $sourceType = 'doctor';
+                $sourceLabel = 'مرکز درمانی و دکتر دامپزشک همکار آسنا';
+                $sourceBadge = '🩺 درمانگاه / پزشک';
+                $sourceBadgeClass = 'bg-indigo-100 text-indigo-800 border-indigo-300';
+                $icon = 'medical_services';
+                $iconColor = 'text-indigo-600 bg-indigo-500/10 border-indigo-200';
+                $viewUrl = htmlspecialchars($path);
+                $canDelete = false;
+            } else {
+                $cat = 'user_uploads';
+                $catLabel = 'مدرک و چکاپ سرپرست';
+                $sourceType = 'user';
+                $sourceLabel = 'بارگذاری شده توسط سرپرست پت';
+                $sourceBadge = '👤 سرپرست پت';
+                $sourceBadgeClass = 'bg-blue-100 text-blue-800 border-blue-300';
+                $icon = 'description';
+                $iconColor = 'text-blue-600 bg-blue-500/10 border-blue-200';
+                $viewUrl = htmlspecialchars($path);
+                $canDelete = true;
+            }
+
+            $unifiedRecords[] = [
+                'id' => 'doc_' . $doc['id'],
+                'raw_id' => $doc['id'],
+                'pet_id' => $petId,
+                'pet_name' => $petName,
+                'title' => $title,
+                'category' => $cat,
+                'category_label' => $catLabel,
+                'source_type' => $sourceType,
+                'source_label' => $sourceLabel,
+                'source_badge' => $sourceBadge,
+                'source_badge_class' => $sourceBadgeClass,
+                'icon' => $icon,
+                'icon_color' => $iconColor,
+                'date' => date('Y/m/d', strtotime($uploadedAt)),
+                'time' => date('H:i', strtotime($uploadedAt)),
+                'timestamp' => strtotime($uploadedAt),
+                'view_url' => $viewUrl,
+                'file_path' => $path,
+                'can_delete' => $canDelete
+            ];
+        }
+    }
+
+    // 2. Prescriptions (Doctor & Pharmacy records)
+    if (!empty($prescriptions)) {
+        foreach ($prescriptions as $rx) {
+            $vetName = $rx['vet_name'] ?: ($rx['doctor_name'] ?? '');
+            $clinicName = $rx['clinic_name'] ?: 'داروخانه تخصصی آسنا';
+            $rxPetName = $rx['pet_name'] ?? (!empty($pets) ? $pets[0]['name'] : 'تدی');
+            $rxCreatedAt = $rx['created_at'] ?? date('Y-m-d H:i:s');
+            $status = $rx['status'] ?? 'pending';
+            $statusText = match($status) {
+                'approved' => 'نسخه معتبر و تأییدشده داروخانه',
+                'rejected' => 'عدم تأیید داروساز',
+                'expired' => 'منقضی شده',
+                default => 'در حال بررسی توسط داروساز کشیک'
+            };
+            $statusBadgeClass = match($status) {
+                'approved' => 'bg-emerald-100 text-emerald-800 border-emerald-300',
+                'rejected' => 'bg-rose-100 text-rose-800 border-rose-300',
+                'expired' => 'bg-slate-100 text-slate-700 border-slate-300',
+                default => 'bg-amber-100 text-amber-800 border-amber-300'
+            };
+
+            $unifiedRecords[] = [
+                'id' => 'rx_' . $rx['id'],
+                'raw_id' => $rx['id'],
+                'pet_id' => (int)($rx['pet_id'] ?? 0),
+                'pet_name' => $rxPetName,
+                'title' => 'نسخه دارویی ' . ($clinicName ? ('- ' . $clinicName) : '') . ($vetName ? (' (دکتر ' . $vetName . ')') : ''),
+                'category' => 'prescriptions',
+                'category_label' => 'نسخه دارویی بالینی',
+                'source_type' => 'pharmacy',
+                'source_label' => $vetName ? ('دکتر دامپزشک: ' . $vetName . ' • ' . $clinicName) : ('داروخانه تخصصی آسنا • ' . $clinicName),
+                'source_badge' => '💊 داروخانه / نسخه پزشک',
+                'source_badge_class' => 'bg-purple-100 text-purple-800 border-purple-300',
+                'icon' => 'prescriptions',
+                'icon_color' => 'text-purple-600 bg-purple-500/10 border-purple-200',
+                'date' => date('Y/m/d', strtotime($rxCreatedAt)),
+                'time' => date('H:i', strtotime($rxCreatedAt)),
+                'timestamp' => strtotime($rxCreatedAt),
+                'view_url' => htmlspecialchars($rx['rx_file_url'] ?? '#'),
+                'file_path' => $rx['rx_file_url'] ?? '',
+                'status_text' => $statusText,
+                'status_class' => $statusBadgeClass,
+                'notes' => $rx['pharmacist_notes'] ?? '',
+                'can_delete' => false
+            ];
+        }
+    }
+
+    // 3. Appointments & Doctor Consultations
+    if (!empty($appointments)) {
+        foreach ($appointments as $appt) {
+            if (!empty($appt['notes']) || ($appt['status'] ?? '') === 'completed') {
+                $docName = $appt['doctor_name'] ?? 'دامپزشک معالج';
+                $apptDate = ($appt['appointment_date'] ?? date('Y-m-d')) . ' ' . ($appt['appointment_time'] ?? '00:00:00');
+                $unifiedRecords[] = [
+                    'id' => 'appt_' . $appt['id'],
+                    'raw_id' => $appt['id'],
+                    'pet_id' => (int)($appt['pet_id'] ?? 0),
+                    'pet_name' => $appt['pet_name'] ?? (!empty($pets) ? $pets[0]['name'] : 'تدی'),
+                    'title' => 'گزارش ویزیت بالینی و چکاپ: دکتر ' . $docName,
+                    'category' => 'clinical',
+                    'category_label' => 'ویزیت و مشاوره پزشک',
+                    'source_type' => 'doctor',
+                    'source_label' => 'دکتر دامپزشک: ' . $docName . ' (' . ($appt['doctor_specialty'] ?? 'دامپزشک') . ')',
+                    'source_badge' => '🩺 ویزیت پزشک',
+                    'source_badge_class' => 'bg-indigo-100 text-indigo-800 border-indigo-300',
+                    'icon' => 'stethoscope',
+                    'icon_color' => 'text-indigo-600 bg-indigo-500/10 border-indigo-200',
+                    'date' => date('Y/m/d', strtotime($apptDate)),
+                    'time' => date('H:i', strtotime($apptDate)),
+                    'timestamp' => strtotime($apptDate),
+                    'view_url' => 'booking.php?view_appt=' . (int)$appt['id'],
+                    'file_path' => '',
+                    'notes' => $appt['notes'] ?? 'ویزیت و مشاوره انجام شده',
+                    'can_delete' => false
+                ];
+            }
+        }
+    }
+
+    // Sort by timestamp desc
+    usort($unifiedRecords, fn($a, $b) => $b['timestamp'] <=> $a['timestamp']);
+
+    // Counts for UI filter badges
+    $totalCount = count($unifiedRecords);
+    $countNutrition = count(array_filter($unifiedRecords, fn($r) => $r['category'] === 'nutrition'));
+    $countDrugs = count(array_filter($unifiedRecords, fn($r) => $r['category'] === 'drugs'));
+    $countRx = count(array_filter($unifiedRecords, fn($r) => $r['category'] === 'prescriptions'));
+    $countClinical = count(array_filter($unifiedRecords, fn($r) => $r['category'] === 'clinical'));
+    $countUploads = count(array_filter($unifiedRecords, fn($r) => $r['category'] === 'user_uploads'));
+    ?>
+
+    <!-- ═══════════════════════════════════════════════════════════════════════ -->
+    <!-- UNIFIED PET MEDICAL & CLINICAL RECORDS HUB (سازمان، داروخانه، پزشک، محاسبه‌گر و سرپرست) -->
+    <!-- ═══════════════════════════════════════════════════════════════════════ -->
+    <div class="bg-surface-container-lowest rounded-3xl border border-outline-variant shadow-md overflow-hidden scroll-mt-24">
+        <!-- Main Hub Header -->
+        <div class="p-6 bg-gradient-to-r from-slate-900 via-[#001a48] to-slate-900 text-white flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+            <div class="space-y-1.5">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-10 h-10 rounded-2xl bg-white/10 flex items-center justify-center text-white shadow-inner">
+                        <span class="material-symbols-outlined text-2xl">health_and_safety</span>
                     </div>
                     <div>
-                        <div class="flex items-center gap-2">
-                            <h4 class="text-sm font-bold text-on-surface"><?php echo htmlspecialchars($doc['title']); ?> - <?php echo htmlspecialchars($doc['pet_name']); ?></h4>
-                            <?php if ($isMealPlan): ?>
-                                <span class="bg-emerald-100 text-emerald-700 text-[10px] font-black px-2.5 py-0.5 rounded-full border border-emerald-200">نسخه بالینی رژیم غذایی</span>
-                            <?php elseif ($isDrugReport): ?>
-                                <span class="bg-amber-100 text-amber-800 text-[10px] font-black px-2.5 py-0.5 rounded-full border border-amber-200">پایش تداخلات دارویی</span>
-                            <?php endif; ?>
-                        </div>
-                        <p class="text-[11px] text-on-surface-variant font-medium persian-number mt-0.5">ثبت شده در: <?php echo date('Y/m/d', strtotime($doc['uploaded_at'])); ?></p>
+                        <h3 class="text-base sm:text-lg font-black text-white flex items-center gap-2">
+                            <span>پرونده یکپارچه سلامت و سوابق پزشکی</span>
+                            <span class="text-xs font-bold px-2.5 py-0.5 rounded-full bg-white/15 text-white/90 border border-white/20">
+                                <?= count($pets) > 0 ? htmlspecialchars(implode(' و ', array_column($pets, 'name'))) : 'حیوانات خانگی' ?>
+                            </span>
+                        </h3>
+                        <p class="text-xs text-slate-300 font-medium leading-relaxed">
+                            پایش متمرکز اسناد درمانی، کارنامه‌های تغذیه، تداخلات دارویی، نسخه‌ها و چکاپ‌های صادرشده توسط پزشکان، داروخانه‌ها و سرپرست
+                        </p>
                     </div>
                 </div>
-                <div class="flex items-center gap-2">
-                    <span class="text-xs font-bold text-primary opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
-                        <span>مشاهده سند</span>
-                        <span class="material-symbols-outlined text-sm"><?php echo ($isMealPlan || $isDrugReport) ? 'open_in_new' : 'download'; ?></span>
-                    </span>
-                    <span class="material-symbols-outlined text-on-surface-variant group-hover:-translate-x-1 transition-transform"><?php echo ($isMealPlan || $isDrugReport) ? 'open_in_new' : 'download'; ?></span>
+            </div>
+
+            <!-- Header Quick Actions -->
+            <div class="flex items-center gap-2 flex-wrap">
+                <button type="button" onclick="document.getElementById('addDocModal').classList.remove('hidden')" class="px-4 py-2.5 bg-primary-container text-white rounded-xl font-bold text-xs hover:shadow-lg transition-all flex items-center gap-1.5 shadow-md active:scale-95">
+                    <span class="material-symbols-outlined text-sm">add_circle</span>
+                    <span>ثبت و آپلود مدرک</span>
+                </button>
+                <a href="calculator.php" class="px-3.5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold text-xs transition-all flex items-center gap-1.5 shadow-md active:scale-95">
+                    <span class="material-symbols-outlined text-sm">calculate</span>
+                    <span>محاسبه‌گر رژیم غذایی</span>
+                </a>
+                <a href="interactions.php" class="px-3.5 py-2.5 bg-amber-600 hover:bg-amber-500 text-white rounded-xl font-bold text-xs transition-all flex items-center gap-1.5 shadow-md active:scale-95">
+                    <span class="material-symbols-outlined text-sm">medication</span>
+                    <span>پایش تداخل دارویی</span>
+                </a>
+            </div>
+        </div>
+
+        <!-- Connected Entities Bar (5 Channels) -->
+        <div class="bg-slate-50 px-6 py-3 border-b border-slate-200 flex items-center gap-3 overflow-x-auto text-[11px] font-bold text-slate-600 no-scrollbar">
+            <span class="text-slate-400 font-medium shrink-0 flex items-center gap-1">
+                <span class="material-symbols-outlined text-xs text-emerald-600">sync_alt</span>
+                کانال‌های متصل به پرونده:
+            </span>
+            <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-slate-700 shrink-0">
+                <span class="material-symbols-outlined text-xs text-indigo-600">apartment</span>
+                <span>کلینیک و بیمارستان</span>
+            </div>
+            <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-slate-700 shrink-0">
+                <span class="material-symbols-outlined text-xs text-teal-600">stethoscope</span>
+                <span>پزشکان معالج</span>
+            </div>
+            <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-slate-700 shrink-0">
+                <span class="material-symbols-outlined text-xs text-purple-600">prescriptions</span>
+                <span>داروخانه‌ها</span>
+            </div>
+            <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-slate-700 shrink-0">
+                <span class="material-symbols-outlined text-xs text-emerald-600">smart_toy</span>
+                <span>هوش مصنوعی و محاسبه‌گر</span>
+            </div>
+            <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-slate-700 shrink-0">
+                <span class="material-symbols-outlined text-xs text-blue-600">person</span>
+                <span>سرپرست پت</span>
+            </div>
+        </div>
+
+        <!-- Filter Tabs Bar -->
+        <div class="p-6 pb-2 space-y-4">
+            <div class="flex items-center gap-2 overflow-x-auto pb-2 no-scrollbar" id="docCategoryTabs">
+                <button type="button" onclick="filterDocArchive('all', this)" class="doc-tab-btn px-4 py-2 rounded-xl text-xs font-black transition-all bg-primary text-white shadow-md flex items-center gap-1.5 shrink-0">
+                    <span>همه سوابق و مدارک</span>
+                    <span class="bg-white/20 text-white text-[10px] px-2 py-0.2 rounded-full"><?= $totalCount ?></span>
+                </button>
+
+                <button type="button" onclick="filterDocArchive('nutrition', this)" class="doc-tab-btn px-3.5 py-2 rounded-xl text-xs font-bold transition-all bg-slate-100 text-slate-700 hover:bg-slate-200 flex items-center gap-1.5 shrink-0">
+                    <span class="material-symbols-outlined text-sm text-emerald-600">restaurant</span>
+                    <span>رژیم‌های غذایی بالینی</span>
+                    <span class="bg-emerald-100 text-emerald-800 text-[10px] px-2 py-0.2 rounded-full font-black"><?= $countNutrition ?></span>
+                </button>
+
+                <button type="button" onclick="filterDocArchive('drugs', this)" class="doc-tab-btn px-3.5 py-2 rounded-xl text-xs font-bold transition-all bg-slate-100 text-slate-700 hover:bg-slate-200 flex items-center gap-1.5 shrink-0">
+                    <span class="material-symbols-outlined text-sm text-amber-600">medication</span>
+                    <span>پایش تداخلات دارویی</span>
+                    <span class="bg-amber-100 text-amber-800 text-[10px] px-2 py-0.2 rounded-full font-black"><?= $countDrugs ?></span>
+                </button>
+
+                <button type="button" onclick="filterDocArchive('prescriptions', this)" class="doc-tab-btn px-3.5 py-2 rounded-xl text-xs font-bold transition-all bg-slate-100 text-slate-700 hover:bg-slate-200 flex items-center gap-1.5 shrink-0">
+                    <span class="material-symbols-outlined text-sm text-purple-600">prescriptions</span>
+                    <span>نسخه‌ها و داروخانه</span>
+                    <span class="bg-purple-100 text-purple-800 text-[10px] px-2 py-0.2 rounded-full font-black"><?= $countRx ?></span>
+                </button>
+
+                <button type="button" onclick="filterDocArchive('clinical', this)" class="doc-tab-btn px-3.5 py-2 rounded-xl text-xs font-bold transition-all bg-slate-100 text-slate-700 hover:bg-slate-200 flex items-center gap-1.5 shrink-0">
+                    <span class="material-symbols-outlined text-sm text-indigo-600">medical_information</span>
+                    <span>ویزیت و اسناد درمانگاه</span>
+                    <span class="bg-indigo-100 text-indigo-800 text-[10px] px-2 py-0.2 rounded-full font-black"><?= $countClinical ?></span>
+                </button>
+
+                <button type="button" onclick="filterDocArchive('user_uploads', this)" class="doc-tab-btn px-3.5 py-2 rounded-xl text-xs font-bold transition-all bg-slate-100 text-slate-700 hover:bg-slate-200 flex items-center gap-1.5 shrink-0">
+                    <span class="material-symbols-outlined text-sm text-blue-600">description</span>
+                    <span>مدارک و آزمایشات سرپرست</span>
+                    <span class="bg-blue-100 text-blue-800 text-[10px] px-2 py-0.2 rounded-full font-black"><?= $countUploads ?></span>
+                </button>
+            </div>
+
+            <!-- Pet Filter Chips (if multiple pets) -->
+            <?php if (count($pets) > 1): ?>
+                <div class="flex items-center gap-2 text-xs font-bold text-slate-500 pt-1">
+                    <span class="text-[11px] text-slate-400">فیلتر پت:</span>
+                    <button type="button" onclick="filterByPet('all', this)" class="pet-filter-chip px-3 py-1 rounded-lg bg-primary/10 text-primary font-black border border-primary/20">همه پت‌ها</button>
+                    <?php foreach ($pets as $pt): ?>
+                        <button type="button" onclick="filterByPet('<?= (int)$pt['id'] ?>', this)" class="pet-filter-chip px-3 py-1 rounded-lg bg-white text-slate-700 border border-slate-200 hover:border-primary"><?= htmlspecialchars($pt['name']) ?></button>
+                    <?php endforeach; ?>
                 </div>
+            <?php endif; ?>
+        </div>
+
+        <!-- Records List Body -->
+        <div class="p-6 pt-2 space-y-3" id="docRecordsListContainer">
+            <?php if (empty($unifiedRecords)): ?>
+                <!-- Clean Empty State with Action Buttons -->
+                <div class="text-center py-12 px-6 bg-slate-50/70 rounded-3xl border border-dashed border-slate-300 space-y-4">
+                    <div class="w-16 h-16 rounded-3xl bg-primary/10 text-primary flex items-center justify-center mx-auto shadow-inner">
+                        <span class="material-symbols-outlined text-3xl">clinical_notes</span>
+                    </div>
+                    <div class="max-w-md mx-auto space-y-1">
+                        <h4 class="text-base font-black text-slate-900">پرونده پزشکی و درمانی آماده ثبت مدارک است</h4>
+                        <p class="text-xs text-slate-500 leading-relaxed">
+                            هنوز سندی در پرونده سلامت ثبت نشده است. شما می‌توانید آزمایش‌ها، گواهی واکسن یا شناسنامه پت را آپلود فرمایید یا با محاسبه‌گر هوشمند تغذیه، رژیم بالینی استاندارد WSAVA صادر نمایید.
+                        </p>
+                    </div>
+                    <div class="flex items-center justify-center gap-3 flex-wrap pt-2">
+                        <button type="button" onclick="document.getElementById('addDocModal').classList.remove('hidden')" class="px-5 py-2.5 bg-primary text-white rounded-xl text-xs font-bold transition-all shadow-md flex items-center gap-1.5 hover:bg-primary-hover">
+                            <span class="material-symbols-outlined text-sm">upload_file</span>
+                            <span>آپلود اولین مدرک پت</span>
+                        </button>
+                        <a href="calculator.php" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all shadow-md flex items-center gap-1.5">
+                            <span class="material-symbols-outlined text-sm">calculate</span>
+                            <span>صدور رایگان جدول رژیم غذایی</span>
+                        </a>
+                    </div>
+                </div>
+            <?php else: ?>
+                <?php foreach ($unifiedRecords as $rec): ?>
+                    <div class="doc-record-row group p-4 sm:p-5 bg-white hover:bg-slate-50/80 rounded-2xl border border-slate-200/90 hover:border-primary/40 shadow-sm hover:shadow-md transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                         data-category="<?= htmlspecialchars($rec['category']) ?>"
+                         data-pet-id="<?= (int)$rec['pet_id'] ?>">
+                        
+                        <!-- Right: Icon & Core Details -->
+                        <div class="flex items-start sm:items-center gap-3.5 flex-1 min-w-0">
+                            <div class="w-12 h-12 rounded-2xl <?= $rec['icon_color'] ?> border flex items-center justify-center shrink-0 shadow-sm group-hover:scale-105 transition-transform">
+                                <span class="material-symbols-outlined text-2xl"><?= htmlspecialchars($rec['icon']) ?></span>
+                            </div>
+
+                            <div class="flex-1 min-w-0 space-y-1">
+                                <div class="flex items-center gap-2 flex-wrap">
+                                    <h4 class="text-sm font-black text-slate-900 truncate">
+                                        <?= htmlspecialchars($rec['title']) ?>
+                                    </h4>
+                                    <!-- Source Badge -->
+                                    <span class="text-[10px] font-bold px-2.5 py-0.5 rounded-full border <?= $rec['source_badge_class'] ?>">
+                                        <?= htmlspecialchars($rec['source_badge']) ?>
+                                    </span>
+                                    <?php if (!empty($rec['status_text'])): ?>
+                                        <span class="text-[10px] font-bold px-2 py-0.5 rounded-full border <?= $rec['status_class'] ?>">
+                                            <?= htmlspecialchars($rec['status_text']) ?>
+                                        </span>
+                                    <?php endif; ?>
+                                </div>
+
+                                <div class="flex items-center gap-3 flex-wrap text-[11px] text-slate-500 font-medium">
+                                    <span class="text-primary font-bold flex items-center gap-1">
+                                        <span class="material-symbols-outlined text-[13px]">pets</span>
+                                        <?= htmlspecialchars($rec['pet_name']) ?>
+                                    </span>
+                                    <span>•</span>
+                                    <span class="flex items-center gap-1 font-mono text-slate-600">
+                                        <span class="material-symbols-outlined text-[13px]">calendar_today</span>
+                                        <?= htmlspecialchars($rec['date']) ?> (<?= htmlspecialchars($rec['time']) ?>)
+                                    </span>
+                                    <span>•</span>
+                                    <span class="text-slate-500 truncate max-w-[280px]">
+                                        صادرکننده: <?= htmlspecialchars($rec['source_label']) ?>
+                                    </span>
+                                </div>
+
+                                <?php if (!empty($rec['notes'])): ?>
+                                    <p class="text-[11px] text-slate-600 bg-slate-50 p-2 rounded-xl border border-slate-200/60 line-clamp-1">
+                                        <span class="font-bold text-slate-700">توضیحات:</span> <?= htmlspecialchars($rec['notes']) ?>
+                                    </p>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+
+                        <!-- Left: Action Buttons -->
+                        <div class="flex items-center gap-2 shrink-0 self-end sm:self-center">
+                            <?php if (!empty($rec['view_url']) && $rec['view_url'] !== '#'): ?>
+                                <a href="<?= $rec['view_url'] ?>" target="_blank" rel="noopener noreferrer" class="px-3.5 py-2 bg-primary/10 hover:bg-primary text-primary hover:text-white rounded-xl text-xs font-bold transition-all flex items-center gap-1 shadow-sm">
+                                    <span>مشاهده و بررسی</span>
+                                    <span class="material-symbols-outlined text-sm">open_in_new</span>
+                                </a>
+                            <?php endif; ?>
+
+                            <?php if (!empty($rec['file_path'])): ?>
+                                <a href="<?= htmlspecialchars($rec['file_path']) ?>" download class="p-2 rounded-xl text-slate-500 hover:text-primary hover:bg-slate-100 transition-colors border border-transparent hover:border-slate-200" title="دانلود فایل">
+                                    <span class="material-symbols-outlined text-lg">download</span>
+                                </a>
+                            <?php endif; ?>
+
+                            <?php if ($rec['can_delete']): ?>
+                                <form action="actions/profile_action.php" method="POST" onsubmit="return confirm('آیا از حذف این مدرک از پرونده سلامت اطمینان دارید؟');" class="inline m-0">
+                                    <?= csrf_field() ?>
+                                    <input type="hidden" name="action" value="delete_document">
+                                    <input type="hidden" name="doc_id" value="<?= (int)$rec['raw_id'] ?>">
+                                    <button type="submit" class="p-2 rounded-xl text-slate-400 hover:text-error hover:bg-rose-50 transition-colors border border-transparent hover:border-rose-200" title="حذف مدرک">
+                                        <span class="material-symbols-outlined text-lg">delete</span>
+                                    </button>
+                                </form>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                <?php endforeach; ?>
+            <?php endif; ?>
+
+            <!-- Tab Filter Empty State (Hidden by default, shown by JS if filtered tab is empty) -->
+            <div id="docFilterEmptyState" class="hidden text-center py-10 px-4 bg-slate-50 rounded-2xl border border-dashed border-slate-300 space-y-3">
+                <span class="material-symbols-outlined text-slate-400 text-3xl">filter_list_off</span>
+                <p class="text-xs font-bold text-slate-700">مدرکی در این دسته‌بندی برای پت ثبت نشده است.</p>
+                <div class="flex items-center justify-center gap-2 pt-1">
+                    <button type="button" onclick="filterDocArchive('all', document.querySelector('.doc-tab-btn'))" class="px-3.5 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded-xl text-xs font-bold transition-all">
+                        نمایش همه سوابق
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer: Full Archive Export -->
+        <div class="px-6 py-4 bg-slate-50/80 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3">
+            <div class="flex items-center gap-2 text-xs text-slate-500 font-medium">
+                <span class="material-symbols-outlined text-base text-emerald-600">verified_user</span>
+                <span>کلیه مدارک بالینی دارای تأییدیه اصالت دیجیتال و کد رهگیری هستند.</span>
+            </div>
+            <a href="download_all.php" class="w-full sm:w-auto px-5 py-2.5 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all shadow-sm">
+                <span class="material-symbols-outlined text-sm">download</span>
+                <span>دریافت پرونده کامل سلامت (فایل فشرده ZIP)</span>
             </a>
-            <?php endforeach; ?>
-        <?php endif; ?>
-        <a href="download_all.php" class="w-full bg-primary-container text-white py-4 rounded-2xl font-bold text-sm flex items-center justify-center gap-3 hover:shadow-xl transition-all shadow-lg shadow-primary-container/20">
-            <span class="material-symbols-outlined">download</span>
-            دریافت پرونده کامل سلامت (ZIP)
-        </a>
         </div>
     </div>
+
+    <!-- Client-side Interactive Filter Script -->
+    <script>
+    function filterDocArchive(category, el) {
+        document.querySelectorAll('.doc-tab-btn').forEach(btn => {
+            btn.classList.remove('bg-primary', 'text-white', 'shadow-md');
+            btn.classList.add('bg-slate-100', 'text-slate-700', 'hover:bg-slate-200');
+        });
+        if (el) {
+            el.classList.remove('bg-slate-100', 'text-slate-700', 'hover:bg-slate-200');
+            el.classList.add('bg-primary', 'text-white', 'shadow-md');
+        }
+
+        const items = document.querySelectorAll('.doc-record-row');
+        let visibleCount = 0;
+        items.forEach(row => {
+            const rowCat = row.getAttribute('data-category');
+            if (category === 'all' || rowCat === category) {
+                row.style.display = 'flex';
+                visibleCount++;
+            } else {
+                row.style.display = 'none';
+            }
+        });
+
+        const emptyBox = document.getElementById('docFilterEmptyState');
+        if (emptyBox) {
+            if (visibleCount === 0 && items.length > 0) {
+                emptyBox.classList.remove('hidden');
+            } else {
+                emptyBox.classList.add('hidden');
+            }
+        }
+    }
+
+    function filterByPet(petId, el) {
+        document.querySelectorAll('.pet-filter-chip').forEach(btn => {
+            btn.classList.remove('bg-primary/10', 'text-primary', 'font-black', 'border-primary/20');
+            btn.classList.add('bg-white', 'text-slate-700', 'border-slate-200');
+        });
+        if (el) {
+            el.classList.remove('bg-white', 'text-slate-700', 'border-slate-200');
+            el.classList.add('bg-primary/10', 'text-primary', 'font-black', 'border-primary/20');
+        }
+
+        const items = document.querySelectorAll('.doc-record-row');
+        items.forEach(row => {
+            const rowPet = row.getAttribute('data-pet-id');
+            if (petId === 'all' || rowPet === petId) {
+                row.style.display = 'flex';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    }
+    </script>
 </div>
 
     
@@ -4058,31 +4482,73 @@ function switchSellerFin(period) {
 </div>
 
 <!-- Add Document Modal -->
-<div id="addDocModal" class="hidden fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4">
-    <div class="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl relative">
-        <button onclick="document.getElementById('addDocModal').classList.add('hidden')" class="absolute top-4 left-4 text-on-surface-variant hover:text-error"><span class="material-symbols-outlined">close</span></button>
-        <h2 class="text-xl font-bold text-primary mb-6">آپلود سند جدید</h2>
+<div id="addDocModal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl p-6 sm:p-8 w-full max-w-lg shadow-2xl relative border border-slate-100">
+        <button onclick="document.getElementById('addDocModal').classList.add('hidden')" class="absolute top-6 left-6 text-slate-400 hover:text-error transition-colors p-1 rounded-full hover:bg-slate-100">
+            <span class="material-symbols-outlined">close</span>
+        </button>
+        
+        <div class="flex items-center gap-3 mb-6">
+            <div class="w-12 h-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center">
+                <span class="material-symbols-outlined text-2xl">upload_file</span>
+            </div>
+            <div>
+                <h3 class="text-lg font-black text-primary">ثبت و بایگانی سند پزشکی جدید</h3>
+                <p class="text-xs text-slate-500">افزودن برگه آزمایش، گواهی واکسن، شناسنامه یا نسخه به پرونده سلامت پت</p>
+            </div>
+        </div>
+
         <form action="actions/profile_action.php" method="POST" enctype="multipart/form-data" class="space-y-4">
             <?php echo csrf_field(); ?>
             <input type="hidden" name="action" value="upload_document">
-            <div>
-                <label class="block text-sm font-bold mb-1">حیوان مربوطه</label>
-                <select name="pet_id" required class="w-full border border-outline-variant rounded-lg p-2 focus:ring-2 focus:ring-primary-container outline-none text-sm">
-                    <option value="">انتخاب کنید...</option>
-                    <?php foreach($pets as $pet): ?>
-                        <option value="<?php echo $pet['id']; ?>"><?php echo htmlspecialchars($pet['name']); ?></option>
-                    <?php endforeach; ?>
-                </select>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1.5">حیوان خانگی مربوطه <span class="text-error">*</span></label>
+                    <select name="pet_id" required class="w-full border border-slate-200 rounded-xl p-2.5 bg-slate-50/50 focus:bg-white focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none text-xs font-bold">
+                        <option value="">-- انتخاب پت --</option>
+                        <?php foreach($pets as $pet): ?>
+                            <option value="<?php echo $pet['id']; ?>" <?= count($pets) === 1 ? 'selected' : '' ?>><?php echo htmlspecialchars($pet['name']); ?> (<?= htmlspecialchars($pet['type'] ?? '') ?>)</option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1.5">دسته‌بندی و نوع سند <span class="text-error">*</span></label>
+                    <select name="doc_category" required class="w-full border border-slate-200 rounded-xl p-2.5 bg-slate-50/50 focus:bg-white focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none text-xs font-bold">
+                        <option value="آزمایشگاه و بیوشیمی">آزمایش خون و بیوشیمی (Lab)</option>
+                        <option value="واکسیناسیون و هاری">گواهی واکسیناسیون و هاری</option>
+                        <option value="سونوگرافی و رادیولوژی">سونوگرافی و تصویربرداری</option>
+                        <option value="نسخه درمانی و دارو">نسخه پزشک خارجی</option>
+                        <option value="شناسنامه و میکروچیپ">شناسنامه و میکروچیپ</option>
+                        <option value="جراحی و ترخیص">برگه جراحی و ترخیص</option>
+                        <option value="سایر مدارک بالینی">سایر مدارک سلامت</option>
+                    </select>
+                </div>
             </div>
+
             <div>
-                <label class="block text-sm font-bold mb-1">عنوان سند (مانند: واکسن هاری)</label>
-                <input type="text" name="doc_title" required class="w-full border border-outline-variant rounded-lg p-2 focus:ring-2 focus:ring-primary-container outline-none text-sm">
+                <label class="block text-xs font-bold text-slate-700 mb-1.5">عنوان مدرک (توصیف کوتاه) <span class="text-error">*</span></label>
+                <input type="text" name="doc_title" required placeholder="مثال: آزمایش چکاپ سالیانه تدی، واکسن ۹ گانه" class="w-full border border-slate-200 rounded-xl p-2.5 bg-slate-50/50 focus:bg-white focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none text-xs">
             </div>
+
             <div>
-                <label class="block text-sm font-bold mb-1">انتخاب فایل (PDF, JPG, PNG)</label>
-                <input type="file" name="document" accept=".pdf,.jpg,.jpeg,.png" required class="w-full border border-outline-variant rounded-lg p-2 text-sm">
+                <label class="block text-xs font-bold text-slate-700 mb-1.5">انتخاب فایل مدارک (PDF، عکس JPG یا PNG) <span class="text-error">*</span></label>
+                <div class="border-2 border-dashed border-slate-200 hover:border-primary rounded-2xl p-4 bg-slate-50 text-center transition-colors">
+                    <input type="file" name="document" accept=".pdf,.jpg,.jpeg,.png,.webp" required class="w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-primary file:text-white hover:file:bg-primary-hover file:cursor-pointer cursor-pointer">
+                    <p class="text-[10px] text-slate-400 mt-2">حداکثر حجم مجاز: ۱۰ مگابایت • تصاویر با کیفیت بالا جهت خوانایی بالینی</p>
+                </div>
             </div>
-            <button type="submit" class="w-full bg-primary-container text-white py-3 rounded-xl font-bold mt-4 hover:bg-primary transition-colors">آپلود فایل</button>
+
+            <div class="flex items-center gap-3 pt-2">
+                <button type="submit" class="flex-1 bg-primary text-white py-3 rounded-xl font-bold text-xs hover:bg-primary-hover transition-colors shadow-md flex items-center justify-center gap-2">
+                    <span class="material-symbols-outlined text-sm">cloud_upload</span>
+                    <span>بارگذاری و ثبت نهایی در پرونده</span>
+                </button>
+                <button type="button" onclick="document.getElementById('addDocModal').classList.add('hidden')" class="px-5 py-3 border border-slate-200 text-slate-600 rounded-xl font-bold text-xs hover:bg-slate-100 transition-colors">
+                    انصراف
+                </button>
+            </div>
         </form>
     </div>
 </div>

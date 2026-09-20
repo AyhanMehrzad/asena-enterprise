@@ -47,21 +47,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     } elseif ($action === 'upload_document') {
         $pet_id = (int)($_POST['pet_id'] ?? 0);
-        $title  = trim($_POST['doc_title'] ?? '');
+        $title     = trim($_POST['doc_title'] ?? '');
+        $category  = trim($_POST['doc_category'] ?? '');
 
         // IDOR Prevention: Verify pet belongs to current user
         $petCheck = $pdo->prepare("SELECT id FROM user_pets WHERE id = ? AND user_id = ?");
         $petCheck->execute([$pet_id, $user_id]);
         if (!$petCheck->fetchColumn()) {
             $_SESSION['profile_error'] = 'حیوان خانگی یافت نشد یا دسترسی مجاز نیست.';
-            header("Location: ../profile.php");
+            header("Location: ../profile.php?tab=pets#pets");
             exit;
         }
 
         $allowed_mimes = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
 
         if ($pet_id > 0 && !empty($title) && isset($_FILES['document'])) {
-            $validation = validate_upload($_FILES['document'], $allowed_mimes, 5 * 1024 * 1024);
+            $validation = validate_upload($_FILES['document'], $allowed_mimes, 10 * 1024 * 1024);
 
             if (!$validation['ok']) {
                 $_SESSION['profile_error'] = $validation['error'];
@@ -81,10 +82,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $target_file = $uploadDir . $newFileName;
                 $db_path     = 'uploads/documents/' . $newFileName;
 
+                $finalTitle = !empty($category) ? ('[' . $category . '] ' . $title) : $title;
+
                 if (move_uploaded_file($_FILES['document']['tmp_name'], $target_file)) {
                     $stmt = $pdo->prepare("INSERT INTO pet_documents (pet_id, user_id, title, file_name, file_path) VALUES (?, ?, ?, ?, ?)");
-                    $stmt->execute([$pet_id, $user_id, $title, $newFileName, $db_path]);
-                    $_SESSION['profile_success'] = 'سند با موفقیت آپلود شد.';
+                    $stmt->execute([$pet_id, $user_id, $finalTitle, $newFileName, $db_path]);
+                    $_SESSION['profile_success'] = 'سند بالینی با موفقیت در پرونده سلامت پت ذخیره شد.';
                 } else {
                     $_SESSION['profile_error'] = 'خطا در انتقال فایل.';
                 }
@@ -92,6 +95,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } else {
             $_SESSION['profile_error'] = 'لطفاً تمام فیلدها را پر کنید و فایلی انتخاب نمایید.';
         }
+        header("Location: ../profile.php?tab=pets#pets");
+        exit;
+    } elseif ($action === 'delete_document') {
+        $docId = (int)($_POST['doc_id'] ?? 0);
+        if ($docId > 0) {
+            $stmt = $pdo->prepare("SELECT file_path FROM pet_documents WHERE id = ? AND user_id = ?");
+            $stmt->execute([$docId, $user_id]);
+            $filePath = $stmt->fetchColumn();
+            if ($filePath) {
+                // Prevent deleting system clinical diet plans or drug reports if needed, or allow owner to delete
+                $pdo->prepare("DELETE FROM pet_documents WHERE id = ? AND user_id = ?")->execute([$docId, $user_id]);
+                $fullPath = dirname(__DIR__) . '/' . ltrim($filePath, '/');
+                if (file_exists($fullPath) && is_file($fullPath) && !str_contains($filePath, 'meal_plan_demo')) {
+                    @unlink($fullPath);
+                }
+                $_SESSION['profile_success'] = 'سند مورد نظر با موفقیت از پرونده سلامت حذف گردید.';
+            } else {
+                $_SESSION['profile_error'] = 'سند یافت نشد یا دسترسی مجاز نیست.';
+            }
+        }
+        header("Location: ../profile.php?tab=pets#pets");
+        exit;
     } elseif ($action === 'edit_pet') {
         $pet_id = (int)($_POST['pet_id'] ?? 0);
         $name = trim($_POST['pet_name'] ?? '');
