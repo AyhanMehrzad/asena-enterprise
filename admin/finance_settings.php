@@ -77,7 +77,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             $enamadCode = trim($_POST['enamad_html_code'] ?? '');
             set_setting($pdo, 'enamad_html_code', $enamadCode);
 
-            $success = "تنظیمات حساب بانکی، مالیات، درگاه پرداخت (کارت به کارت / تتر)، زمان‌بندی تسویه و نماد اعتماد با موفقیت ذخیره شد.";
+            // Clinical Calculator & Meal Plan Monetization (Free vs Paid)
+            $calculatorIsPaid = isset($_POST['calculator_is_paid']) ? '1' : '0';
+            $calculatorPrice = max(0, (int)($_POST['calculator_price_toman'] ?? 98000));
+            set_setting($pdo, 'calculator_is_paid', $calculatorIsPaid);
+            set_setting($pdo, 'calculator_price_toman', $calculatorPrice);
+
+            $success = "تنظیمات حساب بانکی، مالیات، درگاه پرداخت، وضعیت رایگان/پولی محاسبه‌گر تغذیه و نماد اعتماد با موفقیت ذخیره شد.";
         }
     } elseif ($action === 'approve_receipt') {
         $subId = (int)$_POST['submission_id'];
@@ -128,6 +134,9 @@ $taxOnAppts     = get_setting($pdo, 'tax_on_appointments_enabled', '1');
 $autoPayoutEnabled = get_setting($pdo, 'auto_payout_enabled', '1');
 $autoPayoutDay     = (int)get_setting($pdo, 'auto_payout_day', 4);
 $autoPayoutTime    = get_setting($pdo, 'auto_payout_time', '09:00');
+
+$calculatorIsPaid = (int)get_setting($pdo, 'calculator_is_paid', 0);
+$calculatorPrice  = (int)get_setting($pdo, 'calculator_price_toman', 98000);
 
 // Pending Card Receipts Queue
 $pendingSubmissionsStmt = $pdo->query("
@@ -434,7 +443,56 @@ require_once __DIR__ . '/includes/admin_header.php';
                     </div>
                 </div>
 
-                <!-- Section 4: Enamad & Legal Trust Badges -->
+                <!-- Section 4: Clinical Calculator & Meal Plan Monetization (Free vs Paid Toggle) -->
+                <div class="pt-4 border-t border-slate-100 dark:border-slate-800">
+                    <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3 mb-4">
+                        <div class="flex items-center gap-2">
+                            <span class="material-symbols-outlined text-emerald-600 dark:text-emerald-400 text-xl">calculate</span>
+                            <h3 class="font-bold text-slate-900 dark:text-white text-base">
+                                وضعیت درآمدزایی محاسبه‌گر بالینی و جدول برنامه غذایی (Free / Paid Toggle)
+                            </h3>
+                        </div>
+                        <span class="text-xs font-mono font-bold px-3 py-1 rounded-full <?= $calculatorIsPaid ? 'bg-amber-100 text-amber-800 border border-amber-300' : 'bg-emerald-100 text-emerald-800 border border-emerald-300' ?>">
+                            <?= $calculatorIsPaid ? 'حالت پولی (Monetized)' : 'حالت رایگان (Free Lead Magnet)' ?>
+                        </span>
+                    </div>
+
+                    <div class="p-5 rounded-2xl bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-900/60 dark:to-slate-800/40 border border-slate-200 dark:border-slate-700 space-y-4">
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                            <div class="space-y-1">
+                                <label for="calcPaidToggle" class="text-sm font-black text-slate-800 dark:text-slate-100 flex items-center gap-2 cursor-pointer">
+                                    <span>کلید روشن/خاموش: پولی کردن صدور کارنامه و رژیم غذایی</span>
+                                </label>
+                                <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                                    • در حالت <strong class="text-emerald-600">خاموش (رایگان)</strong>: کاربران با عضویت رایگان می‌توانند فایل جدول برنامه غذایی را فوراً در پرونده سلامت پت خود ذخیره کنند.<br>
+                                    • در حالت <strong class="text-amber-600">روشن (پولی)</strong>: جهت صدور رسمی و ارسال به پرونده، پرداخت مبلغ زیر الزامی خواهد بود.
+                                </p>
+                            </div>
+
+                            <!-- Interactive ON/OFF Switch -->
+                            <div class="flex items-center gap-3 shrink-0">
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" name="calculator_is_paid" id="calcPaidToggle" value="1" <?= $calculatorIsPaid ? 'checked' : '' ?> class="sr-only peer">
+                                    <div class="w-14 h-8 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[4px] after:start-[4px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-emerald-600"></div>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Price Setting Field -->
+                        <div class="pt-3 border-t border-slate-200/80 dark:border-slate-700/80 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">تعرفه صدور جدول برنامه غذایی (تومان):</label>
+                                <p class="text-[10px] text-slate-400">مبلغی که در فاکتور، دکمه صدور و درگاه پرداخت آنلاین اعمال می‌شود.</p>
+                            </div>
+                            <div class="relative w-full sm:w-60">
+                                <input type="number" name="calculator_price_toman" value="<?= $calculatorPrice ?>" min="0" step="1000" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-mono font-bold focus:border-emerald-500 outline-none pl-12 text-left dir-ltr">
+                                <span class="absolute left-3 top-2.5 text-slate-400 text-xs font-bold">تومان</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 5: Enamad & Legal Trust Badges -->
                 <div>
                     <h3 class="font-bold text-slate-900 dark:text-white text-base flex items-center gap-2 border-b border-slate-100 dark:border-slate-800 pb-3 mb-4">
                         <span class="material-symbols-outlined text-[#001a48] dark:text-blue-400 text-xl">verified</span>

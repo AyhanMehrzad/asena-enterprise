@@ -2,6 +2,8 @@
 $page_title = "محاسبه‌گر هوشمند کالری و رژیم غذایی بالینی پت | آسنا";
 $page_description = "محاسبه دقیق کالری روزانه (MER)، شاخص وضعیت بدنی (BCS)، گرم غذای خشک، آب مصرفی و صدور کارنامه رسمی تغذیه بالینی سگ و گربه بر اساس استانداردهای جهانی FEDIAF و WSAVA.";
 require_once 'includes/header.php';
+$calcIsPaid = (bool)(int)get_setting($pdo, 'calculator_is_paid', 0);
+$calcPrice = (int)get_setting($pdo, 'calculator_price_toman', 98000);
 ?>
 
 <main class="max-w-container-max mx-auto overflow-hidden py-8 px-margin-desktop min-h-[80vh]">
@@ -341,8 +343,12 @@ require_once 'includes/header.php';
                             </div>
                             <div class="text-xs font-black text-white">جدول زمان‌بندی دقیق رژیم غذایی و گرم هر وعده پت آماده است</div>
                             <div class="inline-flex items-center gap-1 mt-1 bg-amber-400/20 text-amber-200 border border-amber-400/30 text-[10px] font-bold px-2.5 py-0.5 rounded-full">
-                                <span>ارزش کارنامه: ۹۸,۰۰۰ تومان</span>
-                                <span class="text-emerald-300">— هدیه رایگان آسنا</span>
+                                <?php if ($calcIsPaid): ?>
+                                    <span>تعرفه صدور برنامه و رژیم غذایی: <?= number_format($calcPrice) ?> تومان</span>
+                                <?php else: ?>
+                                    <span>ارزش کارنامه: <?= number_format($calcPrice) ?> تومان</span>
+                                    <span class="text-emerald-300">— هدیه رایگان آسنا</span>
+                                <?php endif; ?>
                             </div>
                             <div class="text-[9px] text-white/70 mt-1 max-w-xs">
                                 نسخه رسمی به همراه مهر بالینی، دستورالعمل هیدراتاسیون و فایل چاپی در پرونده سلامت شما در پروفایل ذخیره خواهد شد.
@@ -366,8 +372,8 @@ require_once 'includes/header.php';
                     <button type="button" onclick="issueAndSendMealPlanToProfile()" id="btnIssueMealPlan" class="w-full bg-gradient-to-r from-emerald-500 via-emerald-600 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white py-3.5 px-4 rounded-2xl font-black text-xs sm:text-sm text-center shadow-xl shadow-emerald-600/30 hover:shadow-emerald-500/50 transition-all flex flex-col items-center justify-center gap-0.5 cursor-pointer active:scale-98">
                         <div class="flex items-center gap-2">
                             <span class="material-symbols-outlined text-lg">restaurant_menu</span>
-                            <span>صدور و ارسال جدول برنامه غذایی به پرونده من</span>
-                            <span class="bg-white/25 text-[10px] px-2 py-0.5 rounded-full font-sans">رایگان</span>
+                            <span><?= $calcIsPaid ? 'پرداخت و صدور جدول برنامه غذایی به پرونده' : 'صدور و ارسال جدول برنامه غذایی به پرونده من' ?></span>
+                            <span class="bg-white/25 text-[10px] px-2 py-0.5 rounded-full font-sans"><?= $calcIsPaid ? number_format($calcPrice) . ' تومان' : 'رایگان' ?></span>
                         </div>
                         <span class="text-[10px] text-emerald-100 font-normal">
                             ارسال مستقیم فایل به پروفایل • ذخیره در پرونده سلامت • چاپ و دانلود PDF
@@ -385,7 +391,7 @@ require_once 'includes/header.php';
                         </span>
                         <span class="flex items-center gap-1">
                             <span class="material-symbols-outlined text-xs text-emerald-400">check</span>
-                            بدون هزینه
+                            <?= $calcIsPaid ? 'پرداخت امن شتاب' : 'بدون هزینه' ?>
                         </span>
                     </div>
                 </div>
@@ -514,11 +520,11 @@ require_once 'includes/header.php';
 <!-- ========================================================================= -->
 <!-- OFFICIAL ASENA CLINICAL NUTRITION ASSESSMENT & CERTIFICATE MODAL          -->
 <!-- ========================================================================= -->
-<div id="nutritionReportModal" class="fixed inset-0 z-[10080] hidden items-center justify-center p-4 bg-black/70 backdrop-blur-md overflow-y-auto rtl text-right" onclick="if(event.target === this) closeNutritionReportModal();">
-    <div class="bg-white rounded-3xl max-w-2xl w-full shadow-2xl border border-slate-200 overflow-hidden my-6 relative transition-all animate-in fade-in zoom-in-95 duration-200">
+<div id="nutritionReportModal" style="display: none; position: fixed !important; top: 0 !important; right: 0 !important; bottom: 0 !important; left: 0 !important; width: 100vw !important; height: 100vh !important; z-index: 9999999 !important; background-color: rgba(15, 23, 42, 0.88) !important; backdrop-filter: blur(8px) !important; -webkit-backdrop-filter: blur(8px) !important; align-items: center !important; justify-content: center !important; padding: 1rem !important; overflow-y: auto !important; margin: 0 !important;" class="rtl text-right" onclick="if(event.target === this) closeNutritionReportModal();">
+    <div style="position: relative !important; z-index: 10000000 !important; background-color: #ffffff !important; border-radius: 1.5rem !important; max-width: 42rem !important; width: 100% !important; box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.7) !important; overflow: hidden !important; border: 1px solid #cbd5e1 !important; margin: auto !important;" class="animate-in fade-in zoom-in-95 duration-200">
         
         <!-- Header Ribbon -->
-        <div class="bg-gradient-to-r from-[#001a48] via-[#002d72] to-[#001336] p-6 text-white relative">
+        <div style="background: linear-gradient(135deg, #001a48 0%, #002d72 50%, #001336 100%) !important; color: #ffffff !important; padding: 1.5rem !important; position: relative !important;">
             <div class="flex items-center justify-between">
                 <div class="flex items-center gap-3">
                     <div class="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center text-2xl border border-white/20">
@@ -526,7 +532,7 @@ require_once 'includes/header.php';
                     </div>
                     <div>
                         <div class="flex items-center gap-2">
-                            <h2 class="text-base sm:text-lg font-black tracking-tight">شناسنامه و کارنامه تغذیه بالینی پت</h2>
+                            <h2 class="text-base sm:text-lg font-black tracking-tight text-white">شناسنامه و کارنامه تغذیه بالینی پت</h2>
                             <span class="bg-emerald-400/20 text-emerald-300 text-[10px] font-black px-2.5 py-0.5 rounded-full border border-emerald-400/40">تاییدیه WSAVA</span>
                         </div>
                         <p class="text-xs text-white/70 mt-0.5">زیست‌بوم جامع سلامت و خدمات دامپزشکی آسنا (ASENA Medical)</p>
@@ -703,18 +709,18 @@ require_once 'includes/header.php';
 <!-- ========================================================================= -->
 <!-- MEAL PLAN SUCCESS & PROFILE DELIVERY MODAL                                -->
 <!-- ========================================================================= -->
-<div id="mealPlanSuccessModal" class="fixed inset-0 z-[10090] hidden items-center justify-center p-4 bg-black/75 backdrop-blur-md overflow-y-auto rtl text-right" onclick="if(event.target === this) closeMealPlanSuccessModal();">
-    <div class="bg-white rounded-[2rem] max-w-lg w-full shadow-2xl border border-slate-200 overflow-hidden my-6 relative transition-all animate-in fade-in zoom-in-95 duration-200">
+<div id="mealPlanSuccessModal" style="display: none; position: fixed !important; inset: 0 !important; width: 100vw !important; height: 100vh !important; z-index: 9999999 !important; background-color: rgba(15, 23, 42, 0.88) !important; backdrop-filter: blur(8px) !important; -webkit-backdrop-filter: blur(8px) !important; align-items: center !important; justify-content: center !important; padding: 1rem !important; overflow-y: auto !important; margin: 0 !important;" class="rtl text-right" onclick="if(event.target === this) closeMealPlanSuccessModal();">
+    <div style="position: relative !important; z-index: 10000000 !important; background-color: #ffffff !important; border-radius: 1.5rem !important; max-width: 32rem !important; width: 100% !important; box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.8) !important; overflow: hidden !important; border: 1px solid #cbd5e1 !important; margin: auto !important;" class="animate-in fade-in zoom-in-95 duration-200">
         <!-- Top Celebration Header -->
-        <div class="bg-gradient-to-br from-emerald-600 via-teal-700 to-[#002d72] p-6 text-white text-center relative overflow-hidden">
+        <div style="background: linear-gradient(135deg, #059669 0%, #0d9488 50%, #002d72 100%) !important; color: #ffffff !important; padding: 1.5rem !important; text-align: center !important; position: relative !important; overflow: hidden !important;">
             <div class="absolute -top-10 -left-10 w-32 h-32 bg-white/10 rounded-full blur-xl pointer-events-none"></div>
-            <button type="button" onclick="closeMealPlanSuccessModal()" class="absolute top-4 left-4 w-8 h-8 rounded-full bg-white/15 hover:bg-white/25 flex items-center justify-center text-white transition cursor-pointer">
+            <button type="button" onclick="closeMealPlanSuccessModal()" class="w-8 h-8 rounded-full bg-white/15 hover:bg-white/25 flex items-center justify-center text-white transition cursor-pointer" style="position: absolute !important; top: 1rem !important; left: 1rem !important;">
                 <span class="material-symbols-outlined text-lg">close</span>
             </button>
             <div class="w-16 h-16 rounded-3xl bg-white/20 border-2 border-white/40 flex items-center justify-center text-3xl mx-auto mb-3 shadow-lg">
                 <span class="material-symbols-outlined text-3xl text-emerald-100">verified</span>
             </div>
-            <h2 class="text-lg sm:text-xl font-black">جدول برنامه غذایی با موفقیت صادر شد!</h2>
+            <h2 class="text-lg sm:text-xl font-black text-white">جدول برنامه غذایی با موفقیت صادر شد!</h2>
             <p class="text-xs text-emerald-100/90 mt-1">فایل اختصاصی رژیم غذایی در پرونده سلامت پت شما ذخیره گردید.</p>
             <div class="mt-3 inline-flex items-center gap-2 bg-white/15 border border-white/20 px-3 py-1 rounded-xl text-xs font-mono">
                 <span>شناسه پرونده:</span>
@@ -723,7 +729,7 @@ require_once 'includes/header.php';
         </div>
 
         <!-- Content Details -->
-        <div class="p-6 space-y-4 text-xs">
+        <div class="p-6 space-y-4 text-xs bg-white text-slate-800">
             <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-2">
                 <div class="flex items-center gap-2 font-bold text-slate-800">
                     <span class="material-symbols-outlined text-emerald-600 text-base">task_alt</span>
@@ -756,22 +762,24 @@ require_once 'includes/header.php';
 <!-- ========================================================================= -->
 <!-- AUTHENTICATION REQUIRED MODAL (FOR GUEST USERS)                           -->
 <!-- ========================================================================= -->
-<div id="mealPlanAuthModal" class="fixed inset-0 z-[10090] hidden items-center justify-center p-4 bg-black/75 backdrop-blur-md overflow-y-auto rtl text-right" onclick="if(event.target === this) closeMealPlanAuthModal();">
-    <div class="bg-white rounded-[2rem] max-w-md w-full shadow-2xl border border-slate-200 overflow-hidden my-6 relative transition-all animate-in fade-in zoom-in-95 duration-200">
-        <div class="bg-gradient-to-br from-[#001a48] to-[#002d72] p-6 text-white text-center relative">
-            <button type="button" onclick="closeMealPlanAuthModal()" class="absolute top-4 left-4 w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition cursor-pointer">
+<div id="mealPlanAuthModal" style="display: none; position: fixed !important; inset: 0 !important; width: 100vw !important; height: 100vh !important; z-index: 9999999 !important; background-color: rgba(15, 23, 42, 0.88) !important; backdrop-filter: blur(8px) !important; -webkit-backdrop-filter: blur(8px) !important; align-items: center !important; justify-content: center !important; padding: 1rem !important; overflow-y: auto !important; margin: 0 !important;" class="rtl text-right" onclick="if(event.target === this) closeMealPlanAuthModal();">
+    <div style="position: relative !important; z-index: 10000000 !important; background-color: #ffffff !important; border-radius: 1.5rem !important; max-width: 28rem !important; width: 100% !important; box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.8) !important; overflow: hidden !important; border: 1px solid #cbd5e1 !important; margin: auto !important;" class="animate-in fade-in zoom-in-95 duration-200">
+        <!-- Solid Deep Navy Header -->
+        <div style="background: linear-gradient(135deg, #001a48 0%, #002d72 100%) !important; color: #ffffff !important; padding: 1.5rem !important; text-align: center !important; position: relative !important;">
+            <button type="button" onclick="closeMealPlanAuthModal()" class="w-8 h-8 rounded-full bg-white/15 hover:bg-white/25 flex items-center justify-center text-white transition cursor-pointer" style="position: absolute !important; top: 1rem !important; left: 1rem !important;">
                 <span class="material-symbols-outlined text-lg">close</span>
             </button>
-            <div class="w-14 h-14 rounded-2xl bg-amber-500/20 border border-amber-400/30 text-amber-300 flex items-center justify-center text-2xl mx-auto mb-3">
+            <div class="w-14 h-14 rounded-2xl bg-amber-500/20 border border-amber-400/40 text-amber-300 flex items-center justify-center text-2xl mx-auto mb-3 shadow-sm">
                 <span class="material-symbols-outlined text-2xl">lock_open</span>
             </div>
-            <h3 class="text-base font-black">صدور و ذخیره در پرونده اختصاصی پت</h3>
-            <p class="text-xs text-white/70 mt-1">جهت ارسال فایل جدول برنامه غذایی و بایگانی دائمی در سوابق پزشکی، لطفاً وارد شوید.</p>
+            <h3 class="text-base font-black text-white">صدور و ذخیره در پرونده اختصاصی پت</h3>
+            <p class="text-xs text-white/80 mt-1">جهت ارسال فایل جدول برنامه غذایی و بایگانی دائمی در سوابق پزشکی، لطفاً وارد شوید.</p>
         </div>
 
-        <div class="p-6 space-y-3 text-xs">
-            <div class="bg-amber-50 border border-amber-200 p-3.5 rounded-xl text-amber-900 text-[11px] leading-relaxed">
-                اطلاعات واردشده شما محفوظ است و بلافاصله پس از ورود، فایل جدول برنامه غذایی در پروفایل شما ثبت خواهد گردید.
+        <!-- Solid Crisp Body -->
+        <div class="p-6 space-y-3 text-xs bg-white text-slate-800">
+            <div class="bg-amber-50 border border-amber-200 p-3.5 rounded-xl text-amber-900 text-[11px] leading-relaxed font-medium">
+                اطلاعات واردشده پت شما محفوظ است و بلافاصله پس از ورود، فایل جدول برنامه غذایی در پروفایل شما ثبت خواهد گردید.
             </div>
 
             <div class="space-y-2 pt-2">
@@ -779,10 +787,13 @@ require_once 'includes/header.php';
                     <span class="material-symbols-outlined text-base">login</span>
                     <span>ورود با شماره موبایل / حساب کاربری</span>
                 </a>
-                <a href="register.php?redirect=calculator.php%3Fauto_issue%3D1" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-800 py-3 px-4 rounded-xl font-bold text-xs text-center transition flex items-center justify-center gap-2">
+                <a href="register.php?redirect=calculator.php%3Fauto_issue%3D1" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-800 py-3 px-4 rounded-xl font-bold text-xs text-center transition flex items-center justify-center gap-2 border border-slate-200">
                     <span class="material-symbols-outlined text-base">person_add</span>
                     <span>ثبت‌نام سریع در آسنا (رایگان)</span>
                 </a>
+                <button type="button" onclick="closeMealPlanAuthModal()" class="w-full text-center text-xs text-slate-400 hover:text-slate-600 font-bold py-1.5 transition cursor-pointer">
+                    انصراف و بازگشت به محاسبه‌گر
+                </button>
             </div>
         </div>
     </div>
@@ -1293,6 +1304,7 @@ require_once 'includes/header.php';
             if (certAiMetabolic) certAiMetabolic.textContent = `تحلیل بالینی نژاد ${calcState.race}: انرژی متابولیک روزانه ${calcState.mer} kcal بر اساس استانداردهای بین‌المللی WSAVA محاسبه و تأیید شد.`;
         }
 
+        modal.style.display = 'flex';
         modal.classList.remove('hidden');
         modal.classList.add('flex');
         document.body.style.overflow = 'hidden';
@@ -1301,6 +1313,7 @@ require_once 'includes/header.php';
     window.closeNutritionReportModal = function() {
         const modal = document.getElementById('nutritionReportModal');
         if (modal) {
+            modal.style.display = 'none';
             modal.classList.add('hidden');
             modal.classList.remove('flex');
             document.body.style.overflow = '';
@@ -1391,6 +1404,7 @@ require_once 'includes/header.php';
             viewLink.href = data.view_url || data.file_url;
         }
 
+        modal.style.display = 'flex';
         modal.classList.remove('hidden');
         modal.classList.add('flex');
         document.body.style.overflow = 'hidden';
@@ -1399,6 +1413,7 @@ require_once 'includes/header.php';
     window.closeMealPlanSuccessModal = function() {
         const modal = document.getElementById('mealPlanSuccessModal');
         if (modal) {
+            modal.style.display = 'none';
             modal.classList.add('hidden');
             modal.classList.remove('flex');
             document.body.style.overflow = '';
@@ -1408,6 +1423,7 @@ require_once 'includes/header.php';
     window.showMealPlanAuthModal = function() {
         const modal = document.getElementById('mealPlanAuthModal');
         if (modal) {
+            modal.style.display = 'flex';
             modal.classList.remove('hidden');
             modal.classList.add('flex');
             document.body.style.overflow = 'hidden';
@@ -1417,6 +1433,7 @@ require_once 'includes/header.php';
     window.closeMealPlanAuthModal = function() {
         const modal = document.getElementById('mealPlanAuthModal');
         if (modal) {
+            modal.style.display = 'none';
             modal.classList.add('hidden');
             modal.classList.remove('flex');
             document.body.style.overflow = '';
