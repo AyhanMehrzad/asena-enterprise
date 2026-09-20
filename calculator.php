@@ -225,140 +225,168 @@ require_once 'includes/header.php';
 
             </div>
 
-            <!-- Right Column: Live Results Dashboard Card (5 cols) -->
-            <div class="lg:col-span-5 flex flex-col justify-between bg-white/10 backdrop-blur-2xl rounded-[2rem] p-6 sm:p-8 border border-white/20 shadow-2xl relative">
-                <div class="space-y-5">
+            <!-- Right Column: Magnetic Teaser & Diagnostic Progress Tracker (5 cols) -->
+            <div class="lg:col-span-5 flex flex-col justify-between bg-white/10 backdrop-blur-2xl rounded-[2.2rem] p-6 sm:p-8 border border-white/20 shadow-2xl relative overflow-hidden">
+                <!-- Background ambient glow -->
+                <div class="absolute -top-20 -right-20 w-64 h-64 bg-emerald-500/15 rounded-full blur-3xl pointer-events-none"></div>
+
+                <div class="space-y-4 relative z-10">
                     
-                    <div class="flex items-center justify-between border-b border-white/10 pb-4">
+                    <!-- Dynamic Diagnostic Strip -->
+                    <div class="flex items-center justify-between border-b border-white/10 pb-3.5">
                         <div class="flex items-center gap-2.5">
                             <span class="text-3xl" id="resPetEmoji">🐕</span>
                             <div>
-                                <h3 class="text-sm font-black text-white" id="resPetTitle">برنامه غذایی سگ بالغ (۸.۵ کیلوگرم)</h3>
-                                <p class="text-[11px] text-emerald-300 font-bold" id="resPetSubtitle">عقیم‌شده با وضعیت بدنی ایده‌آل</p>
+                                <h3 class="text-sm font-black text-white" id="resPetTitle">شناسایی مشخصات بیومتریک پت</h3>
+                                <p class="text-[11px] text-emerald-300 font-bold flex items-center gap-1.5 mt-0.5" id="resPetSubtitle">
+                                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                                    <span>تحلیل متابولیک و ریسک‌های نژادی آماده است</span>
+                                </p>
                             </div>
                         </div>
                         <span class="bg-emerald-500/20 text-emerald-300 text-[10px] font-mono px-2.5 py-1 rounded-full border border-emerald-400/30">
-                            استاندارد WSAVA
+                            WSAVA & FEDIAF
                         </span>
                     </div>
 
-                    <!-- 6 Metric Widgets Grid -->
-                    <div class="grid grid-cols-2 gap-3">
+                    <!-- Readiness & Biometric Progress Banner -->
+                    <div class="bg-gradient-to-r from-emerald-900/50 to-emerald-800/30 p-3.5 rounded-2xl border border-emerald-400/30 flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <span class="material-symbols-outlined text-emerald-400 text-lg">check_circle</span>
+                            <div>
+                                <div class="text-xs font-black text-white">پایش بیومتریک نژادی ۱۰۰٪ تکمیل شد</div>
+                                <div class="text-[10px] text-emerald-200/80">آماده صدور نسخه رسمی و جدول ۳ وعده‌ای</div>
+                            </div>
+                        </div>
+                        <span class="bg-emerald-500 text-white text-[10px] font-black px-2 py-0.5 rounded-lg shadow-sm">
+                            آماده صدور
+                        </span>
+                    </div>
+
+                    <!-- 4 Diagnostic Health Status Cards (Locked/Ready - No Raw Numbers Exposed) -->
+                    <div class="grid grid-cols-2 gap-2.5">
                         
-                        <div class="bg-white/10 p-3.5 rounded-2xl border border-white/10">
-                            <div class="text-[11px] text-white/70 font-medium mb-1">کالری روزانه (MER):</div>
-                            <div class="text-xl sm:text-2xl font-black font-mono text-amber-300" id="resCalories">
-                                ۵۴۰ <span class="text-xs font-normal text-white/80 font-sans">kcal</span>
+                        <div class="bg-white/10 p-3.5 rounded-2xl border border-white/10 relative overflow-hidden">
+                            <div class="flex items-center justify-between mb-1">
+                                <span class="text-[11px] text-white/70 font-medium">کالری متابولیک (MER):</span>
+                                <span class="material-symbols-outlined text-xs text-amber-300">lock</span>
                             </div>
-                            <div class="text-[10px] text-white/50 mt-1">انرژی متابولیک خالص</div>
+                            <div class="text-xs sm:text-sm font-black text-amber-300 flex items-center gap-1">
+                                <span>محاسبه بالینی شد</span>
+                                <span class="text-emerald-400 text-xs">✓</span>
+                            </div>
+                            <div class="text-[9px] text-white/50 mt-1">تثبیت بر پایه استاندارد جهانی FEDIAF</div>
                         </div>
 
-                        <div class="bg-emerald-500/20 p-3.5 rounded-2xl border border-emerald-400/30">
-                            <div class="text-[11px] text-emerald-200 font-bold mb-1">غذای خشک روزانه:</div>
-                            <div class="text-xl sm:text-2xl font-black font-mono text-emerald-300" id="resKibbleGrams">
-                                ۱۴۵ <span class="text-xs font-normal text-white/80 font-sans">گرم</span>
+                        <div class="bg-white/10 p-3.5 rounded-2xl border border-white/10 relative overflow-hidden">
+                            <div class="flex items-center justify-between mb-1">
+                                <span class="text-[11px] text-white/70 font-medium">سهم دقیق غذای هر وعده:</span>
+                                <span class="material-symbols-outlined text-xs text-emerald-300">lock</span>
                             </div>
-                            <div class="text-[10px] text-emerald-200/80 mt-1 font-bold" id="resMealPortion">۲ وعده ۷۲ گرمی</div>
+                            <div class="text-xs sm:text-sm font-black text-emerald-300 flex items-center gap-1">
+                                <span>گرم دقیق هر وعده</span>
+                                <span class="text-emerald-400 text-xs">✓</span>
+                            </div>
+                            <div class="text-[9px] text-white/50 mt-1">تفکیک ارگونومیک صبح، عصر و شب</div>
                         </div>
 
-                        <div class="bg-white/10 p-3.5 rounded-2xl border border-white/10">
-                            <div class="text-[11px] text-white/70 font-medium mb-1">آب تازه مصرفی:</div>
-                            <div class="text-xl sm:text-2xl font-black font-mono text-sky-300" id="resWaterMl">
-                                ۵۱۰ <span class="text-xs font-normal text-white/80 font-sans">میلی‌لیتر</span>
+                        <div class="bg-white/10 p-3.5 rounded-2xl border border-white/10 relative overflow-hidden">
+                            <div class="flex items-center justify-between mb-1">
+                                <span class="text-[11px] text-white/70 font-medium">جدول زمان‌بندی ۷ روزه:</span>
+                                <span class="material-symbols-outlined text-xs text-sky-300">verified</span>
                             </div>
-                            <div class="text-[10px] text-white/50 mt-1">حداقل مایعات روزانه</div>
+                            <div class="text-xs sm:text-sm font-black text-sky-300 flex items-center gap-1">
+                                <span>تولید گردید</span>
+                                <span class="text-emerald-400 text-xs">✓</span>
+                            </div>
+                            <div class="text-[9px] text-white/50 mt-1">ساعات دقیق مصرف، آب و مکمل‌ها</div>
                         </div>
 
-                        <div class="bg-white/10 p-3.5 rounded-2xl border border-white/10">
-                            <div class="text-[11px] text-white/70 font-medium mb-1">وزن ایده‌آل هدف:</div>
-                            <div class="text-xl sm:text-2xl font-black font-mono text-emerald-400" id="resIdealWeight">
-                                ۸.۵ <span class="text-xs font-normal text-white/80 font-sans">کیلوگرم</span>
+                        <div class="bg-white/10 p-3.5 rounded-2xl border border-white/10 relative overflow-hidden">
+                            <div class="flex items-center justify-between mb-1">
+                                <span class="text-[11px] text-white/70 font-medium">هشدارهای نژادی و دارویی:</span>
+                                <span class="material-symbols-outlined text-xs text-rose-300">warning</span>
                             </div>
-                            <div class="text-[10px] text-emerald-200/70 mt-1" id="resWeightProg">ثبات وزن متناسب</div>
-                        </div>
-
-                        <div class="bg-white/10 p-3.5 rounded-2xl border border-white/10">
-                            <div class="text-[11px] text-white/70 font-medium mb-1">سقف مجاز تشویقی:</div>
-                            <div class="text-lg sm:text-xl font-black font-mono text-purple-300" id="resTreats">
-                                ۵۴ <span class="text-xs font-normal text-white/80 font-sans">کالری (قانون ۱۰٪)</span>
+                            <div class="text-xs sm:text-sm font-black text-rose-300 flex items-center gap-1" id="teaserAlertsBadge">
+                                <span>۲ زنگ خطر شناسایی شد</span>
+                                <span class="text-amber-400 text-xs">⚠️</span>
                             </div>
-                            <div class="text-[10px] text-white/50 mt-1">حداکثر ۱۵ گرم در روز</div>
-                        </div>
-
-                        <div class="bg-white/10 p-3.5 rounded-2xl border border-white/10">
-                            <div class="text-[11px] text-white/70 font-medium mb-1">تخفیف تحویل خودکار:</div>
-                            <div class="text-xl sm:text-2xl font-black font-mono text-[#fd8100]">
-                                ۱۵٪ <span class="text-xs font-normal text-white/80 font-sans">تخفیف دائمی</span>
-                            </div>
-                            <div class="text-[10px] text-white/50 mt-1">اشتراک اتوشیپ آسنا</div>
+                            <div class="text-[9px] text-white/50 mt-1">حفاظت مفاصل، گوارش و فک نژاد</div>
                         </div>
 
                     </div>
 
-                    <!-- Recommended Kibble Match Box -->
-                    <div class="bg-gradient-to-r from-emerald-900/40 to-primary/40 p-4 rounded-2xl border border-emerald-400/30 flex items-center gap-3">
-                        <div class="w-12 h-12 rounded-xl bg-white/10 flex items-center justify-center text-2xl shrink-0">
-                            🥘
+                    <!-- Stunning Blurred Teaser Mockup of the Meal Plan Chart -->
+                    <div class="relative rounded-2xl overflow-hidden border border-white/20 bg-slate-900/60 p-4 shadow-xl">
+                        <!-- Mockup Meal Table (Intentionally Blurred) -->
+                        <div class="select-none pointer-events-none filter blur-[3.5px] opacity-40 space-y-2">
+                            <div class="flex justify-between items-center bg-white/10 p-2 rounded-lg text-[10px]">
+                                <span>وعده ۱: صبح (۰۸:۳۰)</span>
+                                <span class="font-mono text-emerald-400">███ گرم + امگا ۳</span>
+                            </div>
+                            <div class="flex justify-between items-center bg-white/10 p-2 rounded-lg text-[10px]">
+                                <span>وعده ۲: نیمروزی (۱۴:۰۰)</span>
+                                <span class="font-mono text-purple-300">پاداش سلامت ██ گرم</span>
+                            </div>
+                            <div class="flex justify-between items-center bg-white/10 p-2 rounded-lg text-[10px]">
+                                <span>وعده ۳: شب (۲۰:۰۰)</span>
+                                <span class="font-mono text-emerald-400">███ گرم + گلوکوزامین</span>
+                            </div>
                         </div>
-                        <div class="flex-1">
-                            <div class="text-xs font-black text-white" id="resRecommendedFood">غذای خشک رویال کنین ژرمن شپرد ادالت</div>
-                            <div class="text-[10px] text-white/70 mt-0.5">فرمول بالینی متناسب با متابولیسم، فک و شاخص وزنی نژاد پت شما</div>
+
+                        <!-- Golden Lock & Value Overlay -->
+                        <div class="absolute inset-0 flex flex-col items-center justify-center text-center p-3 z-10 bg-slate-950/45 backdrop-blur-[2px]">
+                            <div class="w-9 h-9 rounded-full bg-amber-500/20 border border-amber-400/40 text-amber-300 flex items-center justify-center text-lg mb-1 shadow-lg">
+                                <span class="material-symbols-outlined text-lg">lock</span>
+                            </div>
+                            <div class="text-xs font-black text-white">جدول زمان‌بندی دقیق رژیم غذایی و گرم هر وعده پت آماده است</div>
+                            <div class="inline-flex items-center gap-1 mt-1 bg-amber-400/20 text-amber-200 border border-amber-400/30 text-[10px] font-bold px-2.5 py-0.5 rounded-full">
+                                <span>ارزش کارنامه: ۹۸,۰۰۰ تومان</span>
+                                <span class="text-emerald-300">— هدیه رایگان آسنا</span>
+                            </div>
+                            <div class="text-[9px] text-white/70 mt-1 max-w-xs">
+                                نسخه رسمی به همراه مهر بالینی، دستورالعمل هیدراتاسیون و فایل چاپی در پرونده سلامت شما در پروفایل ذخیره خواهد شد.
+                            </div>
                         </div>
                     </div>
 
-                    <!-- AI Clinical Nutritionist Live Assessment Card -->
-                    <div class="bg-gradient-to-br from-indigo-950/70 via-slate-900/90 to-[#001a48] p-4 sm:p-5 rounded-2xl border border-indigo-400/35 shadow-xl space-y-3 relative overflow-hidden">
-                        <div class="absolute -top-10 -left-10 w-28 h-28 bg-indigo-500/20 rounded-full blur-xl pointer-events-none"></div>
-                        <div class="flex items-center justify-between border-b border-white/10 pb-2.5">
-                            <div class="flex items-center gap-2">
-                                <div class="w-8 h-8 rounded-xl bg-indigo-500/25 border border-indigo-400/40 flex items-center justify-center text-indigo-300 shadow-sm">
-                                    <span class="material-symbols-outlined text-base">psychology</span>
-                                </div>
-                                <div>
-                                    <div class="text-xs font-black text-white flex items-center gap-1.5">
-                                        <span>تحلیلگر هوشمند بالینی پت</span>
-                                        <span class="bg-indigo-500/30 text-indigo-200 text-[9px] px-2 py-0.5 rounded-full font-mono border border-indigo-400/30">AI Vet</span>
-                                    </div>
-                                    <div class="text-[10px] text-white/60" id="aiStatusSubtitle">پایش نژادی بر پایه استانداردهای WSAVA & FEDIAF</div>
-                                </div>
-                            </div>
-                            <button type="button" onclick="triggerAiBreedAnalysis()" id="btnRefreshAi" class="text-[11px] text-indigo-200 hover:text-white bg-white/10 hover:bg-white/20 px-2.5 py-1 rounded-xl transition flex items-center gap-1 border border-white/15 cursor-pointer active:scale-95">
-                                <span class="material-symbols-outlined text-xs">autorenew</span>
-                                <span>تحلیل مجدد AI</span>
-                            </button>
-                        </div>
-
-                        <!-- Live AI Content -->
-                        <div id="aiAnalysisBox" class="space-y-2.5 text-xs text-white/90">
-                            <p class="text-[11px] text-indigo-100 leading-relaxed font-normal" id="aiMetabolicSummary">
-                                در حال استخراج ویژگی‌های متابولیک و اسکلتی نژاد...
-                            </p>
-                            <div id="aiPointsList" class="space-y-1.5 text-[10px] text-white/80">
-                                <!-- Populated dynamically by JS -->
-                            </div>
+                    <!-- Breed Biomechanic Hint Box -->
+                    <div class="bg-indigo-950/50 p-3 rounded-xl border border-indigo-400/25 flex items-start gap-2 text-xs">
+                        <span class="material-symbols-outlined text-indigo-300 text-sm mt-0.5 shrink-0">psychology</span>
+                        <div class="text-[11px] text-indigo-100 leading-relaxed" id="teaserAiMetabolicSummary">
+                            ارزیابی بیومکانیک نژاد و فک پت توسط هوش مصنوعی تکمیل شده و در فایل ارسالی به پروفایل شما ثبت گردیده است.
                         </div>
                     </div>
 
                 </div>
 
-                <!-- CTA Actions -->
-                <div class="pt-5 mt-5 border-t border-white/10 space-y-2.5">
-                    <!-- Primary Feature Button: Issue Official Report -->
-                    <button type="button" onclick="openNutritionReportModal()" class="w-full bg-gradient-to-r from-[#fd8100] via-amber-500 to-[#ea580c] hover:opacity-95 text-white py-3.5 px-4 rounded-2xl font-black text-xs sm:text-sm text-center shadow-xl shadow-orange-500/25 transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-98">
-                        <span class="material-symbols-outlined text-lg">clinical_notes</span>
-                        <span>صدور کارنامه و شناسنامه تغذیه بالینی پت (رسمی)</span>
-                        <span class="bg-white/25 text-[10px] px-2 py-0.5 rounded-full font-sans">هدیه آسنا</span>
+                <!-- High-Converting CTA Actions -->
+                <div class="pt-4 mt-4 border-t border-white/10 space-y-2.5 relative z-10">
+                    <!-- Primary Magnetic Button: Save & Send Meal Plan to Profile -->
+                    <button type="button" onclick="issueAndSendMealPlanToProfile()" id="btnIssueMealPlan" class="w-full bg-gradient-to-r from-emerald-500 via-emerald-600 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white py-3.5 px-4 rounded-2xl font-black text-xs sm:text-sm text-center shadow-xl shadow-emerald-600/30 hover:shadow-emerald-500/50 transition-all flex flex-col items-center justify-center gap-0.5 cursor-pointer active:scale-98">
+                        <div class="flex items-center gap-2">
+                            <span class="material-symbols-outlined text-lg">restaurant_menu</span>
+                            <span>صدور و ارسال جدول برنامه غذایی به پرونده من</span>
+                            <span class="bg-white/25 text-[10px] px-2 py-0.5 rounded-full font-sans">رایگان</span>
+                        </div>
+                        <span class="text-[10px] text-emerald-100 font-normal">
+                            ارسال مستقیم فایل به پروفایل • ذخیره در پرونده سلامت • چاپ و دانلود PDF
+                        </span>
                     </button>
 
-                    <div class="flex flex-col sm:flex-row gap-2.5">
-                        <a href="shop.php" id="calcCtaShop" class="flex-1 bg-emerald-400 hover:bg-emerald-300 text-slate-900 py-3 px-3.5 rounded-xl font-black text-xs text-center shadow-md transition-all flex items-center justify-center gap-1.5">
-                            <span class="material-symbols-outlined text-base">shopping_cart</span>
-                            <span>خرید غذای متناسب</span>
-                        </a>
-                        <a href="subscriptions.php" class="bg-white/15 hover:bg-white/25 text-white py-3 px-3.5 rounded-xl font-bold text-xs text-center transition-all flex items-center justify-center gap-1.5 border border-white/20">
-                            <span class="material-symbols-outlined text-base">autorenew</span>
-                            <span>اشتراک تحویل خودکار</span>
-                        </a>
+                    <div class="flex items-center justify-center gap-4 text-[10px] text-white/70 pt-1">
+                        <span class="flex items-center gap-1">
+                            <span class="material-symbols-outlined text-xs text-emerald-400">check</span>
+                            استاندارد WSAVA
+                        </span>
+                        <span class="flex items-center gap-1">
+                            <span class="material-symbols-outlined text-xs text-emerald-400">check</span>
+                            آرشیو دائمی در پروفایل
+                        </span>
+                        <span class="flex items-center gap-1">
+                            <span class="material-symbols-outlined text-xs text-emerald-400">check</span>
+                            بدون هزینه
+                        </span>
                     </div>
                 </div>
 
@@ -672,6 +700,94 @@ require_once 'includes/header.php';
     </div>
 </div>
 
+<!-- ========================================================================= -->
+<!-- MEAL PLAN SUCCESS & PROFILE DELIVERY MODAL                                -->
+<!-- ========================================================================= -->
+<div id="mealPlanSuccessModal" class="fixed inset-0 z-[10090] hidden items-center justify-center p-4 bg-black/75 backdrop-blur-md overflow-y-auto rtl text-right" onclick="if(event.target === this) closeMealPlanSuccessModal();">
+    <div class="bg-white rounded-[2rem] max-w-lg w-full shadow-2xl border border-slate-200 overflow-hidden my-6 relative transition-all animate-in fade-in zoom-in-95 duration-200">
+        <!-- Top Celebration Header -->
+        <div class="bg-gradient-to-br from-emerald-600 via-teal-700 to-[#002d72] p-6 text-white text-center relative overflow-hidden">
+            <div class="absolute -top-10 -left-10 w-32 h-32 bg-white/10 rounded-full blur-xl pointer-events-none"></div>
+            <button type="button" onclick="closeMealPlanSuccessModal()" class="absolute top-4 left-4 w-8 h-8 rounded-full bg-white/15 hover:bg-white/25 flex items-center justify-center text-white transition cursor-pointer">
+                <span class="material-symbols-outlined text-lg">close</span>
+            </button>
+            <div class="w-16 h-16 rounded-3xl bg-white/20 border-2 border-white/40 flex items-center justify-center text-3xl mx-auto mb-3 shadow-lg">
+                <span class="material-symbols-outlined text-3xl text-emerald-100">verified</span>
+            </div>
+            <h2 class="text-lg sm:text-xl font-black">جدول برنامه غذایی با موفقیت صادر شد!</h2>
+            <p class="text-xs text-emerald-100/90 mt-1">فایل اختصاصی رژیم غذایی در پرونده سلامت پت شما ذخیره گردید.</p>
+            <div class="mt-3 inline-flex items-center gap-2 bg-white/15 border border-white/20 px-3 py-1 rounded-xl text-xs font-mono">
+                <span>شناسه پرونده:</span>
+                <span id="successModalSerial" class="font-bold text-amber-300">ASENA-NUT-XXXX</span>
+            </div>
+        </div>
+
+        <!-- Content Details -->
+        <div class="p-6 space-y-4 text-xs">
+            <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-2">
+                <div class="flex items-center gap-2 font-bold text-slate-800">
+                    <span class="material-symbols-outlined text-emerald-600 text-base">task_alt</span>
+                    <span>محتوای سند ذخیره شده در پرونده شما:</span>
+                </div>
+                <ul class="text-[11px] text-slate-600 space-y-1.5 pr-5 list-disc">
+                    <li>جدول تفکیکی وعده‌های روزانه (صبح، عصر، شب با گرم دقیق)</li>
+                    <li>پروتکل بالینی تغییر تدریجی ۷ روزه جیره غذایی</li>
+                    <li>توصیه‌ها و هشدارهای فیزیولوژیک ویژه نژاد <span id="successModalBreed" class="font-bold text-emerald-700"></span></li>
+                    <li>برنامه مکمل‌های تجویزی و هیدراتاسیون بالینی روزانه</li>
+                </ul>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="space-y-2.5 pt-2">
+                <a id="successModalViewLink" href="#" target="_blank" rel="noopener noreferrer" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-3.5 px-4 rounded-xl font-black text-xs text-center shadow-lg shadow-emerald-600/25 transition flex items-center justify-center gap-2">
+                    <span class="material-symbols-outlined text-base">open_in_new</span>
+                    <span>مشاهده و چاپ فایل جدول برنامه غذایی</span>
+                </a>
+
+                <a href="profile.php#view-records" class="w-full bg-[#002d72] hover:bg-[#001a48] text-white py-3.5 px-4 rounded-xl font-bold text-xs text-center transition flex items-center justify-center gap-2">
+                    <span class="material-symbols-outlined text-base">folder_shared</span>
+                    <span>مشاهده در سوابق پزشکی و پروفایل من</span>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- AUTHENTICATION REQUIRED MODAL (FOR GUEST USERS)                           -->
+<!-- ========================================================================= -->
+<div id="mealPlanAuthModal" class="fixed inset-0 z-[10090] hidden items-center justify-center p-4 bg-black/75 backdrop-blur-md overflow-y-auto rtl text-right" onclick="if(event.target === this) closeMealPlanAuthModal();">
+    <div class="bg-white rounded-[2rem] max-w-md w-full shadow-2xl border border-slate-200 overflow-hidden my-6 relative transition-all animate-in fade-in zoom-in-95 duration-200">
+        <div class="bg-gradient-to-br from-[#001a48] to-[#002d72] p-6 text-white text-center relative">
+            <button type="button" onclick="closeMealPlanAuthModal()" class="absolute top-4 left-4 w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition cursor-pointer">
+                <span class="material-symbols-outlined text-lg">close</span>
+            </button>
+            <div class="w-14 h-14 rounded-2xl bg-amber-500/20 border border-amber-400/30 text-amber-300 flex items-center justify-center text-2xl mx-auto mb-3">
+                <span class="material-symbols-outlined text-2xl">lock_open</span>
+            </div>
+            <h3 class="text-base font-black">صدور و ذخیره در پرونده اختصاصی پت</h3>
+            <p class="text-xs text-white/70 mt-1">جهت ارسال فایل جدول برنامه غذایی و بایگانی دائمی در سوابق پزشکی، لطفاً وارد شوید.</p>
+        </div>
+
+        <div class="p-6 space-y-3 text-xs">
+            <div class="bg-amber-50 border border-amber-200 p-3.5 rounded-xl text-amber-900 text-[11px] leading-relaxed">
+                اطلاعات واردشده شما محفوظ است و بلافاصله پس از ورود، فایل جدول برنامه غذایی در پروفایل شما ثبت خواهد گردید.
+            </div>
+
+            <div class="space-y-2 pt-2">
+                <a href="login.php?redirect=calculator.php%3Fauto_issue%3D1" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-3 px-4 rounded-xl font-black text-xs text-center shadow-md transition flex items-center justify-center gap-2">
+                    <span class="material-symbols-outlined text-base">login</span>
+                    <span>ورود با شماره موبایل / حساب کاربری</span>
+                </a>
+                <a href="register.php?redirect=calculator.php%3Fauto_issue%3D1" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-800 py-3 px-4 rounded-xl font-bold text-xs text-center transition flex items-center justify-center gap-2">
+                    <span class="material-symbols-outlined text-base">person_add</span>
+                    <span>ثبت‌نام سریع در آسنا (رایگان)</span>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Interactive Calculator JavaScript Engine -->
 <script>
 (function() {
@@ -965,24 +1081,22 @@ require_once 'includes/header.php';
 
         // Treats (10% rule)
         const treatKcal = Math.round(mer * 0.10);
+        calcState.treatCalories = treatKcal;
 
-        // Update UI elements
-        document.getElementById('resCalories').innerHTML = mer.toLocaleString('fa-IR') + ' <span class="text-xs font-normal text-white/80 font-sans">kcal</span>';
-        document.getElementById('resKibbleGrams').innerHTML = kibbleGrams.toLocaleString('fa-IR') + ' <span class="text-xs font-normal text-white/80 font-sans">گرم</span>';
-        document.getElementById('resWaterMl').innerHTML = waterMl.toLocaleString('fa-IR') + ' <span class="text-xs font-normal text-white/80 font-sans">میلی‌لیتر</span>';
-        document.getElementById('resIdealWeight').innerHTML = idealW.toLocaleString('fa-IR') + ' <span class="text-xs font-normal text-white/80 font-sans">کیلوگرم</span>';
-        document.getElementById('resWeightProg').textContent = progText;
-        document.getElementById('resTreats').innerHTML = treatKcal.toLocaleString('fa-IR') + ' <span class="text-xs font-normal text-white/80 font-sans">kcal (قانون ۱۰٪)</span>';
-        document.getElementById('resMealPortion').textContent = meals + ' وعده ' + portionGrams.toLocaleString('fa-IR') + ' گرمی';
-
-        // Titles & Recommendations (includes Breed)
+        // Safely update Titles & Teaser Progress in Dashboard
         const petLabel = calcState.species === 'dog' ? 'سگ' : 'گربه';
         const stageLabel = calcState.stage === 'puppy' ? (calcState.species === 'dog' ? 'توله سگ' : 'بچه‌گربه') : (calcState.stage === 'senior' ? 'ارشد' : 'بالغ');
-        document.getElementById('resPetEmoji').textContent = calcState.species === 'dog' ? '🐕' : '🐈';
-        document.getElementById('resPetTitle').textContent = `برنامه غذایی ${petLabel} ${stageLabel} • نژاد ${calcState.race} (${W.toFixed(1)} کیلوگرم)`;
+        const petEmojiEl = document.getElementById('resPetEmoji');
+        if (petEmojiEl) petEmojiEl.textContent = calcState.species === 'dog' ? '🐕' : '🐈';
+
+        const petTitleEl = document.getElementById('resPetTitle');
+        if (petTitleEl) petTitleEl.textContent = `پایش بالینی ${petLabel} ${stageLabel} • نژاد ${calcState.race} (${W.toFixed(1)} کیلوگرم)`;
 
         const actDesc = calcState.activity === 'neutered' ? 'عقیم‌شده با تحرک معمول' : (calcState.activity === 'active' ? 'پرتحرک و فعال' : 'کم‌تحرک / نیازمند پایش کالری');
-        document.getElementById('resPetSubtitle').textContent = actDesc;
+        const petSubtitleEl = document.getElementById('resPetSubtitle');
+        if (petSubtitleEl) {
+            petSubtitleEl.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span><span>${actDesc} • آماده صدور نسخه</span>`;
+        }
 
         // Recommended Product Text matched to Breed & Life Stage
         let foodName = '';
@@ -1044,7 +1158,16 @@ require_once 'includes/header.php';
             if (data.success) {
                 calcState.aiAnalysis = data;
                 
-                // Update live dashboard
+                // Update live dashboard and teaser hints
+                const teaserAiEl = document.getElementById('teaserAiMetabolicSummary');
+                if (teaserAiEl && data.metabolic_analysis) {
+                    teaserAiEl.textContent = data.metabolic_analysis.substring(0, 160) + '... (نسخه کامل در فایل ارسالی به پرونده)';
+                }
+                const alertsEl = document.getElementById('teaserAlertsBadge');
+                if (alertsEl && Array.isArray(data.health_alerts)) {
+                    alertsEl.innerHTML = `<span>${data.health_alerts.length} زنگ خطر شناسایی شد</span><span class="text-amber-400 text-xs">⚠️</span>`;
+                }
+
                 if (aiSummaryEl) {
                     aiSummaryEl.textContent = data.metabolic_analysis;
                 }
@@ -1181,11 +1304,14 @@ require_once 'includes/header.php';
         }
     };
 
-    window.saveNutritionReportToProfile = async function() {
-        const btn = document.getElementById('btnSaveReport');
-        const origContent = btn.innerHTML;
-        btn.disabled = true;
-        btn.innerHTML = '<span class="material-symbols-outlined text-sm animate-spin">sync</span><span>در حال ثبت...</span>';
+    // Save & Send Meal Plan Chart to Profile Action
+    window.issueAndSendMealPlanToProfile = async function() {
+        const btn = document.getElementById('btnIssueMealPlan');
+        const origContent = btn ? btn.innerHTML : '';
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<div class="flex items-center justify-center gap-2 py-2"><span class="material-symbols-outlined text-lg animate-spin">sync</span><span class="text-xs font-black">در حال صدور نسخه و ارسال فایل به پرونده...</span></div>';
+        }
 
         try {
             const csrf = window.ASENA_CSRF_TOKEN || document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
@@ -1205,45 +1331,119 @@ require_once 'includes/header.php';
                     daily_calories: calcState.mer,
                     kibble_grams: calcState.kibbleGrams,
                     water_ml: calcState.waterMl,
+                    treat_calories: calcState.treatCalories || Math.round(calcState.mer * 0.10),
                     stage: calcState.stage,
                     activity: calcState.activity,
                     ai_analysis: calcState.aiAnalysis ? calcState.aiAnalysis.metabolic_analysis : '',
+                    ai_analysis_obj: calcState.aiAnalysis,
                     csrf_token: csrf
                 })
             });
 
             const data = await res.json();
+            if (btn) {
+                btn.innerHTML = origContent;
+                btn.disabled = false;
+            }
+
             if (data.success) {
-                btn.innerHTML = '<span class="material-symbols-outlined text-sm">check_circle</span><span>در پرونده ثبت شد</span>';
-                btn.className = 'px-5 py-2.5 rounded-xl bg-emerald-700 text-white text-xs font-black transition flex items-center justify-center gap-1.5 shadow-md';
-                if (typeof showToast === 'function') {
-                    showToast(data.message, 'success');
-                } else {
-                    alert(data.message);
-                }
+                // Clear any stored pending state
+                try { localStorage.removeItem('asena_pending_meal_plan'); } catch(e){}
+                showMealPlanSuccessModal(data);
             } else if (data.require_login) {
-                btn.innerHTML = origContent;
-                btn.disabled = false;
-                if (confirm('جهت ذخیره کارنامه در پرونده سلامت، ابتدا باید وارد حساب کاربری خود شوید. آیا مایل به ورود هستید؟')) {
-                    window.location.href = 'login.php?redirect=' + encodeURIComponent('calculator.php');
-                }
+                // Save current state in localStorage for automatic issue after login
+                try {
+                    localStorage.setItem('asena_pending_meal_plan', JSON.stringify(calcState));
+                } catch(e) {}
+                showMealPlanAuthModal();
             } else {
-                btn.innerHTML = origContent;
-                btn.disabled = false;
-                alert(data.message || 'خطا در ثبت کارنامه.');
+                alert(data.message || 'خطا در صدور جدول برنامه غذایی.');
             }
         } catch (e) {
-            btn.innerHTML = origContent;
-            btn.disabled = false;
+            if (btn) {
+                btn.innerHTML = origContent;
+                btn.disabled = false;
+            }
             console.error(e);
             alert('خطا در برقراری ارتباط با سرور.');
         }
     };
 
+    window.showMealPlanSuccessModal = function(data) {
+        const modal = document.getElementById('mealPlanSuccessModal');
+        if (!modal) return;
+        const serialEl = document.getElementById('successModalSerial');
+        const breedEl = document.getElementById('successModalBreed');
+        const viewLink = document.getElementById('successModalViewLink');
+
+        if (serialEl) serialEl.textContent = data.serial || 'ASENA-NUT-SUCCESS';
+        if (breedEl) breedEl.textContent = calcState.race;
+        if (viewLink && (data.file_url || data.view_url)) {
+            viewLink.href = data.view_url || data.file_url;
+        }
+
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        document.body.style.overflow = 'hidden';
+    };
+
+    window.closeMealPlanSuccessModal = function() {
+        const modal = document.getElementById('mealPlanSuccessModal');
+        if (modal) {
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+            document.body.style.overflow = '';
+        }
+    };
+
+    window.showMealPlanAuthModal = function() {
+        const modal = document.getElementById('mealPlanAuthModal');
+        if (modal) {
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            document.body.style.overflow = 'hidden';
+        }
+    };
+
+    window.closeMealPlanAuthModal = function() {
+        const modal = document.getElementById('mealPlanAuthModal');
+        if (modal) {
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+            document.body.style.overflow = '';
+        }
+    };
+
+    window.saveNutritionReportToProfile = async function() {
+        // Direct alias to issueAndSendMealPlanToProfile
+        return window.issueAndSendMealPlanToProfile();
+    };
+
     // Close on ESC
     document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') closeNutritionReportModal();
+        if (e.key === 'Escape') {
+            closeNutritionReportModal();
+            closeMealPlanSuccessModal();
+            closeMealPlanAuthModal();
+        }
     });
+
+    // Check for auto-issue after redirect login
+    try {
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('auto_issue') === '1') {
+            const saved = localStorage.getItem('asena_pending_meal_plan');
+            if (saved) {
+                const parsed = JSON.parse(saved);
+                if (parsed && typeof parsed === 'object') {
+                    Object.assign(calcState, parsed);
+                }
+                setTimeout(() => {
+                    issueAndSendMealPlanToProfile();
+                }, 800);
+            }
+        }
+    } catch(e) {}
 
     // Initial setup on load
     renderBreedChips();

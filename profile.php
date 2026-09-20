@@ -2688,18 +2688,27 @@ function switchSellerFin(period) {
 <?php if(empty($documents)): ?>
     <p class="text-sm text-on-surface-variant">هیچ سندی آپلود نشده است.</p>
 <?php else: ?>
-    <?php foreach($documents as $doc): ?>
-    <a href="<?php echo htmlspecialchars($doc['file_path']); ?>" download class="group p-4 bg-surface-container-low rounded-2xl flex items-center justify-between cursor-pointer hover:bg-white hover:shadow-md border border-transparent hover:border-primary-container transition-all">
+    <?php foreach($documents as $doc): 
+        $isMealPlan = str_contains($doc['title'] ?? '', 'برنامه غذایی') || str_ends_with($doc['file_path'] ?? '', '.html');
+        $docUrl = htmlspecialchars($doc['file_path'] ?? '#');
+        $targetAttr = $isMealPlan ? 'target="_blank" rel="noopener noreferrer"' : 'download';
+    ?>
+    <a href="<?php echo $docUrl; ?>" <?php echo $targetAttr; ?> class="group p-4 bg-surface-container-low rounded-2xl flex items-center justify-between cursor-pointer hover:bg-white hover:shadow-md border border-transparent hover:border-primary-container transition-all">
     <div class="flex items-center gap-4">
-    <div class="p-3 bg-status-active/10 text-status-active rounded-xl group-hover:scale-105 transition-transform">
-    <span class="material-symbols-outlined">description</span>
+    <div class="p-3 <?php echo $isMealPlan ? 'bg-emerald-500/15 text-emerald-600' : 'bg-status-active/10 text-status-active'; ?> rounded-xl group-hover:scale-105 transition-transform">
+    <span class="material-symbols-outlined"><?php echo $isMealPlan ? 'restaurant' : 'description'; ?></span>
     </div>
     <div>
-    <h4 class="text-sm font-bold text-on-surface"><?php echo htmlspecialchars($doc['title']); ?> - <?php echo htmlspecialchars($doc['pet_name']); ?></h4>
-    <p class="text-[11px] text-on-surface-variant font-medium persian-number mt-0.5">آپلود شده در: <?php echo date('Y/m/d', strtotime($doc['uploaded_at'])); ?></p>
+    <div class="flex items-center gap-2">
+        <h4 class="text-sm font-bold text-on-surface"><?php echo htmlspecialchars($doc['title']); ?> - <?php echo htmlspecialchars($doc['pet_name']); ?></h4>
+        <?php if ($isMealPlan): ?>
+            <span class="bg-emerald-100 text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded-full">نسخه بالینی</span>
+        <?php endif; ?>
+    </div>
+    <p class="text-[11px] text-on-surface-variant font-medium persian-number mt-0.5">ثبت شده در: <?php echo date('Y/m/d', strtotime($doc['uploaded_at'])); ?></p>
     </div>
     </div>
-    <span class="material-symbols-outlined text-on-surface-variant group-hover:-translate-x-1 transition-transform">download</span>
+    <span class="material-symbols-outlined text-on-surface-variant group-hover:-translate-x-1 transition-transform"><?php echo $isMealPlan ? 'open_in_new' : 'download'; ?></span>
     </a>
     <?php endforeach; ?>
 <?php endif; ?>

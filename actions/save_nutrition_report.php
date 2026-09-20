@@ -14,6 +14,7 @@ if (session_status() === PHP_SESSION_NONE) {
 
 require_once __DIR__ . '/../includes/db.php';
 require_once __DIR__ . '/../includes/functions.php';
+require_once __DIR__ . '/../includes/MealPlanGenerator.php';
 
 // Verify POST method
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -64,6 +65,14 @@ $waterMl = (int)($inputData['water_ml'] ?? 0);
 $activity = trim((string)($inputData['activity'] ?? 'neutered'));
 $stage = trim((string)($inputData['stage'] ?? 'adult'));
 $aiAnalysis = trim((string)($inputData['ai_analysis'] ?? ''));
+$aiAnalysisObj = $inputData['ai_analysis_obj'] ?? null;
+if (empty($aiAnalysisObj) && !empty($aiAnalysis)) {
+    $decodedAi = json_decode($aiAnalysis, true);
+    if (is_array($decodedAi)) {
+        $aiAnalysisObj = $decodedAi;
+    }
+}
+$treatCalories = (int)($inputData['treat_calories'] ?? (int)round($dailyCalories * 0.10));
 
 if ($weightKg <= 0 || $dailyCalories <= 0) {
     echo json_encode(['success' => false, 'message' => 'اطلاعات وزنی و کالری نامعتبر است.'], JSON_UNESCAPED_UNICODE);
@@ -71,6 +80,37 @@ if ($weightKg <= 0 || $dailyCalories <= 0) {
 }
 
 $reportSerial = 'ASENA-NUT-' . strtoupper(substr(bin2hex(random_bytes(4)), 0, 8));
+
+// Generate Standalone Meal Plan HTML Document File
+$mealPlansDir = __DIR__ . '/../uploads/meal_plans';
+if (!is_dir($mealPlansDir)) {
+    @mkdir($mealPlansDir, 0755, true);
+}
+
+$cleanSerialPart = strtolower(str_replace(['ASENA-', 'NUT-', 'DIET-'], '', $reportSerial));
+$fileName = 'meal_plan_' . $cleanSerialPart . '_' . time() . '.html';
+$relativeFilePath = 'uploads/meal_plans/' . $fileName;
+$fullFilePath = $mealPlansDir . '/' . $fileName;
+
+$htmlContent = MealPlanGenerator::generate([
+    'serial' => $reportSerial,
+    'pet_name' => $petName,
+    'species' => $species,
+    'race' => $race,
+    'weight_kg' => $weightKg,
+    'ideal_weight_kg' => $idealWeightKg,
+    'bcs_score' => $bcsScore,
+    'stage' => $stage,
+    'activity' => $activity,
+    'daily_calories' => $dailyCalories,
+    'kibble_grams' => $kibbleGrams,
+    'water_ml' => $waterMl,
+    'treat_calories' => $treatCalories,
+    'ai_analysis' => $aiAnalysisObj,
+    'created_at' => date('Y/m/d - H:i')
+]);
+
+@file_put_contents($fullFilePath, $htmlContent);
 
 try {
     $reportSummary = sprintf(
@@ -114,29 +154,33 @@ try {
         }
     }
 
-    // 2. Try inserting document / record if table exists
+    // 2. Try inserting document / record with file_path pointing to generated meal plan HTML
+    $docTitle = 'جدول و برنامه غذایی بالینی (' . $reportSerial . ')';
     try {
         $insDoc = $pdo->prepare("
             INSERT INTO pet_documents (user_id, pet_id, title, document_type, notes, file_path, uploaded_at)
-            VALUES (?, ?, ?, 'nutrition_assessment', ?, 'digital_report', NOW())
+            VALUES (?, ?, ?, 'nutrition_assessment', ?, ?, NOW())
         ");
-        $insDoc->execute([$userId, $petId, 'شناسنامه و برنامه تغذیه بالینی (' . $reportSerial . ')', $reportSummary]);
+        $insDoc->execute([$userId, $petId, $docTitle, $reportSummary, $relativeFilePath]);
     } catch (Exception $e) {
         // Fallback if notes column doesn't exist
         try {
             $insDoc = $pdo->prepare("
                 INSERT INTO pet_documents (user_id, pet_id, title, document_type, file_path, uploaded_at)
-                VALUES (?, ?, ?, 'nutrition_assessment', 'digital_report', NOW())
+                VALUES (?, ?, ?, 'nutrition_assessment', ?, NOW())
             ");
-            $insDoc->execute([$userId, $petId, 'شناسنامه و برنامه تغذیه بالینی (' . $reportSerial . ')']);
+            $insDoc->execute([$userId, $petId, $docTitle, $relativeFilePath]);
         } catch (Exception $e2) {}
     }
 
     echo json_encode([
         'success' => true,
-        'message' => 'شناسنامه تغذیه بالینی با موفقیت در پرونده سلامت حیوان خانگی شما ثبت گردید.',
+        'message' => 'جدول برنامه غذایی بالینی با موفقیت صادر و به پرونده سلامت شما در پروفایل ارسال گردید.',
         'serial' => $reportSerial,
         'pet_id' => $petId,
+        'file_path' => $relativeFilePath,
+        'file_url' => $relativeFilePath,
+        'view_url' => 'view_meal_plan.php?file=' . urlencode($fileName),
         'created_at' => date('Y-m-d H:i:s')
     ], JSON_UNESCAPED_UNICODE);
 
