@@ -20,11 +20,26 @@
     --asena-shadow-lg: 0 20px 35px -10px rgba(0, 26, 72, 0.15);
 }
 
-/* Persian Font & Tabular Digit Rendering */
+/* Root Viewport Scrolling & Persian Typography */
+html {
+    overflow-y: scroll;
+    overflow-x: hidden;
+    scroll-behavior: smooth;
+}
+
+body {
+    min-height: 100vh;
+    overflow-x: hidden;
+}
+
 body, button, input, select, textarea, a {
     font-family: 'Vazirmatn', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
+}
+
+/* Mobile Touch Ergonomics & Tap Delay Removal (Interactive Controls Only) */
+button, input, select, textarea, a, .btn, [role="button"] {
     touch-action: manipulation;
     -webkit-tap-highlight-color: transparent;
 }

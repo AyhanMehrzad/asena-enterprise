@@ -407,11 +407,15 @@ $nextPayoutFormatted = $fmtDateText->format($nextThursday) . ' ساعت ۲۲:۰�
     @media (min-width: 1024px) {
         #profile-sidebar {
             top: 0 !important;
+            bottom: 0 !important;
             z-index: 50 !important;
+            overflow-y: auto !important;
+            overscroll-behavior: contain;
             transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), padding 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
         }
         #profile-main {
             transition: margin-right 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+            padding-bottom: 8rem !important;
         }
         /* Dynamically adjust the desktop floating header to avoid sidebar collision */
         header.hidden.lg\:block {
@@ -495,7 +499,7 @@ $nextPayoutFormatted = $fmtDateText->format($nextThursday) . ' ساعت ۲۲:۰�
 <p class="text-xs text-on-surface-variant truncate"><?php echo htmlspecialchars($user['phone']); ?></p>
 </div>
 </div>
-<nav class="flex flex-col gap-1 flex-1 overflow-y-auto">
+<nav class="flex flex-col gap-1 flex-1 min-h-0 overflow-y-auto">
 <?php if ($isSeller): ?>
     <!-- Seller Sidebar Navigation Links -->
     <a class="flex items-center gap-3 px-4 py-3 bg-primary-container text-white rounded-xl font-bold transition-all shadow-md" href="profile.php?view=seller" title="پیشخوان و آمار فروش">
@@ -4654,7 +4658,9 @@ function switchSellerFin(period) {
             sidebar.classList.remove('translate-x-full');
             backdrop.classList.remove('hidden');
             setTimeout(() => backdrop.classList.remove('opacity-0'), 10);
-            document.body.style.overflow = 'hidden';
+            if (window.innerWidth < 1024) {
+                document.body.style.overflow = 'hidden';
+            }
         } else {
             sidebar.classList.add('translate-x-full');
             backdrop.classList.add('opacity-0');
@@ -4684,6 +4690,27 @@ function switchSellerFin(period) {
             console.warn('Failed to store sidebar state:', e);
         }
     }
+
+    // Sidebar Wheel Event Chaining: Seamlessly propagate scroll to main page when sidebar is at bounds
+    document.addEventListener('DOMContentLoaded', () => {
+        const pSidebar = document.getElementById('profile-sidebar');
+        if (pSidebar) {
+            pSidebar.addEventListener('wheel', (e) => {
+                const nav = pSidebar.querySelector('nav');
+                if (!nav) return;
+                const isNavScrollable = nav.scrollHeight > nav.clientHeight;
+                if (!isNavScrollable) {
+                    window.scrollBy({ top: e.deltaY, behavior: 'auto' });
+                } else {
+                    const atTop = nav.scrollTop <= 0 && e.deltaY < 0;
+                    const atBottom = nav.scrollTop + nav.clientHeight >= nav.scrollHeight - 1 && e.deltaY > 0;
+                    if (atTop || atBottom) {
+                        window.scrollBy({ top: e.deltaY, behavior: 'auto' });
+                    }
+                }
+            }, { passive: true });
+        }
+    });
 
     // ─── Marketplace Escrow Wallet Interactions ──────────────────────────────────
     function toggleWalletDetails() {

@@ -432,8 +432,15 @@
       - پیاده‌سازی نوار ظریف وضعیت آفلاین (`#offline-status-strip`) با پایش خودکار رویدادهای `online`/`offline` شبکه بدون مسدود کردن فرم‌ها یا پاک شدن اطلاعات کاربر.
       - افزودن ژست لمسی کشیدن به پایین (Swipe-down to dismiss) برای باتم‌شیت‌ها (`.mobile-bottom-sheet`) مشابه اپلیکیشن‌های بومی اندروید.
       - ارتقای کش سرویس‌ورکر به نسخه `v1.3.0`.
-    - **بهینه‌سازی اهداف لمسی و استایل دکمه چسبان شست ([`assets/css/enterprise-ui.css`](file:///opt/lampp/htdocs/asena/asena-enterprise/assets/css/enterprise-ui.css)):**
-      - حذف هایلایت خاکستری تاچ در موبایل، اعمال انیمیشن فشرده‌شدن فیزیکی دکمه‌ها (`active:scale-[0.97]`) و کلاس `.sticky-thumb-action-bar` با رعایت حاشیه ایمن `safe-area-inset-bottom`.
+48. **اصلاح بنیادین ارگونومی اسکرول دسکتاپ و تاچ‌پد لینوکس در پنل کاربری (App Shell Scroll Ergonomics & Touchpad Resolution):**
+    - **تفکیک `touch-action` از بدنه و رفع قفل اسکرول لینوکس ([`assets/css/enterprise-ui.css`](file:///opt/lampp/htdocs/asena/asena-enterprise/assets/css/enterprise-ui.css)):**
+      - حذف `touch-action: manipulation` از تگ‌های `body` و `html` و محدودسازی دقیق آن به المان‌های تعاملی (`button, input, select, textarea, a, .btn`)؛ این تداخل عامل اصلی قفل شدن ژست اسکرول دو انگشتی تاچ‌پد در مرورگر کروم روی سیستم‌عامل لینوکس بود.
+      - تنظیم اسکرول قطعی ریشه سند روی `html { overflow-y: scroll; scroll-behavior: smooth; }` جهت پایداری ناوبری و عدم پرش عرض صفحه.
+    - **زنجیره‌سازی هوشمند اسکرول سایدبار (Sidebar Wheel Event Chaining) در [`profile.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/profile.php):**
+      - افزودن لیسنر اختصاصی چرخ ماوس به سایدبار (`#profile-sidebar`) جهت انتقال خودکار اسکرول به صفحه اصلی در صورت عدم نیاز سایدبار به اسکرول یا رسیدن به انتهای لیست، تا کاربر در صورت قرار گرفتن نشانگر ماوس روی فضای سایدبار هرگز احساس گیر کردن نکند.
+      - افزودن کلاس `min-h-0` به منوی ناوبری سایدبار جهت انقباض استاندارد فلکس‌باکس و دسترسی همیشگی به دکمه‌های فوتر سایدبار (پشتیبانی و خروج).
+      - افزایش فاصله انتهای فضای کاربری (`padding-bottom: 8rem`) برای ایجاد حاشیه تنفس دیداری و پیمایش آزادانه کارت‌های زیرین پنل.
+      - محدودسازی قفل اسکرول بدنه (`document.body.style.overflow = 'hidden'`) صرفاً به صفحات کوچک موبایل (`window.innerWidth < 1024`).
 
 ---
 
