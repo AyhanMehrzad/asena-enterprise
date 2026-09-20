@@ -53,317 +53,285 @@ if ($userId > 0 && isset($pdo)) {
     </div>
 
     <!-- Main Drug Interaction Component -->
-    <div class="bg-gradient-to-br from-[#001a48] via-[#002d72] to-slate-900 rounded-[2.5rem] p-6 sm:p-10 lg:p-12 text-white shadow-2xl relative overflow-hidden border border-white/10 mb-12">
-        <!-- Background Decorative Ambient Glows -->
-        <div class="absolute -top-24 -left-24 w-96 h-96 bg-blue-500/15 rounded-full blur-3xl pointer-events-none"></div>
-        <div class="absolute -bottom-24 -right-24 w-96 h-96 bg-[#fd8100]/15 rounded-full blur-3xl pointer-events-none"></div>
+    <div class="max-w-4xl mx-auto bg-white rounded-3xl p-6 sm:p-10 shadow-xl border border-slate-200/80 mb-12 space-y-8">
 
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 relative z-10">
+        <!-- 1. Pet Species Selector -->
+        <div class="space-y-2.5">
+            <label class="text-xs sm:text-sm font-bold text-slate-800 flex items-center gap-2">
+                <span class="w-6 h-6 rounded-lg bg-blue-50 text-blue-700 flex items-center justify-center text-xs font-bold">۱</span>
+                <span>گونه حیوان خانگی را مشخص کنید:</span>
+            </label>
+            <div class="grid grid-cols-5 gap-2 sm:gap-3">
+                <button type="button" onclick="setDrugSpecies('dog')" id="drugSpeciesDog" class="drug-species-btn py-2.5 px-2 rounded-2xl font-bold text-xs flex flex-col sm:flex-row items-center justify-center gap-1.5 border transition cursor-pointer bg-[#001a48] text-white border-[#001a48] shadow-sm">
+                    <span class="text-base sm:text-lg">🐕</span>
+                    <span>سگ</span>
+                </button>
+                <button type="button" onclick="setDrugSpecies('cat')" id="drugSpeciesCat" class="drug-species-btn py-2.5 px-2 rounded-2xl font-bold text-xs flex flex-col sm:flex-row items-center justify-center gap-1.5 border transition cursor-pointer bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200">
+                    <span class="text-base sm:text-lg">🐈</span>
+                    <span>گربه</span>
+                </button>
+                <button type="button" onclick="setDrugSpecies('horse')" id="drugSpeciesHorse" class="drug-species-btn py-2.5 px-2 rounded-2xl font-bold text-xs flex flex-col sm:flex-row items-center justify-center gap-1.5 border transition cursor-pointer bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200">
+                    <span class="text-base sm:text-lg">🐎</span>
+                    <span>اسب</span>
+                </button>
+                <button type="button" onclick="setDrugSpecies('bird')" id="drugSpeciesBird" class="drug-species-btn py-2.5 px-2 rounded-2xl font-bold text-xs flex flex-col sm:flex-row items-center justify-center gap-1.5 border transition cursor-pointer bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200">
+                    <span class="text-base sm:text-lg">🦜</span>
+                    <span>پرنده</span>
+                </button>
+                <button type="button" onclick="setDrugSpecies('exotic')" id="drugSpeciesExotic" class="drug-species-btn py-2.5 px-2 rounded-2xl font-bold text-xs flex flex-col sm:flex-row items-center justify-center gap-1.5 border transition cursor-pointer bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200">
+                    <span class="text-base sm:text-lg">🐇</span>
+                    <span>اگزوتیک</span>
+                </button>
+            </div>
+        </div>
 
-            <!-- Left Form Column: Pet & Drug Selection (7 cols) -->
-            <div class="lg:col-span-7 space-y-6">
+        <!-- 2. Drug Search & Intake Manager -->
+        <div class="space-y-3 pt-2">
+            <label class="text-xs sm:text-sm font-bold text-slate-800 flex items-center justify-between">
+                <span class="flex items-center gap-2">
+                    <span class="w-6 h-6 rounded-lg bg-blue-50 text-blue-700 flex items-center justify-center text-xs font-bold">۲</span>
+                    <span>نام داروهای مصرفی همزمان را اضافه کنید:</span>
+                </span>
+                <span class="text-[11px] text-slate-500 font-normal">حداقل ۲ قلم جهت بررسی تداخل</span>
+            </label>
 
-                <!-- 1. Quick Pet Selection (For Logged In Users) -->
+            <!-- Search Input with Autocomplete Dropdown -->
+            <div class="relative">
+                <div class="flex items-center bg-slate-50 border-2 border-slate-200 rounded-2xl overflow-hidden p-1 focus-within:border-blue-600 focus-within:bg-white focus-within:ring-4 focus-within:ring-blue-100 transition">
+                    <span class="material-symbols-outlined text-slate-400 px-3.5 text-2xl">search</span>
+                    <input type="text" id="drugSearchInput" 
+                           placeholder="نام دارو را جستجو یا تایپ کنید (مثلاً: کارپروفن، پردنیزولون، انروفلوکساسین...)" 
+                           autocomplete="off"
+                           class="w-full py-3 text-xs sm:text-sm text-slate-800 bg-transparent focus:outline-none placeholder-slate-400">
+                    <button type="button" onclick="addCustomDrugFromInput()" class="bg-[#001a48] hover:bg-[#002d72] text-white text-xs sm:text-sm font-bold px-5 py-2.5 rounded-xl transition flex items-center gap-1 shrink-0 cursor-pointer shadow-sm">
+                        <span class="material-symbols-outlined text-lg">add</span>
+                        <span>افزودن دارو</span>
+                    </button>
+                </div>
+
+                <!-- Autocomplete Results Menu -->
+                <div id="drugSearchResults" class="hidden absolute top-full right-0 left-0 mt-2 bg-white rounded-2xl shadow-2xl border border-slate-200 z-50 overflow-hidden text-right max-h-64 overflow-y-auto">
+                    <!-- Populated dynamically via JS -->
+                </div>
+            </div>
+
+            <!-- Selected Medication Chips / Pills Container -->
+            <div class="space-y-2">
+                <div class="flex items-center justify-between text-[11px] text-slate-500">
+                    <span>داروهای انتخاب‌شده (<span id="drugCountBadge" class="font-bold text-blue-600 font-mono">۰</span> قلم):</span>
+                    <button type="button" onclick="clearAllDrugs()" class="text-slate-400 hover:text-red-600 transition text-[11px] cursor-pointer">پاک کردن همه</button>
+                </div>
+                
+                <div id="selectedDrugsContainer" class="min-h-[64px] bg-slate-50 rounded-2xl p-3 sm:p-4 border border-slate-200/80 flex flex-wrap items-center gap-2">
+                    <span id="emptyDrugsPrompt" class="text-xs text-slate-400 flex items-center gap-1.5 py-1 px-1">
+                        <span class="material-symbols-outlined text-base text-slate-400">info</span>
+                        هنوز دارویی اضافه نشده است. نام دارو را جستجو کرده یا مستقیماً تایپ و دکمه افزودن را بزنید.
+                    </span>
+                </div>
+            </div>
+
+            <!-- Subtle Quick Testing Presets -->
+            <div class="flex flex-wrap items-center gap-1.5 text-[11px] text-slate-500 pt-1">
+                <span class="text-slate-400 font-medium">نمونه‌های آزمایشی:</span>
+                <button type="button" onclick="loadScenario('nsaid_steroid')" class="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-rose-50 hover:text-rose-700 hover:border-rose-200 border border-slate-200 text-slate-600 transition cursor-pointer font-medium">
+                    کارپروفن + پردنیزولون
+                </button>
+                <button type="button" onclick="loadScenario('paracetamol_cat')" class="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-rose-50 hover:text-rose-700 hover:border-rose-200 border border-slate-200 text-slate-600 transition cursor-pointer font-medium">
+                    استامینوفن در گربه
+                </button>
+                <button type="button" onclick="loadScenario('antibiotic_sucralfate')" class="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-amber-50 hover:text-amber-700 hover:border-amber-200 border border-slate-200 text-slate-600 transition cursor-pointer font-medium">
+                    انروفلوکساسین + سوکرالفات
+                </button>
+                <button type="button" onclick="loadScenario('safe_duo')" class="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-200 border border-slate-200 text-slate-600 transition cursor-pointer font-medium">
+                    آموکسی‌سیلین + پروبیوتیک
+                </button>
+            </div>
+        </div>
+
+        <!-- 3. Progressive Disclosure Accordion: Optional Clinical Details -->
+        <div class="border border-slate-200 rounded-2xl overflow-hidden bg-slate-50/50">
+            <button type="button" onclick="togglePetDetailsAccordion()" class="w-full flex items-center justify-between p-3.5 sm:p-4 text-xs sm:text-sm font-bold text-slate-700 hover:bg-slate-100/80 transition cursor-pointer">
+                <span class="flex items-center gap-2">
+                    <span class="material-symbols-outlined text-slate-500 text-lg">tune</span>
+                    <span>مشخصات تکمیلی، وزن، بیماری‌های زمینه و یادداشت بالینی (اختیاری)</span>
+                </span>
+                <span id="accordionChevron" class="material-symbols-outlined text-slate-400 text-xl transition-transform duration-200">expand_more</span>
+            </button>
+            <div id="petDetailsContent" class="hidden p-4 sm:p-6 pt-2 border-t border-slate-200 space-y-4 bg-white">
+                
+                <!-- Quick Pet Selection (For Logged In Users) -->
                 <?php if (!empty($userPets)): ?>
-                <div class="space-y-2 bg-white/5 p-3.5 rounded-2xl border border-white/10">
-                    <label class="text-xs font-bold text-white/90 flex items-center gap-2">
-                        <span class="material-symbols-outlined text-amber-400 text-sm">pets</span>
+                <div class="space-y-1.5 bg-slate-50 p-3 rounded-xl border border-slate-200">
+                    <label class="text-[11px] font-bold text-slate-700 flex items-center gap-1.5">
+                        <span class="material-symbols-outlined text-amber-500 text-sm">pets</span>
                         <span>انتخاب سریع از میان پت‌های ثبت‌شده شما:</span>
                     </label>
-                    <div class="flex flex-wrap gap-2">
+                    <div class="flex flex-wrap gap-1.5">
                         <?php foreach ($userPets as $up): ?>
                         <button type="button" 
                                 onclick="selectRegisteredPet(<?= htmlspecialchars(json_encode($up), ENT_QUOTES, 'UTF-8') ?>)"
-                                class="registered-pet-btn px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-xs font-bold text-white border border-white/15 transition flex items-center gap-1.5 cursor-pointer">
+                                class="registered-pet-btn px-3 py-1.5 rounded-lg bg-white hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300 text-xs font-bold text-slate-700 border border-slate-200 transition flex items-center gap-1.5 cursor-pointer shadow-2xs">
                             <span><?= ($up['type'] === 'cat') ? '🐈' : (($up['type'] === 'horse') ? '🐎' : '🐕') ?></span>
                             <span><?= htmlspecialchars($up['name']) ?></span>
-                            <span class="text-[10px] text-white/60 font-mono"><?= $up['weight_kg'] > 0 ? (float)$up['weight_kg'] . ' kg' : '' ?></span>
+                            <span class="text-[10px] text-slate-400 font-mono"><?= $up['weight_kg'] > 0 ? (float)$up['weight_kg'] . ' kg' : '' ?></span>
                         </button>
                         <?php endforeach; ?>
                     </div>
                 </div>
                 <?php endif; ?>
 
-                <!-- 2. Pet Species & Clinical Profile -->
-                <div class="space-y-3">
-                    <label class="text-xs sm:text-sm font-bold text-white/90 flex items-center gap-2">
-                        <span class="w-6 h-6 rounded-lg bg-white/15 flex items-center justify-center text-xs">۱</span>
-                        مشخصات بالینی بیمار (گونه و جثه):
-                    </label>
-                    
-                    <!-- Species Switcher -->
-                    <div class="grid grid-cols-3 sm:grid-cols-5 gap-2">
-                        <button type="button" onclick="setDrugSpecies('dog')" id="drugSpeciesDog" class="drug-species-btn py-2.5 px-2 rounded-2xl font-black text-xs flex flex-col items-center justify-center gap-1 border-2 transition-all bg-blue-500 text-white border-blue-400 shadow-md cursor-pointer">
-                            <span class="text-lg">🐕</span>
-                            <span>سگ (Canine)</span>
-                        </button>
-                        <button type="button" onclick="setDrugSpecies('cat')" id="drugSpeciesCat" class="drug-species-btn py-2.5 px-2 rounded-2xl font-bold text-xs flex flex-col items-center justify-center gap-1 border-2 transition-all bg-white/10 text-white/80 border-white/15 hover:bg-white/15 cursor-pointer">
-                            <span class="text-lg">🐈</span>
-                            <span>گربه (Feline)</span>
-                        </button>
-                        <button type="button" onclick="setDrugSpecies('horse')" id="drugSpeciesHorse" class="drug-species-btn py-2.5 px-2 rounded-2xl font-bold text-xs flex flex-col items-center justify-center gap-1 border-2 transition-all bg-white/10 text-white/80 border-white/15 hover:bg-white/15 cursor-pointer">
-                            <span class="text-lg">🐎</span>
-                            <span>اسب (Equine)</span>
-                        </button>
-                        <button type="button" onclick="setDrugSpecies('bird')" id="drugSpeciesBird" class="drug-species-btn py-2.5 px-2 rounded-2xl font-bold text-xs flex flex-col items-center justify-center gap-1 border-2 transition-all bg-white/10 text-white/80 border-white/15 hover:bg-white/15 cursor-pointer">
-                            <span class="text-lg">🦜</span>
-                            <span>پرنده (Avian)</span>
-                        </button>
-                        <button type="button" onclick="setDrugSpecies('exotic')" id="drugSpeciesExotic" class="drug-species-btn py-2.5 px-2 rounded-2xl font-bold text-xs flex flex-col items-center justify-center gap-1 border-2 transition-all bg-white/10 text-white/80 border-white/15 hover:bg-white/15 cursor-pointer">
-                            <span class="text-lg">🐇</span>
-                            <span>اگزوتیک/خرگوش</span>
-                        </button>
+                <!-- Pet Name, Breed & Weight Fields -->
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div>
+                        <label class="block text-[11px] font-bold text-slate-600 mb-1">نام بیمار:</label>
+                        <input type="text" id="drugPetName" placeholder="مثال: لئو / بتی" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-blue-500">
                     </div>
-
-                    <!-- Pet Name, Breed & Weight Fields -->
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
-                        <div>
-                            <label class="block text-[11px] font-bold text-white/70 mb-1">نام بیمار:</label>
-                            <input type="text" id="drugPetName" placeholder="مثال: لئو / بتی" class="w-full bg-white/10 border border-white/20 rounded-xl px-3 py-2 text-xs text-white placeholder-white/40 focus:outline-none focus:border-blue-400">
-                        </div>
-                        <div>
-                            <label class="block text-[11px] font-bold text-white/70 mb-1">نژاد پت:</label>
-                            <input type="text" id="drugPetRace" placeholder="مثال: ژرمن شپرد / پرشین" class="w-full bg-white/10 border border-white/20 rounded-xl px-3 py-2 text-xs text-white placeholder-white/40 focus:outline-none focus:border-blue-400">
-                        </div>
-                        <div>
-                            <label class="block text-[11px] font-bold text-white/70 mb-1">وزن بیمار (کیلوگرم):</label>
-                            <div class="relative">
-                                <input type="number" id="drugPetWeight" value="12" min="0.2" max="120" step="0.5" class="w-full bg-white/10 border border-white/20 rounded-xl px-3 py-2 text-xs font-mono font-bold text-white focus:outline-none focus:border-blue-400 text-left dir-ltr pl-8">
-                                <span class="absolute left-2.5 top-2 text-[10px] text-white/50">kg</span>
-                            </div>
+                    <div>
+                        <label class="block text-[11px] font-bold text-slate-600 mb-1">نژاد پت:</label>
+                        <input type="text" id="drugPetRace" placeholder="مثال: ژرمن شپرد / پرشین" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-bold text-slate-600 mb-1">وزن بیمار (کیلوگرم):</label>
+                        <div class="relative">
+                            <input type="number" id="drugPetWeight" value="12" min="0.2" max="120" step="0.5" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-mono font-bold text-slate-800 focus:outline-none focus:border-blue-500 text-left dir-ltr pl-8">
+                            <span class="absolute left-2.5 top-2 text-[10px] text-slate-400">kg</span>
                         </div>
                     </div>
                 </div>
 
-                <!-- 3. Pre-existing Sensitive Conditions (بیماری‌های زمینه‌ای حساس) -->
-                <div class="space-y-2">
-                    <label class="text-xs font-bold text-white/90 flex items-center justify-between">
-                        <span class="flex items-center gap-1.5">
-                            <span class="material-symbols-outlined text-sm text-amber-300">clinical_notes</span>
-                            بیماری‌های زمینه‌ای و شرایط ویژه بیمار (اختیاری):
-                        </span>
-                        <span class="text-[10px] text-white/50">کلیک جهت انتخاب چندگانه</span>
-                    </label>
+                <!-- Pre-existing Sensitive Conditions -->
+                <div class="space-y-1.5">
+                    <label class="text-[11px] font-bold text-slate-600 block">بیماری‌های زمینه‌ای یا شرایط حساس بیمار:</label>
                     <div class="flex flex-wrap gap-1.5">
-                        <button type="button" onclick="toggleCondition(this, 'renal')" class="condition-chip px-2.5 py-1 rounded-lg text-xs font-medium bg-white/10 hover:bg-white/15 text-white/80 border border-white/15 transition cursor-pointer">
+                        <button type="button" onclick="toggleCondition(this, 'renal')" class="condition-chip px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 transition cursor-pointer">
                             نارسایی کلیوی (CKD)
                         </button>
-                        <button type="button" onclick="toggleCondition(this, 'hepatic')" class="condition-chip px-2.5 py-1 rounded-lg text-xs font-medium bg-white/10 hover:bg-white/15 text-white/80 border border-white/15 transition cursor-pointer">
+                        <button type="button" onclick="toggleCondition(this, 'hepatic')" class="condition-chip px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 transition cursor-pointer">
                             اختلال یا نارسایی کبدی
                         </button>
-                        <button type="button" onclick="toggleCondition(this, 'cardiac')" class="condition-chip px-2.5 py-1 rounded-lg text-xs font-medium bg-white/10 hover:bg-white/15 text-white/80 border border-white/15 transition cursor-pointer">
+                        <button type="button" onclick="toggleCondition(this, 'cardiac')" class="condition-chip px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 transition cursor-pointer">
                             بیماری قلبی / فشار خون
                         </button>
-                        <button type="button" onclick="toggleCondition(this, 'epilepsy')" class="condition-chip px-2.5 py-1 rounded-lg text-xs font-medium bg-white/10 hover:bg-white/15 text-white/80 border border-white/15 transition cursor-pointer">
+                        <button type="button" onclick="toggleCondition(this, 'epilepsy')" class="condition-chip px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 transition cursor-pointer">
                             صرع و سابقه تشنج
                         </button>
-                        <button type="button" onclick="toggleCondition(this, 'ulcer')" class="condition-chip px-2.5 py-1 rounded-lg text-xs font-medium bg-white/10 hover:bg-white/15 text-white/80 border border-white/15 transition cursor-pointer">
+                        <button type="button" onclick="toggleCondition(this, 'ulcer')" class="condition-chip px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 transition cursor-pointer">
                             زخم معده یا گوارشی
                         </button>
-                        <button type="button" onclick="toggleCondition(this, 'diabetes')" class="condition-chip px-2.5 py-1 rounded-lg text-xs font-medium bg-white/10 hover:bg-white/15 text-white/80 border border-white/15 transition cursor-pointer">
+                        <button type="button" onclick="toggleCondition(this, 'diabetes')" class="condition-chip px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 transition cursor-pointer">
                             دیابت
                         </button>
-                        <button type="button" onclick="toggleCondition(this, 'pregnancy')" class="condition-chip px-2.5 py-1 rounded-lg text-xs font-medium bg-white/10 hover:bg-white/15 text-white/80 border border-white/15 transition cursor-pointer">
+                        <button type="button" onclick="toggleCondition(this, 'pregnancy')" class="condition-chip px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 transition cursor-pointer">
                             بارداری یا شیردهی
                         </button>
-                        <button type="button" onclick="toggleCondition(this, 'mdr1')" class="condition-chip px-2.5 py-1 rounded-lg text-xs font-medium bg-white/10 hover:bg-white/15 text-white/80 border border-white/15 transition cursor-pointer">
+                        <button type="button" onclick="toggleCondition(this, 'mdr1')" class="condition-chip px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 transition cursor-pointer">
                             جهش ژنی حساسیت MDR1
                         </button>
                     </div>
                 </div>
 
-                <!-- 4. Drug Search & Intake Manager -->
-                <div class="space-y-3 pt-2 border-t border-white/10">
-                    <label class="text-xs sm:text-sm font-bold text-white/90 flex items-center justify-between">
-                        <span class="flex items-center gap-2">
-                            <span class="w-6 h-6 rounded-lg bg-white/15 flex items-center justify-center text-xs">۲</span>
-                            افزودن داروهای مصرفی همزمان:
-                        </span>
-                        <span class="text-[10px] text-blue-200">جستجو در داروخانه یا تایپ دستی</span>
-                    </label>
-
-                    <!-- Search Input with Autocomplete Dropdown -->
-                    <div class="relative">
-                        <div class="flex items-center bg-white rounded-2xl shadow-md overflow-hidden p-1">
-                            <span class="material-symbols-outlined text-slate-400 px-3 text-xl">search</span>
-                            <input type="text" id="drugSearchInput" 
-                                   placeholder="نام دارو را جستجو یا تایپ کنید (مثلاً: کارپروفن، پردنیزولون، انروفلوکساسین...)" 
-                                   autocomplete="off"
-                                   class="w-full py-2.5 text-xs text-slate-800 focus:outline-none placeholder-slate-400">
-                            <button type="button" onclick="addCustomDrugFromInput()" class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-4 py-2 rounded-xl transition flex items-center gap-1 shrink-0 cursor-pointer">
-                                <span class="material-symbols-outlined text-base">add</span>
-                                <span>افزودن دارو</span>
-                            </button>
-                        </div>
-
-                        <!-- Autocomplete Results Menu -->
-                        <div id="drugSearchResults" class="hidden absolute top-full right-0 left-0 mt-2 bg-white rounded-2xl shadow-2xl border border-slate-200 z-50 overflow-hidden text-right max-h-64 overflow-y-auto">
-                            <!-- Populated dynamically via JS -->
-                        </div>
-                    </div>
-
-                    <!-- Selected Medication Chips / Pills Container -->
-                    <div class="space-y-2">
-                        <div class="flex items-center justify-between text-[11px] text-white/70">
-                            <span>فهرست داروهای انتخاب‌شده (<span id="drugCountBadge" class="font-bold text-amber-300 font-mono">۰</span> قلم):</span>
-                            <button type="button" onclick="clearAllDrugs()" class="text-white/50 hover:text-white transition text-[10px] cursor-pointer">پاک کردن همه</button>
-                        </div>
-                        
-                        <div id="selectedDrugsContainer" class="min-h-[70px] bg-white/5 rounded-2xl p-3 border border-white/10 flex flex-wrap items-center gap-2">
-                            <span id="emptyDrugsPrompt" class="text-xs text-white/40 flex items-center gap-1.5 py-2 px-1">
-                                <span class="material-symbols-outlined text-sm">info</span>
-                                هنوز دارویی اضافه نشده است. حداقل ۲ داروی همزمان را جهت بررسی تداخل یا ۱ دارو را برای بررسی سمیت گونه‌ای وارد فرمایید.
-                            </span>
-                        </div>
-                    </div>
-
-                    <!-- One-Click Preset Clinical Scenarios -->
-                    <div class="pt-2">
-                        <div class="text-[11px] font-bold text-white/70 mb-1.5 flex items-center gap-1">
-                            <span class="material-symbols-outlined text-xs text-amber-400">science</span>
-                            <span>سناریوهای بالینی آماده (برای تست سریع سیستم):</span>
-                        </div>
-                        <div class="flex flex-wrap gap-1.5 text-[10px]">
-                            <button type="button" onclick="loadScenario('nsaid_steroid')" class="px-2.5 py-1 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-red-200 border border-red-400/30 font-bold transition flex items-center gap-1 cursor-pointer">
-                                <span>🚨 تداخل مرگبار: کارپروفن + پردنیزولون</span>
-                            </button>
-                            <button type="button" onclick="loadScenario('paracetamol_cat')" class="px-2.5 py-1 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-red-200 border border-red-400/30 font-bold transition flex items-center gap-1 cursor-pointer">
-                                <span>🚨 سمیت کشنده: استامینوفن در گربه</span>
-                            </button>
-                            <button type="button" onclick="loadScenario('antibiotic_sucralfate')" class="px-2.5 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 border border-amber-400/30 font-bold transition flex items-center gap-1 cursor-pointer">
-                                <span>⚠️ افت جذب: انروفلوکساسین + سوکرالفات</span>
-                            </button>
-                            <button type="button" onclick="loadScenario('safe_duo')" class="px-2.5 py-1 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-200 border border-emerald-400/30 font-bold transition flex items-center gap-1 cursor-pointer">
-                                <span>✅ هم‌افزای ایمن: آموکسی‌سیلین + پروبیوتیک</span>
-                            </button>
-                        </div>
-                    </div>
-
+                <!-- Pet Condition & Clinical History Input -->
+                <div class="space-y-1.5">
+                    <label class="text-[11px] font-bold text-slate-600 block">شرح وضعیت بالینی، علائم، آلرژی یا توضیحات سرپرست (جهت تحلیل هوش مصنوعی):</label>
+                    <textarea id="drugUserNotes" rows="2" placeholder="اگر حیوان شما دارای علائم خاصی مثل بی‌اشتهایی، استفراغ، آلرژی به داروی خاص یا سابقه جراحی اخیر است در اینجا بنویسید..." class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-blue-500 leading-relaxed"></textarea>
                 </div>
+            </div>
+        </div>
 
-                <!-- 5. Pet Condition & Clinical History Input -->
-                <div class="space-y-2 pt-2 border-t border-white/10">
-                    <label class="text-xs font-bold text-white/90 flex items-center justify-between">
-                        <span class="flex items-center gap-1.5">
-                            <span class="material-symbols-outlined text-sm text-blue-300">clinical_notes</span>
-                            <span>شرح وضعیت بالینی، علائم، آلرژی یا یادداشت سرپرست (اختیاری):</span>
-                        </span>
-                        <span class="text-[10px] text-blue-200">تحلیل عمیق هوش مصنوعی</span>
-                    </label>
-                    <textarea id="drugUserNotes" rows="2" placeholder="اگر حیوان شما دارای علائم خاصی مثل بی‌اشتهایی، استفراغ، آلرژی به داروی خاص، سابقه جراحی اخیر یا دستور ویژه پزشک است در اینجا بنویسید تا هوش مصنوعی در پایش تداخلات لحاظ نماید..." class="w-full bg-white/10 border border-white/20 rounded-xl p-2.5 text-xs text-white placeholder-white/40 focus:outline-none focus:border-blue-400 leading-relaxed"></textarea>
-                </div>
+        <!-- 4. Primary Action Button -->
+        <div>
+            <button type="button" onclick="runDrugInteractionAnalysis()" id="btnRunDrugAnalysis" class="w-full bg-[#001a48] hover:bg-[#002d72] text-white py-4 px-6 rounded-2xl font-black text-sm text-center shadow-lg shadow-blue-950/20 hover:shadow-xl transition-all flex items-center justify-center gap-2.5 cursor-pointer active:scale-98">
+                <span class="material-symbols-outlined text-2xl">psychology</span>
+                <span>شروع پایش و تحلیل بالینی تداخلات دارویی</span>
+            </button>
+        </div>
 
-                <!-- 6. Primary Analysis Action Button -->
-                <div class="pt-2">
-                    <button type="button" onclick="runDrugInteractionAnalysis()" id="btnRunDrugAnalysis" class="w-full bg-gradient-to-r from-blue-500 via-blue-600 to-indigo-600 hover:from-blue-400 hover:to-indigo-500 text-white py-4 px-6 rounded-2xl font-black text-sm text-center shadow-xl shadow-blue-600/30 hover:shadow-blue-500/50 transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-98">
-                        <span class="material-symbols-outlined text-xl">psychology</span>
-                        <span>شروع پایش و تحلیل تداخلات با هوش مصنوعی بالینی</span>
-                    </button>
-                </div>
+        <!-- 5. Detailed Interactive Results Container (Appears after analysis) -->
+        <div id="detailedResultsArea" class="space-y-4 pt-6 border-t-2 border-slate-100 hidden">
 
-                <!-- Mandatory Medical Disclaimer Box -->
-                <div class="p-3.5 rounded-2xl bg-red-950/40 border border-red-500/30 text-red-200 text-xs leading-relaxed space-y-1">
-                    <div class="font-bold text-red-300 flex items-center gap-1.5 text-xs">
-                        <span class="material-symbols-outlined text-sm text-red-400">gavel</span>
-                        <span>سلب مسئولیت پزشکی و هشدار سلامت:</span>
+            <!-- Verdict Banner / Safety Meter Box -->
+            <div id="safetyMeterBox" class="p-5 sm:p-6 rounded-2xl border text-center space-y-2 transition-all">
+                <div class="flex items-center justify-between border-b pb-3 mb-2">
+                    <div class="flex items-center gap-1.5 text-xs font-bold text-slate-700">
+                        <span class="material-symbols-outlined text-blue-600 text-lg">monitor_heart</span>
+                        <span>نتیجه ارزیابی بالینی فارماکوکینتیک</span>
                     </div>
-                    <p class="text-[11px] text-red-200/90 leading-normal">
-                        این ابزار صرفاً جنبه محاسبات تغذیه و شاخص بدنی دارد. تجویز هرگونه دارو، قرص ضدانگل، قطره ضدکک یا واکسیناسیون باید منحصراً توسط دکتر دامپزشک پس از معاینه بالینی حضوری انجام پذیرد. مصرف خودسرانه داروهای انسانی برای پتها خطر مسمومیت مرگبار دارد.
-                    </p>
+                    <span id="analysisStatusBadge" class="text-[10px] font-mono font-bold px-3 py-1 rounded-full">
+                    </span>
                 </div>
-
+                <div id="safetyIconWrap" class="w-14 h-14 rounded-2xl flex items-center justify-center text-3xl mx-auto shadow-xs">
+                    <span class="material-symbols-outlined text-3xl">medication_liquid</span>
+                </div>
+                <h4 id="safetyHeading" class="text-base sm:text-lg font-black"></h4>
+                <p id="safetySummaryText" class="text-xs sm:text-sm leading-relaxed max-w-xl mx-auto"></p>
             </div>
 
-            <!-- Right Results Column (5 cols) -->
-            <div class="lg:col-span-5 flex flex-col justify-between space-y-6">
+            <!-- AI Condition Assessment Callout -->
+            <div id="conditionAnalysisWrap" class="hidden"></div>
 
-                <!-- Clinical Verification Header Badge -->
-                <div class="bg-white/10 backdrop-blur-md rounded-3xl p-5 border border-white/15 space-y-3">
-                    <div class="flex items-center justify-between border-b border-white/10 pb-3">
-                        <div class="flex items-center gap-2">
-                            <span class="material-symbols-outlined text-blue-400 text-xl">monitor_heart</span>
-                            <span class="font-bold text-xs sm:text-sm">وضعیت ارزیابی فارماکوکینتیک</span>
-                        </div>
-                        <span id="analysisStatusBadge" class="text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-white/15 text-white/80">
-                            در انتظار داروها
-                        </span>
-                    </div>
-
-                    <!-- Dynamic Visual Safety Meter Card -->
-                    <div id="safetyMeterBox" class="p-4 rounded-2xl bg-white/5 border border-white/10 text-center space-y-2 transition-all">
-                        <div id="safetyIconWrap" class="w-14 h-14 rounded-2xl bg-blue-500/20 text-blue-300 flex items-center justify-center text-3xl mx-auto shadow-inner">
-                            <span class="material-symbols-outlined text-3xl">medication_liquid</span>
-                        </div>
-                        <h4 id="safetyHeading" class="text-base font-black text-white">پایشگر آماده بررسی است</h4>
-                        <p id="safetySummaryText" class="text-xs text-white/70 leading-relaxed">
-                            پس از افزودن داروهای پت، روی دکمه شروع پایش کلیک کنید تا آنالیز کامل شیمیایی و فیزیولوژیک صادر گردد.
-                        </p>
-                    </div>
-
-                    <!-- Detailed Interactive Results Container (Appears after analysis) -->
-                    <div id="detailedResultsArea" class="space-y-3 hidden">
-
-                        <!-- AI Condition Assessment Callout -->
-                        <div id="conditionAnalysisWrap" class="hidden"></div>
-
-                        <!-- Interactions Accordion List -->
-                        <div id="interactionsListWrapper" class="space-y-2">
-                            <!-- Populated dynamically via JS -->
-                        </div>
-
-                        <!-- Species Contraindications Alert -->
-                        <div id="contraindicationsWrapper" class="space-y-2">
-                            <!-- Populated dynamically via JS -->
-                        </div>
-
-                        <!-- Time Spacing Guidelines -->
-                        <div id="timeSpacingWrapper" class="bg-amber-950/40 border border-amber-400/30 p-3.5 rounded-2xl space-y-1.5 hidden text-xs">
-                            <div class="font-bold text-amber-200 flex items-center gap-1.5">
-                                <span class="material-symbols-outlined text-sm">schedule</span>
-                                <span>دستورالعمل فاصله زمانی بین داروها:</span>
-                            </div>
-                            <ul id="timeSpacingList" class="space-y-1 text-[11px] text-amber-100/90 list-disc list-inside"></ul>
-                        </div>
-
-                        <!-- Safe Synergies List -->
-                        <div id="safeCombinationsWrapper" class="bg-emerald-950/40 border border-emerald-400/30 p-3.5 rounded-2xl space-y-1.5 hidden text-xs">
-                            <div class="font-bold text-emerald-200 flex items-center gap-1.5">
-                                <span class="material-symbols-outlined text-sm">verified</span>
-                                <span>هم‌پوشانی‌های ایمن و مفید:</span>
-                            </div>
-                            <ul id="safeCombinationsList" class="space-y-1 text-[11px] text-emerald-100/90 list-disc list-inside"></ul>
-                        </div>
-
-                        <!-- Action Buttons: Save to Dossier & Print -->
-                        <div class="pt-3 border-t border-white/10 grid grid-cols-2 gap-2">
-                            <button type="button" onclick="saveDrugReportToProfile()" id="btnSaveReport" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-2.5 px-3 rounded-xl font-bold text-xs transition flex items-center justify-center gap-1.5 shadow-md cursor-pointer">
-                                <span class="material-symbols-outlined text-base">save</span>
-                                <span>ثبت در پرونده پت</span>
-                            </button>
-                            <button type="button" onclick="window.print()" class="w-full bg-white/15 hover:bg-white/25 text-white py-2.5 px-3 rounded-xl font-bold text-xs transition flex items-center justify-center gap-1.5 cursor-pointer">
-                                <span class="material-symbols-outlined text-base">print</span>
-                                <span>چاپ نسخه بالینی</span>
-                            </button>
-                        </div>
-
-                        <!-- Direct Bridge to Vet Booking or Pharmacy -->
-                        <div class="pt-1 flex items-center justify-between text-[11px] text-white/70">
-                            <a href="booking.php" class="hover:text-amber-300 transition flex items-center gap-1">
-                                <span class="material-symbols-outlined text-xs text-amber-400">videocam</span>
-                                <span>مشاوره ویزیت با دامپزشک آنلاین</span>
-                            </a>
-                            <a href="pharmacy.php" class="hover:text-blue-300 transition flex items-center gap-1">
-                                <span class="material-symbols-outlined text-xs text-blue-400">local_pharmacy</span>
-                                <span>داروخانه دامپزشکی آسنا</span>
-                            </a>
-                        </div>
-
-                    </div>
-
-                </div>
-
+            <!-- Interactions Accordion List -->
+            <div id="interactionsListWrapper" class="space-y-3">
+                <!-- Populated dynamically via JS -->
             </div>
 
+            <!-- Species Contraindications Alert -->
+            <div id="contraindicationsWrapper" class="space-y-3">
+                <!-- Populated dynamically via JS -->
+            </div>
+
+            <!-- Time Spacing Guidelines -->
+            <div id="timeSpacingWrapper" class="bg-amber-50 border border-amber-200 p-4 sm:p-5 rounded-2xl space-y-2 hidden text-xs">
+                <div class="font-bold text-amber-900 flex items-center gap-1.5">
+                    <span class="material-symbols-outlined text-base text-amber-700">schedule</span>
+                    <span>دستورالعمل فاصله زمانی بین داروها:</span>
+                </div>
+                <ul id="timeSpacingList" class="space-y-1.5 text-[11px] sm:text-xs text-amber-900 list-disc list-inside"></ul>
+            </div>
+
+            <!-- Safe Synergies List -->
+            <div id="safeCombinationsWrapper" class="bg-emerald-50 border border-emerald-200 p-4 sm:p-5 rounded-2xl space-y-2 hidden text-xs">
+                <div class="font-bold text-emerald-900 flex items-center gap-1.5">
+                    <span class="material-symbols-outlined text-base text-emerald-700">verified</span>
+                    <span>هم‌پوشانی‌های ایمن و مفید:</span>
+                </div>
+                <ul id="safeCombinationsList" class="space-y-1.5 text-[11px] sm:text-xs text-emerald-900 list-disc list-inside"></ul>
+            </div>
+
+            <!-- Action Buttons: Save to Dossier & Print -->
+            <div class="pt-2 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <button type="button" onclick="saveDrugReportToProfile()" id="btnSaveReport" class="w-full bg-[#001a48] hover:bg-[#002d72] text-white py-3 px-4 rounded-xl font-bold text-xs sm:text-sm transition flex items-center justify-center gap-2 shadow-sm cursor-pointer">
+                    <span class="material-symbols-outlined text-lg">save</span>
+                    <span>ثبت در پرونده سلامت پت</span>
+                </button>
+                <button type="button" onclick="window.print()" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 py-3 px-4 rounded-xl font-bold text-xs sm:text-sm transition flex items-center justify-center gap-2 border border-slate-200 cursor-pointer">
+                    <span class="material-symbols-outlined text-lg">print</span>
+                    <span>چاپ نسخه بالینی</span>
+                </button>
+            </div>
+
+            <!-- Direct Bridge to Vet Booking or Pharmacy -->
+            <div class="pt-2 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500 border-t border-slate-100">
+                <a href="booking.php" class="hover:text-blue-700 transition flex items-center gap-1.5 font-medium">
+                    <span class="material-symbols-outlined text-base text-amber-500">videocam</span>
+                    <span>مشاوره ویزیت با دامپزشک آنلاین</span>
+                </a>
+                <a href="pharmacy.php" class="hover:text-blue-700 transition flex items-center gap-1.5 font-medium">
+                    <span class="material-symbols-outlined text-base text-blue-600">local_pharmacy</span>
+                    <span>داروخانه دامپزشکی آسنا</span>
+                </a>
+            </div>
+
+        </div>
+
+        <!-- Mandatory Medical Disclaimer Box -->
+        <div class="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-950 text-xs leading-relaxed space-y-1.5">
+            <div class="font-bold text-rose-900 flex items-center gap-1.5 text-xs">
+                <span class="material-symbols-outlined text-sm text-rose-700">gavel</span>
+                <span>سلب مسئولیت پزشکی و هشدار سلامت:</span>
+            </div>
+            <p class="text-[11px] sm:text-xs text-rose-900/90 leading-relaxed">
+                این ابزار صرفاً جنبه محاسبات تغذیه و شاخص بدنی دارد. تجویز هرگونه دارو، قرص ضدانگل، قطره ضدکک یا واکسیناسیون باید منحصراً توسط دکتر دامپزشک پس از معاینه بالینی حضوری انجام پذیرد. مصرف خودسرانه داروهای انسانی برای پتها خطر مسمومیت مرگبار دارد.
+            </p>
         </div>
 
     </div>
@@ -476,17 +444,32 @@ if ($userId > 0 && isset($pdo)) {
     const emptyPrompt = document.getElementById('emptyDrugsPrompt');
     const drugCountBadge = document.getElementById('drugCountBadge');
 
+    // Toggle Pet Details Accordion Drawer
+    window.togglePetDetailsAccordion = function(forceOpen = false) {
+        const content = document.getElementById('petDetailsContent');
+        const chevron = document.getElementById('accordionChevron');
+        if (!content) return;
+        const isClosed = content.classList.contains('hidden');
+        if (forceOpen || isClosed) {
+            content.classList.remove('hidden');
+            if (chevron) chevron.classList.add('rotate-180');
+        } else {
+            content.classList.add('hidden');
+            if (chevron) chevron.classList.remove('rotate-180');
+        }
+    };
+
     // Species switcher
     window.setDrugSpecies = function(species) {
         state.species = species;
         document.querySelectorAll('.drug-species-btn').forEach(btn => {
-            btn.classList.remove('bg-blue-500', 'border-blue-400', 'shadow-md');
-            btn.classList.add('bg-white/10', 'text-white/80', 'border-white/15');
+            btn.classList.remove('bg-[#001a48]', 'text-white', 'border-[#001a48]', 'shadow-sm');
+            btn.classList.add('bg-slate-100', 'text-slate-700', 'border-slate-200');
         });
         const activeBtn = document.getElementById('drugSpecies' + species.charAt(0).toUpperCase() + species.slice(1));
         if (activeBtn) {
-            activeBtn.classList.remove('bg-white/10', 'text-white/80', 'border-white/15');
-            activeBtn.classList.add('bg-blue-500', 'border-blue-400', 'shadow-md');
+            activeBtn.classList.remove('bg-slate-100', 'text-slate-700', 'border-slate-200');
+            activeBtn.classList.add('bg-[#001a48]', 'text-white', 'border-[#001a48]', 'shadow-sm');
         }
     };
 
@@ -495,12 +478,12 @@ if ($userId > 0 && isset($pdo)) {
         const idx = state.conditions.indexOf(cond);
         if (idx === -1) {
             state.conditions.push(cond);
-            el.classList.add('bg-amber-500', 'text-slate-950', 'font-black', 'border-amber-400');
-            el.classList.remove('bg-white/10', 'text-white/80', 'border-white/15');
+            el.classList.add('bg-blue-600', 'text-white', 'font-bold', 'border-blue-600', 'shadow-2xs');
+            el.classList.remove('bg-slate-100', 'text-slate-700', 'border-slate-200');
         } else {
             state.conditions.splice(idx, 1);
-            el.classList.remove('bg-amber-500', 'text-slate-950', 'font-black', 'border-amber-400');
-            el.classList.add('bg-white/10', 'text-white/80', 'border-white/15');
+            el.classList.remove('bg-blue-600', 'text-white', 'font-bold', 'border-blue-600', 'shadow-2xs');
+            el.classList.add('bg-slate-100', 'text-slate-700', 'border-slate-200');
         }
     };
 
@@ -521,6 +504,8 @@ if ($userId > 0 && isset($pdo)) {
         state.petName = pet.name || '';
         state.race = pet.race || '';
         state.weight = parseFloat(pet.weight_kg) || 12;
+
+        togglePetDetailsAccordion(true);
     };
 
     // Add drug item
@@ -586,12 +571,12 @@ if ($userId > 0 && isset($pdo)) {
 
         state.drugs.forEach((d, idx) => {
             const chip = document.createElement('div');
-            chip.className = 'flex items-center gap-2 bg-white text-slate-800 py-1.5 px-3 rounded-xl text-xs font-bold shadow-sm border border-slate-200 animate-in fade-in zoom-in-95 duration-150';
+            chip.className = 'flex items-center gap-2 bg-white text-slate-800 py-1.5 px-3 rounded-xl text-xs font-bold shadow-xs border border-slate-200 animate-in fade-in zoom-in-95 duration-150';
             chip.innerHTML = `
                 <span class="material-symbols-outlined text-blue-600 text-sm">medication</span>
                 <span>${escapeHtml(d.name)}</span>
                 ${d.category ? `<span class="text-[9px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded">${escapeHtml(d.category)}</span>` : ''}
-                <button type="button" onclick="removeDrug(${idx})" class="w-4 h-4 rounded-full bg-slate-200 hover:bg-red-500 hover:text-white text-slate-600 flex items-center justify-center text-[10px] transition cursor-pointer">✕</button>
+                <button type="button" onclick="removeDrug(${idx})" class="w-4 h-4 rounded-full bg-slate-100 hover:bg-red-500 hover:text-white text-slate-500 flex items-center justify-center text-[10px] transition cursor-pointer">✕</button>
             `;
             selectedContainer.appendChild(chip);
         });
@@ -600,6 +585,7 @@ if ($userId > 0 && isset($pdo)) {
     // Quick Preset Scenarios
     window.loadScenario = function(type) {
         state.drugs = [];
+        togglePetDetailsAccordion(true);
         if (type === 'nsaid_steroid') {
             setDrugSpecies('dog');
             document.getElementById('drugPetName').value = 'تدی';
@@ -716,7 +702,7 @@ if ($userId > 0 && isset($pdo)) {
         const origContent = btn ? btn.innerHTML : '';
         if (btn) {
             btn.disabled = true;
-            btn.innerHTML = '<span class="material-symbols-outlined text-lg animate-spin">sync</span><span>در حال تطبیق فارماکوپیا و اسکن تداخلات...</span>';
+            btn.innerHTML = '<span class="material-symbols-outlined text-lg animate-spin">sync</span><span>در حال تطبیق فارماکوپیا و اسکن بالینی...</span>';
         }
 
         try {
@@ -773,40 +759,44 @@ if ($userId > 0 && isset($pdo)) {
         const overall = data.overall_safety || 'safe';
 
         // Reset styling classes
-        meterBox.className = 'p-5 rounded-2xl border text-center space-y-2 transition-all';
+        meterBox.className = 'p-5 sm:p-6 rounded-2xl border text-center space-y-2 transition-all';
 
         if (overall === 'critical') {
-            meterBox.classList.add('bg-red-950/60', 'border-red-500', 'text-red-100');
-            iconWrap.className = 'w-14 h-14 rounded-2xl bg-red-500/25 border border-red-400 text-red-300 flex items-center justify-center text-3xl mx-auto shadow-lg animate-pulse';
+            meterBox.classList.add('bg-rose-50', 'border-rose-300', 'text-rose-950');
+            iconWrap.className = 'w-14 h-14 rounded-2xl bg-rose-100 border border-rose-300 text-rose-600 flex items-center justify-center text-3xl mx-auto shadow-xs';
             iconWrap.innerHTML = '<span class="material-symbols-outlined text-3xl">dangerous</span>';
             heading.textContent = '🚨 هشدار بحرانی: منع مصرف قطعی / تداخل خطرناک';
-            heading.className = 'text-base font-black text-red-300';
+            heading.className = 'text-base sm:text-lg font-black text-rose-900';
+            summaryText.className = 'text-xs sm:text-sm text-rose-900/90 leading-relaxed max-w-xl mx-auto';
             safetyBadge.textContent = 'خطر بحرانی 🔴';
-            safetyBadge.className = 'text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-red-500/30 text-red-200 border border-red-500/40';
+            safetyBadge.className = 'text-[10px] font-mono font-bold px-3 py-1 rounded-full bg-rose-100 text-rose-800 border border-rose-300';
         } else if (overall === 'warning') {
-            meterBox.classList.add('bg-orange-950/60', 'border-orange-500', 'text-orange-100');
-            iconWrap.className = 'w-14 h-14 rounded-2xl bg-orange-500/25 border border-orange-400 text-orange-300 flex items-center justify-center text-3xl mx-auto shadow-lg';
+            meterBox.classList.add('bg-amber-50', 'border-amber-300', 'text-amber-950');
+            iconWrap.className = 'w-14 h-14 rounded-2xl bg-amber-100 border border-amber-300 text-amber-700 flex items-center justify-center text-3xl mx-auto shadow-xs';
             iconWrap.innerHTML = '<span class="material-symbols-outlined text-3xl">warning</span>';
             heading.textContent = '⚠️ احتیاط بالینی: نیاز به پایش یا تنظیم دوز';
-            heading.className = 'text-base font-black text-orange-300';
+            heading.className = 'text-base sm:text-lg font-black text-amber-900';
+            summaryText.className = 'text-xs sm:text-sm text-amber-900/90 leading-relaxed max-w-xl mx-auto';
             safetyBadge.textContent = 'احتیاط بالا 🟠';
-            safetyBadge.className = 'text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-orange-500/30 text-orange-200 border border-orange-500/40';
+            safetyBadge.className = 'text-[10px] font-mono font-bold px-3 py-1 rounded-full bg-amber-100 text-amber-800 border border-amber-300';
         } else if (overall === 'moderate') {
-            meterBox.classList.add('bg-amber-950/50', 'border-amber-500', 'text-amber-100');
-            iconWrap.className = 'w-14 h-14 rounded-2xl bg-amber-500/20 border border-amber-400 text-amber-300 flex items-center justify-center text-3xl mx-auto shadow-sm';
+            meterBox.classList.add('bg-yellow-50', 'border-yellow-300', 'text-yellow-950');
+            iconWrap.className = 'w-14 h-14 rounded-2xl bg-yellow-100 border border-yellow-300 text-yellow-800 flex items-center justify-center text-3xl mx-auto shadow-xs';
             iconWrap.innerHTML = '<span class="material-symbols-outlined text-3xl">schedule</span>';
             heading.textContent = 'تداخل متوسط: نیازمند رعایت فاصله زمانی';
-            heading.className = 'text-base font-black text-amber-300';
+            heading.className = 'text-base sm:text-lg font-black text-yellow-900';
+            summaryText.className = 'text-xs sm:text-sm text-yellow-900/90 leading-relaxed max-w-xl mx-auto';
             safetyBadge.textContent = 'تداخل متوسط 🟡';
-            safetyBadge.className = 'text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-amber-500/30 text-amber-200 border border-amber-500/40';
+            safetyBadge.className = 'text-[10px] font-mono font-bold px-3 py-1 rounded-full bg-yellow-100 text-yellow-800 border border-yellow-300';
         } else {
-            meterBox.classList.add('bg-emerald-950/50', 'border-emerald-500', 'text-emerald-100');
-            iconWrap.className = 'w-14 h-14 rounded-2xl bg-emerald-500/20 border border-emerald-400 text-emerald-300 flex items-center justify-center text-3xl mx-auto shadow-sm';
+            meterBox.classList.add('bg-emerald-50', 'border-emerald-300', 'text-emerald-950');
+            iconWrap.className = 'w-14 h-14 rounded-2xl bg-emerald-100 border border-emerald-300 text-emerald-700 flex items-center justify-center text-3xl mx-auto shadow-xs';
             iconWrap.innerHTML = '<span class="material-symbols-outlined text-3xl">check_circle</span>';
-            heading.textContent = 'وضعیت ایمن: تداخل فارماکولوژیک ثبت نشد';
-            heading.className = 'text-base font-black text-emerald-300';
+            heading.textContent = 'وضعیت ایمن: تداخل دارویی خطرناکی ثبت نشد';
+            heading.className = 'text-base sm:text-lg font-black text-emerald-900';
+            summaryText.className = 'text-xs sm:text-sm text-emerald-900/90 leading-relaxed max-w-xl mx-auto';
             safetyBadge.textContent = 'سازگار و ایمن 🟢';
-            safetyBadge.className = 'text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-emerald-500/30 text-emerald-200 border border-emerald-500/40';
+            safetyBadge.className = 'text-[10px] font-mono font-bold px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300';
         }
 
         summaryText.textContent = data.overall_summary || '';
@@ -816,12 +806,12 @@ if ($userId > 0 && isset($pdo)) {
         if (condWrap) {
             if (data.condition_analysis) {
                 condWrap.innerHTML = `
-                    <div class="p-3.5 rounded-2xl bg-blue-950/50 border border-blue-400/40 text-xs space-y-1 text-white shadow-inner">
-                        <div class="flex items-center gap-1.5 text-blue-300 font-bold text-xs">
-                            <span class="material-symbols-outlined text-base text-blue-400">psychology</span>
+                    <div class="p-4 rounded-2xl bg-blue-50 border border-blue-200 text-xs space-y-1.5 text-slate-800">
+                        <div class="flex items-center gap-1.5 text-blue-800 font-bold text-xs">
+                            <span class="material-symbols-outlined text-base text-blue-600">psychology</span>
                             <span>تحلیل اختصاصی هوش مصنوعی بالینی بر اساس وضعیت پت:</span>
                         </div>
-                        <p class="text-[11px] text-blue-100/90 leading-relaxed">${escapeHtml(data.condition_analysis)}</p>
+                        <p class="text-[11px] sm:text-xs text-slate-700 leading-relaxed">${escapeHtml(data.condition_analysis)}</p>
                     </div>
                 `;
                 condWrap.classList.remove('hidden');
@@ -841,23 +831,23 @@ if ($userId > 0 && isset($pdo)) {
                 const card = document.createElement('div');
                 const isCrit = (it.severity === 'critical');
                 card.className = isCrit 
-                    ? 'p-3.5 rounded-2xl bg-red-950/40 border border-red-500/40 text-xs space-y-2'
-                    : 'p-3.5 rounded-2xl bg-amber-950/30 border border-amber-500/30 text-xs space-y-2';
+                    ? 'p-4 sm:p-5 rounded-2xl bg-rose-50/70 border border-rose-200 text-xs space-y-2 text-slate-800'
+                    : 'p-4 sm:p-5 rounded-2xl bg-amber-50/70 border border-amber-200 text-xs space-y-2 text-slate-800';
                 card.innerHTML = `
                     <div class="flex items-center justify-between">
-                        <span class="font-black text-white flex items-center gap-1.5">
-                            <span class="px-2 py-0.5 rounded-md bg-white/10 font-mono text-[11px]">${escapeHtml(it.drug1)}</span>
-                            <span class="text-amber-400">⇄</span>
-                            <span class="px-2 py-0.5 rounded-md bg-white/10 font-mono text-[11px]">${escapeHtml(it.drug2)}</span>
+                        <span class="font-bold text-slate-800 flex items-center gap-1.5">
+                            <span class="px-2 py-0.5 rounded-md bg-white border border-slate-200 font-mono text-[11px] text-slate-700">${escapeHtml(it.drug1)}</span>
+                            <span class="text-amber-500 font-bold">⇄</span>
+                            <span class="px-2 py-0.5 rounded-md bg-white border border-slate-200 font-mono text-[11px] text-slate-700">${escapeHtml(it.drug2)}</span>
                         </span>
-                        <span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${isCrit ? 'bg-red-500/30 text-red-200' : 'bg-amber-500/30 text-amber-200'}">
+                        <span class="text-[10px] font-bold px-2.5 py-0.5 rounded-full ${isCrit ? 'bg-rose-100 text-rose-800 border border-rose-200' : 'bg-amber-100 text-amber-800 border border-amber-200'}">
                             ${escapeHtml(it.level_fa || (isCrit ? 'خطر شدید' : 'متوسط'))}
                         </span>
                     </div>
-                    <div class="font-bold text-[11px] ${isCrit ? 'text-red-300' : 'text-amber-300'}">${escapeHtml(it.title || '')}</div>
-                    <p class="text-[11px] text-white/80 leading-relaxed">${escapeHtml(it.mechanism || '')}</p>
-                    ${it.clinical_signs ? `<div class="text-[10px] text-white/60"><strong>علائم هشدار:</strong> ${escapeHtml(it.clinical_signs)}</div>` : ''}
-                    ${it.recommendation ? `<div class="bg-white/5 p-2 rounded-xl text-[11px] text-emerald-200 border border-white/5"><strong>دستورالعمل:</strong> ${escapeHtml(it.recommendation)}</div>` : ''}
+                    <div class="font-bold text-xs sm:text-sm ${isCrit ? 'text-rose-900' : 'text-amber-900'}">${escapeHtml(it.title || '')}</div>
+                    <p class="text-[11px] sm:text-xs text-slate-600 leading-relaxed">${escapeHtml(it.mechanism || '')}</p>
+                    ${it.clinical_signs ? `<div class="text-[10px] sm:text-[11px] text-slate-500"><strong>علائم هشدار:</strong> ${escapeHtml(it.clinical_signs)}</div>` : ''}
+                    ${it.recommendation ? `<div class="bg-white p-3 rounded-xl text-[11px] sm:text-xs text-emerald-800 border border-emerald-200"><strong>دستورالعمل بالینی:</strong> ${escapeHtml(it.recommendation)}</div>` : ''}
                 `;
                 itWrapper.appendChild(card);
             });
@@ -871,14 +861,14 @@ if ($userId > 0 && isset($pdo)) {
         if (contra.length > 0) {
             contra.forEach(c => {
                 const card = document.createElement('div');
-                card.className = 'p-3.5 rounded-2xl bg-red-950/60 border-2 border-red-500 text-xs space-y-2 text-white';
+                card.className = 'p-4 sm:p-5 rounded-2xl bg-rose-100/80 border-2 border-rose-300 text-xs space-y-2 text-rose-950';
                 card.innerHTML = `
-                    <div class="flex items-center gap-2 text-red-300 font-black">
-                        <span class="material-symbols-outlined text-lg">block</span>
-                        <span>${escapeHtml(c.title || 'منع مصرف')}</span>
+                    <div class="flex items-center gap-2 text-rose-900 font-black text-xs sm:text-sm">
+                        <span class="material-symbols-outlined text-lg text-rose-600">block</span>
+                        <span>${escapeHtml(c.title || 'منع مصرف گونه‌ای')}</span>
                     </div>
-                    <p class="text-[11px] text-red-100/90 leading-relaxed">${escapeHtml(c.mechanism || '')}</p>
-                    ${c.action ? `<div class="bg-red-500/20 p-2 rounded-xl text-[11px] text-red-200 font-bold">اقدام فوری: ${escapeHtml(c.action)}</div>` : ''}
+                    <p class="text-[11px] sm:text-xs text-rose-900/90 leading-relaxed">${escapeHtml(c.mechanism || '')}</p>
+                    ${c.action ? `<div class="bg-white/80 p-2.5 rounded-xl text-[11px] sm:text-xs text-rose-800 font-bold border border-rose-200">اقدام فوری: ${escapeHtml(c.action)}</div>` : ''}
                 `;
                 ctWrapper.appendChild(card);
             });
@@ -921,7 +911,7 @@ if ($userId > 0 && isset($pdo)) {
 
         // Show detailed results area
         resultsArea.classList.remove('hidden');
-        resultsArea.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        resultsArea.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
 
     // Populate Printable Hidden Element
@@ -975,7 +965,7 @@ if ($userId > 0 && isset($pdo)) {
         const safetyBadge = document.getElementById('analysisStatusBadge');
         if (safetyBadge) {
             safetyBadge.textContent = 'در انتظار داروها';
-            safetyBadge.className = 'text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-white/15 text-white/80';
+            safetyBadge.className = 'text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200';
         }
     }
 
