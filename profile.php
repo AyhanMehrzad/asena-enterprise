@@ -2755,22 +2755,11 @@ function switchSellerFin(period) {
             $petId = (int)($doc['pet_id'] ?? 0);
             $uploadedAt = $doc['uploaded_at'] ?? date('Y-m-d H:i:s');
             
-            $isMealPlan = str_contains($title, 'برنامه غذایی') || str_ends_with($path, '.html');
             $isDrugReport = str_contains($title, 'تداخل') || str_contains($path, 'drug_report');
+            $isMealPlan = str_contains($title, 'برنامه غذایی') || str_contains($path, 'meal_plan');
             $isDoctorClinicDoc = str_contains($path, 'clinical_docs');
 
-            if ($isMealPlan) {
-                $cat = 'nutrition';
-                $catLabel = 'رژیم غذایی بالینی';
-                $sourceType = 'calculator';
-                $sourceLabel = 'موتور هوش مصنوعی و محاسبه‌گر تغذیه بالینی آسنا (WSAVA & FEDIAF)';
-                $sourceBadge = '🤖 محاسبه‌گر تغذیه آسنا';
-                $sourceBadgeClass = 'bg-emerald-100 text-emerald-800 border-emerald-300';
-                $icon = 'restaurant';
-                $iconColor = 'text-emerald-600 bg-emerald-500/10 border-emerald-200';
-                $viewUrl = 'view_meal_plan.php?file=' . urlencode(basename($path));
-                $canDelete = false;
-            } elseif ($isDrugReport) {
+            if ($isDrugReport) {
                 $cat = 'drugs';
                 $catLabel = 'پایش تداخلات دارویی';
                 $sourceType = 'interactions';
@@ -2780,6 +2769,17 @@ function switchSellerFin(period) {
                 $icon = 'medication';
                 $iconColor = 'text-amber-600 bg-amber-500/10 border-amber-200';
                 $viewUrl = htmlspecialchars($path);
+                $canDelete = false;
+            } elseif ($isMealPlan) {
+                $cat = 'nutrition';
+                $catLabel = 'رژیم غذایی بالینی';
+                $sourceType = 'calculator';
+                $sourceLabel = 'موتور هوش مصنوعی و محاسبه‌گر تغذیه بالینی آسنا (WSAVA & FEDIAF)';
+                $sourceBadge = '🤖 محاسبه‌گر تغذیه آسنا';
+                $sourceBadgeClass = 'bg-emerald-100 text-emerald-800 border-emerald-300';
+                $icon = 'restaurant';
+                $iconColor = 'text-emerald-600 bg-emerald-500/10 border-emerald-200';
+                $viewUrl = 'view_meal_plan.php?file=' . urlencode(basename($path));
                 $canDelete = false;
             } elseif ($isDoctorClinicDoc) {
                 $cat = 'clinical';
