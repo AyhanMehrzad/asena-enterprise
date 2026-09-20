@@ -135,26 +135,50 @@ if ($isBooking) {
 
     $taxable_subtotal = max(0, $subtotal - $promoDiscount);
 
-    // Add 10% VAT (مصوب قانونی کل کشور بر اساس مبلغ مشمول مالیات پس از کسر تخفیف)
-    $tax_rate_pct = (float)get_setting($pdo, 'tax_rate_percent', 10.0);
-    $tax_amount   = (int)round($taxable_subtotal * ($tax_rate_pct / 100.0));
+    // Carrier & National Logistics Calculation
+    $selected_carrier = $_SESSION['selected_carrier'] ?? 'pishtaz';
+    if (!in_array($selected_carrier, ['pishtaz', 'tipax'])) {
+        $selected_carrier = 'pishtaz';
+    }
 
-    // Free Shipping & National Logistics Calculation
+    $total_cart_weight_grams = 0;
+    foreach ($pending_items as $pi) {
+        $total_cart_weight_grams += 450 * (int)$pi['qty'];
+    }
+    if ($total_cart_weight_grams <= 0) $total_cart_weight_grams = 450;
+
+    $extra_weight_fee = 0;
+    if ($total_cart_weight_grams > 1000) {
+        $extra_kg = ceil(($total_cart_weight_grams - 1000) / 1000.0);
+        $extra_weight_fee = (int)($extra_kg * 12000);
+    }
+
     $free_shipping_enabled   = (get_setting($pdo, 'free_shipping_enabled', '1') === '1');
     $free_shipping_threshold = (int)get_setting($pdo, 'free_shipping_threshold_toman', 600000);
     $standard_shipping_cost  = (int)get_setting($pdo, 'standard_shipping_cost_toman', 49000);
 
+    $pishtaz_total_cost = $standard_shipping_cost + $extra_weight_fee;
+    $tipax_total_cost   = max($standard_shipping_cost + 19000, 68000) + $extra_weight_fee;
+
     if ($checkout_type === 'autoship') {
         $shipping_cost = 0; // Always free for Autoship subscribers
+        $carrier_label = 'ارسال خودکار دوره‌ای (رایگان)';
     } else {
         if ($free_shipping_enabled && $taxable_subtotal >= $free_shipping_threshold) {
             $shipping_cost = 0;
+            $carrier_label = 'پست پیشتاز سراسری (ارسال رایگان)';
         } else {
-            $shipping_cost = $standard_shipping_cost;
+            $shipping_cost = ($selected_carrier === 'tipax') ? $tipax_total_cost : $pishtaz_total_cost;
+            $carrier_label = ($selected_carrier === 'tipax') ? 'تیپاکس اکسپرس' : 'پست پیشتاز سراسری';
         }
     }
 
-    $final_total  = $taxable_subtotal + $tax_amount + $shipping_cost;
+    // 10% Statutory VAT computed on BOTH (Product Subtotal + Shipping Cost)
+    $tax_rate_pct = (float)get_setting($pdo, 'tax_rate_percent', 10.0);
+    $tax_base     = $taxable_subtotal + $shipping_cost;
+    $tax_amount   = (int)round($tax_base * ($tax_rate_pct / 100.0));
+
+    $final_total  = $tax_base + $tax_amount;
 
     $duration_months = (int)($_GET['duration'] ?? 3);
     if (!in_array($duration_months, [3, 6, 12])) $duration_months = 3;
@@ -169,8 +193,8 @@ if ($isBooking) {
     } else {
         $payable_today = $final_total;
         $promoDesc = $promoCode ? " [کد تخفیف: {$promoCode}]" : "";
-        $shippingDesc = ($shipping_cost === 0) ? " [ارسال رایگان]" : " [کرایه حمل: " . number_format($shipping_cost) . " ت]";
-        $order_desc = "خرید از فروشگاه آسنا — " . count($pending_items) . " محصول{$shippingDesc}{$promoDesc}";
+        $shippingDesc = ($shipping_cost === 0) ? " [ارسال رایگان]" : " [کرایه حمل: " . number_format($shipping_cost) . " ت ({$carrier_label})]";
+        $order_desc = "خرید از فروشگاه آسنا — " . count($pending_items) . " محصول{$shippingDesc}{$promoDesc} [مالیات کل: " . number_format($tax_amount) . " ت]";
     }
 }
 
@@ -186,6 +210,8 @@ $orderMetadata = [
     'tax_amount' => $tax_amount ?? 0,
     'tax_rate_pct' => $tax_rate_pct ?? 10.0,
     'shipping_cost' => $shipping_cost ?? 0,
+    'carrier_name' => $carrier_label ?? 'شرکت ملی پست',
+    'dispatch_sla' => 'حداکثر ۲۴ ساعت کاری',
     'free_shipping_threshold' => $free_shipping_threshold ?? 600000,
     'promo_code' => $promoCode ?? null,
     'discount_amount' => $promoDiscount ?? 0
@@ -222,6 +248,8 @@ if ($isBooking || $isSmsPackage) {
         'promo_code'      => $promoCode,
         'promo_id'        => $promoId,
         'tax_amount'      => $tax_amount,
+        'shipping_cost'   => $shipping_cost,
+        'carrier_name'    => $carrier_label,
         'total_amount'    => $payable_today,
         'per_delivery'    => $final_total,
         'duration_months' => $duration_months,

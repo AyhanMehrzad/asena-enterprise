@@ -110,25 +110,64 @@ if (empty($applied_promo)) {
 
 $std_promo_discount = (int)($applied_promo['discount_amount'] ?? 0);
 $std_taxable_subtotal = max(0, $std_subtotal - $std_promo_discount);
-$std_tax_amount = (int)round($std_taxable_subtotal * ($tax_rate_pct / 100.0));
+
+// Selected Carrier from session or default
+$selected_carrier = $_SESSION['selected_carrier'] ?? 'pishtaz';
+if (!in_array($selected_carrier, ['pishtaz', 'tipax'])) {
+    $selected_carrier = 'pishtaz';
+}
+
+// Calculate total cart weight in grams
+$total_cart_weight_grams = 0;
+foreach ($standard_products as $p) {
+    $item_weight = !empty($p['weight_grams']) ? (int)$p['weight_grams'] : 450;
+    $total_cart_weight_grams += $item_weight * (int)$p['qty'];
+}
+if ($total_cart_weight_grams <= 0) {
+    $total_cart_weight_grams = max(450, count($standard_products) * 450);
+}
+
+// Extra weight fee: if parcel > 1000g, add 12,000 T per additional kg
+$extra_weight_fee = 0;
+if ($total_cart_weight_grams > 1000) {
+    $extra_kg = ceil(($total_cart_weight_grams - 1000) / 1000.0);
+    $extra_weight_fee = (int)($extra_kg * 12000);
+}
 
 // Free Shipping & National Logistics Calculation
 $free_shipping_enabled   = (get_setting($pdo, 'free_shipping_enabled', '1') === '1');
 $free_shipping_threshold = (int)get_setting($pdo, 'free_shipping_threshold_toman', 600000);
 $standard_shipping_cost  = (int)get_setting($pdo, 'standard_shipping_cost_toman', 49000);
 
+$pishtaz_base_cost = $standard_shipping_cost;
+$pishtaz_total_cost = $pishtaz_base_cost + $extra_weight_fee;
+
+$tipax_base_cost = max($standard_shipping_cost + 19000, 68000);
+$tipax_total_cost = $tipax_base_cost + $extra_weight_fee;
+
 if ($std_taxable_subtotal <= 0) {
     $std_shipping_cost = 0;
 } elseif ($free_shipping_enabled && $std_taxable_subtotal >= $free_shipping_threshold) {
     $std_shipping_cost = 0;
 } else {
-    $std_shipping_cost = $standard_shipping_cost;
+    $std_shipping_cost = ($selected_carrier === 'tipax') ? $tipax_total_cost : $pishtaz_total_cost;
 }
 
 $amount_to_free_shipping = max(0, $free_shipping_threshold - $std_taxable_subtotal);
 $shipping_progress_pct   = ($free_shipping_threshold > 0) ? min(100, (int)round(($std_taxable_subtotal / $free_shipping_threshold) * 100)) : 100;
 
-$std_final_price = $std_taxable_subtotal + $std_tax_amount + $std_shipping_cost;
+// VAT (10%) calculated on BOTH (Product Subtotal + Shipping Cost)
+$std_tax_base   = $std_taxable_subtotal + $std_shipping_cost;
+$std_tax_amount = (int)round($std_tax_base * ($tax_rate_pct / 100.0));
+
+// Final total payable = (Product Price + Shipping) + Tax of two of them together
+$std_final_price = $std_tax_base + $std_tax_amount;
+
+// Iranian Delivery Schedule & Earliest SLA Calculation
+require_once __DIR__ . '/includes/jdf.php';
+$now_ts = time();
+$pishtaz_delivery_fa = jdate('l j F', $now_ts + (2 * 86400)) . ' الی ' . jdate('l j F', $now_ts + (3 * 86400));
+$tipax_delivery_fa   = jdate('l j F', $now_ts + (1 * 86400)) . ' الی ' . jdate('l j F', $now_ts + (2 * 86400));
 
 $auto_subtotal = $auto_total_price - $auto_total_discount;
 $auto_tax_amount = (int)round($auto_subtotal * ($tax_rate_pct / 100.0));
@@ -394,6 +433,85 @@ if (empty($wishlist_products)) {
                             </div>
                         </div>
                         <?php endif; ?>
+
+                        <!-- Iranian Logistics & Fast Delivery SLA Card -->
+                        <div class="mt-8 bg-white p-5 md:p-6 rounded-3xl border border-outline-variant/40 shadow-xs space-y-4">
+                            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-outline-variant/30 pb-3">
+                                <div class="flex items-center gap-2">
+                                    <span class="material-symbols-outlined text-secondary-container text-xl">local_shipping</span>
+                                    <h3 class="font-bold text-sm text-primary">روش ارسال پستی و زمان‌بندی تحویل مرسوله</h3>
+                                </div>
+                                <div class="flex items-center gap-2 text-[11px] text-slate-500 font-medium">
+                                    <span class="inline-flex items-center gap-1 bg-slate-100 px-2.5 py-1 rounded-full text-slate-700 font-bold">
+                                        <span class="material-symbols-outlined text-xs text-secondary-container">scale</span>
+                                        <span>وزن تقریبی: <?= number_format($total_cart_weight_grams) ?> گرم</span>
+                                    </span>
+                                    <span class="inline-flex items-center gap-1 bg-blue-50 text-blue-800 px-2.5 py-1 rounded-full font-bold">
+                                        <span class="material-symbols-outlined text-xs">schedule</span>
+                                        <span>ارسال تامین‌کننده: ۲۴h کاری</span>
+                                    </span>
+                                </div>
+                            </div>
+
+                            <!-- Carrier Selection Radio Cards -->
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                                <!-- Pishtaz Card -->
+                                <label class="relative flex items-start gap-3 p-3.5 rounded-2xl border-2 transition-all cursor-pointer <?= ($selected_carrier === 'pishtaz') ? 'border-primary bg-primary/5 shadow-2xs' : 'border-outline-variant/30 hover:border-slate-300 bg-white' ?>">
+                                    <input type="radio" name="selected_carrier_radio" value="pishtaz" <?= ($selected_carrier === 'pishtaz') ? 'checked' : '' ?> onchange="changeCarrier('pishtaz')" class="mt-1 text-primary focus:ring-primary h-4 w-4">
+                                    <div class="flex-1 space-y-1">
+                                        <div class="flex items-center justify-between">
+                                            <span class="font-bold text-xs text-primary flex items-center gap-1">
+                                                <span>پست پیشتاز سراسری</span>
+                                                <?php if($free_shipping_enabled && $std_taxable_subtotal >= $free_shipping_threshold): ?>
+                                                    <span class="text-[9px] bg-emerald-100 text-emerald-800 font-black px-1.5 py-0.5 rounded-full">رایگان</span>
+                                                <?php endif; ?>
+                                            </span>
+                                            <span class="text-xs font-mono font-bold text-slate-800">
+                                                <?= ($free_shipping_enabled && $std_taxable_subtotal >= $free_shipping_threshold) ? 'رایگان' : number_format($pishtaz_total_cost) . ' ت' ?>
+                                            </span>
+                                        </div>
+                                        <p class="text-[11px] text-slate-500 leading-relaxed">
+                                            شرکت ملی پست جمهوری اسلامی ایران با کد رهگیری ۲۴ رقمی
+                                        </p>
+                                        <div class="flex items-center gap-1 text-[10px] text-emerald-700 font-bold pt-1">
+                                            <span class="material-symbols-outlined text-xs">bolt</span>
+                                            <span>سریع‌ترین موعد تحویل: <?= $pishtaz_delivery_fa ?></span>
+                                        </div>
+                                    </div>
+                                </label>
+
+                                <!-- Tipax Card -->
+                                <label class="relative flex items-start gap-3 p-3.5 rounded-2xl border-2 transition-all cursor-pointer <?= ($selected_carrier === 'tipax') ? 'border-secondary-container bg-secondary-container/5 shadow-2xs' : 'border-outline-variant/30 hover:border-slate-300 bg-white' ?>">
+                                    <input type="radio" name="selected_carrier_radio" value="tipax" <?= ($selected_carrier === 'tipax') ? 'checked' : '' ?> onchange="changeCarrier('tipax')" class="mt-1 text-secondary-container focus:ring-secondary-container h-4 w-4">
+                                    <div class="flex-1 space-y-1">
+                                        <div class="flex items-center justify-between">
+                                            <span class="font-bold text-xs text-primary flex items-center gap-1">
+                                                <span>تیپاکس اکسپرس</span>
+                                                <span class="text-[9px] bg-amber-100 text-amber-900 font-black px-1.5 py-0.5 rounded-full">سریع درب منزل</span>
+                                            </span>
+                                            <span class="text-xs font-mono font-bold text-slate-800">
+                                                <?= number_format($tipax_total_cost) ?> ت
+                                            </span>
+                                        </div>
+                                        <p class="text-[11px] text-slate-500 leading-relaxed">
+                                            تحویل اکسپرس بین‌شهری درب منزل یا کلینیک به همراه بیمه مرسوله
+                                        </p>
+                                        <div class="flex items-center gap-1 text-[10px] text-emerald-700 font-bold pt-1">
+                                            <span class="material-symbols-outlined text-xs">bolt</span>
+                                            <span>سریع‌ترین موعد تحویل: <?= $tipax_delivery_fa ?></span>
+                                        </div>
+                                    </div>
+                                </label>
+                            </div>
+
+                            <!-- Dispatch & Postal Policy Notice -->
+                            <div class="bg-slate-50 border border-slate-200/80 rounded-2xl p-3 flex items-start gap-2 text-[11px] text-slate-600">
+                                <span class="material-symbols-outlined text-slate-400 text-base shrink-0 mt-0.5">info</span>
+                                <p class="leading-relaxed">
+                                    <strong>شفافیت زمان تحویل:</strong> تمامی سفارشات ظرف حداکثر ۲۴ ساعت کاری توسط تامین‌کنندگان آسنا بسته‌بندی و تحویل باجه پستی / تیپاکس می‌گردد. پس از تحویل، کد رهگیری مرسوله پیامک شده و خط سیر توزیع از باجه تا آدرس شما به صورت آنلاین قابل پیگیری است.
+                                </p>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- Standard Summary Box -->
@@ -434,23 +552,23 @@ if (empty($wishlist_products)) {
                                 </div>
                                 <?php endif; ?>
 
-                                <div class="flex justify-between items-center text-slate-600 bg-slate-50 p-2.5 rounded-xl border border-slate-200/60">
-                                    <span class="flex items-center gap-1">
-                                        <span class="material-symbols-outlined text-sm text-slate-400">account_balance</span>
-                                        مالیات بر ارزش افزوده (<?= (int)$tax_rate_pct ?>٪):
-                                    </span>
-                                    <span class="font-bold font-mono text-slate-800">+<?= number_format($std_tax_amount) ?> تومان</span>
-                                </div>
                                 <div class="flex justify-between items-center text-on-surface-variant">
                                     <span class="flex items-center gap-1">
                                         <span class="material-symbols-outlined text-sm text-slate-400">local_shipping</span>
-                                        هزینه بسته‌بندی و ارسال:
+                                        هزینه ارسال (<?= ($selected_carrier === 'tipax') ? 'تیپاکس اکسپرس' : 'پست پیشتاز' ?>):
                                     </span>
                                     <?php if($std_shipping_cost === 0): ?>
                                         <span class="text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded-full">رایگان</span>
                                     <?php else: ?>
                                         <span class="font-bold font-mono text-slate-800">+<?= number_format($std_shipping_cost) ?> تومان</span>
                                     <?php endif; ?>
+                                </div>
+                                <div class="flex justify-between items-center text-slate-600 bg-slate-50 p-2.5 rounded-xl border border-slate-200/60">
+                                    <span class="flex items-center gap-1">
+                                        <span class="material-symbols-outlined text-sm text-slate-400">account_balance</span>
+                                        مالیات ارزش افزوده (<?= (int)$tax_rate_pct ?>٪ بر کالا و حمل):
+                                    </span>
+                                    <span class="font-bold font-mono text-slate-800">+<?= number_format($std_tax_amount) ?> تومان</span>
                                 </div>
                             </div>
 
@@ -1274,6 +1392,29 @@ function removePromoCode() {
                 location.reload();
             }, 300);
         }
+    })
+    .catch(() => {
+        location.reload();
+    });
+}
+
+function changeCarrier(carrier) {
+    const csrfToken = document.querySelector('input[name="csrf_token"]')?.value || '<?= csrf_token() ?>';
+    const formData = new FormData();
+    formData.append('action', 'set_carrier');
+    formData.append('carrier', carrier);
+    formData.append('active_tab', 'standard');
+    formData.append('ajax', '1');
+    formData.append('csrf_token', csrfToken);
+
+    fetch('actions/cart_action.php', {
+        method: 'POST',
+        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        body: formData
+    })
+    .then(r => r.json())
+    .then(data => {
+        location.reload();
     })
     .catch(() => {
         location.reload();

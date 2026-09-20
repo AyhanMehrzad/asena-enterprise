@@ -472,6 +472,16 @@ foreach ($sellerProducts as $p) {
                                 <span class="inline-block px-2.5 py-1 rounded-lg text-[11px] font-bold border <?= $badgeClass ?>">
                                     <?= $statusLabel ?>
                                 </span>
+                                <?php if ($ord['order_status'] === 'processing' || $ord['order_status'] === 'pending_payment'): 
+                                    $createdAtTs = strtotime($ord['order_date']);
+                                    $dispatchDeadlineTs = $createdAtTs + (24 * 3600);
+                                    $hoursLeft = round(($dispatchDeadlineTs - time()) / 3600);
+                                ?>
+                                    <div class="mt-1.5 flex items-center gap-1 text-[10px] font-bold text-amber-800 bg-amber-100/80 px-2 py-0.5 rounded-md border border-amber-200 whitespace-nowrap">
+                                        <span class="material-symbols-outlined text-xs">schedule</span>
+                                        <span>مهلت ارسال: <?= $hoursLeft > 0 ? "ظرف {$hoursLeft} ساعت آینده" : "پایان مهلت ۲۴h" ?></span>
+                                    </div>
+                                <?php endif; ?>
                             </td>
                             <td class="p-3.5">
                                 <?php if (!empty($ord['post_tracking_code'])): ?>

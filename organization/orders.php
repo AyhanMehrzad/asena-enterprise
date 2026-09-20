@@ -508,8 +508,10 @@ $fmtDate = new IntlDateFormatter('fa_IR@calendar=persian', IntlDateFormatter::FU
                             <div class="flex items-center gap-2 font-black text-emerald-900">
                                 <span class="material-symbols-outlined text-emerald-600">verified</span>
                                 <span>✅ نسخه توسط داروساز تأیید شد — آماده بسته‌بندی و ارسال</span>
+                            <div class="flex items-center gap-2">
+                                <span class="px-2.5 py-1 rounded-full bg-amber-100 text-amber-900 text-[10px] font-bold">مهلت ارسال: ظرف ۲۴h کاری</span>
+                                <span class="px-2.5 py-1 rounded-full bg-emerald-200 text-emerald-900 text-[10px] font-bold">قفل ارسال باز شد</span>
                             </div>
-                            <span class="px-2.5 py-1 rounded-full bg-emerald-200 text-emerald-900 text-[10px] font-bold">قفل ارسال باز شد</span>
                         </div>
 
                         <?php if (!empty($rx['pharmacist_notes'])): ?>

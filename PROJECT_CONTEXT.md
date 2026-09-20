@@ -83,6 +83,16 @@
 
 ## ۳. تاریخچه تغییرات اخیر (Change Log)
 
+### نسخه ۱.۰.۸ (سپتامبر ۲۰۲۶ - تطبیق فرمول مالیاتی کالا و حمل، مهلت ارسال ۲۴ ساعته تامین‌کننده و محاسبه چندحاملی پستی)
+1. **فرمول مالیات بر ارزش افزوده قانونی بر مجموع کالا و کرایه حمل:**
+   - اعمال دقیق فرمول مالیاتی مصوب بر مجموع ارزش ناخالص کالاها و کرایه پستی: `(Product Subtotal + Shipping Cost) + 10% VAT` در سبد خرید [`cart.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/cart.php)، درگاه شاپرک [`payment.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/payment.php)، ثبت نهایی سفارش [`actions/complete_payment.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/actions/complete_payment.php) و صدور فاکتور رسمی [`actions/generate_invoice.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/actions/generate_invoice.php).
+   - حفظ حریم مالی و پورسانت داخلی ۱۵٪ آسنا و ۸۵٪ فروشنده مطابق Rule 7 (بدون افشا در فاکتور مشتری).
+2. **انتخاب چندحاملی لجستیک کشوری و تخمین هوشمند اولین زمان تحویل:**
+   - افزودن کارت انتخاب حامل بین **پست پیشتاز سراسری (شرکت ملی پست)** و **تیپاکس اکسپرس (تحویل سریع درب منزل)** با محاسبه وزن کل مرسوله، اضافه وزن و سقف ارسال رایگان کشوری.
+   - نمایش شفاف **سریع‌ترین زمان ممکن تحویل** بر اساس استانداردهای ترانزیت پستی و تقویم شمسی (`jdate`).
+3. **الزام و پایش مهلت ارسال ۲۴ ساعته تامین‌کنندگان (Seller Dispatch SLA):**
+   - تعبیه نشان و هشدار مهلت ارسال مرسوله ظرف ۲۴ ساعت کاری در پرتال فروشندگان [`seller/index.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/seller/index.php) و سفارشات داروخانه/کلینیک [`organization/orders.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/organization/orders.php).
+
 ### نسخه ۱.۰.۷ (سپتامبر ۲۰۲۶ - پیکربندی انبارداری، سقف ارسال رایگان مرسولات سراسری و نماد اعتماد الکترونیکی)
 1. **پیکربندی انبارداری، هزینه حمل و سقف ارسال رایگان مرسولات:**
    - تعبیه سقف خرید برای ارسال رایگان (`free_shipping_threshold_toman`، پیش‌فرض ۶۰۰,۰۰۰ تومان) و هزینه ثابت ارسال زیر سقف (`standard_shipping_cost_toman`، پیش‌فرض ۴۹,۰۰۰ تومان) در پنل مدیریت مالی [`admin/finance_settings.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/admin/finance_settings.php).

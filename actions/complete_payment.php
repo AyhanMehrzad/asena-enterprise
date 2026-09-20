@@ -222,29 +222,41 @@ try {
             $fullShippingAddress .= ' (کد پستی: ' . $uAddr['postal_code'] . ')';
         }
 
-        // 1. Create order with real amount, discount, tax, promo_code, ref_id and shipping_address snapshot
+        // 1. Create order with real amount, discount, tax, shipping, carrier, promo_code, ref_id and shipping_address snapshot
         $discountAmount = (int)($pending['discount_amount'] ?? 0);
         $taxAmount      = (int)($pending['tax_amount'] ?? 0);
+        $shippingCost   = (int)($pending['shipping_cost'] ?? 0);
+        $carrierName    = !empty($pending['carrier_name']) ? $pending['carrier_name'] : 'شرکت ملی پست (پیشتاز)';
         $promoCode      = !empty($pending['promo_code']) ? $pending['promo_code'] : null;
         $promoId        = (int)($pending['promo_id'] ?? 0);
 
+        $fullShippingAddressWithSla = $fullShippingAddress . " [حامل: {$carrierName} | مهلت ارسال: ۲۴h کاری]";
+
         $orderStmt = $pdo->prepare(
-            "INSERT INTO orders (user_id, total_amount, discount_amount, tax_amount, promo_code, status, gateway_ref_id, shipping_address)
-             VALUES (?, ?, ?, ?, ?, 'processing', ?, ?)"
+            "INSERT INTO orders (user_id, total_amount, discount_amount, tax_amount, shipping_cost, carrier_name, promo_code, status, gateway_ref_id, shipping_address)
+             VALUES (?, ?, ?, ?, ?, ?, ?, 'processing', ?, ?)"
         );
         try {
-            $orderStmt->execute([$user_id, $total_amount, $discountAmount, $taxAmount, $promoCode, $ref_id, $fullShippingAddress]);
+            $orderStmt->execute([$user_id, $total_amount, $discountAmount, $taxAmount, $shippingCost, $carrierName, $promoCode, $ref_id, $fullShippingAddressWithSla]);
         } catch (PDOException $colErr) {
             try {
                 $orderStmt = $pdo->prepare(
-                    "INSERT INTO orders (user_id, total_amount, discount_amount, status, gateway_ref_id, shipping_address) VALUES (?, ?, ?, 'processing', ?, ?)"
+                    "INSERT INTO orders (user_id, total_amount, discount_amount, tax_amount, promo_code, status, gateway_ref_id, shipping_address)
+                     VALUES (?, ?, ?, ?, ?, 'processing', ?, ?)"
                 );
-                $orderStmt->execute([$user_id, $total_amount, $discountAmount, $ref_id, $fullShippingAddress]);
+                $orderStmt->execute([$user_id, $total_amount, $discountAmount, $taxAmount, $promoCode, $ref_id, $fullShippingAddressWithSla]);
             } catch (PDOException $colErr2) {
-                $orderStmt = $pdo->prepare(
-                    "INSERT INTO orders (user_id, total_amount, status, gateway_ref_id, shipping_address) VALUES (?, ?, 'processing', ?, ?)"
-                );
-                $orderStmt->execute([$user_id, $total_amount, $ref_id, $fullShippingAddress]);
+                try {
+                    $orderStmt = $pdo->prepare(
+                        "INSERT INTO orders (user_id, total_amount, discount_amount, status, gateway_ref_id, shipping_address) VALUES (?, ?, ?, 'processing', ?, ?)"
+                    );
+                    $orderStmt->execute([$user_id, $total_amount, $discountAmount, $ref_id, $fullShippingAddressWithSla]);
+                } catch (PDOException $colErr3) {
+                    $orderStmt = $pdo->prepare(
+                        "INSERT INTO orders (user_id, total_amount, status, gateway_ref_id, shipping_address) VALUES (?, ?, 'processing', ?, ?)"
+                    );
+                    $orderStmt->execute([$user_id, $total_amount, $ref_id, $fullShippingAddressWithSla]);
+                }
             }
         }
         $order_id = $pdo->lastInsertId();

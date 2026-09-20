@@ -111,6 +111,13 @@ if ($product_id > 0) {
             unset($_SESSION['cart_frequency'][$product_id]);
             break;
     }
+} elseif ($action === 'set_carrier') {
+    $carrier = trim($_POST['carrier'] ?? 'pishtaz');
+    if (in_array($carrier, ['pishtaz', 'tipax'])) {
+        $_SESSION['selected_carrier'] = $carrier;
+        $action_status = "success";
+        $action_message = "روش ارسال با موفقیت به‌روزرسانی شد.";
+    }
 }
 
 // Determine active tab to persist

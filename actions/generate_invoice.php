@@ -203,24 +203,26 @@ $qrApiUrl = "https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=" . u
     </table>
 
     <!-- Summary & Totals -->
+    <?php 
+    $shippingCost = (int)($order['shipping_cost'] ?? 0);
+    $productsBase = max(0, $taxableBase - $shippingCost);
+    ?>
     <table class="info-card">
         <tr>
-            <td style="width: 70%; text-align: left;" class="bold">جمع بهای کالاها و خدمات مشمول (مبنای مالیاتی):</td>
-            <td style="width: 30%;" class="bold"><?php echo number_format($taxableBase); ?> تومان</td>
+            <td style="width: 70%; text-align: left;" class="bold">جمع بهای کالاها و خدمات مشمول:</td>
+            <td style="width: 30%;" class="bold"><?php echo number_format($productsBase); ?> تومان</td>
         </tr>
         <tr>
-            <td style="text-align: left;" class="bold">مالیات بر ارزش افزوده و عوارض قانونی (۱۰٪):</td>
+            <td style="text-align: left;" class="bold">هزینه بسته‌بندی و ارسال (<?php echo htmlspecialchars($order['carrier_name'] ?: 'پست پیشتاز'); ?>):</td>
+            <td class="bold"><?php echo ($shippingCost > 0) ? number_format($shippingCost) . ' تومان' : 'رایگان (سقف کشوری)'; ?></td>
+        </tr>
+        <tr>
+            <td style="text-align: left;" class="bold">مالیات بر ارزش افزوده و عوارض قانونی (۱۰٪ بر کالا و حمل):</td>
             <td class="bold"><?php echo number_format($calculatedVat); ?> تومان</td>
         </tr>
-        <?php if (!empty($order['shipping_cost'])): ?>
-        <tr>
-            <td style="text-align: left;" class="bold">هزینه بسته‌بندی و ارسال (<?php echo htmlspecialchars($order['carrier_name'] ?: 'پست/تیپاکس'); ?>):</td>
-            <td class="bold"><?php echo number_format((int)$order['shipping_cost']); ?> تومان</td>
-        </tr>
-        <?php endif; ?>
         <tr style="background: #e8f4fd;">
-            <td style="text-align: left; font-size: 13px;" class="bold">مبلغ نهایی قابل پرداخت / پرداخت شده:</td>
-            <td style="font-size: 14px; color: #002d72;" class="bold"><?php echo number_format($grossTotal + (int)($order['shipping_cost'] ?? 0)); ?> تومان</td>
+            <td style="text-align: left; font-size: 13px;" class="bold">مبلغ نهایی فاکتور (پرداخت شده):</td>
+            <td style="font-size: 14px; color: #002d72;" class="bold"><?php echo number_format($grossTotal); ?> تومان</td>
         </tr>
     </table>
 
