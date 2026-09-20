@@ -1,5 +1,6 @@
 <?php
 require_once 'includes/db.php';
+require_once 'includes/MapService.php';
 if (!isset($_SESSION['user_id'])) {
     header("Location: login.php");
     exit;
@@ -307,9 +308,9 @@ exit;
 
             const map = L.map('map').setView([startLat, startLng], zoomLevel);
 
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            L.tileLayer('<?= MapService::TILE_URL ?>', {
                 maxZoom: 19,
-                attribution: '© OpenStreetMap'
+                attribution: '<?= addslashes(MapService::ATTRIBUTION) ?>'
             }).addTo(map);
 
             let marker = L.marker([startLat, startLng], {draggable: true}).addTo(map);

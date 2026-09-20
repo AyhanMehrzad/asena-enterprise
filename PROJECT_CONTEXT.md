@@ -442,6 +442,22 @@
       - افزایش فاصله انتهای فضای کاربری (`padding-bottom: 8rem`) برای ایجاد حاشیه تنفس دیداری و پیمایش آزادانه کارت‌های زیرین پنل.
       - محدودسازی قفل اسکرول بدنه (`document.body.style.overflow = 'hidden'`) صرفاً به صفحات کوچک موبایل (`window.innerWidth < 1024`).
 
+49. **یکپارچه‌سازی نقشه ملی مپ (Map.ir)، اعتبارسنجی الگوریتمی کد پستی ۱۰ رقمی و تعیین خودکار محدوده مکانی منزل (Map.ir Integration & Iranian Postal Intelligence):**
+    - **سرویس مرکزی نقشه و اطلاعات جغرافیایی ایران ([`includes/MapService.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/includes/MapService.php)):**
+      - تعریف تایل‌های رستر نقشه شیوه مپ (`https://map.ir/shiveh/xyz/1.0.0/Shiveh:Shiveh@EPSG:3857@png/{z}/{x}/{y}.png`) با کلید دسترسی فعال JWT.
+      - اتصال به سرویس معکوس آدرس‌یابی مپ (`https://map.ir/reverse`) با متادیتای باکیفیت فارسی (استان، شهر، محله، معبر اصلی و نشانی استاندارد پستی) و فال‌بک خودکار به Nominatim.
+      - دایرکتوری غنی پیش‌شماره‌های پستی ۳۱ استان و شهرهای کشور همراه با مختصات مرکز ثقل جغرافیایی هر ناحیه.
+    - **اعتبارسنجی الگوریتمی دقیق کد پستی ایران در فرانت‌اند و بک‌اند ([`actions/postal_code_lookup.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/actions/postal_code_lookup.php)، [`actions/profile_action.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/actions/profile_action.php) و [`actions/settings_action.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/actions/settings_action.php)):**
+      - تبدیل خودکار ارقام فارسی/عربی به انگلیسی و حذف کاراکترهای نامعتبر.
+      - فیلتر و رد کدهای جعلی و تکراری (نظیر ۱۰ رقم یکسان، بیش از ۳ رقم متوالی یکسان، توالی‌های آزمایشی مانند ۱۲۳۴۵۶۷۸۹۰، آغاز با ارقام غیرمجاز ۰ یا ۲، رقم پنجم نامعتبر طبق استانداردهای شرکت ملی پست، یا پنج رقم دوم تماماً صفر).
+      - جلوگیری قطعی در لایه کنترلر بک‌اند از ذخیره هرگونه کد پستی ساختگی و نامعتبر.
+    - **جایگزینی تایل‌های OpenStreetMap با نقشه مپ و ارگونومی تعیین موقعیت در پروفایل ([`profile.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/profile.php) و [`profile_settings.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/profile_settings.php)):**
+      - نمایش نقشه ملی Map.ir در تب نشانی‌های پروفایل با وضوح بالا، نام‌گذاری معابر به زبان فارسی و نشانگر تعاملی.
+      - پایش بلادرنگ ورودی کد پستی در فرانت‌اند: شمارشگر زنده ارقام، نشانگر وضعیت در حال استعلام، بج وضعیت اعتبار، و پرواز نرم دوربین نقشه (`flyTo`) به محدوده کد پستی کاربر همراه با پیشنهاد قرار دادن پین روی درب ورودی منزل.
+      - همگام‌سازی استخراج آدرس مپ و کد پستی هنگام جابجایی یا کلیک روی نشانگر نقشه.
+    - **به‌روزرسانی خط‌مشی امنیت محتوا ([`includes/SecurityMiddleware.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/includes/SecurityMiddleware.php)):**
+      - مجازسازی دامنه‌های `https://map.ir` و `https://*.map.ir` در هدر `connect-src` استاندارد CSP.
+
 ---
 
 ## ۴. پروتکل ثبت تغییرات آینده (Maintenance Rule)

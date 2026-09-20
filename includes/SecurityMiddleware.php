@@ -28,7 +28,7 @@ class SecurityMiddleware {
             "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net",
             "font-src 'self' data: https://fonts.gstatic.com",
             "img-src 'self' data: blob: https:",
-            "connect-src 'self' https://api.neshan.org https://*.tile.openstreetmap.org https://*.zarinpal.com https://*.shaparak.ir",
+            "connect-src 'self' https://map.ir https://*.map.ir https://api.neshan.org https://*.tile.openstreetmap.org https://*.zarinpal.com https://*.shaparak.ir",
             "frame-ancestors 'self'",
             "form-action 'self' https://*.zarinpal.com https://*.shaparak.ir",
             "base-uri 'self'"

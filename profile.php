@@ -1,6 +1,7 @@
 <?php
 require_once 'includes/db.php';
 require_once 'includes/AuthGuard.php';
+require_once 'includes/MapService.php';
 
 $user = AuthGuard::requireAuth();
 $user_id = (int)$user['id'];
@@ -2489,8 +2490,18 @@ function switchSellerFin(period) {
                         <input type="text" name="city" id="address_city" value="<?= htmlspecialchars($user['city'] ?? 'تبریز') ?>" required class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-secondary-container font-medium text-xs text-slate-800 bg-slate-50 focus:bg-white transition-all">
                     </div>
                     <div>
-                        <label class="block text-xs font-bold text-slate-700 mb-1.5">کد پستی ۱۰ رقمی (بدون خط تیره) *</label>
-                        <input type="text" name="postal_code" id="address_postal_code" value="<?= htmlspecialchars($user['postal_code'] ?? '') ?>" maxlength="10" required placeholder="مثلاً: 5138612345" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-secondary-container font-mono text-left dir-ltr text-xs text-slate-800 bg-slate-50 focus:bg-white transition-all">
+                        <label class="block text-xs font-bold text-slate-700 mb-1.5 flex items-center justify-between">
+                            <span>کد پستی ۱۰ رقمی (بدون خط تیره) *</span>
+                            <span id="postal-validation-badge" class="text-[10px] hidden font-bold"></span>
+                        </label>
+                        <div class="relative">
+                            <input type="text" name="postal_code" id="address_postal_code" value="<?= htmlspecialchars($user['postal_code'] ?? '') ?>" maxlength="10" required placeholder="مثلاً: 5138612345" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-secondary-container font-mono text-left dir-ltr text-xs text-slate-800 bg-slate-50 focus:bg-white transition-all">
+                            <div id="postal-status-spinner" class="absolute left-3 top-1/2 -translate-y-1/2 hidden items-center">
+                                <span class="material-symbols-outlined text-sm text-secondary-container animate-spin">sync</span>
+                            </div>
+                        </div>
+                        <p id="postal-error-hint" class="text-[11px] text-rose-600 font-medium mt-1 hidden"></p>
+                        <p id="postal-success-hint" class="text-[11px] text-emerald-700 font-medium mt-1 hidden"></p>
                     </div>
                 </div>
 
@@ -4838,11 +4849,12 @@ function switchSellerFin(period) {
 
         customerMap = L.map('customer-address-map', {
             zoomControl: true,
-            attributionControl: false
+            attributionControl: true
         }).setView([initialLat, initialLng], 14);
 
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            maxZoom: 19
+        L.tileLayer('<?= MapService::TILE_URL ?>', {
+            maxZoom: 19,
+            attribution: '<?= addslashes(MapService::ATTRIBUTION) ?>'
         }).addTo(customerMap);
 
         // Interactive Marker
@@ -4874,6 +4886,8 @@ function switchSellerFin(period) {
                 pillText.textContent = currentAddr.length > 50 ? currentAddr.substring(0, 50) + '...' : currentAddr;
             }
         }
+
+        initPostalCodeHandler();
     }
 
     function updateLatLngInputs(lat, lng) {
@@ -5060,6 +5074,173 @@ function switchSellerFin(period) {
                 pillText.textContent = 'نشانگر را جابجا کنید تا نشانی استخراج شود';
             }
         }, { enableHighAccuracy: true, timeout: 10000 });
+    }
+
+    // ─── Iranian Postal Code Intelligence & Location Resolver ──────────────────────
+    let postalAbortCtrl = null;
+    let postalHandlerInitialized = false;
+
+    function normalizePersianDigits(str) {
+        if (!str) return '';
+        const persian = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
+        const arabic  = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
+        let out = String(str);
+        for (let i = 0; i < 10; i++) {
+            out = out.split(persian[i]).join(i).split(arabic[i]).join(i);
+        }
+        return out.replace(/[^0-9]/g, '');
+    }
+
+    async function handlePostalCodeValidation(autoCenterMap = true) {
+        const input = document.getElementById('address_postal_code');
+        const badge = document.getElementById('postal-validation-badge');
+        const spinner = document.getElementById('postal-status-spinner');
+        const errHint = document.getElementById('postal-error-hint');
+        const succHint = document.getElementById('postal-success-hint');
+        const cityInput = document.getElementById('address_city');
+
+        if (!input) return;
+        const raw = input.value.trim();
+        const clean = normalizePersianDigits(raw);
+        input.value = clean;
+
+        if (!clean) {
+            if (badge) badge.className = 'hidden';
+            if (errHint) errHint.className = 'hidden';
+            if (succHint) succHint.className = 'hidden';
+            input.classList.remove('border-rose-500', 'border-emerald-500', 'ring-2', 'ring-rose-200', 'ring-emerald-200');
+            return;
+        }
+
+        if (clean.length < 10) {
+            if (badge) {
+                badge.className = 'text-[10px] text-amber-600 font-bold';
+                badge.textContent = `${clean.length} از ۱۰ رقم`;
+            }
+            if (errHint) errHint.className = 'hidden';
+            if (succHint) succHint.className = 'hidden';
+            input.classList.remove('border-rose-500', 'border-emerald-500', 'ring-2', 'ring-rose-200', 'ring-emerald-200');
+            return;
+        }
+
+        if (spinner) spinner.classList.remove('hidden');
+        if (postalAbortCtrl) postalAbortCtrl.abort();
+        postalAbortCtrl = new AbortController();
+
+        try {
+            const resp = await fetch(`actions/postal_code_lookup.php?postal_code=${clean}`, {
+                signal: postalAbortCtrl.signal
+            });
+            const res = await resp.json();
+
+            if (spinner) spinner.classList.add('hidden');
+
+            if (res && res.status === 'success' && res.data) {
+                input.classList.remove('border-rose-500', 'ring-rose-200');
+                input.classList.add('border-emerald-500', 'ring-2', 'ring-emerald-200');
+
+                if (badge) {
+                    badge.className = 'text-[10px] text-emerald-600 font-bold';
+                    badge.textContent = `✔ معتبر (${res.data.city})`;
+                }
+                if (errHint) errHint.className = 'hidden';
+                if (succHint) {
+                    succHint.className = 'text-[11px] text-emerald-700 font-medium mt-1';
+                    succHint.textContent = `موقعیت: ${res.data.display_address}`;
+                }
+
+                // Auto-fill city if empty or generic
+                if (cityInput && (!cityInput.value.trim() || cityInput.value === 'تبریز')) {
+                    cityInput.value = res.data.city;
+                }
+
+                // Auto-center map if requested
+                if (autoCenterMap && res.data.latitude && res.data.longitude) {
+                    if (!customerMap) initCustomerAddressMap();
+                    if (customerMap && customerMarker) {
+                        customerMap.flyTo([res.data.latitude, res.data.longitude], res.data.zoom || 15, { duration: 1.2 });
+                        customerMarker.setLatLng([res.data.latitude, res.data.longitude]);
+                        updateLatLngInputs(res.data.latitude, res.data.longitude);
+                        customerMarker.bindPopup(`
+                            <div style="font-family: 'Vazirmatn', sans-serif; text-align: right; direction: rtl; padding: 4px; font-size: 12px;">
+                                <b style="color: #001a48;">محدوده کد پستی ${res.data.formatted_code}:</b>
+                                <p style="margin: 4px 0 0 0; color: #334155;">${res.data.display_address}</p>
+                                <span style="font-size: 10px; color: #ea580c; display: block; margin-top: 4px;">📍 نشانگر را روی درب ورودی ساختمان خود قرار دهید.</span>
+                            </div>
+                        `).openPopup();
+                    }
+                }
+            } else {
+                input.classList.remove('border-emerald-500', 'ring-emerald-200');
+                input.classList.add('border-rose-500', 'ring-2', 'ring-rose-200');
+
+                if (badge) {
+                    badge.className = 'text-[10px] text-rose-600 font-bold';
+                    badge.textContent = '✖ نامعتبر';
+                }
+                if (succHint) succHint.className = 'hidden';
+                if (errHint) {
+                    errHint.className = 'text-[11px] text-rose-600 font-medium mt-1';
+                    errHint.textContent = res.message || 'کد پستی وارد شده معتبر نمی‌باشد.';
+                }
+            }
+        } catch (e) {
+            if (e.name === 'AbortError') return;
+            if (spinner) spinner.classList.add('hidden');
+            console.error('[PostalValidation] Error:', e);
+        }
+    }
+
+    function initPostalCodeHandler() {
+        if (postalHandlerInitialized) return;
+        postalHandlerInitialized = true;
+
+        const postalInput = document.getElementById('address_postal_code');
+        if (!postalInput) return;
+
+        postalInput.addEventListener('input', function() {
+            const val = normalizePersianDigits(this.value);
+            this.value = val;
+            if (val.length === 10) {
+                handlePostalCodeValidation(true);
+            } else if (val.length < 10) {
+                const badge = document.getElementById('postal-validation-badge');
+                if (badge) {
+                    badge.className = 'text-[10px] text-amber-600 font-bold';
+                    badge.textContent = `${val.length} از ۱۰ رقم`;
+                }
+                const errHint = document.getElementById('postal-error-hint');
+                if (errHint) errHint.className = 'hidden';
+                const succHint = document.getElementById('postal-success-hint');
+                if (succHint) succHint.className = 'hidden';
+                this.classList.remove('border-rose-500', 'border-emerald-500', 'ring-2', 'ring-rose-200', 'ring-emerald-200');
+            }
+        });
+
+        postalInput.addEventListener('blur', function() {
+            if (this.value.trim().length > 0) {
+                handlePostalCodeValidation(false);
+            }
+        });
+
+        // If postal code already present on load, validate silently
+        if (postalInput.value.trim().length === 10) {
+            handlePostalCodeValidation(false);
+        }
+
+        // Form submission safety guard
+        const form = postalInput.closest('form');
+        if (form) {
+            form.addEventListener('submit', function(e) {
+                const val = normalizePersianDigits(postalInput.value);
+                postalInput.value = val;
+                if (val.length !== 10) {
+                    e.preventDefault();
+                    alert('لطفاً کد پستی معتبر ۱۰ رقمی را وارد فرمایید.');
+                    postalInput.focus();
+                }
+            });
+        }
     }
 
     // ─── Modal Helpers ────────────────────────────────────────────────────────────

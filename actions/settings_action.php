@@ -64,12 +64,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($latitude === '') $latitude = null;
         if ($longitude === '') $longitude = null;
 
-        if (empty($postal_code)) {
-            $_SESSION['settings_error'] = "وارد کردن کد پستی الزامی است.";
-            $_SESSION['profile_error'] = "وارد کردن کد پستی الزامی است.";
+        require_once __DIR__ . '/../includes/MapService.php';
+        $postalVal = MapService::validatePostalCode($postal_code);
+
+        if (!$postalVal['valid']) {
+            $_SESSION['settings_error'] = $postalVal['error'];
+            $_SESSION['profile_error'] = $postalVal['error'];
             header("Location: ../profile.php#addresses");
             exit;
         } else {
+            $postal_code = $postalVal['code'];
             try {
                 $stmt = $pdo->prepare("UPDATE users SET city = ?, postal_code = ?, address = ?, latitude = ?, longitude = ? WHERE id = ?");
                 $stmt->execute([$city, $postal_code, $address, $latitude, $longitude, $user_id]);
