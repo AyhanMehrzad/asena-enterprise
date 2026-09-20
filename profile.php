@@ -2439,29 +2439,72 @@ function switchSellerFin(period) {
                 </div>
             </div>
 
+            <!-- Live Street & Place Search Bar via Map.ir Search v2 -->
+            <div class="relative z-[450]">
+                <div class="relative flex items-center">
+                    <span class="material-symbols-outlined absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-lg pointer-events-none">search</span>
+                    <input type="text" id="map-street-search" placeholder="جستجوی نام معبر، خیابان یا کوچه در نقشه مپ (مثلاً: کوی فیروز، خیابان کار پیشه، بهاران)..." autocomplete="off" class="w-full pr-11 pl-10 py-2.5 rounded-2xl border border-slate-200 bg-white text-xs font-medium text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100 shadow-xs transition-all">
+                    <button type="button" id="clear-map-search" onclick="clearMapSearch()" class="hidden absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer p-1">
+                        <span class="material-symbols-outlined text-sm">close</span>
+                    </button>
+                    <div id="map-search-spinner" class="hidden absolute left-3 top-1/2 -translate-y-1/2">
+                        <span class="material-symbols-outlined text-sm text-indigo-600 animate-spin">sync</span>
+                    </div>
+                </div>
+
+                <!-- Autocomplete Dropdown Menu -->
+                <div id="map-search-results" class="hidden absolute top-full right-0 left-0 mt-1.5 bg-white/98 backdrop-blur-md rounded-2xl shadow-2xl border border-slate-200/90 overflow-hidden divide-y divide-slate-100 max-h-64 overflow-y-auto">
+                </div>
+            </div>
+
             <!-- Quick City & Neighborhood Jumpers -->
             <div class="flex items-center gap-2 overflow-x-auto pb-1 text-xs scrollbar-none">
                 <span class="text-slate-400 font-bold shrink-0 text-[11px]">پرش سریع:</span>
-                <button type="button" onclick="jumpMapTo(38.0700, 46.2931, 14, 'تبریز')" class="px-3 py-1 rounded-xl bg-slate-100 hover:bg-primary/10 hover:text-primary font-bold transition-all shrink-0 active:scale-95 cursor-pointer">📍 تبریز</button>
-                <button type="button" onclick="jumpMapTo(38.0645, 46.3600, 15, 'ولیعصر تبریز')" class="px-3 py-1 rounded-xl bg-slate-100 hover:bg-primary/10 hover:text-primary font-bold transition-all shrink-0 active:scale-95 cursor-pointer">ولیعصر</button>
-                <button type="button" onclick="jumpMapTo(38.0580, 46.3750, 15, 'ائل‌گلی تبریز')" class="px-3 py-1 rounded-xl bg-slate-100 hover:bg-primary/10 hover:text-primary font-bold transition-all shrink-0 active:scale-95 cursor-pointer">ائل‌گلی</button>
-                <button type="button" onclick="jumpMapTo(38.0680, 46.3260, 15, 'آبرسان تبریز')" class="px-3 py-1 rounded-xl bg-slate-100 hover:bg-primary/10 hover:text-primary font-bold transition-all shrink-0 active:scale-95 cursor-pointer">آبرسان</button>
-                <button type="button" onclick="jumpMapTo(35.6892, 51.3890, 13, 'تهران')" class="px-3 py-1 rounded-xl bg-slate-100 hover:bg-primary/10 hover:text-primary font-bold transition-all shrink-0 active:scale-95 cursor-pointer">📍 تهران</button>
-                <button type="button" onclick="jumpMapTo(35.7800, 51.3700, 14, 'سعادت‌آباد')" class="px-3 py-1 rounded-xl bg-slate-100 hover:bg-primary/10 hover:text-primary font-bold transition-all shrink-0 active:scale-95 cursor-pointer">سعادت‌آباد</button>
+                <button type="button" onclick="jumpMapTo(38.0700, 46.2931, 14, 'تبریز')" class="px-3 py-1 rounded-xl bg-slate-100 hover:bg-indigo-50 hover:text-indigo-900 font-bold transition-all shrink-0 active:scale-95 cursor-pointer">📍 تبریز</button>
+                <button type="button" onclick="jumpMapTo(38.0697, 46.2647, 16, 'کوی فیروز')" class="px-3 py-1 rounded-xl bg-indigo-50 text-indigo-800 border border-indigo-200 hover:bg-indigo-100 font-bold transition-all shrink-0 active:scale-95 cursor-pointer">کوی فیروز</button>
+                <button type="button" onclick="jumpMapTo(38.0645, 46.3600, 15, 'ولیعصر تبریز')" class="px-3 py-1 rounded-xl bg-slate-100 hover:bg-indigo-50 hover:text-indigo-900 font-bold transition-all shrink-0 active:scale-95 cursor-pointer">ولیعصر</button>
+                <button type="button" onclick="jumpMapTo(38.0580, 46.3750, 15, 'ائل‌گلی تبریز')" class="px-3 py-1 rounded-xl bg-slate-100 hover:bg-indigo-50 hover:text-indigo-900 font-bold transition-all shrink-0 active:scale-95 cursor-pointer">ائل‌گلی</button>
+                <button type="button" onclick="jumpMapTo(38.0680, 46.3260, 15, 'آبرسان تبریز')" class="px-3 py-1 rounded-xl bg-slate-100 hover:bg-indigo-50 hover:text-indigo-900 font-bold transition-all shrink-0 active:scale-95 cursor-pointer">آبرسان</button>
+                <button type="button" onclick="jumpMapTo(35.6892, 51.3890, 13, 'تهران')" class="px-3 py-1 rounded-xl bg-slate-100 hover:bg-indigo-50 hover:text-indigo-900 font-bold transition-all shrink-0 active:scale-95 cursor-pointer">📍 تهران</button>
             </div>
 
-            <!-- Leaflet Map Container with Floating Real-time Address Pill -->
-            <div class="relative w-full rounded-2xl overflow-hidden border border-slate-200 shadow-inner">
+            <!-- Map.ir Map Container with Custom Glass Controls & Brand Badges -->
+            <div class="relative w-full rounded-3xl overflow-hidden border border-slate-200/90 shadow-md">
                 <div id="customer-address-map" class="w-full h-80 sm:h-96 z-0"></div>
-                
+
+                <!-- Custom Floating Map Controls (Map.ir Style) -->
+                <div class="absolute top-3 right-3 z-[400] flex flex-col gap-1.5">
+                    <button type="button" onclick="customerMapZoomIn()" title="بزرگ‌نمایی" class="w-9 h-9 rounded-xl bg-white/95 hover:bg-white text-slate-700 hover:text-indigo-900 shadow-md border border-slate-200/80 flex items-center justify-center transition-all cursor-pointer active:scale-90 font-black text-lg">
+                        +
+                    </button>
+                    <button type="button" onclick="customerMapZoomOut()" title="کوچک‌نمایی" class="w-9 h-9 rounded-xl bg-white/95 hover:bg-white text-slate-700 hover:text-indigo-900 shadow-md border border-slate-200/80 flex items-center justify-center transition-all cursor-pointer active:scale-90 font-black text-lg">
+                        −
+                    </button>
+                    <button type="button" onclick="locateUserPosition()" title="موقعیت مکانی دقیق من (GPS)" class="w-9 h-9 rounded-xl bg-white/95 hover:bg-blue-50 text-blue-600 shadow-md border border-slate-200/80 flex items-center justify-center transition-all cursor-pointer active:scale-90">
+                        <span class="material-symbols-outlined text-lg">my_location</span>
+                    </button>
+                    <button type="button" id="recenter-tour-btn" onclick="recenterPostalTour()" title="بازگشت به محدوده کد پستی" class="hidden w-9 h-9 rounded-xl bg-white/95 hover:bg-indigo-50 text-indigo-700 shadow-md border border-slate-200/80 items-center justify-center transition-all cursor-pointer active:scale-90">
+                        <span class="material-symbols-outlined text-lg">crop_free</span>
+                    </button>
+                </div>
+
                 <!-- Floating Geocoding Live Indicator -->
-                <div id="map-address-pill" class="absolute top-3 left-3 right-3 sm:right-3 sm:left-auto max-w-md bg-white/95 backdrop-blur-md px-3.5 py-2.5 rounded-2xl text-xs font-bold text-slate-800 shadow-xl border border-slate-200/90 z-[400] flex items-center gap-2.5 transition-all">
-                    <span id="map-pill-icon" class="material-symbols-outlined text-secondary-container text-lg shrink-0">location_on</span>
+                <div id="map-address-pill" class="absolute top-3 left-3 right-14 sm:right-auto sm:max-w-md bg-white/95 backdrop-blur-md px-3.5 py-2.5 rounded-2xl text-xs font-bold text-slate-800 shadow-xl border border-slate-200/90 z-[400] flex items-center gap-2.5 transition-all">
+                    <span id="map-pill-icon" class="material-symbols-outlined text-indigo-700 text-lg shrink-0">location_on</span>
                     <span id="map-pill-text" class="truncate font-medium">روی نقشه کلیک کنید تا نشانی استخراج شود</span>
                 </div>
 
+                <!-- Official Map.ir Brand Watermark Badge -->
+                <div class="absolute bottom-3 left-3 z-[400]">
+                    <a href="https://map.ir" target="_blank" rel="noopener noreferrer" class="flex items-center gap-1.5 px-3 py-1.5 bg-white/95 backdrop-blur-md rounded-xl shadow-md border border-slate-200/90 text-[11px] font-black text-slate-700 hover:text-indigo-900 transition-all hover:scale-105">
+                        <img src="https://map.ir/css/images/mapir-logo.png" alt="Map.ir" class="h-4 w-auto object-contain" onerror="this.style.display='none'">
+                        <span>نقشه مپ</span>
+                    </a>
+                </div>
+
+                <!-- Guidance tooltip pill -->
                 <div class="absolute bottom-3 right-3 bg-white/90 backdrop-blur-md px-3 py-1.5 rounded-xl text-[11px] font-bold text-slate-700 shadow-md border border-slate-200 z-[400] pointer-events-none">
-                    نشانگر را بکشید یا روی هر نقطه کلیک کنید
+                    نشانگر را روی درب ورودی ساختمان قرار دهید
                 </div>
             </div>
 
@@ -2469,9 +2512,9 @@ function switchSellerFin(period) {
             <div id="address-autofill-alert" class="hidden p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2 animate-fade-in transition-all">
                 <div class="flex items-center gap-2">
                     <span class="material-symbols-outlined text-emerald-600 text-lg">check_circle</span>
-                    <span id="autofill-alert-msg" class="font-bold">نشانی و شهر از روی نقشه استخراج و در فرم زیر درج شد.</span>
+                    <span id="autofill-alert-msg" class="font-bold">نشانی و محله از نقشه مپ استخراج و ثبت شد.</span>
                 </div>
-                <span class="text-[11px] text-emerald-700 font-medium opacity-90">در صورت تمایل پلاک، طبقه و زنگ را تکمیل نمایید</span>
+                <span class="text-[11px] text-emerald-700 font-medium opacity-90">پلاک، طبقه یا واحد را در صورت تمایل تکمیل کنید</span>
             </div>
 
             <!-- Address Update Form -->
@@ -4835,10 +4878,33 @@ function switchSellerFin(period) {
         }
     }
 
-    // ─── Leaflet Map & Smart Address Geocoding for Customer ─────────────────────
+    // ─── Map.ir Interactive Map & Smart Address Geocoding for Customer ────────
     let customerMap = null;
     let customerMarker = null;
+    let tourPolygonLayer = null;
+    let lastTourBounds = null;
     let geocodeAbortCtrl = null;
+
+    // Custom High-Contrast Pulsing Iranian Pin (ASENA Brand Navy & Orange)
+    const customMapPinIcon = L.divIcon({
+        className: 'custom-mapir-pin-wrap',
+        html: `
+            <div style="position: relative; width: 38px; height: 48px; transform: translate(-50%, -100%); cursor: grab;">
+                <!-- Pulsing Radar Ring at Touchpoint -->
+                <div style="position: absolute; bottom: 0; left: 50%; width: 26px; height: 26px; margin-left: -13px; margin-bottom: -7px; border-radius: 50%; background: rgba(79, 70, 229, 0.4); animation: ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;"></div>
+                <div style="position: absolute; bottom: 0; left: 50%; width: 10px; height: 10px; margin-left: -5px; margin-bottom: 1px; border-radius: 50%; background: #4338ca;"></div>
+                <!-- Pin Body SVG -->
+                <svg viewBox="0 0 384 512" style="width: 38px; height: 48px; fill: #001a48; filter: drop-shadow(0 6px 8px rgba(0,0,0,0.35));">
+                    <path d="M172.268 501.67C26.97 291.031 0 269.413 0 192 0 85.961 85.961 0 192 0s192 85.961 192 192c0 77.413-26.97 99.031-172.268 309.67-9.535 13.774-29.93 13.773-39.464 0zM192 272c44.183 0 80-35.817 80-80s-35.817-80-80-80-80 35.817-80 80 35.817 80 80 80z"/>
+                </svg>
+                <!-- Inner Brand Badge -->
+                <span style="position: absolute; top: 11px; left: 50%; width: 12px; height: 12px; margin-left: -6px; border-radius: 50%; background: #fd8100; border: 2px solid #ffffff; box-shadow: 0 1px 3px rgba(0,0,0,0.2);"></span>
+            </div>
+        `,
+        iconSize: [0, 0],
+        iconAnchor: [0, 0],
+        popupAnchor: [0, -44]
+    });
 
     function initCustomerAddressMap() {
         const mapContainer = document.getElementById('customer-address-map');
@@ -4847,18 +4913,22 @@ function switchSellerFin(period) {
         let initialLat = parseFloat(document.getElementById('address_latitude').value) || 38.0700;
         let initialLng = parseFloat(document.getElementById('address_longitude').value) || 46.2931;
 
+        // Initialize Map without default controls (we provide custom Map.ir UI)
         customerMap = L.map('customer-address-map', {
-            zoomControl: true,
-            attributionControl: true
-        }).setView([initialLat, initialLng], 14);
+            zoomControl: false,
+            attributionControl: false
+        }).setView([initialLat, initialLng], 15);
 
+        // Map.ir Tile Layer with Retina Detection
         L.tileLayer('<?= MapService::TILE_URL ?>', {
             maxZoom: 19,
-            attribution: '<?= addslashes(MapService::ATTRIBUTION) ?>'
+            maxNativeZoom: 18,
+            detectRetina: true
         }).addTo(customerMap);
 
-        // Interactive Marker
+        // Interactive Pulsing Pin
         customerMarker = L.marker([initialLat, initialLng], {
+            icon: customMapPinIcon,
             draggable: true
         }).addTo(customerMap);
 
@@ -4876,9 +4946,9 @@ function switchSellerFin(period) {
             reverseGeocodeAndFillAddress(e.latlng.lat, e.latlng.lng);
         });
 
-        // If address text is currently empty, auto-resolve default coordinates
+        // Initial address resolution if needed
         const currentAddr = (document.getElementById('address_text')?.value || '').trim();
-        if (!currentAddr) {
+        if (!currentAddr || currentAddr === 'tabriz-tabriz-tabriz' || currentAddr.includes('tabriz-tabriz')) {
             reverseGeocodeAndFillAddress(initialLat, initialLng, false);
         } else {
             const pillText = document.getElementById('map-pill-text');
@@ -4888,6 +4958,21 @@ function switchSellerFin(period) {
         }
 
         initPostalCodeHandler();
+        initMapSearchHandler();
+    }
+
+    function customerMapZoomIn() {
+        if (customerMap) customerMap.zoomIn();
+    }
+    function customerMapZoomOut() {
+        if (customerMap) customerMap.zoomOut();
+    }
+    function recenterPostalTour() {
+        if (lastTourBounds && customerMap) {
+            customerMap.fitBounds(lastTourBounds, { padding: [35, 35], maxZoom: 17 });
+        } else if (customerMarker && customerMap) {
+            customerMap.flyTo(customerMarker.getLatLng(), 16);
+        }
     }
 
     function updateLatLngInputs(lat, lng) {
@@ -4909,7 +4994,7 @@ function switchSellerFin(period) {
         const alertBanner = document.getElementById('address-autofill-alert');
 
         if (pillText) {
-            pillText.innerHTML = '<span class="inline-flex items-center gap-1.5 text-secondary-container"><span class="material-symbols-outlined text-sm animate-spin">sync</span> در حال استخراج آدرس از نقشه...</span>';
+            pillText.innerHTML = '<span class="inline-flex items-center gap-1.5 text-indigo-700"><span class="material-symbols-outlined text-sm animate-spin">sync</span> در حال استخراج نشانی از نقشه مپ...</span>';
         }
 
         if (geocodeAbortCtrl) {
@@ -4920,7 +5005,7 @@ function switchSellerFin(period) {
         try {
             let data = null;
 
-            // 1. Primary: Server-side Persian geocoding endpoint
+            // 1. Primary: Server-side Persian geocoding endpoint (Map.ir Reverse)
             try {
                 const response = await fetch(`actions/reverse_geocode.php?lat=${lat}&lng=${lng}`, {
                     signal: geocodeAbortCtrl.signal
@@ -4936,7 +5021,7 @@ function switchSellerFin(period) {
                 console.warn('[Geocode] Server endpoint fallback:', srvErr);
             }
 
-            // 2. Secondary fallback: Direct OpenStreetMap Nominatim with Persian language
+            // 2. Secondary fallback: Direct OpenStreetMap Nominatim
             if (!data) {
                 const directUrl = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1&accept-language=fa`;
                 const directResp = await fetch(directUrl, { signal: geocodeAbortCtrl.signal });
@@ -4959,14 +5044,14 @@ function switchSellerFin(period) {
             }
 
             if (data && data.formatted_address) {
-                // Auto fill the Address Textarea!
+                // Auto fill the Address Textarea
                 if (addressTextarea) {
                     addressTextarea.value = data.formatted_address;
                     if (highlight) {
-                        addressTextarea.classList.add('ring-2', 'ring-emerald-500', 'bg-emerald-50/30', 'transition-all');
+                        addressTextarea.classList.add('ring-2', 'ring-emerald-500', 'bg-emerald-50/40', 'transition-all');
                         setTimeout(() => {
-                            addressTextarea.classList.remove('ring-2', 'ring-emerald-500', 'bg-emerald-50/30');
-                        }, 1800);
+                            addressTextarea.classList.remove('ring-2', 'ring-emerald-500', 'bg-emerald-50/40');
+                        }, 2000);
                     }
                 }
 
@@ -4986,22 +5071,22 @@ function switchSellerFin(period) {
                 }
                 if (pillIcon) {
                     pillIcon.textContent = 'check_circle';
-                    pillIcon.classList.remove('text-secondary-container');
+                    pillIcon.classList.remove('text-indigo-700');
                     pillIcon.classList.add('text-emerald-600');
                     setTimeout(() => {
                         pillIcon.textContent = 'location_on';
                         pillIcon.classList.remove('text-emerald-600');
-                        pillIcon.classList.add('text-secondary-container');
+                        pillIcon.classList.add('text-indigo-700');
                     }, 2000);
                 }
 
                 // Bind Marker Popup
                 if (customerMarker) {
                     customerMarker.bindPopup(`
-                        <div style="font-family: 'Vazirmatn', sans-serif; text-align: right; direction: rtl; padding: 4px; font-size: 12px;">
+                        <div style="font-family: 'Vazirmatn', sans-serif; text-align: right; direction: rtl; padding: 4px; font-size: 12px; line-height: 1.6;">
                             <b style="color: #001a48;">موقعیت انتخابی شما:</b>
                             <p style="margin: 4px 0 0 0; color: #334155; font-weight: bold;">${data.formatted_address}</p>
-                            <span style="font-size: 10px; color: #16a34a; display: block; margin-top: 4px;">✔ نشانی در فرم ثبت شد</span>
+                            <span style="font-size: 10px; color: #16a34a; display: block; margin-top: 4px; font-weight: bold;">✔ نشانی در فرم ثبت شد</span>
                         </div>
                     `).openPopup();
                 }
@@ -5032,7 +5117,7 @@ function switchSellerFin(period) {
     /**
      * Quick Jump to specific city/neighborhood and auto-fill address
      */
-    function jumpMapTo(lat, lng, zoom = 14, name = '') {
+    function jumpMapTo(lat, lng, zoom = 15, name = '') {
         if (!customerMap || !customerMarker) {
             initCustomerAddressMap();
         }
@@ -5055,7 +5140,7 @@ function switchSellerFin(period) {
 
         const pillText = document.getElementById('map-pill-text');
         if (pillText) {
-            pillText.innerHTML = '<span class="inline-flex items-center gap-1.5 text-blue-600"><span class="material-symbols-outlined text-sm animate-spin">sync</span> در حال دریافت مختصات GPS شما...</span>';
+            pillText.innerHTML = '<span class="inline-flex items-center gap-1.5 text-blue-600"><span class="material-symbols-outlined text-sm animate-spin">sync</span> در حال دریافت مختصات دقیق GPS...</span>';
         }
 
         navigator.geolocation.getCurrentPosition(pos => {
@@ -5063,17 +5148,114 @@ function switchSellerFin(period) {
             const lng = pos.coords.longitude;
             if (!customerMap) initCustomerAddressMap();
             if (customerMap && customerMarker) {
-                customerMap.flyTo([lat, lng], 16, { duration: 1.2 });
+                customerMap.flyTo([lat, lng], 17, { duration: 1.2 });
                 customerMarker.setLatLng([lat, lng]);
                 updateLatLngInputs(lat, lng);
                 reverseGeocodeAndFillAddress(lat, lng, true);
             }
         }, err => {
-            alert('دسترسی به موقعیت مکانی انجام نشد یا توسط مرورگر مسدود گردید.');
+            alert('دسترسی به موقعیت مکانی GPS انجام نشد یا توسط تنظیمات مرورگر مسدود گردید.');
             if (pillText) {
                 pillText.textContent = 'نشانگر را جابجا کنید تا نشانی استخراج شود';
             }
         }, { enableHighAccuracy: true, timeout: 10000 });
+    }
+
+    // ─── Map.ir Live Place & Street Search Handler ──────────────────────────────
+    let searchDebounceTimer = null;
+
+    function initMapSearchHandler() {
+        const searchInput = document.getElementById('map-street-search');
+        const searchResults = document.getElementById('map-search-results');
+        const clearBtn = document.getElementById('clear-map-search');
+
+        if (!searchInput) return;
+
+        searchInput.addEventListener('input', function() {
+            const val = this.value.trim();
+            if (clearBtn) clearBtn.classList.toggle('hidden', !val);
+
+            if (val.length < 2) {
+                if (searchResults) {
+                    searchResults.innerHTML = '';
+                    searchResults.classList.add('hidden');
+                }
+                return;
+            }
+
+            clearTimeout(searchDebounceTimer);
+            searchDebounceTimer = setTimeout(() => performMapSearch(val), 280);
+        });
+
+        // Close search results on click outside
+        document.addEventListener('click', function(e) {
+            if (searchResults && !searchResults.contains(e.target) && e.target !== searchInput) {
+                searchResults.classList.add('hidden');
+            }
+        });
+    }
+
+    async function performMapSearch(query) {
+        const searchSpinner = document.getElementById('map-search-spinner');
+        const searchResults = document.getElementById('map-search-results');
+        const cityVal = document.getElementById('address_city')?.value || 'تبریز';
+        const pos = customerMarker ? customerMarker.getLatLng() : { lat: 38.07, lng: 46.29 };
+
+        if (searchSpinner) searchSpinner.classList.remove('hidden');
+
+        try {
+            const resp = await fetch(`actions/map_search_action.php?q=${encodeURIComponent(query)}&city=${encodeURIComponent(cityVal)}&lat=${pos.lat}&lng=${pos.lng}`);
+            const json = await resp.json();
+            if (searchSpinner) searchSpinner.classList.add('hidden');
+
+            if (searchResults && json.status === 'success') {
+                if (json.results && json.results.length > 0) {
+                    searchResults.innerHTML = json.results.map(item => `
+                        <div onclick="selectSearchResult(${item.lat}, ${item.lng}, '${item.title.replace(/'/g, "\\'")}', '${(item.address || '').replace(/'/g, "\\'")}')" class="p-3 hover:bg-indigo-50/60 cursor-pointer transition-colors flex items-start gap-2.5">
+                            <span class="material-symbols-outlined text-indigo-700 text-base shrink-0 mt-0.5">location_on</span>
+                            <div class="min-w-0 flex-1">
+                                <div class="text-xs font-bold text-slate-800 truncate">${item.title}</div>
+                                <div class="text-[11px] text-slate-500 truncate mt-0.5">${item.address || ''}</div>
+                            </div>
+                        </div>
+                    `).join('');
+                    searchResults.classList.remove('hidden');
+                } else {
+                    searchResults.innerHTML = '<div class="p-3 text-xs text-slate-400 text-center font-medium">موردی یافت نشد. می‌توانید با کلیک روی نقشه مستقیماً انتخاب کنید.</div>';
+                    searchResults.classList.remove('hidden');
+                }
+            }
+        } catch (e) {
+            if (searchSpinner) searchSpinner.classList.add('hidden');
+            console.error('[MapSearch] Error:', e);
+        }
+    }
+
+    function selectSearchResult(lat, lng, title, address) {
+        const searchResults = document.getElementById('map-search-results');
+        const searchInput = document.getElementById('map-street-search');
+        if (searchResults) searchResults.classList.add('hidden');
+        if (searchInput) searchInput.value = title;
+
+        if (!customerMap) initCustomerAddressMap();
+        if (customerMap && customerMarker) {
+            customerMap.flyTo([lat, lng], 17, { duration: 1.2 });
+            customerMarker.setLatLng([lat, lng]);
+            updateLatLngInputs(lat, lng);
+            reverseGeocodeAndFillAddress(lat, lng, true);
+        }
+    }
+
+    function clearMapSearch() {
+        const searchInput = document.getElementById('map-street-search');
+        const clearBtn = document.getElementById('clear-map-search');
+        const searchResults = document.getElementById('map-search-results');
+        if (searchInput) searchInput.value = '';
+        if (clearBtn) clearBtn.classList.add('hidden');
+        if (searchResults) {
+            searchResults.innerHTML = '';
+            searchResults.classList.add('hidden');
+        }
     }
 
     // ─── Iranian Postal Code Intelligence & Location Resolver ──────────────────────
@@ -5098,6 +5280,7 @@ function switchSellerFin(period) {
         const errHint = document.getElementById('postal-error-hint');
         const succHint = document.getElementById('postal-success-hint');
         const cityInput = document.getElementById('address_city');
+        const addressTextarea = document.getElementById('address_text');
 
         if (!input) return;
         const raw = input.value.trim();
@@ -5139,9 +5322,10 @@ function switchSellerFin(period) {
                 input.classList.remove('border-rose-500', 'ring-rose-200');
                 input.classList.add('border-emerald-500', 'ring-2', 'ring-emerald-200');
 
+                const hoodName = res.data.neighbourhood ? ` - محله ${res.data.neighbourhood}` : '';
                 if (badge) {
                     badge.className = 'text-[10px] text-emerald-600 font-bold';
-                    badge.textContent = `✔ معتبر (${res.data.city})`;
+                    badge.textContent = `✔ معتبر (${res.data.city}${hoodName})`;
                 }
                 if (errHint) errHint.className = 'hidden';
                 if (succHint) {
@@ -5149,25 +5333,67 @@ function switchSellerFin(period) {
                     succHint.textContent = `موقعیت: ${res.data.display_address}`;
                 }
 
-                // Auto-fill city if empty or generic
-                if (cityInput && (!cityInput.value.trim() || cityInput.value === 'تبریز')) {
+                // Auto-fill city
+                if (cityInput && res.data.city) {
                     cityInput.value = res.data.city;
                 }
 
-                // Auto-center map if requested
-                if (autoCenterMap && res.data.latitude && res.data.longitude) {
-                    if (!customerMap) initCustomerAddressMap();
-                    if (customerMap && customerMarker) {
-                        customerMap.flyTo([res.data.latitude, res.data.longitude], res.data.zoom || 15, { duration: 1.2 });
-                        customerMarker.setLatLng([res.data.latitude, res.data.longitude]);
-                        updateLatLngInputs(res.data.latitude, res.data.longitude);
-                        customerMarker.bindPopup(`
-                            <div style="font-family: 'Vazirmatn', sans-serif; text-align: right; direction: rtl; padding: 4px; font-size: 12px;">
-                                <b style="color: #001a48;">محدوده کد پستی ${res.data.formatted_code}:</b>
-                                <p style="margin: 4px 0 0 0; color: #334155;">${res.data.display_address}</p>
-                                <span style="font-size: 10px; color: #ea580c; display: block; margin-top: 4px;">📍 نشانگر را روی درب ورودی ساختمان خود قرار دهید.</span>
-                            </div>
-                        `).openPopup();
+                // Cleanly replace dummy or empty address with real neighborhood & street!
+                if (addressTextarea) {
+                    const curVal = addressTextarea.value.trim();
+                    if (!curVal || curVal === 'tabriz-tabriz-tabriz' || curVal.includes('tabriz-tabriz') || curVal === 'تبریز') {
+                        const newAddr = res.data.suggested_address || res.data.formatted_address || '';
+                        if (newAddr) {
+                            addressTextarea.value = newAddr;
+                            addressTextarea.classList.add('ring-2', 'ring-emerald-500', 'bg-emerald-50/40');
+                            setTimeout(() => addressTextarea.classList.remove('ring-2', 'ring-emerald-500', 'bg-emerald-50/40'), 2500);
+                        }
+                    }
+                }
+
+                // Draw Tour Area Polygon on the map if returned
+                if (!customerMap) initCustomerAddressMap();
+                if (customerMap) {
+                    if (tourPolygonLayer) {
+                        customerMap.removeLayer(tourPolygonLayer);
+                        tourPolygonLayer = null;
+                    }
+
+                    if (res.data.polygon && res.data.polygon.length > 2) {
+                        tourPolygonLayer = L.polygon(res.data.polygon, {
+                            color: '#4338ca',
+                            weight: 2.5,
+                            dashArray: '5, 5',
+                            fillColor: '#6366f1',
+                            fillOpacity: 0.15
+                        }).addTo(customerMap);
+
+                        if (res.data.bounds) {
+                            lastTourBounds = res.data.bounds;
+                            const recenterBtn = document.getElementById('recenter-tour-btn');
+                            if (recenterBtn) recenterBtn.classList.remove('hidden');
+                        }
+                    }
+
+                    // Fly to Centroid or Coordinates
+                    if (autoCenterMap && res.data.latitude && res.data.longitude) {
+                        if (res.data.bounds) {
+                            customerMap.fitBounds(res.data.bounds, { padding: [35, 35], maxZoom: 17 });
+                        } else {
+                            customerMap.flyTo([res.data.latitude, res.data.longitude], res.data.zoom || 16.5, { duration: 1.2 });
+                        }
+
+                        if (customerMarker) {
+                            customerMarker.setLatLng([res.data.latitude, res.data.longitude]);
+                            updateLatLngInputs(res.data.latitude, res.data.longitude);
+                            customerMarker.bindPopup(`
+                                <div style="font-family: 'Vazirmatn', sans-serif; text-align: right; direction: rtl; padding: 4px; font-size: 12px; line-height: 1.6;">
+                                    <b style="color: #001a48; font-size: 13px;">محدوده کد پستی ${res.data.formatted_code}:</b>
+                                    <p style="margin: 3px 0; color: #334155; font-weight: bold;">${res.data.display_address}</p>
+                                    <span style="font-size: 11px; color: #fd8100; display: block; font-weight: bold;">📍 نشانگر را روی درب ورودی ساختمان خود قرار دهید.</span>
+                                </div>
+                            `).openPopup();
+                        }
                     }
                 }
             } else {

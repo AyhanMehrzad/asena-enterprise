@@ -289,6 +289,7 @@ class MapService {
         $ch = curl_init($url);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_TIMEOUT, 3);
+        curl_setopt($ch, CURLOPT_IPRESOLVE, CURL_IPRESOLVE_V4);
         curl_setopt($ch, CURLOPT_HTTPHEADER, [
             'x-api-key: ' . self::API_KEY,
             'Accept: application/json',
@@ -373,5 +374,197 @@ class MapService {
         }
 
         return null;
+    }
+
+    /**
+     * High-Precision Iranian Postal Code Tour Area Lookup via Map.ir
+     * Retrieves the 5-digit delivery zone polygon, bbox, centroid, and reverse-geocodes
+     * the exact neighborhood and primary thoroughfare.
+     * 
+     * @param string $postalCode 10-digit Iranian postal code
+     * @return ?array
+     */
+    public static function lookupPostalCodeTour(string $postalCode): ?array {
+        $validation = self::validatePostalCode($postalCode);
+        if (!$validation['valid']) {
+            return null;
+        }
+
+        $clean = $validation['code'];
+        $url = "https://map.ir/geo-data/postalcodes/{$clean}/tour-geom";
+
+        $ch = curl_init($url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 4);
+        curl_setopt($ch, CURLOPT_IPRESOLVE, CURL_IPRESOLVE_V4);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, [
+            'x-api-key: ' . self::API_KEY,
+            'Accept: application/json',
+            'User-Agent: ASENA-Enterprise/1.0'
+        ]);
+        $raw = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+
+        if ($httpCode === 200 && $raw) {
+            $json = json_decode($raw, true);
+            $coords = $json['data']['geom']['coordinates'][0] ?? null;
+
+            if (!empty($coords) && is_array($coords)) {
+                $latSum = 0;
+                $lngSum = 0;
+                $count = count($coords);
+                $leafletPolygon = [];
+                $minLat = 90.0;
+                $maxLat = -90.0;
+                $minLng = 180.0;
+                $maxLng = -180.0;
+
+                foreach ($coords as $pt) {
+                    $lng = (float)$pt[0];
+                    $lat = (float)$pt[1];
+                    $latSum += $lat;
+                    $lngSum += $lng;
+                    $minLat = min($minLat, $lat);
+                    $maxLat = max($maxLat, $lat);
+                    $minLng = min($minLng, $lng);
+                    $maxLng = max($maxLng, $lng);
+                    $leafletPolygon[] = [$lat, $lng];
+                }
+
+                $centroidLat = round($latSum / $count, 6);
+                $centroidLng = round($lngSum / $count, 6);
+
+                // Reverse geocode the centroid to discover neighborhood and street
+                $rev = self::reverseGeocode($centroidLat, $centroidLng);
+
+                $province = $rev['province'] ?? '';
+                $city = $rev['city'] ?? '';
+                $neighborhood = $rev['neighbourhood'] ?? '';
+                $primaryRoad = $rev['primary_road'] ?? '';
+                $formattedAddress = $rev['formatted_address'] ?? '';
+
+                if (empty($neighborhood) && !empty($formattedAddress)) {
+                    if (preg_match('/محله\s+([^،,]+)/u', $formattedAddress, $m)) {
+                        $neighborhood = trim($m[1]);
+                    }
+                }
+
+                $zoneCode = substr($clean, 0, 5);
+                $unitCode = substr($clean, 5, 5);
+
+                // Build a clean, human-friendly doorstep suggested address
+                $suggestedAddress = '';
+                if (!empty($city)) {
+                    $suggestedAddress .= $city;
+                }
+                if (!empty($neighborhood)) {
+                    $suggestedAddress .= ($suggestedAddress ? '، محله ' : 'محله ') . $neighborhood;
+                }
+                if (!empty($primaryRoad)) {
+                    $suggestedAddress .= ($suggestedAddress ? '، ' : '') . trim($primaryRoad);
+                }
+                if (empty($suggestedAddress)) {
+                    $suggestedAddress = $formattedAddress;
+                }
+
+                return [
+                    'source'            => 'map_ir_tour',
+                    'postal_code'       => $clean,
+                    'formatted_code'    => $zoneCode . '-' . $unitCode,
+                    'zone_code'         => $zoneCode,
+                    'unit_code'         => $unitCode,
+                    'province'          => $province ?: 'آذربایجان شرقی',
+                    'city'              => $city ?: 'تبریز',
+                    'neighbourhood'     => $neighborhood,
+                    'primary_road'      => trim($primaryRoad),
+                    'formatted_address' => $formattedAddress,
+                    'suggested_address' => $suggestedAddress,
+                    'latitude'          => $centroidLat,
+                    'longitude'         => $centroidLng,
+                    'zoom'              => 16.5,
+                    'polygon'           => $leafletPolygon,
+                    'bounds'            => [
+                        [$minLat, $minLng],
+                        [$maxLat, $maxLng]
+                    ],
+                    'display_address'   => 'محدوده گشت پستی ' . $zoneCode . ($neighborhood ? ' (محله ' . $neighborhood . ')' : '')
+                ];
+            }
+        }
+
+        // Fallback to static postal directory if tour API didn't return geom
+        return self::lookupPostalCode($clean);
+    }
+
+    /**
+     * Map.ir Search v2 API wrapper for live street, neighborhood, and place autocomplete
+     * 
+     * @param string $text
+     * @param ?float $lat Optional coordinate bias
+     * @param ?float $lng Optional coordinate bias
+     * @return array
+     */
+    public static function searchPlaces(string $text, ?float $lat = null, ?float $lng = null): array {
+        $text = trim($text);
+        if (empty($text) || mb_strlen($text) < 2) {
+            return [];
+        }
+
+        $url = 'https://map.ir/search/v2';
+        $body = ['text' => $text];
+        if ($lat !== null && $lng !== null) {
+            $body['location'] = [
+                'type' => 'Point',
+                'coordinates' => [$lng, $lat]
+            ];
+        }
+
+        $ch = curl_init($url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($body));
+        curl_setopt($ch, CURLOPT_TIMEOUT, 4);
+        curl_setopt($ch, CURLOPT_IPRESOLVE, CURL_IPRESOLVE_V4);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, [
+            'x-api-key: ' . self::API_KEY,
+            'Content-Type: application/json',
+            'Accept: application/json',
+            'User-Agent: ASENA-Enterprise/1.0'
+        ]);
+        $raw = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+
+        if ($httpCode === 200 && $raw) {
+            $json = json_decode($raw, true);
+            $items = $json['value'] ?? [];
+            $results = [];
+
+            foreach ($items as $item) {
+                $geom = $item['geom'] ?? [];
+                $coords = $geom['coordinates'] ?? [];
+                if (count($coords) >= 2) {
+                    $itemLng = (float)$coords[0];
+                    $itemLat = (float)$coords[1];
+                    $title = !empty($item['title']) ? $item['title'] : (!empty($item['neighborhood']) ? $item['neighborhood'] : ($item['address'] ?? 'مکان'));
+                    
+                    $results[] = [
+                        'title'        => $title,
+                        'address'      => $item['address'] ?? '',
+                        'province'     => $item['province'] ?? '',
+                        'county'       => $item['county'] ?? '',
+                        'neighbourhood'=> $item['neighborhood'] ?? '',
+                        'type'         => $item['type'] ?? '',
+                        'fclass'       => $item['fclass'] ?? '',
+                        'lat'          => $itemLat,
+                        'lng'          => $itemLng
+                    ];
+                }
+            }
+            return array_slice($results, 0, 8);
+        }
+
+        return [];
     }
 }

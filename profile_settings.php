@@ -310,6 +310,8 @@ exit;
 
             L.tileLayer('<?= MapService::TILE_URL ?>', {
                 maxZoom: 19,
+                maxNativeZoom: 18,
+                detectRetina: true,
                 attribution: '<?= addslashes(MapService::ATTRIBUTION) ?>'
             }).addTo(map);
 
@@ -317,6 +319,29 @@ exit;
 
             const addressInput = document.querySelector('textarea[name="address"]');
             const postalInput = document.querySelector('input[name="postal_code"]');
+
+            if (postalInput) {
+                postalInput.addEventListener('change', async function() {
+                    const clean = this.value.replace(/[^0-9]/g, '');
+                    if (clean.length === 10) {
+                        try {
+                            const res = await fetch(`actions/postal_code_lookup.php?postal_code=${clean}`);
+                            const json = await res.json();
+                            if (json && json.status === 'success' && json.data) {
+                                if (json.data.latitude && json.data.longitude) {
+                                    map.flyTo([json.data.latitude, json.data.longitude], json.data.zoom || 16);
+                                    marker.setLatLng([json.data.latitude, json.data.longitude]);
+                                    latInput.value = json.data.latitude.toFixed(6);
+                                    lngInput.value = json.data.longitude.toFixed(6);
+                                }
+                                if (addressInput && (!addressInput.value.trim() || addressInput.value === 'tabriz-tabriz-tabriz')) {
+                                    addressInput.value = json.data.suggested_address || json.data.formatted_address || '';
+                                }
+                            }
+                        } catch(e) {}
+                    }
+                });
+            }
 
             async function reverseGeocode(lat, lng) {
                 try {

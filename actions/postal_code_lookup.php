@@ -33,7 +33,11 @@ if (!$validation['valid']) {
     exit;
 }
 
-$resolved = MapService::lookupPostalCode($validation['code']);
+$resolved = MapService::lookupPostalCodeTour($validation['code']);
+
+if (!$resolved) {
+    $resolved = MapService::lookupPostalCode($validation['code']);
+}
 
 if (!$resolved) {
     echo json_encode([
