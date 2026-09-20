@@ -954,7 +954,10 @@ if ($userId > 0 && isset($pdo)) {
                     overall_summary: state.latestReport.overall_summary,
                     drugs: state.drugs,
                     interactions: state.latestReport.interactions_found || [],
-                    contraindications: state.latestReport.species_contraindications || []
+                    contraindications: state.latestReport.species_contraindications || [],
+                    safe_combinations: state.latestReport.safe_combinations || [],
+                    time_spacing_schedule: state.latestReport.time_spacing_schedule || [],
+                    vet_recommendations: state.latestReport.vet_recommendations || []
                 })
             });
 
@@ -965,7 +968,10 @@ if ($userId > 0 && isset($pdo)) {
             }
 
             if (data && data.success) {
-                alert('✅ کارنامه بررسی تداخلات دارویی با موفقیت در پرونده سلامت پت شما ذخیره گردید.');
+                const viewUrl = data.view_url || 'profile.php?tab=pets#pets';
+                if (confirm('✅ کارنامه بررسی تداخلات دارویی با موفقیت در پرونده سلامت پت شما ذخیره گردید.\n\nآیا مایلید هم‌اکنون کارنامه رسمی بالینی را مشاهده فرمایید؟')) {
+                    window.open(viewUrl, '_blank');
+                }
             } else if (data && data.require_login) {
                 alert('جهت بایگانی کارنامه در پرونده سلامت، لطفاً ابتدا وارد حساب کاربری خود شوید.');
                 window.location.href = 'login.php?redirect=' + encodeURIComponent('interactions.php');

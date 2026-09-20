@@ -2768,7 +2768,7 @@ function switchSellerFin(period) {
                 $sourceBadgeClass = 'bg-amber-100 text-amber-800 border-amber-300';
                 $icon = 'medication';
                 $iconColor = 'text-amber-600 bg-amber-500/10 border-amber-200';
-                $viewUrl = htmlspecialchars($path);
+                $viewUrl = 'view_drug_report.php?file=' . urlencode(basename($path));
                 $canDelete = false;
             } elseif ($isMealPlan) {
                 $cat = 'nutrition';
