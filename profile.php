@@ -8,8 +8,9 @@ $success = $_SESSION['profile_success'] ?? '';
 $error = $_SESSION['profile_error'] ?? '';
 unset($_SESSION['profile_success'], $_SESSION['profile_error']);
 
-// Suppress bulky marketing footer in operational profile workspace
+// Suppress bulky marketing footer and notification banner in operational profile workspace
 $hideMarketingFooter = true;
+$hideMarketingHeader = true;
 
 $userRole = $user['role'] ?? 'user';
 
@@ -383,13 +384,45 @@ $nextPayoutFormatted = $fmtDateText->format($nextThursday) . ' ساعت ۲۲:۰�
         backdrop-filter: blur(12px);
         border: 1px solid rgba(255, 255, 255, 0.3);
     }
-    /* Desktop Collapsible Sidebar & Rail Ergonomics */
+    /* Custom Sleek Scrollbar for Sidebar Navigation */
+    #profile-sidebar nav {
+        scrollbar-width: thin;
+        scrollbar-color: rgba(148, 163, 184, 0.3) transparent;
+    }
+    #profile-sidebar nav::-webkit-scrollbar {
+        width: 4px;
+    }
+    #profile-sidebar nav::-webkit-scrollbar-track {
+        background: transparent;
+    }
+    #profile-sidebar nav::-webkit-scrollbar-thumb {
+        background: rgba(148, 163, 184, 0.25);
+        border-radius: 9999px;
+    }
+    #profile-sidebar nav::-webkit-scrollbar-thumb:hover {
+        background: rgba(148, 163, 184, 0.45);
+    }
+
+    /* Full-Height Desktop App Shell Ergonomics */
     @media (min-width: 1024px) {
         #profile-sidebar {
+            top: 0 !important;
+            z-index: 50 !important;
             transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), padding 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
         }
         #profile-main {
             transition: margin-right 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        }
+        /* Dynamically adjust the desktop floating header to avoid sidebar collision */
+        header.hidden.lg\:block {
+            margin-right: 17rem !important;
+            margin-left: 2rem !important;
+            max-width: none !important;
+            width: auto !important;
+            transition: margin-right 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        }
+        body.sidebar-collapsed-shell header.hidden.lg\:block {
+            margin-right: 6rem !important;
         }
         #profile-sidebar.sidebar-collapsed {
             width: 5rem !important; /* 80px */
@@ -432,7 +465,7 @@ $nextPayoutFormatted = $fmtDateText->format($nextThursday) . ' ساعت ۲۲:۰�
 <div id="profile-backdrop" class="fixed inset-0 bg-black/50 z-[60] hidden lg:hidden backdrop-blur-sm transition-opacity opacity-0" onclick="toggleProfileSidebar()"></div>
 
 <!-- SideNavBar -->
-<aside id="profile-sidebar" class="fixed right-0 top-0 lg:top-16 bottom-0 w-64 p-6 flex flex-col bg-surface-container-lowest border-l border-outline-variant z-[70] lg:z-40 transition-transform duration-300 translate-x-full lg:translate-x-0">
+<aside id="profile-sidebar" class="fixed right-0 top-0 bottom-0 w-64 p-6 flex flex-col bg-surface-container-lowest border-l border-outline-variant z-[70] lg:z-50 transition-transform duration-300 translate-x-full lg:translate-x-0">
 <div class="mb-10 flex justify-between items-center sidebar-toggle-container">
 <div class="sidebar-header-text">
 <?php if ($isSeller): ?>
@@ -583,6 +616,7 @@ $nextPayoutFormatted = $fmtDateText->format($nextThursday) . ' ساعت ۲۲:۰�
     if (window.innerWidth >= 1024 && localStorage.getItem('asena_sidebar_collapsed') === '1') {
         document.getElementById('profile-sidebar')?.classList.add('sidebar-collapsed');
         document.getElementById('profile-main')?.classList.add('sidebar-collapsed');
+        document.body.classList.add('sidebar-collapsed-shell');
         const icon = document.getElementById('sidebar-desktop-toggle-icon');
         if (icon) icon.innerText = 'chevron_left';
     }
@@ -4637,6 +4671,7 @@ function switchSellerFin(period) {
 
         const isCollapsed = sidebar.classList.toggle('sidebar-collapsed');
         main.classList.toggle('sidebar-collapsed', isCollapsed);
+        document.body.classList.toggle('sidebar-collapsed-shell', isCollapsed);
 
         if (icon) {
             // In RTL, chevron_left points away from edge (expand); chevron_right points toward edge (collapse)

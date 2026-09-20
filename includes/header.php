@@ -368,7 +368,7 @@ if (function_exists('get_curated_recommendations')) {
     }
 }
 ?>
-<?php if (!empty($top_notif)): ?>
+<?php if (!empty($top_notif) && empty($hideMarketingHeader)): ?>
 <!-- Top Floating Notification Bar -->
 <div id="topNotificationBar" class="bg-gradient-to-r from-secondary-container via-[#ea580c] to-secondary-container text-white py-2 px-4 text-xs font-bold shadow-sm relative z-50">
     <div class="max-w-[1600px] mx-auto flex items-center justify-between gap-3">
