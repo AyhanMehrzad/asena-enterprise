@@ -24,10 +24,29 @@ class PostexShippingService
     public function __construct(?PDO $db = null)
     {
         $this->db = $db;
-        $this->apiKey = getenv('POSTEX_API_KEY') ?: 'postex_live_21de47511fpzXYeen3IGz0hKHGIOqtJAOk7lbf83';
-        $this->apiUrl = rtrim(getenv('POSTEX_API_URL') ?: 'https://api.postex.ir', '/');
-        $this->isSandbox = (getenv('POSTEX_SANDBOX') === 'true' || empty($this->apiKey));
-        $this->defaultFromCity = (int)(getenv('POSTEX_DEFAULT_FROM_CITY') ?: 1); // 1 = Tehran
+        $defaultApiKey = 'postex_live_21de47511fpzXYeen3IGz0hKHGIOqtJAOk7lbf83';
+        $dbApiKey = null;
+
+        if ($this->db) {
+            try {
+                $stmt = $this->db->prepare("SELECT setting_value FROM settings WHERE setting_key = 'postex_api_key' LIMIT 1");
+                $stmt->execute();
+                $dbApiKey = $stmt->fetchColumn();
+            } catch (Throwable $e) {
+                // Ignore DB error and fallback to env/default
+            }
+        }
+
+        $this->apiKey = (!empty($dbApiKey) && !str_contains($dbApiKey, 'SANDBOX'))
+            ? trim((string)$dbApiKey)
+            : (getenv('POSTEX_API_KEY') ?: ($_ENV['POSTEX_API_KEY'] ?? ($_SERVER['POSTEX_API_KEY'] ?? $defaultApiKey)));
+
+        $this->apiUrl = rtrim(getenv('POSTEX_API_URL') ?: ($_ENV['POSTEX_API_URL'] ?? ($_SERVER['POSTEX_API_URL'] ?? 'https://api.postex.ir')), '/');
+        
+        $sandboxVal = getenv('POSTEX_SANDBOX') ?: ($_ENV['POSTEX_SANDBOX'] ?? ($_SERVER['POSTEX_SANDBOX'] ?? 'false'));
+        $this->isSandbox = ($sandboxVal === 'true' || $sandboxVal === true || empty($this->apiKey));
+        
+        $this->defaultFromCity = (int)(getenv('POSTEX_DEFAULT_FROM_CITY') ?: ($_ENV['POSTEX_DEFAULT_FROM_CITY'] ?? 1)); // 1 = Tehran
     }
 
     /**
