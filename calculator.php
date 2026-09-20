@@ -1115,7 +1115,10 @@ require_once 'includes/header.php';
             else if (calcState.activity === 'neutered') foodName = 'غذای خشک استرلایزد رفلکس پلاس گربه عقیم‌شده';
             else foodName = 'غذای خشک رفلکس پلاس ادالت مرغ و برنج گربه';
         }
-        document.getElementById('resRecommendedFood').textContent = foodName;
+        const recFoodEl = document.getElementById('resRecommendedFood');
+        if (recFoodEl) {
+            recFoodEl.textContent = foodName;
+        }
 
         // CTA Link
         const shopCta = document.getElementById('calcCtaShop');
@@ -1340,32 +1343,38 @@ require_once 'includes/header.php';
                 })
             });
 
-            const data = await res.json();
+            let data = null;
+            try {
+                data = await res.json();
+            } catch(parseErr) {
+                console.warn('Response was not valid JSON:', parseErr);
+            }
+
             if (btn) {
                 btn.innerHTML = origContent;
                 btn.disabled = false;
             }
 
-            if (data.success) {
+            if (data && data.success) {
                 // Clear any stored pending state
                 try { localStorage.removeItem('asena_pending_meal_plan'); } catch(e){}
                 showMealPlanSuccessModal(data);
-            } else if (data.require_login) {
+            } else if (data && data.require_login) {
                 // Save current state in localStorage for automatic issue after login
                 try {
                     localStorage.setItem('asena_pending_meal_plan', JSON.stringify(calcState));
                 } catch(e) {}
                 showMealPlanAuthModal();
             } else {
-                alert(data.message || 'خطا در صدور جدول برنامه غذایی.');
+                alert((data && data.message) || 'خطا در صدور جدول برنامه غذایی. لطفاً مجدداً تلاش فرمایید.');
             }
         } catch (e) {
             if (btn) {
                 btn.innerHTML = origContent;
                 btn.disabled = false;
             }
-            console.error(e);
-            alert('خطا در برقراری ارتباط با سرور.');
+            console.error('Network or execution error:', e);
+            alert('خطا در برقراری ارتباط با سرور. لطفاً اتصال اینترنت خود را بررسی کنید.');
         }
     };
 

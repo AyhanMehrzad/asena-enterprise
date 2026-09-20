@@ -27,6 +27,17 @@ function csrf_verify(): void {
     }
 }
 
+function verify_csrf_token(?string $token): bool {
+    if (session_status() === PHP_SESSION_NONE) {
+        session_start();
+    }
+    $expected = $_SESSION['csrf_token'] ?? '';
+    if (empty($expected) || empty($token)) {
+        return false;
+    }
+    return hash_equals($expected, trim((string)$token));
+}
+
 function safe_redirect(string $url, string $fallback = '/'): void {
     $parsed = parse_url($url);
     // Block schemes, hosts, AND backslash-based protocol-relative URLs

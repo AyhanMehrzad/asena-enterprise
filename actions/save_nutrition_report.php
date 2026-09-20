@@ -32,22 +32,23 @@ if (!empty($rawInput) && ($decoded = json_decode($rawInput, true))) {
     $inputData = $_POST;
 }
 
-// CSRF check
-$csrf = $inputData['csrf_token'] ?? $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '';
-if (!verify_csrf_token($csrf)) {
-    http_response_code(403);
-    echo json_encode(['success' => false, 'message' => 'توکن امنیتی (CSRF) نامعتبر یا منقضی شده است.'], JSON_UNESCAPED_UNICODE);
-    exit;
-}
-
-// Check authentication
+// Check authentication first
 $userId = (int)($_SESSION['user_id'] ?? 0);
 if ($userId <= 0) {
-    http_response_code(401);
     echo json_encode([
         'success' => false,
         'require_login' => true,
-        'message' => 'جهت ذخیره کارنامه در پرونده سلامت، لطفاً ابتدا وارد حساب کاربری خود شوید.'
+        'message' => 'جهت ذخیره و صدور جدول برنامه غذایی در پرونده سلامت، لطفاً ابتدا وارد حساب کاربری خود شوید.'
+    ], JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
+// CSRF check
+$csrf = $inputData['csrf_token'] ?? $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '';
+if (!verify_csrf_token($csrf)) {
+    echo json_encode([
+        'success' => false,
+        'message' => 'توکن امنیتی (CSRF) منقضی شده است. لطفاً صفحه را تازه‌سازی کنید.'
     ], JSON_UNESCAPED_UNICODE);
     exit;
 }
