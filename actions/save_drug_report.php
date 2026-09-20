@@ -60,6 +60,8 @@ $weightKg = (float)($inputData['weight_kg'] ?? 0);
 $overallSafety = trim((string)($inputData['overall_safety'] ?? 'safe'));
 $overallSummary = trim((string)($inputData['overall_summary'] ?? ''));
 $reportSerial = trim((string)($inputData['report_serial'] ?? 'ASENA-INT-' . strtoupper(substr(bin2hex(random_bytes(4)), 0, 8))));
+$userNotes = trim((string)($inputData['user_notes'] ?? ''));
+$conditionAnalysis = trim((string)($inputData['condition_analysis'] ?? ''));
 
 $drugs = (array)($inputData['drugs'] ?? []);
 $interactions = (array)($inputData['interactions'] ?? []);
@@ -96,6 +98,10 @@ $notesContent = sprintf(
     $drugListText,
     $overallSummary
 );
+
+if (!empty($userNotes)) {
+    $notesContent .= "\n\nوضعیت بالینی گزارش‌شده توسط سرپرست:\n" . $userNotes;
+}
 
 if (!empty($interactions)) {
     $notesContent .= "\n\nتداخلات ثبت‌شده:\n";
@@ -158,6 +164,8 @@ try {
         'age_stage' => $inputData['age_stage'] ?? 'adult',
         'overall_safety' => $overallSafety,
         'overall_summary' => $overallSummary,
+        'user_notes' => $userNotes,
+        'condition_analysis' => $conditionAnalysis,
         'drugs' => $drugs,
         'interactions' => $interactions,
         'contraindications' => $contraindications,

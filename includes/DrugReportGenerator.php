@@ -45,6 +45,8 @@ class DrugReportGenerator
         $overallSafety = strtolower((string)($data['overall_safety'] ?? 'safe'));
         $overallSummary = trim((string)($data['overall_summary'] ?? ''));
         $createdAt = $data['created_at'] ?? date('Y/m/d - H:i');
+        $userNotes = trim((string)($data['user_notes'] ?? ''));
+        $conditionAnalysis = trim((string)($data['condition_analysis'] ?? ''));
 
         $drugs = (array)($data['drugs'] ?? []);
         $interactions = (array)($data['interactions'] ?? []);
@@ -963,6 +965,27 @@ class DrugReportGenerator
             </div>
         </div>
 
+        <?php if (!empty($userNotes) || !empty($conditionAnalysis)): ?>
+            <!-- User Reported Pet Condition & Clinical AI Pharmacology Evaluation -->
+            <div style="margin-bottom: 24px; background: #eff6ff; border: 1px solid #bfdbfe; border-right: 4px solid #2563eb; padding: 16px 18px; border-radius: 14px;">
+                <div style="display: flex; align-items: center; gap: 8px; font-weight: 800; color: #1e40af; font-size: 13px; margin-bottom: 8px;">
+                    <span class="material-symbols-outlined" style="font-size: 20px;">clinical_notes</span>
+                    <span>شرح وضعیت بالینی، علائم یا حساسیت‌های اعلام‌شده توسط سرپرست:</span>
+                </div>
+                <?php if (!empty($userNotes)): ?>
+                    <div style="font-size: 12px; color: #1e293b; line-height: 1.7; background: #ffffff; padding: 12px 14px; border-radius: 10px; border: 1px solid #dbeafe; margin-bottom: 10px;">
+                        <?php echo nl2br(htmlspecialchars($userNotes)); ?>
+                    </div>
+                <?php endif; ?>
+                <?php if (!empty($conditionAnalysis)): ?>
+                    <div style="font-size: 12px; color: #1e40af; line-height: 1.7; background: rgba(219, 234, 254, 0.4); padding: 10px 14px; border-radius: 10px; border: 1px solid #bfdbfe;">
+                        <strong style="color: #1d4ed8; display: block; margin-bottom: 4px;">ارزیابی فارماکولوژی اختصاصی هوش مصنوعی بالینی آسنا:</strong>
+                        <?php echo nl2br(htmlspecialchars($conditionAnalysis)); ?>
+                    </div>
+                <?php endif; ?>
+            </div>
+        <?php endif; ?>
+
         <!-- 4 Key Metrics Cards -->
         <div class="metrics-grid">
             <div class="metric-card">
@@ -1150,9 +1173,15 @@ class DrugReportGenerator
             </div>
         </div>
 
-        <!-- Disclaimer -->
-        <div class="disclaimer-text">
-            این کارنامه بالینی صرفاً جهت افزایش ایمنی درمان و بر پایه معتبرترین کتاب‌های مرجع فارماکولوژی دامپزشکی جهان استخراج گردیده است. تشخیص بیماری، دوز دقیق و دستور نهایی مصرف منحصراً در صلاحیت دکتر دامپزشک معالج پس از معاینه حضوری بیمار می‌باشد.
+        <!-- Mandatory Medical Disclaimer & Health Warning -->
+        <div class="disclaimer-text" style="background: #fff1f2; border: 1px solid #fecdd3; border-radius: 12px; padding: 14px 18px; color: #9f1239; line-height: 1.8; font-size: 11.5px; text-align: justify; margin-top: 24px;">
+            <div style="font-weight: 800; display: flex; align-items: center; gap: 6px; margin-bottom: 4px; color: #881337; font-size: 12px;">
+                <span class="material-symbols-outlined" style="font-size: 18px;">gavel</span>
+                <span>سلب مسئولیت پزشکی و هشدار سلامت:</span>
+            </div>
+            <div style="color: #be123c; font-weight: 500;">
+                این ابزار صرفاً جنبه محاسبات تغذیه و شاخص بدنی دارد. تجویز هرگونه دارو، قرص ضدانگل، قطره ضدکک یا واکسیناسیون باید منحصراً توسط دکتر دامپزشک پس از معاینه بالینی حضوری انجام پذیرد. مصرف خودسرانه داروهای انسانی برای پتها خطر مسمومیت مرگبار دارد.
+            </div>
         </div>
 
     </div>

@@ -53,21 +53,8 @@ if (!verify_csrf_token($csrf)) {
     exit;
 }
 
-// Check monetization setting (prevent bypass when paid mode is active)
-$calculatorIsPaid = (bool)(int)get_setting($pdo, 'calculator_is_paid', 0);
-$userRole = $_SESSION['user_role'] ?? $_SESSION['role'] ?? 'user';
-if ($calculatorIsPaid && $userRole !== 'admin') {
-    $calcPrice = (int)get_setting($pdo, 'calculator_price_toman', 98000);
-    echo json_encode([
-        'success' => false,
-        'require_payment' => true,
-        'price' => $calcPrice,
-        'message' => 'صدور و بایگانی جدول برنامه غذایی نیازمند پرداخت آنلاین است.'
-    ], JSON_UNESCAPED_UNICODE);
-    exit;
-}
-
 // Extract inputs
+$userNotes = trim((string)($inputData['user_notes'] ?? $inputData['pet_condition'] ?? ''));
 $petName = trim((string)($inputData['pet_name'] ?? 'حیوان خانگی من'));
 $species = in_array($inputData['species'] ?? '', ['dog', 'cat']) ? $inputData['species'] : 'dog';
 $race = trim((string)($inputData['race'] ?? $inputData['breed'] ?? 'مشخص نشده'));
@@ -122,6 +109,7 @@ $htmlContent = MealPlanGenerator::generate([
     'water_ml' => $waterMl,
     'treat_calories' => $treatCalories,
     'ai_analysis' => $aiAnalysisObj,
+    'user_notes' => $userNotes,
     'created_at' => date('Y/m/d - H:i')
 ]);
 
@@ -129,7 +117,7 @@ $htmlContent = MealPlanGenerator::generate([
 
 try {
     $reportSummary = sprintf(
-        "کارنامه تغذیه بالینی آسنا (%s)\nگونه: %s | نژاد: %s | مرحله زندگی: %s\nوزن جاری: %.1f کیلوگرم | وزن هدف: %.1f کیلوگرم\nشاخص وضعیت بدنی (BCS): %d/9\nکالری روزانه: %d کیلوکالری | غذای خشک: %d گرم | آب مورد نیاز: %d میلی‌لیتر%s",
+        "کارنامه تغذیه بالینی آسنا (%s)\nگونه: %s | نژاد: %s | مرحله زندگی: %s\nوزن جاری: %.1f کیلوگرم | وزن هدف: %.1f کیلوگرم\nشاخص وضعیت بدنی (BCS): %d/9\nکالری روزانه: %d کیلوکالری | غذای خشک: %d گرم | آب مورد نیاز: %d میلی‌لیتر%s%s",
         $reportSerial,
         $species === 'dog' ? 'سگ' : 'گربه',
         $race,
@@ -140,6 +128,7 @@ try {
         $dailyCalories,
         $kibbleGrams,
         $waterMl,
+        !empty($userNotes) ? "\nشرح وضعیت گزارش‌شده توسط سرپرست: " . $userNotes : '',
         !empty($aiAnalysis) ? "\n\nتحلیل هوش مصنوعی بالینی:\n" . $aiAnalysis : ''
     );
 

@@ -241,12 +241,35 @@ if ($userId > 0 && isset($pdo)) {
 
                 </div>
 
-                <!-- 5. Primary Analysis Action Button -->
+                <!-- 5. Pet Condition & Clinical History Input -->
+                <div class="space-y-2 pt-2 border-t border-white/10">
+                    <label class="text-xs font-bold text-white/90 flex items-center justify-between">
+                        <span class="flex items-center gap-1.5">
+                            <span class="material-symbols-outlined text-sm text-blue-300">clinical_notes</span>
+                            <span>شرح وضعیت بالینی، علائم، آلرژی یا یادداشت سرپرست (اختیاری):</span>
+                        </span>
+                        <span class="text-[10px] text-blue-200">تحلیل عمیق هوش مصنوعی</span>
+                    </label>
+                    <textarea id="drugUserNotes" rows="2" placeholder="اگر حیوان شما دارای علائم خاصی مثل بی‌اشتهایی، استفراغ، آلرژی به داروی خاص، سابقه جراحی اخیر یا دستور ویژه پزشک است در اینجا بنویسید تا هوش مصنوعی در پایش تداخلات لحاظ نماید..." class="w-full bg-white/10 border border-white/20 rounded-xl p-2.5 text-xs text-white placeholder-white/40 focus:outline-none focus:border-blue-400 leading-relaxed"></textarea>
+                </div>
+
+                <!-- 6. Primary Analysis Action Button -->
                 <div class="pt-2">
                     <button type="button" onclick="runDrugInteractionAnalysis()" id="btnRunDrugAnalysis" class="w-full bg-gradient-to-r from-blue-500 via-blue-600 to-indigo-600 hover:from-blue-400 hover:to-indigo-500 text-white py-4 px-6 rounded-2xl font-black text-sm text-center shadow-xl shadow-blue-600/30 hover:shadow-blue-500/50 transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-98">
                         <span class="material-symbols-outlined text-xl">psychology</span>
                         <span>شروع پایش و تحلیل تداخلات با هوش مصنوعی بالینی</span>
                     </button>
+                </div>
+
+                <!-- Mandatory Medical Disclaimer Box -->
+                <div class="p-3.5 rounded-2xl bg-red-950/40 border border-red-500/30 text-red-200 text-xs leading-relaxed space-y-1">
+                    <div class="font-bold text-red-300 flex items-center gap-1.5 text-xs">
+                        <span class="material-symbols-outlined text-sm text-red-400">gavel</span>
+                        <span>سلب مسئولیت پزشکی و هشدار سلامت:</span>
+                    </div>
+                    <p class="text-[11px] text-red-200/90 leading-normal">
+                        این ابزار صرفاً جنبه محاسبات تغذیه و شاخص بدنی دارد. تجویز هرگونه دارو، قرص ضدانگل، قطره ضدکک یا واکسیناسیون باید منحصراً توسط دکتر دامپزشک پس از معاینه بالینی حضوری انجام پذیرد. مصرف خودسرانه داروهای انسانی برای پتها خطر مسمومیت مرگبار دارد.
+                    </p>
                 </div>
 
             </div>
@@ -279,6 +302,9 @@ if ($userId > 0 && isset($pdo)) {
 
                     <!-- Detailed Interactive Results Container (Appears after analysis) -->
                     <div id="detailedResultsArea" class="space-y-3 hidden">
+
+                        <!-- AI Condition Assessment Callout -->
+                        <div id="conditionAnalysisWrap" class="hidden"></div>
 
                         <!-- Interactions Accordion List -->
                         <div id="interactionsListWrapper" class="space-y-2">
@@ -439,6 +465,7 @@ if ($userId > 0 && isset($pdo)) {
         weight: 12,
         conditions: [],
         drugs: [],
+        userNotes: '',
         latestReport: null
     };
 
@@ -678,10 +705,12 @@ if ($userId > 0 && isset($pdo)) {
         const nameInp = document.getElementById('drugPetName');
         const raceInp = document.getElementById('drugPetRace');
         const weightInp = document.getElementById('drugPetWeight');
+        const notesInp = document.getElementById('drugUserNotes');
 
         state.petName = nameInp ? nameInp.value.trim() : '';
         state.race = raceInp ? raceInp.value.trim() : '';
         state.weight = weightInp ? parseFloat(weightInp.value) || 12 : 12;
+        state.userNotes = notesInp ? notesInp.value.trim() : '';
 
         const btn = document.getElementById('btnRunDrugAnalysis');
         const origContent = btn ? btn.innerHTML : '';
@@ -705,6 +734,7 @@ if ($userId > 0 && isset($pdo)) {
                     race: state.race,
                     weight_kg: state.weight,
                     conditions: state.conditions,
+                    user_notes: state.userNotes,
                     drugs: state.drugs
                 })
             });
@@ -780,6 +810,26 @@ if ($userId > 0 && isset($pdo)) {
         }
 
         summaryText.textContent = data.overall_summary || '';
+
+        // AI Condition Analysis Callout
+        const condWrap = document.getElementById('conditionAnalysisWrap');
+        if (condWrap) {
+            if (data.condition_analysis) {
+                condWrap.innerHTML = `
+                    <div class="p-3.5 rounded-2xl bg-blue-950/50 border border-blue-400/40 text-xs space-y-1 text-white shadow-inner">
+                        <div class="flex items-center gap-1.5 text-blue-300 font-bold text-xs">
+                            <span class="material-symbols-outlined text-base text-blue-400">psychology</span>
+                            <span>تحلیل اختصاصی هوش مصنوعی بالینی بر اساس وضعیت پت:</span>
+                        </div>
+                        <p class="text-[11px] text-blue-100/90 leading-relaxed">${escapeHtml(data.condition_analysis)}</p>
+                    </div>
+                `;
+                condWrap.classList.remove('hidden');
+            } else {
+                condWrap.innerHTML = '';
+                condWrap.classList.add('hidden');
+            }
+        }
 
         // Render Individual Interactions Cards
         const itWrapper = document.getElementById('interactionsListWrapper');
@@ -917,6 +967,11 @@ if ($userId > 0 && isset($pdo)) {
     function resetResultsView() {
         const resultsArea = document.getElementById('detailedResultsArea');
         if (resultsArea) resultsArea.classList.add('hidden');
+        const condWrap = document.getElementById('conditionAnalysisWrap');
+        if (condWrap) {
+            condWrap.innerHTML = '';
+            condWrap.classList.add('hidden');
+        }
         const safetyBadge = document.getElementById('analysisStatusBadge');
         if (safetyBadge) {
             safetyBadge.textContent = 'در انتظار داروها';
@@ -949,6 +1004,8 @@ if ($userId > 0 && isset($pdo)) {
                     species: state.species,
                     race: state.race,
                     weight_kg: state.weight,
+                    user_notes: state.userNotes,
+                    condition_analysis: state.latestReport.condition_analysis || '',
                     report_serial: state.latestReport.report_serial,
                     overall_safety: state.latestReport.overall_safety,
                     overall_summary: state.latestReport.overall_summary,

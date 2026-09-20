@@ -58,6 +58,8 @@ class DrugInteractionService {
             ];
         }
 
+        $userNotes = trim((string)($petInfo['user_notes'] ?? ''));
+
         // Run Rule Engine First (for deterministic safety baseline)
         $ruleResult = $this->evaluateRuleEngine($cleanDrugs, $petInfo);
 
@@ -81,17 +83,29 @@ class DrugInteractionService {
                 'source' => 'gemini_enhanced',
                 'overall_safety' => $highestSeverity,
                 'overall_summary' => $aiResult['overall_summary'] ?? $ruleResult['overall_summary'],
+                'condition_analysis' => $aiResult['condition_analysis'] ?? '',
+                'user_notes' => $userNotes,
                 'interactions_found' => $mergedInteractions,
                 'species_contraindications' => $mergedContraindications,
                 'safe_combinations' => $aiResult['safe_combinations'] ?? $ruleResult['safe_combinations'],
                 'time_spacing_schedule' => $aiResult['time_spacing_schedule'] ?? $ruleResult['time_spacing_schedule'],
                 'vet_recommendations' => $aiResult['vet_recommendations'] ?? $ruleResult['vet_recommendations'],
-                'disclaimer' => 'این تحلیل بر اساس فارماکوپیای بالینی دامپزشکی (Plumb\'s & BSAVA) تدوین شده و جایگزین تشخیص حضوری دکتر دامپزشک نمی‌باشد.'
+                'disclaimer' => 'سلب مسئولیت پزشکی و هشدار سلامت: این ابزار صرفاً جنبه محاسبات تغذیه و شاخص بدنی دارد. تجویز هرگونه دارو، قرص ضدانگل، قطره ضدکک یا واکسیناسیون باید منحصراً توسط دکتر دامپزشک پس از معاینه بالینی حضوری انجام پذیرد. مصرف خودسرانه داروهای انسانی برای پتها خطر مسمومیت مرگبار دارد.'
             ];
         }
 
         // Fallback to pure clinical rule engine
-        return array_merge(['success' => true, 'source' => 'rule_engine'], $ruleResult);
+        $fallbackCondition = '';
+        if (!empty($userNotes)) {
+            $fallbackCondition = "بررسی علائم و وضعیت گزارش‌شده ({$userNotes}) همراه با رژیم دارویی، نیازمند پایش مستمر بالینی توسط دکتر دامپزشک است.";
+        }
+        return array_merge([
+            'success' => true,
+            'source' => 'rule_engine',
+            'condition_analysis' => $fallbackCondition,
+            'user_notes' => $userNotes,
+            'disclaimer' => 'سلب مسئولیت پزشکی و هشدار سلامت: این ابزار صرفاً جنبه محاسبات تغذیه و شاخص بدنی دارد. تجویز هرگونه دارو، قرص ضدانگل، قطره ضدکک یا واکسیناسیون باید منحصراً توسط دکتر دامپزشک پس از معاینه بالینی حضوری انجام پذیرد. مصرف خودسرانه داروهای انسانی برای پتها خطر مسمومیت مرگبار دارد.'
+        ], $ruleResult);
     }
 
     /**
@@ -380,7 +394,7 @@ class DrugInteractionService {
             'safe_combinations' => $safeCombinations,
             'time_spacing_schedule' => array_unique($timeSpacing),
             'vet_recommendations' => $recommendations,
-            'disclaimer' => 'پایشگر تداخلات دارویی آسنا صرفاً ابزار کمکی بالینی است و تصمیم نهایی درمانی بر عهده پزشک دامپزشک می‌باشد.'
+            'disclaimer' => 'سلب مسئولیت پزشکی و هشدار سلامت: این ابزار صرفاً جنبه محاسبات تغذیه و شاخص بدنی دارد. تجویز هرگونه دارو، قرص ضدانگل، قطره ضدکک یا واکسیناسیون باید منحصراً توسط دکتر دامپزشک پس از معاینه بالینی حضوری انجام پذیرد. مصرف خودسرانه داروهای انسانی برای پتها خطر مسمومیت مرگبار دارد.'
         ];
     }
 
@@ -399,6 +413,7 @@ class DrugInteractionService {
         $race = $petInfo['race'] ?: 'مشخص نشده';
         $weight = (float)($petInfo['weight_kg'] ?? 0);
         $conditions = implode('، ', (array)($petInfo['conditions'] ?? ['بدون بیماری زمینه‌ای خاص']));
+        $userNotes = trim((string)($petInfo['user_notes'] ?? ''));
 
         $drugListStr = '';
         foreach ($cleanDrugs as $idx => $d) {
@@ -416,15 +431,18 @@ class DrugInteractionService {
 - گونه حیوان: {$speciesFa}
 - نژاد پت: {$race}
 - وزن بدن: {$weight} کیلوگرم
-- بیماری‌های زمینه‌ای: {$conditions}
+- بیماری‌های زمینه‌ای: {$conditions}";
 
-فهرست داروهای مصرفی همزمان:
-{$drugListStr}
+        if (!empty($userNotes)) {
+            $userPrompt .= "\n- توضیحات تکمیلی، علائم بالینی یا حساسیت‌های اعلام‌شده توسط سرپرست: {$userNotes}";
+        }
 
+        $userPrompt .= "\n\nفهرست داروهای مصرفی همزمان:\n{$drugListStr}\n
 لطفاً خروجی را دقیقاً و صرفاً به صورت JSON با کلیدهای زیر برگردانید:
 {
   \"overall_safety\": \"critical\" | \"warning\" | \"moderate\" | \"safe\",
   \"overall_summary\": \"توضیح بالینی مختصر و صریح وضعیت در ۲ جمله\",
+  \"condition_analysis\": \"ارزیابی و تحلیل فارماکولوژی اختصاصی پیرامون علائم یا توضیحات تکمیلی سرپرست و نحوه تداخل یا سازگاری داروها با این وضعیت\",
   \"interactions_found\": [
     {
       \"drug1\": \"نام داروی اول\",

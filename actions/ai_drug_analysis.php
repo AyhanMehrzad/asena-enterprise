@@ -108,7 +108,8 @@ $petInfo = [
     'race' => trim((string)($inputData['race'] ?? '')),
     'weight_kg' => (float)($inputData['weight_kg'] ?? 0),
     'age_stage' => trim((string)($inputData['age_stage'] ?? 'adult')),
-    'conditions' => is_array($inputData['conditions'] ?? null) ? $inputData['conditions'] : []
+    'conditions' => is_array($inputData['conditions'] ?? null) ? $inputData['conditions'] : [],
+    'user_notes' => trim((string)($inputData['user_notes'] ?? ''))
 ];
 
 $service = new DrugInteractionService($pdo);

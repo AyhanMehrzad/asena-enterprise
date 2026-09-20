@@ -48,6 +48,7 @@ class MealPlanGenerator
         $stage = $data['stage'] ?? 'adult';
         $activity = $data['activity'] ?? 'neutered';
         $createdAt = $data['created_at'] ?? date('Y/m/d - H:i');
+        $userNotes = trim((string)($data['user_notes'] ?? $data['pet_condition'] ?? ''));
 
         // Stage & Activity Persian Titles
         $stageFa = match ($stage) {
@@ -883,6 +884,34 @@ class MealPlanGenerator
             <!-- Metabolic Note Callout -->
             <div style="background: #f1f5f9; border-right: 4px solid var(--primary); padding: 14px 18px; border-radius: 12px; font-size: 12px; color: #334155; line-height: 1.6;">
                 <strong>یادداشت بیومکانیک بالینی دامپزشک:</strong> <?php echo htmlspecialchars($metabolicNote); ?>
+            </div>
+
+            <?php if (!empty($userNotes)): ?>
+            <!-- User Reported Pet Condition & Clinical AI Guidance -->
+            <div style="margin-top: 16px; background: #eff6ff; border: 1px solid #bfdbfe; border-right: 4px solid #2563eb; padding: 16px 18px; border-radius: 14px;">
+                <div style="display: flex; align-items: center; gap: 8px; font-weight: 800; color: #1e40af; font-size: 13px; margin-bottom: 8px;">
+                    <span class="material-symbols-outlined" style="font-size: 18px;">clinical_notes</span>
+                    <span>شرح وضعیت بالینی، علائم یا عادات ارائه‌شده توسط سرپرست:</span>
+                </div>
+                <div style="font-size: 12px; color: #1e293b; line-height: 1.7; background: #ffffff; padding: 10px 14px; border-radius: 10px; border: 1px solid #dbeafe; margin-bottom: 8px;">
+                    <?php echo nl2br(htmlspecialchars($userNotes)); ?>
+                </div>
+                <div style="font-size: 11px; color: #1e40af; line-height: 1.6;">
+                    <strong style="color: #1d4ed8;">تحلیل تطبیقی هوش مصنوعی بالینی آسنا:</strong>
+                    رژیم غذایی و مقادیر فوق با در نظر گرفتن توضیحات بالینی سرپرست تنظیم گردیده‌اند. در صورت مشاهده هرگونه تغییر گوارشی، مراجعه به دامپزشک الزامی است.
+                </div>
+            </div>
+            <?php endif; ?>
+
+            <!-- Mandatory Medical Disclaimer & Health Warning -->
+            <div style="margin-top: 18px; padding: 14px 18px; border-radius: 14px; background: #fff1f2; border: 1px solid #fecdd3; color: #9f1239; font-size: 11px; line-height: 1.7;">
+                <div style="font-weight: 800; display: flex; align-items: center; gap: 6px; margin-bottom: 4px; color: #881337;">
+                    <span class="material-symbols-outlined" style="font-size: 18px;">gavel</span>
+                    <span>سلب مسئولیت پزشکی و هشدار سلامت:</span>
+                </div>
+                <div style="color: #be123c; font-weight: 500;">
+                    این ابزار صرفاً جنبه محاسبات تغذیه و شاخص بدنی دارد. تجویز هرگونه دارو، قرص ضدانگل، قطره ضدکک یا واکسیناسیون باید منحصراً توسط دکتر دامپزشک پس از معاینه بالینی حضوری انجام پذیرد. مصرف خودسرانه داروهای انسانی برای پتها خطر مسمومیت مرگبار دارد.
+                </div>
             </div>
 
         </div>

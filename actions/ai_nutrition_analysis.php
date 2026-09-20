@@ -33,6 +33,7 @@ $kibbleGrams = (int)($inputData['kibble_grams'] ?? 145);
 $waterMl = (int)($inputData['water_ml'] ?? 510);
 $activity = trim((string)($inputData['activity'] ?? 'neutered'));
 $stage = trim((string)($inputData['stage'] ?? 'adult'));
+$userNotes = trim((string)($inputData['user_notes'] ?? $inputData['pet_condition'] ?? ''));
 
 // Translations for prompts
 $speciesFa = $species === 'dog' ? 'سگ' : 'گربه';
@@ -74,7 +75,7 @@ if (!empty($avalai_api_key)) {
 - شاخص وضعیت بدنی (BCS): {$bcsFa}
 - انرژی متابولیک محاسبه‌شده (MER): {$dailyCalories} کیلوکالری در روز
 - غذای خشک استاندارد: {$kibbleGrams} گرم در روز
-- حداقل آب مورد نیاز: {$waterMl} میلی‌لیتر
+- حداقل آب مورد نیاز: {$waterMl} میلی‌لیتر" . (!empty($userNotes) ? "\n- شرح وضعیت و عادات گزارش‌شده توسط سرپرست: {$userNotes}\nتوجه: لطفاً به نکات بالینی سرپرست بالا توجه ویژه نمایید." : "") . "
 
 لطفاً به صورت ساختاریافته در بخش‌های زیر تحلیل بالینی ارائه دهید:
 ۱. ارزیابی بیومکانیک و متابولیسم نژاد {$race}
@@ -342,6 +343,7 @@ $response = [
         'stage' => $stage,
         'activity' => $activity
     ],
+    'user_notes' => $userNotes,
     'timestamp' => date('Y-m-d H:i:s')
 ];
 

@@ -77,13 +77,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             $enamadCode = trim($_POST['enamad_html_code'] ?? '');
             set_setting($pdo, 'enamad_html_code', $enamadCode);
 
-            // Clinical Calculator & Meal Plan Monetization (Free vs Paid)
+            // Clinical Calculator & Meal Plan Monetization (Free vs Paid via Charity Pay Link)
             $calculatorIsPaid = isset($_POST['calculator_is_paid']) ? '1' : '0';
-            $calculatorPrice = max(0, (int)($_POST['calculator_price_toman'] ?? 98000));
+            $calculatorPrice = max(0, (int)($_POST['calculator_price_toman'] ?? 0));
+            $calculatorCharityLink = trim($_POST['calculator_charity_link'] ?? '');
             set_setting($pdo, 'calculator_is_paid', $calculatorIsPaid);
             set_setting($pdo, 'calculator_price_toman', $calculatorPrice);
+            set_setting($pdo, 'calculator_charity_link', $calculatorCharityLink);
 
-            $success = "تنظیمات حساب بانکی، مالیات، درگاه پرداخت، وضعیت رایگان/پولی محاسبه‌گر تغذیه و نماد اعتماد با موفقیت ذخیره شد.";
+            $success = "تنظیمات خزانه‌داری، مالیات، درگاه پرداخت، لینک خیریه محاسبه‌گر تغذیه و نماد اعتماد با موفقیت ذخیره شد.";
         }
     } elseif ($action === 'approve_receipt') {
         $subId = (int)$_POST['submission_id'];
@@ -136,7 +138,8 @@ $autoPayoutDay     = (int)get_setting($pdo, 'auto_payout_day', 4);
 $autoPayoutTime    = get_setting($pdo, 'auto_payout_time', '09:00');
 
 $calculatorIsPaid = (int)get_setting($pdo, 'calculator_is_paid', 0);
-$calculatorPrice  = (int)get_setting($pdo, 'calculator_price_toman', 98000);
+$calculatorPrice  = (int)get_setting($pdo, 'calculator_price_toman', 50000);
+$calculatorCharityLink = get_setting($pdo, 'calculator_charity_link', 'charity.php');
 
 // Pending Card Receipts Queue
 $pendingSubmissionsStmt = $pdo->query("
@@ -449,11 +452,11 @@ require_once __DIR__ . '/includes/admin_header.php';
                         <div class="flex items-center gap-2">
                             <span class="material-symbols-outlined text-emerald-600 dark:text-emerald-400 text-xl">calculate</span>
                             <h3 class="font-bold text-slate-900 dark:text-white text-base">
-                                وضعیت درآمدزایی محاسبه‌گر بالینی و جدول برنامه غذایی (Free / Paid Toggle)
+                                تنظیمات وضعیت دسترسی و مدل خیریه محاسبه‌گر تغذیه (معاف از مالیات)
                             </h3>
                         </div>
-                        <span class="text-xs font-mono font-bold px-3 py-1 rounded-full <?= $calculatorIsPaid ? 'bg-amber-100 text-amber-800 border border-amber-300' : 'bg-emerald-100 text-emerald-800 border border-emerald-300' ?>">
-                            <?= $calculatorIsPaid ? 'حالت پولی (Monetized)' : 'حالت رایگان (Free Lead Magnet)' ?>
+                        <span class="text-xs font-mono font-bold px-3 py-1 rounded-full <?= $calculatorIsPaid ? 'bg-rose-100 text-rose-800 border border-rose-300' : 'bg-emerald-100 text-emerald-800 border border-emerald-300' ?>">
+                            <?= $calculatorIsPaid ? 'حالت پولی (حمایت خیریه)' : 'حالت رایگان (Unpaid)' ?>
                         </span>
                     </div>
 
@@ -461,11 +464,11 @@ require_once __DIR__ . '/includes/admin_header.php';
                         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                             <div class="space-y-1">
                                 <label for="calcPaidToggle" class="text-sm font-black text-slate-800 dark:text-slate-100 flex items-center gap-2 cursor-pointer">
-                                    <span>کلید روشن/خاموش: پولی کردن صدور کارنامه و رژیم غذایی</span>
+                                    <span>کلید وضعیت: دسترسی رایگان یا پرداخت از طریق لینک خیریه</span>
                                 </label>
                                 <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-                                    • در حالت <strong class="text-emerald-600">خاموش (رایگان)</strong>: کاربران با عضویت رایگان می‌توانند فایل جدول برنامه غذایی را فوراً در پرونده سلامت پت خود ذخیره کنند.<br>
-                                    • در حالت <strong class="text-amber-600">روشن (پولی)</strong>: جهت صدور رسمی و ارسال به پرونده، پرداخت مبلغ زیر الزامی خواهد بود.
+                                    • در حالت <strong class="text-emerald-600">خاموش (رایگان / Unpaid)</strong>: محاسبه‌گر بدون نیاز به پرداخت کار می‌کند و کاربران با یک دکمه تمیز فایل را در پرونده ذخیره می‌کنند.<br>
+                                    • در حالت <strong class="text-rose-600">روشن (پولی خیریه / Paid)</strong>: به منظور <strong class="text-emerald-700">عدم شمول مالیات بر ارزش افزوده و درآمد</strong>، پرداخت از درگاه تجاری حذف شده و مستقیماً به لینک خیریه و نذر حیوانات هدایت می‌گردد.
                                 </p>
                             </div>
 
@@ -478,11 +481,22 @@ require_once __DIR__ . '/includes/admin_header.php';
                             </div>
                         </div>
 
-                        <!-- Price Setting Field -->
+                        <!-- Charity Pay Link Field -->
+                        <div class="pt-3 border-t border-slate-200/80 dark:border-slate-700/80 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                            <div class="max-w-md">
+                                <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">لینک پرداخت خیریه / نذر حیوانات (معاف از مالیات):</label>
+                                <p class="text-[10px] text-slate-400 leading-relaxed">آدرس صفحه پرداخت خیریه، پویش حمایت مالی یا درگاه نذر حیوانات (مثلاً لینک ری‌میت، زرین‌لینک خیریه یا صفحه charity.php). کاربر هنگام صدور به این لینک هدایت می‌شود.</p>
+                            </div>
+                            <div class="relative w-full sm:w-80">
+                                <input type="text" name="calculator_charity_link" value="<?= htmlspecialchars($calculatorCharityLink) ?>" placeholder="مثال: charity.php یا https://reymit.ir/..." class="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-mono focus:border-emerald-500 outline-none text-left dir-ltr">
+                            </div>
+                        </div>
+
+                        <!-- Suggested Donation Amount Field -->
                         <div class="pt-3 border-t border-slate-200/80 dark:border-slate-700/80 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                             <div>
-                                <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">تعرفه صدور جدول برنامه غذایی (تومان):</label>
-                                <p class="text-[10px] text-slate-400">مبلغی که در فاکتور، دکمه صدور و درگاه پرداخت آنلاین اعمال می‌شود.</p>
+                                <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">مبلغ پیشنهادی حمایت خیریه (تومان - اختیاری):</label>
+                                <p class="text-[10px] text-slate-400">مبلغ راهنما در دکمه جهت تشویق کاربر به حمایت از حیوانات بی‌پناه.</p>
                             </div>
                             <div class="relative w-full sm:w-60">
                                 <input type="number" name="calculator_price_toman" value="<?= $calculatorPrice ?>" min="0" step="1000" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-mono font-bold focus:border-emerald-500 outline-none pl-12 text-left dir-ltr">

@@ -3,7 +3,11 @@ $page_title = "محاسبه‌گر هوشمند کالری و رژیم غذای�
 $page_description = "محاسبه دقیق کالری روزانه (MER)، شاخص وضعیت بدنی (BCS)، گرم غذای خشک، آب مصرفی و صدور کارنامه رسمی تغذیه بالینی سگ و گربه بر اساس استانداردهای جهانی FEDIAF و WSAVA.";
 require_once 'includes/header.php';
 $calcIsPaid = (bool)(int)get_setting($pdo, 'calculator_is_paid', 0);
-$calcPrice = (int)get_setting($pdo, 'calculator_price_toman', 98000);
+$calcCharityLink = trim((string)get_setting($pdo, 'calculator_charity_link', 'charity.php'));
+if (empty($calcCharityLink)) {
+    $calcCharityLink = 'charity.php';
+}
+$calcPrice = (int)get_setting($pdo, 'calculator_price_toman', 50000);
 ?>
 
 <main class="max-w-container-max mx-auto overflow-hidden py-8 px-margin-desktop min-h-[80vh]">
@@ -225,9 +229,21 @@ $calcPrice = (int)get_setting($pdo, 'calculator_price_toman', 98000);
                     <input type="text" id="calcPetName" value="تدی" placeholder="مثال: لوسی، تدی، میلو..." oninput="calcState.petName = this.value || 'پت من'; recalculateNutrition();" class="w-full sm:w-48 bg-white/10 border border-white/20 rounded-xl px-3 py-1.5 text-xs text-white font-bold text-center focus:outline-none focus:border-emerald-400">
                 </div>
 
+                <!-- 8. Pet Clinical Condition & Dietary History (User Input) -->
+                <div class="space-y-2 bg-white/5 p-4 rounded-2xl border border-white/10">
+                    <label for="calcUserNotes" class="text-xs font-bold text-white/90 flex items-center justify-between">
+                        <span class="flex items-center gap-2">
+                            <span class="material-symbols-outlined text-sm text-emerald-400">clinical_notes</span>
+                            <span>شرح وضعیت بالینی، بیماری، حساسیت یا عادات پت (اختیاری):</span>
+                        </span>
+                        <span class="text-[10px] text-emerald-300">تحلیل عمیق هوش مصنوعی</span>
+                    </label>
+                    <textarea id="calcUserNotes" rows="2" placeholder="مثال: به مرغ آلرژی دارد، بی‌تحرک است، سابقه سنگ ادراری یا جراحی اخیر دارد و..." class="w-full bg-white/10 border border-white/20 rounded-xl p-2.5 text-xs text-white placeholder-white/40 focus:outline-none focus:border-emerald-400 focus:bg-white/15 transition resize-none" oninput="calcState.userNotes = this.value; debouncedAiAnalysis();"></textarea>
+                </div>
+
             </div>
 
-            <!-- Right Column: Magnetic Teaser & Diagnostic Progress Tracker (5 cols) -->
+            <!-- Right Column: Diagnostic Output & Single Action Button (5 cols) -->
             <div class="lg:col-span-5 flex flex-col justify-between bg-white/10 backdrop-blur-2xl rounded-[2.2rem] p-6 sm:p-8 border border-white/20 shadow-2xl relative overflow-hidden">
                 <!-- Background ambient glow -->
                 <div class="absolute -top-20 -right-20 w-64 h-64 bg-emerald-500/15 rounded-full blur-3xl pointer-events-none"></div>
@@ -242,7 +258,7 @@ $calcPrice = (int)get_setting($pdo, 'calculator_price_toman', 98000);
                                 <h3 class="text-sm font-black text-white" id="resPetTitle">شناسایی مشخصات بیومتریک پت</h3>
                                 <p class="text-[11px] text-emerald-300 font-bold flex items-center gap-1.5 mt-0.5" id="resPetSubtitle">
                                     <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                                    <span>تحلیل متابولیک و ریسک‌های نژادی آماده است</span>
+                                    <span>تحلیل متابولیک و جیره غذایی آماده است</span>
                                 </p>
                             </div>
                         </div>
@@ -251,148 +267,111 @@ $calcPrice = (int)get_setting($pdo, 'calculator_price_toman', 98000);
                         </span>
                     </div>
 
-                    <!-- Readiness & Biometric Progress Banner -->
-                    <div class="bg-gradient-to-r from-emerald-900/50 to-emerald-800/30 p-3.5 rounded-2xl border border-emerald-400/30 flex items-center justify-between">
-                        <div class="flex items-center gap-2">
-                            <span class="material-symbols-outlined text-emerald-400 text-lg">check_circle</span>
-                            <div>
-                                <div class="text-xs font-black text-white">پایش بیومتریک نژادی ۱۰۰٪ تکمیل شد</div>
-                                <div class="text-[10px] text-emerald-200/80">آماده صدور نسخه رسمی و جدول ۳ وعده‌ای</div>
-                            </div>
-                        </div>
-                        <span class="bg-emerald-500 text-white text-[10px] font-black px-2 py-0.5 rounded-lg shadow-sm">
-                            آماده صدور
-                        </span>
-                    </div>
-
-                    <!-- 4 Diagnostic Health Status Cards (Locked/Ready - No Raw Numbers Exposed) -->
+                    <!-- 4 Live Diagnostic Output Cards -->
                     <div class="grid grid-cols-2 gap-2.5">
                         
                         <div class="bg-white/10 p-3.5 rounded-2xl border border-white/10 relative overflow-hidden">
-                            <div class="flex items-center justify-between mb-1">
-                                <span class="text-[11px] text-white/70 font-medium">کالری متابولیک (MER):</span>
-                                <span class="material-symbols-outlined text-xs text-amber-300">lock</span>
+                            <div class="text-[11px] text-white/70 font-medium mb-1">کالری متابولیک (MER):</div>
+                            <div class="text-xs sm:text-sm font-black text-amber-300 flex items-baseline gap-1">
+                                <span id="teaserMerVal" class="text-base font-mono">۵۵۰</span>
+                                <span class="text-[10px] text-white/70 font-sans">kcal/روز</span>
                             </div>
-                            <div class="text-xs sm:text-sm font-black text-amber-300 flex items-center gap-1">
-                                <span>محاسبه بالینی شد</span>
-                                <span class="text-emerald-400 text-xs">✓</span>
-                            </div>
-                            <div class="text-[9px] text-white/50 mt-1">تثبیت بر پایه استاندارد جهانی FEDIAF</div>
+                            <div class="text-[9px] text-white/50 mt-1">تثبیت بر پایه استاندارد FEDIAF</div>
                         </div>
 
                         <div class="bg-white/10 p-3.5 rounded-2xl border border-white/10 relative overflow-hidden">
-                            <div class="flex items-center justify-between mb-1">
-                                <span class="text-[11px] text-white/70 font-medium">سهم دقیق غذای هر وعده:</span>
-                                <span class="material-symbols-outlined text-xs text-emerald-300">lock</span>
+                            <div class="text-[11px] text-white/70 font-medium mb-1">گرم غذای خشک روزانه:</div>
+                            <div class="text-xs sm:text-sm font-black text-emerald-300 flex items-baseline gap-1">
+                                <span id="teaserKibbleVal" class="text-base font-mono">۱۴۵</span>
+                                <span class="text-[10px] text-white/70 font-sans">گرم در روز</span>
                             </div>
-                            <div class="text-xs sm:text-sm font-black text-emerald-300 flex items-center gap-1">
-                                <span>گرم دقیق هر وعده</span>
-                                <span class="text-emerald-400 text-xs">✓</span>
-                            </div>
-                            <div class="text-[9px] text-white/50 mt-1">تفکیک ارگونومیک صبح، عصر و شب</div>
+                            <div class="text-[9px] text-white/50 mt-1">محاسبه بر پایه ۳.۷۵ kcal/g</div>
                         </div>
 
                         <div class="bg-white/10 p-3.5 rounded-2xl border border-white/10 relative overflow-hidden">
-                            <div class="flex items-center justify-between mb-1">
-                                <span class="text-[11px] text-white/70 font-medium">جدول زمان‌بندی ۷ روزه:</span>
-                                <span class="material-symbols-outlined text-xs text-sky-300">verified</span>
+                            <div class="text-[11px] text-white/70 font-medium mb-1">آب مصرفی روزانه:</div>
+                            <div class="text-xs sm:text-sm font-black text-sky-300 flex items-baseline gap-1">
+                                <span id="teaserWaterVal" class="text-base font-mono">۵۱۰</span>
+                                <span class="text-[10px] text-white/70 font-sans">میلی‌لیتر</span>
                             </div>
-                            <div class="text-xs sm:text-sm font-black text-sky-300 flex items-center gap-1">
-                                <span>تولید گردید</span>
-                                <span class="text-emerald-400 text-xs">✓</span>
-                            </div>
-                            <div class="text-[9px] text-white/50 mt-1">ساعات دقیق مصرف، آب و مکمل‌ها</div>
+                            <div class="text-[9px] text-white/50 mt-1">هیدراتاسیون فیزیولوژیک</div>
                         </div>
 
                         <div class="bg-white/10 p-3.5 rounded-2xl border border-white/10 relative overflow-hidden">
-                            <div class="flex items-center justify-between mb-1">
-                                <span class="text-[11px] text-white/70 font-medium">هشدارهای نژادی و دارویی:</span>
-                                <span class="material-symbols-outlined text-xs text-rose-300">warning</span>
+                            <div class="text-[11px] text-white/70 font-medium mb-1">وزن ایده‌آل و هدف:</div>
+                            <div class="text-xs sm:text-sm font-black text-purple-300 flex items-baseline gap-1">
+                                <span id="teaserWeightVal" class="text-base font-mono">۸.۵</span>
+                                <span class="text-[10px] text-white/70 font-sans">کیلوگرم</span>
                             </div>
-                            <div class="text-xs sm:text-sm font-black text-rose-300 flex items-center gap-1" id="teaserAlertsBadge">
-                                <span>۲ زنگ خطر شناسایی شد</span>
-                                <span class="text-amber-400 text-xs">⚠️</span>
-                            </div>
-                            <div class="text-[9px] text-white/50 mt-1">حفاظت مفاصل، گوارش و فک نژاد</div>
+                            <div class="text-[9px] text-white/50 mt-1">تطبیق با شاخص سلامت BCS</div>
                         </div>
 
                     </div>
 
-                    <!-- Stunning Blurred Teaser Mockup of the Meal Plan Chart -->
-                    <div class="relative rounded-2xl overflow-hidden border border-white/20 bg-slate-900/60 p-4 shadow-xl">
-                        <!-- Mockup Meal Table (Intentionally Blurred) -->
-                        <div class="select-none pointer-events-none filter blur-[3.5px] opacity-40 space-y-2">
-                            <div class="flex justify-between items-center bg-white/10 p-2 rounded-lg text-[10px]">
+                    <!-- Clean Meal Schedule Preview Card -->
+                    <div class="rounded-2xl border border-white/20 bg-slate-900/60 p-4 shadow-xl space-y-2.5">
+                        <div class="flex items-center justify-between text-xs font-bold text-white/90 border-b border-white/10 pb-2">
+                            <span class="flex items-center gap-1.5">
+                                <span class="material-symbols-outlined text-sm text-emerald-400">schedule</span>
+                                <span>زمان‌بندی و مقادیر وعده‌های غذایی پت:</span>
+                            </span>
+                            <span class="text-[10px] text-emerald-300">بالانس ارگونومیک</span>
+                        </div>
+                        <div class="space-y-1.5 text-xs">
+                            <div class="flex justify-between items-center bg-white/10 px-3 py-2 rounded-xl text-[11px]">
                                 <span>وعده ۱: صبح (۰۸:۳۰)</span>
-                                <span class="font-mono text-emerald-400">███ گرم + امگا ۳</span>
+                                <span class="font-bold text-emerald-400"><span id="mealPortionMorning">۶۵</span> گرم غذای خشک + آب تازه</span>
                             </div>
-                            <div class="flex justify-between items-center bg-white/10 p-2 rounded-lg text-[10px]">
-                                <span>وعده ۲: نیمروزی (۱۴:۰۰)</span>
-                                <span class="font-mono text-purple-300">پاداش سلامت ██ گرم</span>
+                            <div class="flex justify-between items-center bg-white/10 px-3 py-2 rounded-xl text-[11px]">
+                                <span>وعده ۲: عصر / شب (۲۰:۰۰)</span>
+                                <span class="font-bold text-emerald-400"><span id="mealPortionNoon">۸۰</span> گرم غذای خشک</span>
                             </div>
-                            <div class="flex justify-between items-center bg-white/10 p-2 rounded-lg text-[10px]">
-                                <span>وعده ۳: شب (۲۰:۰۰)</span>
-                                <span class="font-mono text-emerald-400">███ گرم + گلوکوزامین</span>
+                            <div class="flex justify-between items-center bg-white/5 px-3 py-1.5 rounded-xl text-[10px] text-white/70">
+                                <span>سقف مجاز تشویقی و پاداش:</span>
+                                <span class="font-mono text-amber-300"><span id="mealTreatGrams">۵۵</span> kcal (زیر ۱۰٪ جیره)</span>
                             </div>
                         </div>
 
-                        <!-- Golden Lock & Value Overlay -->
-                        <div class="absolute inset-0 flex flex-col items-center justify-center text-center p-3 z-10 bg-slate-950/45 backdrop-blur-[2px]">
-                            <div class="w-9 h-9 rounded-full bg-amber-500/20 border border-amber-400/40 text-amber-300 flex items-center justify-center text-lg mb-1 shadow-lg">
-                                <span class="material-symbols-outlined text-lg">lock</span>
-                            </div>
-                            <div class="text-xs font-black text-white">جدول زمان‌بندی دقیق رژیم غذایی و گرم هر وعده پت آماده است</div>
-                            <div class="inline-flex items-center gap-1 mt-1 bg-amber-400/20 text-amber-200 border border-amber-400/30 text-[10px] font-bold px-2.5 py-0.5 rounded-full">
-                                <?php if ($calcIsPaid): ?>
-                                    <span>تعرفه صدور برنامه و رژیم غذایی: <?= number_format($calcPrice) ?> تومان</span>
-                                <?php else: ?>
-                                    <span>ارزش کارنامه: <?= number_format($calcPrice) ?> تومان</span>
-                                    <span class="text-emerald-300">— هدیه رایگان آسنا</span>
-                                <?php endif; ?>
-                            </div>
-                            <div class="text-[9px] text-white/70 mt-1 max-w-xs">
-                                نسخه رسمی به همراه مهر بالینی، دستورالعمل هیدراتاسیون و فایل چاپی در پرونده سلامت شما در پروفایل ذخیره خواهد شد.
-                            </div>
+                        <?php if ($calcIsPaid): ?>
+                        <div class="mt-2 text-[10px] text-rose-200 bg-rose-500/20 border border-rose-400/30 rounded-xl p-2.5 text-center leading-relaxed">
+                            💖 <strong>نذر و حمایت از حیوانات بی‌پناه:</strong> مبالغ دریافتی این بخش مستقیماً صرف امداد و غذای نقاهتگاه پناهگاه حیوانات می‌شود (معاف از مالیات).
                         </div>
+                        <?php endif; ?>
                     </div>
 
-                    <!-- Breed Biomechanic Hint Box -->
+                    <!-- AI Metabolic Summary Hint -->
                     <div class="bg-indigo-950/50 p-3 rounded-xl border border-indigo-400/25 flex items-start gap-2 text-xs">
                         <span class="material-symbols-outlined text-indigo-300 text-sm mt-0.5 shrink-0">psychology</span>
                         <div class="text-[11px] text-indigo-100 leading-relaxed" id="teaserAiMetabolicSummary">
-                            ارزیابی بیومکانیک نژاد و فک پت توسط هوش مصنوعی تکمیل شده و در فایل ارسالی به پروفایل شما ثبت گردیده است.
+                            ارزیابی بیومکانیک نژاد و فک پت توسط هوش مصنوعی تکمیل شده و در فایل ارسالی به پرونده شما ثبت گردیده است.
                         </div>
                     </div>
 
                 </div>
 
-                <!-- High-Converting CTA Actions -->
-                <div class="pt-4 mt-4 border-t border-white/10 space-y-2.5 relative z-10">
-                    <!-- Primary Magnetic Button: Save & Send Meal Plan to Profile -->
-                    <button type="button" onclick="issueAndSendMealPlanToProfile()" id="btnIssueMealPlan" class="w-full bg-gradient-to-r from-emerald-500 via-emerald-600 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white py-3.5 px-4 rounded-2xl font-black text-xs sm:text-sm text-center shadow-xl shadow-emerald-600/30 hover:shadow-emerald-500/50 transition-all flex flex-col items-center justify-center gap-0.5 cursor-pointer active:scale-98">
-                        <div class="flex items-center gap-2">
-                            <span class="material-symbols-outlined text-lg">restaurant_menu</span>
-                            <span><?= $calcIsPaid ? 'پرداخت و صدور جدول برنامه غذایی به پرونده' : 'صدور و ارسال جدول برنامه غذایی به پرونده من' ?></span>
-                            <span class="bg-white/25 text-[10px] px-2 py-0.5 rounded-full font-sans"><?= $calcIsPaid ? number_format($calcPrice) . ' تومان' : 'رایگان' ?></span>
-                        </div>
-                        <span class="text-[10px] text-emerald-100 font-normal">
-                            ارسال مستقیم فایل به پروفایل • ذخیره در پرونده سلامت • چاپ و دانلود PDF
-                        </span>
-                    </button>
+                <!-- Single High-Converting Action Button (No Clutter) -->
+                <div class="pt-4 mt-4 border-t border-white/10 relative z-10 space-y-3">
+                    <?php if ($calcIsPaid): ?>
+                        <button type="button" onclick="issueAndSendMealPlanToProfile()" id="btnIssueMealPlan" class="w-full bg-gradient-to-r from-rose-600 via-pink-600 to-amber-600 hover:from-rose-500 hover:to-amber-500 text-white py-4 px-6 rounded-2xl font-black text-xs sm:text-sm text-center shadow-xl shadow-rose-600/30 transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-98">
+                            <span class="material-symbols-outlined text-xl">volunteer_activism</span>
+                            <span>پرداخت حمایت خیریه<?= $calcPrice > 0 ? ' (' . number_format($calcPrice) . ' تومان)' : '' ?> و صدور برنامه غذایی</span>
+                        </button>
+                    <?php else: ?>
+                        <button type="button" onclick="issueAndSendMealPlanToProfile()" id="btnIssueMealPlan" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-4 px-6 rounded-2xl font-black text-xs sm:text-sm text-center shadow-xl shadow-emerald-600/30 transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-98">
+                            <span class="material-symbols-outlined text-xl">folder_shared</span>
+                            <span>صدور و ذخیره در پرونده سلامت</span>
+                        </button>
+                    <?php endif; ?>
 
-                    <div class="flex items-center justify-center gap-4 text-[10px] text-white/70 pt-1">
-                        <span class="flex items-center gap-1">
-                            <span class="material-symbols-outlined text-xs text-emerald-400">check</span>
-                            استاندارد WSAVA
-                        </span>
-                        <span class="flex items-center gap-1">
-                            <span class="material-symbols-outlined text-xs text-emerald-400">check</span>
-                            آرشیو دائمی در پروفایل
-                        </span>
-                        <span class="flex items-center gap-1">
-                            <span class="material-symbols-outlined text-xs text-emerald-400">check</span>
-                            <?= $calcIsPaid ? 'پرداخت امن شتاب' : 'بدون هزینه' ?>
-                        </span>
+                    <!-- Mandatory Medical Disclaimer & Health Warning -->
+                    <div class="p-3 bg-rose-500/15 border border-rose-400/25 rounded-2xl text-[10px] text-rose-200 space-y-1">
+                        <div class="flex items-center gap-1.5 font-black text-rose-300">
+                            <span class="material-symbols-outlined text-xs">gavel</span>
+                            <span>سلب مسئولیت پزشکی و هشدار سلامت:</span>
+                        </div>
+                        <p class="leading-relaxed text-white/80">
+                            این ابزار صرفاً جنبه محاسبات تغذیه و شاخص بدنی دارد. تجویز هرگونه دارو، قرص ضدانگل، قطره ضدکک یا واکسیناسیون باید منحصراً توسط دکتر دامپزشک پس از معاینه بالینی حضوری انجام پذیرد. مصرف خودسرانه داروهای انسانی برای پتها خطر مسمومیت مرگبار دارد.
+                        </p>
                     </div>
                 </div>
 
@@ -679,13 +658,24 @@ $calcPrice = (int)get_setting($pdo, 'calculator_price_toman', 98000);
                 </div>
             </div>
 
+            <!-- Mandatory Medical Disclaimer & Health Warning -->
+            <div class="p-3.5 bg-rose-50 border border-rose-200 rounded-2xl text-[11px] text-rose-800 space-y-1">
+                <div class="flex items-center gap-1.5 font-black text-rose-900">
+                    <span class="material-symbols-outlined text-sm">gavel</span>
+                    <span>سلب مسئولیت پزشکی و هشدار سلامت:</span>
+                </div>
+                <p class="leading-relaxed">
+                    این ابزار صرفاً جنبه محاسبات تغذیه و شاخص بدنی دارد. تجویز هرگونه دارو، قرص ضدانگل، قطره ضدکک یا واکسیناسیون باید منحصراً توسط دکتر دامپزشک پس از معاینه بالینی حضوری انجام پذیرد. مصرف خودسرانه داروهای انسانی برای پتها خطر مسمومیت مرگبار دارد.
+                </p>
+            </div>
+
         </div>
 
         <!-- Footer Actions -->
         <div class="p-6 bg-slate-50 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3">
             <div class="flex items-center gap-1.5 text-xs text-slate-500">
                 <span class="material-symbols-outlined text-emerald-600 text-base">verified</span>
-                <span>ارزش کارنامه: ۴۹,۰۰۰ تومان — هدیه آسنا به کاربران گرامی</span>
+                <span>سند رسمی ارزیابی و جیره بالینی تغذیه پت</span>
             </div>
             <div class="flex flex-wrap items-center gap-2 w-full sm:w-auto">
                 <button type="button" onclick="consultAiAboutDiet()" class="flex-1 sm:flex-none px-3.5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-sm active:scale-95 cursor-pointer">
@@ -804,6 +794,7 @@ $calcPrice = (int)get_setting($pdo, 'calculator_price_toman', 98000);
 (function() {
     const CALC_IS_PAID = <?= $calcIsPaid ? 'true' : 'false' ?>;
     const CALC_PRICE = <?= (int)$calcPrice ?>;
+    const CALC_CHARITY_LINK = <?= json_encode($calcCharityLink) ?>;
     const DOG_BREEDS = [
         { name: 'ژرمن شپرد', title: 'ژرمن شپرد (German Shepherd)', icon: '🐕', size: 'large', defaultWeight: 30, hintTitle: 'شاخص فیزیولوژیک ژرمن شپرد', hintDesc: 'نژاد بزرگ‌جثه با حساسیت مفاصل ران (دیسپلازی) و معده حساس. نیاز به کلسیم و فسفر بالانس‌شده و فرمول غنی از ال-کارنیتین.', foodTitle: 'غذای خشک رویال کنین ژرمن شپرد ادالت' },
         { name: 'هاسکی', title: 'سیبرین هاسکی (Siberian Husky)', icon: '🐺', size: 'medium-large', defaultWeight: 22, hintTitle: 'متابولیسم سیبرین هاسکی', hintDesc: 'راندمان جذب کالری بسیار بالا با خودتنظیمی مصرف غذا. حساسیت بالا به کمبود زینک و نیازمند امگا ۳ جهت حفظ پوشش دولایه در اقلیم ایران.', foodTitle: 'غذای خشک رفلکس پلاس ماهی سالمون و برنج هاسکی' },
@@ -846,6 +837,7 @@ $calcPrice = (int)get_setting($pdo, 'calculator_price_toman', 98000);
         activity: 'neutered',
         bcs: 5,
         petName: 'تدی',
+        userNotes: '',
         idealWeight: 8.5,
         mer: 540,
         kibbleGrams: 145,
@@ -1096,6 +1088,24 @@ $calcPrice = (int)get_setting($pdo, 'calculator_price_toman', 98000);
         const treatKcal = Math.round(mer * 0.10);
         calcState.treatCalories = treatKcal;
 
+        // Update 4 Real-time Diagnostic Output Cards
+        const tMer = document.getElementById('teaserMerVal');
+        if (tMer) tMer.textContent = mer;
+        const tKibble = document.getElementById('teaserKibbleVal');
+        if (tKibble) tKibble.textContent = kibbleGrams;
+        const tWater = document.getElementById('teaserWaterVal');
+        if (tWater) tWater.textContent = waterMl;
+        const tWeight = document.getElementById('teaserWeightVal');
+        if (tWeight) tWeight.textContent = idealW.toFixed(1);
+
+        // Update Real-time Meal Portions Preview
+        const pMorning = document.getElementById('mealPortionMorning');
+        if (pMorning) pMorning.textContent = Math.round(kibbleGrams * 0.45);
+        const pNoon = document.getElementById('mealPortionNoon');
+        if (pNoon) pNoon.textContent = (kibbleGrams - Math.round(kibbleGrams * 0.45));
+        const pTreat = document.getElementById('mealTreatGrams');
+        if (pTreat) pTreat.textContent = treatKcal;
+
         // Safely update Titles & Teaser Progress in Dashboard
         const petLabel = calcState.species === 'dog' ? 'سگ' : 'گربه';
         const stageLabel = calcState.stage === 'puppy' ? (calcState.species === 'dog' ? 'توله سگ' : 'بچه‌گربه') : (calcState.stage === 'senior' ? 'ارشد' : 'بالغ');
@@ -1167,7 +1177,8 @@ $calcPrice = (int)get_setting($pdo, 'calculator_price_toman', 98000);
                     activity: calcState.activity,
                     daily_calories: calcState.mer,
                     kibble_grams: calcState.kibbleGrams,
-                    water_ml: calcState.waterMl
+                    water_ml: calcState.waterMl,
+                    user_notes: calcState.userNotes || document.getElementById('calcUserNotes')?.value || ''
                 })
             });
             const data = await res.json();
@@ -1329,14 +1340,25 @@ $calcPrice = (int)get_setting($pdo, 'calculator_price_toman', 98000);
         if (btn) {
             btn.disabled = true;
             btn.innerHTML = CALC_IS_PAID 
-                ? '<div class="flex items-center justify-center gap-2 py-2"><span class="material-symbols-outlined text-lg animate-spin">sync</span><span class="text-xs font-black">در حال اتصال امن به درگاه پرداخت...</span></div>'
-                : '<div class="flex items-center justify-center gap-2 py-2"><span class="material-symbols-outlined text-lg animate-spin">sync</span><span class="text-xs font-black">در حال صدور نسخه و ارسال فایل به پرونده...</span></div>';
+                ? '<div class="flex items-center justify-center gap-2 py-2"><span class="material-symbols-outlined text-lg animate-spin">sync</span><span class="text-xs font-black">در حال هدایت به خیریه و صدور نسخه...</span></div>'
+                : '<div class="flex items-center justify-center gap-2 py-2"><span class="material-symbols-outlined text-lg animate-spin">sync</span><span class="text-xs font-black">در حال صدور نسخه و ذخیره در پرونده...</span></div>';
         }
 
-        const targetEndpoint = CALC_IS_PAID ? 'actions/initiate_meal_plan_payment.php' : 'actions/save_nutrition_report.php';
+        // If in Paid/Charity mode, open charity payment link in a new tab (tax-exempt donation)
+        if (CALC_IS_PAID && CALC_CHARITY_LINK) {
+            try {
+                window.open(CALC_CHARITY_LINK, '_blank');
+            } catch(e) {
+                console.warn('Charity window open blocked:', e);
+            }
+        }
+
+        const targetEndpoint = 'actions/save_nutrition_report.php';
 
         try {
             const csrf = window.ASENA_CSRF_TOKEN || document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+            const userNotesVal = calcState.userNotes || document.getElementById('calcUserNotes')?.value || '';
+            
             const res = await fetch(targetEndpoint, {
                 method: 'POST',
                 headers: {
@@ -1356,6 +1378,7 @@ $calcPrice = (int)get_setting($pdo, 'calculator_price_toman', 98000);
                     treat_calories: calcState.treatCalories || Math.round(calcState.mer * 0.10),
                     stage: calcState.stage,
                     activity: calcState.activity,
+                    user_notes: userNotesVal,
                     ai_analysis: calcState.aiAnalysis ? calcState.aiAnalysis.metabolic_analysis : '',
                     ai_analysis_obj: calcState.aiAnalysis,
                     csrf_token: csrf
@@ -1375,25 +1398,13 @@ $calcPrice = (int)get_setting($pdo, 'calculator_price_toman', 98000);
             }
 
             if (data && data.success) {
-                if (data.payment_url) {
-                    // Save pending meal plan state to localStorage
-                    try { localStorage.setItem('asena_pending_meal_plan', JSON.stringify(calcState)); } catch(e){}
-                    window.location.href = data.payment_url;
-                    return;
-                }
-                // Clear any stored pending state
                 try { localStorage.removeItem('asena_pending_meal_plan'); } catch(e){}
                 showMealPlanSuccessModal(data);
             } else if (data && data.require_login) {
-                // Save current state in localStorage for automatic issue after login
                 try {
                     localStorage.setItem('asena_pending_meal_plan', JSON.stringify(calcState));
                 } catch(e) {}
                 showMealPlanAuthModal();
-            } else if (data && data.require_payment) {
-                // Switch to payment
-                try { localStorage.setItem('asena_pending_meal_plan', JSON.stringify(calcState)); } catch(e){}
-                window.location.reload();
             } else {
                 alert((data && data.message) || 'خطا در صدور جدول برنامه غذایی. لطفاً مجدداً تلاش فرمایید.');
             }
