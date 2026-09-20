@@ -145,10 +145,16 @@ $pishtaz_total_cost = $pishtaz_base_cost + $extra_weight_fee;
 $tipax_base_cost = max($standard_shipping_cost + 19000, 68000);
 $tipax_total_cost = $tipax_base_cost + $extra_weight_fee;
 
+$is_free_eligible = ($free_shipping_enabled && $std_taxable_subtotal >= $free_shipping_threshold);
+
 if ($std_taxable_subtotal <= 0) {
     $std_shipping_cost = 0;
-} elseif ($free_shipping_enabled && $std_taxable_subtotal >= $free_shipping_threshold) {
-    $std_shipping_cost = 0;
+} elseif ($is_free_eligible) {
+    if ($selected_carrier === 'tipax') {
+        $std_shipping_cost = max(0, $tipax_total_cost - $pishtaz_total_cost);
+    } else {
+        $std_shipping_cost = 0;
+    }
 } else {
     $std_shipping_cost = ($selected_carrier === 'tipax') ? $tipax_total_cost : $pishtaz_total_cost;
 }
@@ -490,7 +496,11 @@ if (empty($wishlist_products)) {
                                                 <span class="text-[9px] bg-amber-100 text-amber-900 font-black px-1.5 py-0.5 rounded-full">سریع درب منزل</span>
                                             </span>
                                             <span class="text-xs font-mono font-bold text-slate-800">
-                                                <?= number_format($tipax_total_cost) ?> ت
+                                                <?php if($is_free_eligible): ?>
+                                                    <?= number_format(max(0, $tipax_total_cost - $pishtaz_total_cost)) ?> ت <span class="text-[10px] text-emerald-600 font-normal">(تخفیف سقف)</span>
+                                                <?php else: ?>
+                                                    <?= number_format($tipax_total_cost) ?> ت
+                                                <?php endif; ?>
                                             </span>
                                         </div>
                                         <p class="text-[11px] text-slate-500 leading-relaxed">

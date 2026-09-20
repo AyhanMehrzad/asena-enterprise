@@ -164,9 +164,15 @@ if ($isBooking) {
         $shipping_cost = 0; // Always free for Autoship subscribers
         $carrier_label = 'ارسال خودکار دوره‌ای (رایگان)';
     } else {
-        if ($free_shipping_enabled && $taxable_subtotal >= $free_shipping_threshold) {
-            $shipping_cost = 0;
-            $carrier_label = 'پست پیشتاز سراسری (ارسال رایگان)';
+        $is_free_eligible = ($free_shipping_enabled && $taxable_subtotal >= $free_shipping_threshold);
+        if ($is_free_eligible) {
+            if ($selected_carrier === 'tipax') {
+                $shipping_cost = max(0, $tipax_total_cost - $pishtaz_total_cost);
+                $carrier_label = 'تیپاکس اکسپرس (با تخفیف سقف خرید)';
+            } else {
+                $shipping_cost = 0;
+                $carrier_label = 'پست پیشتاز سراسری (ارسال رایگان)';
+            }
         } else {
             $shipping_cost = ($selected_carrier === 'tipax') ? $tipax_total_cost : $pishtaz_total_cost;
             $carrier_label = ($selected_carrier === 'tipax') ? 'تیپاکس اکسپرس' : 'پست پیشتاز سراسری';
