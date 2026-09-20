@@ -44,6 +44,22 @@
       "type": "image/png"
     }
   ],
+  "screenshots": [
+    {
+      "src": "/assets/images/og-asena.png",
+      "sizes": "1200x630",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "پیشخوان و فروشگاه سامانه جامع خدمات دامپزشکی آسنا"
+    },
+    {
+      "src": "/assets/images/dog-hero.jpg",
+      "sizes": "1080x1920",
+      "type": "image/jpeg",
+      "form_factor": "narrow",
+      "label": "پرونده سلامت و خدمات بالینی پت"
+    }
+  ],
   "shortcuts": [
     {
       "name": "حیوانات من و پرونده سلامت",
