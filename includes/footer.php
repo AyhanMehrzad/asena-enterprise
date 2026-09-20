@@ -744,10 +744,11 @@ if (basename($_SERVER['SCRIPT_FILENAME'] ?? '') === basename(__FILE__)) {
     });
 
     // Ambient Network Offline/Online Event Listeners
-    function updateNetworkStatus() {
+    function updateNetworkStatus(e) {
         const strip = document.getElementById('offline-status-strip');
         if (!strip) return;
-        if (!navigator.onLine) {
+        const isOffline = (e && e.type === 'offline') || (e && e.type === 'online' ? false : !navigator.onLine);
+        if (isOffline) {
             strip.classList.add('visible');
         } else {
             strip.classList.remove('visible');
