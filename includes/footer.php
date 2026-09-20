@@ -14,16 +14,24 @@ if (basename($_SERVER['SCRIPT_FILENAME'] ?? '') === basename(__FILE__)) {
                     <h3 class="text-3xl font-bold text-primary group-hover:text-secondary-container transition-colors">ASENA</h3>
                 </a>
                 <p class="text-sm text-on-surface-variant leading-relaxed">اولین اکوسیستم هوشمند مراقبت از حیوانات خانگی. تلفیقی از تخصص پزشکی، تکنولوژی روز و عشق به حیوانات.</p>
+                <?php 
+                $footerSupportPhone = ($pdo instanceof PDO) ? get_setting($pdo, 'support_phone_fixed', '02191000000') : '02191000000';
+                ?>
                 <div class="flex gap-4">
-                    <a class="w-12 h-12 rounded-2xl bg-white shadow-sm flex items-center justify-center text-primary hover:bg-primary-container hover:text-white transition-colors" href="#">
+                    <a class="w-12 h-12 rounded-2xl bg-white shadow-sm flex items-center justify-center text-primary hover:bg-primary-container hover:text-white transition-colors" href="#" title="اشتراک‌گذاری">
                         <span class="material-symbols-outlined">share</span>
                     </a>
-                    <a class="w-12 h-12 rounded-2xl bg-white shadow-sm flex items-center justify-center text-primary hover:bg-primary-container hover:text-white transition-colors" href="#">
+                    <a class="w-12 h-12 rounded-2xl bg-white shadow-sm flex items-center justify-center text-primary hover:bg-primary-container hover:text-white transition-colors" href="mailto:info@asena.company" title="پست الکترونیکی">
                         <span class="material-symbols-outlined">mail</span>
                     </a>
-                    <a class="w-12 h-12 rounded-2xl bg-white shadow-sm flex items-center justify-center text-primary hover:bg-primary-container hover:text-white transition-colors" href="#">
+                    <a class="w-12 h-12 rounded-2xl bg-white shadow-sm flex items-center justify-center text-primary hover:bg-primary-container hover:text-white transition-colors" href="tel:<?= htmlspecialchars($footerSupportPhone) ?>" title="تماس با پشتیبانی">
                         <span class="material-symbols-outlined">call</span>
                     </a>
+                </div>
+                <div class="flex items-center gap-2 pt-1 text-xs text-slate-600 bg-white/70 px-3 py-1.5 rounded-xl border border-outline-variant/30">
+                    <span class="material-symbols-outlined text-sm text-secondary-container">support_agent</span>
+                    <span class="text-[11px] text-slate-500">پشتیبانی ثابت:</span>
+                    <a href="tel:<?= htmlspecialchars($footerSupportPhone) ?>" class="font-mono font-bold text-primary hover:underline dir-ltr"><?= htmlspecialchars($footerSupportPhone) ?></a>
                 </div>
             </div>
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-10 flex-1 text-center sm:text-right">

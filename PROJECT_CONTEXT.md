@@ -83,6 +83,17 @@
 
 ## ۳. تاریخچه تغییرات اخیر (Change Log)
 
+### نسخه ۱.۰.۷ (سپتامبر ۲۰۲۶ - پیکربندی انبارداری، سقف ارسال رایگان مرسولات سراسری و نماد اعتماد الکترونیکی)
+1. **پیکربندی انبارداری، هزینه حمل و سقف ارسال رایگان مرسولات:**
+   - تعبیه سقف خرید برای ارسال رایگان (`free_shipping_threshold_toman`، پیش‌فرض ۶۰۰,۰۰۰ تومان) و هزینه ثابت ارسال زیر سقف (`standard_shipping_cost_toman`، پیش‌فرض ۴۹,۰۰۰ تومان) در پنل مدیریت مالی [`admin/finance_settings.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/admin/finance_settings.php).
+   - طراحی و استقرار نوار پیشرفت تعاملی درصد تا ارسال رایگان سراسری به همراه محاسبه خودکار کرایه در سبد خرید [`cart.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/cart.php) و فرآیند پرداخت شاپرک [`payment.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/payment.php).
+   - اختصاص ارسال ۱۰۰٪ رایگان دائمی به سفارشات ادواری Autoship جهت ترغیب سرپرستان پت.
+2. **پشتیبانی سراسری، تلفن ثابت رسمی و الزامات اینماد:**
+   - افزودن فیلد داینامیک شماره تلفن ثابت پشتیبانی سراسری (`support_phone_fixed`) در تنظیمات مدیریت.
+   - نمایش پویا در فوتر سراسری [`includes/footer.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/includes/footer.php) و صفحه رسمی تماس و شکایات [`contact.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/contact.php) منطبق با الزامات اینماد صمت.
+3. **آماده‌سازی بسته APK و انتشار در کافه‌بازار و مایکت:**
+   - اتصال دامنه و وب‌مانیفست آسنا به ارزیابی PWABuilder جهت استخراج خروجی Trusted Web Activity (TWA) برای انتشار در استورهای ایرانی اندروید.
+
 ### نسخه ۱.۰.۶ (سپتامبر ۲۰۲۶ - یکپارچه‌سازی وب‌سرویس‌های Map.ir، استعلام هندسه تور پستی و ارتقای نقشه پروفایل)
 1. **وب‌سرویس استعلام هندسه محدوده توزیع پستی (Map.ir Tour Area API):**
    - اتصال به اندپوینت‌های رسمی `https://map.ir/geo-data/postalcodes/{postalcode}/tour-geom` و `tour-bbox` در [`includes/MapService.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/includes/MapService.php).

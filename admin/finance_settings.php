@@ -85,7 +85,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             set_setting($pdo, 'calculator_price_toman', $calculatorPrice);
             set_setting($pdo, 'calculator_charity_link', $calculatorCharityLink);
 
-            $success = "تنظیمات خزانه‌داری، مالیات، درگاه پرداخت، لینک خیریه محاسبه‌گر تغذیه و نماد اعتماد با موفقیت ذخیره شد.";
+            // Logistics, Shipping Costs & Free Shipping Threshold
+            $freeShippingEnabled = isset($_POST['free_shipping_enabled']) ? '1' : '0';
+            $freeShippingThreshold = max(0, (int)($_POST['free_shipping_threshold_toman'] ?? 600000));
+            $standardShippingCost = max(0, (int)($_POST['standard_shipping_cost_toman'] ?? 49000));
+            $supportPhone = trim($_POST['support_phone_fixed'] ?? '02191000000');
+
+            set_setting($pdo, 'free_shipping_enabled', $freeShippingEnabled);
+            set_setting($pdo, 'free_shipping_threshold_toman', $freeShippingThreshold);
+            set_setting($pdo, 'standard_shipping_cost_toman', $standardShippingCost);
+            set_setting($pdo, 'support_phone_fixed', $supportPhone);
+
+            $success = "تنظیمات خزانه‌داری، مالیات، درگاه پرداخت، سقف ارسال رایگان و نماد اعتماد با موفقیت ذخیره شد.";
         }
     } elseif ($action === 'approve_receipt') {
         $subId = (int)$_POST['submission_id'];
@@ -140,6 +151,11 @@ $autoPayoutTime    = get_setting($pdo, 'auto_payout_time', '09:00');
 $calculatorIsPaid = (int)get_setting($pdo, 'calculator_is_paid', 0);
 $calculatorPrice  = (int)get_setting($pdo, 'calculator_price_toman', 50000);
 $calculatorCharityLink = get_setting($pdo, 'calculator_charity_link', 'charity.php');
+
+$freeShippingEnabled   = (int)get_setting($pdo, 'free_shipping_enabled', 1);
+$freeShippingThreshold = (int)get_setting($pdo, 'free_shipping_threshold_toman', 600000);
+$standardShippingCost  = (int)get_setting($pdo, 'standard_shipping_cost_toman', 49000);
+$supportPhone          = get_setting($pdo, 'support_phone_fixed', '02191000000');
 
 // Pending Card Receipts Queue
 $pendingSubmissionsStmt = $pdo->query("
@@ -518,6 +534,71 @@ require_once __DIR__ . '/includes/admin_header.php';
                         <p class="text-[10px] text-slate-400 mt-1.5 leading-relaxed">
                             پس از تکمیل مراحل احراز هویت، ثبت دامنه و تایید کارشناس در سامانه اینماد، کد اختصاصی نماد را در کادر بالا کپی کنید تا بلافاصله به صورت زنده در فوتر سایت نمایش یابد.
                         </p>
+                    </div>
+                </div>
+
+                <!-- Section 6: Logistics, Shipping Rates & Free Delivery Threshold -->
+                <div>
+                    <h3 class="font-bold text-slate-900 dark:text-white text-base flex items-center gap-2 border-b border-slate-100 dark:border-slate-800 pb-3 mb-4">
+                        <span class="material-symbols-outlined text-[#fd8100] text-xl">local_shipping</span>
+                        پیکربندی انبارداری، نرخ ارسال و سقف ارسال رایگان به سراسر کشور
+                    </h3>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <!-- Free Shipping Switch & Threshold -->
+                        <div class="md:col-span-2 p-5 bg-gradient-to-br from-blue-50/50 to-indigo-50/30 dark:bg-slate-800/40 rounded-2xl border border-blue-100 dark:border-slate-700/60 space-y-4">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <h4 class="text-xs font-bold text-slate-800 dark:text-white flex items-center gap-1.5">
+                                        <span class="material-symbols-outlined text-emerald-600 text-base">redeem</span>
+                                        سقف خرید جهت ارسال رایگان مرسولات
+                                    </h4>
+                                    <p class="text-[11px] text-slate-500 mt-0.5">در صورت خرید بیشتر از این مبلغ، هزینه پست و بسته‌بندی برای مشتری صفر محاسبه می‌شود.</p>
+                                </div>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" name="free_shipping_enabled" value="1" <?= $freeShippingEnabled ? 'checked' : '' ?> class="sr-only peer">
+                                    <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
+                                </label>
+                            </div>
+
+                            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2">
+                                <span class="text-xs font-bold text-slate-700 dark:text-slate-300">مبلغ سقف ارسال رایگان (تومان):</span>
+                                <div class="relative w-full sm:w-64">
+                                    <input type="number" name="free_shipping_threshold_toman" value="<?= $freeShippingThreshold ?>" min="0" step="10000" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-mono font-bold focus:border-primary outline-none pl-12 text-left dir-ltr">
+                                    <span class="absolute left-3 top-2.5 text-slate-400 text-xs font-bold">تومان</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Fixed Shipping Cost Below Threshold -->
+                        <div class="p-5 bg-slate-50 dark:bg-slate-800/40 rounded-2xl border border-slate-200 dark:border-slate-700/60 space-y-4">
+                            <div>
+                                <h4 class="text-xs font-bold text-slate-800 dark:text-white flex items-center gap-1.5">
+                                    <span class="material-symbols-outlined text-primary text-base">local_post_office</span>
+                                    هزینه ثابت ارسال (زیر سقف)
+                                </h4>
+                                <p class="text-[11px] text-slate-500 mt-0.5">کرایه پست پیشتاز / تیپاکس برای سبدهای زیر سقف رایگان</p>
+                            </div>
+
+                            <div class="relative">
+                                <input type="number" name="standard_shipping_cost_toman" value="<?= $standardShippingCost ?>" min="0" step="1000" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-mono font-bold focus:border-primary outline-none pl-12 text-left dir-ltr">
+                                <span class="absolute left-3 top-2.5 text-slate-400 text-xs font-bold">تومان</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Fixed Support Phone -->
+                    <div class="mt-4 p-5 bg-slate-50 dark:bg-slate-800/40 rounded-2xl border border-slate-200 dark:border-slate-700/60 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div>
+                            <h4 class="text-xs font-bold text-slate-800 dark:text-white flex items-center gap-1.5">
+                                <span class="material-symbols-outlined text-blue-600 text-base">support_agent</span>
+                                شماره تلفن ثابت پشتیبانی سراسری (الزام اینماد و هدر/فوتر)
+                            </h4>
+                            <p class="text-[11px] text-slate-500 mt-0.5">شماره خط ثابت استان آذربایجان شرقی (تبریز) یا خط ابری کشوری جهت استعلام مشتریان</p>
+                        </div>
+                        <div class="relative w-full sm:w-64">
+                            <input type="text" name="support_phone_fixed" value="<?= htmlspecialchars($supportPhone) ?>" placeholder="مثال: 04133333333 یا 02191000000" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-mono font-bold focus:border-primary outline-none pl-3 text-left dir-ltr">
+                        </div>
                     </div>
                 </div>
 

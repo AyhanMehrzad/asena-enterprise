@@ -138,7 +138,23 @@ if ($isBooking) {
     // Add 10% VAT (مصوب قانونی کل کشور بر اساس مبلغ مشمول مالیات پس از کسر تخفیف)
     $tax_rate_pct = (float)get_setting($pdo, 'tax_rate_percent', 10.0);
     $tax_amount   = (int)round($taxable_subtotal * ($tax_rate_pct / 100.0));
-    $final_total  = $taxable_subtotal + $tax_amount;
+
+    // Free Shipping & National Logistics Calculation
+    $free_shipping_enabled   = (get_setting($pdo, 'free_shipping_enabled', '1') === '1');
+    $free_shipping_threshold = (int)get_setting($pdo, 'free_shipping_threshold_toman', 600000);
+    $standard_shipping_cost  = (int)get_setting($pdo, 'standard_shipping_cost_toman', 49000);
+
+    if ($checkout_type === 'autoship') {
+        $shipping_cost = 0; // Always free for Autoship subscribers
+    } else {
+        if ($free_shipping_enabled && $taxable_subtotal >= $free_shipping_threshold) {
+            $shipping_cost = 0;
+        } else {
+            $shipping_cost = $standard_shipping_cost;
+        }
+    }
+
+    $final_total  = $taxable_subtotal + $tax_amount + $shipping_cost;
 
     $duration_months = (int)($_GET['duration'] ?? 3);
     if (!in_array($duration_months, [3, 6, 12])) $duration_months = 3;
@@ -146,14 +162,15 @@ if ($isBooking) {
 
     if ($checkout_type === 'autoship' && $payment_model === 'upfront') {
         $payable_today = round(($final_total * $duration_months) * 0.95);
-        $order_desc = "خرید یک‌جا اشتراک {$duration_months} ماهه تحویل خودکار آسنا (" . count($pending_items) . " قلم با احتساب ۱۰٪ مالیات ارزش افزوده)";
+        $order_desc = "خرید یک‌جا اشتراک {$duration_months} ماهه تحویل خودکار آسنا (" . count($pending_items) . " قلم با ارسال رایگان و مالیات ارزش افزوده)";
     } elseif ($checkout_type === 'autoship') {
         $payable_today = $final_total;
-        $order_desc = "پرداخت نوبت ۱ از اشتراک {$duration_months} ماهه تحویل خودکار آسنا (" . count($pending_items) . " قلم با احتساب ۱۰٪ مالیات ارزش افزوده)";
+        $order_desc = "پرداخت نوبت ۱ از اشتراک {$duration_months} ماهه تحویل خودکار آسنا (" . count($pending_items) . " قلم با ارسال رایگان و مالیات ارزش افزوده)";
     } else {
         $payable_today = $final_total;
         $promoDesc = $promoCode ? " [کد تخفیف: {$promoCode}]" : "";
-        $order_desc = "خرید از فروشگاه آسنا — " . count($pending_items) . " محصول (با احتساب ۱۰٪ مالیات ارزش افزوده){$promoDesc}";
+        $shippingDesc = ($shipping_cost === 0) ? " [ارسال رایگان]" : " [کرایه حمل: " . number_format($shipping_cost) . " ت]";
+        $order_desc = "خرید از فروشگاه آسنا — " . count($pending_items) . " محصول{$shippingDesc}{$promoDesc}";
     }
 }
 
@@ -168,6 +185,8 @@ $orderMetadata = [
     'checkout_type' => $checkout_type ?? 'standard',
     'tax_amount' => $tax_amount ?? 0,
     'tax_rate_pct' => $tax_rate_pct ?? 10.0,
+    'shipping_cost' => $shipping_cost ?? 0,
+    'free_shipping_threshold' => $free_shipping_threshold ?? 600000,
     'promo_code' => $promoCode ?? null,
     'discount_amount' => $promoDiscount ?? 0
 ];

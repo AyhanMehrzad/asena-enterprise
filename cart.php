@@ -111,7 +111,24 @@ if (empty($applied_promo)) {
 $std_promo_discount = (int)($applied_promo['discount_amount'] ?? 0);
 $std_taxable_subtotal = max(0, $std_subtotal - $std_promo_discount);
 $std_tax_amount = (int)round($std_taxable_subtotal * ($tax_rate_pct / 100.0));
-$std_final_price = $std_taxable_subtotal + $std_tax_amount;
+
+// Free Shipping & National Logistics Calculation
+$free_shipping_enabled   = (get_setting($pdo, 'free_shipping_enabled', '1') === '1');
+$free_shipping_threshold = (int)get_setting($pdo, 'free_shipping_threshold_toman', 600000);
+$standard_shipping_cost  = (int)get_setting($pdo, 'standard_shipping_cost_toman', 49000);
+
+if ($std_taxable_subtotal <= 0) {
+    $std_shipping_cost = 0;
+} elseif ($free_shipping_enabled && $std_taxable_subtotal >= $free_shipping_threshold) {
+    $std_shipping_cost = 0;
+} else {
+    $std_shipping_cost = $standard_shipping_cost;
+}
+
+$amount_to_free_shipping = max(0, $free_shipping_threshold - $std_taxable_subtotal);
+$shipping_progress_pct   = ($free_shipping_threshold > 0) ? min(100, (int)round(($std_taxable_subtotal / $free_shipping_threshold) * 100)) : 100;
+
+$std_final_price = $std_taxable_subtotal + $std_tax_amount + $std_shipping_cost;
 
 $auto_subtotal = $auto_total_price - $auto_total_discount;
 $auto_tax_amount = (int)round($auto_subtotal * ($tax_rate_pct / 100.0));
@@ -425,10 +442,45 @@ if (empty($wishlist_products)) {
                                     <span class="font-bold font-mono text-slate-800">+<?= number_format($std_tax_amount) ?> تومان</span>
                                 </div>
                                 <div class="flex justify-between items-center text-on-surface-variant">
-                                    <span>هزینه بسته‌بندی و ارسال</span>
-                                    <span class="text-status-active font-bold">رایگان</span>
+                                    <span class="flex items-center gap-1">
+                                        <span class="material-symbols-outlined text-sm text-slate-400">local_shipping</span>
+                                        هزینه بسته‌بندی و ارسال:
+                                    </span>
+                                    <?php if($std_shipping_cost === 0): ?>
+                                        <span class="text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded-full">رایگان</span>
+                                    <?php else: ?>
+                                        <span class="font-bold font-mono text-slate-800">+<?= number_format($std_shipping_cost) ?> تومان</span>
+                                    <?php endif; ?>
                                 </div>
                             </div>
+
+                            <?php if($std_taxable_subtotal > 0): ?>
+                                <?php if($std_shipping_cost === 0): ?>
+                                    <div class="bg-emerald-50 border border-emerald-200/80 rounded-2xl p-3 flex items-center gap-2.5 text-emerald-800 text-xs shadow-2xs">
+                                        <span class="material-symbols-outlined text-emerald-600 text-xl shrink-0">verified</span>
+                                        <div>
+                                            <span class="font-bold block">ارسال این سفارش به سراسر ایران رایگان است! 🎉</span>
+                                            <span class="text-[10px] text-emerald-600 block mt-0.5">پست پیشتاز سراسری به همراه بیمه مرسوله</span>
+                                        </div>
+                                    </div>
+                                <?php else: ?>
+                                    <div class="bg-blue-50/80 border border-blue-200/70 rounded-2xl p-3 space-y-2 text-xs shadow-2xs">
+                                        <div class="flex items-center justify-between text-slate-700">
+                                            <span class="flex items-center gap-1.5 font-bold">
+                                                <span class="material-symbols-outlined text-primary text-base">local_shipping</span>
+                                                <span>ارسال رایگان به سراسر کشور</span>
+                                            </span>
+                                            <span class="text-[11px] font-bold font-mono text-primary"><?= $shipping_progress_pct ?>٪</span>
+                                        </div>
+                                        <div class="w-full bg-slate-200/70 rounded-full h-1.5 overflow-hidden">
+                                            <div class="bg-gradient-to-l from-[#001a48] to-[#fd8100] h-1.5 rounded-full transition-all duration-500" style="width: <?= $shipping_progress_pct ?>%"></div>
+                                        </div>
+                                        <p class="text-[10.5px] text-slate-500 leading-normal">
+                                            فقط <strong class="text-primary font-mono font-bold"><?= number_format($amount_to_free_shipping) ?> تومان</strong> دیگر تا <strong class="text-emerald-700">ارسال کاملاً رایگان</strong> سفارش!
+                                        </p>
+                                    </div>
+                                <?php endif; ?>
+                            <?php endif; ?>
 
                             <!-- Promo Code Input Form -->
                             <?php if(empty($applied_promo)): ?>

@@ -118,11 +118,14 @@ require_once 'includes/header.php';
                             </div>
                         </div>
 
+                        <?php 
+                        $contactSupportPhone = ($pdo instanceof PDO) ? get_setting($pdo, 'support_phone_fixed', '02191000000') : '02191000000';
+                        ?>
                         <div class="flex items-start gap-3">
                             <span class="material-symbols-outlined text-slate-400 mt-0.5 text-base">phone_in_talk</span>
                             <div>
                                 <span class="text-slate-400 block text-[10px]">تلفن ثابت مرکزی (استعلام اینماد):</span>
-                                <a href="tel:02191000000" class="font-mono font-bold text-primary dir-ltr inline-block hover:underline">۰۲۱ - ۹۱۰۰۰۰۰۰</a>
+                                <a href="tel:<?= htmlspecialchars($contactSupportPhone) ?>" class="font-mono font-bold text-primary dir-ltr inline-block hover:underline"><?= htmlspecialchars($contactSupportPhone) ?></a>
                                 <span class="text-[10px] text-slate-400 block mt-0.5">پاسخگویی روزهای شنبه تا چهارشنبه ۹ الی ۱۸ | پنج‌شنبه‌ها ۹ الی ۱۳</span>
                             </div>
                         </div>
