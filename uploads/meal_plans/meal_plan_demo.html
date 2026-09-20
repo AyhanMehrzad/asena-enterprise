@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>جدول برنامه غذایی بالینی پت | تدی (Teddy) (ژرمن شپرد) - آسنا</title>
+    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
+    <style>
+        :root {
+            --primary: #002d72;
+            --primary-dark: #001a48;
+            --emerald: #059669;
+            --emerald-light: #10b981;
+            --amber: #d97706;
+            --rose: #e11d48;
+            --bg-slate: #f8fafc;
+            --text-dark: #0f172a;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Vazirmatn', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-slate);
+            color: var(--text-dark);
+            line-height: 1.6;
+            padding: 24px 16px;
+        }
+
+        .document-container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: #ffffff;
+            border-radius: 24px;
+            box-shadow: 0 10px 30px -5px rgba(0, 45, 114, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.05);
+            overflow: hidden;
+        }
+
+        .action-bar {
+            background: #001a48;
+            padding: 14px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            color: #ffffff;
+        }
+
+        .action-btn {
+            background: rgba(255, 255, 255, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #ffffff;
+            padding: 8px 16px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+
+        .action-btn:hover {
+            background: rgba(255, 255, 255, 0.25);
+        }
+
+        .action-btn.primary {
+            background: var(--emerald);
+            border-color: var(--emerald-light);
+        }
+
+        .action-btn.primary:hover {
+            background: #047857;
+        }
+
+        .header-strip {
+            background: linear-gradient(135deg, #001a48 0%, #002d72 50%, #0348a6 100%);
+            color: #ffffff;
+            padding: 32px 32px 28px;
+            position: relative;
+        }
+
+        .header-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(16, 185, 129, 0.2);
+            color: #a7f3d0;
+            border: 1px solid rgba(16, 185, 129, 0.35);
+            padding: 4px 12px;
+            border-radius: 100px;
+            font-size: 11px;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+
+        .header-title {
+            font-size: 24px;
+            font-weight: 900;
+            letter-spacing: -0.5px;
+            margin-bottom: 6px;
+        }
+
+        .header-subtitle {
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.75);
+            font-weight: 400;
+        }
+
+        .serial-badge {
+            position: absolute;
+            top: 28px;
+            left: 32px;
+            text-align: left;
+        }
+
+        .serial-badge .serial-text {
+            font-family: monospace;
+            font-size: 12px;
+            background: rgba(255, 255, 255, 0.12);
+            padding: 4px 10px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            font-weight: 800;
+            letter-spacing: 0.5px;
+        }
+
+        .serial-badge .date-text {
+            font-size: 10px;
+            color: rgba(255, 255, 255, 0.6);
+            margin-top: 4px;
+        }
+
+        .patient-card {
+            background: #f1f5f9;
+            border-bottom: 1px solid var(--border);
+            padding: 18px 32px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+            gap: 16px;
+        }
+
+        .patient-item-label {
+            font-size: 11px;
+            color: var(--text-muted);
+            font-weight: 600;
+            margin-bottom: 2px;
+        }
+
+        .patient-item-value {
+            font-size: 13px;
+            font-weight: 800;
+            color: var(--text-dark);
+        }
+
+        .body-section {
+            padding: 32px;
+        }
+
+        .section-title {
+            font-size: 16px;
+            font-weight: 900;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 16px;
+            border-bottom: 2px solid #e0e7ff;
+            padding-bottom: 8px;
+        }
+
+        /* 4 Key Metrics Cards */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 14px;
+            margin-bottom: 28px;
+        }
+
+        @media (max-width: 640px) {
+            .metrics-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        .metric-card {
+            padding: 16px;
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            background: #ffffff;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
+        }
+
+        .metric-card.highlight {
+            background: #ecfdf5;
+            border-color: #a7f3d0;
+        }
+
+        .metric-card-label {
+            font-size: 11px;
+            color: var(--text-muted);
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .metric-card-val {
+            font-size: 22px;
+            font-weight: 900;
+            color: var(--primary);
+            font-family: monospace;
+        }
+
+        .metric-card-val.green {
+            color: var(--emerald);
+        }
+
+        .metric-card-sub {
+            font-size: 10px;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        /* The Meal Plan Chart Table */
+        .meal-table-wrapper {
+            background: #ffffff;
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+            margin-bottom: 30px;
+        }
+
+        .meal-table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: right;
+            font-size: 13px;
+        }
+
+        .meal-table th {
+            background: #f8fafc;
+            color: var(--primary);
+            font-weight: 800;
+            padding: 14px 16px;
+            border-bottom: 2px solid var(--border);
+            font-size: 12px;
+        }
+
+        .meal-table td {
+            padding: 16px;
+            border-bottom: 1px solid var(--border);
+            vertical-align: top;
+        }
+
+        .meal-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .meal-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 10px;
+            border-radius: 8px;
+            font-size: 11px;
+            font-weight: 800;
+        }
+
+        .meal-badge.morning {
+            background: #fef3c7;
+            color: #b45309;
+        }
+
+        .meal-badge.midday {
+            background: #e0e7ff;
+            color: #3730a3;
+        }
+
+        .meal-badge.evening {
+            background: #f1f5f9;
+            color: #334155;
+        }
+
+        .portion-val {
+            font-weight: 900;
+            font-size: 16px;
+            color: var(--emerald);
+            font-family: monospace;
+        }
+
+        /* 7-Day Transition Protocol */
+        .transition-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            margin-bottom: 28px;
+        }
+
+        @media (max-width: 640px) {
+            .transition-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        .transition-card {
+            background: #f8fafc;
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 12px 14px;
+        }
+
+        .transition-day {
+            font-size: 11px;
+            font-weight: 800;
+            color: var(--text-dark);
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 6px;
+        }
+
+        .transition-ratio {
+            font-size: 10px;
+            font-weight: 700;
+            color: var(--emerald);
+            background: #ecfdf5;
+            padding: 2px 6px;
+            border-radius: 6px;
+        }
+
+        .progress-bar {
+            height: 6px;
+            background: #e2e8f0;
+            border-radius: 100px;
+            overflow: hidden;
+            display: flex;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--emerald);
+        }
+
+        /* Clinical Warnings & Supplements Grid */
+        .details-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 28px;
+        }
+
+        @media (max-width: 768px) {
+            .details-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .detail-box {
+            border-radius: 16px;
+            padding: 18px;
+            border: 1px solid var(--border);
+            background: #ffffff;
+        }
+
+        .detail-box.warning {
+            background: #fffbeb;
+            border-color: #fde68a;
+        }
+
+        .detail-box.supplements {
+            background: #eff6ff;
+            border-color: #bfdbfe;
+        }
+
+        .detail-box-title {
+            font-size: 13px;
+            font-weight: 800;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .detail-box.warning .detail-box-title {
+            color: #b45309;
+        }
+
+        .detail-box.supplements .detail-box-title {
+            color: #1d4ed8;
+        }
+
+        .detail-list {
+            list-style: none;
+            font-size: 12px;
+            color: var(--text-dark);
+            space-y: 6px;
+        }
+
+        .detail-list li {
+            margin-bottom: 8px;
+            position: relative;
+            padding-right: 14px;
+            line-height: 1.5;
+        }
+
+        .detail-list li::before {
+            content: "•";
+            position: absolute;
+            right: 0;
+            top: 0;
+            font-weight: 900;
+        }
+
+        .detail-box.warning .detail-list li::before {
+            color: #f59e0b;
+        }
+
+        .detail-box.supplements .detail-list li::before {
+            color: #3b82f6;
+        }
+
+        /* Veterinary Seal & Verification */
+        .footer-seal {
+            background: #f8fafc;
+            border-top: 1px solid var(--border);
+            padding: 24px 32px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        .seal-stamp {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .stamp-circle {
+            width: 54px;
+            height: 54px;
+            border-radius: 50%;
+            border: 2px dashed var(--emerald);
+            background: #ecfdf5;
+            color: var(--emerald);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            font-weight: 900;
+            text-align: center;
+            transform: rotate(-10deg);
+        }
+
+        @media print {
+            body {
+                background: #ffffff;
+                padding: 0;
+            }
+
+            .action-bar {
+                display: none !important;
+            }
+
+            .document-container {
+                box-shadow: none;
+                border: 1px solid #cbd5e1;
+                border-radius: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="document-container">
+
+        <!-- Top Action Bar (Web Only) -->
+        <div class="action-bar">
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <span class="material-symbols-outlined" style="color: #10b981;">verified</span>
+                <span style="font-size: 13px; font-weight: 800;">پرونده رسمی تغذیه و جدول رژیم غذایی بالینی پت (آسنا)</span>
+            </div>
+            <div style="display: flex; items-center; gap: 8px;">
+                <button onclick="window.print()" class="action-btn">
+                    <span class="material-symbols-outlined" style="font-size: 16px;">print</span>
+                    <span>چاپ / ذخیره PDF</span>
+                </button>
+                <a href="../../profile.php" class="action-btn primary">
+                    <span class="material-symbols-outlined" style="font-size: 16px;">account_circle</span>
+                    <span>بازگشت به پروفایل من</span>
+                </a>
+            </div>
+        </div>
+
+        <!-- Official Header Strip -->
+        <div class="header-strip">
+            <div class="header-badge">
+                <span class="material-symbols-outlined" style="font-size: 14px;">health_and_safety</span>
+                <span>استاندارد بین‌المللی دامپزشکی FEDIAF & WSAVA Global Nutrition</span>
+            </div>
+            <h1 class="header-title">جدول برنامه غذایی و نسخه بالینی: تدی (Teddy)</h1>
+            <p class="header-subtitle">
+                تولیدشده توسط موتور هوش مصنوعی و کمیته فارماکولوژی و تغذیه حیوانات خانگی آسنا
+            </p>
+            <div class="serial-badge">
+                <div class="serial-text">ASENA-NUT-DEMO01</div>
+                <div class="date-text">تاریخ صدور: ۱۴۰۵/۰۶/۳۰ - ۱۱:۳۰</div>
+            </div>
+        </div>
+
+        <!-- Patient Identification Bar -->
+        <div class="patient-card">
+            <div>
+                <div class="patient-item-label">نام پت:</div>
+                <div class="patient-item-value">تدی (Teddy)</div>
+            </div>
+            <div>
+                <div class="patient-item-label">گونه و رده سنی:</div>
+                <div class="patient-item-value">سگ (Canine) • بالغ (۱ تا ۷ سال)</div>
+            </div>
+            <div>
+                <div class="patient-item-label">نژاد پت:</div>
+                <div class="patient-item-value" style="color: var(--emerald);">ژرمن شپرد</div>
+            </div>
+            <div>
+                <div class="patient-item-label">وزن فعلی / هدف:</div>
+                <div class="patient-item-value">32.0 / 30.0 کیلوگرم</div>
+            </div>
+            <div>
+                <div class="patient-item-label">شاخص توده بدنی (BCS):</div>
+                <div class="patient-item-value">امتیاز 6 از ۹ (اضافه‌وزن)</div>
+            </div>
+            <div>
+                <div class="patient-item-label">سطح تحرک:</div>
+                <div class="patient-item-value">بسیار پرتحرک و پرانرژی</div>
+            </div>
+        </div>
+
+        <!-- Main Body Content -->
+        <div class="body-section">
+
+            <!-- 4 Core Metric Widgets -->
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-card-label">کالری روزانه (MER):</div>
+                    <div class="metric-card-val">1,450 <span style="font-size: 12px; font-weight: 400;">kcal</span></div>
+                    <div class="metric-card-sub">انرژی خالص متابولیک روزانه</div>
+                </div>
+
+                <div class="metric-card highlight">
+                    <div class="metric-card-label" style="color: var(--emerald);">غذای خشک کل روز:</div>
+                    <div class="metric-card-val green">380 <span style="font-size: 12px; font-weight: 400;">گرم</span></div>
+                    <div class="metric-card-sub" style="color: #047857;">تقسیم در ۲ وعده اصلی</div>
+                </div>
+
+                <div class="metric-card">
+                    <div class="metric-card-label">حداقل آب روزانه:</div>
+                    <div class="metric-card-val" style="color: #0284c7;">1,920 <span style="font-size: 12px; font-weight: 400;">ml</span></div>
+                    <div class="metric-card-sub">ظروف تمیز استیل/سرامیک</div>
+                </div>
+
+                <div class="metric-card">
+                    <div class="metric-card-label">سقف تشویقی (۱۰٪):</div>
+                    <div class="metric-card-val" style="color: #9333ea;">145 <span style="font-size: 12px; font-weight: 400;">kcal</span></div>
+                    <div class="metric-card-sub">حداکثر 36 گرم در روز</div>
+                </div>
+            </div>
+
+            <!-- 1. The Meal Plan Chart Table -->
+            <h2 class="section-title">
+                <span class="material-symbols-outlined">restaurant</span>
+                <span>جدول زمان‌بندی و تفکیک وعده‌های روزانه (Meal Plan Schedule)</span>
+            </h2>
+
+            <div class="meal-table-wrapper">
+                <table class="meal-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 18%;">وعده غذایی</th>
+                            <th style="width: 16%;">زمان پیشنهادی</th>
+                            <th style="width: 20%;">سهم و مقدار دقیق</th>
+                            <th style="width: 22%;">مکمل و افزودنی درمانی</th>
+                            <th style="width: 24%;">دستورالعمل بالینی دامپزشک</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Meal 1: Morning -->
+                        <tr>
+                            <td>
+                                <span class="meal-badge morning">
+                                    <span class="material-symbols-outlined" style="font-size: 14px;">wb_sunny</span>
+                                    <span>وعده ۱: صبح</span>
+                                </span>
+                            </td>
+                            <td style="font-weight: 700; color: var(--text-dark);">
+                                ۰۸:۰۰ الی ۰۹:۰۰
+                            </td>
+                            <td>
+                                <div class="portion-val">171 گرم</div>
+                                <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">
+                                    ۴۵٪ از جیره غذای خشک روزانه
+                                </div>
+                            </td>
+                            <td>
+                                <div style="font-size: 12px; font-weight: 700; color: #0284c7;">
+                                    روغن امگا ۳ خالص سالمون                                </div>
+                                <div style="font-size: 10px; color: var(--text-muted); margin-top: 2px;">
+                                    جهت سلامت پوست و تقویت سیستم ایمنی
+                                </div>
+                            </td>
+                            <td style="font-size: 11px; color: var(--text-dark); line-height: 1.4;">
+                                ظرف استیل در ارتفاع مناسب؛ حداقل 864 میلی‌لیتر آب تازه ولرم در کنار غذا. پرهیز از دویدن سریع بلافاصله پس از غذا.
+                            </td>
+                        </tr>
+
+                        <!-- Meal 2: Midday Health Snack -->
+                        <tr>
+                            <td>
+                                <span class="meal-badge midday">
+                                    <span class="material-symbols-outlined" style="font-size: 14px;">nutrition</span>
+                                    <span>وعده ۲: نیمروزی</span>
+                                </span>
+                            </td>
+                            <td style="font-weight: 700; color: var(--text-dark);">
+                                ۱۳:۳۰ الی ۱۴:۳۰
+                            </td>
+                            <td>
+                                <div style="font-weight: 800; font-size: 14px; color: #7c3aed; font-family: monospace;">
+                                    حداکثر 36 گرم
+                                </div>
+                                <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">
+                                    میان‌وعده سلامت / پاداش پازلی
+                                </div>
+                            </td>
+                            <td>
+                                <div style="font-size: 12px; font-weight: 700; color: #7c3aed;">
+                                    تشویقی کم‌چرب / سبزیجات مجاز
+                                </div>
+                                <div style="font-size: 10px; color: var(--text-muted); margin-top: 2px;">
+                                    هویج بخارپز، کدو حلوایی یا دنتال جویدنی
+                                </div>
+                            </td>
+                            <td style="font-size: 11px; color: var(--text-dark); line-height: 1.4;">
+                                تعویض آب مصرفی؛ استفاده از پازل‌فیدرها یا اسباب‌بازی‌های هوشمند جهت ارتقای هوش و آرامش ذهنی پت.
+                            </td>
+                        </tr>
+
+                        <!-- Meal 3: Evening Main Meal -->
+                        <tr>
+                            <td>
+                                <span class="meal-badge evening">
+                                    <span class="material-symbols-outlined" style="font-size: 14px;">bedtime</span>
+                                    <span>وعده ۳: شب</span>
+                                </span>
+                            </td>
+                            <td style="font-weight: 700; color: var(--text-dark);">
+                                ۱۹:۳۰ الی ۲۰:۳۰
+                            </td>
+                            <td>
+                                <div class="portion-val">209 گرم</div>
+                                <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">
+                                    ۵۵٪ از جیره غذای خشک (یا ترکیب پوچ)
+                                </div>
+                            </td>
+                            <td>
+                                <div style="font-size: 12px; font-weight: 700; color: var(--emerald);">
+                                    گلوکوزامین + کندرویتین (مفاصل)                                </div>
+                                <div style="font-size: 10px; color: var(--text-muted); margin-top: 2px;">
+                                    حفاظت غضروفی و پیشگیری از تریکوبزوار
+                                </div>
+                            </td>
+                            <td style="font-size: 11px; color: var(--text-dark); line-height: 1.4;">
+                                در محیطی آرام و بدون استرس خورانده شود؛ آب کافی شبانه در دسترس باشد؛ ۴۵ دقیقه پس از غذا فقط استراحت سبک.
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- 2. 7-Day Diet Transition Protocol -->
+            <h2 class="section-title">
+                <span class="material-symbols-outlined">timeline</span>
+                <span>پروتکل بالینی ۷ روزه تغییر تدریجی جیره (پیشگیری از شوک گوارشی)</span>
+            </h2>
+
+            <div class="transition-grid">
+                <div class="transition-card">
+                    <div class="transition-day">
+                        <span>روز ۱ و ۲</span>
+                        <span class="transition-ratio">۲۵٪ غذای جدید</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: 25%;"></div>
+                    </div>
+                    <div style="font-size: 10px; color: var(--text-muted); margin-top: 6px;">۷۵٪ غذای قبلی + ۲۵٪ جدید</div>
+                </div>
+
+                <div class="transition-card">
+                    <div class="transition-day">
+                        <span>روز ۳ و ۴</span>
+                        <span class="transition-ratio">۵۰٪ غذای جدید</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: 50%;"></div>
+                    </div>
+                    <div style="font-size: 10px; color: var(--text-muted); margin-top: 6px;">۵۰٪ غذای قبلی + ۵۰٪ جدید</div>
+                </div>
+
+                <div class="transition-card">
+                    <div class="transition-day">
+                        <span>روز ۵ و ۶</span>
+                        <span class="transition-ratio">۷۵٪ غذای جدید</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: 75%;"></div>
+                    </div>
+                    <div style="font-size: 10px; color: var(--text-muted); margin-top: 6px;">۲۵٪ غذای قبلی + ۷۵٪ جدید</div>
+                </div>
+
+                <div class="transition-card" style="background: #ecfdf5; border-color: #a7f3d0;">
+                    <div class="transition-day">
+                        <span>روز ۷ به بعد</span>
+                        <span class="transition-ratio" style="background: #059669; color: #ffffff;">۱۰۰٪ کامل</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: 100%;"></div>
+                    </div>
+                    <div style="font-size: 10px; color: #047857; margin-top: 6px; font-weight: 700;">تغذیه کامل با جیره تخصصی</div>
+                </div>
+            </div>
+
+            <!-- 3. Breed Biomechanics & Veterinary Alerts Grid -->
+            <div class="details-grid">
+                
+                <!-- Box 1: Health Alerts & Prohibited Foods -->
+                <div class="detail-box warning">
+                    <div class="detail-box-title">
+                        <span class="material-symbols-outlined">warning</span>
+                        <span>هشدارهای بالینی و نبایدهای تغذیه‌ای نژاد ژرمن شپرد</span>
+                    </div>
+                    <ul class="detail-list">
+                                                    <li>هشدار مفاصل و اسکلت: پرهیز از پرش‌های غیرایمن پس از وعده غذایی.</li>
+                                                    <li>پیشگیری از ولولوس معده (GDV): عدم فعالیت شدید بلافاصله تا ۱ ساعت پس از صرف غذا.</li>
+                                                <li>پرهیز همیشگی از اضافه وزن؛ هر ۱ کیلو وزن اضافه، فشار بر ستون فقرات و مفاصل را ۴ برابر می‌کند.</li>
+                    </ul>
+                </div>
+
+                <!-- Box 2: Recommended Supplements & Kibble Geometry -->
+                <div class="detail-box supplements">
+                    <div class="detail-box-title">
+                        <span class="material-symbols-outlined">medication</span>
+                        <span>مکمل‌های بالینی تجویزی و ویژگی‌های کیبل غذای خشک</span>
+                    </div>
+                    <ul class="detail-list">
+                        <li style="font-weight: 700; color: #1e3a8a;">
+                            هندسه کیبل مناسب: کیبل درشت ارگونومیک با بافت متراکم کرانچی جهت ممانعت از بلع سریع                        </li>
+                                                    <li>مکمل غضروف‌ساز گلوکوزامین + کندرویتین + MSM (روزانه ۱ ساشه)</li>
+                                                    <li>روغن ماهی سالمون غنی از امگا ۳ و EPA/DHA جهت درخشش موها و مهار التهاب مفاصل</li>
+                                                                            <li>تقسیم سهم غذای روزانه به ۲ وعده اصلی (صبح ۰۸:۳۰ و شب ۲۰:۰۰) به همراه یک میان‌وعده نیمروزی.</li>
+                                            </ul>
+                </div>
+
+            </div>
+
+            <!-- Metabolic Note Callout -->
+            <div style="background: #f1f5f9; border-right: 4px solid var(--primary); padding: 14px 18px; border-radius: 12px; font-size: 12px; color: #334155; line-height: 1.6;">
+                <strong>یادداشت بیومکانیک بالینی دامپزشک:</strong> سگ‌های نژاد ژرمن شپرد به دلیل زاویه شیب‌دار اسکلت لگنی و جرم عضلانی بالا، مستعد دیسپلازی هیپ و حساسیت گوارشی هستند. جیره غذایی باید غنی از گلوکوزامین طبیعی و پروتئین با قابلیت هضم بالای ۹۰٪ باشد.            </div>
+
+        </div>
+
+        <!-- Official Seal & Verification Footer -->
+        <div class="footer-seal">
+            <div>
+                <div style="font-weight: 800; color: var(--text-dark); margin-bottom: 2px;">
+                    کمیته فارماکولوژی، بالینی و ارزیابی تغذیه آسنا
+                </div>
+                <div>شماره استعلام استاندارد بالینی: IR-VET-7819 • شناسه پرونده: ASENA-NUT-DEMO01</div>
+                <div style="margin-top: 4px; color: #94a3b8; font-size: 10px;">
+                    این سند به عنوان نسخه رسمی مراقبت‌های تغذیه‌ای در پرونده الکترونیک سلامت بیمار بایگانی گردیده است.
+                </div>
+            </div>
+            <div class="seal-stamp">
+                <div style="font-family: monospace; font-size: 9px; color: #94a3b8; text-align: center; border: 1px solid #cbd5e1; padding: 6px; border-radius: 8px;">
+                    [QR-VERIFY]<br>DEMO01                </div>
+                <div class="stamp-circle">
+                    ASENA<br>CLINICAL<br>VET
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+</body>
+</html>
+        
