@@ -54,6 +54,7 @@ if ($userId <= 0) {
 // Extract inputs
 $petName = trim((string)($inputData['pet_name'] ?? 'حیوان خانگی من'));
 $species = in_array($inputData['species'] ?? '', ['dog', 'cat']) ? $inputData['species'] : 'dog';
+$race = trim((string)($inputData['race'] ?? $inputData['breed'] ?? 'مشخص نشده'));
 $weightKg = (float)($inputData['weight_kg'] ?? 0);
 $idealWeightKg = (float)($inputData['ideal_weight_kg'] ?? $weightKg);
 $bcsScore = (int)($inputData['bcs_score'] ?? 5);
@@ -62,6 +63,7 @@ $kibbleGrams = (int)($inputData['kibble_grams'] ?? 0);
 $waterMl = (int)($inputData['water_ml'] ?? 0);
 $activity = trim((string)($inputData['activity'] ?? 'neutered'));
 $stage = trim((string)($inputData['stage'] ?? 'adult'));
+$aiAnalysis = trim((string)($inputData['ai_analysis'] ?? ''));
 
 if ($weightKg <= 0 || $dailyCalories <= 0) {
     echo json_encode(['success' => false, 'message' => 'اطلاعات وزنی و کالری نامعتبر است.'], JSON_UNESCAPED_UNICODE);
@@ -72,16 +74,18 @@ $reportSerial = 'ASENA-NUT-' . strtoupper(substr(bin2hex(random_bytes(4)), 0, 8)
 
 try {
     $reportSummary = sprintf(
-        "کارنامه تغذیه بالینی آسنا (%s)\nگونه: %s | مرحله زندگی: %s\nوزن جاری: %.1f کیلوگرم | وزن هدف: %.1f کیلوگرم\nشاخص وضعیت بدنی (BCS): %d/9\nکالری روزانه: %d کیلوکالری | غذای خشک: %d گرم | آب مورد نیاز: %d میلی‌لیتر",
+        "کارنامه تغذیه بالینی آسنا (%s)\nگونه: %s | نژاد: %s | مرحله زندگی: %s\nوزن جاری: %.1f کیلوگرم | وزن هدف: %.1f کیلوگرم\nشاخص وضعیت بدنی (BCS): %d/9\nکالری روزانه: %d کیلوکالری | غذای خشک: %d گرم | آب مورد نیاز: %d میلی‌لیتر%s",
         $reportSerial,
         $species === 'dog' ? 'سگ' : 'گربه',
+        $race,
         $stage,
         $weightKg,
         $idealWeightKg,
         $bcsScore,
         $dailyCalories,
         $kibbleGrams,
-        $waterMl
+        $waterMl,
+        !empty($aiAnalysis) ? "\n\nتحلیل هوش مصنوعی بالینی:\n" . $aiAnalysis : ''
     );
 
     // 1. Try to find or insert into user_pets
@@ -91,13 +95,23 @@ try {
     $petId = (int)$chkStmt->fetchColumn();
 
     if ($petId <= 0) {
-        $insPet = $pdo->prepare("INSERT INTO user_pets (user_id, name, type, weight_kg) VALUES (?, ?, ?, ?)");
-        $insPet->execute([$userId, $petName, $species, $weightKg]);
+        try {
+            $insPet = $pdo->prepare("INSERT INTO user_pets (user_id, name, type, race, weight_kg) VALUES (?, ?, ?, ?, ?)");
+            $insPet->execute([$userId, $petName, $species, $race, $weightKg]);
+        } catch (Exception $ePet) {
+            $insPet = $pdo->prepare("INSERT INTO user_pets (user_id, name, type, weight_kg) VALUES (?, ?, ?, ?)");
+            $insPet->execute([$userId, $petName, $species, $weightKg]);
+        }
         $petId = (int)$pdo->lastInsertId();
     } else {
-        // Update weight
-        $updPet = $pdo->prepare("UPDATE user_pets SET weight_kg = ? WHERE id = ? AND user_id = ?");
-        $updPet->execute([$weightKg, $petId, $userId]);
+        // Update weight & race
+        try {
+            $updPet = $pdo->prepare("UPDATE user_pets SET weight_kg = ?, race = COALESCE(NULLIF(?, ''), race) WHERE id = ? AND user_id = ?");
+            $updPet->execute([$weightKg, $race, $petId, $userId]);
+        } catch (Exception $ePetUp) {
+            $updPet = $pdo->prepare("UPDATE user_pets SET weight_kg = ? WHERE id = ? AND user_id = ?");
+            $updPet->execute([$weightKg, $petId, $userId]);
+        }
     }
 
     // 2. Try inserting document / record if table exists

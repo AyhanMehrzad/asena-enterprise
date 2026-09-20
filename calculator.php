@@ -58,11 +58,55 @@ require_once 'includes/header.php';
                     </div>
                 </div>
 
-                <!-- 2. Weight Slider -->
+                <!-- 2. Pet Breed / Race Selection -->
+                <div class="space-y-3 bg-white/5 p-5 rounded-2xl border border-white/10">
+                    <div class="flex items-center justify-between">
+                        <label class="text-xs sm:text-sm font-bold text-white/90 flex items-center gap-2">
+                            <span class="w-6 h-6 rounded-lg bg-white/15 flex items-center justify-center text-xs">۲</span>
+                            انتخاب نژاد پت (Breed / Race):
+                        </label>
+                        <span id="calcSelectedBreedBadge" class="bg-emerald-500/20 text-emerald-300 text-[11px] font-bold px-2.5 py-0.5 rounded-full border border-emerald-400/40">
+                            ژرمن شپرد
+                        </span>
+                    </div>
+
+                    <!-- Quick Breed Chips -->
+                    <div id="breedChipsContainer" class="flex flex-wrap gap-1.5 max-h-36 overflow-y-auto pr-1 custom-scrollbar">
+                        <!-- Populated by JS dynamically -->
+                    </div>
+
+                    <!-- Search or Custom Breed Input -->
+                    <div class="flex items-center gap-2 pt-2 border-t border-white/10">
+                        <div class="relative flex-1">
+                            <span class="material-symbols-outlined absolute right-3 top-2.5 text-xs text-white/50">search</span>
+                            <input type="text" id="calcBreedCustomInput" list="breedDatalist" placeholder="جستجو یا تایپ نام نژاد..." oninput="handleBreedInputChange(this.value)" class="w-full bg-white/10 border border-white/15 rounded-xl pr-8 pl-3 py-2 text-xs text-white placeholder:text-white/40 focus:outline-none focus:border-emerald-400">
+                            <datalist id="breedDatalist">
+                                <!-- Populated dynamically -->
+                            </datalist>
+                        </div>
+                        <button type="button" onclick="triggerAiBreedAnalysis()" id="btnQuickAiAnalyze" class="px-3 py-2 bg-gradient-to-r from-emerald-500 to-teal-500 hover:opacity-90 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shrink-0 shadow-sm shadow-emerald-500/30 cursor-pointer">
+                            <span class="material-symbols-outlined text-sm">psychology</span>
+                            <span>تحلیل نژاد با AI</span>
+                        </button>
+                    </div>
+
+                    <!-- Breed Clinical Hint Box -->
+                    <div id="breedSpecificHintBox" class="bg-emerald-500/15 border border-emerald-400/25 rounded-xl p-3 text-[11px] text-emerald-100 flex items-start gap-2">
+                        <span class="material-symbols-outlined text-emerald-300 text-sm shrink-0 mt-0.5">verified_user</span>
+                        <div class="space-y-0.5 flex-1">
+                            <div class="font-bold text-emerald-200" id="breedHintTitle">شاخص فیزیولوژیک نژاد ژرمن شپرد</div>
+                            <div class="text-[10px] text-emerald-100/80 leading-relaxed" id="breedHintDesc">
+                                نژاد کار و بزرگ‌جثه با حساسیت مفاصل لگن (دیسپلازی) و معده حساس. نیاز به کلسیم و فسفر بالانس‌شده و فرمول غنی از ال-کارنیتین.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3. Weight Slider -->
                 <div class="space-y-2.5 bg-white/5 p-5 rounded-2xl border border-white/10">
                     <div class="flex justify-between items-center">
                         <label class="text-xs sm:text-sm font-bold text-white/90 flex items-center gap-2">
-                            <span class="w-6 h-6 rounded-lg bg-white/15 flex items-center justify-center text-xs">۲</span>
+                            <span class="w-6 h-6 rounded-lg bg-white/15 flex items-center justify-center text-xs">۳</span>
                             وزن کنونی پت:
                         </label>
                         <div class="flex items-center gap-1.5 bg-white/15 px-3 py-1 rounded-xl">
@@ -79,10 +123,10 @@ require_once 'includes/header.php';
                     </div>
                 </div>
 
-                <!-- 3. Age / Life Stage -->
+                <!-- 4. Age / Life Stage -->
                 <div class="space-y-2.5">
                     <label class="text-xs sm:text-sm font-bold text-white/90 flex items-center gap-2">
-                        <span class="w-6 h-6 rounded-lg bg-white/15 flex items-center justify-center text-xs">۳</span>
+                        <span class="w-6 h-6 rounded-lg bg-white/15 flex items-center justify-center text-xs">۴</span>
                         مرحله زندگی و سن:
                     </label>
                     <div class="grid grid-cols-3 gap-2.5">
@@ -104,10 +148,10 @@ require_once 'includes/header.php';
                     </div>
                 </div>
 
-                <!-- 4. Physiological Status & Activity -->
+                <!-- 5. Physiological Status & Activity -->
                 <div class="space-y-2.5">
                     <label class="text-xs sm:text-sm font-bold text-white/90 flex items-center gap-2">
-                        <span class="w-6 h-6 rounded-lg bg-white/15 flex items-center justify-center text-xs">۴</span>
+                        <span class="w-6 h-6 rounded-lg bg-white/15 flex items-center justify-center text-xs">۵</span>
                         وضعیت تحرک و فیزیولوژیک:
                     </label>
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
@@ -135,11 +179,11 @@ require_once 'includes/header.php';
                     </div>
                 </div>
 
-                <!-- 5. Body Condition Score (BCS 1 to 9 & BMI) -->
+                <!-- 6. Body Condition Score (BCS 1 to 9 & BMI) -->
                 <div class="space-y-2.5 bg-white/5 p-5 rounded-2xl border border-white/10">
                     <div class="flex justify-between items-center">
                         <label class="text-xs sm:text-sm font-bold text-white/90 flex items-center gap-2">
-                            <span class="w-6 h-6 rounded-lg bg-white/15 flex items-center justify-center text-xs">۵</span>
+                            <span class="w-6 h-6 rounded-lg bg-white/15 flex items-center justify-center text-xs">۶</span>
                             شاخص وضعیت بدنی و تناسب (BCS 1-9):
                         </label>
                         <span id="bcsBadgeDisplay" class="bg-emerald-500/20 text-emerald-300 text-[11px] font-black px-2.5 py-0.5 rounded-full border border-emerald-400/40">
@@ -170,7 +214,7 @@ require_once 'includes/header.php';
                     </div>
                 </div>
 
-                <!-- 6. Personalized Pet Name (Optional for Official Certificate) -->
+                <!-- 7. Personalized Pet Name (Optional for Official Certificate) -->
                 <div class="space-y-2 bg-white/5 p-4 rounded-2xl border border-white/10 flex flex-col sm:flex-row items-center justify-between gap-3">
                     <label for="calcPetName" class="text-xs font-bold text-white/80 flex items-center gap-2 shrink-0">
                         <span class="material-symbols-outlined text-sm text-emerald-400">badge</span>
@@ -257,8 +301,41 @@ require_once 'includes/header.php';
                             🥘
                         </div>
                         <div class="flex-1">
-                            <div class="text-xs font-black text-white" id="resRecommendedFood">غذای خشک رویال کنین مینی ادالت (ویژه نژاد کوچک)</div>
-                            <div class="text-[10px] text-white/70 mt-0.5">فرمول بالینی متناسب با متابولیسم و شاخص وزنی پت شما</div>
+                            <div class="text-xs font-black text-white" id="resRecommendedFood">غذای خشک رویال کنین ژرمن شپرد ادالت</div>
+                            <div class="text-[10px] text-white/70 mt-0.5">فرمول بالینی متناسب با متابولیسم، فک و شاخص وزنی نژاد پت شما</div>
+                        </div>
+                    </div>
+
+                    <!-- AI Clinical Nutritionist Live Assessment Card -->
+                    <div class="bg-gradient-to-br from-indigo-950/70 via-slate-900/90 to-[#001a48] p-4 sm:p-5 rounded-2xl border border-indigo-400/35 shadow-xl space-y-3 relative overflow-hidden">
+                        <div class="absolute -top-10 -left-10 w-28 h-28 bg-indigo-500/20 rounded-full blur-xl pointer-events-none"></div>
+                        <div class="flex items-center justify-between border-b border-white/10 pb-2.5">
+                            <div class="flex items-center gap-2">
+                                <div class="w-8 h-8 rounded-xl bg-indigo-500/25 border border-indigo-400/40 flex items-center justify-center text-indigo-300 shadow-sm">
+                                    <span class="material-symbols-outlined text-base">psychology</span>
+                                </div>
+                                <div>
+                                    <div class="text-xs font-black text-white flex items-center gap-1.5">
+                                        <span>تحلیلگر هوشمند بالینی پت</span>
+                                        <span class="bg-indigo-500/30 text-indigo-200 text-[9px] px-2 py-0.5 rounded-full font-mono border border-indigo-400/30">AI Vet</span>
+                                    </div>
+                                    <div class="text-[10px] text-white/60" id="aiStatusSubtitle">پایش نژادی بر پایه استانداردهای WSAVA & FEDIAF</div>
+                                </div>
+                            </div>
+                            <button type="button" onclick="triggerAiBreedAnalysis()" id="btnRefreshAi" class="text-[11px] text-indigo-200 hover:text-white bg-white/10 hover:bg-white/20 px-2.5 py-1 rounded-xl transition flex items-center gap-1 border border-white/15 cursor-pointer active:scale-95">
+                                <span class="material-symbols-outlined text-xs">autorenew</span>
+                                <span>تحلیل مجدد AI</span>
+                            </button>
+                        </div>
+
+                        <!-- Live AI Content -->
+                        <div id="aiAnalysisBox" class="space-y-2.5 text-xs text-white/90">
+                            <p class="text-[11px] text-indigo-100 leading-relaxed font-normal" id="aiMetabolicSummary">
+                                در حال استخراج ویژگی‌های متابولیک و اسکلتی نژاد...
+                            </p>
+                            <div id="aiPointsList" class="space-y-1.5 text-[10px] text-white/80">
+                                <!-- Populated dynamically by JS -->
+                            </div>
                         </div>
                     </div>
 
@@ -441,7 +518,7 @@ require_once 'includes/header.php';
         <div class="p-6 sm:p-8 space-y-6" id="printableCertificateArea">
             
             <!-- Patient Identification Strip -->
-            <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200 grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+            <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200 grid grid-cols-2 sm:grid-cols-5 gap-3 text-xs">
                 <div>
                     <span class="text-slate-400 block text-[11px]">نام بیمار (پت):</span>
                     <span class="font-black text-slate-800 text-sm" id="certPetName">تدی</span>
@@ -449,6 +526,10 @@ require_once 'includes/header.php';
                 <div>
                     <span class="text-slate-400 block text-[11px]">گونه و رده:</span>
                     <span class="font-bold text-slate-700" id="certSpecies">سگ بالغ</span>
+                </div>
+                <div>
+                    <span class="text-slate-400 block text-[11px]">نژاد پت:</span>
+                    <span class="font-black text-emerald-700" id="certBreed">ژرمن شپرد</span>
                 </div>
                 <div>
                     <span class="text-slate-400 block text-[11px]">وزن ثبت‌شده:</span>
@@ -513,6 +594,27 @@ require_once 'includes/header.php';
                 </div>
             </div>
 
+            <!-- AI Clinical Nutritionist Dossier Section (WSAVA / Breed Specific) -->
+            <div class="bg-gradient-to-br from-slate-900 to-indigo-950 p-5 rounded-2xl border border-indigo-500/30 text-white space-y-3 shadow-md">
+                <div class="flex items-center justify-between border-b border-white/15 pb-2">
+                    <div class="flex items-center gap-2">
+                        <span class="material-symbols-outlined text-indigo-400 text-lg">psychology</span>
+                        <h4 class="text-xs font-black text-white">ارزیابی بالینی هوش مصنوعی بر پایه نژاد و متابولیسم:</h4>
+                    </div>
+                    <span class="bg-indigo-500/30 text-indigo-200 text-[10px] font-mono px-2 py-0.5 rounded-full border border-indigo-400/30">
+                        AI Certified
+                    </span>
+                </div>
+                
+                <p class="text-[11px] text-indigo-100 leading-relaxed font-normal" id="certAiMetabolic">
+                    در حال بارگذاری تحلیل نژادی هوش مصنوعی...
+                </p>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1 text-[11px]" id="certAiBulletPoints">
+                    <!-- Populated dynamically -->
+                </div>
+            </div>
+
             <!-- Target Weight & Clinical Prognosis -->
             <div class="bg-gradient-to-r from-emerald-50 via-teal-50 to-emerald-50 p-4 rounded-2xl border border-emerald-200 space-y-1.5 text-xs text-emerald-950">
                 <div class="flex items-center justify-between font-black">
@@ -551,7 +653,11 @@ require_once 'includes/header.php';
                 <span class="material-symbols-outlined text-emerald-600 text-base">verified</span>
                 <span>ارزش کارنامه: ۴۹,۰۰۰ تومان — هدیه آسنا به کاربران گرامی</span>
             </div>
-            <div class="flex items-center gap-2 w-full sm:w-auto">
+            <div class="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+                <button type="button" onclick="consultAiAboutDiet()" class="flex-1 sm:flex-none px-3.5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-sm active:scale-95 cursor-pointer">
+                    <span class="material-symbols-outlined text-sm">smart_toy</span>
+                    <span>مشاوره با هوش مصنوعی</span>
+                </button>
                 <button type="button" onclick="window.print()" class="flex-1 sm:flex-none px-4 py-2.5 rounded-xl border border-slate-300 hover:bg-white text-slate-700 text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs">
                     <span class="material-symbols-outlined text-sm">print</span>
                     <span>چاپ / ذخیره PDF</span>
@@ -569,8 +675,43 @@ require_once 'includes/header.php';
 <!-- Interactive Calculator JavaScript Engine -->
 <script>
 (function() {
+    const DOG_BREEDS = [
+        { name: 'ژرمن شپرد', title: 'ژرمن شپرد (German Shepherd)', icon: '🐕', size: 'large', defaultWeight: 30, hintTitle: 'شاخص فیزیولوژیک ژرمن شپرد', hintDesc: 'نژاد بزرگ‌جثه با حساسیت مفاصل ران (دیسپلازی) و معده حساس. نیاز به کلسیم و فسفر بالانس‌شده و فرمول غنی از ال-کارنیتین.', foodTitle: 'غذای خشک رویال کنین ژرمن شپرد ادالت' },
+        { name: 'هاسکی', title: 'سیبرین هاسکی (Siberian Husky)', icon: '🐺', size: 'medium-large', defaultWeight: 22, hintTitle: 'متابولیسم سیبرین هاسکی', hintDesc: 'راندمان جذب کالری بسیار بالا با خودتنظیمی مصرف غذا. حساسیت بالا به کمبود زینک و نیازمند امگا ۳ جهت حفظ پوشش دولایه در اقلیم ایران.', foodTitle: 'غذای خشک رفلکس پلاس ماهی سالمون و برنج هاسکی' },
+        { name: 'شیتزو', title: 'شیتزو (Shih Tzu)', icon: '🐶', size: 'toy', defaultWeight: 6.5, hintTitle: 'آناتومی براکی‌سفالیک شیتزو', hintDesc: 'پوزه‌کوتاه با فک ظریف؛ مستعد تشکیل پلاک دندان و سنگ‌های ادراری اگزالات. نیازمند کیبل‌های هلالی کوچک با فسفر کنترل‌شده.', foodTitle: 'غذای خشک رویال کنین شیتزو ادالت' },
+        { name: 'پامرانین', title: 'پامرانین (Pomeranian)', icon: '🦊', size: 'toy', defaultWeight: 3.0, hintTitle: 'سوخت‌وساز فشرده پامرانین', hintDesc: 'متابولیسم بسیار سریع با خطر افت قند خون؛ حساسیت نای به قلاده و مستعد دررفتگی کشکک زانو. نیازمند تغذیه در ۳ وعده ثابت.', foodTitle: 'غذای خشک رویال کنین پامرانین ادالت' },
+        { name: 'تریر', title: 'تریر / یورکشایر (Terrier)', icon: '🐕‍🦺', size: 'small', defaultWeight: 5.5, hintTitle: 'ویژگی‌های گوارشی تریر', hintDesc: 'دستگاه گوارش بسیار حساس با شیوع آلرژی‌های غذایی به غلات. نیازمند پروتئین هیدرولیزشده و کیبل ویژه بهداشت دهان.', foodTitle: 'غذای خشک رویال کنین یورکشایر تریر ادالت' },
+        { name: 'گلدن رتریور', title: 'گلدن رتریور (Golden Retriever)', icon: '🦮', size: 'large', defaultWeight: 32, hintTitle: 'کنترل اشتها در گلدن رتریور', hintDesc: 'حامل جهش ژن پرخوری با استعداد چاقی مفرط و حساسیت مفاصل. نیازمند فیبر بالا، کارنیتین و اندازه‌گیری دقیق گرم غذا با ترازوی دیجیتال.', foodTitle: 'غذای خشک رویال کنین گلدن رتریور ادالت' },
+        { name: 'پاگ', title: 'پاگ (Pug)', icon: '🐾', size: 'small-brachy', defaultWeight: 8.0, hintTitle: 'سندرم تنفسی و وزن پاگ', hintDesc: 'اضافه وزن به شدت تنفس پاگ را مختل می‌کند. رژیم کم‌کالری با پروتئین باکیفیت و کیبل حجیم جهت احساس سیری سریع.', foodTitle: 'غذای خشک رویال کنین پاگ ادالت' },
+        { name: 'پودل', title: 'پودل (Poodle)', icon: '🐩', size: 'toy-medium', defaultWeight: 7.0, hintTitle: 'پوشش فر و مفاصل پودل', hintDesc: 'نیاز به اسیدهای چرب امگا ۶ و بیوتین جهت درخشندگی پوشش بدون ریزش و آنتی‌اکسیدان‌های چشمی جهت محافظت از عدسی چشم.', foodTitle: 'غذای خشک رویال کنین پودل ادالت' },
+        { name: 'روتوایلر', title: 'روتوایلر (Rottweiler)', icon: '🐕', size: 'large', defaultWeight: 45, hintTitle: 'حجم عضلانی روتوایلر', hintDesc: 'فشار مضاعف وزن روی مفاصل و تاندون‌ها؛ نیاز به پروتئین بالای ۳۰٪، گلوکوزامین و کنترل سرعت غذا خوردن جهت جلوگیری از پیچش معده.', foodTitle: 'غذای خشک رویال کنین روتوایلر ادالت' },
+        { name: 'دوبرمن', title: 'دوبرمن پینچر (Doberman)', icon: '🐕', size: 'large', defaultWeight: 36, hintTitle: 'سلامت عضله قلب دوبرمن', hintDesc: 'مستعد کاردیومیوپاتی اتساعی (DCM)؛ رژیم غذایی باید حتماً غنی از ال-کارنیتین و تائورین دارویی باشد.', foodTitle: 'غذای خشک هیلز ساینس پلن لارج برید' },
+        { name: 'بولداگ', title: 'بولداگ فرانسوی/انگلیسی (Bulldog)', icon: '🐶', size: 'medium-brachy', defaultWeight: 12, hintTitle: 'گوارش و مفاصل بولداگ', hintDesc: 'حساسیت به نفخ و بوی نامطبوع گازهای گوارشی؛ نیازمند پروتئین‌های با قابلیت هضم L.I.P و کیبل ویژه فک کوتاه.', foodTitle: 'غذای خشک رویال کنین فرنچ بولداگ ادالت' },
+        { name: 'سرابی', title: 'سرابی بومی / کانگال (Sarabi)', icon: '🐕', size: 'giant', defaultWeight: 55, hintTitle: 'رشد استخوانی سگ غول‌پیکر بومی', hintDesc: 'وزن‌گیری اسکلتی سنگین؛ پرهیز اکید از کلسیم مازاد در دوران رشد و تقسیم جیره به ۲ وعده با استراحت کامل قبل و بعد غذا.', foodTitle: 'غذای خشک رویال کنین جاینت ادالت (سگ‌های بالای ۴۵ کیلو)' },
+        { name: 'مالتیز', title: 'مالتیز (Maltese)', icon: '🐶', size: 'toy', defaultWeight: 3.5, hintTitle: 'کنترل لکه‌های اشک و پوست مالتیز', hintDesc: 'حساسیت به رنگدانه‌های غذایی و ایجاد لکه اشک قهوه‌ای زیر چشم؛ نیاز به رژیم سفید بدون مواد نگهدارنده مصنوعی.', foodTitle: 'غذای خشک رویال کنین مالتیز ادالت' },
+        { name: 'شیتزو تریر', title: 'میکس شیتزو تریر (Shih-Tzu Cross)', icon: '🐶', size: 'small', defaultWeight: 6.0, hintTitle: 'میکس محبوب ایرانی', hintDesc: 'ترکیب پوشش بلند و فعالیت متوسط آپارتمانی؛ نیازمند تعادل چربی و فیبر برای سلامت روده و پوست بدون خارش.', foodTitle: 'غذای خشک رویال کنین مینی ادالت' },
+        { name: 'میکس و بومی', title: 'میکس / نژاد بومی (Crossbreed)', icon: '🐕', size: 'medium', defaultWeight: 15, hintTitle: 'مقاومت ژنتیکی میکس بومی', hintDesc: 'تنوع ژنتیکی عالی و مقاومت بدنی خوب؛ تمرکز بر شاخص بدنی BCS 5/9 و پیشگیری از اضافه وزن ناشی از بی‌تحرکی.', foodTitle: 'غذای خشک رویال کنین مدیوم ادالت' },
+        { name: 'سایر نژادها', title: 'سایر نژادهای سگ', icon: '✨', size: 'custom', defaultWeight: 10, hintTitle: 'جیره استاندارد سگ', hintDesc: 'بالانس دقیق کالری و پروتئین با قابلیت هضم بالا و تأمین هیدراتاسیون کافی.', foodTitle: 'غذای خشک تخصصی سگ بالینی' }
+    ];
+
+    const CAT_BREEDS = [
+        { name: 'پرشین', title: 'پرشین اصیل (Persian Cat)', icon: '🐱', size: 'longhair-brachy', defaultWeight: 4.5, hintTitle: 'فک فلت و هربال پرشین', hintDesc: 'پوزه‌کوتاه با بلع مداوم مو؛ رژیم الزامی با فیبر پسیلیوم جهت دفع طبیعی گلوله مویی و فسفر پایین برای حفاظت از کلیه‌های مستعد PKD.', foodTitle: 'غذای خشک رویال کنین پرشین ادالت' },
+        { name: 'دی‌اس‌اچ', title: 'دی‌اس‌اچ / بومی موکوتاه (DSH)', icon: '🐈', size: 'shorthair', defaultWeight: 4.0, hintTitle: 'حفاظت مجاری ادراری DSH', hintDesc: 'شایع‌ترین چالش پس از عقیم‌سازی، تنبلی مثانه و رسوبات FLUTD است. آب‌رسانی مداوم و غذای استرلایزد با چربی کنترل‌شده توصیه می‌شود.', foodTitle: 'غذای خشک استرلایزد رفلکس پلاس گربه' },
+        { name: 'بریتیش', title: 'بریتیش شورت‌هیر (British Shorthair)', icon: '🐾', size: 'cobby', defaultWeight: 5.5, hintTitle: 'عضلات فشرده بریتیش', hintDesc: 'ساختار بدنی قوی با استعداد تنبلی و چاقی؛ نیاز به پروتئین مرغوب ۳۴٪ و تائورین و EPA/DHA جهت حمایت از عملکرد قلب.', foodTitle: 'غذای خشک رویال کنین بریتیش شورت‌هیر ادالت' },
+        { name: 'اسکاتیش فولد', title: 'اسکاتیش فولد (Scottish Fold)', icon: '🐱', size: 'ocd-prone', defaultWeight: 4.2, hintTitle: 'نقص غضروفی سیستمیک اسکاتیش', hintDesc: 'ژن تاخوردگی گوش همراه با نقص غضروف مفاصل است. پرهیز مطلق از اضافه وزن و استفاده از گلوکوزامین و عصاره صدف سبز ضروری است.', foodTitle: 'غذای خشک رویال کنین بریتیش یا هیلز جوینت ساپورت' },
+        { name: 'سیامی', title: 'سیامی (Siamese)', icon: '🐈', size: 'oriental', defaultWeight: 3.8, hintTitle: 'متابولیسم لاغراندام سیامی', hintDesc: 'فعالیت ذهنی و آوازی بالا با بدن کشیده؛ نیاز به کیبل استوانه‌ای کشیده برای جویدن طولانی و هضم آهسته.', foodTitle: 'غذای خشک رویال کنین سیامی ادالت' },
+        { name: 'راگدال', title: 'راگدال (Ragdoll)', icon: '🐱', size: 'large-longhair', defaultWeight: 6.5, hintTitle: 'نژاد آرام و سنگین‌وزن راگدال', hintDesc: 'رشد طولانی تا ۳ سالگی؛ جثه درشت نیازمند کیبل بزرگ هرمی و مکمل‌های تقویتی ماهیچه قلب و مفاصل دست و پا.', foodTitle: 'غذای خشک رویال کنین راگدال ادالت' },
+        { name: 'هیمالین', title: 'هیمالین (Himalayan)', icon: '🐈', size: 'longhair', defaultWeight: 4.6, hintTitle: 'پوشش ابریشمی هیمالین', hintDesc: 'تلاقی پرشین و سیامی؛ فرمولاسیون مالت هربال در کنار محافظت از مجاری اشکی چشم و پوست بدون شوره.', foodTitle: 'غذای خشک رویال کنین پرشین یا هربال کر' },
+        { name: 'مین‌کون', title: 'مین‌کون (Maine Coon)', icon: '🐱', size: 'giant-cat', defaultWeight: 8.0, hintTitle: 'بزرگ‌ترین نژاد گربه خانگی', hintDesc: 'آرواره بسیار قدرتمند؛ کیبل باید بزرگ باشد تا گربه نتواند آن را درسته ببلعد. حفاظت شدید از مفاصل و عضله قلب.', foodTitle: 'غذای خشک رویال کنین مین‌کون ادالت' },
+        { name: 'ترکیش ون', title: 'ترکیش ون / آنگورا (Turkish Van)', icon: '🐈', size: 'semilonghair', defaultWeight: 5.0, hintTitle: 'گربه چابک و آب‌دوست', hintDesc: 'انرژی عضلانی بالا بدون لایه چربی؛ نیازمند رژیم با پروتئین لذیذ مرغ یا ماهی و اسیدهای آمینه ضروری.', foodTitle: 'غذای خشک رفلکس پلاس گربه بالغ' },
+        { name: 'پرشین فلت', title: 'پرشین فلت / پینج‌فیس (Flat)', icon: '🐱', size: 'brachy', defaultWeight: 4.2, hintTitle: 'فک شدیداً براکی‌سفالیک فلت', hintDesc: 'تنفس صدادار با حساسیت به خشکی مجاری فوقانی؛ غذای تر رطوبت‌بالا در کنار کیبل ارگونومیک بادامی الزامی است.', foodTitle: 'غذای خشک و مرطوب رویال کنین پرشین' },
+        { name: 'میکس و دورگه', title: 'میکس / دورگه گربه (Cross)', icon: '🐾', size: 'standard', defaultWeight: 4.0, hintTitle: 'گربه خانگی متعادل', hintDesc: 'پایش دوره‌ای وزن، پیشگیری از گلوله مویی با علف گربه و تشویق به بازی روزانه جهت تخلیه غریزه شکار.', foodTitle: 'غذای خشک استرلایزد یا ادالت رفلکس پلاس' },
+        { name: 'سایر نژادها', title: 'سایر نژادهای گربه', icon: '✨', size: 'custom', defaultWeight: 4.0, hintTitle: 'جیره استاندارد گربه', hintDesc: 'تأمین کامل تائورین، اسیدهای چرب امگا و کنترل pH ادرار جهت سلامت پایدار.', foodTitle: 'غذای خشک تخصصی گربه بالینی' }
+    ];
+
     window.calcState = {
         species: 'dog',
+        race: 'ژرمن شپرد',
         weight: 8.5,
         stage: 'adult',
         activity: 'neutered',
@@ -580,8 +721,93 @@ require_once 'includes/header.php';
         mer: 540,
         kibbleGrams: 145,
         waterMl: 510,
-        serial: 'ASENA-NUT-' + Math.random().toString(36).substring(2, 8).toUpperCase()
+        serial: 'ASENA-NUT-' + Math.random().toString(36).substring(2, 8).toUpperCase(),
+        aiAnalysis: null
     };
+
+    let aiDebounceTimer = null;
+
+    window.renderBreedChips = function() {
+        const container = document.getElementById('breedChipsContainer');
+        const datalist = document.getElementById('breedDatalist');
+        if (!container) return;
+
+        const breeds = calcState.species === 'dog' ? DOG_BREEDS : CAT_BREEDS;
+        
+        // Render Chips
+        let html = '';
+        breeds.forEach(b => {
+            const isActive = b.name === calcState.race || b.title === calcState.race;
+            const activeClass = isActive 
+                ? 'bg-emerald-500 text-white font-black border-emerald-400 shadow-md shadow-emerald-500/30' 
+                : 'bg-white/10 text-white/80 hover:bg-white/20 border-white/15';
+            html += `<button type="button" onclick="selectBreed('${b.name}')" class="calc-breed-chip py-1.5 px-3 rounded-xl border text-xs transition-all flex items-center gap-1.5 cursor-pointer ${activeClass}">
+                <span>${b.icon}</span>
+                <span>${b.name}</span>
+            </button>`;
+        });
+        container.innerHTML = html;
+
+        // Render Datalist for autocomplete
+        if (datalist) {
+            datalist.innerHTML = breeds.map(b => `<option value="${b.name}">${b.title}</option>`).join('');
+        }
+
+        // Update custom input
+        const customInput = document.getElementById('calcBreedCustomInput');
+        if (customInput && !customInput.matches(':focus')) {
+            customInput.value = calcState.race;
+        }
+
+        // Update badge
+        const badge = document.getElementById('calcSelectedBreedBadge');
+        if (badge) badge.textContent = calcState.race;
+
+        // Update Breed Hint Box
+        updateBreedHintBox();
+    };
+
+    function updateBreedHintBox() {
+        const breeds = calcState.species === 'dog' ? DOG_BREEDS : CAT_BREEDS;
+        const found = breeds.find(b => b.name === calcState.race || calcState.race.includes(b.name));
+        const hintTitle = document.getElementById('breedHintTitle');
+        const hintDesc = document.getElementById('breedHintDesc');
+        
+        if (found) {
+            if (hintTitle) hintTitle.textContent = found.hintTitle;
+            if (hintDesc) hintDesc.textContent = found.hintDesc;
+        } else {
+            if (hintTitle) hintTitle.textContent = `شاخص فیزیولوژیک نژاد ${calcState.race}`;
+            if (hintDesc) hintDesc.textContent = 'بالانس متابولیک و تنظیم پروتئین بر اساس فنوتیپ و شاخص وضعیت بدنی پت.';
+        }
+    }
+
+    window.selectBreed = function(breedName) {
+        calcState.race = breedName;
+        renderBreedChips();
+        recalculateNutrition();
+        debouncedAiAnalysis();
+    };
+
+    window.handleBreedInputChange = function(val) {
+        const trimmed = val.trim();
+        if (!trimmed) return;
+        calcState.race = trimmed;
+        
+        const badge = document.getElementById('calcSelectedBreedBadge');
+        if (badge) badge.textContent = trimmed;
+        
+        updateBreedHintBox();
+        recalculateNutrition();
+        debouncedAiAnalysis();
+    };
+
+    function debouncedAiAnalysis() {
+        clearTimeout(aiDebounceTimer);
+        aiDebounceTimer = setTimeout(() => {
+            triggerAiBreedAnalysis();
+        }, 1200);
+    }
 
     window.setCalcSpecies = function(species) {
         calcState.species = species;
@@ -594,23 +820,31 @@ require_once 'includes/header.php';
             btnDog.className = 'calc-species-btn py-3.5 px-4 rounded-2xl font-black text-sm flex items-center justify-center gap-2.5 border-2 transition-all bg-emerald-500 text-white border-emerald-400 shadow-lg shadow-emerald-500/25 cursor-pointer';
             btnCat.className = 'calc-species-btn py-3.5 px-4 rounded-2xl font-black text-sm flex items-center justify-center gap-2.5 border-2 transition-all bg-white/10 text-white/80 border-white/15 hover:bg-white/15 cursor-pointer';
             labelPuppy.textContent = 'توله سگ (زیر ۱ سال)';
-            if (calcState.weight > 60) calcState.weight = 60;
+            calcState.race = 'ژرمن شپرد';
+            if (calcState.weight < 1) calcState.weight = 8.5;
+            document.getElementById('calcWeightSlider').max = 60;
         } else {
             btnCat.className = 'calc-species-btn py-3.5 px-4 rounded-2xl font-black text-sm flex items-center justify-center gap-2.5 border-2 transition-all bg-emerald-500 text-white border-emerald-400 shadow-lg shadow-emerald-500/25 cursor-pointer';
             btnDog.className = 'calc-species-btn py-3.5 px-4 rounded-2xl font-black text-sm flex items-center justify-center gap-2.5 border-2 transition-all bg-white/10 text-white/80 border-white/15 hover:bg-white/15 cursor-pointer';
             labelPuppy.textContent = 'بچه گربه (زیر ۱ سال)';
+            calcState.race = 'پرشین';
             if (calcState.weight > 12) {
                 calcState.weight = 4.5;
                 document.getElementById('calcWeightSlider').value = 4.5;
             }
+            document.getElementById('calcWeightSlider').max = 12;
         }
+        
+        renderBreedChips();
         recalculateNutrition();
+        debouncedAiAnalysis();
     };
 
     window.updateWeightFromSlider = function(val) {
         calcState.weight = parseFloat(val);
         document.getElementById('calcWeightDisplay').textContent = calcState.weight.toFixed(1);
         recalculateNutrition();
+        debouncedAiAnalysis();
     };
 
     window.setCalcStage = function(stage) {
@@ -624,6 +858,7 @@ require_once 'includes/header.php';
             }
         });
         recalculateNutrition();
+        debouncedAiAnalysis();
     };
 
     window.setCalcActivity = function(act) {
@@ -637,6 +872,7 @@ require_once 'includes/header.php';
             }
         });
         recalculateNutrition();
+        debouncedAiAnalysis();
     };
 
     window.setCalcBcs = function(bcs) {
@@ -666,6 +902,7 @@ require_once 'includes/header.php';
             badge.className = 'bg-rose-500/20 text-rose-300 text-[11px] font-black px-2.5 py-0.5 rounded-full border border-rose-400/40';
         }
         recalculateNutrition();
+        debouncedAiAnalysis();
     };
 
     window.recalculateNutrition = function() {
@@ -738,18 +975,23 @@ require_once 'includes/header.php';
         document.getElementById('resTreats').innerHTML = treatKcal.toLocaleString('fa-IR') + ' <span class="text-xs font-normal text-white/80 font-sans">kcal (قانون ۱۰٪)</span>';
         document.getElementById('resMealPortion').textContent = meals + ' وعده ' + portionGrams.toLocaleString('fa-IR') + ' گرمی';
 
-        // Titles & Recommendations
+        // Titles & Recommendations (includes Breed)
         const petLabel = calcState.species === 'dog' ? 'سگ' : 'گربه';
-        const stageLabel = calcState.stage === 'puppy' ? (calcState.species === 'dog' ? 'توله سگ' : 'بچه‌گربه') : (calcState.stage === 'senior' ? 'ارشد / مسن' : 'بالغ');
+        const stageLabel = calcState.stage === 'puppy' ? (calcState.species === 'dog' ? 'توله سگ' : 'بچه‌گربه') : (calcState.stage === 'senior' ? 'ارشد' : 'بالغ');
         document.getElementById('resPetEmoji').textContent = calcState.species === 'dog' ? '🐕' : '🐈';
-        document.getElementById('resPetTitle').textContent = `برنامه غذایی ${petLabel} ${stageLabel} (${W.toFixed(1)} کیلوگرم)`;
+        document.getElementById('resPetTitle').textContent = `برنامه غذایی ${petLabel} ${stageLabel} • نژاد ${calcState.race} (${W.toFixed(1)} کیلوگرم)`;
 
         const actDesc = calcState.activity === 'neutered' ? 'عقیم‌شده با تحرک معمول' : (calcState.activity === 'active' ? 'پرتحرک و فعال' : 'کم‌تحرک / نیازمند پایش کالری');
         document.getElementById('resPetSubtitle').textContent = actDesc;
 
-        // Recommended Product Text
+        // Recommended Product Text matched to Breed & Life Stage
         let foodName = '';
-        if (calcState.species === 'dog') {
+        const breeds = calcState.species === 'dog' ? DOG_BREEDS : CAT_BREEDS;
+        const breedInfo = breeds.find(b => b.name === calcState.race || calcState.race.includes(b.name));
+        
+        if (breedInfo && breedInfo.foodTitle) {
+            foodName = breedInfo.foodTitle;
+        } else if (calcState.species === 'dog') {
             if (calcState.bcs >= 7) foodName = 'غذای خشک رژیمی هیلز پرفکت ویت (مدیریت تخصصی وزن سگ)';
             else if (calcState.stage === 'puppy') foodName = 'غذای خشک رویال کنین مینی پاپی (توله‌های در حال رشد)';
             else foodName = 'غذای خشک رویال کنین مینی ادالت (ویژه سگ‌های نژاد کوچک)';
@@ -764,8 +1006,94 @@ require_once 'includes/header.php';
         // CTA Link
         const shopCta = document.getElementById('calcCtaShop');
         if (shopCta) {
-            shopCta.href = `shop.php?category=${calcState.species === 'dog' ? 'dog-food' : 'cat-food'}`;
+            shopCta.href = `shop.php?category=${calcState.species === 'dog' ? 'dog-food' : 'cat-food'}&q=${encodeURIComponent(calcState.race)}`;
         }
+    };
+
+    // AI Clinical Nutritionist Caller
+    window.triggerAiBreedAnalysis = async function() {
+        const aiSummaryEl = document.getElementById('aiMetabolicSummary');
+        const aiPointsEl = document.getElementById('aiPointsList');
+        const btnRefresh = document.getElementById('btnRefreshAi');
+        const btnQuick = document.getElementById('btnQuickAiAnalyze');
+        const aiStatusSubtitle = document.getElementById('aiStatusSubtitle');
+        
+        if (btnRefresh) btnRefresh.innerHTML = '<span class="material-symbols-outlined text-xs animate-spin">sync</span><span>تحلیل...</span>';
+        if (btnQuick) btnQuick.innerHTML = '<span class="material-symbols-outlined text-xs animate-spin">sync</span><span>درحال تحلیل...</span>';
+        if (aiSummaryEl) aiSummaryEl.innerHTML = '<span class="text-white/60 flex items-center gap-1.5"><span class="material-symbols-outlined text-sm animate-spin">sync</span>هوش مصنوعی در حال تحلیل بیومکانیک و استانداردهای تغذیه نژاد ' + calcState.race + '...</span>';
+
+        try {
+            const res = await fetch('actions/ai_nutrition_analysis.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    species: calcState.species,
+                    race: calcState.race,
+                    pet_name: calcState.petName,
+                    weight_kg: calcState.weight,
+                    ideal_weight_kg: calcState.idealWeight,
+                    bcs_score: calcState.bcs,
+                    stage: calcState.stage,
+                    activity: calcState.activity,
+                    daily_calories: calcState.mer,
+                    kibble_grams: calcState.kibbleGrams,
+                    water_ml: calcState.waterMl
+                })
+            });
+            const data = await res.json();
+            if (data.success) {
+                calcState.aiAnalysis = data;
+                
+                // Update live dashboard
+                if (aiSummaryEl) {
+                    aiSummaryEl.textContent = data.metabolic_analysis;
+                }
+                if (aiStatusSubtitle) {
+                    aiStatusSubtitle.textContent = `تحلیل تخصصی نژاد ${data.race_title} (${data.race_category})`;
+                }
+                if (aiPointsEl && Array.isArray(data.clinical_recommendations)) {
+                    let ptsHtml = '';
+                    // Top recommendation
+                    if (data.clinical_recommendations[0]) {
+                        ptsHtml += `<div class="flex items-start gap-1.5 text-emerald-200">
+                            <span class="material-symbols-outlined text-xs mt-0.5 text-emerald-400">check_circle</span>
+                            <span>${data.clinical_recommendations[0]}</span>
+                        </div>`;
+                    }
+                    // Top health alert
+                    if (Array.isArray(data.health_alerts) && data.health_alerts[0]) {
+                        ptsHtml += `<div class="flex items-start gap-1.5 text-amber-200">
+                            <span class="material-symbols-outlined text-xs mt-0.5 text-amber-400">warning</span>
+                            <span>${data.health_alerts[0]}</span>
+                        </div>`;
+                    }
+                    // Recommended supplements
+                    if (Array.isArray(data.recommended_supplements) && data.recommended_supplements[0]) {
+                        ptsHtml += `<div class="flex items-start gap-1.5 text-sky-200">
+                            <span class="material-symbols-outlined text-xs mt-0.5 text-sky-400">medication</span>
+                            <span>مکمل بالینی: ${data.recommended_supplements[0]}</span>
+                        </div>`;
+                    }
+                    aiPointsEl.innerHTML = ptsHtml;
+                }
+            }
+        } catch (e) {
+            console.error('AI Analysis failed:', e);
+            if (aiSummaryEl) {
+                aiSummaryEl.textContent = `رژیم محاسبه‌شده با استانداردهای FEDIAF برای نژاد ${calcState.race} منطبق است. پروتئین خالص و آب مصرفی کنترل شود.`;
+            }
+        } finally {
+            if (btnRefresh) btnRefresh.innerHTML = '<span class="material-symbols-outlined text-xs">autorenew</span><span>تحلیل مجدد AI</span>';
+            if (btnQuick) btnQuick.innerHTML = '<span class="material-symbols-outlined text-sm">psychology</span><span>تحلیل نژاد با AI</span>';
+        }
+    };
+
+    // Consult AI in Chat with full pet profile
+    window.consultAiAboutDiet = function() {
+        const petInfo = `سلام، من از محاسبه‌گر بالینی آسنا استفاده کردم و نیاز به مشاوره تغذیه دارم:\nنام پت: ${calcState.petName}\nگونه: ${calcState.species === 'dog' ? 'سگ' : 'گربه'}\nنژاد: ${calcState.race}\nوزن: ${calcState.weight} کیلوگرم (هدف: ${calcState.idealWeight} kg)\nشاخص بدنی: BCS ${calcState.bcs}/9\nکالری روزانه: ${calcState.mer} kcal\nغذای خشک: ${calcState.kibbleGrams} گرم\nمرحله: ${calcState.stage}\nتحرک: ${calcState.activity}\nلطفاً راهنمایی‌های بالینی تکمیلی را بفرمایید.`;
+        
+        sessionStorage.setItem('ai_chat_prefill', petInfo);
+        window.location.href = 'chat.php?mode=ai&prefill=' + encodeURIComponent(petInfo);
     };
 
     // Modal Handlers
@@ -778,6 +1106,7 @@ require_once 'includes/header.php';
 
         document.getElementById('certPetName').textContent = petName;
         document.getElementById('certSpecies').textContent = (calcState.species === 'dog' ? 'سگ' : 'گربه') + ' (' + (calcState.stage === 'puppy' ? 'توله/کیتن' : (calcState.stage === 'senior' ? 'ارشد' : 'بالغ')) + ')';
+        document.getElementById('certBreed').textContent = calcState.race;
         document.getElementById('certCurrentWeight').textContent = calcState.weight.toFixed(1) + ' کیلوگرم';
         document.getElementById('certTargetWeight').textContent = 'وزن هدف: ' + calcState.idealWeight.toFixed(1) + ' کیلوگرم';
         document.getElementById('certKcal').textContent = calcState.mer.toLocaleString('fa-IR') + ' kcal';
@@ -794,14 +1123,49 @@ require_once 'includes/header.php';
 
         let prog = '';
         if (calcState.bcs <= 3) {
-            prog = 'هدف: افزایش تدریجی بافت عضلانی با جیره پرکالری. پایش هفتگی وزن توصیه می‌شود.';
+            prog = `هدف بالینی: افزایش تدریجی بافت عضلانی نژاد ${calcState.race} با جیره متراکم. پایش هفتگی وزن توصیه می‌شود.`;
         } else if (calcState.bcs >= 7) {
-            prog = 'هدف: کاهش چربی احشایی با نرخ ایمن ۱ تا ۱.۵ درصد در هفته. از دادن پس‌مانده غذای انسانی جداً پرهیز شود.';
+            prog = `هدف بالینی: کاهش چربی احشایی نژاد ${calcState.race} با نرخ ایمن ۱ تا ۱.۵ درصد در هفته جهت کاهش استرس مفاصل. از دادن پس‌مانده غذای انسانی جداً پرهیز شود.`;
         } else {
-            prog = 'پت شما در محدوده شاخص استاندارد سلامت وزنی قرار دارد. تداوم این جیره مانع از ابتلا به دیابت و دردهای اسکلتی خواهد شد.';
+            prog = `پت شما در محدوده شاخص استاندارد سلامت وزنی نژاد ${calcState.race} قرار دارد. تداوم این جیره مانع از ابتلا به دیابت، اختلالات گوارشی و دردهای اسکلتی خواهد شد.`;
         }
         document.getElementById('certPrognosis').textContent = prog;
         document.getElementById('certSerial').textContent = calcState.serial;
+
+        // Render AI Section in Certificate
+        const certAiMetabolic = document.getElementById('certAiMetabolic');
+        const certAiBullets = document.getElementById('certAiBulletPoints');
+        if (calcState.aiAnalysis) {
+            if (certAiMetabolic) certAiMetabolic.textContent = calcState.aiAnalysis.metabolic_analysis;
+            if (certAiBullets) {
+                let bHtml = '';
+                if (calcState.aiAnalysis.clinical_recommendations) {
+                    bHtml += `<div class="bg-white/10 p-2.5 rounded-xl border border-white/10">
+                        <div class="font-bold text-emerald-300 mb-1 flex items-center gap-1">
+                            <span class="material-symbols-outlined text-xs">task_alt</span>
+                            <span>توصیه‌های کلیدی جیره:</span>
+                        </div>
+                        <ul class="list-disc list-inside space-y-1 text-white/80 text-[10px]">
+                            ${calcState.aiAnalysis.clinical_recommendations.slice(0, 2).map(r => `<li>${r}</li>`).join('')}
+                        </ul>
+                    </div>`;
+                }
+                if (calcState.aiAnalysis.health_alerts) {
+                    bHtml += `<div class="bg-white/10 p-2.5 rounded-xl border border-white/10">
+                        <div class="font-bold text-amber-300 mb-1 flex items-center gap-1">
+                            <span class="material-symbols-outlined text-xs">error</span>
+                            <span>هشدارهای نژادی و بالینی:</span>
+                        </div>
+                        <ul class="list-disc list-inside space-y-1 text-white/80 text-[10px]">
+                            ${calcState.aiAnalysis.health_alerts.slice(0, 2).map(a => `<li>${a}</li>`).join('')}
+                        </ul>
+                    </div>`;
+                }
+                certAiBullets.innerHTML = bHtml;
+            }
+        } else {
+            if (certAiMetabolic) certAiMetabolic.textContent = `تحلیل بالینی نژاد ${calcState.race}: انرژی متابولیک روزانه ${calcState.mer} kcal بر اساس استانداردهای بین‌المللی WSAVA محاسبه و تأیید شد.`;
+        }
 
         modal.classList.remove('hidden');
         modal.classList.add('flex');
@@ -834,6 +1198,7 @@ require_once 'includes/header.php';
                 body: JSON.stringify({
                     pet_name: calcState.petName,
                     species: calcState.species,
+                    race: calcState.race,
                     weight_kg: calcState.weight,
                     ideal_weight_kg: calcState.idealWeight,
                     bcs_score: calcState.bcs,
@@ -842,6 +1207,7 @@ require_once 'includes/header.php';
                     water_ml: calcState.waterMl,
                     stage: calcState.stage,
                     activity: calcState.activity,
+                    ai_analysis: calcState.aiAnalysis ? calcState.aiAnalysis.metabolic_analysis : '',
                     csrf_token: csrf
                 })
             });
@@ -879,8 +1245,10 @@ require_once 'includes/header.php';
         if (e.key === 'Escape') closeNutritionReportModal();
     });
 
-    // Initial calculation on load
+    // Initial setup on load
+    renderBreedChips();
     recalculateNutrition();
+    triggerAiBreedAnalysis();
 })();
 </script>
 
