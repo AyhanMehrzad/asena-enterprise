@@ -5128,7 +5128,7 @@ function switchSellerFin(period) {
         postalAbortCtrl = new AbortController();
 
         try {
-            const resp = await fetch(`actions/postal_code_lookup.php?postal_code=${clean}`, {
+            const resp = await fetch(`actions/postal_code_lookup.php?postal_code=${clean}&_=${Date.now()}`, {
                 signal: postalAbortCtrl.signal
             });
             const res = await resp.json();

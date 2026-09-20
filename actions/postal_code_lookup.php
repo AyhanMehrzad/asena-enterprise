@@ -7,7 +7,7 @@
  */
 
 header('Content-Type: application/json; charset=utf-8');
-header('Cache-Control: public, max-age=3600');
+header('Cache-Control: no-cache, no-store, must-revalidate');
 
 require_once __DIR__ . '/../includes/MapService.php';
 
