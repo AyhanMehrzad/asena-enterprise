@@ -83,6 +83,19 @@
 
 ## ۳. تاریخچه تغییرات اخیر (Change Log)
 
+### نسخه ۱.۰.۴ (سپتامبر ۲۰۲۶ - سامانه پایش تداخلات دارویی، پولی‌سازی محاسبه‌گر بالینی و ادغام کارنامه‌های سلامت در پروفایل)
+1. **سامانه پایش هوشمند تداخلات دارویی پت (`includes/DrugInteractionService.php` و `interactions.php`):**
+   - توسعه موتور دوگانه فارماکولوژی دامپزشکی (AvalAI / Gemini API + ماتریس آفلاین بیش از ۵۰ قاعده بالینی تداخلات دارویی).
+   - تفکیک لاجیک پنل همکاران به `partner_interactions.php` و استقرار رابط کاربری اختصاصی بررسی تداخلات در `interactions.php` و `drug_interactions.php`.
+   - ایجاد اندپوینت AJAX در `actions/ai_drug_analysis.php` و ثبت کارنامه در `actions/save_drug_report.php`.
+2. **پولی‌سازی و تنظیمات مالی محاسبه‌گر تغذیه بالینی:**
+   - افزودن کلیدهای فعال‌سازی (`calculator_is_paid`) و قیمت (`calculator_price_toman`) در `admin/finance_settings.php`.
+   - انطباق گردش کار `calculator.php` با فلوهای رایگان و درگاه پرداخت آنلاین (`actions/initiate_meal_plan_payment.php` و `actions/complete_payment.php`).
+3. **ادغام و نمایش کارنامه‌های رژیم بالینی در پروفایل کاربر (`profile.php`):**
+   - اصلاح شِمای ذخیره‌سازی در `pet_documents` با ستون‌های استاندارد (`pet_id`, `user_id`, `title`, `file_name`, `file_path`).
+   - تعبیه ویجت کارت کارنامه‌های بالینی در تب پیشخوان (`#view-overview`) و تب حیوانات خانگی (`#view-pets`).
+   - اتصال به نمایشگر اختصاصی رژیم غذایی در `view_meal_plan.php` با قابلیت چاپ، مشاهده نسخه بالینی و QR اصالت.
+
 ### نسخه ۱.۰.۲ (سپتامبر ۲۰۲۶ - نگارش قبلی)
 1. **رفع خطای انقضای اطلاعات سفارش در درگاه (`actions/complete_payment.php`):**
    - مقداردهی متغیر `$pending` از سشن قبل از شروط گیت ۳.
