@@ -232,7 +232,7 @@ if ($userId > 0 && isset($pdo)) {
 
                 <!-- Pet Condition & Clinical History Input -->
                 <div class="space-y-1.5">
-                    <label class="text-[11px] font-bold text-slate-600 block">شرح وضعیت بالینی، علائم، آلرژی یا توضیحات سرپرست (جهت تحلیل هوش مصنوعی):</label>
+                    <label class="text-[11px] font-bold text-slate-600 block">شرح وضعیت بالینی، علائم، آلرژی یا توضیحات سرپرست:</label>
                     <textarea id="drugUserNotes" rows="2" placeholder="اگر حیوان شما دارای علائم خاصی مثل بی‌اشتهایی، استفراغ، آلرژی به داروی خاص یا سابقه جراحی اخیر است در اینجا بنویسید..." class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-blue-500 leading-relaxed"></textarea>
                 </div>
             </div>
