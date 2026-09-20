@@ -61,24 +61,24 @@ if ($userId > 0 && isset($pdo)) {
                 <span class="w-6 h-6 rounded-lg bg-blue-50 text-blue-700 flex items-center justify-center text-xs font-bold">۱</span>
                 <span>گونه حیوان خانگی را مشخص کنید:</span>
             </label>
-            <div class="grid grid-cols-5 gap-2 sm:gap-3">
-                <button type="button" onclick="setDrugSpecies('dog')" id="drugSpeciesDog" class="drug-species-btn py-2.5 px-2 rounded-2xl font-bold text-xs flex flex-col sm:flex-row items-center justify-center gap-1.5 border transition cursor-pointer bg-[#001a48] text-white border-[#001a48] shadow-sm">
+            <div class="flex flex-wrap sm:flex-nowrap gap-2 sm:gap-3">
+                <button type="button" onclick="setDrugSpecies('dog')" id="drugSpeciesDog" class="drug-species-btn flex-1 min-w-[75px] py-2.5 px-2 rounded-2xl font-bold text-xs flex flex-row items-center justify-center gap-1.5 border transition cursor-pointer bg-[#001a48] text-white border-[#001a48] shadow-sm">
                     <span class="text-base sm:text-lg">🐕</span>
                     <span>سگ</span>
                 </button>
-                <button type="button" onclick="setDrugSpecies('cat')" id="drugSpeciesCat" class="drug-species-btn py-2.5 px-2 rounded-2xl font-bold text-xs flex flex-col sm:flex-row items-center justify-center gap-1.5 border transition cursor-pointer bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200">
+                <button type="button" onclick="setDrugSpecies('cat')" id="drugSpeciesCat" class="drug-species-btn flex-1 min-w-[75px] py-2.5 px-2 rounded-2xl font-bold text-xs flex flex-row items-center justify-center gap-1.5 border transition cursor-pointer bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200">
                     <span class="text-base sm:text-lg">🐈</span>
                     <span>گربه</span>
                 </button>
-                <button type="button" onclick="setDrugSpecies('horse')" id="drugSpeciesHorse" class="drug-species-btn py-2.5 px-2 rounded-2xl font-bold text-xs flex flex-col sm:flex-row items-center justify-center gap-1.5 border transition cursor-pointer bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200">
+                <button type="button" onclick="setDrugSpecies('horse')" id="drugSpeciesHorse" class="drug-species-btn flex-1 min-w-[75px] py-2.5 px-2 rounded-2xl font-bold text-xs flex flex-row items-center justify-center gap-1.5 border transition cursor-pointer bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200">
                     <span class="text-base sm:text-lg">🐎</span>
                     <span>اسب</span>
                 </button>
-                <button type="button" onclick="setDrugSpecies('bird')" id="drugSpeciesBird" class="drug-species-btn py-2.5 px-2 rounded-2xl font-bold text-xs flex flex-col sm:flex-row items-center justify-center gap-1.5 border transition cursor-pointer bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200">
+                <button type="button" onclick="setDrugSpecies('bird')" id="drugSpeciesBird" class="drug-species-btn flex-1 min-w-[75px] py-2.5 px-2 rounded-2xl font-bold text-xs flex flex-row items-center justify-center gap-1.5 border transition cursor-pointer bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200">
                     <span class="text-base sm:text-lg">🦜</span>
                     <span>پرنده</span>
                 </button>
-                <button type="button" onclick="setDrugSpecies('exotic')" id="drugSpeciesExotic" class="drug-species-btn py-2.5 px-2 rounded-2xl font-bold text-xs flex flex-col sm:flex-row items-center justify-center gap-1.5 border transition cursor-pointer bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200">
+                <button type="button" onclick="setDrugSpecies('exotic')" id="drugSpeciesExotic" class="drug-species-btn flex-1 min-w-[75px] py-2.5 px-2 rounded-2xl font-bold text-xs flex flex-row items-center justify-center gap-1.5 border transition cursor-pointer bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200">
                     <span class="text-base sm:text-lg">🐇</span>
                     <span>اگزوتیک</span>
                 </button>
