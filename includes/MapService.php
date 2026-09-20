@@ -180,16 +180,7 @@ class MapService {
             ];
         }
 
-        // 3. Reject any 4 or more consecutive identical digits (e.g. 1111, 5555)
-        if (preg_match('/(\d)\1{3}/', $clean)) {
-            return [
-                'valid' => false,
-                'code'  => $clean,
-                'error' => 'ساختار کد پستی نامعتبر است (وجود بیش از ۳ رقم یکسان متوالی).'
-            ];
-        }
-
-        // 4. Reject sequential dummy sequences (e.g. 1234567890, 0123456789, 9876543210)
+        // 3. Reject sequential dummy sequences (e.g. 1234567890, 0123456789, 9876543210)
         $dummySequences = [
             '1234567890', '0123456789', '9876543210', '0987654321',
             '1234512345', '9876598765', '1357924680', '2468013579'
@@ -202,27 +193,18 @@ class MapService {
             ];
         }
 
-        // 5. Iranian Postal Code Regex Specification:
-        // - Zone (first digit): 1, 3, 4, 5, 6, 7, 8, 9 (0 and 2 are invalid)
-        // - Digits 2-4: [13-9] (no 0 or 2 in zone code according to Post standards)
-        // - 5th digit (area type): [1346-9] (cannot be 0, 2, or 5)
-        // - Digits 6-10: Destination code [013-9]{5}, cannot be all zeros
-        $regex = '/^([13-9]{4}[1346-9])([013-9]{5})$/';
+        // 4. Iranian Postal Code Standard (شرکت ملی پست جمهوری اسلامی ایران):
+        // - ۵ رقم اول (کد رهسپاری شهر و ناحیه): شامل ارقام ۱ و ۳ تا ۹ بوده و هرگز ارقام ۰ و ۲ در آن به کار نمی‌رود.
+        // - ۵ رقم دوم (کد شناسایی ساختمان و واحد): شامل هر یک از ارقام ۰ تا ۹ می‌باشد و نباید تماماً صفر باشد.
+        $regex = '/^[13-9]{5}[0-9]{5}$/';
         if (!preg_match($regex, $clean)) {
-            // Provide a graceful explanation
-            $firstDigit = $clean[0];
-            if ($firstDigit === '0' || $firstDigit === '2') {
+            // Check if 0 or 2 used in first 5 digits
+            $firstFive = substr($clean, 0, 5);
+            if (str_contains($firstFive, '0') || str_contains($firstFive, '2')) {
                 return [
                     'valid' => false,
                     'code'  => $clean,
-                    'error' => 'کد پستی معتبر در ایران با رقم صفر یا ۲ آغاز نمی‌شود.'
-                ];
-            }
-            if ($clean[4] === '0' || $clean[4] === '2') {
-                return [
-                    'valid' => false,
-                    'code'  => $clean,
-                    'error' => 'رقم پنجم کد پستی نامعتبر است (طبق استاندارد شرکت ملی پست).'
+                    'error' => 'طبق استاندارد شرکت ملی پست، در ۵ رقم اول کد پستی نباید از ارقام ۰ یا ۲ استفاده شود.'
                 ];
             }
             return [
@@ -232,7 +214,7 @@ class MapService {
             ];
         }
 
-        // 6. Last 5 digits cannot be all zeros
+        // 5. Last 5 digits cannot be all zeros
         if (substr($clean, 5, 5) === '00000') {
             return [
                 'valid' => false,

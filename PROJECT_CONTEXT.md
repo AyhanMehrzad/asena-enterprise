@@ -449,7 +449,7 @@
       - دایرکتوری غنی پیش‌شماره‌های پستی ۳۱ استان و شهرهای کشور همراه با مختصات مرکز ثقل جغرافیایی هر ناحیه.
     - **اعتبارسنجی الگوریتمی دقیق کد پستی ایران در فرانت‌اند و بک‌اند ([`actions/postal_code_lookup.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/actions/postal_code_lookup.php)، [`actions/profile_action.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/actions/profile_action.php) و [`actions/settings_action.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/actions/settings_action.php)):**
       - تبدیل خودکار ارقام فارسی/عربی به انگلیسی و حذف کاراکترهای نامعتبر.
-      - فیلتر و رد کدهای جعلی و تکراری (نظیر ۱۰ رقم یکسان، بیش از ۳ رقم متوالی یکسان، توالی‌های آزمایشی مانند ۱۲۳۴۵۶۷۸۹۰، آغاز با ارقام غیرمجاز ۰ یا ۲، رقم پنجم نامعتبر طبق استانداردهای شرکت ملی پست، یا پنج رقم دوم تماماً صفر).
+      - انطباق ۱۰۰٪ با استاندارد رسمی شرکت ملی پست: ۵ رقم اول (کد رهسپاری) بدون ۰ و ۲ (`[13-9]{5}`) و ۵ رقم دوم (کد توزیع ساختمان/واحد) از تمامی ارقام ۰ تا ۹ (`[0-9]{5}`) بدون محدودیت‌های اشتباهی در تکرار ارقام پلاک، و رد توالی‌های فیک ۱۰ رقم یکسان یا کدهای آزمایشی نظیر ۱۲۳۴۵۶۷۸۹۰.
       - جلوگیری قطعی در لایه کنترلر بک‌اند از ذخیره هرگونه کد پستی ساختگی و نامعتبر.
     - **جایگزینی تایل‌های OpenStreetMap با نقشه مپ و ارگونومی تعیین موقعیت در پروفایل ([`profile.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/profile.php) و [`profile_settings.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/profile_settings.php)):**
       - نمایش نقشه ملی Map.ir در تب نشانی‌های پروفایل با وضوح بالا، نام‌گذاری معابر به زبان فارسی و نشانگر تعاملی.
