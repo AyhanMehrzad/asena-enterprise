@@ -169,23 +169,42 @@ try {
         }
     }
 
-    // 2. Try inserting document / record with file_path pointing to generated meal plan HTML
+    // 2. Insert document record with file_path pointing to generated meal plan HTML
     $docTitle = 'جدول و برنامه غذایی بالینی (' . $reportSerial . ')';
+    $docInserted = false;
+    $docError = null;
+
+    // Strategy 1: Standard schema used across platform (pet_id, user_id, title, file_name, file_path)
     try {
         $insDoc = $pdo->prepare("
-            INSERT INTO pet_documents (user_id, pet_id, title, document_type, notes, file_path, uploaded_at)
-            VALUES (?, ?, ?, 'nutrition_assessment', ?, ?, NOW())
+            INSERT INTO pet_documents (pet_id, user_id, title, file_name, file_path)
+            VALUES (?, ?, ?, ?, ?)
         ");
-        $insDoc->execute([$userId, $petId, $docTitle, $reportSummary, $relativeFilePath]);
-    } catch (Exception $e) {
-        // Fallback if notes column doesn't exist
+        $insDoc->execute([$petId, $userId, $docTitle, $fileName, $relativeFilePath]);
+        $docInserted = true;
+    } catch (Exception $e1) {
+        $docError = $e1->getMessage();
+        // Strategy 2: Schema with document_type and notes
         try {
             $insDoc = $pdo->prepare("
-                INSERT INTO pet_documents (user_id, pet_id, title, document_type, file_path, uploaded_at)
-                VALUES (?, ?, ?, 'nutrition_assessment', ?, NOW())
+                INSERT INTO pet_documents (user_id, pet_id, title, document_type, notes, file_path, uploaded_at)
+                VALUES (?, ?, ?, 'nutrition_assessment', ?, ?, NOW())
             ");
-            $insDoc->execute([$userId, $petId, $docTitle, $relativeFilePath]);
-        } catch (Exception $e2) {}
+            $insDoc->execute([$userId, $petId, $docTitle, $reportSummary, $relativeFilePath]);
+            $docInserted = true;
+        } catch (Exception $e2) {
+            // Strategy 3: Schema with document_type only
+            try {
+                $insDoc = $pdo->prepare("
+                    INSERT INTO pet_documents (user_id, pet_id, title, file_path)
+                    VALUES (?, ?, ?, ?)
+                ");
+                $insDoc->execute([$petId, $userId, $docTitle, $relativeFilePath]);
+                $docInserted = true;
+            } catch (Exception $e3) {
+                error_log('Error saving pet document: ' . $e3->getMessage());
+            }
+        }
     }
 
     echo json_encode([

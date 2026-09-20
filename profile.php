@@ -65,7 +65,7 @@ $stmt->execute([$user_id]);
 $pets = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Fetch pet documents
-$stmt = $pdo->prepare("SELECT d.*, p.name as pet_name FROM pet_documents d JOIN user_pets p ON d.pet_id = p.id WHERE d.user_id = ? ORDER BY d.uploaded_at DESC");
+$stmt = $pdo->prepare("SELECT d.*, COALESCE(p.name, 'عمومی') as pet_name FROM pet_documents d LEFT JOIN user_pets p ON d.pet_id = p.id WHERE d.user_id = ? ORDER BY d.uploaded_at DESC");
 $stmt->execute([$user_id]);
 $documents = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -1989,6 +1989,70 @@ function switchSellerFin(period) {
                     <?php endif; ?>
                 </div>
 
+                <!-- Clinical Meal Plans & Health Reports Widget -->
+                <?php 
+                    $mealPlanDocs = array_filter($documents, function($d) {
+                        return str_contains($d['title'] ?? '', 'برنامه غذایی') || str_ends_with($d['file_path'] ?? '', '.html');
+                    });
+                ?>
+                <div class="bg-surface-container-lowest rounded-3xl border border-outline-variant shadow-sm p-6 space-y-4">
+                    <div class="flex items-center justify-between pb-3 border-b border-outline-variant/50">
+                        <div class="flex items-center gap-2">
+                            <span class="material-symbols-outlined text-emerald-600">restaurant</span>
+                            <h3 class="text-sm font-black text-primary">رژیم غذایی و کارنامه‌های بالینی</h3>
+                        </div>
+                        <a href="calculator.php" class="text-xs font-bold text-emerald-700 hover:underline flex items-center gap-0.5">
+                            <span class="material-symbols-outlined text-sm">calculate</span>
+                            محاسبه‌گر
+                        </a>
+                    </div>
+
+                    <?php if (empty($mealPlanDocs)): ?>
+                        <div class="p-3.5 bg-emerald-50/60 rounded-2xl border border-emerald-100 space-y-2 text-right">
+                            <div class="flex items-center gap-2 text-emerald-900 font-bold text-xs">
+                                <span class="material-symbols-outlined text-sm text-emerald-600">verified</span>
+                                <span>محاسبه استاندارد WSAVA برای <?= count($pets) > 0 ? htmlspecialchars($pets[0]['name']) : 'پت شما' ?></span>
+                            </div>
+                            <p class="text-[11px] text-emerald-800 leading-relaxed">
+                                تعیین دقیق کالری روزانه (RER/MER)، گرم غذای خشک، آب آشامیدنی و جدول زمان‌بندی وعده‌ها.
+                            </p>
+                            <a href="calculator.php" class="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl transition-colors flex items-center justify-center gap-1.5 shadow-sm">
+                                <span class="material-symbols-outlined text-sm">calculate</span>
+                                دریافت و صدور کارنامه بالینی
+                            </a>
+                        </div>
+                    <?php else: ?>
+                        <div class="space-y-2.5">
+                            <?php foreach (array_slice($mealPlanDocs, 0, 2) as $mpDoc): 
+                                $mpUrl = 'view_meal_plan.php?file=' . urlencode(basename($mpDoc['file_path'] ?? ''));
+                            ?>
+                                <a href="<?= $mpUrl ?>" target="_blank" rel="noopener noreferrer" class="flex items-center gap-3 p-3 rounded-2xl bg-emerald-50/50 hover:bg-emerald-50 border border-emerald-100 hover:border-emerald-300 transition-all group">
+                                    <div class="w-9 h-9 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-sm group-hover:scale-105 transition-transform">
+                                        <span class="material-symbols-outlined text-lg">restaurant</span>
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <div class="flex items-center gap-1.5">
+                                            <h4 class="text-xs font-black text-slate-900 truncate"><?= htmlspecialchars($mpDoc['pet_name']) ?></h4>
+                                            <span class="text-[9px] bg-emerald-200 text-emerald-900 px-1.5 py-0.2 rounded font-bold">نسخه بالینی</span>
+                                        </div>
+                                        <p class="text-[10px] text-slate-500 font-medium truncate mt-0.5"><?= htmlspecialchars($mpDoc['title']) ?></p>
+                                    </div>
+                                    <span class="material-symbols-outlined text-emerald-600 text-base group-hover:-translate-x-0.5 transition-transform">open_in_new</span>
+                                </a>
+                            <?php endforeach; ?>
+                            <div class="flex items-center gap-2 pt-1">
+                                <button type="button" onclick="switchCustomerView('pets')" class="flex-1 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-600 hover:text-primary hover:border-primary transition-colors text-center">
+                                    مشاهده سوابق (<?= count($mealPlanDocs) ?>)
+                                </button>
+                                <a href="calculator.php" class="px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl transition-colors flex items-center gap-1">
+                                    <span class="material-symbols-outlined text-sm">add</span>
+                                    جدید
+                                </a>
+                            </div>
+                        </div>
+                    <?php endif; ?>
+                </div>
+
                 <!-- Subscriptions Widget -->
                 <div class="bg-surface-container-lowest rounded-3xl border border-outline-variant shadow-sm p-6 space-y-4">
                     <div class="flex items-center justify-between pb-3 border-b border-outline-variant/50">
@@ -2674,52 +2738,74 @@ function switchSellerFin(period) {
     </script>
 </div>
 
-        </div><div class="bg-surface-container-lowest rounded-2xl border border-outline-variant shadow-sm overflow-hidden">
-<div class="px-6 py-4 border-b border-outline-variant bg-white flex justify-between items-center">
-<h3 class="text-lg font-bold text-primary flex items-center gap-2">
-<span class="material-symbols-outlined">description</span>
-                            سوابق پزشکی <?php echo count($pets) > 0 ? htmlspecialchars(implode(' و ', array_column($pets, 'name'))) : ''; ?>
-                        </h3>
-<button onclick="document.getElementById('addDocModal').classList.remove('hidden')" class="text-sm font-bold text-primary flex items-center gap-1 hover:underline">
-    <span class="material-symbols-outlined text-sm">add</span> آپلود
-</button>
-</div>
-<div class="p-6 space-y-4">
-<?php if(empty($documents)): ?>
-    <p class="text-sm text-on-surface-variant">هیچ سندی آپلود نشده است.</p>
-<?php else: ?>
-    <?php foreach($documents as $doc): 
-        $isMealPlan = str_contains($doc['title'] ?? '', 'برنامه غذایی') || str_ends_with($doc['file_path'] ?? '', '.html');
-        $docUrl = htmlspecialchars($doc['file_path'] ?? '#');
-        $targetAttr = $isMealPlan ? 'target="_blank" rel="noopener noreferrer"' : 'download';
-    ?>
-    <a href="<?php echo $docUrl; ?>" <?php echo $targetAttr; ?> class="group p-4 bg-surface-container-low rounded-2xl flex items-center justify-between cursor-pointer hover:bg-white hover:shadow-md border border-transparent hover:border-primary-container transition-all">
-    <div class="flex items-center gap-4">
-    <div class="p-3 <?php echo $isMealPlan ? 'bg-emerald-500/15 text-emerald-600' : 'bg-status-active/10 text-status-active'; ?> rounded-xl group-hover:scale-105 transition-transform">
-    <span class="material-symbols-outlined"><?php echo $isMealPlan ? 'restaurant' : 'description'; ?></span>
-    </div>
-    <div>
-    <div class="flex items-center gap-2">
-        <h4 class="text-sm font-bold text-on-surface"><?php echo htmlspecialchars($doc['title']); ?> - <?php echo htmlspecialchars($doc['pet_name']); ?></h4>
-        <?php if ($isMealPlan): ?>
-            <span class="bg-emerald-100 text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded-full">نسخه بالینی</span>
+    <div class="bg-surface-container-lowest rounded-2xl border border-outline-variant shadow-sm overflow-hidden">
+        <div class="px-6 py-4 border-b border-outline-variant bg-white flex flex-wrap justify-between items-center gap-2">
+            <h3 class="text-base font-bold text-primary flex items-center gap-2">
+                <span class="material-symbols-outlined text-teal-700">description</span>
+                <span>سوابق پزشکی، برنامه‌های غذایی و کارنامه‌های سلامت <?php echo count($pets) > 0 ? htmlspecialchars(implode(' و ', array_column($pets, 'name'))) : ''; ?></span>
+            </h3>
+            <div class="flex items-center gap-2">
+                <a href="calculator.php" class="text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 px-3 py-1.5 rounded-xl border border-emerald-200 flex items-center gap-1 transition-all">
+                    <span class="material-symbols-outlined text-sm">calculate</span>
+                    <span>محاسبه‌گر تغذیه بالینی</span>
+                </a>
+                <button onclick="document.getElementById('addDocModal').classList.remove('hidden')" class="text-xs font-bold text-primary flex items-center gap-1 hover:underline px-2 py-1">
+                    <span class="material-symbols-outlined text-sm">add</span> آپلود مدرک
+                </button>
+            </div>
+        </div>
+        <div class="p-6 space-y-4">
+        <?php if(empty($documents)): ?>
+            <div class="text-center py-8 bg-slate-50 rounded-2xl border border-dashed border-slate-200 space-y-3">
+                <span class="material-symbols-outlined text-slate-400 text-3xl">folder_off</span>
+                <p class="text-sm font-bold text-on-surface-variant">هنوز سند یا کارنامه تغذیه‌ای در پرونده سلامت شما ثبت نشده است.</p>
+                <p class="text-xs text-slate-500">می‌توانید با استفاده از محاسبه‌گر تخصصی آسنا، رژیم غذایی علمی پت خود را با استاندارد WSAVA صادر فرمایید.</p>
+                <a href="calculator.php" class="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all shadow-md">
+                    <span class="material-symbols-outlined text-sm">calculate</span>
+                    <span>دریافت و صدور برنامه غذایی برای <?php echo count($pets) > 0 ? htmlspecialchars($pets[0]['name']) : 'پت شما'; ?></span>
+                </a>
+            </div>
+        <?php else: ?>
+            <?php foreach($documents as $doc): 
+                $isMealPlan = str_contains($doc['title'] ?? '', 'برنامه غذایی') || str_ends_with($doc['file_path'] ?? '', '.html');
+                $isDrugReport = str_contains($doc['title'] ?? '', 'تداخل') || str_contains($doc['file_path'] ?? '', 'drug_report');
+                $docUrl = $isMealPlan ? ('view_meal_plan.php?file=' . urlencode(basename($doc['file_path'] ?? ''))) : htmlspecialchars($doc['file_path'] ?? '#');
+                $targetAttr = ($isMealPlan || $isDrugReport) ? 'target="_blank" rel="noopener noreferrer"' : 'download';
+            ?>
+            <a href="<?php echo $docUrl; ?>" <?php echo $targetAttr; ?> class="group p-4 bg-surface-container-low rounded-2xl flex items-center justify-between cursor-pointer hover:bg-white hover:shadow-md border border-transparent hover:border-primary-container transition-all">
+                <div class="flex items-center gap-4">
+                    <div class="p-3 <?php echo $isMealPlan ? 'bg-emerald-500/15 text-emerald-600' : ($isDrugReport ? 'bg-amber-500/15 text-amber-600' : 'bg-status-active/10 text-status-active'); ?> rounded-xl group-hover:scale-105 transition-transform">
+                        <span class="material-symbols-outlined"><?php echo $isMealPlan ? 'restaurant' : ($isDrugReport ? 'medication' : 'description'); ?></span>
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <h4 class="text-sm font-bold text-on-surface"><?php echo htmlspecialchars($doc['title']); ?> - <?php echo htmlspecialchars($doc['pet_name']); ?></h4>
+                            <?php if ($isMealPlan): ?>
+                                <span class="bg-emerald-100 text-emerald-700 text-[10px] font-black px-2.5 py-0.5 rounded-full border border-emerald-200">نسخه بالینی رژیم غذایی</span>
+                            <?php elseif ($isDrugReport): ?>
+                                <span class="bg-amber-100 text-amber-800 text-[10px] font-black px-2.5 py-0.5 rounded-full border border-amber-200">پایش تداخلات دارویی</span>
+                            <?php endif; ?>
+                        </div>
+                        <p class="text-[11px] text-on-surface-variant font-medium persian-number mt-0.5">ثبت شده در: <?php echo date('Y/m/d', strtotime($doc['uploaded_at'])); ?></p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="text-xs font-bold text-primary opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
+                        <span>مشاهده سند</span>
+                        <span class="material-symbols-outlined text-sm"><?php echo ($isMealPlan || $isDrugReport) ? 'open_in_new' : 'download'; ?></span>
+                    </span>
+                    <span class="material-symbols-outlined text-on-surface-variant group-hover:-translate-x-1 transition-transform"><?php echo ($isMealPlan || $isDrugReport) ? 'open_in_new' : 'download'; ?></span>
+                </div>
+            </a>
+            <?php endforeach; ?>
         <?php endif; ?>
+        <a href="download_all.php" class="w-full bg-primary-container text-white py-4 rounded-2xl font-bold text-sm flex items-center justify-center gap-3 hover:shadow-xl transition-all shadow-lg shadow-primary-container/20">
+            <span class="material-symbols-outlined">download</span>
+            دریافت پرونده کامل سلامت (ZIP)
+        </a>
+        </div>
     </div>
-    <p class="text-[11px] text-on-surface-variant font-medium persian-number mt-0.5">ثبت شده در: <?php echo date('Y/m/d', strtotime($doc['uploaded_at'])); ?></p>
-    </div>
-    </div>
-    <span class="material-symbols-outlined text-on-surface-variant group-hover:-translate-x-1 transition-transform"><?php echo $isMealPlan ? 'open_in_new' : 'download'; ?></span>
-    </a>
-    <?php endforeach; ?>
-<?php endif; ?>
-<a href="download_all.php" class="w-full bg-primary-container text-white py-4 rounded-2xl font-bold text-sm flex items-center justify-center gap-3 hover:shadow-xl transition-all shadow-lg shadow-primary-container/20">
-<span class="material-symbols-outlined">download</span>
-                            دریافت پرونده کامل سلامت (ZIP)
-                        </a>
 </div>
-</div>
-
-    </div>
 
     
     <!-- ═══════════════════════════════════════════════════════════════════════ -->

@@ -177,20 +177,31 @@ try {
         }
 
         // Insert document into pet_documents
+        // Save clinical meal plan into pet_documents
         $docTitle = 'جدول و برنامه غذایی بالینی (' . $reportSerial . ')';
         $reportSummary = "کارنامه و رژیم غذایی بالینی پت ({$reportSerial}) با پرداخت آنلاین معتبر به شماره ارجاع {$ref_id}";
         try {
             $insDoc = $pdo->prepare("
-                INSERT INTO pet_documents (user_id, pet_id, title, document_type, notes, file_path, uploaded_at)
-                VALUES (?, ?, ?, 'nutrition_assessment', ?, ?, NOW())
+                INSERT INTO pet_documents (pet_id, user_id, title, file_name, file_path)
+                VALUES (?, ?, ?, ?, ?)
             ");
-            $insDoc->execute([$user_id, $petId, $docTitle, $reportSummary, $relativeFilePath]);
+            $insDoc->execute([$petId, $user_id, $docTitle, $fileName, $relativeFilePath]);
         } catch (Exception $eDoc) {
-            $insDoc = $pdo->prepare("
-                INSERT INTO pet_documents (user_id, pet_id, title, document_type, file_path, uploaded_at)
-                VALUES (?, ?, ?, 'nutrition_assessment', ?, NOW())
-            ");
-            $insDoc->execute([$user_id, $petId, $docTitle, $relativeFilePath]);
+            try {
+                $insDoc = $pdo->prepare("
+                    INSERT INTO pet_documents (user_id, pet_id, title, document_type, notes, file_path, uploaded_at)
+                    VALUES (?, ?, ?, 'nutrition_assessment', ?, ?, NOW())
+                ");
+                $insDoc->execute([$user_id, $petId, $docTitle, $reportSummary, $relativeFilePath]);
+            } catch (Exception $eDoc2) {
+                try {
+                    $insDoc = $pdo->prepare("
+                        INSERT INTO pet_documents (pet_id, user_id, title, file_path)
+                        VALUES (?, ?, ?, ?)
+                    ");
+                    $insDoc->execute([$petId, $user_id, $docTitle, $relativeFilePath]);
+                } catch (Exception $eDoc3) {}
+            }
         }
 
         // Update payment transaction status

@@ -138,21 +138,45 @@ try {
         }
     }
 
-    // 2. Insert into pet_documents
-    $docTitle = 'کارنامه بالینی پایش تداخلات دارویی (' . $reportSerial . ')';
+    // 2. Generate clean HTML report file for viewing & printing
+    $fileName = 'drug_report_' . strtolower(preg_replace('/[^a-zA-Z0-9_-]/', '', $reportSerial)) . '_' . time() . '.html';
+    $uploadDir = dirname(__DIR__) . '/uploads/documents';
+    if (!is_dir($uploadDir)) {
+        mkdir($uploadDir, 0755, true);
+    }
+    $reportFilePath = $uploadDir . '/' . $fileName;
+    $relativeFilePath = 'uploads/documents/' . $fileName;
+
+    $drugsHtmlList = '';
+    foreach ($drugsList as $drg) {
+        $drugsHtmlList .= '<li style="padding: 6px 12px; background: #f1f5f9; border-radius: 8px; margin: 4px; font-weight: bold; display: inline-block;">' . htmlspecialchars((string)$drg) . '</li>';
+    }
+    $reportHtml = '<!DOCTYPE html><html lang="fa" dir="rtl"><head><meta charset="UTF-8"><title>' . htmlspecialchars($docTitle) . '</title><link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;700;900&display=swap" rel="stylesheet"><style>body{font-family:\'Vazirmatn\',sans-serif;background:#f8fafc;padding:30px;color:#0f172a;direction:rtl;}.card{max-width:700px;margin:0 auto;background:#fff;border-radius:24px;box-shadow:0 10px 30px rgba(0,0,0,0.05);padding:32px;border:1px solid #e2e8f0;}.header{display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #f1f5f9;padding-bottom:16px;margin-bottom:20px;}.badge{padding:4px 12px;border-radius:999px;font-size:12px;font-weight:900;background:#eff6ff;color:#1e40af;}.alert{background:#fef2f2;border:1px solid #fecaca;color:#991b1b;padding:16px;border-radius:16px;margin-bottom:20px;line-height:1.7;font-size:13px;}</style></head><body><div class="card"><div class="header"><div><h2 style="margin:0;color:#001a48;font-weight:900;">کارنامه بالینی پایش تداخلات دارویی پت</h2><p style="margin:4px 0 0;font-size:12px;color:#64748b;">کد رهگیری: ' . htmlspecialchars($reportSerial) . ' | حیوان: ' . htmlspecialchars($petName) . ' (' . htmlspecialchars($species) . ' - ' . htmlspecialchars((string)$weightKg) . ' kg)</p></div><div class="badge">سامانه فارماکولوژی بالینی آسنا</div></div><div class="alert"><strong>خلاصه و تحلیل دارویی:</strong><p style="margin:8px 0 0;white-space:pre-line;">' . htmlspecialchars($analysisText) . '</p></div><div><h4 style="margin-bottom:8px;font-size:13px;color:#334155;">داروهای بررسی شده:</h4><ul style="list-style:none;padding:0;margin:0;">' . $drugsHtmlList . '</ul></div><div style="margin-top:24px;text-align:center;font-size:11px;color:#94a3b8;border-top:1px dashed #e2e8f0;padding-top:16px;">این سند صرفاً جهت آگاهی بالینی و بر اساس مستندات فارماکوکینتیک دامپزشکی صادر گردیده است. دستور مصرف نهایی منحصراً در صلاحیت دکتر دامپزشک است.</div></div></body></html>';
+    @file_put_contents($reportFilePath, $reportHtml);
+
+    // 3. Insert into pet_documents
     try {
         $insDoc = $pdo->prepare("
-            INSERT INTO pet_documents (user_id, pet_id, title, document_type, notes, uploaded_at)
-            VALUES (?, ?, ?, 'drug_interaction', ?, NOW())
+            INSERT INTO pet_documents (pet_id, user_id, title, file_name, file_path)
+            VALUES (?, ?, ?, ?, ?)
         ");
-        $insDoc->execute([$userId, $petId, $docTitle, $notesContent]);
+        $insDoc->execute([$petId, $userId, $docTitle, $fileName, $relativeFilePath]);
     } catch (Exception $e) {
-        // Fallback without notes column if needed
-        $insDoc = $pdo->prepare("
-            INSERT INTO pet_documents (user_id, pet_id, title, document_type, uploaded_at)
-            VALUES (?, ?, ?, 'drug_interaction', NOW())
-        ");
-        $insDoc->execute([$userId, $petId, $docTitle]);
+        try {
+            $insDoc = $pdo->prepare("
+                INSERT INTO pet_documents (user_id, pet_id, title, document_type, notes, file_path, uploaded_at)
+                VALUES (?, ?, ?, 'drug_interaction', ?, ?, NOW())
+            ");
+            $insDoc->execute([$userId, $petId, $docTitle, $notesContent, $relativeFilePath]);
+        } catch (Exception $e2) {
+            try {
+                $insDoc = $pdo->prepare("
+                    INSERT INTO pet_documents (pet_id, user_id, title, file_path)
+                    VALUES (?, ?, ?, ?)
+                ");
+                $insDoc->execute([$petId, $userId, $docTitle, $relativeFilePath]);
+            } catch (Exception $e3) {}
+        }
     }
 
     echo json_encode([
@@ -160,6 +184,7 @@ try {
         'message' => 'کارنامه ارزیابی تداخلات دارویی با موفقیت در پرونده سلامت پت ذخیره گردید.',
         'serial' => $reportSerial,
         'pet_id' => $petId,
+        'file_path' => $relativeFilePath,
         'profile_url' => 'profile.php?tab=pets'
     ], JSON_UNESCAPED_UNICODE);
 
