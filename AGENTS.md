@@ -38,3 +38,10 @@ This document establishes the foundational architectural rules, coding standards
    - Strictly follow [`.agents/rules/progressive_disclosure_and_app_simplification.md`](file:///.agents/rules/progressive_disclosure_and_app_simplification.md).
    - Keep landing page (`index.php`) as a concise showcase; never embed heavyweight multi-step interactive tools (calculators, full booking calendars) directly inline.
    - Relocate tools to dedicated, single-purpose pages (`calculator.php`, `interactions.php`, `subscriptions.php`) and link to them prominently via Bento teasers and the global navigation bar.
+
+9. **PWA & Android Responsive UI/UX Standards**:
+   - Strictly follow [`.agents/rules/pwa_and_android_responsive_ux.md`](file:///.agents/rules/pwa_and_android_responsive_ux.md).
+   - Prioritize the natural thumb zone (bottom 40% of viewport) for primary navigation, CTAs, and bottom sheets.
+   - Enforce 48x48dp minimum touch targets, eliminate 300ms tap latency, and transform multi-column tables into structured mobile cards.
+   - Maintain offline resilience with Stale-While-Revalidate service worker caching, dynamic theme-color synchronization, and intent-driven install prompts.
+

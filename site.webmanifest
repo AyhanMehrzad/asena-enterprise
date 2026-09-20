@@ -46,39 +46,31 @@
   ],
   "shortcuts": [
     {
+      "name": "حیوانات من و پرونده سلامت",
+      "short_name": "حیوانات من",
+      "description": "دسترسی مستقیم به پرونده پزشکی، داروها و رژیم غذایی پت‌ها",
+      "url": "/profile.php#pets",
+      "icons": [{ "src": "/assets/images/favicon-96x96.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "تداخل‌سنج دارویی دامپزشکی",
+      "short_name": "تداخل‌سنج داروها",
+      "description": "پایش هوشمند سازگاری داروها و منع مصرف‌های بالینی",
+      "url": "/interactions.php",
+      "icons": [{ "src": "/assets/images/favicon-96x96.png", "sizes": "96x96" }]
+    },
+    {
       "name": "محاسبه‌گر کالری و تغذیه پت",
-      "short_name": "تغذیه پت",
+      "short_name": "تغذیه و جیره",
       "description": "محاسبه آنلاین جیره غذایی و سلامت وزنی بر اساس استانداردهای بالینی",
       "url": "/calculator.php",
       "icons": [{ "src": "/assets/images/favicon-96x96.png", "sizes": "96x96" }]
     },
     {
-      "name": "رزرو نوبت کلینیک",
-
+      "name": "رزرو آنلاین نوبت کلینیک",
       "short_name": "نوبت‌دهی",
       "description": "رزرو آنلاین وقت ویزیت متخصص دامپزشک",
       "url": "/booking.php",
-      "icons": [{ "src": "/assets/images/favicon-96x96.png", "sizes": "96x96" }]
-    },
-    {
-      "name": "فروشگاه پت‌شاپ",
-      "short_name": "فروشگاه",
-      "description": "خرید آنلاین ملزومات و غذای سگ، گربه و پرندگان",
-      "url": "/shop.php",
-      "icons": [{ "src": "/assets/images/favicon-96x96.png", "sizes": "96x96" }]
-    },
-    {
-      "name": "داروخانه تخصصی",
-      "short_name": "داروخانه",
-      "description": "داروهای دامپزشکی، مکمل‌ها و ارسال زنجیره سرد",
-      "url": "/pharmacy.php",
-      "icons": [{ "src": "/assets/images/favicon-96x96.png", "sizes": "96x96" }]
-    },
-    {
-      "name": "پروفایل و حیوانات من",
-      "short_name": "پروفایل",
-      "description": "مدیریت نوبت‌ها، سفارشات و پرونده پت‌ها",
-      "url": "/profile.php",
       "icons": [{ "src": "/assets/images/favicon-96x96.png", "sizes": "96x96" }]
     }
   ]

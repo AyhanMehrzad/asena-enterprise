@@ -3,7 +3,7 @@
  * Version: 1.0.0
  */
 
-const CACHE_NAME = 'asena-enterprise-v1.2.0';
+const CACHE_NAME = 'asena-enterprise-v1.3.0';
 const STATIC_ASSETS = [
     './offline.html',
     './assets/css/style.css',

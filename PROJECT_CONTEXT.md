@@ -422,6 +422,19 @@
     - **فاصله‌گذاری پویای هدر سایت (`margin-right` متناسب با باز/بسته بودن سایدبار):** جلوگیری قطعی از تصادم کپسول هدر با سایدبار در تمام رزولوشن‌های دسکتاپ.
     - **اسکرول‌بار ظریف و مدرن ۴ پیکسلی:** حذف اسکرول‌بار خاکستری قدیمی مرورگر و جایگزینی با اسکرول‌بار نیمه‌شفاف و شیک اختصاصی.
 
+47. **ارتقای استانداردهای تجربه کاربری PWA، واکنش‌گرایی اندروید و انعطاف‌پذیری آفلاین (PWA & Android Responsive UX Standards):**
+    - **تدوین قاعده رسمی ارگونومی موبایل و PWA ([`.agents/rules/pwa_and_android_responsive_ux.md`](file:///.agents/rules/pwa_and_android_responsive_ux.md)):**
+      - ثبت استاندارد رسمی ارگونومی شست (تمرکز اقدامات روی ۴۰٪ پایینی نمایشگر)، حداقل ابعاد لمسی ۴۸×۴۸dp، حذف تاخیر ۳۰۰ میلی‌ثانیه‌ای تاچ با `touch-action: manipulation` و افشای تدریجی فرم‌ها.
+      - اضافه شدن بند ۹ به مستند مادر [`AGENTS.md`](file:///opt/lampp/htdocs/asena/asena-enterprise/AGENTS.md).
+    - **ارتقای شورت‌کات‌های مانیفست اندروید ([`site.webmanifest`](file:///opt/lampp/htdocs/asena/asena-enterprise/site.webmanifest)):**
+      - بهینه‌سازی لانچرهای سریع صفحه اصلی به ۴ ابزار پرکاربرد: پرونده سلامت حیوانات، تداخل‌سنج داروها، محاسبه‌گر کالری و رژیم غذایی، و نوبت‌دهی آنلاین کلینیک.
+    - **نوار وضعیت هوشمند شبکه و ارتقای کش ([`includes/footer.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/includes/footer.php) و [`sw.js`](file:///opt/lampp/htdocs/asena/asena-enterprise/sw.js)):**
+      - پیاده‌سازی نوار ظریف وضعیت آفلاین (`#offline-status-strip`) با پایش خودکار رویدادهای `online`/`offline` شبکه بدون مسدود کردن فرم‌ها یا پاک شدن اطلاعات کاربر.
+      - افزودن ژست لمسی کشیدن به پایین (Swipe-down to dismiss) برای باتم‌شیت‌ها (`.mobile-bottom-sheet`) مشابه اپلیکیشن‌های بومی اندروید.
+      - ارتقای کش سرویس‌ورکر به نسخه `v1.3.0`.
+    - **بهینه‌سازی اهداف لمسی و استایل دکمه چسبان شست ([`assets/css/enterprise-ui.css`](file:///opt/lampp/htdocs/asena/asena-enterprise/assets/css/enterprise-ui.css)):**
+      - حذف هایلایت خاکستری تاچ در موبایل، اعمال انیمیشن فشرده‌شدن فیزیکی دکمه‌ها (`active:scale-[0.97]`) و کلاس `.sticky-thumb-action-bar` با رعایت حاشیه ایمن `safe-area-inset-bottom`.
+
 ---
 
 ## ۴. پروتکل ثبت تغییرات آینده (Maintenance Rule)

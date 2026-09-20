@@ -155,6 +155,12 @@ if (basename($_SERVER['SCRIPT_FILENAME'] ?? '') === basename(__FILE__)) {
         fetch('actions/autoship_worker.php', { method: 'POST' }).catch(() => {});
     </script>
 
+    <!-- Ambient Offline Network Resilience Strip -->
+    <div id="offline-status-strip" role="status" aria-live="polite">
+        <span class="material-symbols-outlined text-sm text-amber-400">cloud_off</span>
+        <span>شما در وضعیت آفلاین هستید - اطلاعات پرونده سلامت و کش محلی در دسترس است</span>
+    </div>
+
     <!-- Digikala-Style 5-Tab Mobile Bottom Navigation Bar -->
     <nav class="mobile-bottom-nav" id="mobileBottomNavBar" role="navigation" aria-label="ناوبری اصلی موبایل">
         <!-- 1. خانه (Home) -->
@@ -735,6 +741,59 @@ if (basename($_SERVER['SCRIPT_FILENAME'] ?? '') === basename(__FILE__)) {
                 closePwaInstallGuide();
             }
         }
+    });
+
+    // Ambient Network Offline/Online Event Listeners
+    function updateNetworkStatus() {
+        const strip = document.getElementById('offline-status-strip');
+        if (!strip) return;
+        if (!navigator.onLine) {
+            strip.classList.add('visible');
+        } else {
+            strip.classList.remove('visible');
+        }
+    }
+    window.addEventListener('online', updateNetworkStatus);
+    window.addEventListener('offline', updateNetworkStatus);
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+        updateNetworkStatus();
+    }
+
+    // Native-like Swipe Down to Dismiss Bottom Sheets
+    document.addEventListener('DOMContentLoaded', () => {
+        document.querySelectorAll('.mobile-bottom-sheet').forEach(sheet => {
+            let startY = 0;
+            let currentY = 0;
+            let isDragging = false;
+            
+            const handle = sheet.querySelector('.sheet-drag-handle') || sheet;
+            handle.addEventListener('touchstart', (e) => {
+                startY = e.touches[0].clientY;
+                isDragging = true;
+            }, { passive: true });
+
+            sheet.addEventListener('touchmove', (e) => {
+                if (!isDragging) return;
+                currentY = e.touches[0].clientY;
+                const diff = currentY - startY;
+                if (diff > 0) {
+                    sheet.style.transform = `translateY(${diff}px)`;
+                }
+            }, { passive: true });
+
+            sheet.addEventListener('touchend', () => {
+                if (!isDragging) return;
+                isDragging = false;
+                const diff = currentY - startY;
+                if (diff > 70) {
+                    if (typeof closeMobileCategoriesSheet === 'function') closeMobileCategoriesSheet();
+                    sheet.classList.remove('active');
+                    const backdrop = document.querySelector('.mobile-sheet-backdrop.active');
+                    if (backdrop) backdrop.classList.remove('active');
+                }
+                sheet.style.transform = '';
+            });
+        });
     });
 
     </script>
