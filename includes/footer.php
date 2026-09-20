@@ -4,6 +4,7 @@ if (basename($_SERVER['SCRIPT_FILENAME'] ?? '') === basename(__FILE__)) {
     exit('Direct access forbidden');
 }
 ?>
+<?php if (empty($hideMarketingFooter)): ?>
     <!-- Footer -->
     <footer class="bg-surface-container-low border border-outline-variant/30 rounded-[2rem] md:rounded-[3rem] mt-16 md:mt-24 w-[96%] max-w-[1600px] mx-auto overflow-hidden">
         <div class="flex flex-col lg:flex-row-reverse justify-between px-6 lg:px-10 py-10 lg:py-16 gap-10 lg:gap-16">
@@ -145,6 +146,7 @@ if (basename($_SERVER['SCRIPT_FILENAME'] ?? '') === basename(__FILE__)) {
             </div>
         </div>
     </div>
+<?php endif; ?>
 
     <!-- Autoship Web Worker Trigger (Poor Man's Cron) -->
     <script>

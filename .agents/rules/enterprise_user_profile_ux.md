@@ -22,3 +22,13 @@
 ## 4. Seamless Tab/View Routing & Mobile First Navigation
 - On Desktop: Navigation sidebar must maintain active tab state and support direct URL hashes (`#overview`, `#personal-info`, `#addresses`, etc.).
 - On Mobile: Implement a sticky, horizontally scrollable pill-tab bar (`backdrop-blur-md bg-surface/90`) allowing quick touch switching between views without page reloads.
+
+## 5. App Shell Ergonomics & Desktop Collapsible Sidebars
+- **Distinction Between App Shell and Marketing Pages:**
+  - Profile dashboards (`profile.php`) and operational role panels (`admin/`, `doctor/`, `organization/`, `seller/`, `pharmacist/`) are high-density application shells, NOT marketing landing pages.
+  - Marketing footers (5-column e-commerce link catalogs, trust seals, newsletter forms) MUST be omitted from dashboards and panels (`$hideMarketingFooter = true`). Only a clean, minimal 1-line copyright bar or app-status strip may be displayed if needed.
+
+- **Collapsible Desktop Sidebars (Desktop & Mobile Parity):**
+  - Sidebars on desktop (`lg:`) must support collapsible states: toggling smoothly between full expanded width (`w-64`) and compact icon-rail (`w-20` with hover tooltips) or full collapse (`w-0`), with main container margin auto-adjusting (`lg:mr-64` <-> `lg:mr-20` / `lg:mr-0`).
+  - The user's collapse/expand preference must persist across page loads and tab transitions using `localStorage.getItem('asena_sidebar_collapsed')`.
+  - Transitions must be hardware-accelerated (`transition-all duration-300 ease-in-out`).

@@ -8,6 +8,9 @@ $success = $_SESSION['profile_success'] ?? '';
 $error = $_SESSION['profile_error'] ?? '';
 unset($_SESSION['profile_success'], $_SESSION['profile_error']);
 
+// Suppress bulky marketing footer in operational profile workspace
+$hideMarketingFooter = true;
+
 $userRole = $user['role'] ?? 'user';
 
 // Determine if current view should be Seller Mode
@@ -380,6 +383,49 @@ $nextPayoutFormatted = $fmtDateText->format($nextThursday) . ' ساعت ۲۲:۰�
         backdrop-filter: blur(12px);
         border: 1px solid rgba(255, 255, 255, 0.3);
     }
+    /* Desktop Collapsible Sidebar & Rail Ergonomics */
+    @media (min-width: 1024px) {
+        #profile-sidebar {
+            transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), padding 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        }
+        #profile-main {
+            transition: margin-right 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        }
+        #profile-sidebar.sidebar-collapsed {
+            width: 5rem !important; /* 80px */
+            padding-left: 0.75rem !important;
+            padding-right: 0.75rem !important;
+        }
+        #profile-sidebar.sidebar-collapsed .sidebar-header-text,
+        #profile-sidebar.sidebar-collapsed .sidebar-label,
+        #profile-sidebar.sidebar-collapsed .sidebar-badge {
+            display: none !important;
+        }
+        #profile-sidebar.sidebar-collapsed .sidebar-toggle-container {
+            justify-content: center !important;
+            margin-bottom: 1.5rem !important;
+        }
+        #profile-sidebar.sidebar-collapsed .sidebar-user-card {
+            justify-content: center !important;
+            padding: 0.5rem 0 !important;
+            background: transparent !important;
+        }
+        #profile-sidebar.sidebar-collapsed nav a,
+        #profile-sidebar.sidebar-collapsed .sidebar-footer-link {
+            justify-content: center !important;
+            padding-left: 0.5rem !important;
+            padding-right: 0.5rem !important;
+            gap: 0 !important;
+        }
+        #profile-sidebar.sidebar-collapsed nav a span.material-symbols-outlined,
+        #profile-sidebar.sidebar-collapsed .sidebar-footer-link span.material-symbols-outlined {
+            margin: 0 !important;
+            font-size: 1.5rem !important;
+        }
+        #profile-main.sidebar-collapsed {
+            margin-right: 5rem !important; /* 80px */
+        }
+    }
 </style>
 
 <!-- Mobile Backdrop -->
@@ -387,8 +433,8 @@ $nextPayoutFormatted = $fmtDateText->format($nextThursday) . ' ساعت ۲۲:۰�
 
 <!-- SideNavBar -->
 <aside id="profile-sidebar" class="fixed right-0 top-0 lg:top-16 bottom-0 w-64 p-6 flex flex-col bg-surface-container-lowest border-l border-outline-variant z-[70] lg:z-40 transition-transform duration-300 translate-x-full lg:translate-x-0">
-<div class="mb-10 flex justify-between items-center">
-<div>
+<div class="mb-10 flex justify-between items-center sidebar-toggle-container">
+<div class="sidebar-header-text">
 <?php if ($isSeller): ?>
     <div class="flex items-center gap-2 mb-1">
         <span class="material-symbols-outlined text-emerald-600 text-xl">storefront</span>
@@ -400,15 +446,18 @@ $nextPayoutFormatted = $fmtDateText->format($nextThursday) . ' ساعت ۲۲:۰�
     <p class="text-xs text-on-surface-variant">خدمات جامع سلامت و فروشگاهی پت</p>
 <?php endif; ?>
 </div>
-<button class="lg:hidden text-on-surface-variant" onclick="toggleProfileSidebar()">
+<button type="button" class="lg:hidden text-on-surface-variant p-1 rounded-lg hover:bg-surface-container-low" onclick="toggleProfileSidebar()" aria-label="بستن منو">
 <span class="material-symbols-outlined">close</span>
 </button>
+<button type="button" id="sidebar-desktop-toggle-btn" class="hidden lg:flex w-8 h-8 rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface-variant items-center justify-center transition-colors shadow-xs" onclick="toggleDesktopSidebar()" title="تغییر وضعیت منو">
+<span id="sidebar-desktop-toggle-icon" class="material-symbols-outlined text-xl">chevron_right</span>
+</button>
 </div>
-<div class="flex items-center gap-3 mb-6 p-2 bg-surface-container-low rounded-xl">
-<div class="w-10 h-10 rounded-full bg-primary-container text-white flex items-center justify-center font-bold">
+<div class="flex items-center gap-3 mb-6 p-2 bg-surface-container-low rounded-xl sidebar-user-card" title="<?php echo htmlspecialchars($user['name'] ?? 'کاربر'); ?>">
+<div class="w-10 h-10 rounded-full bg-primary-container text-white flex items-center justify-center font-bold shrink-0">
             <?php echo mb_substr(htmlspecialchars($user['name'] ?? 'ک'), 0, 1, 'UTF-8'); ?>
         </div>
-<div class="overflow-hidden">
+<div class="overflow-hidden sidebar-label">
 <p class="text-sm font-bold truncate text-on-surface"><?php echo htmlspecialchars($user['name'] ?? 'کاربر مهمان'); ?></p>
 <p class="text-xs text-on-surface-variant truncate"><?php echo htmlspecialchars($user['phone']); ?></p>
 </div>
@@ -416,120 +465,128 @@ $nextPayoutFormatted = $fmtDateText->format($nextThursday) . ' ساعت ۲۲:۰�
 <nav class="flex flex-col gap-1 flex-1 overflow-y-auto">
 <?php if ($isSeller): ?>
     <!-- Seller Sidebar Navigation Links -->
-    <a class="flex items-center gap-3 px-4 py-3 bg-primary-container text-white rounded-xl font-bold transition-all shadow-md" href="profile.php?view=seller">
-        <span class="material-symbols-outlined text-secondary">dashboard</span>
-        <span class="text-sm">پیشخوان و آمار فروش</span>
+    <a class="flex items-center gap-3 px-4 py-3 bg-primary-container text-white rounded-xl font-bold transition-all shadow-md" href="profile.php?view=seller" title="پیشخوان و آمار فروش">
+        <span class="material-symbols-outlined text-secondary shrink-0">dashboard</span>
+        <span class="text-sm sidebar-label">پیشخوان و آمار فروش</span>
     </a>
-    <a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-low rounded-xl transition-all" href="#seller-orders-section">
-        <span class="material-symbols-outlined text-indigo-600">local_shipping</span>
-        <span class="text-sm">سفارشات دریافتی مشتریان</span>
+    <a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-low rounded-xl transition-all" href="#seller-orders-section" title="سفارشات دریافتی مشتریان">
+        <span class="material-symbols-outlined text-indigo-600 shrink-0">local_shipping</span>
+        <span class="text-sm sidebar-label">سفارشات دریافتی مشتریان</span>
         <?php if ($sellerPendingCount > 0): ?>
-            <span class="mr-auto px-2 py-0.5 rounded-full text-[10px] bg-amber-100 text-amber-800 font-bold"><?= $sellerPendingCount ?></span>
+            <span class="mr-auto px-2 py-0.5 rounded-full text-[10px] bg-amber-100 text-amber-800 font-bold sidebar-badge"><?= $sellerPendingCount ?></span>
         <?php endif; ?>
     </a>
-    <a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-low rounded-xl transition-all" href="#seller-products-section">
-        <span class="material-symbols-outlined text-teal-600">inventory_2</span>
-        <span class="text-sm">مدیریت کاتالوگ و محصولات</span>
-        <span class="mr-auto px-2 py-0.5 rounded-full text-[10px] bg-slate-100 text-slate-700 font-bold"><?= count($sellerProducts) ?></span>
+    <a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-low rounded-xl transition-all" href="#seller-products-section" title="مدیریت کاتالوگ و محصولات">
+        <span class="material-symbols-outlined text-teal-600 shrink-0">inventory_2</span>
+        <span class="text-sm sidebar-label">مدیریت کاتالوگ و محصولات</span>
+        <span class="mr-auto px-2 py-0.5 rounded-full text-[10px] bg-slate-100 text-slate-700 font-bold sidebar-badge"><?= count($sellerProducts) ?></span>
     </a>
-    <a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-low rounded-xl transition-all" href="#wallet-section">
-        <span class="material-symbols-outlined text-emerald-600">account_balance_wallet</span>
-        <span class="text-sm font-bold text-emerald-800">کیف پول و تسویه‌حساب (Escrow)</span>
+    <a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-low rounded-xl transition-all" href="#wallet-section" title="کیف پول و تسویه‌حساب (Escrow)">
+        <span class="material-symbols-outlined text-emerald-600 shrink-0">account_balance_wallet</span>
+        <span class="text-sm font-bold text-emerald-800 sidebar-label">کیف پول و تسویه‌حساب</span>
     </a>
-    <a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-low rounded-xl transition-all" href="javascript:void(0)" onclick="openBankTab()">
-        <span class="material-symbols-outlined text-amber-600">credit_card</span>
-        <span class="text-sm">مشخصات بانکی و شماره شبا</span>
+    <a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-low rounded-xl transition-all" href="javascript:void(0)" onclick="openBankTab()" title="مشخصات بانکی و شماره شبا">
+        <span class="material-symbols-outlined text-amber-600 shrink-0">credit_card</span>
+        <span class="text-sm sidebar-label">مشخصات بانکی و شبا</span>
     </a>
     <?php if (in_array($userRole, ['organization', 'organization_manager', 'admin'])): ?>
-        <a class="flex items-center gap-3 px-4 py-3 bg-sky-50 text-sky-700 hover:bg-sky-100 rounded-xl transition-all font-bold border border-sky-200 mt-2" href="organization/index.php">
-            <span class="material-symbols-outlined">local_hospital</span>
-            <span class="text-xs">پنل جامع مدیریت مرکز درمانی</span>
+        <a class="flex items-center gap-3 px-4 py-3 bg-sky-50 text-sky-700 hover:bg-sky-100 rounded-xl transition-all font-bold border border-sky-200 mt-2" href="organization/index.php" title="پنل جامع مدیریت مرکز درمانی">
+            <span class="material-symbols-outlined shrink-0">local_hospital</span>
+            <span class="text-xs sidebar-label">پنل جامع مرکز درمانی</span>
         </a>
     <?php endif; ?>
     <?php if ($userRole === 'admin'): ?>
-        <a class="flex items-center gap-3 px-4 py-3 text-emerald-600 hover:bg-emerald-50 rounded-xl transition-all font-bold" href="admin/index.php">
-            <span class="material-symbols-outlined">admin_panel_settings</span>
-            <span class="text-sm">پنل مدیریت کل سایت</span>
+        <a class="flex items-center gap-3 px-4 py-3 text-emerald-600 hover:bg-emerald-50 rounded-xl transition-all font-bold" href="admin/index.php" title="پنل مدیریت کل سایت">
+            <span class="material-symbols-outlined shrink-0">admin_panel_settings</span>
+            <span class="text-sm sidebar-label">پنل مدیریت سایت</span>
         </a>
     <?php endif; ?>
 <?php else: ?>
     <!-- Normal Pet Owner Sidebar Links (Digikala Architecture) -->
-    <a id="sidebar-btn-overview" class="flex items-center gap-3 px-4 py-3 bg-primary-container text-white rounded-xl font-bold transition-all shadow-md cursor-pointer" onclick="switchCustomerView('overview')">
-        <span class="material-symbols-outlined">dashboard</span>
-        <span class="text-sm">پیشخوان</span>
+    <a id="sidebar-btn-overview" class="flex items-center gap-3 px-4 py-3 bg-primary-container text-white rounded-xl font-bold transition-all shadow-md cursor-pointer" onclick="switchCustomerView('overview')" title="پیشخوان">
+        <span class="material-symbols-outlined shrink-0">dashboard</span>
+        <span class="text-sm sidebar-label">پیشخوان</span>
     </a>
-    <a id="sidebar-btn-personal-info" class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-low rounded-xl transition-all cursor-pointer font-bold" onclick="switchCustomerView('personal-info')">
-        <span class="material-symbols-outlined text-primary">person</span>
-        <span class="text-sm">اطلاعات حساب کاربری</span>
+    <a id="sidebar-btn-personal-info" class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-low rounded-xl transition-all cursor-pointer font-bold" onclick="switchCustomerView('personal-info')" title="اطلاعات حساب کاربری">
+        <span class="material-symbols-outlined text-primary shrink-0">person</span>
+        <span class="text-sm sidebar-label">اطلاعات حساب کاربری</span>
     </a>
-    <a id="sidebar-btn-addresses" class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-low rounded-xl transition-all cursor-pointer font-bold" onclick="switchCustomerView('addresses')">
-        <span class="material-symbols-outlined text-rose-600">location_on</span>
-        <span class="text-sm">آدرس‌ها و نشانی</span>
+    <a id="sidebar-btn-addresses" class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-low rounded-xl transition-all cursor-pointer font-bold" onclick="switchCustomerView('addresses')" title="آدرس‌ها و نشانی">
+        <span class="material-symbols-outlined text-rose-600 shrink-0">location_on</span>
+        <span class="text-sm sidebar-label">آدرس‌ها و نشانی</span>
     </a>
-    <a id="sidebar-btn-pets" class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-low rounded-xl transition-all cursor-pointer font-bold" onclick="switchCustomerView('pets')">
-        <span class="material-symbols-outlined text-amber-600">pets</span>
-        <span class="text-sm">حیوانات من</span>
+    <a id="sidebar-btn-pets" class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-low rounded-xl transition-all cursor-pointer font-bold" onclick="switchCustomerView('pets')" title="حیوانات من">
+        <span class="material-symbols-outlined text-amber-600 shrink-0">pets</span>
+        <span class="text-sm sidebar-label">حیوانات من</span>
     </a>
-    <a id="sidebar-btn-appointments" class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-low rounded-xl transition-all cursor-pointer font-bold" onclick="switchCustomerView('appointments')">
-        <span class="material-symbols-outlined text-teal-600">calendar_month</span>
-        <span class="text-sm">نوبت‌های من</span>
+    <a id="sidebar-btn-appointments" class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-low rounded-xl transition-all cursor-pointer font-bold" onclick="switchCustomerView('appointments')" title="نوبت‌های من">
+        <span class="material-symbols-outlined text-teal-600 shrink-0">calendar_month</span>
+        <span class="text-sm sidebar-label">نوبت‌های من</span>
     </a>
-    <a id="sidebar-btn-orders" class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-low rounded-xl transition-all cursor-pointer font-bold" onclick="switchCustomerView('orders')">
-        <span class="material-symbols-outlined text-indigo-600">receipt_long</span>
-        <span class="text-sm">تاریخچه سفارشات</span>
+    <a id="sidebar-btn-orders" class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-low rounded-xl transition-all cursor-pointer font-bold" onclick="switchCustomerView('orders')" title="تاریخچه سفارشات">
+        <span class="material-symbols-outlined text-indigo-600 shrink-0">receipt_long</span>
+        <span class="text-sm sidebar-label">تاریخچه سفارشات</span>
     </a>
-    <a id="sidebar-btn-prescriptions" class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-low rounded-xl transition-all cursor-pointer font-bold" onclick="switchCustomerView('prescriptions')">
-        <span class="material-symbols-outlined text-emerald-600">medical_services</span>
-        <span class="text-sm">نسخه‌های من</span>
+    <a id="sidebar-btn-prescriptions" class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-low rounded-xl transition-all cursor-pointer font-bold" onclick="switchCustomerView('prescriptions')" title="نسخه‌های من">
+        <span class="material-symbols-outlined text-emerald-600 shrink-0">medical_services</span>
+        <span class="text-sm sidebar-label">نسخه‌های من</span>
         <?php if(!empty($prescriptions)): ?>
-        <span class="mr-auto text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full font-black"><?= count($prescriptions) ?></span>
+        <span class="mr-auto text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full font-black sidebar-badge"><?= count($prescriptions) ?></span>
         <?php endif; ?>
     </a>
-    <a id="sidebar-btn-subscriptions" class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-low rounded-xl transition-all cursor-pointer font-bold" onclick="switchCustomerView('subscriptions')">
-        <span class="material-symbols-outlined text-orange-600">autorenew</span>
-        <span class="text-sm">اشتراک‌های فعال</span>
+    <a id="sidebar-btn-subscriptions" class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-low rounded-xl transition-all cursor-pointer font-bold" onclick="switchCustomerView('subscriptions')" title="اشتراک‌های فعال">
+        <span class="material-symbols-outlined text-orange-600 shrink-0">autorenew</span>
+        <span class="text-sm sidebar-label">اشتراک‌های فعال</span>
     </a>
-    <a id="sidebar-btn-wallet" class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-low rounded-xl transition-all cursor-pointer font-bold" onclick="switchCustomerView('wallet')">
-        <span class="material-symbols-outlined text-emerald-600">account_balance_wallet</span>
-        <span class="text-sm">کیف پول اعتباری</span>
+    <a id="sidebar-btn-wallet" class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-low rounded-xl transition-all cursor-pointer font-bold" onclick="switchCustomerView('wallet')" title="کیف پول اعتباری">
+        <span class="material-symbols-outlined text-emerald-600 shrink-0">account_balance_wallet</span>
+        <span class="text-sm sidebar-label">کیف پول اعتباری</span>
     </a>
-    <a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-low rounded-xl transition-all font-bold" href="wishlist.php">
-        <span class="material-symbols-outlined text-red-500">favorite</span>
-        <span class="text-sm">علاقه‌مندی‌ها</span>
+    <a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-low rounded-xl transition-all font-bold" href="wishlist.php" title="علاقه‌مندی‌ها">
+        <span class="material-symbols-outlined text-red-500 shrink-0">favorite</span>
+        <span class="text-sm sidebar-label">علاقه‌مندی‌ها</span>
     </a>
     <?php if(isset($user['role']) && $user['role'] === 'admin'): ?>
-        <a class="flex items-center gap-3 px-4 py-3 text-emerald-600 hover:bg-emerald-50 rounded-xl transition-all font-bold" href="admin/index.php">
-            <span class="material-symbols-outlined">admin_panel_settings</span>
-            <span class="text-sm">پنل مدیریت سایت</span>
+        <a class="flex items-center gap-3 px-4 py-3 text-emerald-600 hover:bg-emerald-50 rounded-xl transition-all font-bold" href="admin/index.php" title="پنل مدیریت کل سایت">
+            <span class="material-symbols-outlined shrink-0">admin_panel_settings</span>
+            <span class="text-sm sidebar-label">پنل مدیریت سایت</span>
         </a>
     <?php endif; ?>
     <?php if (in_array($userRole, ['seller', 'organization', 'organization_manager', 'admin'])): ?>
-        <a class="flex items-center gap-3 px-4 py-3 text-sky-700 bg-sky-50 hover:bg-sky-100 rounded-xl transition-all font-bold border border-sky-200 mt-2" href="profile.php?view=seller">
-            <span class="material-symbols-outlined">storefront</span>
-            <span class="text-xs">سوئیچ به پنل فروشندگان</span>
+        <a class="flex items-center gap-3 px-4 py-3 text-sky-700 bg-sky-50 hover:bg-sky-100 rounded-xl transition-all font-bold border border-sky-200 mt-2" href="profile.php?view=seller" title="سوئیچ به پنل فروشندگان">
+            <span class="material-symbols-outlined shrink-0">storefront</span>
+            <span class="text-xs sidebar-label">سوئیچ به پنل فروشندگان</span>
         </a>
     <?php endif; ?>
 <?php endif; ?>
 </nav>
 <div class="pt-6 border-t border-outline-variant flex flex-col gap-1">
-<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-low rounded-xl transition-all" href="user_tickets.php">
-<span class="material-symbols-outlined">help</span>
-<span class="text-sm">پشتیبانی و تیکت‌ها</span>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-low rounded-xl transition-all sidebar-footer-link" href="user_tickets.php" title="پشتیبانی و تیکت‌ها">
+<span class="material-symbols-outlined shrink-0">help</span>
+<span class="text-sm sidebar-label">پشتیبانی و تیکت‌ها</span>
 </a>
 <?php if ($isSeller): ?>
-    <a class="flex items-center gap-3 px-4 py-2.5 text-slate-500 hover:text-slate-700 hover:bg-slate-50 rounded-xl transition-all text-xs font-bold" href="profile.php?view=customer">
-        <span class="material-symbols-outlined text-base">person</span>
-        <span>مشاهده پنل خریدار</span>
+    <a class="flex items-center gap-3 px-4 py-2.5 text-slate-500 hover:text-slate-700 hover:bg-slate-50 rounded-xl transition-all text-xs font-bold sidebar-footer-link" href="profile.php?view=customer" title="مشاهده پنل خریدار">
+        <span class="material-symbols-outlined text-base shrink-0">person</span>
+        <span class="sidebar-label">مشاهده پنل خریدار</span>
     </a>
 <?php endif; ?>
-<a class="flex items-center gap-3 px-4 py-3 text-red-600 hover:bg-red-50 rounded-xl transition-all" href="logout.php" onclick="return confirm('آیا از خروج از حساب کاربری اطمینان دارید؟');">
-<span class="material-symbols-outlined">logout</span>
-<span class="text-sm">خروج</span>
+<a class="flex items-center gap-3 px-4 py-3 text-red-600 hover:bg-red-50 rounded-xl transition-all sidebar-footer-link" href="logout.php" onclick="return confirm('آیا از خروج از حساب کاربری اطمینان دارید؟');" title="خروج از حساب کاربری">
+<span class="material-symbols-outlined shrink-0">logout</span>
+<span class="text-sm sidebar-label">خروج</span>
 </a>
 </div>
 </aside>
 <!-- Main Content -->
-<main class="lg:mr-64 mr-0 mt-16 p-4 md:p-8 min-h-screen transition-all duration-300">
+<main id="profile-main" class="lg:mr-64 mr-0 mt-16 p-4 md:p-8 min-h-screen transition-all duration-300">
+<script>
+    if (window.innerWidth >= 1024 && localStorage.getItem('asena_sidebar_collapsed') === '1') {
+        document.getElementById('profile-sidebar')?.classList.add('sidebar-collapsed');
+        document.getElementById('profile-main')?.classList.add('sidebar-collapsed');
+        const icon = document.getElementById('sidebar-desktop-toggle-icon');
+        if (icon) icon.innerText = 'chevron_left';
+    }
+</script>
 <div class="max-w-[1200px] mx-auto space-y-6 md:space-y-8">
 
 <!-- Mobile Header Toggle -->
@@ -4569,6 +4626,27 @@ function switchSellerFin(period) {
             backdrop.classList.add('opacity-0');
             setTimeout(() => backdrop.classList.add('hidden'), 300);
             document.body.style.overflow = '';
+        }
+    }
+
+    function toggleDesktopSidebar() {
+        const sidebar = document.getElementById('profile-sidebar');
+        const main = document.getElementById('profile-main');
+        const icon = document.getElementById('sidebar-desktop-toggle-icon');
+        if (!sidebar || !main) return;
+
+        const isCollapsed = sidebar.classList.toggle('sidebar-collapsed');
+        main.classList.toggle('sidebar-collapsed', isCollapsed);
+
+        if (icon) {
+            // In RTL, chevron_left points away from edge (expand); chevron_right points toward edge (collapse)
+            icon.innerText = isCollapsed ? 'chevron_left' : 'chevron_right';
+        }
+
+        try {
+            localStorage.setItem('asena_sidebar_collapsed', isCollapsed ? '1' : '0');
+        } catch (e) {
+            console.warn('Failed to store sidebar state:', e);
         }
     }
 
