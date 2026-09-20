@@ -345,12 +345,19 @@
       - ایجاد ویجت کارنامه شفافیت فروش و تسویه‌حساب همکاران فروشگاهی و کلینیکی با نمایش فروش ناخالص، سهم خالص دریافتی (۸۵٪) و وضعیت واریز پایا.
     - **کامپایل پروداکشن Tailwind CSS:** بازسازی موفقیت‌آمیز استایل‌ها در `assets/css/tailwind.output.css` با دستور `./bin/build-css`.
 
+43. **پیاده‌سازی سامانه پایش تداخلات دارویی و منع مصرف پت و اتصال چرخه پرداخت محاسبه‌گر بالینی (Pet Drug Interaction Checker & Calculator Monetization Flow):**
+    - **سامانه هوشمند تداخل‌سنج دارویی و فارماکوپیای بالینی ([`interactions.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/interactions.php)، [`drug_interactions.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/drug_interactions.php) و [`includes/DrugInteractionService.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/includes/DrugInteractionService.php)):**
+      - توسعه موتور دوگانه فارماکولوژی دامپزشکی بر پایه رفرنس‌های جهانی Plumb's و BSAVA با ترکیب هوش مصنوعی زنده (مدل‌های AvalAI / Gemini) و موتور قوانین آفلاین با بیش از ۵۰ قاعده بحرانی (منع مصرف کورتون + NSAID، سمیت کشنده استامینوفن و پرمترین در گربه، جهش ژنتیکی MDR1 در نژادهای کالی و شپرد، کلاتاسیون فلوروکینولون‌ها با سوکرالفات، سمیت شنوایی آمینوگلیکوزیدها با فوروزماید، و سندرم سروتونین ترامادول).
+      - جستجوی بلادرنگ در میان ۸۰۰+ قلم داروی کاتالوگ داروخانه دامپزشکی (`pharmacy_medicines`) با اتوکامپلیت ایجکس در [`actions/ai_drug_analysis.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/actions/ai_drug_analysis.php).
+      - طراحی رابط کاربری بنتو با سنجشگر بصری سطح خطر (بحرانی 🔴، احتیاط 🟠، تداخل متوسط 🟡 و ایمن 🟢)، جدول ساعات فاصله زمانی مصرف داروها، و امکان ثبت مستقیم در پرونده پزشکی پت با شناسه اختصاصی (`actions/save_drug_report.php`) و نسخه چاپی بدون نیاز به ابزار خارجی.
+      - تفکیک پاکیزه پرتال مالی و پیامک همکاران به نشانی اختصاصی [`partner_interactions.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/partner_interactions.php) و به‌روزرسانی ریدایرکت‌ها در پنل‌های پزشک، فروشنده و کلینیک.
+    - **اتصال چرخه پرداخت و درآمدزایی محاسبه‌گر بالینی ([`calculator.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/calculator.php)، [`actions/initiate_meal_plan_payment.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/actions/initiate_meal_plan_payment.php) و [`actions/complete_payment.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/actions/complete_payment.php)):**
+      - پشتیبانی کامل از سوییچ پولی/رایگان در پنل ادمین (`admin/finance_settings.php`).
+      - در حالت خاموش (رایگان)، صدور آنی کارنامه و فایل جدول برنامه غذایی به صورت هدیه آسنا ثبت می‌گردد.
+      - در حالت روشن (پولی)، دکمه صدور مبلغ تعیین‌شده را نمایش داده و پس از تایید لاگین، تراکنش در جدول `payment_transactions` ثبت و کاربر به درگاه بانکی فعال هدایت می‌شود.
+      - پس از پرداخت موفق، اکشن `complete_payment.php` به صورت اتمیک فایل رسمی جدول برنامه غذایی را با `MealPlanGenerator` تولید، در پرونده سلامت پت (`pet_documents`) و `user_pets` آرشیو، و کاربر را به صفحه نمایش کارنامه هدایت می‌نماید.
+
 ---
-
-
-
-
-
 
 ## ۴. پروتکل ثبت تغییرات آینده (Maintenance Rule)
 > **دستورالعمل برای هوش مصنوعی در ادامه کار:**  

@@ -802,6 +802,8 @@ $calcPrice = (int)get_setting($pdo, 'calculator_price_toman', 98000);
 <!-- Interactive Calculator JavaScript Engine -->
 <script>
 (function() {
+    const CALC_IS_PAID = <?= $calcIsPaid ? 'true' : 'false' ?>;
+    const CALC_PRICE = <?= (int)$calcPrice ?>;
     const DOG_BREEDS = [
         { name: 'ژرمن شپرد', title: 'ژرمن شپرد (German Shepherd)', icon: '🐕', size: 'large', defaultWeight: 30, hintTitle: 'شاخص فیزیولوژیک ژرمن شپرد', hintDesc: 'نژاد بزرگ‌جثه با حساسیت مفاصل ران (دیسپلازی) و معده حساس. نیاز به کلسیم و فسفر بالانس‌شده و فرمول غنی از ال-کارنیتین.', foodTitle: 'غذای خشک رویال کنین ژرمن شپرد ادالت' },
         { name: 'هاسکی', title: 'سیبرین هاسکی (Siberian Husky)', icon: '🐺', size: 'medium-large', defaultWeight: 22, hintTitle: 'متابولیسم سیبرین هاسکی', hintDesc: 'راندمان جذب کالری بسیار بالا با خودتنظیمی مصرف غذا. حساسیت بالا به کمبود زینک و نیازمند امگا ۳ جهت حفظ پوشش دولایه در اقلیم ایران.', foodTitle: 'غذای خشک رفلکس پلاس ماهی سالمون و برنج هاسکی' },
@@ -1326,12 +1328,16 @@ $calcPrice = (int)get_setting($pdo, 'calculator_price_toman', 98000);
         const origContent = btn ? btn.innerHTML : '';
         if (btn) {
             btn.disabled = true;
-            btn.innerHTML = '<div class="flex items-center justify-center gap-2 py-2"><span class="material-symbols-outlined text-lg animate-spin">sync</span><span class="text-xs font-black">در حال صدور نسخه و ارسال فایل به پرونده...</span></div>';
+            btn.innerHTML = CALC_IS_PAID 
+                ? '<div class="flex items-center justify-center gap-2 py-2"><span class="material-symbols-outlined text-lg animate-spin">sync</span><span class="text-xs font-black">در حال اتصال امن به درگاه پرداخت...</span></div>'
+                : '<div class="flex items-center justify-center gap-2 py-2"><span class="material-symbols-outlined text-lg animate-spin">sync</span><span class="text-xs font-black">در حال صدور نسخه و ارسال فایل به پرونده...</span></div>';
         }
+
+        const targetEndpoint = CALC_IS_PAID ? 'actions/initiate_meal_plan_payment.php' : 'actions/save_nutrition_report.php';
 
         try {
             const csrf = window.ASENA_CSRF_TOKEN || document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
-            const res = await fetch('actions/save_nutrition_report.php', {
+            const res = await fetch(targetEndpoint, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -1369,6 +1375,12 @@ $calcPrice = (int)get_setting($pdo, 'calculator_price_toman', 98000);
             }
 
             if (data && data.success) {
+                if (data.payment_url) {
+                    // Save pending meal plan state to localStorage
+                    try { localStorage.setItem('asena_pending_meal_plan', JSON.stringify(calcState)); } catch(e){}
+                    window.location.href = data.payment_url;
+                    return;
+                }
                 // Clear any stored pending state
                 try { localStorage.removeItem('asena_pending_meal_plan'); } catch(e){}
                 showMealPlanSuccessModal(data);
@@ -1378,6 +1390,10 @@ $calcPrice = (int)get_setting($pdo, 'calculator_price_toman', 98000);
                     localStorage.setItem('asena_pending_meal_plan', JSON.stringify(calcState));
                 } catch(e) {}
                 showMealPlanAuthModal();
+            } else if (data && data.require_payment) {
+                // Switch to payment
+                try { localStorage.setItem('asena_pending_meal_plan', JSON.stringify(calcState)); } catch(e){}
+                window.location.reload();
             } else {
                 alert((data && data.message) || 'خطا در صدور جدول برنامه غذایی. لطفاً مجدداً تلاش فرمایید.');
             }

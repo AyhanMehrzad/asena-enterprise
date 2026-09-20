@@ -1,935 +1,1013 @@
 <?php
 /**
- * ASENA Enterprise - Interactions with Asena (پرتال تعاملات، صورت‌حساب و خدمات متقابل با آسنا)
- * For Sellers, Doctors, and Organizations/Clinics
+ * ASENA Enterprise - Pet Drug Interaction & Contraindication Checker
+ * سامانه هوشمند پایش تداخلات دارویی و منع مصرف حیوانات خانگی با هوش مصنوعی بالینی
  */
-require_once __DIR__ . '/includes/db.php';
-require_once __DIR__ . '/includes/functions.php';
-require_once __DIR__ . '/includes/jdf.php';
-require_once __DIR__ . '/includes/SmsService.php';
 
-if (!isset($_SESSION['user_id'])) {
-    $_SESSION['redirect_after_login'] = 'interactions.php';
-    header('Location: login.php');
+// Route to partner portal if accessed from partner/SMS context
+if (isset($_GET['tab']) || isset($_GET['portal']) || isset($_POST['send_direct_sms']) || (isset($_POST['action']) && in_array($_POST['action'], ['send_direct_sms', 'purchase_sms_package', 'purchase_sms_gateway', 'save_bank_settings'], true))) {
+    require_once __DIR__ . '/partner_interactions.php';
     exit;
 }
 
-$userId = (int)$_SESSION['user_id'];
+$page_title = "پایشگر هوشمند تداخلات دارویی و منع مصرف پت | هوش مصنوعی آسنا";
+$page_description = "بررسی بالینی هم‌پوشانی داروها، مکمل‌ها و موارد منع مصرف در سگ، گربه، اسب و پرندگان با هوش مصنوعی بر اساس رفرنس‌های جهانی دامپزشکی Plumb's و BSAVA.";
 
-// Fetch user role and details
-$uStmt = $pdo->prepare("SELECT id, name, phone, role, email FROM users WHERE id = ?");
-$uStmt->execute([$userId]);
-$currentUser = $uStmt->fetch(PDO::FETCH_ASSOC);
+require_once 'includes/header.php';
 
-if (!$currentUser) {
-    header('Location: logout.php');
-    exit;
-}
-
-$role = $currentUser['role'] ?? 'user';
-$allowedRoles = ['seller', 'doctor', 'organization', 'organization_manager', 'admin'];
-if (!in_array($role, $allowedRoles, true)) {
-    $_SESSION['profile_error'] = 'پرتال تعاملات مالی با آسنا مخصوص تامین‌کنندگان، فروشندگان و مراکز درمانی همکار است.';
-    header('Location: profile.php');
-    exit;
-}
-
-// Fetch wallet & bank details
-$wStmt = $pdo->prepare("SELECT * FROM seller_wallets WHERE seller_id = ?");
-$wStmt->execute([$userId]);
-$wallet = $wStmt->fetch(PDO::FETCH_ASSOC);
-
-if (!$wallet) {
-    $pdo->prepare("INSERT INTO seller_wallets (seller_id, balance_pending_escrow, balance_available_for_payout, balance_settled_lifetime, sms_credits) VALUES (?, 0, 0, 0, 0)")
-        ->execute([$userId]);
-    $wallet = [
-        'seller_id' => $userId,
-        'balance_pending_escrow' => 0,
-        'balance_available_for_payout' => 0,
-        'balance_settled_lifetime' => 0,
-        'sms_credits' => 0,
-        'bank_sheba' => '',
-        'bank_card_number' => '',
-        'bank_name' => '',
-        'bank_account_holder' => ''
-    ];
-}
-
-$flashMessage = '';
-$flashType = 'info';
-
-// SMS Package Definitions loaded dynamically from Site Settings with profitable pricing
-$pack100Price = (int)get_setting($pdo, 'sms_pack_100_price', 85000);
-$pack500Price = (int)get_setting($pdo, 'sms_pack_500_price', 375000);
-$pack1000Price = (int)get_setting($pdo, 'sms_pack_1000_price', 680000);
-
-$smsPackages = [
-    'pack_100' => ['name' => 'بسته ۱۰۰ پیامک', 'credits' => 100, 'price' => $pack100Price, 'desc' => 'مناسب اطلاع‌رسانی نوبت‌ها و سفارشات سبک (هر پیامک ' . number_format(round($pack100Price / 100)) . ' ت)'],
-    'pack_500' => ['name' => 'بسته ۵۰۰ پیامک', 'credits' => 500, 'price' => $pack500Price, 'desc' => 'صرفه‌جویی ۱۲٪ — ویژه فروشگاه‌ها و مطب‌های پرمخاطب (هر پیامک ' . number_format(round($pack500Price / 500)) . ' ت)'],
-    'pack_1000' => ['name' => 'بسته ۱۰۰۰ پیامک طلایی', 'credits' => 1000, 'price' => $pack1000Price, 'desc' => 'صرفه‌جویی ۲۰٪ — ویژه کلینیک‌ها و بیمارستان‌های تخصصی (هر پیامک ' . number_format(round($pack1000Price / 1000)) . ' ت)']
-];
-
-// Handle Actions
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
-    csrf_verify();
-    $act = $_POST['action'];
-
-    if ($act === 'send_direct_sms') {
-        $currCredits = (int)$wallet['sms_credits'];
-        $recipient = SmsService::normalizePhone(trim($_POST['recipient_phone'] ?? ''));
-        $msgText = trim($_POST['sms_message'] ?? '');
-
-        if ($currCredits <= 0) {
-            $flashMessage = "خطا: اعتبار پیامک شما ۰ عدد است! ارسال پیامک محدود و مسدود می‌باشد مگر با تهیه بسته پیامکی از گزینه‌های زیر.";
-            $flashType = 'error';
-        } elseif (empty($recipient) || strlen($recipient) < 10) {
-            $flashMessage = "لطفاً شماره تلفن همراه گیرنده را به صورت معتبر وارد فرمایید (مانند ۰۹۱۲۳۴۵۶۷۸۹).";
-            $flashType = 'error';
-        } elseif (empty($msgText) || mb_strlen($msgText) < 5) {
-            $flashMessage = "لطفاً متن پیامک را وارد نمایید (حداقل ۵ کاراکتر).";
-            $flashType = 'error';
-        } else {
-            // Deduct credit first (atomic overdraft protection)
-            $deducted = SmsService::deductUserSmsCredits($pdo, $userId, $recipient, $msgText, 1);
-            if ($deducted) {
-                $smsInstance = new SmsService();
-                $res = $smsInstance->sendDirectSms($recipient, $msgText);
-                // Refresh wallet
-                $wStmt->execute([$userId]);
-                $wallet = $wStmt->fetch(PDO::FETCH_ASSOC);
-
-                $flashMessage = "پیامک اختصاصی با موفقیت به شماره {$recipient} ارسال شد و ۱ اعتبار از بسته شما کسر گردید. مانده فعلی: {$wallet['sms_credits']} عدد.";
-                $flashType = 'success';
-            } else {
-                $flashMessage = "خطا در کسر اعتبار پیامک یا مانده ناکافی.";
-                $flashType = 'error';
-            }
-        }
-    } elseif ($act === 'buy_sms_wallet') {
-        $pkgKey = trim($_POST['package_key'] ?? '');
-        if (isset($smsPackages[$pkgKey])) {
-            $pkg = $smsPackages[$pkgKey];
-            $cost = $pkg['price'];
-            $credits = $pkg['credits'];
-            $available = (int)$wallet['balance_available_for_payout'];
-
-            if ($available >= $cost) {
-                // Deduct from wallet and add credits
-                $pdo->beginTransaction();
-                try {
-                    $pdo->prepare("UPDATE seller_wallets SET balance_available_for_payout = balance_available_for_payout - ?, sms_credits = sms_credits + ? WHERE seller_id = ?")
-                        ->execute([$cost, $credits, $userId]);
-
-                    $pdo->prepare("INSERT INTO sms_package_purchases (user_id, package_name, credits, price, payment_method, payment_ref, status) VALUES (?, ?, ?, ?, 'wallet', 'WALLET_DEDUCT', 'completed')")
-                        ->execute([$userId, $pkg['name'], $credits, $cost]);
-
-                    $pdo->commit();
-                    $flashMessage = "بسته «{$pkg['name']}» با موفقیت از محل موجودی کیف‌پول شما خریداری شد و {$credits} پیامک به حسابتان افزوده گردید.";
-                    $flashType = 'success';
-                    // Refresh wallet
-                    $wStmt->execute([$userId]);
-                    $wallet = $wStmt->fetch(PDO::FETCH_ASSOC);
-                } catch (Exception $e) {
-                    $pdo->rollBack();
-                    $flashMessage = "خطا در خرید بسته از کیف پول: " . $e->getMessage();
-                    $flashType = 'error';
-                }
-            } else {
-                $flashMessage = "موجودی قابل تسویه شما (" . number_format($available) . " تومان) برای خرید این بسته (" . number_format($cost) . " تومان) کافی نیست. لطفاً از گزینه پرداخت آنلاین استفاده فرمایید.";
-                $flashType = 'error';
-            }
-        }
-    } elseif ($act === 'buy_sms_gateway') {
-        $pkgKey = trim($_POST['package_key'] ?? '');
-        if (isset($smsPackages[$pkgKey])) {
-            $pkg = $smsPackages[$pkgKey];
-            $_SESSION['pending_order'] = [
-                'type' => 'sms_package',
-                'package_key' => $pkgKey,
-                'package_name' => $pkg['name'],
-                'credits' => $pkg['credits'],
-                'total_amount' => $pkg['price'],
-                'created_at' => time()
-            ];
-            header('Location: payment.php');
-            exit;
-        }
-    } elseif ($act === 'new_ticket_with_asena') {
-        $subject = trim($_POST['subject'] ?? 'درخواست پشتیبانی و حسابرسی');
-        $dept = trim($_POST['department'] ?? 'امور مالی و تسویه پایا');
-        $initialMessage = trim($_POST['message'] ?? '');
-
-        if (!empty($initialMessage)) {
-            $fullSubject = "[{$dept}] {$subject}";
-            $insT = $pdo->prepare("INSERT INTO tickets (user_id, mode, status, created_at, updated_at) VALUES (?, 'admin', 'open', NOW(), NOW())");
-            $insT->execute([$userId]);
-            $ticketId = (int)$pdo->lastInsertId();
-
-            $pdo->prepare("INSERT INTO ticket_messages (ticket_id, sender_type, message, created_at) VALUES (?, 'user', ?, NOW())")
-                ->execute([$ticketId, "موضوع: {$fullSubject}\n\n{$initialMessage}"]);
-
-            $pdo->prepare("INSERT INTO ticket_messages (ticket_id, sender_type, message, created_at) VALUES (?, 'admin', 'پیام شما به واحد خزانه‌داری و مدیریت آسنا ارسال شد. همکاران امور مالی به زودی پاسخگوی شما خواهند بود.', NOW())")
-                ->execute([$ticketId]);
-
-            header("Location: chat.php?ticket_id={$ticketId}");
-            exit;
-        } else {
-            $flashMessage = "لطفاً متن پیام تیکت را وارد نمایید.";
-            $flashType = 'error';
-        }
-    }
-}
-
-// 1. Fetch Debits to Asena: 5% Platform Commission from Orders & Appointments
-$commOrdersStmt = $pdo->prepare("
-    SELECT l.*, o.id as order_number, o.created_at as order_date 
-    FROM seller_escrow_ledger l
-    JOIN orders o ON l.order_id = o.id
-    WHERE l.seller_id = ?
-    ORDER BY l.id DESC
-    LIMIT 30
-");
-$commOrdersStmt->execute([$userId]);
-$ledgerItems = $commOrdersStmt->fetchAll(PDO::FETCH_ASSOC);
-
-$commAptsStmt = $pdo->prepare("
-    SELECT a.*, d.name as doctor_name, u.name as customer_name 
-    FROM appointments a
-    LEFT JOIN doctors d ON a.doctor_id = d.id
-    LEFT JOIN users u ON a.user_id = u.id
-    WHERE a.organization_id = ? OR d.user_id = ?
-    ORDER BY a.id DESC
-    LIMIT 30
-");
-$commAptsStmt->execute([$userId, $userId]);
-$appointmentItems = $commAptsStmt->fetchAll(PDO::FETCH_ASSOC);
-
-// Totals of Commission
-$totalCommissionPaid = 0;
-foreach ($ledgerItems as $li) {
-    $totalCommissionPaid += (int)$li['commission_amount'];
-}
-foreach ($appointmentItems as $ai) {
-    $totalCommissionPaid += (int)($ai['commission_amount'] ?: round((int)$ai['fee'] * 0.15));
-}
-
-// 2. Fetch SMS Purchases & Usage Logs
-$smsPurchasesStmt = $pdo->prepare("SELECT * FROM sms_package_purchases WHERE user_id = ? ORDER BY id DESC LIMIT 15");
-$smsPurchasesStmt->execute([$userId]);
-$smsPurchases = $smsPurchasesStmt->fetchAll(PDO::FETCH_ASSOC);
-
-$smsSpentTotal = 0;
-foreach ($smsPurchases as $sp) {
-    if ($sp['status'] === 'completed') {
-        $smsSpentTotal += (int)$sp['price'];
-    }
-}
-
-$smsUsageStmt = $pdo->prepare("SELECT * FROM sms_usage_logs WHERE user_id = ? ORDER BY id DESC LIMIT 15");
-$smsUsageStmt->execute([$userId]);
-$smsLogs = $smsUsageStmt->fetchAll(PDO::FETCH_ASSOC);
-
-// 3. Fetch Paya Settlements received from Asena
-$payoutsStmt = $pdo->prepare("
-    SELECT b.* 
-    FROM seller_payout_batches b
-    WHERE b.paya_export_content LIKE ? OR b.id IN (
-        SELECT DISTINCT settlement_batch_id FROM seller_escrow_ledger WHERE seller_id = ? AND settlement_batch_id IS NOT NULL
-    ) OR b.id IN (
-        SELECT DISTINCT settlement_batch_id FROM appointments WHERE (organization_id = ? OR doctor_id IN (SELECT id FROM doctors WHERE user_id = ?)) AND settlement_batch_id IS NOT NULL
-    )
-    ORDER BY b.id DESC
-    LIMIT 20
-");
-$shebaSearch = '%' . ($wallet['bank_sheba'] ?: 'XYZ_NOT_FOUND') . '%';
-$payoutsStmt->execute([$shebaSearch, $userId, $userId, $userId]);
-$payoutBatches = $payoutsStmt->fetchAll(PDO::FETCH_ASSOC);
-
-// 4. Dedicated Separated Tickets with Asena Management
-$ticketsStmt = $pdo->prepare("
-    SELECT t.*, 
-           COALESCE(
-               (SELECT message FROM ticket_messages WHERE ticket_id = t.id ORDER BY id DESC LIMIT 1),
-               'پیامی ثبت نشده است'
-           ) as last_message,
-           (SELECT sender_type FROM ticket_messages WHERE ticket_id = t.id ORDER BY id DESC LIMIT 1) as last_sender,
-           (SELECT created_at FROM ticket_messages WHERE ticket_id = t.id ORDER BY id DESC LIMIT 1) as last_time
-    FROM tickets t
-    WHERE t.user_id = ? AND t.mode = 'admin'
-    ORDER BY (t.status = 'open') DESC, t.updated_at DESC
-");
-$ticketsStmt->execute([$userId]);
-$myTickets = $ticketsStmt->fetchAll(PDO::FETCH_ASSOC);
-
-// Active Tab
-$activeTab = $_GET['tab'] ?? 'overview';
-if (!in_array($activeTab, ['overview', 'debits', 'payouts', 'sms', 'tickets'])) {
-    $activeTab = 'overview';
+// Fetch current user's registered pets if logged in
+$userPets = [];
+$userId = (int)($_SESSION['user_id'] ?? 0);
+if ($userId > 0 && isset($pdo)) {
+    try {
+        $pStmt = $pdo->prepare("SELECT id, name, type, race, weight_kg FROM user_pets WHERE user_id = ? ORDER BY id DESC");
+        $pStmt->execute([$userId]);
+        $userPets = $pStmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (Exception $e) {}
 }
 ?>
-<!DOCTYPE html>
-<html lang="fa" dir="rtl">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>پرتال تعاملات، حسابرسی و خدمات با آسنا</title>
-    <link rel="stylesheet" href="assets/css/style.css">
-    <link rel="stylesheet" href="assets/css/enterprise-ui.css">
-    <link href="assets/css/material-symbols.css" rel="stylesheet"/>
-    <link href="assets/css/geist.css" rel="stylesheet"/>
-    <link rel="stylesheet" href="assets/css/tailwind.output.css?v=<?= time() ?>">
-    <style>
-        body { font-family: Tahoma, 'Vazirmatn', sans-serif; background: #f8fafc; color: #0f172a; }
-        .tab-btn.active { background: #001a48; color: #fff; box-shadow: 0 4px 12px rgba(0, 26, 72, 0.15); }
-    </style>
-</head>
-<body class="p-4 sm:p-6 lg:p-8">
 
-<div class="max-w-[1350px] mx-auto space-y-6">
+<main class="max-w-container-max mx-auto overflow-hidden py-8 px-margin-desktop min-h-[85vh]">
 
-    <!-- Back to Role Panel Navigation Bar -->
-    <div class="flex flex-col sm:flex-row justify-between items-center gap-4 bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm">
-        <div class="flex items-center gap-3">
-            <a href="index.php" class="flex items-center gap-2 text-primary font-bold text-xs hover:text-blue-700 transition">
-                <img src="assets/images/logo.png" alt="لوگو" class="w-8 h-8 object-contain">
-                <span class="font-black text-sm">پلتفرم جامع آسنا</span>
-            </a>
-            <span class="text-slate-300">|</span>
-            <span class="text-xs text-slate-500 font-bold">پرتال اختصاصی امور مالی و تعاملات متقابل</span>
-        </div>
-
-        <div class="flex items-center gap-2">
-            <?php if ($role === 'seller'): ?>
-                <a href="seller/index.php" class="px-3.5 py-1.5 rounded-xl bg-blue-50 text-blue-700 text-xs font-bold hover:bg-blue-100 transition flex items-center gap-1">
-                    <span class="material-symbols-outlined text-sm">storefront</span>
-                    <span>بازگشت به پنل فروشندگان</span>
-                </a>
-            <?php elseif ($role === 'doctor'): ?>
-                <a href="doctor/index.php" class="px-3.5 py-1.5 rounded-xl bg-blue-50 text-blue-700 text-xs font-bold hover:bg-blue-100 transition flex items-center gap-1">
-                    <span class="material-symbols-outlined text-sm">stethoscope</span>
-                    <span>بازگشت به پنل پزشکان</span>
-                </a>
-            <?php elseif ($role === 'organization' || $role === 'organization_manager'): ?>
-                <a href="organization/index.php" class="px-3.5 py-1.5 rounded-xl bg-blue-50 text-blue-700 text-xs font-bold hover:bg-blue-100 transition flex items-center gap-1">
-                    <span class="material-symbols-outlined text-sm">apartment</span>
-                    <span>بازگشت به پنل مرکز درمانی</span>
-                </a>
-            <?php elseif ($role === 'admin'): ?>
-                <a href="admin/index.php" class="px-3.5 py-1.5 rounded-xl bg-purple-50 text-purple-700 text-xs font-bold hover:bg-purple-100 transition flex items-center gap-1">
-                    <span class="material-symbols-outlined text-sm">admin_panel_settings</span>
-                    <span>کنسول مدیریت ارشد</span>
-                </a>
-            <?php endif; ?>
-        </div>
+    <!-- Breadcrumbs -->
+    <div class="flex items-center gap-2 text-xs text-on-surface-variant mb-6">
+        <a href="index.php" class="hover:text-primary transition-colors">خانه</a>
+        <span>></span>
+        <span class="text-on-surface-variant">ابزارهای هوشمند سلامت</span>
+        <span>></span>
+        <span class="text-primary font-bold">پایشگر تداخلات دارویی و منع مصرف</span>
     </div>
 
-    <!-- Hero Banner -->
-    <div class="p-6 lg:p-8 rounded-3xl bg-gradient-to-r from-[#001a48] via-[#002d72] to-[#1e3a8a] text-white shadow-lg relative overflow-hidden">
-        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 relative z-10">
-            <div>
-                <div class="flex items-center gap-2 mb-2">
-                    <span class="bg-amber-400/20 text-amber-300 border border-amber-400/30 text-[10px] font-bold px-2.5 py-0.5 rounded-full">
-                        حساب کاربری: <?= htmlspecialchars($currentUser['name']) ?>
-                    </span>
-                    <span class="bg-white/10 text-slate-200 text-[10px] px-2.5 py-0.5 rounded-full">
-                        نقش: <?= htmlspecialchars($role) ?>
-                    </span>
-                </div>
-                <h1 class="text-xl lg:text-2xl font-black">تعاملات مالی، صورت‌حساب کارمزد و خدمات با پلتفرم آسنا</h1>
-                <p class="text-xs text-slate-300 mt-1 max-w-2xl leading-relaxed">
-                    شفافیت کامل در مبالغ پرداختی به آسنا (کارمزد ۱۵٪ کاتالوگ و بسته‌های پیامک)، واریزی‌های هفتگی پایا، مانده پیامک اختصاصی و تیکت‌های پشتیبانی با خزانه‌داری
-                </p>
-            </div>
-
-            <div class="bg-white/10 backdrop-blur-md p-4 rounded-2xl border border-white/15 text-left md:text-right shrink-0">
-                <span class="text-[10px] text-slate-300 block mb-1">موعد تسویه هفتگی بعدی:</span>
-                <span class="text-sm font-bold text-amber-300 flex items-center gap-1.5 justify-end">
-                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                    پنج‌شنبه ساعت ۰۹:۰۰ صبح (پایا)
-                </span>
-            </div>
+    <!-- Hero Header -->
+    <div class="text-center max-w-3xl mx-auto mb-10 space-y-3">
+        <div class="inline-flex items-center gap-2 px-4 py-1.5 bg-blue-50 text-blue-700 border border-blue-200 rounded-full text-xs font-bold shadow-2xs">
+            <span class="material-symbols-outlined text-sm text-blue-600">verified_user</span>
+            <span>استاندارد فارماکولوژی دامپزشکی Plumb's & BSAVA</span>
         </div>
+        <h1 class="text-2xl sm:text-4xl font-black text-slate-800 tracking-tight leading-snug py-1">
+            سامانه هوشمند سنجش تداخلات دارویی پت
+        </h1>
+        <p class="text-xs sm:text-sm text-slate-500 leading-relaxed font-normal">
+            نام داروهای مصرفی یا تجویزی حیوان خانگی خود را وارد کنید تا هوش مصنوعی بالینی، تداخلات خطرناک، افت اثربخشی، مسمومیت‌های گونه‌ای و جدول ساعات فاصله مصرف را فوراً پایش و تحلیل کند.
+        </p>
     </div>
 
-    <!-- Flash Message -->
-    <?php if ($flashMessage): ?>
-        <div class="p-4 rounded-2xl text-xs font-bold flex items-center gap-3 <?= $flashType === 'success' ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-rose-50 text-rose-800 border border-rose-200' ?>">
-            <span class="material-symbols-outlined text-lg"><?= $flashType === 'success' ? 'check_circle' : 'error' ?></span>
-            <span><?= htmlspecialchars($flashMessage) ?></span>
-        </div>
-    <?php endif; ?>
+    <!-- Main Drug Interaction Component -->
+    <div class="bg-gradient-to-br from-[#001a48] via-[#002d72] to-slate-900 rounded-[2.5rem] p-6 sm:p-10 lg:p-12 text-white shadow-2xl relative overflow-hidden border border-white/10 mb-12">
+        <!-- Background Decorative Ambient Glows -->
+        <div class="absolute -top-24 -left-24 w-96 h-96 bg-blue-500/15 rounded-full blur-3xl pointer-events-none"></div>
+        <div class="absolute -bottom-24 -right-24 w-96 h-96 bg-[#fd8100]/15 rounded-full blur-3xl pointer-events-none"></div>
 
-    <!-- Overview Stat Cards -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <!-- 1. What You Pay Asena (15% Commission + SMS) -->
-        <div class="p-5 rounded-2xl bg-white border border-slate-200/80 shadow-sm flex items-center justify-between">
-            <div>
-                <span class="text-xs font-bold text-slate-500 block mb-1">کل پرداختی شما به آسنا (کارمزد+پیامک):</span>
-                <span class="text-xl font-black text-rose-600 font-mono"><?= number_format($totalCommissionPaid + $smsSpentTotal) ?> تومان</span>
-                <span class="text-[10px] text-slate-400 block mt-1">کارمزد ۱۵٪: <?= number_format($totalCommissionPaid) ?> ت</span>
-            </div>
-            <div class="w-12 h-12 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center shrink-0">
-                <span class="material-symbols-outlined text-2xl">receipt</span>
-            </div>
-        </div>
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 relative z-10">
 
-        <!-- 2. What Asena Paid You (Lifetime Settled) -->
-        <div class="p-5 rounded-2xl bg-white border border-slate-200/80 shadow-sm flex items-center justify-between">
-            <div>
-                <span class="text-xs font-bold text-slate-500 block mb-1">مجموع واریزی‌های پایا از آسنا:</span>
-                <span class="text-xl font-black text-emerald-600 font-mono"><?= number_format((int)$wallet['balance_settled_lifetime']) ?> تومان</span>
-                <span class="text-[10px] text-slate-400 block mt-1">واریز شده به شماره شبای شما</span>
-            </div>
-            <div class="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
-                <span class="material-symbols-outlined text-2xl">account_balance</span>
-            </div>
-        </div>
+            <!-- Left Form Column: Pet & Drug Selection (7 cols) -->
+            <div class="lg:col-span-7 space-y-6">
 
-        <!-- 3. Available for Next Payout -->
-        <div class="p-5 rounded-2xl bg-white border border-slate-200/80 shadow-sm flex items-center justify-between">
-            <div>
-                <span class="text-xs font-bold text-slate-500 block mb-1">موجودی آماده تسویه پنج‌شنبه:</span>
-                <span class="text-xl font-black text-[#001a48] font-mono"><?= number_format((int)$wallet['balance_available_for_payout']) ?> تومان</span>
-                <span class="text-[10px] text-slate-400 block mt-1">امانی ۷ روزه: <?= number_format((int)$wallet['balance_pending_escrow']) ?> ت</span>
-            </div>
-            <div class="w-12 h-12 rounded-xl bg-blue-50 text-[#001a48] flex items-center justify-center shrink-0">
-                <span class="material-symbols-outlined text-2xl">payments</span>
-            </div>
-        </div>
-
-        <!-- 4. Remaining SMS Credits -->
-        <div class="p-5 rounded-2xl bg-white border border-slate-200/80 shadow-sm flex items-center justify-between">
-            <div>
-                <span class="text-xs font-bold text-slate-500 block mb-1">اعتبار پیامک اختصاصی آسنا:</span>
-                <span class="text-xl font-black text-[#fd8100] font-mono"><?= number_format((int)$wallet['sms_credits']) ?> <span class="text-xs font-normal text-slate-500">عدد</span></span>
-                <span class="text-[10px] text-slate-400 block mt-1">جهت ارسال پیامک به مشتریان/بیماران</span>
-            </div>
-            <div class="w-12 h-12 rounded-xl bg-amber-50 text-[#fd8100] flex items-center justify-center shrink-0">
-                <span class="material-symbols-outlined text-2xl">sms</span>
-            </div>
-        </div>
-    </div>
-
-    <!-- Navigation Tabs -->
-    <div class="flex flex-wrap gap-2 border-b border-slate-200 pb-2">
-        <a href="?tab=overview" class="tab-btn px-4 py-2.5 rounded-xl font-bold text-xs flex items-center gap-1.5 text-slate-600 hover:text-primary transition <?= $activeTab === 'overview' ? 'active' : 'bg-white' ?>">
-            <span class="material-symbols-outlined text-base">dashboard</span>
-            <span>نمای کلی و تراز مالی</span>
-        </a>
-        <a href="?tab=debits" class="tab-btn px-4 py-2.5 rounded-xl font-bold text-xs flex items-center gap-1.5 text-slate-600 hover:text-primary transition <?= $activeTab === 'debits' ? 'active' : 'bg-white' ?>">
-            <span class="material-symbols-outlined text-base">point_of_sale</span>
-            <span>آنچه باید به آسنا بپردازید (کارمزد ۱۵٪)</span>
-        </a>
-        <a href="?tab=payouts" class="tab-btn px-4 py-2.5 rounded-xl font-bold text-xs flex items-center gap-1.5 text-slate-600 hover:text-primary transition <?= $activeTab === 'payouts' ? 'active' : 'bg-white' ?>">
-            <span class="material-symbols-outlined text-base">receipt_long</span>
-            <span>واریزی‌های پایا از آسنا و رسیدهای رسمی</span>
-        </a>
-        <a href="?tab=sms" class="tab-btn px-4 py-2.5 rounded-xl font-bold text-xs flex items-center gap-1.5 text-slate-600 hover:text-primary transition <?= $activeTab === 'sms' ? 'active' : 'bg-white' ?>">
-            <span class="material-symbols-outlined text-base">send_to_mobile</span>
-            <span>خرید بسته پیامک و گزارش مصرف</span>
-        </a>
-        <a href="?tab=tickets" class="tab-btn px-4 py-2.5 rounded-xl font-bold text-xs flex items-center gap-1.5 text-slate-600 hover:text-primary transition <?= $activeTab === 'tickets' ? 'active' : 'bg-white' ?>">
-            <span class="material-symbols-outlined text-base">support_agent</span>
-            <span>تیکت‌های اختصاصی با مدیریت آسنا</span>
-            <?php if (count($myTickets) > 0): ?>
-                <span class="bg-primary text-white text-[10px] px-1.5 py-0.5 rounded-full"><?= count($myTickets) ?></span>
-            <?php endif; ?>
-        </a>
-    </div>
-
-    <!-- TAB 1: OVERVIEW & FINANCIAL STATEMENT -->
-    <?php if ($activeTab === 'overview'): ?>
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        <!-- Account Reconciliation Box (Col 7) -->
-        <div class="lg:col-span-7 bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-5">
-            <h3 class="font-bold text-slate-900 text-sm flex items-center gap-2 border-b border-slate-100 pb-3">
-                <span class="material-symbols-outlined text-primary text-base">balance</span>
-                ترازنامه حسابداری و وضعیت مالی متقابل با آسنا
-            </h3>
-
-            <div class="space-y-3 text-xs">
-                <div class="flex justify-between items-center p-3 rounded-xl bg-slate-50">
-                    <span class="text-slate-600">گردش کل فروش و خدمات ثبت شده برای شما:</span>
-                    <span class="font-mono font-bold text-slate-900"><?= number_format((int)$wallet['balance_settled_lifetime'] + (int)$wallet['balance_available_for_payout'] + (int)$wallet['balance_pending_escrow'] + $totalCommissionPaid) ?> تومان</span>
-                </div>
-
-                <div class="flex justify-between items-center p-3 rounded-xl bg-rose-50/70 border border-rose-100 text-rose-900">
-                    <span class="font-bold">سهم کارمزد پلتفرم آسنا (۱۵٪):</span>
-                    <span class="font-mono font-bold text-rose-700">-<?= number_format($totalCommissionPaid) ?> تومان</span>
-                </div>
-
-                <div class="flex justify-between items-center p-3 rounded-xl bg-amber-50/70 border border-amber-100 text-amber-900">
-                    <span>هزینه بسته‌های پیامک خریداری شده از آسنا:</span>
-                    <span class="font-mono font-bold text-amber-800">-<?= number_format($smsSpentTotal) ?> تومان</span>
-                </div>
-
-                <div class="flex justify-between items-center p-3 rounded-xl bg-blue-50/70 border border-blue-100 text-blue-900">
-                    <span>وجوه در حال سپری کردن مهلت ۷ روزه تست (اسکرو):</span>
-                    <span class="font-mono font-bold text-blue-800"><?= number_format((int)$wallet['balance_pending_escrow']) ?> تومان</span>
-                </div>
-
-                <div class="flex justify-between items-center p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-900">
-                    <span class="font-bold text-sm">مبلغ خالص آماده برای حواله پایا این پنج‌شنبه ساعت ۹:۰۰:</span>
-                    <span class="font-mono font-black text-lg text-emerald-700"><?= number_format((int)$wallet['balance_available_for_payout']) ?> تومان</span>
-                </div>
-            </div>
-
-            <!-- Shaba Details -->
-            <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200 text-xs space-y-1.5">
-                <div class="flex justify-between">
-                    <span class="text-slate-500">شماره شبای ثبت‌شده جهت واریز:</span>
-                    <span class="font-mono font-bold text-slate-800 dir-ltr"><?= htmlspecialchars($wallet['bank_sheba'] ?: 'ثبت نشده') ?></span>
-                </div>
-                <div class="flex justify-between">
-                    <span class="text-slate-500">بانک عامل:</span>
-                    <span class="font-bold text-slate-800"><?= htmlspecialchars($wallet['bank_name'] ?: 'بانک متصل شبا') ?></span>
-                </div>
-            </div>
-        </div>
-
-        <!-- Quick Actions & SMS Topup (Col 5) -->
-        <div class="lg:col-span-5 space-y-6">
-            <!-- SMS Quick Recharge -->
-            <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-4">
-                <div class="flex justify-between items-center border-b border-slate-100 pb-3">
-                    <h4 class="font-bold text-sm text-slate-900 flex items-center gap-1.5">
-                        <span class="material-symbols-outlined text-[#fd8100] text-base">forward_to_inbox</span>
-                        شارژ پیامک اختصاصی آسنا
-                    </h4>
-                    <span class="text-xs font-mono font-bold text-[#fd8100] bg-amber-50 px-2 py-0.5 rounded-lg">
-                        <?= (int)$wallet['sms_credits'] ?> پیامک موجود
-                    </span>
-                </div>
-                <p class="text-xs text-slate-500 leading-relaxed">
-                    برای ارسال پیامک‌های رهگیری سفارشات، یادآوری نوبت‌ها یا پیام به مشتریان، نیاز به شارژ اعتبار پیامک پلتفرم دارید.
-                </p>
-                <a href="?tab=sms" class="w-full bg-[#fd8100] hover:bg-[#ea580c] text-white py-3 rounded-xl font-bold text-xs flex items-center justify-center gap-2 shadow-sm transition">
-                    <span class="material-symbols-outlined text-sm">add_shopping_cart</span>
-                    <span>مشاهده و خرید بسته‌های پیامک</span>
-                </a>
-            </div>
-
-            <!-- Dedicated Support Ticket Quick Launch -->
-            <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-4">
-                <div class="flex justify-between items-center border-b border-slate-100 pb-3">
-                    <h4 class="font-bold text-sm text-slate-900 flex items-center gap-1.5">
-                        <span class="material-symbols-outlined text-primary text-base">support_agent</span>
-                        مکاتبه با واحد مالی آسنا
-                    </h4>
-                    <span class="text-[10px] text-slate-400">پاسخگویی مستقیم</span>
-                </div>
-                <p class="text-xs text-slate-500 leading-relaxed">
-                    هرگونه مغایرت در تسویه، تغییر شماره شبا یا سوال در مورد کارمزد ۱۵٪ را مستقیماً از طریق تیکت اختصاصی مطرح نمایید.
-                </p>
-                <a href="?tab=tickets" class="w-full bg-[#001a48] hover:bg-[#002d72] text-white py-3 rounded-xl font-bold text-xs flex items-center justify-center gap-2 shadow-sm transition">
-                    <span class="material-symbols-outlined text-sm">chat</span>
-                    <span>ثبت تیکت جدید با مدیریت آسنا</span>
-                </a>
-            </div>
-        </div>
-    </div>
-    <?php endif; ?>
-
-    <!-- TAB 2: DEBITS & 15% COMMISSION BREAKDOWN -->
-    <?php if ($activeTab === 'debits'): ?>
-    <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-6">
-        <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-2 border-b border-slate-100 pb-4">
-            <div>
-                <h3 class="font-bold text-slate-900 text-sm flex items-center gap-2">
-                    <span class="material-symbols-outlined text-rose-600 text-base">point_of_sale</span>
-                    ریز اقلام کارمزدهای کسر شده (سهم ۱۵٪ پلتفرم آسنا)
-                </h3>
-                <p class="text-xs text-slate-500 mt-0.5">کارمزد ۱۵٪ بابت خدمات بازاریابی، پشتیبانی، هاستینگ و زیرساخت پرداخت از مبالغ فروش کسر می‌گردد.</p>
-            </div>
-            <span class="font-bold text-xs text-rose-700 bg-rose-50 px-3 py-1.5 rounded-xl border border-rose-100">
-                مجموع کارمزدهای کسر شده: <?= number_format($totalCommissionPaid) ?> تومان
-            </span>
-        </div>
-
-        <div class="overflow-x-auto rounded-2xl border border-slate-200">
-            <table class="w-full text-xs text-right">
-                <thead class="bg-slate-50 text-slate-700 font-bold">
-                    <tr>
-                        <th class="p-3">نوع خدمت</th>
-                        <th class="p-3">شناسه سفارش / نوبت</th>
-                        <th class="p-3">تاریخ ثبت</th>
-                        <th class="p-3 text-center">مبلغ ناخالص فروش</th>
-                        <th class="p-3 text-center text-rose-600">کارمزد پلتفرم آسنا (۱۵٪)</th>
-                        <th class="p-3 text-center text-emerald-700">سهم خالص شما (۸۵٪)</th>
-                        <th class="p-3 text-center">وضعیت تسویه</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-slate-100">
-                    <?php foreach ($ledgerItems as $l): ?>
-                    <tr class="hover:bg-slate-50">
-                        <td class="p-3"><span class="px-2 py-0.5 rounded bg-blue-50 text-blue-700 font-bold text-[10px]">فروش کالا</span></td>
-                        <td class="p-3 font-mono font-bold">#PC-<?= (int)$l['order_id'] ?></td>
-                        <td class="p-3 text-slate-500"><?= htmlspecialchars(substr($l['order_date'] ?? $l['created_at'], 0, 16)) ?></td>
-                        <td class="p-3 text-center font-mono"><?= number_format($l['gross_amount']) ?> ت</td>
-                        <td class="p-3 text-center font-mono font-bold text-rose-600">-<?= number_format($l['commission_amount']) ?> ت</td>
-                        <td class="p-3 text-center font-mono font-bold text-emerald-700"><?= number_format($l['net_seller_amount']) ?> ت</td>
-                        <td class="p-3 text-center">
-                            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold <?= $l['status'] === 'settled_in_batch' ? 'bg-emerald-100 text-emerald-800' : 'bg-blue-100 text-blue-800' ?>">
-                                <?= $l['status'] === 'settled_in_batch' ? 'واریز شده در پایا' : ($l['status'] === 'released_to_available' ? 'آماده پنج‌شنبه' : 'اسکرو ۷ روزه') ?>
-                            </span>
-                        </td>
-                    </tr>
-                    <?php endforeach; ?>
-
-                    <?php foreach ($appointmentItems as $apt): 
-                        $fee = (int)$apt['fee'];
-                        $comm = (int)($apt['commission_amount'] ?: round($fee * 0.05));
-                        $net = (int)($apt['net_amount'] ?: ($fee - $comm));
-                    ?>
-                    <tr class="hover:bg-slate-50">
-                        <td class="p-3"><span class="px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 font-bold text-[10px]">ویزیت پزشک</span></td>
-                        <td class="p-3 font-mono font-bold">#APT-<?= (int)$apt['id'] ?></td>
-                        <td class="p-3 text-slate-500"><?= htmlspecialchars($apt['appointment_date']) ?> (ساعت <?= htmlspecialchars($apt['appointment_time']) ?>)</td>
-                        <td class="p-3 text-center font-mono"><?= number_format($fee) ?> ت</td>
-                        <td class="p-3 text-center font-mono font-bold text-rose-600">-<?= number_format($comm) ?> ت</td>
-                        <td class="p-3 text-center font-mono font-bold text-emerald-700"><?= number_format($net) ?> ت</td>
-                        <td class="p-3 text-center">
-                            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold <?= $apt['settlement_status'] === 'settled_in_batch' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800' ?>">
-                                <?= $apt['settlement_status'] === 'settled_in_batch' ? 'واریز شده در پایا' : ($apt['settlement_status'] === 'available_for_payout' ? 'آماده پنج‌شنبه' : 'در انتظار ویزیت') ?>
-                            </span>
-                        </td>
-                    </tr>
-                    <?php endforeach; ?>
-
-                    <?php if (empty($ledgerItems) && empty($appointmentItems)): ?>
-                    <tr>
-                        <td colspan="7" class="p-6 text-center text-slate-400">هنوز سفارشی برای کسر کارمزد ثبت نگردیده است.</td>
-                    </tr>
-                    <?php endif; ?>
-                </tbody>
-            </table>
-        </div>
-    </div>
-    <?php endif; ?>
-
-    <!-- TAB 3: PAYA PAYOUTS & OFFICIAL RECEIPTS -->
-    <?php if ($activeTab === 'payouts'): ?>
-    <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-6">
-        <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-2 border-b border-slate-100 pb-4">
-            <div>
-                <h3 class="font-bold text-slate-900 text-sm flex items-center gap-2">
-                    <span class="material-symbols-outlined text-emerald-600 text-base">receipt_long</span>
-                    تاریخچه حواله‌های پایا و رسیدهای رسمی هفتگی صادرشده
-                </h3>
-                <p class="text-xs text-slate-500 mt-0.5">واریز مستقیم از حساب خزانه‌داری آسنا به شماره شبای شما، با کیوآرکد و امضای دیجیتال</p>
-            </div>
-            <span class="font-bold text-xs text-emerald-700 bg-emerald-50 px-3 py-1.5 rounded-xl border border-emerald-100">
-                مجموع تسویه‌شده مادام‌العمر: <?= number_format((int)$wallet['balance_settled_lifetime']) ?> تومان
-            </span>
-        </div>
-
-        <?php if (!empty($payoutBatches)): ?>
-        <div class="overflow-x-auto rounded-2xl border border-slate-200">
-            <table class="w-full text-xs text-right">
-                <thead class="bg-slate-50 text-slate-700 font-bold">
-                    <tr>
-                        <th class="p-3">شناسه یکتای پایا</th>
-                        <th class="p-3">تاریخ و ساعت پردازش</th>
-                        <th class="p-3 text-center">مبلغ کل بسته</th>
-                        <th class="p-3 text-center">وضعیت حواله</th>
-                        <th class="p-3 text-center">عملیات و مدارک رسمی</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-slate-100">
-                    <?php foreach ($payoutBatches as $b): ?>
-                    <tr class="hover:bg-slate-50">
-                        <td class="p-3 font-mono font-bold text-primary"><?= htmlspecialchars($b['batch_code']) ?></td>
-                        <td class="p-3 text-slate-600"><?= jdate('Y/m/d - H:i', strtotime($b['processed_at'] ?? $b['created_at'])) ?></td>
-                        <td class="p-3 text-center font-mono font-bold text-emerald-700"><?= number_format($b['total_payout_amount']) ?> تومان</td>
-                        <td class="p-3 text-center">
-                            <span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">
-                                ✔ تسویه موفق پایا
-                            </span>
-                        </td>
-                        <td class="p-3 text-center flex items-center justify-center gap-2">
-                            <a href="actions/generate_payout_receipt.php?batch_code=<?= urlencode($b['batch_code']) ?>" target="_blank" class="px-3 py-1.5 rounded-xl bg-[#001a48] hover:bg-[#002d72] text-white font-bold text-[11px] flex items-center gap-1 shadow-sm transition">
-                                <span class="material-symbols-outlined text-sm">print</span>
-                                <span>چاپ رسید رسمی با QR</span>
-                            </a>
-                            <a href="verify_payout.php?batch=<?= urlencode($b['batch_code']) ?>" target="_blank" class="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-[11px] flex items-center gap-1 transition">
-                                <span class="material-symbols-outlined text-sm">verified</span>
-                                <span>استعلام بانکی</span>
-                            </a>
-                        </td>
-                    </tr>
-                    <?php endforeach; ?>
-                </tbody>
-            </table>
-        </div>
-        <?php else: ?>
-        <div class="p-8 text-center text-slate-400 space-y-2">
-            <span class="material-symbols-outlined text-4xl text-slate-300">account_balance_wallet</span>
-            <p class="text-xs">هنوز حواله پایا صادر نشده است. اولین حواله در سیکل پنج‌شنبه‌ها ساعت ۹:۰۰ صبح صادر خواهد شد.</p>
-        </div>
-        <?php endif; ?>
-    </div>
-    <?php endif; ?>
-
-    <!-- TAB 4: SMS PACKAGES & USAGE -->
-    <?php if ($activeTab === 'sms'): ?>
-    <div class="space-y-6">
-
-        <!-- Enforcement & Live Sender Console -->
-        <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-4">
-            <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-3 border-b border-slate-100 pb-4">
-                <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-2xl <?= (int)$wallet['sms_credits'] > 0 ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600' ?> flex items-center justify-center">
-                        <span class="material-symbols-outlined"><?= (int)$wallet['sms_credits'] > 0 ? 'mark_chat_read' : 'phonelink_erase' ?></span>
-                    </div>
-                    <div>
-                        <h4 class="font-black text-slate-900 text-sm">ارسال مستقیم پیامک به مراجعین یا مشتریان (تست محدودیت اعتبار)</h4>
-                        <p class="text-xs text-slate-500 mt-0.5">ارسال پیامک با زیرساخت وب‌سرویس ملی‌پیامک آسنا؛ هر پیامک ۱ اعتبار از حساب شما کسر می‌کند.</p>
+                <!-- 1. Quick Pet Selection (For Logged In Users) -->
+                <?php if (!empty($userPets)): ?>
+                <div class="space-y-2 bg-white/5 p-3.5 rounded-2xl border border-white/10">
+                    <label class="text-xs font-bold text-white/90 flex items-center gap-2">
+                        <span class="material-symbols-outlined text-amber-400 text-sm">pets</span>
+                        <span>انتخاب سریع از میان پت‌های ثبت‌شده شما:</span>
+                    </label>
+                    <div class="flex flex-wrap gap-2">
+                        <?php foreach ($userPets as $up): ?>
+                        <button type="button" 
+                                onclick="selectRegisteredPet(<?= htmlspecialchars(json_encode($up), ENT_QUOTES, 'UTF-8') ?>)"
+                                class="registered-pet-btn px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-xs font-bold text-white border border-white/15 transition flex items-center gap-1.5 cursor-pointer">
+                            <span><?= ($up['type'] === 'cat') ? '🐈' : (($up['type'] === 'horse') ? '🐎' : '🐕') ?></span>
+                            <span><?= htmlspecialchars($up['name']) ?></span>
+                            <span class="text-[10px] text-white/60 font-mono"><?= $up['weight_kg'] > 0 ? (float)$up['weight_kg'] . ' kg' : '' ?></span>
+                        </button>
+                        <?php endforeach; ?>
                     </div>
                 </div>
-                <div class="flex items-center gap-2">
-                    <span class="text-xs text-slate-500 font-bold">وضعیت حساب:</span>
-                    <?php if ((int)$wallet['sms_credits'] > 0): ?>
-                        <span class="px-3 py-1 rounded-xl bg-emerald-100 text-emerald-800 font-black text-xs">
-                            مجاز به ارسال (<?= number_format((int)$wallet['sms_credits']) ?> اعتبار)
-                        </span>
-                    <?php else: ?>
-                        <span class="px-3 py-1 rounded-xl bg-rose-100 text-rose-800 font-black text-xs flex items-center gap-1">
-                            <span class="material-symbols-outlined text-xs">block</span>
-                            <span>مسدود شده (اعتبار صفر)</span>
-                        </span>
-                    <?php endif; ?>
+                <?php endif; ?>
+
+                <!-- 2. Pet Species & Clinical Profile -->
+                <div class="space-y-3">
+                    <label class="text-xs sm:text-sm font-bold text-white/90 flex items-center gap-2">
+                        <span class="w-6 h-6 rounded-lg bg-white/15 flex items-center justify-center text-xs">۱</span>
+                        مشخصات بالینی بیمار (گونه و جثه):
+                    </label>
+                    
+                    <!-- Species Switcher -->
+                    <div class="grid grid-cols-3 sm:grid-cols-5 gap-2">
+                        <button type="button" onclick="setDrugSpecies('dog')" id="drugSpeciesDog" class="drug-species-btn py-2.5 px-2 rounded-2xl font-black text-xs flex flex-col items-center justify-center gap-1 border-2 transition-all bg-blue-500 text-white border-blue-400 shadow-md cursor-pointer">
+                            <span class="text-lg">🐕</span>
+                            <span>سگ (Canine)</span>
+                        </button>
+                        <button type="button" onclick="setDrugSpecies('cat')" id="drugSpeciesCat" class="drug-species-btn py-2.5 px-2 rounded-2xl font-bold text-xs flex flex-col items-center justify-center gap-1 border-2 transition-all bg-white/10 text-white/80 border-white/15 hover:bg-white/15 cursor-pointer">
+                            <span class="text-lg">🐈</span>
+                            <span>گربه (Feline)</span>
+                        </button>
+                        <button type="button" onclick="setDrugSpecies('horse')" id="drugSpeciesHorse" class="drug-species-btn py-2.5 px-2 rounded-2xl font-bold text-xs flex flex-col items-center justify-center gap-1 border-2 transition-all bg-white/10 text-white/80 border-white/15 hover:bg-white/15 cursor-pointer">
+                            <span class="text-lg">🐎</span>
+                            <span>اسب (Equine)</span>
+                        </button>
+                        <button type="button" onclick="setDrugSpecies('bird')" id="drugSpeciesBird" class="drug-species-btn py-2.5 px-2 rounded-2xl font-bold text-xs flex flex-col items-center justify-center gap-1 border-2 transition-all bg-white/10 text-white/80 border-white/15 hover:bg-white/15 cursor-pointer">
+                            <span class="text-lg">🦜</span>
+                            <span>پرنده (Avian)</span>
+                        </button>
+                        <button type="button" onclick="setDrugSpecies('exotic')" id="drugSpeciesExotic" class="drug-species-btn py-2.5 px-2 rounded-2xl font-bold text-xs flex flex-col items-center justify-center gap-1 border-2 transition-all bg-white/10 text-white/80 border-white/15 hover:bg-white/15 cursor-pointer">
+                            <span class="text-lg">🐇</span>
+                            <span>اگزوتیک/خرگوش</span>
+                        </button>
+                    </div>
+
+                    <!-- Pet Name, Breed & Weight Fields -->
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+                        <div>
+                            <label class="block text-[11px] font-bold text-white/70 mb-1">نام بیمار:</label>
+                            <input type="text" id="drugPetName" placeholder="مثال: لئو / بتی" class="w-full bg-white/10 border border-white/20 rounded-xl px-3 py-2 text-xs text-white placeholder-white/40 focus:outline-none focus:border-blue-400">
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-bold text-white/70 mb-1">نژاد پت:</label>
+                            <input type="text" id="drugPetRace" placeholder="مثال: ژرمن شپرد / پرشین" class="w-full bg-white/10 border border-white/20 rounded-xl px-3 py-2 text-xs text-white placeholder-white/40 focus:outline-none focus:border-blue-400">
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-bold text-white/70 mb-1">وزن بیمار (کیلوگرم):</label>
+                            <div class="relative">
+                                <input type="number" id="drugPetWeight" value="12" min="0.2" max="120" step="0.5" class="w-full bg-white/10 border border-white/20 rounded-xl px-3 py-2 text-xs font-mono font-bold text-white focus:outline-none focus:border-blue-400 text-left dir-ltr pl-8">
+                                <span class="absolute left-2.5 top-2 text-[10px] text-white/50">kg</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-            </div>
 
-            <?php if ((int)$wallet['sms_credits'] <= 0): ?>
-            <div class="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-start gap-3">
-                <span class="material-symbols-outlined text-amber-700 mt-0.5">warning</span>
-                <div class="space-y-1">
-                    <p class="font-bold">محدودیت قطعی ارسال پیامک فعال است:</p>
-                    <p class="text-amber-800">
-                        موجودی پیامک اختصاصی شما <strong>۰ عدد</strong> است. کلیه ارسال‌های خودکار و دستی به بیماران، مراجعین و خریداران مسدود گردیده است. جهت برطرف شدن محدودیت و امکان ارسال پیامک، لطفاً یکی از بسته‌های شارژ زیر را تهیه فرمایید.
-                    </p>
-                </div>
-            </div>
-            <?php endif; ?>
-
-            <form method="POST" action="interactions.php?tab=sms" class="grid grid-cols-1 md:grid-cols-12 gap-3 pt-1">
-                <?= csrf_field() ?>
-                <input type="hidden" name="action" value="send_direct_sms">
-
-                <div class="md:col-span-4">
-                    <label class="block text-[11px] font-bold text-slate-700 mb-1">شماره همراه گیرنده (مشتری/بیمار):</label>
-                    <input type="text" name="recipient_phone" placeholder="0912..." dir="ltr" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-mono focus:ring-2 focus:ring-[#001a48] outline-none" required>
-                </div>
-
-                <div class="md:col-span-6">
-                    <label class="block text-[11px] font-bold text-slate-700 mb-1">متن پیامک ارسالی:</label>
-                    <input type="text" name="sms_message" placeholder="سلام، نوبت شما برای فردا ساعت ۱۰ رزرو است..." class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-[#001a48] outline-none" required>
-                </div>
-
-                <div class="md:col-span-2 flex items-end">
-                    <button type="submit" class="w-full py-2.5 px-4 rounded-xl <?= (int)$wallet['sms_credits'] > 0 ? 'bg-[#001a48] hover:bg-[#002d72] text-white' : 'bg-slate-200 text-slate-400 cursor-not-allowed' ?> font-bold text-xs shadow-sm transition flex items-center justify-center gap-1">
-                        <span class="material-symbols-outlined text-sm">send</span>
-                        <span>ارسال پیامک</span>
-                    </button>
-                </div>
-            </form>
-        </div>
-
-        <!-- Packages Cards -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <?php foreach ($smsPackages as $key => $p): ?>
-            <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm flex flex-col justify-between space-y-5 hover:border-[#fd8100] transition">
+                <!-- 3. Pre-existing Sensitive Conditions (بیماری‌های زمینه‌ای حساس) -->
                 <div class="space-y-2">
-                    <div class="flex justify-between items-center">
-                        <span class="text-xs font-bold text-[#fd8100] bg-amber-50 px-2.5 py-1 rounded-full"><?= $p['credits'] ?> پیامک</span>
-                        <span class="material-symbols-outlined text-slate-400">sms</span>
+                    <label class="text-xs font-bold text-white/90 flex items-center justify-between">
+                        <span class="flex items-center gap-1.5">
+                            <span class="material-symbols-outlined text-sm text-amber-300">clinical_notes</span>
+                            بیماری‌های زمینه‌ای و شرایط ویژه بیمار (اختیاری):
+                        </span>
+                        <span class="text-[10px] text-white/50">کلیک جهت انتخاب چندگانه</span>
+                    </label>
+                    <div class="flex flex-wrap gap-1.5">
+                        <button type="button" onclick="toggleCondition(this, 'renal')" class="condition-chip px-2.5 py-1 rounded-lg text-xs font-medium bg-white/10 hover:bg-white/15 text-white/80 border border-white/15 transition cursor-pointer">
+                            نارسایی کلیوی (CKD)
+                        </button>
+                        <button type="button" onclick="toggleCondition(this, 'hepatic')" class="condition-chip px-2.5 py-1 rounded-lg text-xs font-medium bg-white/10 hover:bg-white/15 text-white/80 border border-white/15 transition cursor-pointer">
+                            اختلال یا نارسایی کبدی
+                        </button>
+                        <button type="button" onclick="toggleCondition(this, 'cardiac')" class="condition-chip px-2.5 py-1 rounded-lg text-xs font-medium bg-white/10 hover:bg-white/15 text-white/80 border border-white/15 transition cursor-pointer">
+                            بیماری قلبی / فشار خون
+                        </button>
+                        <button type="button" onclick="toggleCondition(this, 'epilepsy')" class="condition-chip px-2.5 py-1 rounded-lg text-xs font-medium bg-white/10 hover:bg-white/15 text-white/80 border border-white/15 transition cursor-pointer">
+                            صرع و سابقه تشنج
+                        </button>
+                        <button type="button" onclick="toggleCondition(this, 'ulcer')" class="condition-chip px-2.5 py-1 rounded-lg text-xs font-medium bg-white/10 hover:bg-white/15 text-white/80 border border-white/15 transition cursor-pointer">
+                            زخم معده یا گوارشی
+                        </button>
+                        <button type="button" onclick="toggleCondition(this, 'diabetes')" class="condition-chip px-2.5 py-1 rounded-lg text-xs font-medium bg-white/10 hover:bg-white/15 text-white/80 border border-white/15 transition cursor-pointer">
+                            دیابت
+                        </button>
+                        <button type="button" onclick="toggleCondition(this, 'pregnancy')" class="condition-chip px-2.5 py-1 rounded-lg text-xs font-medium bg-white/10 hover:bg-white/15 text-white/80 border border-white/15 transition cursor-pointer">
+                            بارداری یا شیردهی
+                        </button>
+                        <button type="button" onclick="toggleCondition(this, 'mdr1')" class="condition-chip px-2.5 py-1 rounded-lg text-xs font-medium bg-white/10 hover:bg-white/15 text-white/80 border border-white/15 transition cursor-pointer">
+                            جهش ژنی حساسیت MDR1
+                        </button>
                     </div>
-                    <h4 class="font-black text-slate-900 text-base"><?= htmlspecialchars($p['name']) ?></h4>
-                    <p class="text-xs text-slate-500 leading-relaxed"><?= htmlspecialchars($p['desc']) ?></p>
                 </div>
 
-                <div class="border-t border-slate-100 pt-4 space-y-3">
-                    <div class="text-xl font-black font-mono text-slate-900">
-                        <?= number_format($p['price']) ?> <span class="text-xs text-slate-400 font-normal">تومان</span>
-                    </div>
+                <!-- 4. Drug Search & Intake Manager -->
+                <div class="space-y-3 pt-2 border-t border-white/10">
+                    <label class="text-xs sm:text-sm font-bold text-white/90 flex items-center justify-between">
+                        <span class="flex items-center gap-2">
+                            <span class="w-6 h-6 rounded-lg bg-white/15 flex items-center justify-center text-xs">۲</span>
+                            افزودن داروهای مصرفی همزمان:
+                        </span>
+                        <span class="text-[10px] text-blue-200">جستجو در داروخانه یا تایپ دستی</span>
+                    </label>
 
-                    <div class="grid grid-cols-2 gap-2">
-                        <!-- Option A: Pay from Wallet -->
-                        <form method="POST" action="interactions.php" onsubmit="return confirm('آیا مایلید هزینه این بسته از موجودی کیف پول شما کسر گردد؟');">
-                            <?= csrf_field() ?>
-                            <input type="hidden" name="action" value="buy_sms_wallet">
-                            <input type="hidden" name="package_key" value="<?= $key ?>">
-                            <button type="submit" class="w-full py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-[11px] font-bold transition">
-                                کسر از کیف‌پول
+                    <!-- Search Input with Autocomplete Dropdown -->
+                    <div class="relative">
+                        <div class="flex items-center bg-white rounded-2xl shadow-md overflow-hidden p-1">
+                            <span class="material-symbols-outlined text-slate-400 px-3 text-xl">search</span>
+                            <input type="text" id="drugSearchInput" 
+                                   placeholder="نام دارو را جستجو یا تایپ کنید (مثلاً: کارپروفن، پردنیزولون، انروفلوکساسین...)" 
+                                   autocomplete="off"
+                                   class="w-full py-2.5 text-xs text-slate-800 focus:outline-none placeholder-slate-400">
+                            <button type="button" onclick="addCustomDrugFromInput()" class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-4 py-2 rounded-xl transition flex items-center gap-1 shrink-0 cursor-pointer">
+                                <span class="material-symbols-outlined text-base">add</span>
+                                <span>افزودن دارو</span>
                             </button>
-                        </form>
+                        </div>
 
-                        <!-- Option B: Pay Online Gateway -->
-                        <form method="POST" action="interactions.php">
-                            <?= csrf_field() ?>
-                            <input type="hidden" name="action" value="buy_sms_gateway">
-                            <input type="hidden" name="package_key" value="<?= $key ?>">
-                            <button type="submit" class="w-full py-2.5 rounded-xl bg-[#fd8100] hover:bg-[#ea580c] text-white text-[11px] font-bold shadow-sm transition">
-                                پرداخت آنلاین
-                            </button>
-                        </form>
+                        <!-- Autocomplete Results Menu -->
+                        <div id="drugSearchResults" class="hidden absolute top-full right-0 left-0 mt-2 bg-white rounded-2xl shadow-2xl border border-slate-200 z-50 overflow-hidden text-right max-h-64 overflow-y-auto">
+                            <!-- Populated dynamically via JS -->
+                        </div>
                     </div>
-                </div>
-            </div>
-            <?php endforeach; ?>
-        </div>
 
-        <!-- Recent SMS Purchases & Usage Logs -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <!-- Purchases -->
-            <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-4">
-                <h4 class="font-bold text-xs text-slate-800 flex items-center gap-1.5 border-b border-slate-100 pb-3">
-                    <span class="material-symbols-outlined text-sm text-[#fd8100]">shopping_bag</span>
-                    سوابق خرید بسته‌های پیامک
-                </h4>
-                <div class="overflow-x-auto">
-                    <table class="w-full text-xs text-right">
-                        <thead class="text-slate-400">
-                            <tr>
-                                <th class="pb-2">بسته</th>
-                                <th class="pb-2">مبلغ</th>
-                                <th class="pb-2">روش پرداخت</th>
-                                <th class="pb-2">تاریخ</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-slate-100">
-                            <?php foreach ($smsPurchases as $sp): ?>
-                            <tr>
-                                <td class="py-2 font-bold"><?= htmlspecialchars($sp['package_name']) ?></td>
-                                <td class="py-2 font-mono"><?= number_format($sp['price']) ?> ت</td>
-                                <td class="py-2 text-[10px] text-slate-500"><?= $sp['payment_method'] === 'wallet' ? 'کیف‌پول' : 'درگاه پرداخت' ?></td>
-                                <td class="py-2 text-slate-400 text-[10px]"><?= jdate('Y/m/d', strtotime($sp['created_at'])) ?></td>
-                            </tr>
-                            <?php endforeach; ?>
-                            <?php if (empty($smsPurchases)): ?>
-                            <tr><td colspan="4" class="py-4 text-center text-slate-400">تاکنون بسته‌ای خریداری نشده است.</td></tr>
-                            <?php endif; ?>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <!-- Usage Logs -->
-            <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-4">
-                <h4 class="font-bold text-xs text-slate-800 flex items-center gap-1.5 border-b border-slate-100 pb-3">
-                    <span class="material-symbols-outlined text-sm text-primary">history</span>
-                    گزارش پیامک‌های ارسالی به مشتریان
-                </h4>
-                <div class="overflow-x-auto">
-                    <table class="w-full text-xs text-right">
-                        <thead class="text-slate-400">
-                            <tr>
-                                <th class="pb-2">گیرنده</th>
-                                <th class="pb-2">متن پیامک</th>
-                                <th class="pb-2">تاریخ ارسال</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-slate-100">
-                            <?php foreach ($smsLogs as $sl): ?>
-                            <tr>
-                                <td class="py-2 font-mono dir-ltr text-right"><?= htmlspecialchars($sl['recipient']) ?></td>
-                                <td class="py-2 truncate max-w-[200px]" title="<?= htmlspecialchars($sl['message']) ?>"><?= htmlspecialchars($sl['message']) ?></td>
-                                <td class="py-2 text-slate-400 text-[10px]"><?= jdate('Y/m/d - H:i', strtotime($sl['created_at'])) ?></td>
-                            </tr>
-                            <?php endforeach; ?>
-                            <?php if (empty($smsLogs)): ?>
-                            <tr><td colspan="3" class="py-4 text-center text-slate-400">هیچ پیامکی ثبت نشده است.</td></tr>
-                            <?php endif; ?>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    </div>
-    <?php endif; ?>
-
-    <!-- TAB 5: SEPARATED TICKETS WITH ASENA MANAGEMENT -->
-    <?php if ($activeTab === 'tickets'): ?>
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        <!-- New Ticket Form (Col 5) -->
-        <div class="lg:col-span-5 bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-4">
-            <h4 class="font-bold text-sm text-slate-900 flex items-center gap-2 border-b border-slate-100 pb-3">
-                <span class="material-symbols-outlined text-primary text-base">edit_note</span>
-                ارسال تیکت جدید به مدیریت و خزانه‌داری آسنا
-            </h4>
-
-            <form method="POST" action="interactions.php" class="space-y-4">
-                <?= csrf_field() ?>
-                <input type="hidden" name="action" value="new_ticket_with_asena">
-
-                <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1">دپارتمان مربوطه:</label>
-                    <select name="department" class="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs font-bold bg-slate-50 outline-none">
-                        <option value="امور مالی و تسویه پایا">امور مالی و تسویه پایا پنج‌شنبه‌ها</option>
-                        <option value="شارژ پنل پیامک و فاکتور">شارژ پنل پیامک و فاکتور</option>
-                        <option value="استعلام کارمزد و کاتالوگ">استعلام کارمزد ۱۵٪ و مغایرت سفارش</option>
-                        <option value="پشتیبانی فنی پلتفرم">پشتیبانی فنی و دسترسی</option>
-                    </select>
-                </div>
-
-                <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1">موضوع تیکت:</label>
-                    <input type="text" name="subject" required placeholder="عنوان درخواست..." class="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs font-bold bg-slate-50 outline-none">
-                </div>
-
-                <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1">شرح درخواست یا پیام:</label>
-                    <textarea name="message" required rows="4" placeholder="متن پیام خود را با جزئیات بنویسید..." class="w-full p-3 rounded-xl border border-slate-200 text-xs bg-slate-50 outline-none leading-relaxed"></textarea>
-                </div>
-
-                <button type="submit" class="w-full bg-[#001a48] hover:bg-[#002d72] text-white py-3 rounded-xl font-bold text-xs flex items-center justify-center gap-2 shadow-sm transition">
-                    <span class="material-symbols-outlined text-sm">send</span>
-                    <span>ارسال تیکت به مدیریت آسنا</span>
-                </button>
-            </form>
-        </div>
-
-        <!-- Tickets List (Col 7) -->
-        <div class="lg:col-span-7 bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-4">
-            <h4 class="font-bold text-sm text-slate-900 flex items-center gap-2 border-b border-slate-100 pb-3">
-                <span class="material-symbols-outlined text-primary text-base">forum</span>
-                مکاتبات و تیکت‌های تفکیک‌شده شما با مدیریت پلتفرم آسنا
-            </h4>
-
-            <?php if (!empty($myTickets)): ?>
-            <div class="space-y-3">
-                <?php foreach ($myTickets as $t): ?>
-                <div class="p-4 rounded-2xl border border-slate-100 hover:border-slate-300 transition bg-slate-50/60 flex items-center justify-between gap-4">
-                    <div class="space-y-1">
-                        <div class="flex items-center gap-2">
-                            <span class="font-bold text-xs text-slate-900">تیکت #<?= $t['id'] ?></span>
-                            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold <?= $t['status'] === 'open' ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-200 text-slate-600' ?>">
-                                <?= $t['status'] === 'open' ? 'درحال پیگیری' : 'بسته شده' ?>
+                    <!-- Selected Medication Chips / Pills Container -->
+                    <div class="space-y-2">
+                        <div class="flex items-center justify-between text-[11px] text-white/70">
+                            <span>فهرست داروهای انتخاب‌شده (<span id="drugCountBadge" class="font-bold text-amber-300 font-mono">۰</span> قلم):</span>
+                            <button type="button" onclick="clearAllDrugs()" class="text-white/50 hover:text-white transition text-[10px] cursor-pointer">پاک کردن همه</button>
+                        </div>
+                        
+                        <div id="selectedDrugsContainer" class="min-h-[70px] bg-white/5 rounded-2xl p-3 border border-white/10 flex flex-wrap items-center gap-2">
+                            <span id="emptyDrugsPrompt" class="text-xs text-white/40 flex items-center gap-1.5 py-2 px-1">
+                                <span class="material-symbols-outlined text-sm">info</span>
+                                هنوز دارویی اضافه نشده است. حداقل ۲ داروی همزمان را جهت بررسی تداخل یا ۱ دارو را برای بررسی سمیت گونه‌ای وارد فرمایید.
                             </span>
                         </div>
-                        <p class="text-xs text-slate-600 truncate max-w-sm"><?= htmlspecialchars($t['last_message']) ?></p>
-                        <span class="text-[10px] text-slate-400 block"><?= jdate('Y/m/d - H:i', strtotime($t['last_time'] ?? $t['created_at'])) ?></span>
                     </div>
 
-                    <a href="chat.php?ticket_id=<?= $t['id'] ?>" class="px-4 py-2 rounded-xl bg-white border border-slate-200 hover:bg-primary hover:text-white text-primary text-xs font-bold shadow-sm transition shrink-0 flex items-center gap-1">
-                        <span>مشاهده و چت</span>
-                        <span class="material-symbols-outlined text-xs">arrow_back</span>
-                    </a>
+                    <!-- One-Click Preset Clinical Scenarios -->
+                    <div class="pt-2">
+                        <div class="text-[11px] font-bold text-white/70 mb-1.5 flex items-center gap-1">
+                            <span class="material-symbols-outlined text-xs text-amber-400">science</span>
+                            <span>سناریوهای بالینی آماده (برای تست سریع سیستم):</span>
+                        </div>
+                        <div class="flex flex-wrap gap-1.5 text-[10px]">
+                            <button type="button" onclick="loadScenario('nsaid_steroid')" class="px-2.5 py-1 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-red-200 border border-red-400/30 font-bold transition flex items-center gap-1 cursor-pointer">
+                                <span>🚨 تداخل مرگبار: کارپروفن + پردنیزولون</span>
+                            </button>
+                            <button type="button" onclick="loadScenario('paracetamol_cat')" class="px-2.5 py-1 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-red-200 border border-red-400/30 font-bold transition flex items-center gap-1 cursor-pointer">
+                                <span>🚨 سمیت کشنده: استامینوفن در گربه</span>
+                            </button>
+                            <button type="button" onclick="loadScenario('antibiotic_sucralfate')" class="px-2.5 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 border border-amber-400/30 font-bold transition flex items-center gap-1 cursor-pointer">
+                                <span>⚠️ افت جذب: انروفلوکساسین + سوکرالفات</span>
+                            </button>
+                            <button type="button" onclick="loadScenario('safe_duo')" class="px-2.5 py-1 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-200 border border-emerald-400/30 font-bold transition flex items-center gap-1 cursor-pointer">
+                                <span>✅ هم‌افزای ایمن: آموکسی‌سیلین + پروبیوتیک</span>
+                            </button>
+                        </div>
+                    </div>
+
                 </div>
-                <?php endforeach; ?>
+
+                <!-- 5. Primary Analysis Action Button -->
+                <div class="pt-2">
+                    <button type="button" onclick="runDrugInteractionAnalysis()" id="btnRunDrugAnalysis" class="w-full bg-gradient-to-r from-blue-500 via-blue-600 to-indigo-600 hover:from-blue-400 hover:to-indigo-500 text-white py-4 px-6 rounded-2xl font-black text-sm text-center shadow-xl shadow-blue-600/30 hover:shadow-blue-500/50 transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-98">
+                        <span class="material-symbols-outlined text-xl">psychology</span>
+                        <span>شروع پایش و تحلیل تداخلات با هوش مصنوعی بالینی</span>
+                    </button>
+                </div>
+
             </div>
-            <?php else: ?>
-            <div class="p-8 text-center text-slate-400 space-y-2">
-                <span class="material-symbols-outlined text-4xl text-slate-300">chat</span>
-                <p class="text-xs">تاکنون تیکتی با مدیریت آسنا ثبت نکرده‌اید.</p>
+
+            <!-- Right Results Column (5 cols) -->
+            <div class="lg:col-span-5 flex flex-col justify-between space-y-6">
+
+                <!-- Clinical Verification Header Badge -->
+                <div class="bg-white/10 backdrop-blur-md rounded-3xl p-5 border border-white/15 space-y-3">
+                    <div class="flex items-center justify-between border-b border-white/10 pb-3">
+                        <div class="flex items-center gap-2">
+                            <span class="material-symbols-outlined text-blue-400 text-xl">monitor_heart</span>
+                            <span class="font-bold text-xs sm:text-sm">وضعیت ارزیابی فارماکوکینتیک</span>
+                        </div>
+                        <span id="analysisStatusBadge" class="text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-white/15 text-white/80">
+                            در انتظار داروها
+                        </span>
+                    </div>
+
+                    <!-- Dynamic Visual Safety Meter Card -->
+                    <div id="safetyMeterBox" class="p-4 rounded-2xl bg-white/5 border border-white/10 text-center space-y-2 transition-all">
+                        <div id="safetyIconWrap" class="w-14 h-14 rounded-2xl bg-blue-500/20 text-blue-300 flex items-center justify-center text-3xl mx-auto shadow-inner">
+                            <span class="material-symbols-outlined text-3xl">medication_liquid</span>
+                        </div>
+                        <h4 id="safetyHeading" class="text-base font-black text-white">پایشگر آماده بررسی است</h4>
+                        <p id="safetySummaryText" class="text-xs text-white/70 leading-relaxed">
+                            پس از افزودن داروهای پت، روی دکمه شروع پایش کلیک کنید تا آنالیز کامل شیمیایی و فیزیولوژیک صادر گردد.
+                        </p>
+                    </div>
+
+                    <!-- Detailed Interactive Results Container (Appears after analysis) -->
+                    <div id="detailedResultsArea" class="space-y-3 hidden">
+
+                        <!-- Interactions Accordion List -->
+                        <div id="interactionsListWrapper" class="space-y-2">
+                            <!-- Populated dynamically via JS -->
+                        </div>
+
+                        <!-- Species Contraindications Alert -->
+                        <div id="contraindicationsWrapper" class="space-y-2">
+                            <!-- Populated dynamically via JS -->
+                        </div>
+
+                        <!-- Time Spacing Guidelines -->
+                        <div id="timeSpacingWrapper" class="bg-amber-950/40 border border-amber-400/30 p-3.5 rounded-2xl space-y-1.5 hidden text-xs">
+                            <div class="font-bold text-amber-200 flex items-center gap-1.5">
+                                <span class="material-symbols-outlined text-sm">schedule</span>
+                                <span>دستورالعمل فاصله زمانی بین داروها:</span>
+                            </div>
+                            <ul id="timeSpacingList" class="space-y-1 text-[11px] text-amber-100/90 list-disc list-inside"></ul>
+                        </div>
+
+                        <!-- Safe Synergies List -->
+                        <div id="safeCombinationsWrapper" class="bg-emerald-950/40 border border-emerald-400/30 p-3.5 rounded-2xl space-y-1.5 hidden text-xs">
+                            <div class="font-bold text-emerald-200 flex items-center gap-1.5">
+                                <span class="material-symbols-outlined text-sm">verified</span>
+                                <span>هم‌پوشانی‌های ایمن و مفید:</span>
+                            </div>
+                            <ul id="safeCombinationsList" class="space-y-1 text-[11px] text-emerald-100/90 list-disc list-inside"></ul>
+                        </div>
+
+                        <!-- Action Buttons: Save to Dossier & Print -->
+                        <div class="pt-3 border-t border-white/10 grid grid-cols-2 gap-2">
+                            <button type="button" onclick="saveDrugReportToProfile()" id="btnSaveReport" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-2.5 px-3 rounded-xl font-bold text-xs transition flex items-center justify-center gap-1.5 shadow-md cursor-pointer">
+                                <span class="material-symbols-outlined text-base">save</span>
+                                <span>ثبت در پرونده پت</span>
+                            </button>
+                            <button type="button" onclick="window.print()" class="w-full bg-white/15 hover:bg-white/25 text-white py-2.5 px-3 rounded-xl font-bold text-xs transition flex items-center justify-center gap-1.5 cursor-pointer">
+                                <span class="material-symbols-outlined text-base">print</span>
+                                <span>چاپ نسخه بالینی</span>
+                            </button>
+                        </div>
+
+                        <!-- Direct Bridge to Vet Booking or Pharmacy -->
+                        <div class="pt-1 flex items-center justify-between text-[11px] text-white/70">
+                            <a href="booking.php" class="hover:text-amber-300 transition flex items-center gap-1">
+                                <span class="material-symbols-outlined text-xs text-amber-400">videocam</span>
+                                <span>مشاوره ویزیت با دامپزشک آنلاین</span>
+                            </a>
+                            <a href="pharmacy.php" class="hover:text-blue-300 transition flex items-center gap-1">
+                                <span class="material-symbols-outlined text-xs text-blue-400">local_pharmacy</span>
+                                <span>داروخانه دامپزشکی آسنا</span>
+                            </a>
+                        </div>
+
+                    </div>
+
+                </div>
+
             </div>
-            <?php endif; ?>
+
+        </div>
+
+    </div>
+
+    <!-- Printable Official Assessment Report Container (For window.print) -->
+    <div id="printableDrugReportArea" class="hidden">
+        <div style="direction: rtl; text-align: right; font-family: Tahoma, sans-serif; padding: 25px; border: 2px solid #001a48; border-radius: 12px; margin-bottom: 20px;">
+            <div style="display: flex; justify-content: space-between; border-bottom: 2px solid #001a48; padding-bottom: 12px; margin-bottom: 15px;">
+                <div>
+                    <h2 style="margin: 0; color: #001a48; font-size: 18px;">سامانه جامع دامپزشکی آسنا | گزارش رسمی پایش تداخلات دارویی پت</h2>
+                    <p style="margin: 4px 0 0 0; font-size: 11px; color: #666;">مطابق استانداردهای جهانی فارماکوپیا Plumb's Veterinary Drug Handbook</p>
+                </div>
+                <div style="text-align: left; font-size: 11px; font-family: monospace;">
+                    <div>شماره رهگیری: <strong id="printReportSerial">-</strong></div>
+                    <div>تاریخ صدور: <span id="printReportDate"><?= date('Y/m/d - H:i') ?></span></div>
+                </div>
+            </div>
+
+            <div style="background: #f8fafc; padding: 10px; border-radius: 8px; margin-bottom: 15px; font-size: 12px;">
+                <strong>مشخصات بیمار:</strong> <span id="printPetDetails">-</span>
+            </div>
+
+            <div style="margin-bottom: 15px; font-size: 12px;">
+                <strong>فهرست داروهای ارزیابی‌شده:</strong>
+                <div id="printDrugsList" style="margin-top: 5px; font-size: 11px; color: #333;">-</div>
+            </div>
+
+            <div id="printInteractionsSection" style="margin-bottom: 15px;">
+                <!-- Filled dynamically -->
+            </div>
+
+            <div style="margin-top: 30px; border-top: 1px dashed #ccc; padding-top: 10px; font-size: 10px; color: #777; text-align: center;">
+                این سند صرفاً خروجی هوش مصنوعی بالینی و پایگاه دانش فارماکولوژی آسنا است و جایگزین تشخیص و دستور کتبی دکتر دامپزشک نمی‌باشد.
+            </div>
         </div>
     </div>
-    <?php endif; ?>
 
-</div>
+    <!-- Educational Clinical FAQs Bento Grid -->
+    <div class="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-sm mb-12 space-y-6">
+        <div class="flex items-center gap-2 border-b border-slate-100 pb-3">
+            <span class="material-symbols-outlined text-blue-600 text-2xl">help</span>
+            <h3 class="text-sm sm:text-base font-black text-slate-800">
+                پرسش‌های متداول و راهنمای ایمنی مصرف داروی حیوانات خانگی
+            </h3>
+        </div>
 
-</body>
-</html>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs leading-relaxed text-slate-600">
+            <div class="p-4 rounded-2xl bg-slate-50 border border-slate-100 space-y-1.5">
+                <h4 class="font-bold text-slate-800 text-xs flex items-center gap-1.5 text-red-600">
+                    <span class="material-symbols-outlined text-sm">warning</span>
+                    چرا مصرف همزمان کورتون با مسکن‌های ضدالتهاب (NSAID) کشنده است؟
+                </h4>
+                <p>
+                    مسکن‌های ضدالتهاب غیر استروئیدی (مانند کارپروفن و ملوکسیکام) و داروهای استروئیدی (پردنیزولون و دگزامتازون) هر دو تولید موکوس محافظ لایه داخلی معده را به شدت سرکوب می‌کنند. مصرف همزمان این دو دسته منجر به زخم‌های عمیق، سوراخ شدن دیواره روده و خونریزی داخلی مهلک می‌گردد. حداقل ۵ الی ۷ روز فاصله پاک‌سازی (Washout) الزامی است.
+                </p>
+            </div>
+
+            <div class="p-4 rounded-2xl bg-slate-50 border border-slate-100 space-y-1.5">
+                <h4 class="font-bold text-slate-800 text-xs flex items-center gap-1.5 text-red-600">
+                    <span class="material-symbols-outlined text-sm">dangerous</span>
+                    چرا استامینوفن (پاراستامول) برای گربه‌ها سمی و کشنده است؟
+                </h4>
+                <p>
+                    گربه‌ها به دلیل نقص فیزیولوژیک در سیستم آنزیمی کبد (آنزیم گلوکورونیل ترانسفراز)، توانایی متابولیسم پاراستامول را ندارند. مصرف حتی نصف قرص استامینوفن در گربه باعث متهموگلوبینمی (تغییر ساختار هموگلوبین و ناتوانی در حمل اکسیژن)، تورم صورت، زردی و مرگ در چند ساعت می‌شود.
+                </p>
+            </div>
+
+            <div class="p-4 rounded-2xl bg-slate-50 border border-slate-100 space-y-1.5">
+                <h4 class="font-bold text-slate-800 text-xs flex items-center gap-1.5 text-amber-600">
+                    <span class="material-symbols-outlined text-sm">schedule</span>
+                    فاصله زمانی مجاز بین شربت‌های محافظ معده و آنتی‌بیوتیک‌ها چقدر است؟
+                </h4>
+                <p>
+                    داروهایی نظیر سوکرالفات، شربت‌های آنتی‌اسید و مکمل‌های حاوی کلسیم یا آهن با اتصال به آنتی‌بیوتیک‌هایی مانند انروفلوکساسین و تتراسایکلین‌ها مانع از جذب آن‌ها می‌شوند. همواره حداقل ۲ ساعت فاصله بین این داروها رعایت گردد.
+                </p>
+            </div>
+
+            <div class="p-4 rounded-2xl bg-slate-50 border border-slate-100 space-y-1.5">
+                <h4 class="font-bold text-slate-800 text-xs flex items-center gap-1.5 text-blue-600">
+                    <span class="material-symbols-outlined text-sm">pets</span>
+                    جهش ژنتیکی MDR1 در سگ‌ها چیست و چه داروهایی خطرناک است؟
+                </h4>
+                <p>
+                    در نژادهای گله نظیر کالی، استرالین شپرد و شلتی، جهش ژن MDR1 موجب نقص پمپ دفع دارویی در سد خونی-مغزی می‌شود. داروهایی مانند آیورمکتین و لوپرامید در این نژادها منجر به مسمومیت شدید عصبی و کما می‌گردد.
+                </p>
+            </div>
+        </div>
+    </div>
+
+</main>
+
+<script>
+(() => {
+    // Current drug interaction state
+    const state = {
+        species: 'dog',
+        petName: '',
+        race: '',
+        weight: 12,
+        conditions: [],
+        drugs: [],
+        latestReport: null
+    };
+
+    // DOM Elements
+    const searchInput = document.getElementById('drugSearchInput');
+    const searchResults = document.getElementById('drugSearchResults');
+    const selectedContainer = document.getElementById('selectedDrugsContainer');
+    const emptyPrompt = document.getElementById('emptyDrugsPrompt');
+    const drugCountBadge = document.getElementById('drugCountBadge');
+
+    // Species switcher
+    window.setDrugSpecies = function(species) {
+        state.species = species;
+        document.querySelectorAll('.drug-species-btn').forEach(btn => {
+            btn.classList.remove('bg-blue-500', 'border-blue-400', 'shadow-md');
+            btn.classList.add('bg-white/10', 'text-white/80', 'border-white/15');
+        });
+        const activeBtn = document.getElementById('drugSpecies' + species.charAt(0).toUpperCase() + species.slice(1));
+        if (activeBtn) {
+            activeBtn.classList.remove('bg-white/10', 'text-white/80', 'border-white/15');
+            activeBtn.classList.add('bg-blue-500', 'border-blue-400', 'shadow-md');
+        }
+    };
+
+    // Pre-existing condition toggle
+    window.toggleCondition = function(el, cond) {
+        const idx = state.conditions.indexOf(cond);
+        if (idx === -1) {
+            state.conditions.push(cond);
+            el.classList.add('bg-amber-500', 'text-slate-950', 'font-black', 'border-amber-400');
+            el.classList.remove('bg-white/10', 'text-white/80', 'border-white/15');
+        } else {
+            state.conditions.splice(idx, 1);
+            el.classList.remove('bg-amber-500', 'text-slate-950', 'font-black', 'border-amber-400');
+            el.classList.add('bg-white/10', 'text-white/80', 'border-white/15');
+        }
+    };
+
+    // Quick Pet Selection
+    window.selectRegisteredPet = function(pet) {
+        if (!pet) return;
+        if (pet.type && ['dog', 'cat', 'horse', 'bird', 'exotic'].includes(pet.type)) {
+            setDrugSpecies(pet.type);
+        }
+        const nameInp = document.getElementById('drugPetName');
+        const raceInp = document.getElementById('drugPetRace');
+        const weightInp = document.getElementById('drugPetWeight');
+
+        if (nameInp) nameInp.value = pet.name || '';
+        if (raceInp) raceInp.value = pet.race || '';
+        if (weightInp && pet.weight_kg > 0) weightInp.value = pet.weight_kg;
+
+        state.petName = pet.name || '';
+        state.race = pet.race || '';
+        state.weight = parseFloat(pet.weight_kg) || 12;
+    };
+
+    // Add drug item
+    window.addDrug = function(drugName, category = '', dose = '') {
+        const cleanName = drugName.trim();
+        if (!cleanName) return;
+
+        // Check if already added
+        const exists = state.drugs.some(d => d.name.toLowerCase() === cleanName.toLowerCase());
+        if (exists) {
+            searchInput.value = '';
+            searchResults.classList.add('hidden');
+            return;
+        }
+
+        state.drugs.push({
+            name: cleanName,
+            category: category,
+            dose: dose,
+            frequency: ''
+        });
+
+        renderDrugsList();
+        searchInput.value = '';
+        searchResults.classList.add('hidden');
+    };
+
+    window.addCustomDrugFromInput = function() {
+        const val = searchInput.value.trim();
+        if (val) {
+            addDrug(val, 'داروی تجویزی / آزاد');
+        }
+    };
+
+    // Remove single drug
+    window.removeDrug = function(idx) {
+        if (idx >= 0 && idx < state.drugs.length) {
+            state.drugs.splice(idx, 1);
+            renderDrugsList();
+        }
+    };
+
+    // Clear all drugs
+    window.clearAllDrugs = function() {
+        state.drugs = [];
+        renderDrugsList();
+        resetResultsView();
+    };
+
+    // Render drug chips
+    function renderDrugsList() {
+        if (drugCountBadge) drugCountBadge.textContent = state.drugs.length;
+
+        if (state.drugs.length === 0) {
+            selectedContainer.innerHTML = '';
+            selectedContainer.appendChild(emptyPrompt);
+            emptyPrompt.classList.remove('hidden');
+            return;
+        }
+
+        emptyPrompt.classList.add('hidden');
+        selectedContainer.innerHTML = '';
+
+        state.drugs.forEach((d, idx) => {
+            const chip = document.createElement('div');
+            chip.className = 'flex items-center gap-2 bg-white text-slate-800 py-1.5 px-3 rounded-xl text-xs font-bold shadow-sm border border-slate-200 animate-in fade-in zoom-in-95 duration-150';
+            chip.innerHTML = `
+                <span class="material-symbols-outlined text-blue-600 text-sm">medication</span>
+                <span>${escapeHtml(d.name)}</span>
+                ${d.category ? `<span class="text-[9px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded">${escapeHtml(d.category)}</span>` : ''}
+                <button type="button" onclick="removeDrug(${idx})" class="w-4 h-4 rounded-full bg-slate-200 hover:bg-red-500 hover:text-white text-slate-600 flex items-center justify-center text-[10px] transition cursor-pointer">✕</button>
+            `;
+            selectedContainer.appendChild(chip);
+        });
+    }
+
+    // Quick Preset Scenarios
+    window.loadScenario = function(type) {
+        state.drugs = [];
+        if (type === 'nsaid_steroid') {
+            setDrugSpecies('dog');
+            document.getElementById('drugPetName').value = 'تدی';
+            document.getElementById('drugPetRace').value = 'ژرمن شپرد';
+            document.getElementById('drugPetWeight').value = '28';
+            addDrug('کارپروفن ۵۰ (Rimadyl / Carprofen)', 'مسکن و ضدالتهاب NSAID');
+            addDrug('پردنیزولون ۵ (Prednisolone)', 'کورتیکواستروئید');
+        } else if (type === 'paracetamol_cat') {
+            setDrugSpecies('cat');
+            document.getElementById('drugPetName').value = 'لوسی';
+            document.getElementById('drugPetRace').value = 'DSH گربه خیابانی';
+            document.getElementById('drugPetWeight').value = '4';
+            addDrug('استامینوفن / پاراستامول (Acetaminophen)', 'ضد درد و تب انسانی');
+        } else if (type === 'antibiotic_sucralfate') {
+            setDrugSpecies('dog');
+            document.getElementById('drugPetName').value = 'مکس';
+            document.getElementById('drugPetRace').value = 'گلدن رتریور';
+            document.getElementById('drugPetWeight').value = '30';
+            addDrug('انروفلوکساسین (Enrofloxacin)', 'آنتی‌بیوتیک فلوروکینولون');
+            addDrug('شربت سوکرالفات (Sucralfate)', 'محافظ مخاط معده');
+        } else if (type === 'safe_duo') {
+            setDrugSpecies('dog');
+            document.getElementById('drugPetName').value = 'برفی';
+            document.getElementById('drugPetRace').value = 'پامرانین';
+            document.getElementById('drugPetWeight').value = '5';
+            addDrug('آموکسی‌سیلین-کلاوولانات (Clavamox)', 'آنتی‌بیوتیک پنی‌سیلین');
+            addDrug('پودر پروبیوتیک پت (Probiotic)', 'مکمل بازسازی فلور روده');
+        }
+    };
+
+    // Live search debounced against pharmacy_medicines
+    let searchTimeout = null;
+    if (searchInput) {
+        searchInput.addEventListener('input', (e) => {
+            const q = e.target.value.trim();
+            clearTimeout(searchTimeout);
+            if (q.length < 2) {
+                searchResults.classList.add('hidden');
+                return;
+            }
+
+            searchTimeout = setTimeout(async () => {
+                try {
+                    const res = await fetch(`actions/ai_drug_analysis.php?action=search&q=${encodeURIComponent(q)}&species=${state.species}`);
+                    const data = await res.json();
+                    if (data && data.success && data.results && data.results.length > 0) {
+                        searchResults.innerHTML = '';
+                        data.results.forEach(m => {
+                            const item = document.createElement('div');
+                            item.className = 'p-2.5 hover:bg-slate-50 border-b border-slate-100 flex items-center justify-between cursor-pointer transition';
+                            item.innerHTML = `
+                                <div class="flex items-center gap-2">
+                                    <span class="material-symbols-outlined text-blue-500 text-sm">vaccines</span>
+                                    <div>
+                                        <div class="text-xs font-bold text-slate-800">${escapeHtml(m.name)}</div>
+                                        <div class="text-[10px] text-slate-400">${escapeHtml(m.category || '')} ${m.brand ? '• ' + escapeHtml(m.brand) : ''}</div>
+                                    </div>
+                                </div>
+                                <span class="text-[10px] bg-blue-50 text-blue-700 px-2 py-0.5 rounded-lg font-bold">+ افزودن</span>
+                            `;
+                            item.onclick = () => addDrug(m.name, m.category || 'داروی داروخانه');
+                            searchResults.appendChild(item);
+                        });
+                        searchResults.classList.remove('hidden');
+                    } else {
+                        searchResults.innerHTML = `
+                            <div class="p-3 text-center text-xs text-slate-400">
+                                دارویی در کاتالوگ با این نام یافت نشد. دکمه «افزودن دارو» را بزنید تا با همین عنوان دستی اضافه شود.
+                            </div>
+                        `;
+                        searchResults.classList.remove('hidden');
+                    }
+                } catch(err) {
+                    console.error(err);
+                }
+            }, 250);
+        });
+
+        // Keydown Enter on input
+        searchInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                addCustomDrugFromInput();
+            }
+        });
+    }
+
+    // Hide search results on outside click
+    document.addEventListener('click', (e) => {
+        if (searchInput && searchResults && !searchInput.contains(e.target) && !searchResults.contains(e.target)) {
+            searchResults.classList.add('hidden');
+        }
+    });
+
+    // Run AI & Clinical Interaction Analysis
+    window.runDrugInteractionAnalysis = async function() {
+        if (state.drugs.length === 0) {
+            alert('لطفاً ابتدا حداقل یک داروی مصرفی را به فهرست اضافه فرمایید.');
+            searchInput.focus();
+            return;
+        }
+
+        const nameInp = document.getElementById('drugPetName');
+        const raceInp = document.getElementById('drugPetRace');
+        const weightInp = document.getElementById('drugPetWeight');
+
+        state.petName = nameInp ? nameInp.value.trim() : '';
+        state.race = raceInp ? raceInp.value.trim() : '';
+        state.weight = weightInp ? parseFloat(weightInp.value) || 12 : 12;
+
+        const btn = document.getElementById('btnRunDrugAnalysis');
+        const origContent = btn ? btn.innerHTML : '';
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<span class="material-symbols-outlined text-lg animate-spin">sync</span><span>در حال تطبیق فارماکوپیا و اسکن تداخلات...</span>';
+        }
+
+        try {
+            const csrf = window.ASENA_CSRF_TOKEN || document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+            const res = await fetch('actions/ai_drug_analysis.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrf
+                },
+                body: JSON.stringify({
+                    csrf_token: csrf,
+                    species: state.species,
+                    pet_name: state.petName,
+                    race: state.race,
+                    weight_kg: state.weight,
+                    conditions: state.conditions,
+                    drugs: state.drugs
+                })
+            });
+
+            const data = await res.json();
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = origContent;
+            }
+
+            if (data && data.success) {
+                state.latestReport = data;
+                displayAnalysisResults(data);
+            } else {
+                alert((data && data.message) || 'خطا در تحلیل تداخلات دارویی. لطفاً مجدداً تلاش فرمایید.');
+            }
+        } catch(err) {
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = origContent;
+            }
+            console.error('Analysis error:', err);
+            alert('خطا در برقراری ارتباط با سرور.');
+        }
+    };
+
+    // Render Clinical Results to UI
+    function displayAnalysisResults(data) {
+        const safetyBadge = document.getElementById('analysisStatusBadge');
+        const meterBox = document.getElementById('safetyMeterBox');
+        const iconWrap = document.getElementById('safetyIconWrap');
+        const heading = document.getElementById('safetyHeading');
+        const summaryText = document.getElementById('safetySummaryText');
+        const resultsArea = document.getElementById('detailedResultsArea');
+
+        const overall = data.overall_safety || 'safe';
+
+        // Reset styling classes
+        meterBox.className = 'p-5 rounded-2xl border text-center space-y-2 transition-all';
+
+        if (overall === 'critical') {
+            meterBox.classList.add('bg-red-950/60', 'border-red-500', 'text-red-100');
+            iconWrap.className = 'w-14 h-14 rounded-2xl bg-red-500/25 border border-red-400 text-red-300 flex items-center justify-center text-3xl mx-auto shadow-lg animate-pulse';
+            iconWrap.innerHTML = '<span class="material-symbols-outlined text-3xl">dangerous</span>';
+            heading.textContent = '🚨 هشدار بحرانی: منع مصرف قطعی / تداخل خطرناک';
+            heading.className = 'text-base font-black text-red-300';
+            safetyBadge.textContent = 'خطر بحرانی 🔴';
+            safetyBadge.className = 'text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-red-500/30 text-red-200 border border-red-500/40';
+        } else if (overall === 'warning') {
+            meterBox.classList.add('bg-orange-950/60', 'border-orange-500', 'text-orange-100');
+            iconWrap.className = 'w-14 h-14 rounded-2xl bg-orange-500/25 border border-orange-400 text-orange-300 flex items-center justify-center text-3xl mx-auto shadow-lg';
+            iconWrap.innerHTML = '<span class="material-symbols-outlined text-3xl">warning</span>';
+            heading.textContent = '⚠️ احتیاط بالینی: نیاز به پایش یا تنظیم دوز';
+            heading.className = 'text-base font-black text-orange-300';
+            safetyBadge.textContent = 'احتیاط بالا 🟠';
+            safetyBadge.className = 'text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-orange-500/30 text-orange-200 border border-orange-500/40';
+        } else if (overall === 'moderate') {
+            meterBox.classList.add('bg-amber-950/50', 'border-amber-500', 'text-amber-100');
+            iconWrap.className = 'w-14 h-14 rounded-2xl bg-amber-500/20 border border-amber-400 text-amber-300 flex items-center justify-center text-3xl mx-auto shadow-sm';
+            iconWrap.innerHTML = '<span class="material-symbols-outlined text-3xl">schedule</span>';
+            heading.textContent = 'تداخل متوسط: نیازمند رعایت فاصله زمانی';
+            heading.className = 'text-base font-black text-amber-300';
+            safetyBadge.textContent = 'تداخل متوسط 🟡';
+            safetyBadge.className = 'text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-amber-500/30 text-amber-200 border border-amber-500/40';
+        } else {
+            meterBox.classList.add('bg-emerald-950/50', 'border-emerald-500', 'text-emerald-100');
+            iconWrap.className = 'w-14 h-14 rounded-2xl bg-emerald-500/20 border border-emerald-400 text-emerald-300 flex items-center justify-center text-3xl mx-auto shadow-sm';
+            iconWrap.innerHTML = '<span class="material-symbols-outlined text-3xl">check_circle</span>';
+            heading.textContent = 'وضعیت ایمن: تداخل فارماکولوژیک ثبت نشد';
+            heading.className = 'text-base font-black text-emerald-300';
+            safetyBadge.textContent = 'سازگار و ایمن 🟢';
+            safetyBadge.className = 'text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-emerald-500/30 text-emerald-200 border border-emerald-500/40';
+        }
+
+        summaryText.textContent = data.overall_summary || '';
+
+        // Render Individual Interactions Cards
+        const itWrapper = document.getElementById('interactionsListWrapper');
+        itWrapper.innerHTML = '';
+        const interactions = data.interactions_found || [];
+
+        if (interactions.length > 0) {
+            interactions.forEach(it => {
+                const card = document.createElement('div');
+                const isCrit = (it.severity === 'critical');
+                card.className = isCrit 
+                    ? 'p-3.5 rounded-2xl bg-red-950/40 border border-red-500/40 text-xs space-y-2'
+                    : 'p-3.5 rounded-2xl bg-amber-950/30 border border-amber-500/30 text-xs space-y-2';
+                card.innerHTML = `
+                    <div class="flex items-center justify-between">
+                        <span class="font-black text-white flex items-center gap-1.5">
+                            <span class="px-2 py-0.5 rounded-md bg-white/10 font-mono text-[11px]">${escapeHtml(it.drug1)}</span>
+                            <span class="text-amber-400">⇄</span>
+                            <span class="px-2 py-0.5 rounded-md bg-white/10 font-mono text-[11px]">${escapeHtml(it.drug2)}</span>
+                        </span>
+                        <span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${isCrit ? 'bg-red-500/30 text-red-200' : 'bg-amber-500/30 text-amber-200'}">
+                            ${escapeHtml(it.level_fa || (isCrit ? 'خطر شدید' : 'متوسط'))}
+                        </span>
+                    </div>
+                    <div class="font-bold text-[11px] ${isCrit ? 'text-red-300' : 'text-amber-300'}">${escapeHtml(it.title || '')}</div>
+                    <p class="text-[11px] text-white/80 leading-relaxed">${escapeHtml(it.mechanism || '')}</p>
+                    ${it.clinical_signs ? `<div class="text-[10px] text-white/60"><strong>علائم هشدار:</strong> ${escapeHtml(it.clinical_signs)}</div>` : ''}
+                    ${it.recommendation ? `<div class="bg-white/5 p-2 rounded-xl text-[11px] text-emerald-200 border border-white/5"><strong>دستورالعمل:</strong> ${escapeHtml(it.recommendation)}</div>` : ''}
+                `;
+                itWrapper.appendChild(card);
+            });
+        }
+
+        // Render Contraindications Cards
+        const ctWrapper = document.getElementById('contraindicationsWrapper');
+        ctWrapper.innerHTML = '';
+        const contra = data.species_contraindications || [];
+
+        if (contra.length > 0) {
+            contra.forEach(c => {
+                const card = document.createElement('div');
+                card.className = 'p-3.5 rounded-2xl bg-red-950/60 border-2 border-red-500 text-xs space-y-2 text-white';
+                card.innerHTML = `
+                    <div class="flex items-center gap-2 text-red-300 font-black">
+                        <span class="material-symbols-outlined text-lg">block</span>
+                        <span>${escapeHtml(c.title || 'منع مصرف')}</span>
+                    </div>
+                    <p class="text-[11px] text-red-100/90 leading-relaxed">${escapeHtml(c.mechanism || '')}</p>
+                    ${c.action ? `<div class="bg-red-500/20 p-2 rounded-xl text-[11px] text-red-200 font-bold">اقدام فوری: ${escapeHtml(c.action)}</div>` : ''}
+                `;
+                ctWrapper.appendChild(card);
+            });
+        }
+
+        // Time spacing list
+        const timeWrap = document.getElementById('timeSpacingWrapper');
+        const timeList = document.getElementById('timeSpacingList');
+        timeList.innerHTML = '';
+        const timings = data.time_spacing_schedule || [];
+        if (timings.length > 0) {
+            timings.forEach(t => {
+                const li = document.createElement('li');
+                li.textContent = t;
+                timeList.appendChild(li);
+            });
+            timeWrap.classList.remove('hidden');
+        } else {
+            timeWrap.classList.add('hidden');
+        }
+
+        // Safe combinations list
+        const safeWrap = document.getElementById('safeCombinationsWrapper');
+        const safeList = document.getElementById('safeCombinationsList');
+        safeList.innerHTML = '';
+        const safes = data.safe_combinations || [];
+        if (safes.length > 0) {
+            safes.forEach(s => {
+                const li = document.createElement('li');
+                li.innerHTML = `<strong>${escapeHtml(s.drug1 || '')} + ${escapeHtml(s.drug2 || '')}:</strong> ${escapeHtml(s.benefit || '')}`;
+                safeList.appendChild(li);
+            });
+            safeWrap.classList.remove('hidden');
+        } else {
+            safeWrap.classList.add('hidden');
+        }
+
+        // Populate Printable view
+        populatePrintView(data);
+
+        // Show detailed results area
+        resultsArea.classList.remove('hidden');
+        resultsArea.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    // Populate Printable Hidden Element
+    function populatePrintView(data) {
+        const serialEl = document.getElementById('printReportSerial');
+        const detailsEl = document.getElementById('printPetDetails');
+        const drugsEl = document.getElementById('printDrugsList');
+        const itSection = document.getElementById('printInteractionsSection');
+
+        if (serialEl) serialEl.textContent = data.report_serial || 'ASENA-INT-001';
+        if (detailsEl) {
+            const spText = (state.species === 'cat') ? 'گربه' : ((state.species === 'horse') ? 'اسب' : 'سگ');
+            detailsEl.textContent = `نام: ${state.petName || 'پت'} | گونه: ${spText} | نژاد: ${state.race || 'عمومی'} | وزن: ${state.weight} کیلوگرم`;
+        }
+        if (drugsEl) {
+            drugsEl.textContent = state.drugs.map(d => d.name).join(' + ');
+        }
+        if (itSection) {
+            itSection.innerHTML = '';
+            const allIt = data.interactions_found || [];
+            if (allIt.length === 0) {
+                itSection.innerHTML = '<div style="color: green; font-weight: bold;">تداخل فارماکولوژیک خطرناکی بین داروهای فوق مشاهده نشد.</div>';
+            } else {
+                allIt.forEach((it, i) => {
+                    const d = document.createElement('div');
+                    d.style.marginBottom = '8px';
+                    d.style.padding = '8px';
+                    d.style.background = '#fff5f5';
+                    d.style.border = '1px solid #fed7d7';
+                    d.style.borderRadius = '6px';
+                    d.innerHTML = `
+                        <div style="font-weight: bold; color: #9b2c2c;">${i + 1}. تداخل: ${escapeHtml(it.drug1)} با ${escapeHtml(it.drug2)} (${escapeHtml(it.level_fa || '')})</div>
+                        <div style="font-size: 11px; margin-top: 3px;"><strong>مکانیسم:</strong> ${escapeHtml(it.mechanism)}</div>
+                        <div style="font-size: 11px; margin-top: 3px; color: #22543d;"><strong>دستورالعمل:</strong> ${escapeHtml(it.recommendation || '')}</div>
+                    `;
+                    itSection.appendChild(d);
+                });
+            }
+        }
+    }
+
+    // Reset results back to initial prompt
+    function resetResultsView() {
+        const resultsArea = document.getElementById('detailedResultsArea');
+        if (resultsArea) resultsArea.classList.add('hidden');
+        const safetyBadge = document.getElementById('analysisStatusBadge');
+        if (safetyBadge) {
+            safetyBadge.textContent = 'در انتظار داروها';
+            safetyBadge.className = 'text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-white/15 text-white/80';
+        }
+    }
+
+    // Save report to pet health dossier in profile
+    window.saveDrugReportToProfile = async function() {
+        if (!state.latestReport) return;
+
+        const btn = document.getElementById('btnSaveReport');
+        const origText = btn ? btn.innerHTML : '';
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<span class="material-symbols-outlined text-sm animate-spin">sync</span><span>در حال ذخیره...</span>';
+        }
+
+        try {
+            const csrf = window.ASENA_CSRF_TOKEN || document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+            const res = await fetch('actions/save_drug_report.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrf
+                },
+                body: JSON.stringify({
+                    csrf_token: csrf,
+                    pet_name: state.petName,
+                    species: state.species,
+                    race: state.race,
+                    weight_kg: state.weight,
+                    report_serial: state.latestReport.report_serial,
+                    overall_safety: state.latestReport.overall_safety,
+                    overall_summary: state.latestReport.overall_summary,
+                    drugs: state.drugs,
+                    interactions: state.latestReport.interactions_found || [],
+                    contraindications: state.latestReport.species_contraindications || []
+                })
+            });
+
+            const data = await res.json();
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = origText;
+            }
+
+            if (data && data.success) {
+                alert('✅ کارنامه بررسی تداخلات دارویی با موفقیت در پرونده سلامت پت شما ذخیره گردید.');
+            } else if (data && data.require_login) {
+                alert('جهت بایگانی کارنامه در پرونده سلامت، لطفاً ابتدا وارد حساب کاربری خود شوید.');
+                window.location.href = 'login.php?redirect=' + encodeURIComponent('interactions.php');
+            } else {
+                alert((data && data.message) || 'خطا در ثبت سند.');
+            }
+        } catch(err) {
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = origText;
+            }
+            alert('خطا در برقراری ارتباط با سرور.');
+        }
+    };
+
+    function escapeHtml(str) {
+        if (!str) return '';
+        const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+        return String(str).replace(/[&<>"']/g, m => map[m]);
+    }
+
+})();
+</script>
+
+<style>
+@media print {
+    body * {
+        visibility: hidden !important;
+    }
+    #printableDrugReportArea, #printableDrugReportArea * {
+        visibility: visible !important;
+    }
+    #printableDrugReportArea {
+        display: block !important;
+        position: absolute !important;
+        left: 0 !important;
+        top: 0 !important;
+        width: 100% !important;
+        background: white !important;
+        color: black !important;
+    }
+}
+</style>
+
+<?php require_once 'includes/footer.php'; ?>

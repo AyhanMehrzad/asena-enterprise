@@ -53,6 +53,20 @@ if (!verify_csrf_token($csrf)) {
     exit;
 }
 
+// Check monetization setting (prevent bypass when paid mode is active)
+$calculatorIsPaid = (bool)(int)get_setting($pdo, 'calculator_is_paid', 0);
+$userRole = $_SESSION['user_role'] ?? $_SESSION['role'] ?? 'user';
+if ($calculatorIsPaid && $userRole !== 'admin') {
+    $calcPrice = (int)get_setting($pdo, 'calculator_price_toman', 98000);
+    echo json_encode([
+        'success' => false,
+        'require_payment' => true,
+        'price' => $calcPrice,
+        'message' => 'صدور و بایگانی جدول برنامه غذایی نیازمند پرداخت آنلاین است.'
+    ], JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
 // Extract inputs
 $petName = trim((string)($inputData['pet_name'] ?? 'حیوان خانگی من'));
 $species = in_array($inputData['species'] ?? '', ['dog', 'cat']) ? $inputData['species'] : 'dog';

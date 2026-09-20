@@ -81,7 +81,7 @@ $activeTab = $_GET['tab'] ?? 'orders';
             'orders'       => ['icon' => 'local_shipping', 'title' => 'سفارشات و ارسال کالا', 'tab' => 'orders-tab'],
             'products'     => ['icon' => 'inventory_2', 'title' => 'مدیریت موجودی و انبارداری', 'tab' => 'products-tab'],
             'wallet'       => ['icon' => 'account_balance_wallet', 'title' => 'کیف پول امانی و تسویه پایا', 'tab' => 'wallet-tab'],
-            'interactions' => ['icon' => 'hub', 'title' => 'تعاملات و صورت‌حساب آسنا', 'url' => '../interactions.php'],
+            'interactions' => ['icon' => 'hub', 'title' => 'تعاملات و صورت‌حساب آسنا', 'url' => '../partner_interactions.php'],
             'shipping'     => ['icon' => 'markunread_mailbox', 'title' => 'رهگیری مرسولات و پستکس', 'tab' => 'shipping-tab'],
             'settings'     => ['icon' => 'store', 'title' => 'مشخصات فروشگاه و حساب بانکی', 'tab' => 'settings-tab'],
         ];
@@ -181,7 +181,7 @@ $activeTab = $_GET['tab'] ?? 'orders';
             <span class="material-symbols-outlined text-sm text-amber-600">store</span>
             <span>تنظیمات</span>
         </button>
-        <a href="../interactions.php" class="seller-mobile-tab px-3.5 py-2 rounded-xl bg-blue-50 border border-blue-200 text-blue-700 text-xs font-bold shrink-0 flex items-center gap-1.5">
+        <a href="../partner_interactions.php" class="seller-mobile-tab px-3.5 py-2 rounded-xl bg-blue-50 border border-blue-200 text-blue-700 text-xs font-bold shrink-0 flex items-center gap-1.5">
             <span class="material-symbols-outlined text-sm text-blue-600">hub</span>
             <span>تعاملات آسنا</span>
         </a>

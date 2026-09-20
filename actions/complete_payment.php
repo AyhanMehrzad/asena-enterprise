@@ -26,12 +26,13 @@ $pending = $_SESSION['pending_order'] ?? null;
 $is_booking = (($pending['type'] ?? '') === 'booking');
 $is_subscription = (($pending['type'] ?? '') === 'subscription');
 $is_sms_package = (($pending['type'] ?? '') === 'sms_package');
+$is_meal_plan = (($pending['type'] ?? '') === 'meal_plan');
 
 if (!$pending
     || empty($pending['authority'])
     || !hash_equals((string)$pending['authority'], (string)$authority)
     || empty($pending['total_amount'])
-    || (!$is_booking && !$is_subscription && !$is_sms_package && empty($pending['items']))
+    || (!$is_booking && !$is_subscription && !$is_sms_package && !$is_meal_plan && empty($pending['items']))
 ) {
     unset($_SESSION['pending_order']);
     $_SESSION['profile_error'] = 'اطلاعات سفارش نامعتبر یا منقضی شده است.';
@@ -103,6 +104,103 @@ try {
         $order_id = $sub_id; // For the success message below
     } elseif ($is_booking) {
         $order_id = 0; // Clinical appointment booking handled specifically below
+    } elseif ($is_meal_plan) {
+        require_once __DIR__ . '/../includes/MealPlanGenerator.php';
+
+        $mealData = (array)($pending['meal_plan_data'] ?? []);
+        $petName = trim((string)($mealData['pet_name'] ?? 'حیوان خانگی من'));
+        $species = in_array($mealData['species'] ?? '', ['dog', 'cat']) ? $mealData['species'] : 'dog';
+        $race = trim((string)($mealData['race'] ?? 'مشخص نشده'));
+        $weightKg = (float)($mealData['weight_kg'] ?? 0);
+        $idealWeightKg = (float)($mealData['ideal_weight_kg'] ?? $weightKg);
+        $bcsScore = (int)($mealData['bcs_score'] ?? 5);
+        $dailyCalories = (int)($mealData['daily_calories'] ?? 0);
+        $kibbleGrams = (int)($mealData['kibble_grams'] ?? 0);
+        $waterMl = (int)($mealData['water_ml'] ?? 0);
+        $activity = trim((string)($mealData['activity'] ?? 'neutered'));
+        $stage = trim((string)($mealData['stage'] ?? 'adult'));
+        $treatCalories = (int)($mealData['treat_calories'] ?? (int)round($dailyCalories * 0.10));
+        $aiAnalysisObj = $mealData['ai_analysis_obj'] ?? null;
+        if (empty($aiAnalysisObj) && !empty($mealData['ai_analysis'])) {
+            $decodedAi = json_decode((string)$mealData['ai_analysis'], true);
+            if (is_array($decodedAi)) $aiAnalysisObj = $decodedAi;
+        }
+
+        $reportSerial = 'ASENA-NUT-' . strtoupper(substr(bin2hex(random_bytes(4)), 0, 8));
+
+        // Generate Standalone Meal Plan HTML Document File
+        $mealPlansDir = __DIR__ . '/../uploads/meal_plans';
+        if (!is_dir($mealPlansDir)) {
+            @mkdir($mealPlansDir, 0755, true);
+        }
+
+        $cleanSerialPart = strtolower(str_replace(['ASENA-', 'NUT-', 'DIET-'], '', $reportSerial));
+        $fileName = 'meal_plan_' . $cleanSerialPart . '_' . time() . '.html';
+        $relativeFilePath = 'uploads/meal_plans/' . $fileName;
+        $fullFilePath = $mealPlansDir . '/' . $fileName;
+
+        $htmlContent = MealPlanGenerator::generate([
+            'serial' => $reportSerial,
+            'pet_name' => $petName,
+            'species' => $species,
+            'race' => $race,
+            'weight_kg' => $weightKg,
+            'ideal_weight_kg' => $idealWeightKg,
+            'bcs_score' => $bcsScore,
+            'stage' => $stage,
+            'activity' => $activity,
+            'daily_calories' => $dailyCalories,
+            'kibble_grams' => $kibbleGrams,
+            'water_ml' => $waterMl,
+            'treat_calories' => $treatCalories,
+            'ai_analysis' => $aiAnalysisObj,
+            'created_at' => date('Y/m/d - H:i')
+        ]);
+
+        @file_put_contents($fullFilePath, $htmlContent);
+
+        // Find or create pet
+        $petId = 0;
+        $chkStmt = $pdo->prepare("SELECT id FROM user_pets WHERE user_id = ? AND (name = ? OR name LIKE ?) LIMIT 1");
+        $chkStmt->execute([$user_id, $petName, "%$petName%"]);
+        $petId = (int)$chkStmt->fetchColumn();
+
+        if ($petId <= 0) {
+            try {
+                $insPet = $pdo->prepare("INSERT INTO user_pets (user_id, name, type, race, weight_kg) VALUES (?, ?, ?, ?, ?)");
+                $insPet->execute([$user_id, $petName, $species, $race, $weightKg]);
+            } catch (Exception $ePet) {
+                $insPet = $pdo->prepare("INSERT INTO user_pets (user_id, name, type, weight_kg) VALUES (?, ?, ?, ?)");
+                $insPet->execute([$user_id, $petName, $species, $weightKg]);
+            }
+            $petId = (int)$pdo->lastInsertId();
+        }
+
+        // Insert document into pet_documents
+        $docTitle = 'جدول و برنامه غذایی بالینی (' . $reportSerial . ')';
+        $reportSummary = "کارنامه و رژیم غذایی بالینی پت ({$reportSerial}) با پرداخت آنلاین معتبر به شماره ارجاع {$ref_id}";
+        try {
+            $insDoc = $pdo->prepare("
+                INSERT INTO pet_documents (user_id, pet_id, title, document_type, notes, file_path, uploaded_at)
+                VALUES (?, ?, ?, 'nutrition_assessment', ?, ?, NOW())
+            ");
+            $insDoc->execute([$user_id, $petId, $docTitle, $reportSummary, $relativeFilePath]);
+        } catch (Exception $eDoc) {
+            $insDoc = $pdo->prepare("
+                INSERT INTO pet_documents (user_id, pet_id, title, document_type, file_path, uploaded_at)
+                VALUES (?, ?, ?, 'nutrition_assessment', ?, NOW())
+            ");
+            $insDoc->execute([$user_id, $petId, $docTitle, $relativeFilePath]);
+        }
+
+        // Update payment transaction status
+        try {
+            $pdo->prepare("UPDATE payment_transactions SET status = 'paid', tracking_code = ? WHERE authority_or_ref = ?")
+                ->execute([$ref_id, $authority]);
+        } catch (Exception $eTx) {}
+
+        $order_id = 0;
+        $mealPlanRedirectUrl = '../view_meal_plan.php?file=' . urlencode($fileName) . '&paid=1';
     } else {
         // Fetch snapshot of buyer address
         $userAddrStmt = $pdo->prepare("SELECT city, address, postal_code FROM users WHERE id = ?");
@@ -382,9 +480,13 @@ try {
     // 4. Clean up session
     unset($_SESSION['cart'], $_SESSION['cart_types'], $_SESSION['cart_frequency'], $_SESSION['active_cart_tab'], $_SESSION['pending_order'], $_SESSION['applied_promo']);
     
-    if ($is_sms_package) {
+    if ($is_meal_plan) {
+        $_SESSION['profile_success'] = "پرداخت موفق! جدول برنامه غذایی بالینی با موفقیت صادر و در پرونده سلامت ذخیره گردید. کد رهگیری: {$ref_id}";
+        header('Location: ' . ($mealPlanRedirectUrl ?? '../view_meal_plan.php?paid=1'));
+        exit;
+    } elseif ($is_sms_package) {
         $_SESSION['profile_success'] = "پرداخت موفق! {$pending['package_name']} با موفقیت به حساب شما افزوده شد. کد رهگیری: {$ref_id}";
-        header('Location: ../interactions.php');
+        header('Location: ../partner_interactions.php');
         exit;
     } elseif ($is_subscription) {
         $_SESSION['profile_success'] =
