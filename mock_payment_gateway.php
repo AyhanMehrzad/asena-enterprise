@@ -11,6 +11,10 @@ if (empty($authority) || $amount <= 0 || empty($callback_url)) {
     die("پارامترهای درخواست پرداخت نامعتبر است.");
 }
 
+$sep = (str_contains($callback_url, '?')) ? '&' : '?';
+$success_url = $callback_url . $sep . 'Authority=' . urlencode($authority) . '&Status=OK';
+$cancel_url  = $callback_url . $sep . 'Authority=' . urlencode($authority) . '&Status=NOK';
+
 $fmt = new IntlDateFormatter('fa_IR@calendar=persian', IntlDateFormatter::FULL, IntlDateFormatter::FULL, 'Asia/Tehran', IntlDateFormatter::TRADITIONAL, 'yyyy/MM/dd - HH:mm');
 $currentDate = $fmt->format(time());
 ?>
@@ -109,15 +113,14 @@ $currentDate = $fmt->format(time());
 
         <!-- Action Buttons -->
         <div class="pt-4 flex flex-col sm:flex-row gap-3">
-            <!-- Success Payment Button -->
-            <a href="<?= htmlspecialchars($callback_url) ?>?Authority=<?= urlencode($authority) ?>&Status=OK" 
+            <a href="<?= htmlspecialchars($success_url) ?>" 
                class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 rounded-2xl text-center text-sm shadow-lg shadow-emerald-600/30 transition-all flex items-center justify-center gap-2 active:scale-95">
                 <span class="material-symbols-outlined text-lg">check_circle</span>
                 پرداخت و تکمیل سفارش (تایید موفق)
             </a>
 
             <!-- Cancel Button -->
-            <a href="<?= htmlspecialchars($callback_url) ?>?Authority=<?= urlencode($authority) ?>&Status=NOK" 
+            <a href="<?= htmlspecialchars($cancel_url) ?>" 
                class="sm:w-36 bg-slate-200 hover:bg-red-100 hover:text-red-700 text-slate-700 font-bold py-3.5 rounded-2xl text-center text-sm transition-all flex items-center justify-center gap-1 active:scale-95">
                 <span class="material-symbols-outlined text-lg">cancel</span>
                 انصراف

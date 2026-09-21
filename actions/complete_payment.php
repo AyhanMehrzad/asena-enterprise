@@ -12,6 +12,23 @@ if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
 $authority = trim($_GET['Authority'] ?? $_GET['authority'] ?? '');
 $status    = strtoupper(trim($_GET['Status'] ?? $_GET['status'] ?? ''));
 
+// Resilient parsing if tx parameter was passed or merged in query string
+if (empty($authority) && !empty($_GET['tx'])) {
+    $rawTx = trim($_GET['tx']);
+    if (str_contains($rawTx, '?')) {
+        $parts = explode('?', $rawTx, 2);
+        $authority = $parts[0];
+        if (empty($status) && str_contains($parts[1], 'Status=')) {
+            parse_str($parts[1], $extraParams);
+            if (!empty($extraParams['Status'])) {
+                $status = strtoupper(trim($extraParams['Status']));
+            }
+        }
+    } else {
+        $authority = $rawTx;
+    }
+}
+
 // ── Gate 2: Gateway reported failure ──────────────────────────────────────────
 if ($status !== 'OK' || empty($authority)) {
     unset($_SESSION['pending_order']);
@@ -397,6 +414,12 @@ try {
             error_log("Escrow Deposit Warning: " . $escrowEx->getMessage());
         }
     }
+
+    // 2.6 Update payment transaction record to paid
+    try {
+        $pdo->prepare("UPDATE payment_transactions SET status = 'paid', tracking_code = ?, order_id = ? WHERE authority_or_ref = ?")
+            ->execute([$ref_id, (int)$order_id, $authority]);
+    } catch (Throwable $eTx) {}
 
     // 3. Loyalty points, booking approval & SMS Notifications
     require_once __DIR__ . '/../includes/SmsService.php';
