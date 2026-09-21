@@ -533,6 +533,22 @@
     - **به‌روزرسانی خط‌مشی امنیت محتوا ([`includes/SecurityMiddleware.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/includes/SecurityMiddleware.php)):**
       - مجازسازی دامنه‌های `https://map.ir` و `https://*.map.ir` در هدر `connect-src` استاندارد CSP.
 
+50. **پیکربندی کران‌جاب‌های پارس‌پک و موتور پشتیبان‌گیری خودکار دیتابیس (ParsPack Cron Jobs & Resilient Database Backup Engine):**
+    - **موتور پشتیبان‌گیری پایگاه‌داده ([`scripts/backup_db.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/scripts/backup_db.php)):** پیاده‌سازی معماری دوگانه بک‌آپ (mysqldump فشرده با فال‌بک استریم PDO در پکت‌های ۵۰۰ تایی)، پوشه امن با دسترسی 0700 و `.htaccess`، و پاکسازی خودکار آرشیوهای بیش از ۱۴ روز.
+    - **ارتقای اسکریپت شل ([`scripts/backup.sh`](file:///opt/lampp/htdocs/asena/asena-enterprise/scripts/backup.sh)):** ارجاع به موتور جدید PHP با پشتیبانی از سیستم‌عامل‌های لینوکسی.
+    - **ثبت دو کران‌جاب در پنل هاست پارس‌پک:** بک‌آپ روزانه شب‌ها ساعت ۳ بامداد (`0 3 * * *`) و پردازشگر اتوشیپ شب‌ها ساعت ۰۰:۳۰ بامداد (`30 0 * * *`).
+
+51. **پاکسازی رابط کاربری و رفع فایل‌های قدیمی (UI Header Cleanup & Artifact Maintenance):**
+    - **حذف دکمه تکراری «حساب کاربری» در هدر ([`includes/header.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/includes/header.php)):** حذف پیل باتن اضافی و یکپارچه‌سازی کامل ناوبری کاربر در هدر و منوی کناری.
+    - **حذف فایل منسوخ `issues.txt`:** به دلیل صحت کامل عملکرد سیستم OTP، ورود پیامکی، احراز هویت دوطرفه و مدل‌های هوش مصنوعی.
+
+52. **تست جامع سناریومحور تمامی نقش‌ها، رفع باگ درگاه شبیه‌ساز و خودترمیمی اسکیما v5 (Comprehensive Scenario QA, Mock Gateway Fix & Schema v5):**
+    - **رفع باگ کوئری استرینگ درگاه شبیه‌ساز ([`mock_payment_gateway.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/mock_payment_gateway.php) و [`actions/complete_payment.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/actions/complete_payment.php)):** تشخیص وجود کاراکتر `?` در URL کال‌بک و افزودن صحیح پارامترها با `&`؛ تجزیه تاب‌آور شناسه‌های `Authority`, `authority`, و `tx` در پردازش بازگشت پرداخت بانکی.
+    - **خودترمیمی دیتابیس v5 ([`includes/db.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/includes/db.php)):** اجرای خودکار مایگریشن‌های ۱۸ و ۱۹ در لایو سرور؛ ایجاد خودکار جدول `promo_codes`, `promo_code_usages`, ستون‌های سفارشات و `reserved_stock`.
+    - **درج پویا و مقاوم سفارشات (Dynamic Column Introspection):** بازنویسی استعلام درج در جدول `orders` در [`actions/complete_payment.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/actions/complete_payment.php) و [`includes/AutoshipService.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/includes/AutoshipService.php) با بررسی بلادرنگ ستون‌های موجود در جدول، جهت پیشگیری از خطاهای عدم وجود فیلد در دیتابیس‌های مختلف.
+    - **ثبت سفارشات واقعی و صدور فاکتور رسمی:** تست موفق سفارش عادی #PC-8 و سفارش اتوشیپ #PC-9 با صدور فاکتور الکترونیک رسمی ماده ۱۶۹ در `order_receipt.php`.
+    - **کنترل‌های سلف‌سرویس اتوشیپ و وجوه امانی:** راستی‌آزمایی عملکرد Ship Now، توقف موقت و تعویق سفارشات در `profile.php`، و صدور رسید رسمی حواله پایا در `actions/generate_payout_receipt.php` با دفاع امنیتی IDOR.
+
 ---
 
 ## ۴. پروتکل ثبت تغییرات آینده (Maintenance Rule)
