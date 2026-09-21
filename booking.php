@@ -225,43 +225,71 @@ $booked_slots_json = json_encode($booked_slots);
                 </div>
                 <?php endif; ?>
 
+                <style>
+                .no-scrollbar::-webkit-scrollbar {
+                    display: none !important;
+                    width: 0 !important;
+                    height: 0 !important;
+                }
+                .no-scrollbar {
+                    -ms-overflow-style: none !important;
+                    scrollbar-width: none !important;
+                }
+                </style>
+
+                <?php
+                $countAllDoctors = count($doctors);
+                $countVeterinarians = count(array_filter($doctors, fn($d) => ($d['provider_type'] ?? '') !== 'groomer'));
+                $countGroomers = count(array_filter($doctors, fn($d) => ($d['provider_type'] ?? '') === 'groomer'));
+                $countEmergency = count(array_filter($doctors, fn($d) => !empty($d['is_emergency'])));
+                ?>
+
                 <!-- Live Search & Category Filter Toolbar -->
-                <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm mb-6 space-y-3">
+                <div class="bg-white rounded-3xl border border-slate-200/80 p-4 sm:p-5 shadow-xs mb-6 space-y-3.5">
                     <!-- Search Input -->
                     <div class="relative">
                         <span class="material-symbols-outlined absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xl">search</span>
                         <input type="text" id="specialist-search" oninput="applySpecialistFilters()" 
-                               placeholder="جستجوی نام پزشک یا گرومر، تخصص، کلینیک یا خدمات (مثلاً: آرایشگر، ارتوپدی، گره‌زدایی، اورژانس)..."
-                               class="w-full h-12 pr-11 pl-10 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 text-xs font-medium bg-slate-50 focus:bg-white transition-all">
+                               placeholder="جستجوی نام پزشک یا گرومر، تخصص، کلینیک یا خدمات..."
+                               class="w-full h-12 pr-11 pl-10 rounded-2xl border border-slate-200/90 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200/60 text-xs font-medium bg-slate-50/70 focus:bg-white transition-all outline-none">
                         <button type="button" onclick="document.getElementById('specialist-search').value=''; applySpecialistFilters();" class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
                             <span class="material-symbols-outlined text-lg">cancel</span>
                         </button>
                     </div>
 
-                    <!-- Filter Tabs / Chips -->
-                    <div class="flex items-center justify-between gap-2 flex-wrap pt-1 border-t border-slate-100">
-                        <div class="flex items-center gap-1.5 overflow-x-auto pb-1" id="filter-tabs">
-                            <button type="button" onclick="setSpecialistFilter('all', this)" class="specialist-filter-btn px-3.5 py-2 rounded-xl text-xs font-bold transition-all bg-indigo-600 text-white shadow-sm flex items-center gap-1.5">
-                                <span class="material-symbols-outlined text-sm">view_agenda</span>
-                                <span>همه متخصصین</span>
-                            </button>
-                            <button type="button" onclick="setSpecialistFilter('doctor', this)" class="specialist-filter-btn px-3.5 py-2 rounded-xl text-xs font-bold transition-all bg-slate-100 text-slate-700 hover:bg-slate-200 flex items-center gap-1.5">
-                                <span class="material-symbols-outlined text-sm text-indigo-600">stethoscope</span>
-                                <span>دامپزشکان و جراحان</span>
-                            </button>
-                            <button type="button" onclick="setSpecialistFilter('groomer', this)" class="specialist-filter-btn px-3.5 py-2 rounded-xl text-xs font-bold transition-all bg-slate-100 text-slate-700 hover:bg-slate-200 flex items-center gap-1.5">
-                                <span class="material-symbols-outlined text-sm text-pink-600">content_cut</span>
-                                <span>گرومرها و آرایشگران پت</span>
-                            </button>
-                            <button type="button" onclick="setSpecialistFilter('emergency', this)" class="specialist-filter-btn px-3.5 py-2 rounded-xl text-xs font-bold transition-all bg-slate-100 text-slate-700 hover:bg-slate-200 flex items-center gap-1.5">
-                                <span class="material-symbols-outlined text-sm text-rose-600">emergency</span>
-                                <span>اورژانس شبانه‌روزی</span>
-                            </button>
-                        </div>
-
-                        <span id="matching-count-badge" class="text-[11px] font-bold text-slate-500 bg-slate-100 px-3 py-1.5 rounded-xl border border-slate-200">
-                            <?= count($doctors) ?> متخصص آماده نوبت‌دهی
+                    <!-- Category Filter Header with Count Badge -->
+                    <div class="flex items-center justify-between px-1 text-xs">
+                        <span class="font-bold flex items-center gap-1.5 text-slate-700">
+                            <span class="material-symbols-outlined text-sm text-indigo-600">tune</span>
+                            <span>دسته‌بندی خدمات:</span>
                         </span>
+                        <span id="matching-count-badge" class="text-[11px] font-bold text-slate-600 bg-slate-100 px-2.5 py-1 rounded-xl border border-slate-200/60">
+                            <?= $countAllDoctors ?> متخصص آماده نوبت‌دهی
+                        </span>
+                    </div>
+
+                    <!-- Filter Tabs / Chips Carousel (No Scrollbar, No Wrapping, Single Row) -->
+                    <div class="flex items-center gap-2 overflow-x-auto py-1 scroll-smooth w-full no-scrollbar" id="filter-tabs" style="scrollbar-width: none; -ms-overflow-style: none; -webkit-overflow-scrolling: touch;">
+                        <button type="button" onclick="setSpecialistFilter('all', this)" class="specialist-filter-btn shrink-0 whitespace-nowrap px-4 py-2.5 rounded-2xl text-xs font-bold transition-all duration-200 flex items-center gap-2 bg-indigo-600 text-white shadow-md shadow-indigo-600/25 border border-indigo-600 active:scale-95 cursor-pointer">
+                            <span class="material-symbols-outlined text-base">view_agenda</span>
+                            <span>همه متخصصین</span>
+                            <span class="filter-chip-count px-1.5 py-0.5 rounded-full text-[10px] font-black bg-white/25 text-white"><?= $countAllDoctors ?></span>
+                        </button>
+                        <button type="button" onclick="setSpecialistFilter('doctor', this)" class="specialist-filter-btn shrink-0 whitespace-nowrap px-4 py-2.5 rounded-2xl text-xs font-bold transition-all duration-200 flex items-center gap-2 bg-slate-100 text-slate-700 hover:bg-slate-200/80 border border-slate-200/80 hover:border-slate-300 active:scale-95 cursor-pointer">
+                            <span class="material-symbols-outlined text-base text-indigo-600">stethoscope</span>
+                            <span>دامپزشکان و جراحان</span>
+                            <span class="filter-chip-count px-1.5 py-0.5 rounded-full text-[10px] font-black bg-slate-200/80 text-slate-600"><?= $countVeterinarians ?></span>
+                        </button>
+                        <button type="button" onclick="setSpecialistFilter('groomer', this)" class="specialist-filter-btn shrink-0 whitespace-nowrap px-4 py-2.5 rounded-2xl text-xs font-bold transition-all duration-200 flex items-center gap-2 bg-slate-100 text-slate-700 hover:bg-slate-200/80 border border-slate-200/80 hover:border-slate-300 active:scale-95 cursor-pointer">
+                            <span class="material-symbols-outlined text-base text-pink-600">content_cut</span>
+                            <span>گرومرها و آرایشگران پت</span>
+                            <span class="filter-chip-count px-1.5 py-0.5 rounded-full text-[10px] font-black bg-slate-200/80 text-slate-600"><?= $countGroomers ?></span>
+                        </button>
+                        <button type="button" onclick="setSpecialistFilter('emergency', this)" class="specialist-filter-btn shrink-0 whitespace-nowrap px-4 py-2.5 rounded-2xl text-xs font-bold transition-all duration-200 flex items-center gap-2 bg-slate-100 text-slate-700 hover:bg-slate-200/80 border border-slate-200/80 hover:border-slate-300 active:scale-95 cursor-pointer">
+                            <span class="material-symbols-outlined text-base text-rose-600 animate-pulse">emergency</span>
+                            <span>اورژانس شبانه‌روزی</span>
+                            <span class="filter-chip-count px-1.5 py-0.5 rounded-full text-[10px] font-black bg-rose-100 text-rose-700"><?= $countEmergency ?></span>
+                        </button>
                     </div>
                 </div>
 
@@ -619,10 +647,23 @@ $booked_slots_json = json_encode($booked_slots);
     // Category Filter Handler
     function setSpecialistFilter(category, btn) {
         currentCategoryFilter = category;
+        const inactiveClass = "specialist-filter-btn shrink-0 whitespace-nowrap px-4 py-2.5 rounded-2xl text-xs font-bold transition-all duration-200 flex items-center gap-2 bg-slate-100 text-slate-700 hover:bg-slate-200/80 border border-slate-200/80 hover:border-slate-300 active:scale-95 cursor-pointer";
+        const activeClass = "specialist-filter-btn shrink-0 whitespace-nowrap px-4 py-2.5 rounded-2xl text-xs font-bold transition-all duration-200 flex items-center gap-2 bg-indigo-600 text-white shadow-md shadow-indigo-600/25 border border-indigo-600 active:scale-95 cursor-pointer";
+
         document.querySelectorAll('.specialist-filter-btn').forEach(b => {
-            b.className = "specialist-filter-btn px-3.5 py-2 rounded-xl text-xs font-bold transition-all bg-slate-100 text-slate-700 hover:bg-slate-200 flex items-center gap-1.5";
+            b.className = inactiveClass;
+            const badge = b.querySelector('.filter-chip-count');
+            if (badge) {
+                badge.className = "filter-chip-count px-1.5 py-0.5 rounded-full text-[10px] font-black bg-slate-200/80 text-slate-600";
+            }
         });
-        btn.className = "specialist-filter-btn px-3.5 py-2 rounded-xl text-xs font-bold transition-all bg-indigo-600 text-white shadow-sm flex items-center gap-1.5";
+
+        btn.className = activeClass;
+        const activeBadge = btn.querySelector('.filter-chip-count');
+        if (activeBadge) {
+            activeBadge.className = "filter-chip-count px-1.5 py-0.5 rounded-full text-[10px] font-black bg-white/25 text-white";
+        }
+
         applySpecialistFilters();
     }
 
