@@ -38,22 +38,27 @@ class PaymentService {
     ): array {
         $authority = 'ASENA-TX-' . date('Ymd') . '-' . strtoupper(substr(bin2hex(random_bytes(6)), 0, 8));
 
-        // Create transaction record
-        $stmt = $this->db->prepare("
-            INSERT INTO payment_transactions 
-            (user_id, order_id, type, amount, gateway_driver, authority_or_ref, status, metadata, created_at)
-            VALUES (?, ?, ?, ?, ?, ?, 'initiated', ?, NOW())
-        ");
-        $stmt->execute([
-            $userId,
-            $orderId,
-            $orderType,
-            $amountTomans,
-            $this->activeDriver,
-            $authority,
-            json_encode($metadata, JSON_UNESCAPED_UNICODE)
-        ]);
-        $txId = (int)$this->db->lastInsertId();
+        // Create transaction record (defensive resilience)
+        $txId = 0;
+        try {
+            $stmt = $this->db->prepare("
+                INSERT INTO payment_transactions 
+                (user_id, order_id, type, amount, gateway_driver, authority_or_ref, status, metadata, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, 'initiated', ?, NOW())
+            ");
+            $stmt->execute([
+                $userId,
+                $orderId,
+                $orderType,
+                $amountTomans,
+                $this->activeDriver,
+                $authority,
+                json_encode($metadata, JSON_UNESCAPED_UNICODE)
+            ]);
+            $txId = (int)$this->db->lastInsertId();
+        } catch (Throwable $t) {
+            error_log('[PaymentService] Warning: Could not log payment transaction: ' . $t->getMessage());
+        }
 
         $appBase = get_app_base_url();
 
@@ -64,9 +69,11 @@ class PaymentService {
                 $zp = new ZarinPalGateway();
                 $callbackUrl = $appBase . '/actions/complete_payment.php?tx=' . urlencode($authority);
                 $res = $zp->requestPayment($amountTomans, $description, $callbackUrl, $metadata);
-                if ($res['success']) {
-                    $this->db->prepare("UPDATE payment_transactions SET authority_or_ref = ? WHERE id = ?")
-                        ->execute([$res['authority'], $txId]);
+                if ($res['success'] && $txId > 0) {
+                    try {
+                        $this->db->prepare("UPDATE payment_transactions SET authority_or_ref = ? WHERE id = ?")
+                            ->execute([$res['authority'], $txId]);
+                    } catch (Throwable $t) {}
                     return $res;
                 }
                 return $res;

@@ -219,6 +219,83 @@ if (!file_exists(__DIR__ . '/.schema_aligned_v3')) {
     } catch (Throwable $e) {}
 }
 
+// Automated schema alignment v4: Self-heals Migration 17 (payment_transactions, platform_ledger_entries, card_receipt_submissions, site_settings)
+if (!file_exists(__DIR__ . '/.schema_aligned_v4')) {
+    try {
+        $pdo->exec("
+            CREATE TABLE IF NOT EXISTS `payment_transactions` (
+                `id` INT AUTO_INCREMENT PRIMARY KEY,
+                `user_id` INT NOT NULL,
+                `order_id` INT DEFAULT NULL,
+                `type` VARCHAR(50) NOT NULL DEFAULT 'order',
+                `amount` BIGINT NOT NULL,
+                `gateway_driver` VARCHAR(50) NOT NULL DEFAULT 'zarinpal',
+                `authority_or_ref` VARCHAR(100) NOT NULL,
+                `tracking_code` VARCHAR(100) DEFAULT NULL,
+                `card_pan` VARCHAR(20) DEFAULT NULL,
+                `status` ENUM('initiated', 'pending_verification', 'paid', 'failed', 'refunded') NOT NULL DEFAULT 'initiated',
+                `metadata` LONGTEXT DEFAULT NULL,
+                `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                INDEX `idx_user_pay` (`user_id`),
+                INDEX `idx_order_pay` (`order_id`),
+                INDEX `idx_auth` (`authority_or_ref`),
+                INDEX `idx_status` (`status`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+            CREATE TABLE IF NOT EXISTS `platform_ledger_entries` (
+                `id` INT AUTO_INCREMENT PRIMARY KEY,
+                `provider_id` INT DEFAULT NULL,
+                `order_id` INT DEFAULT NULL,
+                `settlement_batch_id` VARCHAR(64) DEFAULT NULL,
+                `type` ENUM(
+                    'customer_inflow',
+                    'platform_commission',
+                    'vat_collected',
+                    'escrow_hold',
+                    'escrow_release',
+                    'payout_settlement',
+                    'refund_outflow'
+                ) NOT NULL,
+                `amount` BIGINT NOT NULL,
+                `balance_after` BIGINT NOT NULL DEFAULT 0,
+                `description` VARCHAR(255) NOT NULL,
+                `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                INDEX `idx_provider_ledger` (`provider_id`),
+                INDEX `idx_order_ledger` (`order_id`),
+                INDEX `idx_batch_ledger` (`settlement_batch_id`),
+                INDEX `idx_created_ledger` (`created_at`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+            CREATE TABLE IF NOT EXISTS `card_receipt_submissions` (
+                `id` INT AUTO_INCREMENT PRIMARY KEY,
+                `payment_transaction_id` INT NOT NULL,
+                `user_id` INT NOT NULL,
+                `order_id` INT DEFAULT NULL,
+                `sender_card_last4` VARCHAR(8) DEFAULT NULL,
+                `bank_tracking_code` VARCHAR(64) NOT NULL,
+                `receipt_image_url` VARCHAR(255) DEFAULT NULL,
+                `amount` BIGINT NOT NULL,
+                `status` ENUM('pending', 'approved', 'rejected') NOT NULL DEFAULT 'pending',
+                `rejection_reason` VARCHAR(255) DEFAULT NULL,
+                `reviewed_by` INT DEFAULT NULL,
+                `reviewed_at` DATETIME DEFAULT NULL,
+                `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                INDEX `idx_card_tx` (`payment_transaction_id`),
+                INDEX `idx_card_track` (`bank_tracking_code`),
+                INDEX `idx_card_status` (`status`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+            CREATE TABLE IF NOT EXISTS `site_settings` (
+                `setting_key` VARCHAR(100) NOT NULL PRIMARY KEY,
+                `setting_value` TEXT DEFAULT NULL,
+                `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+        ");
+        @touch(__DIR__ . '/.schema_aligned_v4');
+    } catch (Throwable $e) {}
+}
+
 require_once __DIR__ . '/Feature.php';
 require_once __DIR__ . '/functions.php';
 
