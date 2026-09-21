@@ -296,6 +296,83 @@ if (!file_exists(__DIR__ . '/.schema_aligned_v4')) {
     } catch (Throwable $e) {}
 }
 
+// Automated schema alignment v5: Self-heals Migrations 18 & 19 (promo engine, orders columns, reserved_stock)
+if (!file_exists(__DIR__ . '/.schema_aligned_v5')) {
+    try {
+        $pdo->exec("
+            CREATE TABLE IF NOT EXISTS `promo_codes` (
+                `id` INT AUTO_INCREMENT PRIMARY KEY,
+                `code` VARCHAR(50) NOT NULL UNIQUE,
+                `title` VARCHAR(150) NOT NULL DEFAULT 'تخفیف آسنا',
+                `discount_type` ENUM('percentage', 'fixed_amount') NOT NULL DEFAULT 'percentage',
+                `discount_value` INT NOT NULL DEFAULT 10,
+                `max_discount_amount` INT DEFAULT NULL,
+                `min_order_amount` INT NOT NULL DEFAULT 0,
+                `usage_limit_total` INT DEFAULT NULL,
+                `usage_limit_per_user` INT NOT NULL DEFAULT 1,
+                `first_order_only` TINYINT(1) NOT NULL DEFAULT 0,
+                `starts_at` DATETIME DEFAULT NULL,
+                `expires_at` DATETIME DEFAULT NULL,
+                `is_active` TINYINT(1) NOT NULL DEFAULT 1,
+                `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                INDEX `idx_promo_code` (`code`),
+                INDEX `idx_promo_active` (`is_active`, `expires_at`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+            CREATE TABLE IF NOT EXISTS `promo_code_usages` (
+                `id` INT AUTO_INCREMENT PRIMARY KEY,
+                `promo_code_id` INT NOT NULL,
+                `user_id` INT NOT NULL,
+                `order_id` INT DEFAULT NULL,
+                `discount_amount` INT NOT NULL,
+                `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                INDEX `idx_usage_code_user` (`promo_code_id`, `user_id`),
+                INDEX `idx_usage_user` (`user_id`),
+                INDEX `idx_usage_order` (`order_id`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+        ");
+
+        $colsToAddV5 = [
+            "ALTER TABLE `orders` ADD COLUMN `promo_code` VARCHAR(50) DEFAULT NULL AFTER `discount_amount`",
+            "ALTER TABLE `orders` ADD COLUMN `discount_amount` INT DEFAULT 0 AFTER `total_amount`",
+            "ALTER TABLE `orders` ADD COLUMN `tax_amount` INT DEFAULT 0 AFTER `discount_amount`",
+            "ALTER TABLE `orders` ADD COLUMN `shipping_cost` INT DEFAULT 0 AFTER `tax_amount`",
+            "ALTER TABLE `orders` ADD COLUMN `carrier_name` VARCHAR(100) DEFAULT NULL AFTER `shipping_cost`",
+            "ALTER TABLE `orders` ADD COLUMN `gateway_ref_id` VARCHAR(100) DEFAULT NULL AFTER `status`",
+            "ALTER TABLE `orders` ADD COLUMN `shipping_address` TEXT DEFAULT NULL AFTER `gateway_ref_id`",
+            "ALTER TABLE `orders` ADD COLUMN `tracking_code` VARCHAR(150) DEFAULT NULL AFTER `gateway_ref_id`",
+            "ALTER TABLE `products` ADD COLUMN `reserved_stock` INT NOT NULL DEFAULT 0 AFTER `stock`",
+            "ALTER TABLE `pharmacy_medicines` ADD COLUMN `reserved_stock` INT NOT NULL DEFAULT 0 AFTER `stock`",
+            "ALTER TABLE `payment_transactions` ADD COLUMN `order_id` INT DEFAULT NULL AFTER `user_id`"
+        ];
+
+        foreach ($colsToAddV5 as $sql) {
+            try {
+                $pdo->exec($sql);
+            } catch (Throwable $ignore) {}
+        }
+
+        try {
+            $pdo->exec("
+                INSERT INTO `promo_codes` 
+                (`code`, `title`, `discount_type`, `discount_value`, `max_discount_amount`, `min_order_amount`, `usage_limit_total`, `usage_limit_per_user`, `first_order_only`, `is_active`)
+                VALUES
+                ('WELCOME10', 'تخفیف ۱۰٪ اولین خرید از آسنا', 'percentage', 10, 50000, 100000, NULL, 1, 1, 1),
+                ('ASENA15', 'تخفیف ویژه ۱۵٪ مشتریان وفادار آسنا', 'percentage', 15, 100000, 250000, NULL, 1, 0, 1),
+                ('PWA-WELCOME', 'کد تخفیف ۱۰٪ نصب وب‌اپلیکیشن آسنا', 'percentage', 10, 75000, 150000, NULL, 1, 0, 1)
+                ON DUPLICATE KEY UPDATE 
+                    `title` = VALUES(`title`),
+                    `discount_value` = VALUES(`discount_value`),
+                    `max_discount_amount` = VALUES(`max_discount_amount`),
+                    `is_active` = VALUES(`is_active`);
+            ");
+        } catch (Throwable $seedErr) {}
+
+        @touch(__DIR__ . '/.schema_aligned_v5');
+    } catch (Throwable $e) {}
+}
+
 require_once __DIR__ . '/Feature.php';
 require_once __DIR__ . '/functions.php';
 

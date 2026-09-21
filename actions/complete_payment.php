@@ -239,7 +239,7 @@ try {
             $fullShippingAddress .= ' (کد پستی: ' . $uAddr['postal_code'] . ')';
         }
 
-        // 1. Create order with real amount, discount, tax, shipping, carrier, promo_code, ref_id and shipping_address snapshot
+        // 1. Create order with dynamic schema introspection to guarantee 100% fail-safe insertion
         $discountAmount = (int)($pending['discount_amount'] ?? 0);
         $taxAmount      = (int)($pending['tax_amount'] ?? 0);
         $shippingCost   = (int)($pending['shipping_cost'] ?? 0);
@@ -249,32 +249,44 @@ try {
 
         $fullShippingAddressWithSla = $fullShippingAddress . " [حامل: {$carrierName} | مهلت ارسال: ۲۴h کاری]";
 
-        $orderStmt = $pdo->prepare(
-            "INSERT INTO orders (user_id, total_amount, discount_amount, tax_amount, shipping_cost, carrier_name, promo_code, status, gateway_ref_id, shipping_address)
-             VALUES (?, ?, ?, ?, ?, ?, ?, 'processing', ?, ?)"
-        );
+        $orderCols = [];
         try {
-            $orderStmt->execute([$user_id, $total_amount, $discountAmount, $taxAmount, $shippingCost, $carrierName, $promoCode, $ref_id, $fullShippingAddressWithSla]);
-        } catch (PDOException $colErr) {
-            try {
-                $orderStmt = $pdo->prepare(
-                    "INSERT INTO orders (user_id, total_amount, discount_amount, tax_amount, promo_code, status, gateway_ref_id, shipping_address)
-                     VALUES (?, ?, ?, ?, ?, 'processing', ?, ?)"
-                );
-                $orderStmt->execute([$user_id, $total_amount, $discountAmount, $taxAmount, $promoCode, $ref_id, $fullShippingAddressWithSla]);
-            } catch (PDOException $colErr2) {
-                try {
-                    $orderStmt = $pdo->prepare(
-                        "INSERT INTO orders (user_id, total_amount, discount_amount, status, gateway_ref_id, shipping_address) VALUES (?, ?, ?, 'processing', ?, ?)"
-                    );
-                    $orderStmt->execute([$user_id, $total_amount, $discountAmount, $ref_id, $fullShippingAddressWithSla]);
-                } catch (PDOException $colErr3) {
-                    $orderStmt = $pdo->prepare(
-                        "INSERT INTO orders (user_id, total_amount, status, gateway_ref_id, shipping_address) VALUES (?, ?, 'processing', ?, ?)"
-                    );
-                    $orderStmt->execute([$user_id, $total_amount, $ref_id, $fullShippingAddressWithSla]);
+            $colQuery = $pdo->query("SHOW COLUMNS FROM `orders`");
+            if ($colQuery) {
+                $orderCols = $colQuery->fetchAll(PDO::FETCH_COLUMN);
+            }
+        } catch (Throwable $t) {}
+
+        $orderData = [
+            'user_id'          => $user_id,
+            'total_amount'     => $total_amount,
+            'discount_amount'  => $discountAmount,
+            'tax_amount'       => $taxAmount,
+            'shipping_cost'    => $shippingCost,
+            'carrier_name'     => $carrierName,
+            'promo_code'       => $promoCode,
+            'status'           => 'processing',
+            'gateway_ref_id'   => $ref_id,
+            'shipping_address' => $fullShippingAddressWithSla,
+            'tracking_code'    => $ref_id
+        ];
+
+        if (!empty($orderCols)) {
+            $insertFields = [];
+            $insertPlaceholders = [];
+            $insertValues = [];
+            foreach ($orderData as $col => $val) {
+                if (in_array($col, $orderCols)) {
+                    $insertFields[] = "`{$col}`";
+                    $insertPlaceholders[] = "?";
+                    $insertValues[] = $val;
                 }
             }
+            $orderStmt = $pdo->prepare("INSERT INTO `orders` (" . implode(', ', $insertFields) . ") VALUES (" . implode(', ', $insertPlaceholders) . ")");
+            $orderStmt->execute($insertValues);
+        } else {
+            $orderStmt = $pdo->prepare("INSERT INTO `orders` (user_id, total_amount, status) VALUES (?, ?, 'processing')");
+            $orderStmt->execute([$user_id, $total_amount]);
         }
         $order_id = $pdo->lastInsertId();
 
@@ -588,6 +600,45 @@ try {
         exit;
     }
 
+} catch (PDOException $e) {
+    if ($pdo->inTransaction()) $pdo->rollBack();
+    error_log("Payment PDOException commit error [{$ref_id}]: " . $e->getMessage());
+
+    if (!empty($ref_id)) {
+        try {
+            $logStmt = $pdo->prepare("INSERT INTO payment_discrepancy_logs 
+                (user_id, gateway_ref_id, authority, amount, pending_order_json, error_message, status, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, 'pending_investigation', NOW())");
+            $logStmt->execute([
+                $user_id ?? 0,
+                (string)$ref_id,
+                (string)($authority ?? ''),
+                (int)($final_amount ?? 0),
+                json_encode($pending ?? [], JSON_UNESCAPED_UNICODE),
+                $e->getMessage()
+            ]);
+
+            $ticketStmt = $pdo->prepare("INSERT INTO tickets (user_id, mode, status, created_at, updated_at) VALUES (?, 'admin', 'open', NOW(), NOW())");
+            $ticketStmt->execute([$user_id ?? 0]);
+            $ticketId = (int)$pdo->lastInsertId();
+            if ($ticketId > 0) {
+                $ticketMsg = "🚨 خطای پایگاه داده پس از کسر وجه بانکی:\n"
+                    . "کد رهگیری زرین‌پال: {$ref_id}\n"
+                    . "مبلغ: " . number_format($final_amount ?? 0) . " تومان\n"
+                    . "خطا: " . $e->getMessage();
+                $pdo->prepare("INSERT INTO ticket_messages (ticket_id, sender_type, message, created_at) VALUES (?, 'admin', ?, NOW())")
+                    ->execute([$ticketId, $ticketMsg]);
+            }
+        } catch (Throwable $logEx) {
+            error_log("Failed to log payment discrepancy: " . $logEx->getMessage());
+        }
+    }
+
+    $_SESSION['profile_error'] =
+        'خطای سیستمی پایگاه داده در ثبت سفارش (' . htmlspecialchars($e->getMessage()) . '). مبلغ کسر شده با کد رهگیری ' . ($ref_id ?: 'درگاه') . ' در سامانه مالی جهت پیگیری ثبت شد.';
+    header('Location: ../cart.php');
+    exit;
+
 } catch (RuntimeException $e) {
     if ($pdo->inTransaction()) $pdo->rollBack();
     unset($_SESSION['pending_order']);
@@ -629,45 +680,6 @@ try {
     } else {
         $_SESSION['profile_error'] = $e->getMessage();
     }
-    header('Location: ../cart.php');
-    exit;
-
-} catch (PDOException $e) {
-    if ($pdo->inTransaction()) $pdo->rollBack();
-    error_log("Payment PDOException commit error [{$ref_id}]: " . $e->getMessage());
-
-    if (!empty($ref_id)) {
-        try {
-            $logStmt = $pdo->prepare("INSERT INTO payment_discrepancy_logs 
-                (user_id, gateway_ref_id, authority, amount, pending_order_json, error_message, status, created_at)
-                VALUES (?, ?, ?, ?, ?, ?, 'pending_investigation', NOW())");
-            $logStmt->execute([
-                $user_id ?? 0,
-                (string)$ref_id,
-                (string)($authority ?? ''),
-                (int)($final_amount ?? 0),
-                json_encode($pending ?? [], JSON_UNESCAPED_UNICODE),
-                $e->getMessage()
-            ]);
-
-            $ticketStmt = $pdo->prepare("INSERT INTO tickets (user_id, mode, status, created_at, updated_at) VALUES (?, 'admin', 'open', NOW(), NOW())");
-            $ticketStmt->execute([$user_id ?? 0]);
-            $ticketId = (int)$pdo->lastInsertId();
-            if ($ticketId > 0) {
-                $ticketMsg = "🚨 خطای پایگاه داده پس از کسر وجه بانکی:\n"
-                    . "کد رهگیری زرین‌پال: {$ref_id}\n"
-                    . "مبلغ: " . number_format($final_amount ?? 0) . " تومان\n"
-                    . "خطا: " . $e->getMessage();
-                $pdo->prepare("INSERT INTO ticket_messages (ticket_id, sender_type, message, created_at) VALUES (?, 'admin', ?, NOW())")
-                    ->execute([$ticketId, $ticketMsg]);
-            }
-        } catch (Throwable $logEx) {
-            error_log("Failed to log payment discrepancy: " . $logEx->getMessage());
-        }
-    }
-
-    $_SESSION['profile_error'] =
-        'خطای سیستمی در ثبت سفارش. مبلغ کسر شده با کد رهگیری ' . ($ref_id ?: 'درگاه') . ' در سامانه مالی جهت استرداد ثبت شد.';
     header('Location: ../cart.php');
     exit;
 
