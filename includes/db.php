@@ -182,6 +182,43 @@ if (!file_exists(__DIR__ . '/.schema_aligned_v2')) {
     } catch (Throwable $e) {}
 }
 
+// Automated schema alignment v3: Self-heals Migration 20 (item_source, payment_discrepancy_logs, vet authorization)
+if (!file_exists(__DIR__ . '/.schema_aligned_v3')) {
+    try {
+        $pdo->exec("
+            CREATE TABLE IF NOT EXISTS `payment_discrepancy_logs` (
+                `id` INT AUTO_INCREMENT PRIMARY KEY,
+                `user_id` INT NOT NULL,
+                `gateway_ref_id` VARCHAR(100) NOT NULL,
+                `authority` VARCHAR(100) NOT NULL,
+                `amount` BIGINT NOT NULL,
+                `pending_order_json` LONGTEXT NULL,
+                `error_message` TEXT NOT NULL,
+                `status` ENUM('pending_investigation', 'refunded', 'resolved') DEFAULT 'pending_investigation',
+                `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                INDEX `idx_pdl_user` (`user_id`),
+                INDEX `idx_pdl_ref` (`gateway_ref_id`),
+                INDEX `idx_pdl_status` (`status`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+        ");
+
+        $colsToAddV3 = [
+            "ALTER TABLE `order_items` ADD COLUMN `item_source` VARCHAR(20) NOT NULL DEFAULT 'product' AFTER `product_id`",
+            "ALTER TABLE `order_items` ADD INDEX `idx_order_items_source` (`order_id`, `item_source`)",
+            "ALTER TABLE `prescriptions` ADD COLUMN `direct_doctor_id` INT NULL AFTER `doctor_id`",
+            "ALTER TABLE `prescriptions` ADD COLUMN `authorization_status` VARCHAR(50) DEFAULT 'approved' AFTER `status`",
+            "ALTER TABLE `prescriptions` ADD COLUMN `authorization_note` TEXT NULL AFTER `authorization_status`"
+        ];
+
+        foreach ($colsToAddV3 as $sql) {
+            try {
+                $pdo->exec($sql);
+            } catch (Throwable $ignore) {}
+        }
+        @touch(__DIR__ . '/.schema_aligned_v3');
+    } catch (Throwable $e) {}
+}
+
 require_once __DIR__ . '/Feature.php';
 require_once __DIR__ . '/functions.php';
 
