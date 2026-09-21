@@ -186,16 +186,47 @@ class PromoCodeService {
      * Admin: Retrieve all promotional codes with redemption metrics
      */
     public function getAllPromoCodes(): array {
-        $query = "
-            SELECT p.*, 
-                   COUNT(u.id) as total_redemptions,
-                   COALESCE(SUM(u.discount_amount), 0) as total_discount_granted
-            FROM promo_codes p
-            LEFT JOIN promo_code_usages u ON p.id = u.promo_code_id
-            GROUP BY p.id
-            ORDER BY p.created_at DESC
-        ";
-        return $this->db->query($query)->fetchAll(PDO::FETCH_ASSOC);
+        try {
+            $query = "
+                SELECT p.*, 
+                       COUNT(u.id) as total_redemptions,
+                       COALESCE(SUM(u.discount_amount), 0) as total_discount_granted
+                FROM promo_codes p
+                LEFT JOIN promo_code_usages u ON p.id = u.promo_code_id
+                GROUP BY p.id
+                ORDER BY p.created_at DESC
+            ";
+            $res = $this->db->query($query);
+            return $res ? $res->fetchAll(PDO::FETCH_ASSOC) : [];
+        } catch (Throwable $e) {
+            error_log("PromoCodeService getAllPromoCodes error: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * Admin: Retrieve promo code audit logs / usages
+     */
+    public function getPromoAuditLogs(int $limit = 25): array {
+        try {
+            $stmt = $this->db->prepare("
+                SELECT u.*, 
+                       p.code as promo_code,
+                       usr.name as user_name,
+                       usr.phone as user_phone
+                FROM promo_code_usages u
+                JOIN promo_codes p ON u.promo_code_id = p.id
+                LEFT JOIN users usr ON u.user_id = usr.id
+                ORDER BY u.created_at DESC
+                LIMIT ?
+            ");
+            $stmt->bindValue(1, $limit, PDO::PARAM_INT);
+            $stmt->execute();
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (Throwable $e) {
+            error_log("PromoCodeService getPromoAuditLogs error: " . $e->getMessage());
+            return [];
+        }
     }
 
     /**

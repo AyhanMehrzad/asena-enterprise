@@ -158,15 +158,23 @@ $standardShippingCost  = (int)get_setting($pdo, 'standard_shipping_cost_toman', 
 $supportPhone          = get_setting($pdo, 'support_phone_fixed', '02191000000');
 
 // Pending Card Receipts Queue
-$pendingSubmissionsStmt = $pdo->query("
-    SELECT s.*, t.authority_or_ref, u.name as user_name, u.phone as user_phone 
-    FROM card_receipt_submissions s
-    JOIN payment_transactions t ON s.payment_transaction_id = t.id
-    JOIN users u ON s.user_id = u.id
-    WHERE s.status = 'pending'
-    ORDER BY s.id DESC
-");
-$pendingSubmissions = $pendingSubmissionsStmt->fetchAll(PDO::FETCH_ASSOC);
+$pendingSubmissions = [];
+try {
+    $pendingSubmissionsStmt = $pdo->query("
+        SELECT s.*, t.authority_or_ref, u.name as user_name, u.phone as user_phone 
+        FROM card_receipt_submissions s
+        JOIN payment_transactions t ON s.payment_transaction_id = t.id
+        JOIN users u ON s.user_id = u.id
+        WHERE s.status = 'pending'
+        ORDER BY s.id DESC
+    ");
+    if ($pendingSubmissionsStmt) {
+        $pendingSubmissions = $pendingSubmissionsStmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+} catch (Throwable $e) {
+    error_log("finance_settings card_receipt_submissions error: " . $e->getMessage());
+    $pendingSubmissions = [];
+}
 $defaultEnamadCode = "<a referrerpolicy='origin' target='_blank' href='https://trustseal.enamad.ir/?id=7706608&Code=qBmonKZeAe36PvBvs1zpTGrrRb7uFJs8'><img referrerpolicy='origin' src='https://trustseal.enamad.ir/logo.aspx?id=7706608&Code=qBmonKZeAe36PvBvs1zpTGrrRb7uFJs8' alt='' style='cursor:pointer' code='qBmonKZeAe36PvBvs1zpTGrrRb7uFJs8'></a>";
 $enamadCode        = get_setting($pdo, 'enamad_html_code', $defaultEnamadCode);
 if (empty(trim((string)$enamadCode))) {

@@ -5,6 +5,7 @@
  */
 
 require_once __DIR__ . '/db.php';
+require_once __DIR__ . '/functions.php';
 require_once __DIR__ . '/SecurityMiddleware.php';
 require_once __DIR__ . '/RateLimiter.php';
 require_once __DIR__ . '/CacheService.php';

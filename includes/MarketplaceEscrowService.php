@@ -643,31 +643,47 @@ class MarketplaceEscrowService {
             'recent_batches' => []
         ];
 
-        $stmt = $this->db->query("
-            SELECT 
-                COALESCE(SUM(balance_pending_escrow), 0) as pending,
-                COALESCE(SUM(balance_available_for_payout), 0) as available,
-                COALESCE(SUM(balance_settled_lifetime), 0) as settled,
-                COUNT(CASE WHEN balance_available_for_payout > 0 THEN 1 END) as eligible_sellers
-            FROM seller_wallets
-        ");
-        if ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-            $metrics['total_pending_escrow'] = (int)$row['pending'];
-            $metrics['total_available_payout'] = (int)$row['available'];
-            $metrics['total_lifetime_settled'] = (int)$row['settled'];
-            $metrics['eligible_sellers_count'] = (int)$row['eligible_sellers'];
+        try {
+            $stmt = $this->db->query("
+                SELECT 
+                    COALESCE(SUM(balance_pending_escrow), 0) as pending,
+                    COALESCE(SUM(balance_available_for_payout), 0) as available,
+                    COALESCE(SUM(balance_settled_lifetime), 0) as settled,
+                    COUNT(CASE WHEN balance_available_for_payout > 0 THEN 1 END) as eligible_sellers
+                FROM seller_wallets
+            ");
+            if ($stmt && ($row = $stmt->fetch(PDO::FETCH_ASSOC))) {
+                $metrics['total_pending_escrow'] = (int)$row['pending'];
+                $metrics['total_available_payout'] = (int)$row['available'];
+                $metrics['total_lifetime_settled'] = (int)$row['settled'];
+                $metrics['eligible_sellers_count'] = (int)$row['eligible_sellers'];
+            }
+        } catch (Throwable $e) {
+            error_log("getEscrowMetrics seller_wallets error: " . $e->getMessage());
         }
 
-        $countStmt = $this->db->query("
-            SELECT COUNT(*) FROM seller_escrow_ledger 
-            WHERE status = 'held_in_escrow' AND delivered_at IS NOT NULL
-        ");
-        $metrics['active_in_inspection_count'] = (int)$countStmt->fetchColumn();
+        try {
+            $countStmt = $this->db->query("
+                SELECT COUNT(*) FROM seller_escrow_ledger 
+                WHERE status = 'held_in_escrow' AND delivered_at IS NOT NULL
+            ");
+            if ($countStmt) {
+                $metrics['active_in_inspection_count'] = (int)$countStmt->fetchColumn();
+            }
+        } catch (Throwable $e) {
+            error_log("getEscrowMetrics seller_escrow_ledger error: " . $e->getMessage());
+        }
 
-        $batchStmt = $this->db->query("
-            SELECT * FROM seller_payout_batches ORDER BY id DESC LIMIT 10
-        ");
-        $metrics['recent_batches'] = $batchStmt->fetchAll(PDO::FETCH_ASSOC);
+        try {
+            $batchStmt = $this->db->query("
+                SELECT * FROM seller_payout_batches ORDER BY id DESC LIMIT 10
+            ");
+            if ($batchStmt) {
+                $metrics['recent_batches'] = $batchStmt->fetchAll(PDO::FETCH_ASSOC);
+            }
+        } catch (Throwable $e) {
+            error_log("getEscrowMetrics seller_payout_batches error: " . $e->getMessage());
+        }
 
         return $metrics;
     }

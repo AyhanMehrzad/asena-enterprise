@@ -134,9 +134,9 @@ $adminName = $adminCheck['name'] ?? 'مدیر سیستم';
             $activeKey = 'security_logs';
         } elseif ($currentFile === 'payouts.php') {
             $activeKey = 'payouts';
-        } elseif ($currentFile === 'finance_settings.php') {
+        } elseif ($currentFile === 'finance_settings.php' || $currentFile === 'finance.php') {
             $activeKey = 'finance_settings';
-        } elseif ($currentFile === 'promo_codes.php') {
+        } elseif ($currentFile === 'promo_codes.php' || $currentFile === 'promocodes.php') {
             $activeKey = 'promo_codes';
         } elseif ($currentFile === 'reviews.php') {
             $activeKey = 'reviews';
