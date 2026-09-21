@@ -18,6 +18,15 @@ This standard dictates how discount codes, platform commissions, taxation, and p
   $$\text{ASENA Net Commission} = (\text{Item Gross Price} \times 0.15) - \text{Discount Amount}$$
 - Providers must never suffer payout reductions or deductions because a buyer used an ASENA platform coupon.
 
+## 2.1. Autoship Zero-Commission Platform Policy (100% Payout to Sellers)
+- **Autoship Customer Discount (15%)**: Customers subscribing to recurring scheduled replenishment (Autoship) receive an automatic 15% discount on product unit prices.
+- **ASENA Zero-Interest Platform Margin Forfeiture**: The 15% discount provided to the customer is 100% funded by ASENA entirely waiving its 15% platform commission ($\text{ASENA Commission Rate} = 0.00\%$, $\text{ASENA Commission Amount} = 0$). ASENA receives zero interest/commission on Autoship orders.
+- **Seller 100% Payout Guarantee**:
+  $$\text{Seller Net Payout} = \text{Autoship Unit Price} \times \text{Quantity} \times 1.00 = 100\%$$
+  Sellers receive 100% of their product revenue without any platform deductions or withholding.
+- **Customer Transparent Total**: The customer pays solely for the discounted item + shipping cost (if under free shipping threshold) + statutory 10% VAT. No platform fees or hidden surcharges are levied.
+
+
 ## 3. Statutory VAT Sequence (Post-Discount Taxation)
 - 10% VAT is calculated on the discounted subtotal:
   $$\text{Taxable Subtotal} = \max(0, \text{Gross Subtotal} - \text{Promo Discount})$$

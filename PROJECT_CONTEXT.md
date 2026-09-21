@@ -547,9 +547,15 @@
     - **خودترمیمی دیتابیس v5 ([`includes/db.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/includes/db.php)):** اجرای خودکار مایگریشن‌های ۱۸ و ۱۹ در لایو سرور؛ ایجاد خودکار جدول `promo_codes`, `promo_code_usages`, ستون‌های سفارشات و `reserved_stock`.
     - **درج پویا و مقاوم سفارشات (Dynamic Column Introspection):** بازنویسی استعلام درج در جدول `orders` در [`actions/complete_payment.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/actions/complete_payment.php) و [`includes/AutoshipService.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/includes/AutoshipService.php) با بررسی بلادرنگ ستون‌های موجود در جدول، جهت پیشگیری از خطاهای عدم وجود فیلد در دیتابیس‌های مختلف.
     - **ثبت سفارشات واقعی و صدور فاکتور رسمی:** تست موفق سفارش عادی #PC-8 و سفارش اتوشیپ #PC-9 با صدور فاکتور الکترونیک رسمی ماده ۱۶۹ در `order_receipt.php`.
-    - **کنترل‌های سلف‌سرویس اتوشیپ و وجوه امانی:** راستی‌آزمایی عملکرد Ship Now، توقف موقت و تعویق سفارشات در `profile.php`، و صدور رسید رسمی حواله پایا در `actions/generate_payout_receipt.php` با دفاع امنیتی IDOR.
+53. **تثبیت سیاست مالی اتوشیپ بدون کارمزد و تسویه ۱۰۰٪ درآمد به تأمین‌کننده (Autoship Zero-Commission Policy & 100% Seller Payout):**
+    - **سیاست حاکمیتی مالی ([`.agents/rules/marketplace_promo_and_financial_rules.md`](file:///.agents/rules/marketplace_promo_and_financial_rules.md)):** اضافه شدن بند ۲.۱ مبنی بر اینکه تخفیف ۱۵٪ ارائه‌شده به خریدار در سفارشات تحویل دوره‌ای خودکار (Autoship)، ۱۰۰٪ از محل انصراف شرکت آسنا از سهم کارمزد پلتفرم تأمین می‌شود. شرکت آسنا هیچ‌گونه کارمزدی (۰ تومان) در اتوشیپ کسر نمی‌کند، فروشنده ۱۰۰٪ عایدی حاصل از فروش کالا را دریافت می‌نماید، و کاربر صرفاً هزینه محصول تخفیف‌خورده + هزینه ارسال پستی + ۱۰٪ مالیات مصوب قانونی را می‌پردازد.
+    - **موتور اسکرو و تسویه وجوه ([`includes/MarketplaceEscrowService.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/includes/MarketplaceEscrowService.php)):** تنظیم نرخ کارمزد روی `commission_rate = 0.00` و `commission_amount = 0` برای سفارشات اتوشیپ، و واریز ۱۰۰٪ مبلغ به سهم فروشنده (`net_seller_amount = gross_amount`).
+    - **ثبت سفارشات اتوشیپ ([`actions/complete_payment.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/actions/complete_payment.php)):** ثبت پایدار فیلدهای `order_type = 'autoship'` و `is_autoship = 1` در رکورد سفارش جهت همگام‌سازی بی‌نقص با موتور اسکرو.
+    - **خودترمیمی دیتابیس نسخه ۶ ([`includes/db.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/includes/db.php)):** افزودن فیلدهای مربوطه به جداول `orders` و `order_items` و تعدیل عطف‌به‌ماسبق سفارش اتوشیپ قبلی #9 (تبدیل کارمزد از ۲۰۸,۲۵۰ تومان به ۰ و اعاده ۲,۰۸۲,۵۰۰ تومان کامل به سهم خالص فروشنده).
+    - **شفافیت پنل تسویه حساب ادمین ([`admin/payouts.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/admin/payouts.php)):** نمایش نشان سبز رنگ `۰ تومان (اتوشیپ - سهم فروشنده ۱۰۰٪)` به جای کسر کسورات قرمز رنگ در ردیف تراکنش‌های اتوشیپ.
 
 ---
+
 
 ## ۴. پروتکل ثبت تغییرات آینده (Maintenance Rule)
 > **دستورالعمل برای هوش مصنوعی در ادامه کار:**  

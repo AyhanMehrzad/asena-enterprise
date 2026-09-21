@@ -373,6 +373,44 @@ if (!file_exists(__DIR__ . '/.schema_aligned_v5')) {
     } catch (Throwable $e) {}
 }
 
+// Schema alignment v6: Ensure autoship column alignment & zero-commission policy for Autoship
+if (!file_exists(__DIR__ . '/.schema_aligned_v6')) {
+    try {
+        $colsToAddV6 = [
+            "ALTER TABLE `orders` ADD COLUMN `order_type` VARCHAR(32) DEFAULT 'retail'",
+            "ALTER TABLE `orders` ADD COLUMN `is_autoship` TINYINT(1) DEFAULT 0",
+            "ALTER TABLE `order_items` ADD COLUMN `is_autoship` TINYINT(1) DEFAULT 0"
+        ];
+        foreach ($colsToAddV6 as $sql) {
+            try {
+                $pdo->exec($sql);
+            } catch (Throwable $ignore) {}
+        }
+
+        // Retroactive alignment for Autoship Order #9:
+        // Autoship policy: 15% discount given to buyer is funded by ASENA waiving 100% of its commission (0 Toman).
+        // Seller receives 100% of money (no commission deducted).
+        try {
+            $pdo->exec("UPDATE `orders` SET `order_type` = 'autoship', `is_autoship` = 1 WHERE `id` = 9");
+            $pdo->exec("UPDATE `order_items` SET `is_autoship` = 1, `commission_rate` = 0.00, `commission_amount` = 0, `seller_net_amount` = `price_at_purchase` * `quantity` WHERE `order_id` = 9");
+
+            $chkEscrow = $pdo->query("SELECT id, seller_id, gross_amount, commission_amount FROM seller_escrow_ledger WHERE order_id = 9 LIMIT 1");
+            $escrowRow = $chkEscrow ? $chkEscrow->fetch(PDO::FETCH_ASSOC) : null;
+            if ($escrowRow && (int)$escrowRow['commission_amount'] > 0) {
+                $diff = (int)$escrowRow['commission_amount'];
+                $sellerId = (int)$escrowRow['seller_id'];
+                $pdo->exec("UPDATE seller_escrow_ledger SET commission_amount = 0, net_seller_amount = gross_amount WHERE order_id = 9");
+                // Credit seller's pending escrow wallet balance by the restored amount
+                $updWallet = $pdo->prepare("UPDATE seller_wallets SET balance_pending_escrow = balance_pending_escrow + ? WHERE seller_id = ?");
+                $updWallet->execute([$diff, $sellerId]);
+            }
+        } catch (Throwable $retroErr) {}
+
+        @touch(__DIR__ . '/.schema_aligned_v6');
+    } catch (Throwable $e) {}
+}
+
+
 require_once __DIR__ . '/Feature.php';
 require_once __DIR__ . '/functions.php';
 

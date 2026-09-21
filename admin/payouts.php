@@ -428,7 +428,13 @@ require_once __DIR__ . '/includes/admin_header.php';
                                     <?php endif; ?>
                                 </td>
                                 <td class="px-4 py-3 font-mono"><?= number_format($item['gross_amount']) ?> تومان</td>
-                                <td class="px-4 py-3 font-mono text-rose-500"><?= number_format($item['commission_amount']) ?> تومان</td>
+                                <td class="px-4 py-3 font-mono">
+                                    <?php if ($item['commission_amount'] <= 0): ?>
+                                        <span class="px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700">۰ تومان (اتوشیپ - سهم فروشنده ۱۰۰٪)</span>
+                                    <?php else: ?>
+                                        <span class="text-rose-500 font-semibold"><?= number_format($item['commission_amount']) ?> تومان</span>
+                                    <?php endif; ?>
+                                </td>
                                 <td class="px-4 py-3 font-mono font-bold text-emerald-600"><?= number_format($item['net_seller_amount']) ?> تومان</td>
                                 <td class="px-4 py-3">
                                     <?php if ($isDelivered): ?>

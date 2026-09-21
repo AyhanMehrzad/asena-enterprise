@@ -257,6 +257,16 @@ try {
             }
         } catch (Throwable $t) {}
 
+        $isAutoshipOrder = (!empty($pending['checkout_type']) && $pending['checkout_type'] === 'autoship') ? 1 : 0;
+        if (!$isAutoshipOrder && !empty($items)) {
+            foreach ($items as $chkItem) {
+                if (!empty($chkItem['is_autoship'])) {
+                    $isAutoshipOrder = 1;
+                    break;
+                }
+            }
+        }
+
         $orderData = [
             'user_id'          => $user_id,
             'total_amount'     => $total_amount,
@@ -265,6 +275,8 @@ try {
             'shipping_cost'    => $shippingCost,
             'carrier_name'     => $carrierName,
             'promo_code'       => $promoCode,
+            'order_type'       => $isAutoshipOrder ? 'autoship' : 'retail',
+            'is_autoship'      => $isAutoshipOrder,
             'status'           => 'processing',
             'gateway_ref_id'   => $ref_id,
             'shipping_address' => $fullShippingAddressWithSla,

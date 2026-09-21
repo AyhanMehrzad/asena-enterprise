@@ -63,9 +63,48 @@ class MarketplaceEscrowService {
             $price = (int)$item['price_at_purchase'];
             $grossAmount = $price * $quantity;
 
-            $commissionRate = isset($item['commission_rate']) ? (float)$item['commission_rate'] : self::DEFAULT_COMMISSION_RATE;
-            $commissionAmount = (int)round($grossAmount * ($commissionRate / 100.0));
-            $netSellerAmount = max(0, $grossAmount - $commissionAmount);
+            // Autoship Policy: ASENA waives 100% of platform commission on Autoship subscriptions.
+            // The 15% discount given to the buyer is funded by ASENA waiving its 15% commission margin.
+            // ASENA receives 0% commission (0 Toman interest), and seller receives 100% of the money!
+            $isAutoship = false;
+            if (!empty($item['is_autoship'])) {
+                $isAutoship = true;
+            } elseif (!empty($order['order_type']) && $order['order_type'] === 'autoship') {
+                $isAutoship = true;
+            } elseif (!empty($order['checkout_type']) && $order['checkout_type'] === 'autoship') {
+                $isAutoship = true;
+            } else {
+                try {
+                    $chkSub = $this->db->prepare("
+                        SELECT id FROM user_subscriptions 
+                        WHERE user_id = ? AND status IN ('active', 'paused')
+                        AND created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+                        LIMIT 1
+                    ");
+                    $chkSub->execute([(int)$order['user_id']]);
+                    if ($chkSub->fetch()) {
+                        $txChk = $this->db->prepare("SELECT type, metadata FROM payment_transactions WHERE order_id = ? OR authority_or_ref = ? LIMIT 1");
+                        $txChk->execute([$orderId, $order['gateway_ref_id'] ?? '']);
+                        $tx = $txChk->fetch(PDO::FETCH_ASSOC);
+                        if ($tx) {
+                            $meta = json_decode($tx['metadata'] ?? '{}', true);
+                            if (($meta['checkout_type'] ?? '') === 'autoship' || ($tx['type'] ?? '') === 'autoship') {
+                                $isAutoship = true;
+                            }
+                        }
+                    }
+                } catch (Throwable $tSub) {}
+            }
+
+            if ($isAutoship) {
+                $commissionRate = 0.00;
+                $commissionAmount = 0;
+                $netSellerAmount = $grossAmount; // Seller receives 100% of product money!
+            } else {
+                $commissionRate = isset($item['commission_rate']) ? (float)$item['commission_rate'] : self::DEFAULT_COMMISSION_RATE;
+                $commissionAmount = (int)round($grossAmount * ($commissionRate / 100.0));
+                $netSellerAmount = max(0, $grossAmount - $commissionAmount);
+            }
 
             // Update order_items table
             $updateItem = $this->db->prepare("
@@ -113,18 +152,31 @@ class MarketplaceEscrowService {
                     $sellerId,
                     $orderId,
                     $netSellerAmount,
-                    "نگهداری امانی ۷ روزه تضمین سفارش #{$orderId} (قلم {$item['id']})"
+                    $isAutoship
+                        ? "نگهداری امانی ۷ روزه تضمین اشتراک اتوشیپ #{$orderId} (قلم {$item['id']} - ۱۰۰٪ متعلق به فروشنده)"
+                        : "نگهداری امانی ۷ روزه تضمین سفارش #{$orderId} (قلم {$item['id']})"
                 ]);
 
-                $this->db->prepare("
-                    INSERT INTO platform_ledger_entries 
-                    (provider_id, order_id, type, amount, description, created_at)
-                    VALUES (NULL, ?, 'platform_commission', ?, ?, NOW())
-                ")->execute([
-                    $orderId,
-                    $commissionAmount,
-                    "کارمزد واسطه‌گری پلتفرم آسنا از سفارش #{$orderId}"
-                ]);
+                if ($commissionAmount > 0) {
+                    $this->db->prepare("
+                        INSERT INTO platform_ledger_entries 
+                        (provider_id, order_id, type, amount, description, created_at)
+                        VALUES (NULL, ?, 'platform_commission', ?, ?, NOW())
+                    ")->execute([
+                        $orderId,
+                        $commissionAmount,
+                        "کارمزد واسطه‌گری پلتفرم آسنا از سفارش #{$orderId}"
+                    ]);
+                } elseif ($isAutoship) {
+                    $this->db->prepare("
+                        INSERT INTO platform_ledger_entries 
+                        (provider_id, order_id, type, amount, description, created_at)
+                        VALUES (NULL, ?, 'platform_commission', 0, ?, NOW())
+                    ")->execute([
+                        $orderId,
+                        "کارمزد واسطه‌گری اتوشیپ پلتفرم آسنا (۰٪ کارمزد پلتفرم - پرداخت ۱۰۰٪ وجه کالا به فروشنده)"
+                    ]);
+                }
             } catch (Throwable $e) {}
 
             $totalDeposited += $netSellerAmount;
