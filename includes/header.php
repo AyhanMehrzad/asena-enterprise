@@ -576,10 +576,6 @@ if (function_exists('get_curated_recommendations')) {
                             <a href="seller/index.php" class="bg-amber-600 text-white px-4 py-2 rounded-xl text-xs font-bold shadow-md hover:shadow-lg transition-all flex items-center gap-1.5">
                                 <span class="material-symbols-outlined text-sm">storefront</span> پنل فروشنده
                             </a>
-                        <?php else: ?>
-                            <a href="profile.php" class="bg-white/15 hover:bg-white/25 text-white px-4 py-2 rounded-xl text-xs font-bold shadow-sm transition-all flex items-center gap-1.5">
-                                <span class="material-symbols-outlined text-sm">person</span> حساب کاربری
-                            </a>
                         <?php endif; ?>
 
                         <!-- Loyalty Points Badge -->
