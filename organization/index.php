@@ -90,12 +90,14 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POST['action']) && 
     // Handle Banner Upload
     $bannerUrl = $currentOrg['banner_url'] ?? '';
     if (!empty($_FILES['banner_file']['name']) && $_FILES['banner_file']['error'] === UPLOAD_ERR_OK) {
-        $allowed = ['image/jpeg', 'image/png', 'image/webp'];
+        $allowed = ['image/jpeg' => 'jpg', 'image/png' => 'png', 'image/webp' => 'webp'];
         $fileMime = @mime_content_type($_FILES['banner_file']['tmp_name']);
-        if (in_array($fileMime, $allowed, true) && $_FILES['banner_file']['size'] <= 5 * 1024 * 1024) {
-            $ext = strtolower(pathinfo($_FILES['banner_file']['name'], PATHINFO_EXTENSION));
-            $bannerName = 'org_banner_' . $orgId . '_' . time() . '.' . $ext;
-            $dest = dirname(__DIR__) . '/uploads/organizations/' . $bannerName;
+        if (isset($allowed[$fileMime]) && $_FILES['banner_file']['size'] <= 5 * 1024 * 1024) {
+            $ext = $allowed[$fileMime];
+            $bannerName = 'org_banner_' . $orgId . '_' . bin2hex(random_bytes(8)) . '.' . $ext;
+            $uploadDir = dirname(__DIR__) . '/uploads/organizations/';
+            if (!is_dir($uploadDir)) @mkdir($uploadDir, 0755, true);
+            $dest = $uploadDir . $bannerName;
             if (move_uploaded_file($_FILES['banner_file']['tmp_name'], $dest)) {
                 $bannerUrl = 'uploads/organizations/' . $bannerName;
             }
@@ -107,12 +109,14 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POST['action']) && 
     // Handle Logo Upload
     $logoUrl = $currentOrg['logo_url'] ?? '';
     if (!empty($_FILES['logo_file']['name']) && $_FILES['logo_file']['error'] === UPLOAD_ERR_OK) {
-        $allowed = ['image/jpeg', 'image/png', 'image/webp', 'image/svg+xml'];
+        $allowedLogo = ['image/jpeg' => 'jpg', 'image/png' => 'png', 'image/webp' => 'webp', 'image/svg+xml' => 'svg'];
         $fileMime = @mime_content_type($_FILES['logo_file']['tmp_name']);
-        if ((in_array($fileMime, $allowed, true) || str_ends_with($_FILES['logo_file']['name'], '.svg')) && $_FILES['logo_file']['size'] <= 3 * 1024 * 1024) {
-            $ext = strtolower(pathinfo($_FILES['logo_file']['name'], PATHINFO_EXTENSION));
-            $logoName = 'org_logo_' . $orgId . '_' . time() . '.' . $ext;
-            $dest = dirname(__DIR__) . '/uploads/organizations/' . $logoName;
+        if (isset($allowedLogo[$fileMime]) && $_FILES['logo_file']['size'] <= 3 * 1024 * 1024) {
+            $ext = $allowedLogo[$fileMime];
+            $logoName = 'org_logo_' . $orgId . '_' . bin2hex(random_bytes(8)) . '.' . $ext;
+            $uploadDir = dirname(__DIR__) . '/uploads/organizations/';
+            if (!is_dir($uploadDir)) @mkdir($uploadDir, 0755, true);
+            $dest = $uploadDir . $logoName;
             if (move_uploaded_file($_FILES['logo_file']['tmp_name'], $dest)) {
                 $logoUrl = 'uploads/organizations/' . $logoName;
             }

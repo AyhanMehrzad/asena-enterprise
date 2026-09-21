@@ -72,8 +72,8 @@ if (!empty($payaRecipients)) {
             }
         }
         if (!$activeRecipient) {
-            // Check by user name or first
-            $activeRecipient = $payaRecipients[0];
+            http_response_code(403);
+            die("دسترسی غیرمجاز: اطلاعات بانکی شما در این حواله پایا ثبت نشده است.");
         }
     } else {
         if ($requestedSheba) {

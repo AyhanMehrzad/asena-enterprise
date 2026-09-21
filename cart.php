@@ -15,42 +15,66 @@ $auto_total_price = 0;
 $auto_total_discount = 0;
 
 if (!empty($cart_items)) {
-    // Get all product IDs from cart
-    $ids = array_keys($cart_items);
-    $placeholders = implode(',', array_fill(0, count($ids), '?'));
-    // Fetch from products table and/or pharmacy_medicines table
     $db_products = [];
-    $found_ids = [];
+    $prod_map = []; // prod_id => [cart_key1, ...]
+    $med_map = [];  // med_id => [cart_key1, ...]
 
-    // Check products first if petshop enabled
-    if (Feature::has('petshop_catalog')) {
-        $stmt = $pdo->prepare("SELECT *, 'product' as item_source FROM products WHERE id IN ($placeholders)");
-        $stmt->execute($ids);
-        $found = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        foreach ($found as $item) {
-            $db_products[$item['id']] = $item;
-            $found_ids[] = $item['id'];
+    foreach ($cart_items as $cart_key => $qty) {
+        $cart_key_str = (string)$cart_key;
+        if (str_starts_with($cart_key_str, 'med_')) {
+            $med_id = (int)substr($cart_key_str, 4);
+            $med_map[$med_id][] = $cart_key;
+        } elseif (str_starts_with($cart_key_str, 'prod_')) {
+            $prod_id = (int)substr($cart_key_str, 5);
+            $prod_map[$prod_id][] = $cart_key;
+        } else {
+            // Legacy numeric key fallback
+            $src = $_SESSION['cart_sources'][$cart_key] ?? 'product';
+            if ($src === 'pharmacy') {
+                $med_map[(int)$cart_key][] = $cart_key;
+            } else {
+                $prod_map[(int)$cart_key][] = $cart_key;
+            }
         }
     }
 
-    // For any IDs not found in products (or if pharmacy enabled), check pharmacy_medicines
-    $remaining_ids = array_diff($ids, $found_ids);
-    if (!empty($remaining_ids) && Feature::has('pharmacy_catalog')) {
-        $rem_placeholders = implode(',', array_fill(0, count($remaining_ids), '?'));
-        $stmt = $pdo->prepare("SELECT *, 'pharmacy' as item_source FROM pharmacy_medicines WHERE id IN ($rem_placeholders)");
-        $stmt->execute(array_values($remaining_ids));
-        $found_meds = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        foreach ($found_meds as $item) {
-            $db_products[$item['id']] = $item;
+    // 1. Fetch products from petshop catalog
+    if (!empty($prod_map) && Feature::has('petshop_catalog')) {
+        $pIds = array_keys($prod_map);
+        $pPh = implode(',', array_fill(0, count($pIds), '?'));
+        $stmt = $pdo->prepare("SELECT *, 'product' as item_source FROM products WHERE id IN ($pPh)");
+        $stmt->execute($pIds);
+        $found = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        foreach ($found as $item) {
+            foreach ($prod_map[$item['id']] as $k) {
+                $itemCopy = $item;
+                $itemCopy['cart_key'] = $k;
+                $db_products[$k] = $itemCopy;
+            }
+        }
+    }
+
+    // 2. Fetch medicines from pharmacy catalog independently
+    if (!empty($med_map) && Feature::has('pharmacy_catalog')) {
+        $mIds = array_keys($med_map);
+        $mPh = implode(',', array_fill(0, count($mIds), '?'));
+        $stmt = $pdo->prepare("SELECT *, 'pharmacy' as item_source FROM pharmacy_medicines WHERE id IN ($mPh)");
+        $stmt->execute($mIds);
+        $foundMeds = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        foreach ($foundMeds as $item) {
+            foreach ($med_map[$item['id']] as $k) {
+                $itemCopy = $item;
+                $itemCopy['cart_key'] = $k;
+                $db_products[$k] = $itemCopy;
+            }
         }
     }
     
-    foreach ($db_products as $prod) {
-        $p_id = $prod['id'];
-        $qty = $cart_items[$p_id];
+    foreach ($db_products as $cart_k => $prod) {
+        $qty = $cart_items[$cart_k] ?? 1;
         $prod['qty'] = $qty;
-        $prod['type'] = $cart_types[$p_id] ?? 'standard';
-        $prod['frequency'] = $cart_frequencies[$p_id] ?? '1_month';
+        $prod['type'] = $cart_types[$cart_k] ?? ($cart_types[$prod['id']] ?? 'standard');
+        $prod['frequency'] = $cart_frequencies[$cart_k] ?? ($cart_frequencies[$prod['id']] ?? '1_month');
         
         $price = $prod['price'];
         
@@ -329,7 +353,14 @@ if (empty($wishlist_products)) {
                             <div class="flex-1 w-full">
                                 <div class="flex justify-between items-start mb-1">
                                     <div>
-                                        <span class="text-[11px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-md mb-1 inline-block"><?= htmlspecialchars($prod['category']) ?></span>
+                                        <div class="flex items-center gap-1.5 mb-1">
+                                            <span class="text-[11px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-md inline-block"><?= htmlspecialchars($prod['category']) ?></span>
+                                            <?php if (($prod['item_source'] ?? '') === 'pharmacy'): ?>
+                                                <span class="text-[10px] font-bold text-teal-800 bg-teal-100 px-2 py-0.5 rounded-md inline-block">داروخانه تخصصی</span>
+                                            <?php else: ?>
+                                                <span class="text-[10px] font-bold text-blue-800 bg-blue-100 px-2 py-0.5 rounded-md inline-block">پت‌شاپ</span>
+                                            <?php endif; ?>
+                                        </div>
                                         <a href="product_details.php?id=<?= $prod['id'] ?>" class="block font-bold text-sm sm:text-base text-on-surface hover:text-primary transition-colors">
                                             <?= htmlspecialchars($prod['name']) ?>
                                         </a>
@@ -337,7 +368,8 @@ if (empty($wishlist_products)) {
                                     <form action="actions/cart_action.php" method="POST" class="m-0">
                                         <?= csrf_field() ?>
                                         <input type="hidden" name="active_tab" value="standard">
-                                        <input type="hidden" name="product_id" value="<?= $prod['id'] ?>">
+                                        <input type="hidden" name="product_id" value="<?= htmlspecialchars($prod['cart_key'] ?? $prod['id']) ?>">
+                                        <input type="hidden" name="item_source" value="<?= htmlspecialchars($prod['item_source'] ?? 'product') ?>">
                                         <input type="hidden" name="action" value="remove">
                                         <button type="submit" class="text-error hover:bg-error/10 p-2 rounded-xl transition-colors cursor-pointer" title="حذف از سبد">
                                             <span class="material-symbols-outlined text-lg">delete</span>
@@ -355,7 +387,8 @@ if (empty($wishlist_products)) {
                                     <form action="actions/cart_action.php" method="POST" class="m-0">
                                         <?= csrf_field() ?>
                                         <input type="hidden" name="active_tab" value="autoship">
-                                        <input type="hidden" name="product_id" value="<?= $prod['id'] ?>">
+                                        <input type="hidden" name="product_id" value="<?= htmlspecialchars($prod['cart_key'] ?? $prod['id']) ?>">
+                                        <input type="hidden" name="item_source" value="<?= htmlspecialchars($prod['item_source'] ?? 'product') ?>">
                                         <input type="hidden" name="action" value="toggle_type">
                                         <button type="submit" class="bg-secondary-container hover:bg-emerald-700 text-white px-3 py-1 rounded-lg text-xs font-bold transition-all shadow-sm flex items-center gap-1 active:scale-95 cursor-pointer">
                                             <span class="material-symbols-outlined text-sm">autorenew</span>
@@ -371,7 +404,8 @@ if (empty($wishlist_products)) {
                                         <form action="actions/cart_action.php" method="POST" class="m-0">
                                             <?= csrf_field() ?>
                                             <input type="hidden" name="active_tab" value="standard">
-                                            <input type="hidden" name="product_id" value="<?= $prod['id'] ?>">
+                                            <input type="hidden" name="product_id" value="<?= htmlspecialchars($prod['cart_key'] ?? $prod['id']) ?>">
+                                            <input type="hidden" name="item_source" value="<?= htmlspecialchars($prod['item_source'] ?? 'product') ?>">
                                             <input type="hidden" name="action" value="decrease">
                                             <button type="submit" class="w-7 h-7 flex items-center justify-center bg-white rounded-lg shadow-sm hover:text-primary transition-colors cursor-pointer"><span class="material-symbols-outlined text-xs">remove</span></button>
                                         </form>
@@ -381,7 +415,8 @@ if (empty($wishlist_products)) {
                                         <form action="actions/cart_action.php" method="POST" class="m-0">
                                             <?= csrf_field() ?>
                                             <input type="hidden" name="active_tab" value="standard">
-                                            <input type="hidden" name="product_id" value="<?= $prod['id'] ?>">
+                                            <input type="hidden" name="product_id" value="<?= htmlspecialchars($prod['cart_key'] ?? $prod['id']) ?>">
+                                            <input type="hidden" name="item_source" value="<?= htmlspecialchars($prod['item_source'] ?? 'product') ?>">
                                             <input type="hidden" name="action" value="increase">
                                             <button type="submit" class="w-7 h-7 flex items-center justify-center bg-white rounded-lg shadow-sm hover:text-primary transition-colors cursor-pointer"><span class="material-symbols-outlined text-xs">add</span></button>
                                         </form>
@@ -701,6 +736,9 @@ if (empty($wishlist_products)) {
                                         <div class="flex items-center gap-1.5 mb-1">
                                             <span class="text-[10px] font-bold text-white bg-secondary-container px-2 py-0.5 rounded-md">🔄 اشتراک دوره‌ای</span>
                                             <span class="text-[10px] font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-md"><?= $prod['autoship_pct'] ?>٪ تخفیف دائمی</span>
+                                            <?php if (($prod['item_source'] ?? '') === 'pharmacy'): ?>
+                                                <span class="text-[10px] font-bold text-teal-800 bg-teal-100 px-2 py-0.5 rounded-md">داروخانه</span>
+                                            <?php endif; ?>
                                         </div>
                                         <a href="product_details.php?id=<?= $prod['id'] ?>" class="block font-bold text-sm sm:text-base text-on-surface hover:text-secondary-container transition-colors">
                                             <?= htmlspecialchars($prod['name']) ?>
@@ -709,7 +747,8 @@ if (empty($wishlist_products)) {
                                     <form action="actions/cart_action.php" method="POST" class="m-0">
                                         <?= csrf_field() ?>
                                         <input type="hidden" name="active_tab" value="autoship">
-                                        <input type="hidden" name="product_id" value="<?= $prod['id'] ?>">
+                                        <input type="hidden" name="product_id" value="<?= htmlspecialchars($prod['cart_key'] ?? $prod['id']) ?>">
+                                        <input type="hidden" name="item_source" value="<?= htmlspecialchars($prod['item_source'] ?? 'product') ?>">
                                         <input type="hidden" name="action" value="remove">
                                         <button type="submit" class="text-error hover:bg-error/10 p-2 rounded-xl transition-colors cursor-pointer" title="حذف از اشتراک">
                                             <span class="material-symbols-outlined text-lg">delete</span>
@@ -727,7 +766,8 @@ if (empty($wishlist_products)) {
                                     <form action="actions/cart_action.php" method="POST" class="m-0 flex items-center gap-2">
                                         <?= csrf_field() ?>
                                         <input type="hidden" name="active_tab" value="autoship">
-                                        <input type="hidden" name="product_id" value="<?= $prod['id'] ?>">
+                                        <input type="hidden" name="product_id" value="<?= htmlspecialchars($prod['cart_key'] ?? $prod['id']) ?>">
+                                        <input type="hidden" name="item_source" value="<?= htmlspecialchars($prod['item_source'] ?? 'product') ?>">
                                         <input type="hidden" name="action" value="set_frequency">
                                         <select name="frequency" onchange="this.form.submit()" class="bg-white border border-outline-variant rounded-xl px-3 py-1.5 text-xs font-bold text-primary outline-none focus:border-secondary-container cursor-pointer shadow-sm">
                                             <option value="2_weeks" <?= $prod['frequency'] === '2_weeks' ? 'selected' : '' ?>>هر ۲ هفته یک‌بار</option>
@@ -744,7 +784,8 @@ if (empty($wishlist_products)) {
                                         <form action="actions/cart_action.php" method="POST" class="m-0">
                                             <?= csrf_field() ?>
                                             <input type="hidden" name="active_tab" value="autoship">
-                                            <input type="hidden" name="product_id" value="<?= $prod['id'] ?>">
+                                            <input type="hidden" name="product_id" value="<?= htmlspecialchars($prod['cart_key'] ?? $prod['id']) ?>">
+                                            <input type="hidden" name="item_source" value="<?= htmlspecialchars($prod['item_source'] ?? 'product') ?>">
                                             <input type="hidden" name="action" value="decrease">
                                             <button type="submit" class="w-7 h-7 flex items-center justify-center bg-white rounded-lg shadow-sm hover:text-secondary-container transition-colors cursor-pointer"><span class="material-symbols-outlined text-xs">remove</span></button>
                                         </form>
@@ -754,7 +795,8 @@ if (empty($wishlist_products)) {
                                         <form action="actions/cart_action.php" method="POST" class="m-0">
                                             <?= csrf_field() ?>
                                             <input type="hidden" name="active_tab" value="autoship">
-                                            <input type="hidden" name="product_id" value="<?= $prod['id'] ?>">
+                                            <input type="hidden" name="product_id" value="<?= htmlspecialchars($prod['cart_key'] ?? $prod['id']) ?>">
+                                            <input type="hidden" name="item_source" value="<?= htmlspecialchars($prod['item_source'] ?? 'product') ?>">
                                             <input type="hidden" name="action" value="increase">
                                             <button type="submit" class="w-7 h-7 flex items-center justify-center bg-white rounded-lg shadow-sm hover:text-secondary-container transition-colors cursor-pointer"><span class="material-symbols-outlined text-xs">add</span></button>
                                         </form>

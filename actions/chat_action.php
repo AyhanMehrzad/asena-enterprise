@@ -841,7 +841,9 @@ if ($action === 'doctor_send') {
     $tRow = $chk->fetch(PDO::FETCH_ASSOC);
 
     if (!$tRow) {
-        $uRole = $pdo->query("SELECT role FROM users WHERE id = {$user_id}")->fetchColumn();
+        $uStmt = $pdo->prepare("SELECT role FROM users WHERE id = ?");
+        $uStmt->execute([$user_id]);
+        $uRole = $uStmt->fetchColumn();
         if (!in_array($uRole, ['admin', 'superadmin'])) {
             echo json_encode(['status' => 'error', 'message' => 'دسترسی غیرمجاز: تنها پزشک مربوطه امکان ارسال پیام در این گفتگو را دارد.']);
             exit;
@@ -950,7 +952,9 @@ if ($action === 'doctor_end_chat') {
     ");
     $chk->execute([$ticket_id, $user_id]);
     if (!$chk->fetchColumn()) {
-        $uRole = $pdo->query("SELECT role FROM users WHERE id = {$user_id}")->fetchColumn();
+        $uStmt = $pdo->prepare("SELECT role FROM users WHERE id = ?");
+        $uStmt->execute([$user_id]);
+        $uRole = $uStmt->fetchColumn();
         if (!in_array($uRole, ['admin', 'superadmin'])) {
             echo json_encode(['status' => 'error', 'message' => 'دسترسی غیرمجاز']);
             exit;
@@ -979,7 +983,9 @@ if ($action === 'fetch_doctor_chats') {
     $docId = (int)$dStmt->fetchColumn();
 
     if (!$docId) {
-        $uRole = $pdo->query("SELECT role FROM users WHERE id = {$user_id}")->fetchColumn();
+        $uStmt = $pdo->prepare("SELECT role FROM users WHERE id = ?");
+        $uStmt->execute([$user_id]);
+        $uRole = $uStmt->fetchColumn();
         if (!in_array($uRole, ['admin', 'superadmin'])) {
             echo json_encode(['status' => 'error', 'message' => 'پروفایل پزشک برای این کاربر یافت نشد.']);
             exit;

@@ -23,10 +23,13 @@ if (empty($_SESSION['user_id'])) {
 }
 
 $userId = (int)$_SESSION['user_id'];
+$mode = trim($_POST['mode'] ?? 'file_upload');
+$doctorId = !empty($_POST['doctor_id']) ? (int)$_POST['doctor_id'] : null;
 $clinicName = trim($_POST['clinic_name'] ?? '');
 $vetName = trim($_POST['vet_name'] ?? '');
 $vetPhone = trim($_POST['vet_phone'] ?? '');
 $vetLicense = trim($_POST['vet_license_number'] ?? '');
+$notes = trim($_POST['notes'] ?? '');
 $petId = !empty($_POST['pet_id']) ? (int)$_POST['pet_id'] : null;
 
 // IDOR Prevention: Verify pet belongs to current user
@@ -38,7 +41,67 @@ if ($petId) {
     }
 }
 
-// Validate upload using secure MIME inspection
+$fileUrl = null;
+$trackingCode = 'RX-' . strtoupper(substr(bin2hex(random_bytes(4)), 0, 6));
+
+// Branch 1: Chewy-Style Direct Doctor Verification (No Paper File Required)
+if ($mode === 'direct_doctor') {
+    if (!$doctorId) {
+        echo json_encode(['success' => false, 'message' => 'لطفاً پزشک معالج یا کلینیک را از فهرست پزشکان همکار آسنا انتخاب فرمایید.']);
+        exit;
+    }
+
+    try {
+        $docStmt = $pdo->prepare("
+            SELECT d.id, d.name, d.specialty, d.phone, d.license_number, o.name as org_name 
+            FROM doctors d
+            LEFT JOIN organizations o ON d.organization_id = o.id
+            WHERE d.id = ?
+        ");
+        $docStmt->execute([$doctorId]);
+        $docInfo = $docStmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$docInfo) {
+            echo json_encode(['success' => false, 'message' => 'پزشک انتخابی در سیستم یافت نشد.']);
+            exit;
+        }
+
+        $vetName = $docInfo['name'];
+        $vetPhone = $docInfo['phone'] ?? '';
+        $vetLicense = $docInfo['license_number'] ?? '';
+        $clinicName = $docInfo['org_name'] ?? ($docInfo['specialty'] ?? 'کلینیک همکار آسنا');
+        $fileUrl = 'digital_authorization';
+
+        $stmt = $pdo->prepare("
+            INSERT INTO prescriptions 
+                (tracking_code, user_id, doctor_id, pet_id, rx_file_url, clinic_name, vet_name, vet_phone, vet_license_number, status, dispensing_status, bpms_state, doctor_examination_report)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', 'pending_review', 'broadcasted', ?)
+        ");
+        $stmt->execute([
+            $trackingCode, $userId, $doctorId, $petId, $fileUrl, $clinicName, $vetName, $vetPhone, $vetLicense,
+            $notes ?: 'درخواست تایید دیجیتال نسخه توسط سرپرست بیمار (Chewy-style Digital Rx)'
+        ]);
+        $rxId = (int)$pdo->lastInsertId();
+
+        $_SESSION['active_prescription_id'] = $rxId;
+
+        echo json_encode([
+            'success'         => true,
+            'message'         => 'درخواست تایید الکترونیک نسخه برای ' . htmlspecialchars($vetName) . ' ثبت شد و کد رهگیری به شما اختصاص یافت.',
+            'prescription_id' => $rxId,
+            'tracking_code'   => $trackingCode,
+            'file_url'        => null,
+            'mode'            => 'direct_doctor'
+        ]);
+        exit;
+    } catch (Exception $e) {
+        error_log("Direct Rx error: " . $e->getMessage());
+        echo json_encode(['success' => false, 'message' => 'خطا در ثبت درخواست نسخه: ' . $e->getMessage()]);
+        exit;
+    }
+}
+
+// Branch 2: Paper Prescription File Upload
 if (empty($_FILES['rx_file'])) {
     echo json_encode(['success' => false, 'message' => 'لطفاً تصویر یا فایل معتبر نسخه را انتخاب نمایید.']);
     exit;
@@ -77,16 +140,15 @@ if (!move_uploaded_file($_FILES['rx_file']['tmp_name'], $destPath)) {
 
 $fileUrl = 'uploads/prescriptions/' . $fileName;
 
-$trackingCode = 'RX-' . strtoupper(substr(bin2hex(random_bytes(4)), 0, 6));
-
 try {
     $stmt = $pdo->prepare("
         INSERT INTO prescriptions 
-            (tracking_code, user_id, pet_id, rx_file_url, clinic_name, vet_name, vet_phone, vet_license_number, status, dispensing_status, bpms_state)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending', 'pending_review', 'broadcasted')
+            (tracking_code, user_id, doctor_id, pet_id, rx_file_url, clinic_name, vet_name, vet_phone, vet_license_number, status, dispensing_status, bpms_state, doctor_examination_report)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', 'pending_review', 'broadcasted', ?)
     ");
     $stmt->execute([
-        $trackingCode, $userId, $petId, $fileUrl, $clinicName, $vetName, $vetPhone, $vetLicense
+        $trackingCode, $userId, $doctorId, $petId, $fileUrl, $clinicName, $vetName, $vetPhone, $vetLicense,
+        $notes ?: null
     ]);
     $rxId = (int)$pdo->lastInsertId();
 
@@ -98,7 +160,8 @@ try {
         'message'         => 'نسخه شما با موفقیت بارگذاری شد و کد رهگیری اختصاص یافت.',
         'prescription_id' => $rxId,
         'tracking_code'   => $trackingCode,
-        'file_url'        => $fileUrl
+        'file_url'        => $fileUrl,
+        'mode'            => 'file_upload'
     ]);
 } catch (Exception $e) {
     error_log("Rx upload error: " . $e->getMessage());

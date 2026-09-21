@@ -3801,12 +3801,13 @@ function switchSellerFin(period) {
         <td class="px-6 py-4">
             <span class="px-3 py-1 text-xs font-bold rounded-full <?php
                 if($sub['status'] == 'active') echo 'bg-primary-container/20 text-primary-container';
+                elseif($sub['status'] == 'paused') echo 'bg-amber-100 text-amber-800 border border-amber-300';
                 elseif($sub['status'] == 'ended') echo 'bg-surface-variant text-on-surface-variant';
                 elseif($sub['status'] == 'cancelled') echo 'bg-error/20 text-error';
                 else echo 'bg-surface-container text-on-surface';
             ?>">
                 <?php 
-                    $status_map = ['active'=>'فعال', 'ended'=>'پایان یافته', 'cancelled'=>'لغو شده'];
+                    $status_map = ['active'=>'فعال', 'paused'=>'متوقف شده (موقت)', 'ended'=>'پایان یافته', 'cancelled'=>'لغو شده'];
                     echo $status_map[$sub['status']] ?? $sub['status']; 
                 ?>
             </span>
@@ -3818,13 +3819,50 @@ function switchSellerFin(period) {
             <?php echo $sub['next_delivery_date'] ? $fmtDateText->format(new DateTime($sub['next_delivery_date'])) : 'نامشخص'; ?>
         </td>
     </tr>
-    <?php if ($sub['status'] === 'active'): ?>
-    <!-- User Self-Service Action Bar (Reschedule / Postpone / Cancel) -->
+    <?php if ($sub['status'] === 'active' || $sub['status'] === 'paused'): ?>
+    <!-- User Self-Service Action Bar (Chewy Standards: Ship Now / Pause / Resume / Swap Frequency / Cancel) -->
     <tr class="bg-surface-container-low/30 border-b border-outline-variant/20">
         <td colspan="5" class="px-6 py-3">
             <div class="flex flex-wrap items-center justify-between gap-3 text-xs">
-                <span class="font-bold text-on-surface-variant">مدیریت نوبت تحویل:</span>
+                <span class="font-bold text-on-surface-variant">مدیریت خودکار اشتراک:</span>
                 <div class="flex flex-wrap items-center gap-2">
+                    <?php if ($sub['status'] === 'active'): ?>
+                    <!-- Ship Now (ارسال فوری همین حالا) -->
+                    <form action="actions/subscription_action.php" method="POST" class="inline m-0" onsubmit="return confirm('آیا مایلید این سفارش همین حالا به جریان بیفتد و ارسال فوری ثبت شود؟');">
+                        <?php echo csrf_field(); ?>
+                        <input type="hidden" name="action" value="ship_now">
+                        <input type="hidden" name="subscription_id" value="<?php echo $sub['id']; ?>">
+                        <button type="submit" class="bg-emerald-600 hover:bg-emerald-700 text-white px-2.5 py-1 rounded-lg font-bold transition-all shadow-xs flex items-center gap-1" title="ثبت سفارش فوری برای امروز">
+                            <span class="material-symbols-outlined text-[14px]">local_shipping</span>
+                            <span>ارسال فوری (Ship Now)</span>
+                        </button>
+                    </form>
+
+                    <!-- Toggle Pause -->
+                    <form action="actions/subscription_action.php" method="POST" class="inline m-0" onsubmit="return confirm('آیا از توقف موقت این اشتراک اطمینان دارید؟');">
+                        <?php echo csrf_field(); ?>
+                        <input type="hidden" name="action" value="toggle_pause">
+                        <input type="hidden" name="subscription_id" value="<?php echo $sub['id']; ?>">
+                        <button type="submit" class="bg-amber-100 hover:bg-amber-200 text-amber-900 border border-amber-300 px-2.5 py-1 rounded-lg font-bold transition-all" title="توقف موقت بدون لغو اشتراک">
+                            توقف موقت (Pause)
+                        </button>
+                    </form>
+
+                    <!-- Swap Frequency -->
+                    <form action="actions/subscription_action.php" method="POST" class="inline-flex items-center gap-1 m-0">
+                        <?php echo csrf_field(); ?>
+                        <input type="hidden" name="action" value="update_frequency">
+                        <input type="hidden" name="subscription_id" value="<?php echo $sub['id']; ?>">
+                        <select name="delivery_frequency" onchange="this.form.submit()" class="p-1 px-1.5 rounded-lg border border-outline-variant text-[11px] outline-none bg-white font-bold text-slate-700" title="تغییر فاصله زمانی تحویل">
+                            <option value="1_week" <?php echo ($sub['delivery_frequency'] ?? '') === '1_week' ? 'selected' : ''; ?>>هفتگی (۱ هفته)</option>
+                            <option value="2_weeks" <?php echo ($sub['delivery_frequency'] ?? '') === '2_weeks' ? 'selected' : ''; ?>>هر ۲ هفته</option>
+                            <option value="4_weeks" <?php echo ($sub['delivery_frequency'] ?? '') === '4_weeks' ? 'selected' : ''; ?>>هر ۴ هفته</option>
+                            <option value="1_month" <?php echo empty($sub['delivery_frequency']) || $sub['delivery_frequency'] === '1_month' ? 'selected' : ''; ?>>ماهانه (۳۰ روز)</option>
+                            <option value="2_months" <?php echo ($sub['delivery_frequency'] ?? '') === '2_months' ? 'selected' : ''; ?>>هر ۲ ماه</option>
+                            <option value="3_months" <?php echo ($sub['delivery_frequency'] ?? '') === '3_months' ? 'selected' : ''; ?>>فصلی (۳ ماه)</option>
+                        </select>
+                    </form>
+
                     <!-- Reschedule Form -->
                     <form action="actions/subscription_action.php" method="POST" class="inline-flex items-center gap-1 m-0">
                         <?php echo csrf_field(); ?>
@@ -3842,6 +3880,18 @@ function switchSellerFin(period) {
                         <input type="hidden" name="skip_days" value="30">
                         <button type="submit" class="bg-surface-container-high hover:bg-surface-container-highest text-primary px-3 py-1 rounded-lg font-bold transition-all border border-outline-variant/40">به تعویق انداختن (+۳۰ روز)</button>
                     </form>
+                    <?php else: ?>
+                    <!-- Resume from Paused State -->
+                    <form action="actions/subscription_action.php" method="POST" class="inline m-0">
+                        <?php echo csrf_field(); ?>
+                        <input type="hidden" name="action" value="toggle_pause">
+                        <input type="hidden" name="subscription_id" value="<?php echo $sub['id']; ?>">
+                        <button type="submit" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1 rounded-lg font-bold transition-all shadow-xs flex items-center gap-1">
+                            <span class="material-symbols-outlined text-[14px]">play_arrow</span>
+                            <span>فعال‌سازی مجدد اشتراک (Resume)</span>
+                        </button>
+                    </form>
+                    <?php endif; ?>
 
                     <!-- Cancel Anytime -->
                     <form action="actions/subscription_action.php" method="POST" class="inline m-0" onsubmit="return confirm('آیا از لغو این اشتراک اطمینان دارید؟');">

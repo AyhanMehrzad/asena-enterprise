@@ -11,23 +11,32 @@
 require_once __DIR__ . '/../includes/db.php';
 
 $lock_file = __DIR__ . '/../uploads/.autoship_last_run';
-$today = date('Y-m-d');
-
-// Check if it has already run today
-if (file_exists($lock_file)) {
-    $last_run = trim(file_get_contents($lock_file));
-    if ($last_run === $today) {
-        // Already ran today, exit silently
-        header('Content-Type: application/json');
-        echo json_encode(['status' => 'skipped', 'message' => 'Already ran today']);
-        exit;
-    }
-}
-
-// Ensure the directory exists (it should, but just in case)
 if (!is_dir(dirname($lock_file))) {
     mkdir(dirname($lock_file), 0755, true);
 }
+
+$today = date('Y-m-d');
+$lockFp = fopen($lock_file, 'c+');
+if (!$lockFp || !flock($lockFp, LOCK_EX | LOCK_NB)) {
+    header('Content-Type: application/json');
+    echo json_encode(['status' => 'busy', 'message' => 'Worker is currently running in another process']);
+    exit;
+}
+
+$last_run = trim(stream_get_contents($lockFp));
+if ($last_run === $today) {
+    flock($lockFp, LOCK_UN);
+    fclose($lockFp);
+    header('Content-Type: application/json');
+    echo json_encode(['status' => 'skipped', 'message' => 'Already ran today']);
+    exit;
+}
+
+// Record today into lock file atomically before heavy processing
+ftruncate($lockFp, 0);
+rewind($lockFp);
+fwrite($lockFp, $today);
+fflush($lockFp);
 
 // --- TELEGRAM BOT CONFIGURATION (Decoupled to environment) ---
 function sendTelegramMessage($message) {
@@ -125,5 +134,10 @@ try {
     header('Content-Type: application/json');
     http_response_code(500);
     echo json_encode(['status' => 'error', 'message' => 'Internal error occurred']);
+} finally {
+    if (isset($lockFp) && is_resource($lockFp)) {
+        @flock($lockFp, LOCK_UN);
+        @fclose($lockFp);
+    }
 }
 ?>

@@ -83,9 +83,51 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
-    // 4. Cancel Subscription Anytime
+    // 4. Chewy Feature: Pause or Resume Subscription
+    if ($action === 'toggle_pause' && $subscription_id > 0) {
+        require_once __DIR__ . '/../includes/AutoshipService.php';
+        $autoship = new AutoshipService($pdo);
+        $newStatus = $autoship->togglePause($subscription_id, $user_id);
+        if ($newStatus === 'paused') {
+            $_SESSION['profile_success'] = "اشتراک شما به صورت موقت متوقف شد. هر زمان که تمایل داشتید می‌توانید آن را مجدداً فعال فرمایید.";
+        } elseif ($newStatus === 'active') {
+            $_SESSION['profile_success'] = "اشتراک با موفقیت مجدداً فعال گردید و نوبت ارسال بعدی تنظیم شد.";
+        } else {
+            $_SESSION['profile_error'] = "خطا در تغییر وضعیت اشتراک.";
+        }
+    }
+
+    // 5. Chewy Feature: 1-Click "Ship Now"
+    if ($action === 'ship_now' && $subscription_id > 0) {
+        require_once __DIR__ . '/../includes/AutoshipService.php';
+        $autoship = new AutoshipService($pdo);
+        $orderId = $autoship->shipNow($subscription_id, $user_id);
+        if ($orderId) {
+            $_SESSION['profile_success'] = "سفارش فوری شما با شناسه #PC-{$orderId} ثبت گردید و نوبت بعدی به طور خودکار تمدید شد.";
+        } else {
+            $_SESSION['profile_error'] = "خطا در ثبت سفارش فوری اشتراک. لطفاً مجدداً تلاش فرمایید.";
+        }
+    }
+
+    // 6. Chewy Feature: Update Delivery Frequency
+    if ($action === 'update_frequency' && $subscription_id > 0) {
+        require_once __DIR__ . '/../includes/AutoshipService.php';
+        $newFreq = trim($_POST['delivery_frequency'] ?? '1_month');
+        $validFreqs = ['1_week', '2_weeks', '3_weeks', '4_weeks', '1_month', '6_weeks', '2_months', '3_months'];
+        if (in_array($newFreq, $validFreqs)) {
+            $autoship = new AutoshipService($pdo);
+            if ($autoship->updateFrequency($subscription_id, $user_id, $newFreq)) {
+                $lbl = AutoshipService::frequencyLabel($newFreq);
+                $_SESSION['profile_success'] = "دوره ارسال اشتراک با موفقیت به «{$lbl}» به‌روزرسانی شد.";
+            } else {
+                $_SESSION['profile_error'] = "خطا در به‌روزرسانی دوره ارسال.";
+            }
+        }
+    }
+
+    // 7. Cancel Subscription Anytime (Active or Paused)
     if ($action === 'cancel_subscription' && $subscription_id > 0) {
-        $chk = $pdo->prepare("SELECT id FROM user_subscriptions WHERE id = ? AND user_id = ? AND status = 'active'");
+        $chk = $pdo->prepare("SELECT id FROM user_subscriptions WHERE id = ? AND user_id = ? AND status IN ('active', 'paused')");
         $chk->execute([$subscription_id, $user_id]);
         if ($chk->fetch()) {
             $upd = $pdo->prepare("UPDATE user_subscriptions SET status = 'cancelled' WHERE id = ?");

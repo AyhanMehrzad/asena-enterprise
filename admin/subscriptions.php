@@ -1,7 +1,10 @@
 <?php
-require_once '../includes/db.php';
-require_once '../includes/functions.php';
+require_once __DIR__ . '/../includes/App.php';
+require_once __DIR__ . '/../includes/functions.php';
+App::boot();
+AuthGuard::requireRole('admin');
 
+$pdo = App::db();
 $currentPage = 'user_subscriptions';
 
 // Handle Quick Dispatch Action

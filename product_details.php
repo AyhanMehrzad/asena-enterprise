@@ -65,6 +65,32 @@ if (!empty($product['seller_id'])) {
     }
 }
 
+$userPetAllergies = [];
+if (!empty($_SESSION['user_id'])) {
+    try {
+        $aStmt = $pdo->prepare("SELECT name, allergies FROM user_pets WHERE user_id = ? AND allergies IS NOT NULL AND allergies != ''");
+        $aStmt->execute([$_SESSION['user_id']]);
+        $userPetAllergies = $aStmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (Throwable $e) {}
+}
+
+if (!function_exists('checkItemAllergyWarning')) {
+    function checkItemAllergyWarning(array $item, array $petAllergies): ?array {
+        if (empty($petAllergies)) return null;
+        $searchSpace = mb_strtolower(($item['name'] ?? '') . ' ' . ($item['description'] ?? '') . ' ' . ($item['brand'] ?? '') . ' ' . ($item['category'] ?? ''));
+        foreach ($petAllergies as $pet) {
+            $terms = preg_split('/[،,;\s\/]+/u', $pet['allergies']);
+            foreach ($terms as $term) {
+                $term = trim($term);
+                if (mb_strlen($term) >= 2 && mb_stripos($searchSpace, mb_strtolower($term)) !== false) {
+                    return ['allergen' => $term, 'pet_name' => $pet['name']];
+                }
+            }
+        }
+        return null;
+    }
+}
+
 // Handle review submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'submit_review') {
     csrf_verify();
@@ -291,6 +317,21 @@ require_once 'includes/header.php';
                         <?php echo $product['stock'] > 0 ? 'موجود در انبار (' . $product['stock'] . ' عدد)' : 'ناموجود'; ?>
                     </span>
                 </div>
+
+                <!-- Chewy-Style Pet Allergy Warning Banner -->
+                <?php if ($allergyAlert = checkItemAllergyWarning($product, $userPetAllergies)): ?>
+                <div class="mb-6 p-4 bg-rose-50 border border-rose-200 rounded-2xl flex items-center gap-3 shadow-xs">
+                    <div class="w-10 h-10 rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center shrink-0">
+                        <span class="material-symbols-outlined text-2xl">warning</span>
+                    </div>
+                    <div>
+                        <h4 class="text-xs font-bold text-rose-900">هشدار تطبیق حساسیت پت (استاندارد Chewy)</h4>
+                        <p class="text-xs text-rose-800 mt-0.5 leading-relaxed">
+                            این کالا حاوی ماده <b>«<?= htmlspecialchars($allergyAlert['allergen']) ?>»</b> است که در پرونده سلامت حیوان خانگی شما (<b><?= htmlspecialchars($allergyAlert['pet_name']) ?></b>) به عنوان حساسیت ثبت شده است.
+                        </p>
+                    </div>
+                </div>
+                <?php endif; ?>
 
                 <!-- Description -->
                 <div class="mb-8 text-sm lg:text-base text-on-surface-variant leading-relaxed bg-surface-container-lowest p-4 rounded-2xl border border-outline-variant/20">

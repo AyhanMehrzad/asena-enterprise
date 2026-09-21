@@ -55,37 +55,71 @@ if ($isBooking) {
     $checkout_type    = $_GET['type'] ?? 'all'; // 'autoship', 'standard', or 'all'
 
     // Calculate real totals from DB
-    $ids = array_keys($cart_items);
-    $placeholders = implode(',', array_fill(0, count($ids), '?'));
-    
-    // Check in products first
-    $stmt = $pdo->prepare("SELECT * FROM products WHERE id IN ($placeholders)");
-    $stmt->execute($ids);
-    $db_products = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $db_products = [];
+    $prod_map = [];
+    $med_map = [];
 
-    // If some items were from pharmacy_medicines
-    $found_ids = array_column($db_products, 'id');
-    $remaining_ids = array_diff($ids, $found_ids);
-    if (!empty($remaining_ids)) {
-        $rem_placeholders = implode(',', array_fill(0, count($remaining_ids), '?'));
-        $stmtMeds = $pdo->prepare("SELECT * FROM pharmacy_medicines WHERE id IN ($rem_placeholders)");
-        $stmtMeds->execute(array_values($remaining_ids));
-        $db_products = array_merge($db_products, $stmtMeds->fetchAll(PDO::FETCH_ASSOC));
+    foreach ($cart_items as $cart_key => $qty) {
+        $cart_key_str = (string)$cart_key;
+        if (str_starts_with($cart_key_str, 'med_')) {
+            $med_id = (int)substr($cart_key_str, 4);
+            $med_map[$med_id][] = $cart_key;
+        } elseif (str_starts_with($cart_key_str, 'prod_')) {
+            $prod_id = (int)substr($cart_key_str, 5);
+            $prod_map[$prod_id][] = $cart_key;
+        } else {
+            // Legacy numeric key fallback
+            $src = $_SESSION['cart_sources'][$cart_key] ?? 'product';
+            if ($src === 'pharmacy') {
+                $med_map[(int)$cart_key][] = $cart_key;
+            } else {
+                $prod_map[(int)$cart_key][] = $cart_key;
+            }
+        }
+    }
+
+    if (!empty($prod_map) && Feature::has('petshop_catalog')) {
+        $pIds = array_keys($prod_map);
+        $pPh = implode(',', array_fill(0, count($pIds), '?'));
+        $stmt = $pdo->prepare("SELECT *, 'product' as item_source FROM products WHERE id IN ($pPh)");
+        $stmt->execute($pIds);
+        $found = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        foreach ($found as $item) {
+            foreach ($prod_map[$item['id']] as $k) {
+                $itemCopy = $item;
+                $itemCopy['cart_key'] = $k;
+                $db_products[$k] = $itemCopy;
+            }
+        }
+    }
+
+    if (!empty($med_map) && Feature::has('pharmacy_catalog')) {
+        $mIds = array_keys($med_map);
+        $mPh = implode(',', array_fill(0, count($mIds), '?'));
+        $stmt = $pdo->prepare("SELECT *, 'pharmacy' as item_source FROM pharmacy_medicines WHERE id IN ($mPh)");
+        $stmt->execute($mIds);
+        $foundMeds = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        foreach ($foundMeds as $item) {
+            foreach ($med_map[$item['id']] as $k) {
+                $itemCopy = $item;
+                $itemCopy['cart_key'] = $k;
+                $db_products[$k] = $itemCopy;
+            }
+        }
     }
 
     $total_price    = 0;
     $total_discount = 0;
     $pending_items  = [];
 
-    foreach ($db_products as $prod) {
-        $p_id            = $prod['id'];
-        $item_type       = $cart_types[$p_id] ?? 'standard';
+    foreach ($db_products as $cart_k => $prod) {
+        $item_type       = $cart_types[$cart_k] ?? ($cart_types[$prod['id']] ?? 'standard');
         
         // Filter if specific checkout requested
         if ($checkout_type === 'autoship' && $item_type !== 'autoship') continue;
         if ($checkout_type === 'standard' && $item_type === 'autoship') continue;
 
-        $qty             = (int)($cart_items[$p_id] ?? 0);
+        $qty             = (int)($cart_items[$cart_k] ?? 0);
         $price           = (int)$prod['price'];
         
         if ($item_type === 'autoship') {
@@ -100,11 +134,12 @@ if ($isBooking) {
 
         $pending_items[] = [
             'product_id'            => $prod['id'],
+            'item_source'           => $prod['item_source'] ?? 'product',
             'product_name_snapshot' => $prod['name'],
             'qty'                   => $qty,
             'unit_price'            => $effective_price,
             'is_autoship'           => ($item_type === 'autoship') ? 1 : 0,
-            'frequency'             => $cart_frequencies[$p_id] ?? '1_month'
+            'frequency'             => $cart_frequencies[$cart_k] ?? ($cart_frequencies[$prod['id']] ?? '1_month')
         ];
     }
 

@@ -24,13 +24,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         
         $image_url = null;
         if (isset($_FILES['profile_image']) && $_FILES['profile_image']['error'] === UPLOAD_ERR_OK) {
-            $uploadDir = '../uploads/doctors/';
-            if (!is_dir($uploadDir)) {
-                mkdir($uploadDir, 0777, true);
-            }
-            $fileName = uniqid() . '_' . basename($_FILES['profile_image']['name']);
-            if (move_uploaded_file($_FILES['profile_image']['tmp_name'], $uploadDir . $fileName)) {
-                $image_url = 'uploads/doctors/' . $fileName;
+            $allowedImg = ['image/jpeg', 'image/png', 'image/webp'];
+            $valImg = validate_upload($_FILES['profile_image'], $allowedImg, 5 * 1024 * 1024);
+            if ($valImg['ok']) {
+                $extMap = ['image/jpeg' => 'jpg', 'image/png' => 'png', 'image/webp' => 'webp'];
+                $ext = $extMap[$valImg['mime']] ?? 'jpg';
+                $uploadDir = '../uploads/doctors/';
+                if (!is_dir($uploadDir)) {
+                    mkdir($uploadDir, 0755, true);
+                }
+                $fileName = 'doctor_' . bin2hex(random_bytes(10)) . '.' . $ext;
+                if (move_uploaded_file($_FILES['profile_image']['tmp_name'], $uploadDir . $fileName)) {
+                    $image_url = 'uploads/doctors/' . $fileName;
+                }
+            } else {
+                $error = $valImg['error'] ?? "فرمت تصویر پزشک نامعتبر است.";
             }
         }
         
@@ -57,13 +65,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         
         $image_url = null;
         if (isset($_FILES['profile_image']) && $_FILES['profile_image']['error'] === UPLOAD_ERR_OK) {
-            $uploadDir = '../uploads/doctors/';
-            if (!is_dir($uploadDir)) {
-                mkdir($uploadDir, 0777, true);
-            }
-            $fileName = uniqid() . '_' . basename($_FILES['profile_image']['name']);
-            if (move_uploaded_file($_FILES['profile_image']['tmp_name'], $uploadDir . $fileName)) {
-                $image_url = 'uploads/doctors/' . $fileName;
+            $allowedImg = ['image/jpeg', 'image/png', 'image/webp'];
+            $valImg = validate_upload($_FILES['profile_image'], $allowedImg, 5 * 1024 * 1024);
+            if ($valImg['ok']) {
+                $extMap = ['image/jpeg' => 'jpg', 'image/png' => 'png', 'image/webp' => 'webp'];
+                $ext = $extMap[$valImg['mime']] ?? 'jpg';
+                $uploadDir = '../uploads/doctors/';
+                if (!is_dir($uploadDir)) {
+                    mkdir($uploadDir, 0755, true);
+                }
+                $fileName = 'doctor_' . bin2hex(random_bytes(10)) . '.' . $ext;
+                if (move_uploaded_file($_FILES['profile_image']['tmp_name'], $uploadDir . $fileName)) {
+                    $image_url = 'uploads/doctors/' . $fileName;
+                }
+            } else {
+                $error = $valImg['error'] ?? "فرمت تصویر پزشک نامعتبر است.";
             }
         }
         

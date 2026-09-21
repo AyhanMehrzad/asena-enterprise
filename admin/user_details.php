@@ -1,7 +1,12 @@
 <?php
-require_once '../includes/db.php'; // ensure we have db access
+require_once __DIR__ . '/../includes/App.php';
+require_once __DIR__ . '/../includes/functions.php';
+App::boot();
+AuthGuard::requireRole('admin');
 
-$userId = $_GET['id'] ?? null;
+$pdo = App::db();
+
+$userId = isset($_GET['id']) ? (int)$_GET['id'] : null;
 if (!$userId) {
     header("Location: user_management.php");
     exit;
@@ -9,17 +14,27 @@ if (!$userId) {
 
 // Handle Document Upload
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'upload_doc') {
-    $petId = $_POST['pet_id'];
-    $docTitle = $_POST['title'];
+    csrf_verify();
+    $petId = (int)($_POST['pet_id'] ?? 0);
+    $docTitle = trim($_POST['title'] ?? 'سند بالینی');
     
     if (isset($_FILES['document']) && $_FILES['document']['error'] === UPLOAD_ERR_OK) {
-        $uploadDir = '../uploads/clinical_docs/';
-        $fileName = time() . '_' . basename($_FILES['document']['name']);
-        $filePath = $uploadDir . $fileName;
-        
-        if (move_uploaded_file($_FILES['document']['tmp_name'], $filePath)) {
-            $stmt = $pdo->prepare("INSERT INTO pet_documents (pet_id, user_id, title, file_name, file_path) VALUES (?, ?, ?, ?, ?)");
-            $stmt->execute([$petId, $userId, $docTitle, $fileName, 'uploads/clinical_docs/' . $fileName]);
+        $allowedMimes = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
+        $val = validate_upload($_FILES['document'], $allowedMimes, 10 * 1024 * 1024);
+        if ($val['ok']) {
+            $extMap = ['image/jpeg' => 'jpg', 'image/png' => 'png', 'image/webp' => 'webp', 'application/pdf' => 'pdf'];
+            $ext = $extMap[$val['mime']] ?? 'bin';
+            $uploadDir = '../uploads/clinical_docs/';
+            if (!is_dir($uploadDir)) {
+                mkdir($uploadDir, 0755, true);
+            }
+            $fileName = 'doc_' . bin2hex(random_bytes(10)) . '.' . $ext;
+            $filePath = $uploadDir . $fileName;
+            
+            if (move_uploaded_file($_FILES['document']['tmp_name'], $filePath)) {
+                $stmt = $pdo->prepare("INSERT INTO pet_documents (pet_id, user_id, title, file_name, file_path) VALUES (?, ?, ?, ?, ?)");
+                $stmt->execute([$petId, $userId, $docTitle, $fileName, 'uploads/clinical_docs/' . $fileName]);
+            }
         }
     }
     header("Location: user_details.php?id=" . $userId);
@@ -28,7 +43,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 
 // Handle Pet Deletion
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'delete_pet') {
-    $petId = $_POST['pet_id'];
+    csrf_verify();
+    $petId = (int)($_POST['pet_id'] ?? 0);
     $stmt = $pdo->prepare("DELETE FROM user_pets WHERE id = ? AND user_id = ?");
     $stmt->execute([$petId, $userId]);
     header("Location: user_details.php?id=" . $userId);
@@ -38,13 +54,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 // Handle User Edit
 $error = null;
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'edit_user') {
+    csrf_verify();
     try {
-        $name = $_POST['name'] ?? '';
-        $phone = $_POST['phone'] ?? '';
-        $email = $_POST['email'] ?? '';
-        $address = $_POST['address'] ?? '';
+        $name = trim($_POST['name'] ?? '');
+        $phone = trim($_POST['phone'] ?? '');
+        $email = trim($_POST['email'] ?? '');
+        $address = trim($_POST['address'] ?? '');
         $role = $_POST['role'] ?? 'user';
-        $loyalty_points = $_POST['loyalty_points'] ?? 0;
+        $loyalty_points = (int)($_POST['loyalty_points'] ?? 0);
 
         $stmt = $pdo->prepare("UPDATE users SET name = ?, phone = ?, email = ?, address = ?, role = ?, loyalty_points = ? WHERE id = ?");
         $stmt->execute([$name, $phone, $email, $address, $role, $loyalty_points, $userId]);
@@ -64,13 +81,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             }
             
             if (isset($_FILES['profile_picture']) && $_FILES['profile_picture']['error'] === UPLOAD_ERR_OK) {
-                $uploadDir = '../uploads/doctors/';
-                if (!is_dir($uploadDir)) mkdir($uploadDir, 0777, true);
-                $fileName = time() . '_' . basename($_FILES['profile_picture']['name']);
-                if (move_uploaded_file($_FILES['profile_picture']['tmp_name'], $uploadDir . $fileName)) {
-                    $dbPath = 'uploads/doctors/' . $fileName;
-                    $stmt = $pdo->prepare("UPDATE doctors SET image_url = ? WHERE user_id = ?");
-                    $stmt->execute([$dbPath, $userId]);
+                $allowedImg = ['image/jpeg', 'image/png', 'image/webp'];
+                $valImg = validate_upload($_FILES['profile_picture'], $allowedImg, 5 * 1024 * 1024);
+                if ($valImg['ok']) {
+                    $extMapImg = ['image/jpeg' => 'jpg', 'image/png' => 'png', 'image/webp' => 'webp'];
+                    $extImg = $extMapImg[$valImg['mime']] ?? 'jpg';
+                    $uploadDir = '../uploads/doctors/';
+                    if (!is_dir($uploadDir)) mkdir($uploadDir, 0755, true);
+                    $fileName = 'doctor_' . bin2hex(random_bytes(10)) . '.' . $extImg;
+                    if (move_uploaded_file($_FILES['profile_picture']['tmp_name'], $uploadDir . $fileName)) {
+                        $dbPath = 'uploads/doctors/' . $fileName;
+                        $stmt = $pdo->prepare("UPDATE doctors SET image_url = ? WHERE user_id = ?");
+                        $stmt->execute([$dbPath, $userId]);
+                    }
                 }
             }
         }
@@ -215,6 +238,7 @@ $appointments = $stmt->fetchAll();
                                     </div>
                                 </div>
                                 <form method="POST" onsubmit="return confirm('آیا از حذف این حیوان خانگی اطمینان دارید؟');">
+                                    <?= csrf_field() ?>
                                     <input type="hidden" name="action" value="delete_pet">
                                     <input type="hidden" name="pet_id" value="<?= $pet['id'] ?>">
                                     <button type="submit" class="w-8 h-8 rounded-full flex items-center justify-center text-error bg-error-container/50 hover:bg-error hover:text-white transition-colors" title="حذف حیوان خانگی">
@@ -364,6 +388,7 @@ $appointments = $stmt->fetchAll();
                 </div>
             <?php else: ?>
                 <form method="POST" enctype="multipart/form-data" class="space-y-4">
+                    <?= csrf_field() ?>
                     <input type="hidden" name="action" value="upload_doc">
                     
                     <div class="space-y-1">
@@ -405,6 +430,7 @@ $appointments = $stmt->fetchAll();
         </div>
         <div class="p-6 overflow-y-auto">
             <form method="POST" enctype="multipart/form-data" class="space-y-4">
+                <?= csrf_field() ?>
                 <input type="hidden" name="action" value="edit_user">
                 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">

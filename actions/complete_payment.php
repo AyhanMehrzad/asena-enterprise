@@ -273,22 +273,25 @@ try {
 
     // 2. Insert order_items and decrement stock
     if (!$is_booking && !$is_subscription) {
-        $itemStmt  = $pdo->prepare(
-            "INSERT INTO order_items (order_id, product_id, quantity, price_at_purchase, product_name_snapshot)
-             VALUES (?, ?, ?, ?, ?)"
+        $itemStmt = $pdo->prepare(
+            "INSERT INTO order_items (order_id, product_id, item_source, quantity, price_at_purchase, product_name_snapshot)
+             VALUES (?, ?, ?, ?, ?, ?)"
         );
         foreach ($items as $item) {
             $pid = (int)$item['product_id'];
             $qty = (int)$item['qty'];
+            $itemSource = ($item['item_source'] ?? '') === 'pharmacy' ? 'pharmacy' : 'product';
 
-            // Dynamically locate item in products or pharmacy_medicines
-            $invTable = 'products';
-            $checkStmt = $pdo->prepare("SELECT stock FROM products WHERE id = ? FOR UPDATE");
+            // Dynamically locate item in designated table
+            $invTable = ($itemSource === 'pharmacy') ? 'pharmacy_medicines' : 'products';
+            $checkStmt = $pdo->prepare("SELECT stock FROM {$invTable} WHERE id = ? FOR UPDATE");
             $checkStmt->execute([$pid]);
             $current_stock = $checkStmt->fetchColumn();
 
-            if ($current_stock === false) {
+            if ($current_stock === false && $itemSource === 'product') {
+                // Resilient fallback check across pharmacy
                 $invTable = 'pharmacy_medicines';
+                $itemSource = 'pharmacy';
                 $checkStmt = $pdo->prepare("SELECT stock FROM pharmacy_medicines WHERE id = ? FOR UPDATE");
                 $checkStmt->execute([$pid]);
                 $current_stock = $checkStmt->fetchColumn();
@@ -312,11 +315,24 @@ try {
                 );
             }
 
-            $itemStmt->execute([
-                $order_id, $pid, $qty,
-                (int)$item['unit_price'],
-                $item['product_name_snapshot'],
-            ]);
+            try {
+                $itemStmt->execute([
+                    $order_id, $pid, $itemSource, $qty,
+                    (int)$item['unit_price'],
+                    $item['product_name_snapshot'],
+                ]);
+            } catch (PDOException $eCol) {
+                // Fallback for schema transition
+                $fallbackItemStmt = $pdo->prepare(
+                    "INSERT INTO order_items (order_id, product_id, quantity, price_at_purchase, product_name_snapshot)
+                     VALUES (?, ?, ?, ?, ?)"
+                );
+                $fallbackItemStmt->execute([
+                    $order_id, $pid, $qty,
+                    (int)$item['unit_price'],
+                    $item['product_name_snapshot'],
+                ]);
+            }
             
             $stockStmt = $pdo->prepare("UPDATE {$invTable} SET stock = stock - ? WHERE id = ? AND stock >= ?");
             $stockStmt->execute([$qty, $pid, $qty]);
@@ -552,23 +568,108 @@ try {
 } catch (RuntimeException $e) {
     if ($pdo->inTransaction()) $pdo->rollBack();
     unset($_SESSION['pending_order']);
-    $_SESSION['profile_error'] = $e->getMessage();
+    error_log("Payment RuntimeException [ref: {$ref_id}]: " . $e->getMessage());
+    
+    // If bank debited customer ($ref_id exists), log discrepancy and create priority support ticket
+    if (!empty($ref_id)) {
+        try {
+            $logStmt = $pdo->prepare("INSERT INTO payment_discrepancy_logs 
+                (user_id, gateway_ref_id, authority, amount, pending_order_json, error_message, status, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, 'pending_investigation', NOW())");
+            $logStmt->execute([
+                $user_id ?? 0,
+                (string)$ref_id,
+                (string)($authority ?? ''),
+                (int)($final_amount ?? 0),
+                json_encode($pending ?? [], JSON_UNESCAPED_UNICODE),
+                $e->getMessage()
+            ]);
+
+            $ticketStmt = $pdo->prepare("INSERT INTO tickets (user_id, mode, status, created_at, updated_at) VALUES (?, 'admin', 'open', NOW(), NOW())");
+            $ticketStmt->execute([$user_id ?? 0]);
+            $ticketId = (int)$pdo->lastInsertId();
+            if ($ticketId > 0) {
+                $ticketMsg = "🚨 هشدار مغایرت مالی (کسر از حساب بدون ثبت نهایی سفارش):\n"
+                    . "کد رهگیری زرین‌پال: {$ref_id}\n"
+                    . "مبلغ: " . number_format($final_amount ?? 0) . " تومان\n"
+                    . "شناسه یکتا Authority: " . ($authority ?? '-') . "\n"
+                    . "علت عدم ثبت سفارش: " . $e->getMessage() . "\n"
+                    . "این تیکت به صورت خودکار توسط سامانه ایجاد شده و در صف اولویت پیگیری مالی و استرداد وجه قرار دارد.";
+                $pdo->prepare("INSERT INTO ticket_messages (ticket_id, sender_type, message, created_at) VALUES (?, 'admin', ?, NOW())")
+                    ->execute([$ticketId, $ticketMsg]);
+            }
+        } catch (Throwable $logEx) {
+            error_log("Failed to log payment discrepancy: " . $logEx->getMessage());
+        }
+
+        $_SESSION['profile_error'] = "تراکنش بانکی شما با کد پیگیری {$ref_id} با موفقیت تایید شده بود اما به علت خطای سیستمی (" . htmlspecialchars($e->getMessage()) . ") سفارش ثبت نشد. یک تیکت پیگیری برای پشتیبانی مالی ثبت گردید و موضوع در اسرع وقت بررسی خواهد شد.";
+    } else {
+        $_SESSION['profile_error'] = $e->getMessage();
+    }
     header('Location: ../cart.php');
     exit;
 
 } catch (PDOException $e) {
     if ($pdo->inTransaction()) $pdo->rollBack();
-    error_log("Payment commit error [{$ref_id}]: " . $e->getMessage());
+    error_log("Payment PDOException commit error [{$ref_id}]: " . $e->getMessage());
+
+    if (!empty($ref_id)) {
+        try {
+            $logStmt = $pdo->prepare("INSERT INTO payment_discrepancy_logs 
+                (user_id, gateway_ref_id, authority, amount, pending_order_json, error_message, status, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, 'pending_investigation', NOW())");
+            $logStmt->execute([
+                $user_id ?? 0,
+                (string)$ref_id,
+                (string)($authority ?? ''),
+                (int)($final_amount ?? 0),
+                json_encode($pending ?? [], JSON_UNESCAPED_UNICODE),
+                $e->getMessage()
+            ]);
+
+            $ticketStmt = $pdo->prepare("INSERT INTO tickets (user_id, mode, status, created_at, updated_at) VALUES (?, 'admin', 'open', NOW(), NOW())");
+            $ticketStmt->execute([$user_id ?? 0]);
+            $ticketId = (int)$pdo->lastInsertId();
+            if ($ticketId > 0) {
+                $ticketMsg = "🚨 خطای پایگاه داده پس از کسر وجه بانکی:\n"
+                    . "کد رهگیری زرین‌پال: {$ref_id}\n"
+                    . "مبلغ: " . number_format($final_amount ?? 0) . " تومان\n"
+                    . "خطا: " . $e->getMessage();
+                $pdo->prepare("INSERT INTO ticket_messages (ticket_id, sender_type, message, created_at) VALUES (?, 'admin', ?, NOW())")
+                    ->execute([$ticketId, $ticketMsg]);
+            }
+        } catch (Throwable $logEx) {
+            error_log("Failed to log payment discrepancy: " . $logEx->getMessage());
+        }
+    }
+
     $_SESSION['profile_error'] =
-        'خطای سیستمی در ثبت سفارش. مبلغ کسر شده با کد رهگیری ' . $ref_id . ' قابل استرداد است.';
+        'خطای سیستمی در ثبت سفارش. مبلغ کسر شده با کد رهگیری ' . ($ref_id ?: 'درگاه') . ' در سامانه مالی جهت استرداد ثبت شد.';
     header('Location: ../cart.php');
     exit;
 
 } catch (Throwable $e) {
     if ($pdo->inTransaction()) $pdo->rollBack();
     error_log("Payment unexpected error [{$ref_id}]: " . $e->getMessage());
+
+    if (!empty($ref_id)) {
+        try {
+            $logStmt = $pdo->prepare("INSERT INTO payment_discrepancy_logs 
+                (user_id, gateway_ref_id, authority, amount, pending_order_json, error_message, status, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, 'pending_investigation', NOW())");
+            $logStmt->execute([
+                $user_id ?? 0,
+                (string)$ref_id,
+                (string)($authority ?? ''),
+                (int)($final_amount ?? 0),
+                json_encode($pending ?? [], JSON_UNESCAPED_UNICODE),
+                $e->getMessage()
+            ]);
+        } catch (Throwable $logEx) {}
+    }
+
     $_SESSION['profile_error'] =
-        'خطای غیرمنتظره در ثبت نهایی سفارش: ' . $e->getMessage();
+        'خطای غیرمنتظره در ثبت نهایی سفارش: ' . htmlspecialchars($e->getMessage());
     header('Location: ../cart.php');
     exit;
 }

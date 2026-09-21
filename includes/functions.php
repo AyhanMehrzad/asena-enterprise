@@ -382,3 +382,24 @@ function to_english_digits($input): string {
     $str = str_replace($fa, $en, (string)$input);
     return str_replace($ar, $en, $str);
 }
+
+/**
+ * Chewy-Style Pet Allergen Collision Detection Engine
+ * Matches registered pet health profile allergies against item name, description, brand, category, or generic name.
+ */
+if (!function_exists('checkItemAllergyWarning')) {
+    function checkItemAllergyWarning(array $item, array $petAllergies): ?array {
+        if (empty($petAllergies)) return null;
+        $searchSpace = mb_strtolower(($item['name'] ?? '') . ' ' . ($item['description'] ?? '') . ' ' . ($item['brand'] ?? '') . ' ' . ($item['category'] ?? '') . ' ' . ($item['generic_name'] ?? ''));
+        foreach ($petAllergies as $pet) {
+            $terms = preg_split('/[،,;|\n\r\t]+/u', $pet['allergies'] ?? '');
+            foreach ($terms as $term) {
+                $term = trim($term);
+                if (mb_strlen($term) >= 2 && mb_stripos($searchSpace, mb_strtolower($term)) !== false) {
+                    return ['allergen' => $term, 'pet_name' => $pet['name']];
+                }
+            }
+        }
+        return null;
+    }
+}

@@ -83,6 +83,32 @@ try {
     // Silently continue if check fails
 }
 
+$userPetAllergies = [];
+if (!empty($_SESSION['user_id'])) {
+    try {
+        $aStmt = $pdo->prepare("SELECT name, allergies FROM user_pets WHERE user_id = ? AND allergies IS NOT NULL AND allergies != ''");
+        $aStmt->execute([$_SESSION['user_id']]);
+        $userPetAllergies = $aStmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (Throwable $e) {}
+}
+
+if (!function_exists('checkItemAllergyWarning')) {
+    function checkItemAllergyWarning(array $item, array $petAllergies): ?array {
+        if (empty($petAllergies)) return null;
+        $searchSpace = mb_strtolower(($item['name'] ?? '') . ' ' . ($item['description'] ?? '') . ' ' . ($item['brand'] ?? '') . ' ' . ($item['category'] ?? ''));
+        foreach ($petAllergies as $pet) {
+            $terms = preg_split('/[،,;\s\/]+/u', $pet['allergies']);
+            foreach ($terms as $term) {
+                $term = trim($term);
+                if (mb_strlen($term) >= 2 && mb_stripos($searchSpace, mb_strtolower($term)) !== false) {
+                    return ['allergen' => $term, 'pet_name' => $pet['name']];
+                }
+            }
+        }
+        return null;
+    }
+}
+
 $joinOrg = $has_org_col ? "LEFT JOIN organizations o ON p.organization_id = o.id" : "";
 $selectOrg = $has_org_col ? "o.name as org_name, o.type as org_type, o.id as org_id," : "NULL as org_name, NULL as org_type, NULL as org_id,";
 $joinSeller = $has_seller_col ? "LEFT JOIN users u ON p.seller_id = u.id" : "";
@@ -1022,6 +1048,16 @@ function buildUrlRemoveArrayItem($arrayName, $valueToRemove) {
                                 </span>
                             </div>
                             <?php endif; ?>
+                        <?php endif; ?>
+
+                        <!-- Chewy-Style Pet Allergy Collision Warning -->
+                        <?php if ($allergyAlert = checkItemAllergyWarning($product, $userPetAllergies)): ?>
+                        <div class="mb-2">
+                            <span class="text-[10px] text-rose-700 font-bold bg-rose-50 border border-rose-200 px-2 py-0.5 rounded-md inline-flex items-center gap-1 shadow-xs" title="بر اساس پرونده سلامت حیوان خانگی شما در آسنا">
+                                <span class="material-symbols-outlined text-[12px] text-rose-600">warning</span>
+                                هشدار حساسیت: حاوی <?= htmlspecialchars($allergyAlert['allergen']) ?> (پت: <?= htmlspecialchars($allergyAlert['pet_name']) ?>)
+                            </span>
+                        </div>
                         <?php endif; ?>
 
                         <!-- Card Footer with Price & Permanent Touch Button -->

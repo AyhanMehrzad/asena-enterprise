@@ -35,7 +35,22 @@ try {
         "ALTER TABLE `prescriptions` ADD COLUMN `bpms_state` VARCHAR(50) DEFAULT 'broadcasted' AFTER `status`",
         "ALTER TABLE `prescriptions` ADD COLUMN `dispensing_status` VARCHAR(50) DEFAULT 'pending_review' AFTER `status`",
         "ALTER TABLE `doctors` ADD COLUMN `license_number` VARCHAR(100) NULL AFTER `clinic_name`",
-        "ALTER TABLE `users` MODIFY COLUMN `role` enum('user','admin','doctor','organization','pharmacist','seller','pharmacy') DEFAULT 'user'"
+        "ALTER TABLE `users` MODIFY COLUMN `role` enum('user','admin','doctor','organization','pharmacist','seller','pharmacy') DEFAULT 'user'",
+        "ALTER TABLE `order_items` ADD COLUMN `item_source` VARCHAR(20) NOT NULL DEFAULT 'product' AFTER `product_id`",
+        "CREATE TABLE IF NOT EXISTS `payment_discrepancy_logs` (
+            `id` INT AUTO_INCREMENT PRIMARY KEY,
+            `user_id` INT NOT NULL,
+            `gateway_ref_id` VARCHAR(100) NOT NULL,
+            `authority` VARCHAR(100) NOT NULL,
+            `amount` BIGINT NOT NULL,
+            `pending_order_json` LONGTEXT NULL,
+            `error_message` TEXT NOT NULL,
+            `status` ENUM('pending_investigation', 'refunded', 'resolved') DEFAULT 'pending_investigation',
+            `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            INDEX `idx_pdl_user` (`user_id`),
+            INDEX `idx_pdl_ref` (`gateway_ref_id`),
+            INDEX `idx_pdl_status` (`status`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
     ];
 
     foreach ($schemaFixes as $sql) {

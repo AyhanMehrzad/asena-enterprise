@@ -41,12 +41,48 @@ if (!Feature::has('pharmacy_catalog')) {
 require_once 'includes/header.php';
 
 $userPets = [];
+$userPetAllergies = [];
 if (!empty($_SESSION['user_id'])) {
     try {
-        $pStmt = $pdo->prepare("SELECT id, name, animal_type FROM user_pets WHERE user_id = ? ORDER BY name ASC");
+        $pStmt = $pdo->prepare("SELECT id, name, animal_type, allergies FROM user_pets WHERE user_id = ? ORDER BY name ASC");
         $pStmt->execute([$_SESSION['user_id']]);
         $userPets = $pStmt->fetchAll(PDO::FETCH_ASSOC);
+        foreach ($userPets as $p) {
+            if (!empty($p['allergies'])) {
+                $userPetAllergies[] = ['name' => $p['name'], 'allergies' => $p['allergies']];
+            }
+        }
     } catch (Throwable $e) {}
+}
+
+$registeredDoctors = [];
+try {
+    $dStmt = $pdo->query("
+        SELECT d.id, d.name, d.specialty, o.name as org_name
+        FROM doctors d
+        LEFT JOIN organizations o ON d.organization_id = o.id
+        ORDER BY d.name ASC LIMIT 50
+    ");
+    $registeredDoctors = $dStmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (Throwable $e) {
+    $registeredDoctors = [];
+}
+
+if (!function_exists('checkItemAllergyWarning')) {
+    function checkItemAllergyWarning(array $item, array $petAllergies): ?array {
+        if (empty($petAllergies)) return null;
+        $searchSpace = mb_strtolower(($item['name'] ?? '') . ' ' . ($item['description'] ?? '') . ' ' . ($item['brand'] ?? '') . ' ' . ($item['category'] ?? '') . ' ' . ($item['generic_name'] ?? ''));
+        foreach ($petAllergies as $pet) {
+            $terms = preg_split('/[،,;\s\/]+/u', $pet['allergies']);
+            foreach ($terms as $term) {
+                $term = trim($term);
+                if (mb_strlen($term) >= 2 && mb_stripos($searchSpace, mb_strtolower($term)) !== false) {
+                    return ['allergen' => $term, 'pet_name' => $pet['name']];
+                }
+            }
+        }
+        return null;
+    }
 }
 
 // Pagination variables
@@ -709,6 +745,16 @@ function buildUrl($updates) {
                             <?php endif; ?>
                         <?php endif; ?>
 
+                        <!-- Chewy-Style Pet Allergy Warning Badge -->
+                        <?php if ($allergyAlert = checkItemAllergyWarning($product, $userPetAllergies)): ?>
+                        <div class="mb-2">
+                            <span class="text-[10px] text-rose-700 font-bold bg-rose-50 border border-rose-200 px-2 py-0.5 rounded-md inline-flex items-center gap-1 shadow-xs" title="بر اساس پرونده سلامت حیوان خانگی شما در آسنا">
+                                <span class="material-symbols-outlined text-[12px] text-rose-600">warning</span>
+                                هشدار حساسیت: حاوی <?= htmlspecialchars($allergyAlert['allergen']) ?> (پت: <?= htmlspecialchars($allergyAlert['pet_name']) ?>)
+                            </span>
+                        </div>
+                        <?php endif; ?>
+
                         <!-- Card Footer with Price & Permanent Touch-Friendly Button -->
                         <div class="mt-auto flex items-center justify-between pt-3 border-t border-outline-variant/20 gap-2">
                             <div class="flex flex-col">
@@ -740,19 +786,19 @@ function buildUrl($updates) {
         </section>
     </form>
 
-    <!-- Prescription Upload Modal -->
+    <!-- Prescription Upload Modal (Chewy Digital Direct Verification + Paper Upload) -->
     <div id="prescriptionModal" class="fixed inset-0 bg-black/60 z-50 hidden backdrop-blur-sm flex items-center justify-center p-4">
-        <div class="bg-white rounded-3xl p-6 md:p-8 max-w-lg w-full shadow-2xl relative">
+        <div class="bg-white rounded-3xl p-6 md:p-8 max-w-lg w-full shadow-2xl relative max-h-[92vh] overflow-y-auto">
             <button onclick="document.getElementById('prescriptionModal').classList.add('hidden')" class="absolute top-6 left-6 text-on-surface-variant hover:text-error transition-colors">
                 <span class="material-symbols-outlined">close</span>
             </button>
-            <div class="flex items-center gap-3 mb-6">
+            <div class="flex items-center gap-3 mb-5">
                 <div class="w-12 h-12 rounded-2xl bg-secondary-container/10 text-secondary-container flex items-center justify-center">
                     <span class="material-symbols-outlined text-2xl">medical_information</span>
                 </div>
                 <div>
-                    <h3 class="text-lg md:text-xl font-bold text-primary">ارسال نسخه به داروساز</h3>
-                    <p class="text-xs text-on-surface-variant">بررسی رایگان نسخه و صدور کد رهگیری توسط آسنا</p>
+                    <h3 class="text-lg md:text-xl font-bold text-primary">تایید نسخه داروسازی آسنا</h3>
+                    <p class="text-xs text-on-surface-variant">الگوی Chewy: تایید مستقیم با پزشک یا بارگذاری برگه نسخه</p>
                 </div>
             </div>
 
@@ -773,8 +819,8 @@ function buildUrl($updates) {
                     <span class="material-symbols-outlined text-2xl">verified</span>
                 </div>
                 <div>
-                    <h4 class="text-base font-bold text-emerald-900">نسخه با موفقیت بارگذاری شد!</h4>
-                    <p class="text-xs text-emerald-800 mt-1">نسخه شما در صف بررسی و آماده‌سازی داروساز قرار گرفت.</p>
+                    <h4 class="text-base font-bold text-emerald-900" id="rxSuccessTitle">نسخه با موفقیت ثبت شد!</h4>
+                    <p class="text-xs text-emerald-800 mt-1" id="rxSuccessMsg">درخواست شما در کارتابل بررسی قرار گرفت.</p>
                 </div>
                 <div class="bg-white p-3 rounded-xl border border-emerald-200 inline-block font-mono font-black text-emerald-900 text-sm" id="rxTrackingCodeDisplay">
                     کد رهگیری: RX-XXXXXX
@@ -790,12 +836,25 @@ function buildUrl($updates) {
                 </div>
             </div>
 
+            <!-- Mode Selector Switch Tabs -->
+            <div id="rxTabContainer" class="flex p-1 bg-surface-container-low rounded-2xl mb-4 border border-outline-variant/30 text-xs font-bold">
+                <button type="button" id="tabBtnDirect" onclick="switchRxMode('direct')" class="flex-1 py-2 rounded-xl transition-all flex items-center justify-center gap-1.5 bg-white text-primary shadow-sm">
+                    <span class="material-symbols-outlined text-sm">stethoscope</span>
+                    <span>استعلام از پزشک (بدون کاغذ)</span>
+                </button>
+                <button type="button" id="tabBtnUpload" onclick="switchRxMode('upload')" class="flex-1 py-2 rounded-xl transition-all flex items-center justify-center gap-1.5 text-on-surface-variant hover:text-primary">
+                    <span class="material-symbols-outlined text-sm">upload_file</span>
+                    <span>بارگذاری عکس نسخه</span>
+                </button>
+            </div>
+
             <form id="rxUploadForm" onsubmit="submitPrescription(event)" class="space-y-4">
                 <?= csrf_field() ?>
-                
+                <input type="hidden" name="mode" id="rx_mode_input" value="direct_doctor">
+
                 <?php if (!empty($userPets)): ?>
                 <div>
-                    <label class="block text-xs font-bold text-primary mb-1.5">انتخاب پت (اختیاری):</label>
+                    <label class="block text-xs font-bold text-primary mb-1.5">انتخاب پت:</label>
                     <select name="pet_id" class="w-full text-xs p-3 bg-surface-container-low border border-outline-variant/30 rounded-xl outline-none focus:ring-2 focus:ring-secondary-container">
                         <option value="">بدون انتساب به پت خاص</option>
                         <?php foreach($userPets as $pet): ?>
@@ -805,28 +864,58 @@ function buildUrl($updates) {
                 </div>
                 <?php endif; ?>
 
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <!-- Direct Doctor Verification Section (Chewy Model) -->
+                <div id="directDoctorSection" class="space-y-3">
                     <div>
-                        <label class="block text-xs font-bold text-primary mb-1.5">نام درمانگاه / کلینیک:</label>
-                        <input type="text" name="clinic_name" placeholder="مثال: کلینیک تخصصی آسنا" class="w-full text-xs p-3 bg-surface-container-low border border-outline-variant/30 rounded-xl outline-none focus:ring-2 focus:ring-secondary-container">
+                        <label class="block text-xs font-bold text-primary mb-1.5">انتخاب پزشک معالج همکار آسنا:</label>
+                        <select name="doctor_id" id="rx_doctor_id" class="w-full text-xs p-3 bg-surface-container-low border border-outline-variant/30 rounded-xl outline-none focus:ring-2 focus:ring-secondary-container">
+                            <option value="">-- لطفاً پزشک یا کلینیک را انتخاب کنید --</option>
+                            <?php foreach($registeredDoctors as $doc): ?>
+                            <option value="<?= (int)$doc['id'] ?>">
+                                <?= htmlspecialchars($doc['name']) ?> (<?= htmlspecialchars($doc['org_name'] ?? $doc['specialty'] ?? 'کلینیک همکار') ?>)
+                            </option>
+                            <?php endforeach; ?>
+                        </select>
                     </div>
-                    <div>
-                        <label class="block text-xs font-bold text-primary mb-1.5">نام پزشک معالج:</label>
-                        <input type="text" name="vet_name" placeholder="مثال: دکتر رادمهر" class="w-full text-xs p-3 bg-surface-container-low border border-outline-variant/30 rounded-xl outline-none focus:ring-2 focus:ring-secondary-container">
+                    <div class="p-3 bg-blue-50/70 border border-blue-200/80 rounded-xl flex items-start gap-2 text-xs text-blue-900 leading-relaxed">
+                        <span class="material-symbols-outlined text-blue-600 text-base shrink-0 mt-0.5">verified_user</span>
+                        <span>
+                            <b>مدل یکپارچه Chewy:</b> بدون نیاز به نسخه کاغذی! پس از انتخاب پزشک، درخواست تایید برای پنل دکتر ارسال شده و به صورت الکترونیک تایید می‌گردد.
+                        </span>
                     </div>
                 </div>
 
+                <!-- Paper Upload Section (Shown when tab switched) -->
+                <div id="paperUploadSection" class="space-y-3 hidden">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-bold text-primary mb-1.5">نام درمانگاه / کلینیک:</label>
+                            <input type="text" name="clinic_name" id="rx_clinic_name" placeholder="مثال: کلینیک تخصصی آسنا" class="w-full text-xs p-3 bg-surface-container-low border border-outline-variant/30 rounded-xl outline-none focus:ring-2 focus:ring-secondary-container">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-primary mb-1.5">نام پزشک معالج:</label>
+                            <input type="text" name="vet_name" id="rx_vet_name" placeholder="مثال: دکتر رادمهر" class="w-full text-xs p-3 bg-surface-container-low border border-outline-variant/30 rounded-xl outline-none focus:ring-2 focus:ring-secondary-container">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-primary mb-1.5">تصویر نسخه یا فایل PDF:</label>
+                        <input type="file" name="rx_file" id="rx_file_input" accept="image/jpeg,image/png,image/webp,application/pdf" class="w-full text-xs p-2 bg-surface-container-low border border-outline-variant/30 rounded-xl file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-secondary-container file:text-white hover:file:bg-secondary-container/80">
+                        <span class="text-[10px] text-on-surface-variant mt-1 block">فرمت‌های مجاز: JPG, PNG, WEBP, PDF (حداکثر ۱۰ مگابایت)</span>
+                    </div>
+                </div>
+
+                <!-- Common Notes Field -->
                 <div>
-                    <label class="block text-xs font-bold text-primary mb-1.5">تصویر نسخه یا فایل PDF:</label>
-                    <input type="file" name="rx_file" id="rx_file_input" required accept="image/jpeg,image/png,image/webp,application/pdf" class="w-full text-xs p-2 bg-surface-container-low border border-outline-variant/30 rounded-xl file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-secondary-container file:text-white hover:file:bg-secondary-container/80">
-                    <span class="text-[10px] text-on-surface-variant mt-1 block">فرمت‌های مجاز: JPG, PNG, WEBP, PDF (حداکثر ۱۰ مگابایت)</span>
+                    <label class="block text-xs font-bold text-primary mb-1.5">توضیحات بیمار / داروی درخواستی (اختیاری):</label>
+                    <textarea name="notes" rows="2" placeholder="نام داروهای مورد نیاز، دوز یا توصیه‌های پزشک معالج..." class="w-full text-xs p-3 bg-surface-container-low border border-outline-variant/30 rounded-xl outline-none focus:ring-2 focus:ring-secondary-container resize-none"></textarea>
                 </div>
 
                 <div id="rxUploadError" class="hidden p-3 bg-rose-50 text-rose-700 text-xs font-bold rounded-xl border border-rose-200"></div>
 
                 <button type="submit" id="rxSubmitBtn" class="w-full bg-secondary-container text-white py-3.5 rounded-xl font-bold hover:bg-[#ea580c] transition-all flex items-center justify-center gap-2 shadow-lg">
-                    <span class="material-symbols-outlined text-lg">cloud_upload</span>
-                    <span>ثبت و ارسال نسخه به داروساز</span>
+                    <span class="material-symbols-outlined text-lg">verified</span>
+                    <span id="rxSubmitBtnText">ارسال درخواست استعلام به پزشک</span>
                 </button>
             </form>
             <?php endif; ?>
@@ -1030,18 +1119,75 @@ function addToCart(btn, productId, type = 'standard') {
     }
 }
 
+let currentRxMode = 'direct';
+
+function switchRxMode(mode) {
+    currentRxMode = mode;
+    const directSec = document.getElementById('directDoctorSection');
+    const paperSec = document.getElementById('paperUploadSection');
+    const modeInput = document.getElementById('rx_mode_input');
+    const tabDirect = document.getElementById('tabBtnDirect');
+    const tabUpload = document.getElementById('tabBtnUpload');
+    const btnText = document.getElementById('rxSubmitBtnText');
+    const fileInput = document.getElementById('rx_file_input');
+    const docSelect = document.getElementById('rx_doctor_id');
+
+    if (mode === 'direct') {
+        if (directSec) directSec.classList.remove('hidden');
+        if (paperSec) paperSec.classList.add('hidden');
+        if (modeInput) modeInput.value = 'direct_doctor';
+        if (fileInput) fileInput.removeAttribute('required');
+        if (docSelect) docSelect.setAttribute('required', 'required');
+        
+        if (tabDirect) tabDirect.className = 'flex-1 py-2 rounded-xl transition-all flex items-center justify-center gap-1.5 bg-white text-primary shadow-sm';
+        if (tabUpload) tabUpload.className = 'flex-1 py-2 rounded-xl transition-all flex items-center justify-center gap-1.5 text-on-surface-variant hover:text-primary';
+        if (btnText) btnText.textContent = 'ارسال درخواست استعلام به پزشک';
+    } else {
+        if (directSec) directSec.classList.add('hidden');
+        if (paperSec) paperSec.classList.remove('hidden');
+        if (modeInput) modeInput.value = 'file_upload';
+        if (docSelect) docSelect.removeAttribute('required');
+        if (fileInput) fileInput.setAttribute('required', 'required');
+
+        if (tabUpload) tabUpload.className = 'flex-1 py-2 rounded-xl transition-all flex items-center justify-center gap-1.5 bg-white text-primary shadow-sm';
+        if (tabDirect) tabDirect.className = 'flex-1 py-2 rounded-xl transition-all flex items-center justify-center gap-1.5 text-on-surface-variant hover:text-primary';
+        if (btnText) btnText.textContent = 'بارگذاری و ارسال نسخه دستی';
+    }
+}
+
 function submitPrescription(e) {
     e.preventDefault();
     const form = document.getElementById('rxUploadForm');
     const errDiv = document.getElementById('rxUploadError');
     const btn = document.getElementById('rxSubmitBtn');
+    const docSelect = document.getElementById('rx_doctor_id');
+    const fileInput = document.getElementById('rx_file_input');
+
     if (errDiv) {
         errDiv.classList.add('hidden');
         errDiv.textContent = '';
     }
 
+    if (currentRxMode === 'direct') {
+        if (!docSelect || !docSelect.value) {
+            if (errDiv) {
+                errDiv.textContent = 'لطفاً پزشک معالج یا کلینیک را از فهرست پزشکان همکار آسنا انتخاب فرمایید.';
+                errDiv.classList.remove('hidden');
+            }
+            return;
+        }
+    } else {
+        if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
+            if (errDiv) {
+                errDiv.textContent = 'لطفاً فایل یا تصویر نسخه را انتخاب نمایید.';
+                errDiv.classList.remove('hidden');
+            }
+            return;
+        }
+    }
+
     btn.disabled = true;
-    btn.innerHTML = '<span class="material-symbols-outlined text-lg animate-spin">sync</span><span>در حال بارگذاری و رمزنگاری نسخه...</span>';
+    btn.innerHTML = '<span class="material-symbols-outlined text-lg animate-spin">sync</span><span>در حال پردازش و برقراری ارتباط...</span>';
 
     const fd = new FormData(form);
 
@@ -1053,21 +1199,39 @@ function submitPrescription(e) {
     .then(data => {
         if (data.success) {
             form.classList.add('hidden');
+            const tabContainer = document.getElementById('rxTabContainer');
+            if (tabContainer) tabContainer.classList.add('hidden');
+            
             const successCard = document.getElementById('rxUploadSuccessCard');
+            const successTitle = document.getElementById('rxSuccessTitle');
+            const successMsg = document.getElementById('rxSuccessMsg');
+
+            if (data.mode === 'direct_doctor') {
+                if (successTitle) successTitle.textContent = 'درخواست استعلام الکترونیک ثبت شد!';
+                if (successMsg) successMsg.textContent = 'درخواست شما مستقیماً در کارتابل پزشک معالج قرار گرفت و پس از تایید، داروها آماده ارسال می‌شوند.';
+            } else {
+                if (successTitle) successTitle.textContent = 'نسخه با موفقیت بارگذاری شد!';
+                if (successMsg) successMsg.textContent = 'نسخه شما در صف بررسی و آماده‌سازی دکتر داروساز قرار گرفت.';
+            }
+
             document.getElementById('rxTrackingCodeDisplay').textContent = 'کد رهگیری: ' + (data.tracking_code || 'RX-' + data.prescription_id);
-            successCard.classList.remove('hidden');
+            if (successCard) successCard.classList.remove('hidden');
         } else {
-            errDiv.textContent = data.message || 'خطا در ثبت نسخه.';
-            errDiv.classList.remove('hidden');
+            if (errDiv) {
+                errDiv.textContent = data.message || 'خطا در ثبت نسخه.';
+                errDiv.classList.remove('hidden');
+            }
             btn.disabled = false;
-            btn.innerHTML = '<span class="material-symbols-outlined text-lg">cloud_upload</span><span>ثبت و ارسال نسخه به داروساز</span>';
+            btn.innerHTML = '<span class="material-symbols-outlined text-lg">verified</span><span>' + (currentRxMode === 'direct' ? 'ارسال درخواست استعلام به پزشک' : 'بارگذاری و ارسال نسخه دستی') + '</span>';
         }
     })
     .catch(err => {
-        errDiv.textContent = 'خطای ارتباط با سرور داروخانه. لطفاً مجدداً تلاش فرمایید.';
-        errDiv.classList.remove('hidden');
+        if (errDiv) {
+            errDiv.textContent = 'خطای ارتباط با سرور داروخانه. لطفاً مجدداً تلاش فرمایید.';
+            errDiv.classList.remove('hidden');
+        }
         btn.disabled = false;
-        btn.innerHTML = '<span class="material-symbols-outlined text-lg">cloud_upload</span><span>ثبت و ارسال نسخه به داروساز</span>';
+        btn.innerHTML = '<span class="material-symbols-outlined text-lg">verified</span><span>' + (currentRxMode === 'direct' ? 'ارسال درخواست استعلام به پزشک' : 'بارگذاری و ارسال نسخه دستی') + '</span>';
     });
 }
 
@@ -1077,6 +1241,8 @@ function resetRxForm() {
         form.reset();
         form.classList.remove('hidden');
     }
+    const tabContainer = document.getElementById('rxTabContainer');
+    if (tabContainer) tabContainer.classList.remove('hidden');
     const successCard = document.getElementById('rxUploadSuccessCard');
     if (successCard) successCard.classList.add('hidden');
     const errDiv = document.getElementById('rxUploadError');
@@ -1084,8 +1250,9 @@ function resetRxForm() {
     const btn = document.getElementById('rxSubmitBtn');
     if (btn) {
         btn.disabled = false;
-        btn.innerHTML = '<span class="material-symbols-outlined text-lg">cloud_upload</span><span>ثبت و ارسال نسخه به داروساز</span>';
+        btn.innerHTML = '<span class="material-symbols-outlined text-lg">verified</span><span id="rxSubmitBtnText">ارسال درخواست استعلام به پزشک</span>';
     }
+    switchRxMode('direct');
 }
 </script>
 
