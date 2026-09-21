@@ -15,20 +15,27 @@ if (!is_dir(dirname($lock_file))) {
     mkdir(dirname($lock_file), 0755, true);
 }
 
+$isCli = (php_sapi_name() === 'cli');
+$force = ($isCli && in_array('--force', $argv ?? []));
+
 $today = date('Y-m-d');
 $lockFp = fopen($lock_file, 'c+');
 if (!$lockFp || !flock($lockFp, LOCK_EX | LOCK_NB)) {
-    header('Content-Type: application/json');
-    echo json_encode(['status' => 'busy', 'message' => 'Worker is currently running in another process']);
+    if (!$isCli) {
+        header('Content-Type: application/json');
+    }
+    echo json_encode(['status' => 'busy', 'message' => 'Worker is currently running in another process']) . "\n";
     exit;
 }
 
 $last_run = trim(stream_get_contents($lockFp));
-if ($last_run === $today) {
+if ($last_run === $today && !$force) {
     flock($lockFp, LOCK_UN);
     fclose($lockFp);
-    header('Content-Type: application/json');
-    echo json_encode(['status' => 'skipped', 'message' => 'Already ran today']);
+    if (!$isCli) {
+        header('Content-Type: application/json');
+    }
+    echo json_encode(['status' => 'skipped', 'message' => 'Already ran today']) . "\n";
     exit;
 }
 
@@ -123,8 +130,10 @@ try {
         sendTelegramMessage($message);
     }
 
-    header('Content-Type: application/json');
-    echo json_encode(['status' => 'success', 'processed' => $processed_count]);
+    if (!$isCli) {
+        header('Content-Type: application/json');
+    }
+    echo json_encode(['status' => 'success', 'processed' => $processed_count]) . "\n";
 
 } catch (Exception $e) {
     if ($pdo->inTransaction()) {

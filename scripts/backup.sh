@@ -21,16 +21,18 @@ echo "[$(date '+%Y-%m-%d %H:%M:%S')] Starting ASENA Database Backup..."
 # 1. Ensure backup directory exists
 mkdir -p "${BACKUP_DIR}"
 
-# 2. Extract database credentials from .env
-if [[ ! -f "${ENV_FILE}" ]]; then
-    echo "[ERROR] .env file not found at ${ENV_FILE}" >&2
-    exit 1
+# 2. Extract database credentials from .env or fallback to production defaults
+if [[ -f "${SCRIPT_DIR}/backup_db.php" ]] && command -v php >/dev/null 2>&1; then
+    echo "[INFO] Delegating backup to high-resilience PHP backup engine..."
+    exec php "${SCRIPT_DIR}/backup_db.php"
 fi
 
 get_env_val() {
     local key="$1"
-    local val
-    val=$(grep -E "^${key}=" "${ENV_FILE}" | head -n 1 | cut -d '=' -f2- | tr -d '"' | tr -d "'" | tr -d '\r' || true)
+    local val=""
+    if [[ -f "${ENV_FILE}" ]]; then
+        val=$(grep -E "^${key}=" "${ENV_FILE}" | head -n 1 | cut -d '=' -f2- | tr -d '"' | tr -d "'" | tr -d '\r' || true)
+    fi
     echo "${val}"
 }
 
@@ -39,9 +41,10 @@ DB_NAME=$(get_env_val "DB_NAME")
 DB_USER=$(get_env_val "DB_USER")
 DB_PASS=$(get_env_val "DB_PASS")
 
-DB_HOST="${DB_HOST:-127.0.0.1}"
-DB_NAME="${DB_NAME:-asena_premium}"
-DB_USER="${DB_USER:-root}"
+DB_HOST="${DB_HOST:-localhost}"
+DB_NAME="${DB_NAME:-asencomp_asena_db}"
+DB_USER="${DB_USER:-asencomp_admin}"
+DB_PASS="${DB_PASS:-X3~YN,HY9M:j%jx}"
 
 echo "[INFO] Target Host: ${DB_HOST} | Database: ${DB_NAME} | User: ${DB_USER}"
 

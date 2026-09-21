@@ -83,6 +83,16 @@
 
 ## ۳. تاریخچه تغییرات اخیر (Change Log)
 
+### نسخه ۱.۰.۱۰ (سپتامبر ۲۰۲۶ - موتور پشتیبان‌گیری خودکار دیتابیس و بهینه‌سازی کران‌جاب‌های سرور پارس‌پک)
+1. **موتور پشتیبان‌گیری خودکار و تاب‌آور دیتابیس (Enterprise DB Backup Engine):**
+   - پیاده‌سازی اسکریپت جامع [`scripts/backup_db.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/scripts/backup_db.php) با استراتژی دوگانه: روش پرسرعت `mysqldump` همراه با فشرده‌سازی استریم مستقیم gzip و متد جایگزین (Fallback) استخراج کامل ساختار و داده‌های جداول از طریق PDO در پکت‌های ۵۰۰ تایی.
+   - ذخیره‌سازی خارج از روت وب در مسیر امن `/home/asencomp/backups/` با دسترسی محدود `0700` و مسدودسازی مستقیم وب از طریق `.htaccess`.
+   - اعمال سیاست پاکسازی خودکار دوره‌ای (Auto-pruning) برای نسخه‌های پشتیبان قدیمی‌تر از ۱۴ روز.
+   - به‌روزرسانی اسکریپت شل [`scripts/backup.sh`](file:///opt/lampp/htdocs/asena/asena-enterprise/scripts/backup.sh) جهت تفویض به موتور PHP و تطبیق متغیرهای محیطی با مشخصات دیتابیس پروداکشن.
+2. **ارتقای پردازشگر کران‌جاب سفارشات ادواری (Autoship Worker CLI/Cron Hardening):**
+   - بهینه‌سازی کامل [`actions/autoship_worker.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/actions/autoship_worker.php) برای اجرای مستقل بدون وابستگی به وب در سطح خط فرمان لینوکس (CLI Crontab).
+   - افزودن فلگ `--force` برای اجرای دستی در زمان تست و تفکیک خروجی‌های استاندارد هدر HTTP و لاگ‌های ترمینال.
+
 ### نسخه ۱.۰.۹ (سپتامبر ۲۰۲۶ - برطرف‌سازی آسیب‌پذیری‌های امنیتی بحرانی، رفع تداخل کاتالوگ، مغایرت‌گیری پرداخت و پیاده‌سازی استانداردهای Chewy)
 1. **برطرف‌سازی آسیب‌پذیری‌های امنیتی بحرانی و گیت‌های احراز هویت (Security Hardening):**
    - انتقال کامل `App::boot()` و `AuthGuard::requireRole('admin')` به سطر دوم پیش از هرگونه پردازش متد POST و بررسی توکن CSRF در [`admin/user_details.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/admin/user_details.php) و [`admin/subscriptions.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/admin/subscriptions.php) جهت انسداد دسترسی غیرمجاز و ترفیع دسترسی (Privilege Escalation).
