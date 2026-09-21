@@ -211,6 +211,20 @@ require_once 'includes/header.php';
                 <span class="text-xs font-bold text-outline-variant">تیکت #<?php echo $ticket_id; ?></span>
             </div>
         </div>
+
+        <?php if($mode === 'ai'): ?>
+        <!-- Medical & Clinical Legal Disclaimer Banner -->
+        <div class="bg-amber-500/10 border-b border-amber-500/20 px-4 py-2.5 flex items-center justify-between text-[11px] text-amber-900 font-medium">
+            <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined text-amber-600 text-base shrink-0">health_and_safety</span>
+                <span><strong>سلب مسئولیت پزشکی:</strong> لئو یک دستیار هوشمند است و نظرات آن جایگزین معاینه حضوری دامپزشک نیست. در موارد مسمومیت یا سوانح حاد، فوراً به کلینیک مراجعه فرمایید.</span>
+            </div>
+            <a href="booking.php?emergency=1" class="text-amber-700 hover:text-amber-900 font-bold underline whitespace-nowrap mr-3 shrink-0 flex items-center gap-1">
+                رزرو نوبت اورژانس
+                <span class="material-symbols-outlined text-xs">arrow_left</span>
+            </a>
+        </div>
+        <?php endif; ?>
         
         <!-- Chat Body -->
         <div class="flex-1 p-6 space-y-6 overflow-y-auto custom-scrollbar bg-surface-container-lowest relative" id="chat-messages">
@@ -376,7 +390,13 @@ function renderMessages(messages) {
             imgHtml = `<a href="${safeImgUrl}" target="_blank" class="block"><img src="${safeImgUrl}" class="rounded-xl mb-3 max-w-[220px] max-h-[220px] object-cover cursor-pointer border border-outline-variant/20 hover:scale-105 transition-transform" alt="ضمیمه چت"></a>`;
         }
 
-        const safeMessage = escapeHtml(msg.message).replace(/\n/g, '<br>');
+        const isEmergency = msg.message && (msg.message.includes('🚨') && (msg.message.includes('هشدار قرمز') || msg.message.includes('اورژانس حیاتی')));
+        
+        let safeMessage = escapeHtml(msg.message);
+        safeMessage = safeMessage.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+        safeMessage = safeMessage.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" class="underline font-bold text-inherit hover:opacity-80 inline-flex items-center gap-0.5">$1</a>');
+        safeMessage = safeMessage.replace(/\n/g, '<br>');
+
         const time = new Date(msg.created_at).toLocaleTimeString('fa-IR', { hour: '2-digit', minute: '2-digit' });
 
         if (isUser) {
@@ -386,6 +406,33 @@ function renderMessages(messages) {
                         ${imgHtml}
                         <div dir="auto" class="chat-message-text" style="unicode-bidi: plaintext; text-align: start;">${safeMessage}</div>
                         <div class="text-[9px] text-white/70 mt-1.5 text-left w-full block">${time} <span class="material-symbols-outlined text-[10px] ml-0.5" style="vertical-align: middle">done_all</span></div>
+                    </div>
+                </div>
+            `);
+        } else if (isEmergency) {
+            container.insertAdjacentHTML('beforeend', `
+                <div class="flex gap-3 max-w-[92%] sm:max-w-[85%]">
+                    <div class="w-10 h-10 rounded-full bg-red-600 text-white flex items-center justify-center shrink-0 border-2 border-white shadow-md animate-pulse mt-auto" title="تریاژ فوری اورژانس">
+                        <span class="material-symbols-outlined text-lg">emergency</span>
+                    </div>
+                    <div class="bg-red-50/95 border-2 border-red-500/80 rounded-3xl rounded-br-sm p-4 sm:p-5 shadow-lg shadow-red-500/10 text-sm leading-relaxed text-red-950">
+                        <div class="text-[11px] font-black text-red-700 mb-1.5 flex items-center gap-1.5">
+                            <span class="w-2 h-2 rounded-full bg-red-600 animate-ping"></span>
+                            <span>🚨 پروتکل تریاژ اورژانس حیاتی دامپزشکی آسنا</span>
+                        </div>
+                        ${imgHtml}
+                        <div dir="auto" class="chat-message-text leading-relaxed font-medium" style="unicode-bidi: plaintext; text-align: start;">${safeMessage}</div>
+                        <div class="mt-3.5 pt-3 border-t border-red-200/80 flex flex-wrap items-center gap-2">
+                            <a href="tel:02191015000" class="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-black shadow-sm transition-all active:scale-95">
+                                <span class="material-symbols-outlined text-sm">call</span>
+                                تماس فوری با اورژانس ۲۴ ساعته
+                            </a>
+                            <a href="booking.php?emergency=1" class="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-white border border-red-300 hover:bg-red-100 text-red-800 rounded-xl text-xs font-bold shadow-sm transition-all active:scale-95">
+                                <span class="material-symbols-outlined text-sm">medical_services</span>
+                                رزرو سریع ویزیت اورژانسی
+                            </a>
+                        </div>
+                        <div class="text-[9px] text-red-700/70 mt-2 text-right w-full block">${time}</div>
                     </div>
                 </div>
             `);

@@ -102,11 +102,37 @@ if ($animal && $animal !== 'all' && $has_animal_col) {
 }
 
 if ($search) {
-    $where[] = "(name LIKE ? OR description LIKE ? OR brand LIKE ? OR generic_name LIKE ?)";
-    $params[] = "%$search%";
-    $params[] = "%$search%";
-    $params[] = "%$search%";
-    $params[] = "%$search%";
+    static $hasFulltextPharm = null;
+    if ($hasFulltextPharm === null) {
+        try {
+            $idxCheck = $pdo->query("SHOW INDEX FROM pharmacy_medicines WHERE Index_type = 'FULLTEXT'")->fetchAll();
+            $hasFulltextPharm = !empty($idxCheck);
+        } catch (Throwable $e) {
+            $hasFulltextPharm = false;
+        }
+    }
+
+    $cleanTerm = trim(preg_replace('/[+\-><()~*\"@]+/', ' ', $search));
+    if ($hasFulltextPharm && mb_strlen($cleanTerm) >= 2) {
+        $words = array_filter(explode(' ', $cleanTerm));
+        $ftQuery = '';
+        foreach ($words as $w) {
+            $ftQuery .= '+' . $w . '* ';
+        }
+        $ftQuery = trim($ftQuery);
+
+        $where[] = "(MATCH(name, description, brand) AGAINST(? IN BOOLEAN MODE) OR name LIKE ? OR generic_name LIKE ? OR brand LIKE ?)";
+        $params[] = $ftQuery;
+        $params[] = "%$search%";
+        $params[] = "%$search%";
+        $params[] = "%$search%";
+    } else {
+        $where[] = "(name LIKE ? OR description LIKE ? OR brand LIKE ? OR generic_name LIKE ?)";
+        $params[] = "%$search%";
+        $params[] = "%$search%";
+        $params[] = "%$search%";
+        $params[] = "%$search%";
+    }
 }
 
 // Autoship filtering

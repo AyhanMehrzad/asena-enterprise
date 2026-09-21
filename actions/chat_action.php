@@ -91,6 +91,102 @@ function get_smart_veterinary_fallback($userMessage) {
     return "سلام! من لئو دستیار تخصصی کلینیک آسنا هستم. پیام شما دریافت شد. در صورت نیاز به بررسی تخصصی یا سوالات پزشکی دقیق، می‌توانید از بخش «رزرو نوبت» یک وقت معاینه ثبت کنید یا از طریق پشتیبانی با کارشناسان ما در ارتباط باشید.";
 }
 
+/**
+ * Deterministic Veterinary Emergency & Toxicology Triage Interceptor
+ * Intercepts life-threatening toxins, bloat/GDV, acute seizures, arterial hemorrhage, and trauma
+ * bypassing LLM generation to guarantee instant response (<50ms) and eliminate hallucination risk.
+ */
+function check_veterinary_emergency_triage($userMessage): ?string {
+    $raw = (string)$userMessage;
+    $msg = mb_strtolower(trim($raw));
+
+    $toxPatterns = [
+        'شکلات و کاکائو (مسمومیت تئوبرومین)' => ['/شکلات|کاکائو|تئوبرومین|کافئین|قهوه|chocolate/ui'],
+        'مرگ موش و سموم جونده‌کش (فسفید و ضدانعقاد)' => ['/مرگ\s*موش|سم\s*موش|فسفید|وارفارین|جونده\s*کش|rat\s*poison|rodenticide/ui'],
+        'شوینده‌های اسیدی، وایتکس و سموم حشره‌کش' => ['/وایتکس|سفید\s*کننده|جرم\s*گیر|جوهر\s*نمک|اسید|تاید|مایع\s*ظرفشویی|سم\s*سوسک|سوسک\s*کش|دیازینون|حشره\s*کش|علف\s*کش|ضدیخ|اتیلن\s*گلیکول|bleach|antifreeze/ui'],
+        'داروهای انسانی خطرناک' => ['/استامینوفن|پاراستامول|ایبوپروفن|ژلوفن|ناپروکسن|آسپرین|متادون|ترامادول|قرص\s*(اعصاب|خواب)|آلپرازولام|دیازپام|کلونازپام|advil|tylenol|paracetamol|ibuprofen/ui'],
+        'خوراکی‌های سمی برای سگ و گربه' => ['/انگور|کشمش|پیاز|سیر|زایلیتول|xylitol/ui'],
+        'گیاهان به شدت سمی (مخصوصاً برای گربه)' => ['/دیفن\s*باخیا|خرزهره|لیلیوم|سوسن/ui']
+    ];
+
+    foreach ($toxPatterns as $category => $regexes) {
+        foreach ($regexes as $rgx) {
+            if (preg_match($rgx, $msg, $matches)) {
+                $matchedWord = $matches[0];
+                return "🚨 **هشدار قرمز اورژانس حیاتی دامپزشکی (مسمومیت حاد)** 🚨\n\n" .
+                    "ماده ذکر شده در پیام شما (**{$matchedWord} - در دسته {$category}**) برای حیوانات خانگی به شدت **سمی و کشنده** است و باید در کمتر از ۳۰ تا ۶۰ دقیقه مداخله درمانی آغاز شود.\n\n" .
+                    "⚠️ **اقدامات طلایی و حیاتی در همین لحظه:**\n" .
+                    "۱. **هرگز خودسرانه حیوان را وادار به استفراغ نکنید** (به ویژه در مصرف شوینده‌ها، اسیدها و مواد سوزاننده، استفراغ موجب سوختگی دوبرابر و سوراخ شدن مری می‌شود).\n" .
+                    "۲. **بسته‌بندی، ظرف یا نمونه باقیمانده ماده مصرفی** را بردارید تا پزشک دوز پادزهر (Antidote) را بر اساس ترکیبات دقیق تعیین کند.\n" .
+                    "۳. حیوان را آرام نگه دارید و در مسیر انتقال به کلینیک اجازه ندهید سر و گردن پت در زاویه خفگی قرار گیرد.\n\n" .
+                    "🏥 **فوراً با نزدیک‌ترین مرکز اورژانس شبانه‌روزی دامپزشکی تماس بگیرید یا نوبت اورژانس ثبت فرمایید:**\n" .
+                    "📞 **شماره تماس فوری اورژانس:** [۰۲۱-۹۱۰۱۵۰۰۰](tel:02191015000)\n" .
+                    "🌐 [رزرو فوری نوبت درمانگاه اورژانس](booking.php?emergency=1)";
+            }
+        }
+    }
+
+    $traumaPatterns = [
+        'اتساع و پیچ‌خوردگی حاد معده (GDV / Bloat)' => [
+            '/(شکم|معده).*باد\s*کرده/ui',
+            '/باد\s*کردن.*(شکم|معده)/ui',
+            '/پیچ\s*خوردگی.*(شکم|معده)/ui',
+            '/(تلاش|زور).*استفراغ/ui',
+            '/bloat|gdv/ui'
+        ],
+        'تشنج حاد و بیهوشی' => [
+            '/تشنج/ui',
+            '/کف.*دهان/ui',
+            '/بیهوش\s*شده|از\s*حال\s*رفته/ui',
+            '/seizure/ui'
+        ],
+        'خونریزی شریانی و بریدگی عمیق' => [
+            '/خونریزی.*(شدید|بند\s*نمی|جهنده)/ui',
+            '/بریدگی.*عمیق/ui',
+            '/رگ.*بریده/ui',
+            '/severe\s*bleeding/ui'
+        ],
+        'انسداد مجاری ادراری (به‌ویژه در گربه نر)' => [
+            '/ادرارش.*نمیاد|نمی\s*تونه.*(ادرار|جیش)/ui',
+            '/(فریاد|جیغ).*در\s*خاک/ui',
+            '/انسداد\s*ادرار/ui',
+            '/urinary\s*blockage/ui'
+        ],
+        'خفگی، تنگی نفس شدید و سیانوز' => [
+            '/خفگی|داره\s*خفه\s*میشه/ui',
+            '/گیر\s*کردن.*(استخوان|جسم|غذا)/ui',
+            '/کبود.*(زبان|لثه)/ui',
+            '/تنگی\s*نفس|سخت\s*نفس|نفسش\s*بالا\s*نمیاد/ui',
+            '/choking/ui'
+        ],
+        'سقوط از ارتفاع و ضربه شدید' => [
+            '/سقوط\s*از|افتادن\s*از.*(بالکن|طبقه|پشت\s*بام|پنجره)/ui',
+            '/تصادف|ماشین.*زده/ui',
+            '/fall\s*from\s*height/ui'
+        ]
+    ];
+
+    foreach ($traumaPatterns as $condition => $regexes) {
+        foreach ($regexes as $rgx) {
+            if (preg_match($rgx, $msg, $matches)) {
+                $matchedWord = $matches[0];
+                return "🚨 **هشدار قرمز اورژانس حیاتی دامپزشکی (مداخله فوق‌فوری)** 🚨\n\n" .
+                    "علائم توصیف شده در پیام شما (**{$matchedWord} - مربوط به وضعیت {$condition}**) جزو موارد **اورژانس حاد و تهدیدکننده حیات** است و هر دقیقه تاخیر ریسک جانی جدی به همراه دارد.\n\n" .
+                    "⚠️ **اقدامات طلایی و حیاتی در همین لحظه:**\n" .
+                    "۱. راه هوایی پت را بررسی کرده و دهان را باز و عاری از ترشحات نگه دارید.\n" .
+                    "۲. در خونریزی، با یک گاز یا پارچه کاملاً تمیز فشار مستقیم (Direct Pressure) روی محل اعمال کنید و پانسمان را بر ندارید.\n" .
+                    "۳. در صورت تشنج، وسایل تیز و سفت را از اطراف پت دور کنید، در تاریکی نسبی و آرامش قرار دهید و به هیچ وجه دست خود را داخل دهان حیوان نبرید.\n" .
+                    "۴. در گربه‌های نر که قادر به ادرار نیستند یا در سگ‌هایی با اتساع شکم، این وضعیت اورژانس جراحی محسوب شده و نباید حتی ۱ ساعت به تاخیر بیفتد.\n\n" .
+                    "🏥 **همین حالا بیمار را به اورژانس برسانید یا با مرکز تماس بگیرید:**\n" .
+                    "📞 **شماره تماس فوری اورژانس:** [۰۲۱-۹۱۰۱۵۰۰۰](tel:02191015000)\n" .
+                    "🌐 [رزرو فوری نوبت درمانگاه اورژانس](booking.php?emergency=1)";
+            }
+        }
+    }
+
+    return null;
+}
+
 function can_user_access_ticket(PDO $pdo, int $userId, array $ticket): bool {
     // Ticket creator / owner always has access to their own ticket
     if ((int)$ticket['user_id'] === $userId) {
@@ -392,8 +488,14 @@ if ($action === 'send') {
         
         $ai_reply = null;
 
+        // ── Emergency Triage Interceptor: Bypass LLM for acute toxicology & trauma ──
+        $emergency_triage = check_veterinary_emergency_triage($message);
+        if ($emergency_triage !== null) {
+            $ai_reply = $emergency_triage;
+        }
+
         // 1. Primary Engine: AvalAI Multi-Model API (Ultra-low cost, fast Persian processing)
-        if (!empty($avalai_api_key)) {
+        if (empty($ai_reply) && !empty($avalai_api_key)) {
             $avalaiMessages = [
                 ['role' => 'system', 'content' => $leo_system_prompt]
             ];

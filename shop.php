@@ -100,10 +100,35 @@ if ($category) {
 }
 
 if ($search) {
-    $where[] = "(name LIKE ? OR description LIKE ? OR brand LIKE ?)";
-    $params[] = "%$search%";
-    $params[] = "%$search%";
-    $params[] = "%$search%";
+    static $hasFulltextShop = null;
+    if ($hasFulltextShop === null) {
+        try {
+            $idxCheck = $pdo->query("SHOW INDEX FROM products WHERE Index_type = 'FULLTEXT'")->fetchAll();
+            $hasFulltextShop = !empty($idxCheck);
+        } catch (Throwable $e) {
+            $hasFulltextShop = false;
+        }
+    }
+
+    $cleanTerm = trim(preg_replace('/[+\-><()~*\"@]+/', ' ', $search));
+    if ($hasFulltextShop && mb_strlen($cleanTerm) >= 2) {
+        $words = array_filter(explode(' ', $cleanTerm));
+        $ftQuery = '';
+        foreach ($words as $w) {
+            $ftQuery .= '+' . $w . '* ';
+        }
+        $ftQuery = trim($ftQuery);
+
+        $where[] = "(MATCH(name, description, brand) AGAINST(? IN BOOLEAN MODE) OR name LIKE ? OR brand LIKE ?)";
+        $params[] = $ftQuery;
+        $params[] = "%$search%";
+        $params[] = "%$search%";
+    } else {
+        $where[] = "(name LIKE ? OR description LIKE ? OR brand LIKE ?)";
+        $params[] = "%$search%";
+        $params[] = "%$search%";
+        $params[] = "%$search%";
+    }
 }
 
 // Animal filtering

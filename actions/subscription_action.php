@@ -91,6 +91,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $upd = $pdo->prepare("UPDATE user_subscriptions SET status = 'cancelled' WHERE id = ?");
             $upd->execute([$subscription_id]);
 
+            // Release pending deliveries
+            try {
+                $pdo->prepare("UPDATE subscription_deliveries SET status = 'cancelled' WHERE subscription_id = ? AND status = 'pending'")
+                    ->execute([$subscription_id]);
+            } catch (Throwable $eCan) {}
+
             $_SESSION['profile_success'] = "اشتراک شما لغو شد. هر زمان که تمایل داشتید می‌توانید آن را مجدداً فعال فرمایید.";
         }
     }

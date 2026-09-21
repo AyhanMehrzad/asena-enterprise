@@ -294,9 +294,21 @@ try {
                 $current_stock = $checkStmt->fetchColumn();
             }
 
-            if ($current_stock === false || (int)$current_stock < $qty) {
+            // Segregated Autoship Reservation Pool Check
+            $reserved_pool = 0;
+            try {
+                $resStmt = $pdo->prepare("SELECT COALESCE(reserved_stock, 0) FROM {$invTable} WHERE id = ?");
+                $resStmt->execute([$pid]);
+                $reserved_pool = (int)$resStmt->fetchColumn();
+            } catch (Throwable $eRes) {}
+
+            $available_for_retail = max(0, (int)$current_stock - $reserved_pool);
+            $is_autoship_item = !empty($item['is_autoship']);
+            $effective_available = $is_autoship_item ? (int)$current_stock : $available_for_retail;
+
+            if ($current_stock === false || $effective_available < $qty) {
                 throw new RuntimeException(
-                    "محصول «{$item['product_name_snapshot']}» موجودی کافی ندارد (موجود: " . (int)$current_stock . ")."
+                    "محصول «{$item['product_name_snapshot']}» موجودی آزاد کافی ندارد (موجودی آزاد: " . $effective_available . ")."
                 );
             }
 
@@ -342,6 +354,15 @@ try {
                             $del_pay_status = ($pay_model === 'upfront') ? 'paid' : 'pending';
                         }
                         $autoDelStmt->execute([$new_sub_id, $m, $sched_date, $del_status, $del_pay_status]);
+                    }
+
+                    // Allocate remaining recurring deliveries to reserved_stock pool
+                    if ($dur_months > 1) {
+                        $remaining_committed_qty = ($dur_months - 1) * $qty;
+                        try {
+                            $pdo->prepare("UPDATE {$invTable} SET reserved_stock = reserved_stock + ? WHERE id = ?")
+                                ->execute([$remaining_committed_qty, $pid]);
+                        } catch (Throwable $ePool) {}
                     }
                 } catch (Exception $subEx) {
                     error_log("Autoship scheduling error: " . $subEx->getMessage());
