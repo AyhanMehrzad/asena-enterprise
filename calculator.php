@@ -3,11 +3,12 @@ $page_title = "محاسبه‌گر هوشمند کالری و رژیم غذای�
 $page_description = "محاسبه دقیق کالری روزانه (MER)، شاخص وضعیت بدنی (BCS)، گرم غذای خشک، آب مصرفی و صدور کارنامه رسمی تغذیه بالینی سگ و گربه بر اساس استانداردهای جهانی FEDIAF و WSAVA.";
 require_once 'includes/header.php';
 $calcIsPaid = (bool)(int)get_setting($pdo, 'calculator_is_paid', 0);
+$calcPaymentModel = (string)get_setting($pdo, 'calculator_payment_model', 'gateway');
 $calcCharityLink = trim((string)get_setting($pdo, 'calculator_charity_link', 'charity.php'));
 if (empty($calcCharityLink)) {
     $calcCharityLink = 'charity.php';
 }
-$calcPrice = (int)get_setting($pdo, 'calculator_price_toman', 50000);
+$calcPrice = (int)get_setting($pdo, 'calculator_price_toman', 49000);
 ?>
 
 <main class="max-w-container-max mx-auto overflow-hidden py-8 px-margin-desktop min-h-[80vh]">
@@ -332,9 +333,13 @@ $calcPrice = (int)get_setting($pdo, 'calculator_price_toman', 50000);
                             </div>
                         </div>
 
-                        <?php if ($calcIsPaid): ?>
+                        <?php if ($calcIsPaid && $calcPaymentModel === 'charity'): ?>
                         <div class="mt-2 text-[10px] text-rose-200 bg-rose-500/20 border border-rose-400/30 rounded-xl p-2.5 text-center leading-relaxed">
                             💖 <strong>نذر و حمایت از حیوانات بی‌پناه:</strong> مبالغ دریافتی این بخش مستقیماً صرف امداد و غذای نقاهتگاه پناهگاه حیوانات می‌شود (معاف از مالیات).
+                        </div>
+                        <?php elseif ($calcIsPaid): ?>
+                        <div class="mt-2 text-[10px] text-blue-200 bg-blue-500/20 border border-blue-400/30 rounded-xl p-2.5 text-center leading-relaxed">
+                            💳 <strong>کارنامه تخصصی تغذیه بالینی:</strong> صدور کارنامه مستلزم پرداخت هزینه خدمات دیجیتال دامپزشکی می‌باشد.
                         </div>
                         <?php endif; ?>
                     </div>
@@ -352,14 +357,21 @@ $calcPrice = (int)get_setting($pdo, 'calculator_price_toman', 50000);
                 <!-- Single High-Converting Action Button (No Clutter) -->
                 <div class="pt-4 mt-4 border-t border-white/10 relative z-10 space-y-3">
                     <?php if ($calcIsPaid): ?>
+                        <?php if ($calcPaymentModel === 'charity'): ?>
                         <button type="button" onclick="issueAndSendMealPlanToProfile()" id="btnIssueMealPlan" class="w-full bg-gradient-to-r from-rose-600 via-pink-600 to-amber-600 hover:from-rose-500 hover:to-amber-500 text-white py-4 px-6 rounded-2xl font-black text-xs sm:text-sm text-center shadow-xl shadow-rose-600/30 transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-98">
                             <span class="material-symbols-outlined text-xl">volunteer_activism</span>
                             <span>پرداخت حمایت خیریه<?= $calcPrice > 0 ? ' (' . number_format($calcPrice) . ' تومان)' : '' ?> و صدور برنامه غذایی</span>
                         </button>
+                        <?php else: ?>
+                        <button type="button" onclick="issueAndSendMealPlanToProfile()" id="btnIssueMealPlan" class="w-full bg-gradient-to-r from-blue-600 via-indigo-600 to-primary hover:from-blue-500 hover:to-indigo-500 text-white py-4 px-6 rounded-2xl font-black text-xs sm:text-sm text-center shadow-xl shadow-blue-600/30 transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-98">
+                            <span class="material-symbols-outlined text-xl">payments</span>
+                            <span>پرداخت هزینه<?= $calcPrice > 0 ? ' (' . number_format($calcPrice) . ' تومان)' : '' ?> و صدور کارنامه بالینی</span>
+                        </button>
+                        <?php endif; ?>
                     <?php else: ?>
                         <button type="button" onclick="issueAndSendMealPlanToProfile()" id="btnIssueMealPlan" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-4 px-6 rounded-2xl font-black text-xs sm:text-sm text-center shadow-xl shadow-emerald-600/30 transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-98">
                             <span class="material-symbols-outlined text-xl">folder_shared</span>
-                            <span>صدور و ذخیره در پرونده سلامت</span>
+                            <span>صدور و ذخیره رایگان در پرونده سلامت</span>
                         </button>
                     <?php endif; ?>
 
