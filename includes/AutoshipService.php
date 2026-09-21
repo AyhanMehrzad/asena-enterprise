@@ -140,18 +140,54 @@ class AutoshipService
         // Generate immediate order
         $this->pdo->beginTransaction();
         try {
-            $orderStmt = $this->pdo->prepare("
-                INSERT INTO orders (user_id, total_amount, status, shipping_address)
-                SELECT ?, ?, 'processing', address FROM users WHERE id = ?
-            ");
-            $orderStmt->execute([$userId, (int)$sub['amount'], $userId]);
+            $userAddr = '';
+            try {
+                $uStmt = $this->pdo->prepare("SELECT address FROM users WHERE id = ?");
+                $uStmt->execute([$userId]);
+                $userAddr = (string)$uStmt->fetchColumn();
+            } catch (Throwable $t) {}
+
+            $orderCols = [];
+            try {
+                $colQuery = $this->pdo->query("SHOW COLUMNS FROM `orders`");
+                if ($colQuery) {
+                    $orderCols = $colQuery->fetchAll(PDO::FETCH_COLUMN);
+                }
+            } catch (Throwable $t) {}
+
+            $orderData = [
+                'user_id'          => $userId,
+                'total_amount'     => (int)$sub['amount'],
+                'status'           => 'processing',
+                'shipping_address' => $userAddr
+            ];
+
+            if (!empty($orderCols)) {
+                $insertFields = [];
+                $insertPlaceholders = [];
+                $insertValues = [];
+                foreach ($orderData as $col => $val) {
+                    if (in_array($col, $orderCols)) {
+                        $insertFields[] = "`{$col}`";
+                        $insertPlaceholders[] = "?";
+                        $insertValues[] = $val;
+                    }
+                }
+                $orderStmt = $this->pdo->prepare("INSERT INTO `orders` (" . implode(', ', $insertFields) . ") VALUES (" . implode(', ', $insertPlaceholders) . ")");
+                $orderStmt->execute($insertValues);
+            } else {
+                $orderStmt = $this->pdo->prepare("INSERT INTO `orders` (user_id, total_amount, status) VALUES (?, ?, 'processing')");
+                $orderStmt->execute([$userId, (int)$sub['amount']]);
+            }
             $orderId = (int)$this->pdo->lastInsertId();
 
-            // Create order log
-            $this->pdo->prepare("
-                INSERT INTO order_status_logs (order_id, from_status, to_status, actor_type, actor_id, notes)
-                VALUES (?, NULL, 'processing', 'user', ?, 'ثبت فوری از طریق کلیک Ship Now اتوشیپ')
-            ")->execute([$orderId, $userId]);
+            // Create order log (defensive resilience)
+            try {
+                $this->pdo->prepare("
+                    INSERT INTO order_status_logs (order_id, from_status, to_status, actor_type, actor_id, notes)
+                    VALUES (?, NULL, 'processing', 'user', ?, 'ثبت فوری از طریق کلیک Ship Now اتوشیپ')
+                ")->execute([$orderId, $userId]);
+            } catch (Throwable $t) {}
 
             // Advance next delivery date
             $freqDays = self::frequencyToDays($sub['delivery_frequency'] ?: '1_month');
