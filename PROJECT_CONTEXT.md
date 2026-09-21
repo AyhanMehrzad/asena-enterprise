@@ -552,9 +552,14 @@
     - **موتور اسکرو و تسویه وجوه ([`includes/MarketplaceEscrowService.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/includes/MarketplaceEscrowService.php)):** تنظیم نرخ کارمزد روی `commission_rate = 0.00` و `commission_amount = 0` برای سفارشات اتوشیپ، و واریز ۱۰۰٪ مبلغ به سهم فروشنده (`net_seller_amount = gross_amount`).
     - **ثبت سفارشات اتوشیپ ([`actions/complete_payment.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/actions/complete_payment.php)):** ثبت پایدار فیلدهای `order_type = 'autoship'` و `is_autoship = 1` در رکورد سفارش جهت همگام‌سازی بی‌نقص با موتور اسکرو.
     - **خودترمیمی دیتابیس نسخه ۶ ([`includes/db.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/includes/db.php)):** افزودن فیلدهای مربوطه به جداول `orders` و `order_items` و تعدیل عطف‌به‌ماسبق سفارش اتوشیپ قبلی #9 (تبدیل کارمزد از ۲۰۸,۲۵۰ تومان به ۰ و اعاده ۲,۰۸۲,۵۰۰ تومان کامل به سهم خالص فروشنده).
-    - **شفافیت پنل تسویه حساب ادمین ([`admin/payouts.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/admin/payouts.php)):** نمایش نشان سبز رنگ `۰ تومان (اتوشیپ - سهم فروشنده ۱۰۰٪)` به جای کسر کسورات قرمز رنگ در ردیف تراکنش‌های اتوشیپ.
+54. **پاکسازی کامل فایل‌های زائد، تصاویر آزمایشی و ارتقای امنیت پوشه‌ها جهت پروداکشن (Repository Cleanup & Directory Hardening):**
+    - **حذف اسکرین‌شات‌ها و تصاویر زائد روت و پرزنتیشن:** حذف ۵ اسکرین‌شات باینری روت (`meal_plan_report_chart.png`, `profile_documents_view.png`, `profile_overview_widget.png`, `profile_pet_report.png`, `unified_health_hub_view.png`) و پوشه موکاپ‌های قدیمی `assets/presentation/` (شامل ۷ فایل باینری غیرقابل استفاده).
+    - **پاکسازی فایل‌های خروجی تستی آپلودها:** حذف گزارش‌های استاتیک تستی در `uploads/documents/` و `uploads/meal_plans/` و ایجاد `.gitkeep` برای حفظ ساختار پوشه‌ها.
+    - **حذف اسکریپت‌های یک‌بارمصرف:** حذف `scripts/download_svg_icons.py` و `scripts/localize_assets.php` و حذف نشانگر تستی قدیمی `includes/.schema_aligned_v2`.
+    - **مسدودسازی دسترسی مستقیم وب به پوشه تست‌ها:** ایجاد فایل [`tests/.htaccess`](file:///opt/lampp/htdocs/asena/asena-enterprise/tests/.htaccess) با دستور `Require all denied` جهت حفظ اجرای تست‌ها در CI و جلوگیری از دسترسی خارجی در پروداکشن.
 
 ---
+
 
 
 ## ۴. پروتکل ثبت تغییرات آینده (Maintenance Rule)
