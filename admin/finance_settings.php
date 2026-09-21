@@ -88,13 +88,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             }
 
             $calculatorPrice = max(0, (int)($_POST['calculator_price_toman'] ?? 49000));
-            $calculatorPaymentModel = trim($_POST['calculator_payment_model'] ?? 'gateway');
-            $calculatorCharityLink = trim($_POST['calculator_charity_link'] ?? '');
 
             set_setting($pdo, 'calculator_is_paid', $calculatorIsPaid);
             set_setting($pdo, 'calculator_price_toman', $calculatorPrice);
-            set_setting($pdo, 'calculator_payment_model', $calculatorPaymentModel);
-            set_setting($pdo, 'calculator_charity_link', $calculatorCharityLink);
 
             // Logistics, Shipping Costs & Free Shipping Threshold
             $freeShippingEnabled = isset($_POST['free_shipping_enabled']) ? '1' : '0';
@@ -159,10 +155,8 @@ $autoPayoutEnabled = get_setting($pdo, 'auto_payout_enabled', '1');
 $autoPayoutDay     = (int)get_setting($pdo, 'auto_payout_day', 4);
 $autoPayoutTime    = get_setting($pdo, 'auto_payout_time', '09:00');
 
-$calculatorIsPaid       = (int)get_setting($pdo, 'calculator_is_paid', 0);
-$calculatorPrice        = (int)get_setting($pdo, 'calculator_price_toman', 49000);
-$calculatorPaymentModel = get_setting($pdo, 'calculator_payment_model', 'gateway');
-$calculatorCharityLink  = get_setting($pdo, 'calculator_charity_link', 'charity.php');
+$calculatorIsPaid = (int)get_setting($pdo, 'calculator_is_paid', 0);
+$calculatorPrice  = (int)get_setting($pdo, 'calculator_price_toman', 49000);
 
 $freeShippingEnabled   = (int)get_setting($pdo, 'free_shipping_enabled', 1);
 $freeShippingThreshold = (int)get_setting($pdo, 'free_shipping_threshold_toman', 600000);
@@ -432,7 +426,7 @@ require_once __DIR__ . '/includes/admin_header.php';
                             <input type="radio" name="calculator_mode" id="calcModeRadioPaid" value="paid" <?= $calculatorIsPaid ? 'checked' : '' ?> onchange="setCalculatorMode('paid')" class="w-5 h-5 text-rose-600 focus:ring-rose-500 cursor-pointer">
                             <div>
                                 <span class="text-sm sm:text-base font-black text-slate-900 dark:text-white block">🔴 پولی (Paid Mode)</span>
-                                <span class="text-[11px] text-rose-700 dark:text-rose-400 font-bold block mt-0.5">دریافت هزینه یا حمایت مالی پیش از صدور</span>
+                                <span class="text-[11px] text-rose-700 dark:text-rose-400 font-bold block mt-0.5">دریافت هزینه خدمات پیش از صدور کارنامه</span>
                             </div>
                         </div>
                         <span class="w-10 h-10 rounded-xl bg-rose-100 dark:bg-rose-900/60 text-rose-700 dark:text-rose-300 flex items-center justify-center shrink-0">
@@ -443,10 +437,10 @@ require_once __DIR__ . '/includes/admin_header.php';
                     <div class="text-xs text-slate-600 dark:text-slate-300 space-y-1.5 leading-relaxed pt-2 border-t border-rose-200/50 dark:border-rose-900/40">
                         <div class="flex items-center gap-2 text-rose-800 dark:text-rose-300 font-bold">
                             <span class="material-symbols-outlined text-sm">lock</span>
-                            <span>صدور کارنامه پس از پرداخت موفقیت‌آمیز</span>
+                            <span>صدور کارنامه پس از پرداخت در درگاه</span>
                         </div>
                         <p class="text-[11px] text-slate-500 dark:text-slate-400">
-                            کاربر برای ثبت نهایی و صدور فایل کامل شناسنامه بالینی تغذیه، به درگاه پرداخت مستقیم یا لینک حمایت مالی هدایت شده و پس از واریز، دسترسی صادر می‌گردد.
+                            کاربر برای ثبت نهایی و صدور فایل کامل شناسنامه بالینی تغذیه، به درگاه پرداخت شاپرک متصل شده و پس از تکمیل واریز، دسترسی صادر می‌گردد.
                         </p>
                     </div>
                 </label>
@@ -457,40 +451,20 @@ require_once __DIR__ . '/includes/admin_header.php';
             <input type="checkbox" name="calculator_is_paid" id="calcPaidToggle" value="1" <?= $calculatorIsPaid ? 'checked' : '' ?> class="hidden">
 
             <!-- Sub-settings: Paid Configuration Panel (Conditionally visible when Paid mode is selected) -->
-            <div id="calcPaidDetailsPanel" class="<?= $calculatorIsPaid ? 'block' : 'hidden' ?> p-6 rounded-2xl bg-gradient-to-r from-rose-50/50 via-slate-50 to-amber-50/40 dark:from-slate-900 dark:to-slate-800/80 border border-rose-200 dark:border-slate-700 space-y-6">
+            <div id="calcPaidDetailsPanel" class="<?= $calculatorIsPaid ? 'block' : 'hidden' ?> p-6 rounded-2xl bg-gradient-to-r from-rose-50/50 via-slate-50 to-amber-50/40 dark:from-slate-900 dark:to-slate-800/80 border border-rose-200 dark:border-slate-700 space-y-4">
                 <div class="flex items-center gap-2 text-rose-700 dark:text-rose-400 font-black text-sm border-b border-rose-200/60 dark:border-slate-700 pb-3">
                     <span class="material-symbols-outlined text-base">tune</span>
-                    <span>جزئیات و مبالغ حالت پولی محاسبه‌گر:</span>
+                    <span>تنظیم مبلغ خدمات محاسبه‌گر بالینی:</span>
                 </div>
 
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                    <!-- 1. Price in Tomans -->
-                    <div>
-                        <label class="block text-xs font-bold text-slate-800 dark:text-slate-200 mb-2">مبلغ کارنامه تغذیه بالینی (تومان):</label>
-                        <div class="relative">
-                            <input type="number" name="calculator_price_toman" id="calcPriceInput" value="<?= $calculatorPrice ?>" min="0" step="1000" class="w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-mono font-bold focus:border-rose-500 outline-none pl-14 text-left dir-ltr">
-                            <span class="absolute left-3 top-3 text-slate-400 text-xs font-bold">تومان</span>
-                        </div>
-                        <p class="text-[10px] text-slate-400 mt-1.5">مبلغی که روی دکمه صدور در صفحه محاسبه‌گر درج می‌شود (پیش‌فرض: ۴۹,۰۰۰ یا ۵۰,۰۰۰ تومان).</p>
+                <div class="max-w-md">
+                    <label class="block text-xs font-bold text-slate-800 dark:text-slate-200 mb-2">مبلغ کارنامه تغذیه بالینی (تومان):</label>
+                    <div class="relative">
+                        <input type="number" name="calculator_price_toman" id="calcPriceInput" value="<?= $calculatorPrice ?>" min="0" step="1000" class="w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-mono font-bold focus:border-rose-500 outline-none pl-14 text-left dir-ltr">
+                        <span class="absolute left-3 top-3 text-slate-400 text-xs font-bold">تومان</span>
                     </div>
-
-                    <!-- 2. Payment Destination Model -->
-                    <div>
-                        <label class="block text-xs font-bold text-slate-800 dark:text-slate-200 mb-2">مدل و نحوه دریافت وجه:</label>
-                        <select name="calculator_payment_model" class="w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-bold focus:border-rose-500 outline-none">
-                            <option value="gateway" <?= $calculatorPaymentModel === 'gateway' ? 'selected' : '' ?>>💳 درگاه پرداخت آنلاین شاپرک (درآمد تجاری)</option>
-                            <option value="charity" <?= $calculatorPaymentModel === 'charity' ? 'selected' : '' ?>>💖 حمایت مالی / نذر حیوانات بی‌پناه (معاف از مالیات)</option>
-                        </select>
-                        <p class="text-[10px] text-slate-400 mt-1.5">در مدل خیریه، تراکنش‌ها به حساب معاف از مالیات نذر و امداد حیوانات هدایت می‌گردند.</p>
-                    </div>
-                </div>
-
-                <!-- 3. Charity or Custom URL -->
-                <div>
-                    <label class="block text-xs font-bold text-slate-800 dark:text-slate-200 mb-2">لینک پرداخت یا صفحه حمایت مالی / خیریه (اختیاری):</label>
-                    <input type="text" name="calculator_charity_link" value="<?= htmlspecialchars($calculatorCharityLink) ?>" placeholder="مثال: charity.php یا https://reymit.ir/..." class="w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-mono focus:border-rose-500 outline-none text-left dir-ltr">
-                    <p class="text-[10px] text-slate-400 mt-1.5 leading-relaxed">
-                        در صورتی که می‌خواهید کاربر به صفحه اختصاصی خیریه یا درگاه ری‌میت هدایت شود، آدرس آن را وارد کنید. اگر خالی باشد، از درگاه پرداخت متمرکز آسنا استفاده می‌شود.
+                    <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-2 leading-relaxed">
+                        مبلغی که روی دکمه صدور در صفحه محاسبه‌گر درج می‌شود و کاربر پیش از صدور و ثبت در پرونده، از طریق درگاه پرداخت آنلاین شاپرک پرداخت خواهد نمود (پیش‌فرض: ۴۹,۰۰۰ تومان).
                     </p>
                 </div>
             </div>

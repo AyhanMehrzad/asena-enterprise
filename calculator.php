@@ -3,11 +3,6 @@ $page_title = "محاسبه‌گر هوشمند کالری و رژیم غذای�
 $page_description = "محاسبه دقیق کالری روزانه (MER)، شاخص وضعیت بدنی (BCS)، گرم غذای خشک، آب مصرفی و صدور کارنامه رسمی تغذیه بالینی سگ و گربه بر اساس استانداردهای جهانی FEDIAF و WSAVA.";
 require_once 'includes/header.php';
 $calcIsPaid = (bool)(int)get_setting($pdo, 'calculator_is_paid', 0);
-$calcPaymentModel = (string)get_setting($pdo, 'calculator_payment_model', 'gateway');
-$calcCharityLink = trim((string)get_setting($pdo, 'calculator_charity_link', 'charity.php'));
-if (empty($calcCharityLink)) {
-    $calcCharityLink = 'charity.php';
-}
 $calcPrice = (int)get_setting($pdo, 'calculator_price_toman', 49000);
 ?>
 
@@ -333,13 +328,9 @@ $calcPrice = (int)get_setting($pdo, 'calculator_price_toman', 49000);
                             </div>
                         </div>
 
-                        <?php if ($calcIsPaid && $calcPaymentModel === 'charity'): ?>
-                        <div class="mt-2 text-[10px] text-rose-200 bg-rose-500/20 border border-rose-400/30 rounded-xl p-2.5 text-center leading-relaxed">
-                            💖 <strong>نذر و حمایت از حیوانات بی‌پناه:</strong> مبالغ دریافتی این بخش مستقیماً صرف امداد و غذای نقاهتگاه پناهگاه حیوانات می‌شود (معاف از مالیات).
-                        </div>
-                        <?php elseif ($calcIsPaid): ?>
+                        <?php if ($calcIsPaid): ?>
                         <div class="mt-2 text-[10px] text-blue-200 bg-blue-500/20 border border-blue-400/30 rounded-xl p-2.5 text-center leading-relaxed">
-                            💳 <strong>کارنامه تخصصی تغذیه بالینی:</strong> صدور کارنامه مستلزم پرداخت هزینه خدمات دیجیتال دامپزشکی می‌باشد.
+                            💳 <strong>کارنامه تخصصی تغذیه بالینی:</strong> صدور کارنامه مستلزم پرداخت هزینه خدمات دیجیتال دامپزشکی (<?= number_format($calcPrice) ?> تومان) از طریق درگاه پرداخت آنلاین می‌باشد.
                         </div>
                         <?php endif; ?>
                     </div>
@@ -357,17 +348,10 @@ $calcPrice = (int)get_setting($pdo, 'calculator_price_toman', 49000);
                 <!-- Single High-Converting Action Button (No Clutter) -->
                 <div class="pt-4 mt-4 border-t border-white/10 relative z-10 space-y-3">
                     <?php if ($calcIsPaid): ?>
-                        <?php if ($calcPaymentModel === 'charity'): ?>
-                        <button type="button" onclick="issueAndSendMealPlanToProfile()" id="btnIssueMealPlan" class="w-full bg-gradient-to-r from-rose-600 via-pink-600 to-amber-600 hover:from-rose-500 hover:to-amber-500 text-white py-4 px-6 rounded-2xl font-black text-xs sm:text-sm text-center shadow-xl shadow-rose-600/30 transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-98">
-                            <span class="material-symbols-outlined text-xl">volunteer_activism</span>
-                            <span>پرداخت حمایت خیریه<?= $calcPrice > 0 ? ' (' . number_format($calcPrice) . ' تومان)' : '' ?> و صدور برنامه غذایی</span>
-                        </button>
-                        <?php else: ?>
                         <button type="button" onclick="issueAndSendMealPlanToProfile()" id="btnIssueMealPlan" class="w-full bg-gradient-to-r from-blue-600 via-indigo-600 to-primary hover:from-blue-500 hover:to-indigo-500 text-white py-4 px-6 rounded-2xl font-black text-xs sm:text-sm text-center shadow-xl shadow-blue-600/30 transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-98">
                             <span class="material-symbols-outlined text-xl">payments</span>
                             <span>پرداخت هزینه<?= $calcPrice > 0 ? ' (' . number_format($calcPrice) . ' تومان)' : '' ?> و صدور کارنامه بالینی</span>
                         </button>
-                        <?php endif; ?>
                     <?php else: ?>
                         <button type="button" onclick="issueAndSendMealPlanToProfile()" id="btnIssueMealPlan" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-4 px-6 rounded-2xl font-black text-xs sm:text-sm text-center shadow-xl shadow-emerald-600/30 transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-98">
                             <span class="material-symbols-outlined text-xl">folder_shared</span>
@@ -806,7 +790,6 @@ $calcPrice = (int)get_setting($pdo, 'calculator_price_toman', 49000);
 (function() {
     const CALC_IS_PAID = <?= $calcIsPaid ? 'true' : 'false' ?>;
     const CALC_PRICE = <?= (int)$calcPrice ?>;
-    const CALC_CHARITY_LINK = <?= json_encode($calcCharityLink) ?>;
     const DOG_BREEDS = [
         { name: 'ژرمن شپرد', title: 'ژرمن شپرد (German Shepherd)', icon: '🐕', size: 'large', defaultWeight: 30, hintTitle: 'شاخص فیزیولوژیک ژرمن شپرد', hintDesc: 'نژاد بزرگ‌جثه با حساسیت مفاصل ران (دیسپلازی) و معده حساس. نیاز به کلسیم و فسفر بالانس‌شده و فرمول غنی از ال-کارنیتین.', foodTitle: 'غذای خشک رویال کنین ژرمن شپرد ادالت' },
         { name: 'هاسکی', title: 'سیبرین هاسکی (Siberian Husky)', icon: '🐺', size: 'medium-large', defaultWeight: 22, hintTitle: 'متابولیسم سیبرین هاسکی', hintDesc: 'راندمان جذب کالری بسیار بالا با خودتنظیمی مصرف غذا. حساسیت بالا به کمبود زینک و نیازمند امگا ۳ جهت حفظ پوشش دولایه در اقلیم ایران.', foodTitle: 'غذای خشک رفلکس پلاس ماهی سالمون و برنج هاسکی' },
@@ -1352,20 +1335,11 @@ $calcPrice = (int)get_setting($pdo, 'calculator_price_toman', 49000);
         if (btn) {
             btn.disabled = true;
             btn.innerHTML = CALC_IS_PAID 
-                ? '<div class="flex items-center justify-center gap-2 py-2"><span class="material-symbols-outlined text-lg animate-spin">sync</span><span class="text-xs font-black">در حال هدایت به خیریه و صدور نسخه...</span></div>'
+                ? '<div class="flex items-center justify-center gap-2 py-2"><span class="material-symbols-outlined text-lg animate-spin">sync</span><span class="text-xs font-black">در حال انتقال به درگاه پرداخت...</span></div>'
                 : '<div class="flex items-center justify-center gap-2 py-2"><span class="material-symbols-outlined text-lg animate-spin">sync</span><span class="text-xs font-black">در حال صدور نسخه و ذخیره در پرونده...</span></div>';
         }
 
-        // If in Paid/Charity mode, open charity payment link in a new tab (tax-exempt donation)
-        if (CALC_IS_PAID && CALC_CHARITY_LINK) {
-            try {
-                window.open(CALC_CHARITY_LINK, '_blank');
-            } catch(e) {
-                console.warn('Charity window open blocked:', e);
-            }
-        }
-
-        const targetEndpoint = 'actions/save_nutrition_report.php';
+        const targetEndpoint = CALC_IS_PAID ? 'actions/initiate_meal_plan_payment.php' : 'actions/save_nutrition_report.php';
 
         try {
             const csrf = window.ASENA_CSRF_TOKEN || document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
@@ -1410,15 +1384,19 @@ $calcPrice = (int)get_setting($pdo, 'calculator_price_toman', 49000);
             }
 
             if (data && data.success) {
-                try { localStorage.removeItem('asena_pending_meal_plan'); } catch(e){}
-                showMealPlanSuccessModal(data);
+                if (CALC_IS_PAID && data.payment_url) {
+                    window.location.href = data.payment_url;
+                } else {
+                    try { localStorage.removeItem('asena_pending_meal_plan'); } catch(e){}
+                    showMealPlanSuccessModal(data);
+                }
             } else if (data && data.require_login) {
                 try {
                     localStorage.setItem('asena_pending_meal_plan', JSON.stringify(calcState));
                 } catch(e) {}
                 showMealPlanAuthModal();
             } else {
-                alert((data && data.message) || 'خطا در صدور جدول برنامه غذایی. لطفاً مجدداً تلاش فرمایید.');
+                alert((data && data.message) || 'خطا در فرآیند صدور. لطفاً مجدداً تلاش فرمایید.');
             }
         } catch (e) {
             if (btn) {

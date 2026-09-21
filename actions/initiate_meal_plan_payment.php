@@ -53,7 +53,7 @@ if (!verify_csrf_token($csrf)) {
     exit;
 }
 
-$calcPrice = (int)get_setting($pdo, 'calculator_price_toman', 98000);
+$calcPrice = (int)get_setting($pdo, 'calculator_price_toman', 49000);
 if ($calcPrice <= 0) {
     // If price is 0 or negative, route directly to free saver
     require_once __DIR__ . '/save_nutrition_report.php';
