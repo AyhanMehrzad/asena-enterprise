@@ -576,6 +576,17 @@
     - **مجموعه آزمون خودکار ([`tests/test_ai_license_verification.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/tests/test_ai_license_verification.php)):**
       - اجرای ۱۵ تست موفق شامل بررسی فرمت شماره نظام، الگوریتم هوش مصنوعی، ریدایرکت آدرس‌ها و سلامت اسکریپت‌ها.
 
+56. **مهاجرت پیوندهای سراسری تمپلیت‌ها به آدرس‌های بدون پسوند (Template Navigation Clean URLs Migration):**
+    - **هدر سراسری دسکتاپ و موبایل ([`includes/header.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/includes/header.php)):**
+      - تبدیل کلیه لینک‌های ناوبری اصلی، منوی دراپ‌داون ابزارها، اکشن فرم‌های جستجو، دکمه ورود/پروفایل، سبد خرید و منوی کشویی موبایل از فرمت `.php` به فرمت مدرن و تمیز بدون پسوند (`shop`, `booking`, `calculator`, `interactions`, `organizations`, `subscriptions`, `knowledge_base`, `charity`, `rewards`, `profile`, `login`, `cart`, `./`).
+      - حفظ سازگاری کامل وضعیت تب فعال (`$current_page`) بر مبنای `PHP_SELF`.
+    - **فوتر سراسری، باتم‌شیت و نوار ناوبری ۵ تبِ موبایل ([`includes/footer.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/includes/footer.php)):**
+      - ارتقای پیوندهای ستون‌های چهارگانه فوتر، دسته‌بندی‌های سریع باتم‌شیت دیجی‌کالایی و تبار پایین موبایل به آدرس‌های بدون پسوند.
+    - **صفحه اصلی و کارت‌های تعاملی ([`index.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/index.php)):**
+      - تبدیل فرم‌های هیرو (`booking`, `shop`)، پیوندهای ستون‌های سه‌گانه بنتوگرید، دکمه‌های رزرو پزشکان و کارت‌های سه‌بعدی ابزارهای سلامت به پیوندهای تمیز بدون پسوند.
+    - **راستی‌آزمایی جامع شبکه (Network Verification):**
+      - تست موفقیت‌آمیز تمامی روت‌های تمیز (`shop`, `booking`, `cart`, `calculator`, `interactions`, `subscriptions`, `organizations`, `knowledge_base`, `charity`, `contact`, `about`, `terms`, `privacy`) با دریافت کد HTTP 200 روی سرور عملیاتی.
+
 ---
 
 

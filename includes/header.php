@@ -405,7 +405,7 @@ if (function_exists('get_curated_recommendations')) {
 
         <!-- Digikala Search Pill Bar (Filling remaining width) -->
         <div class="relative flex-1" id="mobileHeaderSearchWrapper">
-            <form action="shop.php" method="GET" class="relative flex items-center bg-slate-100 dark:bg-slate-800/90 border border-slate-200/90 dark:border-slate-700 rounded-full px-3.5 py-1.5 text-slate-800 dark:text-slate-100 hover:border-primary/40 focus-within:border-primary focus-within:bg-white dark:focus-within:bg-slate-900 focus-within:shadow-md transition-all" id="mobileHeaderSearchForm">
+            <form action="shop" method="GET" class="relative flex items-center bg-slate-100 dark:bg-slate-800/90 border border-slate-200/90 dark:border-slate-700 rounded-full px-3.5 py-1.5 text-slate-800 dark:text-slate-100 hover:border-primary/40 focus-within:border-primary focus-within:bg-white dark:focus-within:bg-slate-900 focus-within:shadow-md transition-all" id="mobileHeaderSearchForm">
                 <span class="material-symbols-outlined text-[20px] text-slate-400 shrink-0 ml-1.5 focus-within:text-primary">search</span>
                 <input type="text" name="q" id="mobileHeaderSearchInput" aria-label="جستجو در محصولات و خدمات آسنا" value="<?= htmlspecialchars($_GET['q'] ?? '') ?>" oninput="toggleDigikalaPlaceholder(this)" onfocus="toggleDigikalaPlaceholder(this)" onblur="toggleDigikalaPlaceholder(this)" class="w-full bg-transparent border-none outline-none text-xs sm:text-sm font-medium text-slate-800 dark:text-slate-100 placeholder-transparent" placeholder="جستجو در" autocomplete="off">
                 
@@ -435,15 +435,15 @@ if (function_exists('get_curated_recommendations')) {
             <div class="flex items-center gap-8 flex-1">
                 <!-- Desktop Links (Streamlined) -->
                 <div class="flex gap-5 xl:gap-7 flex-row shrink-0 items-center">
-                    <a class="text-white text-sm font-semibold hover:text-secondary-container transition-all duration-200 <?php echo $current_page == 'index.php' ? 'border-b-2 border-white pb-1 opacity-100' : 'opacity-90'; ?>" href="index.php">خانه</a>
+                    <a class="text-white text-sm font-semibold hover:text-secondary-container transition-all duration-200 <?php echo $current_page == 'index.php' ? 'border-b-2 border-white pb-1 opacity-100' : 'opacity-90'; ?>" href="./">خانه</a>
                     <?php if (Feature::has('petshop_catalog')): ?>
-                        <a class="text-white text-sm font-semibold hover:text-secondary-container transition-all duration-200 <?php echo $current_page == 'shop.php' ? 'border-b-2 border-white pb-1 opacity-100' : 'opacity-90'; ?>" href="shop.php">فروشگاه</a>
+                        <a class="text-white text-sm font-semibold hover:text-secondary-container transition-all duration-200 <?php echo $current_page == 'shop.php' ? 'border-b-2 border-white pb-1 opacity-100' : 'opacity-90'; ?>" href="shop">فروشگاه</a>
                     <?php endif; ?>
                     <?php if (Feature::has('pharmacy_catalog')): ?>
                         <a class="text-white text-sm font-semibold hover:text-secondary-container transition-all duration-200 <?php echo $current_page == 'pharmacy.php' ? 'border-b-2 border-white pb-1 opacity-100' : 'opacity-90'; ?>" href="pharmacy.php">داروخانه تخصصی</a>
                     <?php endif; ?>
                     <?php if (Feature::has('clinic_booking')): ?>
-                        <a class="text-white text-sm font-semibold hover:text-secondary-container transition-all duration-200 <?php echo $current_page == 'booking.php' ? 'border-b-2 border-white pb-1 opacity-100' : 'opacity-90'; ?>" href="booking.php">نوبت‌دهی</a>
+                        <a class="text-white text-sm font-semibold hover:text-secondary-container transition-all duration-200 <?php echo $current_page == 'booking.php' ? 'border-b-2 border-white pb-1 opacity-100' : 'opacity-90'; ?>" href="booking">نوبت‌دهی</a>
                     <?php endif; ?>
 
                     <!-- Dropdown for Smart Tools & Services (Clean, Complete & Progressive) -->
@@ -455,7 +455,7 @@ if (function_exists('get_curated_recommendations')) {
                         <div class="absolute right-0 top-full pt-1 w-64 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 transform origin-top-right">
                             <div class="bg-white rounded-2xl shadow-2xl border border-slate-100 py-2 overflow-hidden text-right">
                                 
-                                <a href="calculator.php" class="flex items-center gap-3 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 hover:text-emerald-600 transition-colors">
+                                <a href="calculator" class="flex items-center gap-3 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 hover:text-emerald-600 transition-colors">
                                     <div class="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
                                         <span class="material-symbols-outlined text-lg">calculate</span>
                                     </div>
@@ -465,7 +465,7 @@ if (function_exists('get_curated_recommendations')) {
                                     </div>
                                 </a>
 
-                                <a href="interactions.php" class="flex items-center gap-3 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 hover:text-blue-600 transition-colors">
+                                <a href="interactions" class="flex items-center gap-3 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 hover:text-blue-600 transition-colors">
                                     <div class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
                                         <span class="material-symbols-outlined text-lg">medication</span>
                                     </div>
@@ -476,7 +476,7 @@ if (function_exists('get_curated_recommendations')) {
                                 </a>
 
                                 <?php if (Feature::has('clinic_booking')): ?>
-                                    <a href="organizations.php" class="flex items-center gap-3 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 hover:text-primary transition-colors">
+                                    <a href="organizations" class="flex items-center gap-3 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 hover:text-primary transition-colors">
                                         <div class="w-8 h-8 rounded-lg bg-teal-50 text-teal-600 flex items-center justify-center shrink-0">
                                             <span class="material-symbols-outlined text-lg">domain</span>
                                         </div>
@@ -488,7 +488,7 @@ if (function_exists('get_curated_recommendations')) {
                                 <?php endif; ?>
 
                                 <?php if (Feature::has('autoship')): ?>
-                                    <a href="subscriptions.php" class="flex items-center gap-3 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 hover:text-secondary-container transition-colors">
+                                    <a href="subscriptions" class="flex items-center gap-3 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 hover:text-secondary-container transition-colors">
                                         <div class="w-8 h-8 rounded-lg bg-orange-50 text-secondary-container flex items-center justify-center shrink-0">
                                             <span class="material-symbols-outlined text-lg">autorenew</span>
                                         </div>
@@ -500,7 +500,7 @@ if (function_exists('get_curated_recommendations')) {
                                 <?php endif; ?>
 
                                 <?php if (Feature::has('blog_engine')): ?>
-                                    <a href="knowledge_base.php" class="flex items-center gap-3 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 hover:text-indigo-600 transition-colors">
+                                    <a href="knowledge_base" class="flex items-center gap-3 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 hover:text-indigo-600 transition-colors">
                                         <div class="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">
                                             <span class="material-symbols-outlined text-lg">auto_stories</span>
                                         </div>
@@ -512,7 +512,7 @@ if (function_exists('get_curated_recommendations')) {
                                 <?php endif; ?>
 
                                 <?php if (Feature::has('charity_campaigns')): ?>
-                                    <a href="charity.php" class="flex items-center gap-3 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 hover:text-rose-600 transition-colors">
+                                    <a href="charity" class="flex items-center gap-3 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 hover:text-rose-600 transition-colors">
                                         <div class="w-8 h-8 rounded-lg bg-rose-50 text-rose-500 flex items-center justify-center shrink-0">
                                             <span class="material-symbols-outlined text-lg">volunteer_activism</span>
                                         </div>
@@ -523,7 +523,7 @@ if (function_exists('get_curated_recommendations')) {
                                     </a>
                                 <?php endif; ?>
 
-                                <a href="rewards.php" class="flex items-center gap-3 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 hover:text-amber-600 transition-colors border-t border-slate-100">
+                                <a href="rewards" class="flex items-center gap-3 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 hover:text-amber-600 transition-colors border-t border-slate-100">
                                     <div class="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
                                         <span class="material-symbols-outlined text-lg">loyalty</span>
                                     </div>
@@ -541,7 +541,7 @@ if (function_exists('get_curated_recommendations')) {
                 <!-- Desktop Search with Instant Autocomplete Dropdown -->
                 <div class="hidden lg:block relative flex-1 max-w-md" id="headerSearchWrapper">
                     <div class="flex items-center bg-white/10 hover:bg-white/15 focus-within:bg-white/20 border border-white/15 focus-within:border-white/40 transition-all rounded-full px-4 py-2 text-white gap-2 w-full">
-                        <form action="shop.php" method="GET" class="flex items-center w-full" id="headerSearchForm">
+                        <form action="shop" method="GET" class="flex items-center w-full" id="headerSearchForm">
                             <button type="submit" class="material-symbols-outlined text-lg bg-transparent border-none outline-none text-white cursor-pointer flex items-center justify-center p-0 hover:scale-110 transition-transform">search</button>
                             <input id="headerSearchInput" name="q" value="<?php echo htmlspecialchars($_GET['q'] ?? ''); ?>" class="bg-transparent border-none focus:ring-0 text-sm w-full placeholder-white/70 text-white mr-2 outline-none font-medium" placeholder="جستجو در داروها، کالاها، کلینیک‌ها..." type="text" autocomplete="off">
                             <span id="headerSearchSpinner" class="material-symbols-outlined text-sm animate-spin hidden text-white/70">sync</span>
@@ -557,34 +557,34 @@ if (function_exists('get_curated_recommendations')) {
                 <div class="flex items-center gap-2.5">
                     <?php if(isset($_SESSION['user_id'])): ?>
                         <?php if(isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'admin'): ?>
-                            <a href="admin/index.php" class="bg-secondary-container text-white px-4 py-2 rounded-xl text-xs font-bold shadow-md hover:shadow-lg transition-all flex items-center gap-1.5">
+                            <a href="admin/" class="bg-secondary-container text-white px-4 py-2 rounded-xl text-xs font-bold shadow-md hover:shadow-lg transition-all flex items-center gap-1.5">
                                 <span class="material-symbols-outlined text-sm">admin_panel_settings</span> پنل مدیریت
                             </a>
                         <?php elseif(isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'doctor'): ?>
-                            <a href="doctor/index.php" class="bg-white text-primary px-4 py-2 rounded-xl text-xs font-bold shadow-md hover:shadow-lg transition-all flex items-center gap-1.5">
+                            <a href="doctor/" class="bg-white text-primary px-4 py-2 rounded-xl text-xs font-bold shadow-md hover:shadow-lg transition-all flex items-center gap-1.5">
                                 <span class="material-symbols-outlined text-sm">stethoscope</span> پنل پزشک
                             </a>
                         <?php elseif(isset($_SESSION['user_role']) && in_array($_SESSION['user_role'], ['organization', 'organization_manager'])): ?>
-                            <a href="organization/index.php" class="bg-teal-600 text-white px-4 py-2 rounded-xl text-xs font-bold shadow-md hover:shadow-lg transition-all flex items-center gap-1.5">
+                            <a href="organization/" class="bg-teal-600 text-white px-4 py-2 rounded-xl text-xs font-bold shadow-md hover:shadow-lg transition-all flex items-center gap-1.5">
                                 <span class="material-symbols-outlined text-sm">domain</span> پنل مرکز درمانی
                             </a>
                         <?php elseif(isset($_SESSION['user_role']) && in_array($_SESSION['user_role'], ['pharmacist', 'pharmacy'])): ?>
-                            <a href="pharmacist/index.php" class="bg-indigo-600 text-white px-4 py-2 rounded-xl text-xs font-bold shadow-md hover:shadow-lg transition-all flex items-center gap-1.5">
+                            <a href="pharmacist/" class="bg-indigo-600 text-white px-4 py-2 rounded-xl text-xs font-bold shadow-md hover:shadow-lg transition-all flex items-center gap-1.5">
                                 <span class="material-symbols-outlined text-sm">medication</span> پنل داروساز
                             </a>
                         <?php elseif(isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'seller'): ?>
-                            <a href="seller/index.php" class="bg-amber-600 text-white px-4 py-2 rounded-xl text-xs font-bold shadow-md hover:shadow-lg transition-all flex items-center gap-1.5">
+                            <a href="seller/" class="bg-amber-600 text-white px-4 py-2 rounded-xl text-xs font-bold shadow-md hover:shadow-lg transition-all flex items-center gap-1.5">
                                 <span class="material-symbols-outlined text-sm">storefront</span> پنل فروشنده
                             </a>
                         <?php endif; ?>
 
                         <!-- Loyalty Points Badge -->
-                        <a href="rewards.php" class="hidden xl:inline-flex items-center gap-1 bg-white/10 hover:bg-white/20 border border-white/20 px-3 py-1.5 rounded-full text-xs font-bold text-amber-300 transition-all" title="امتیاز وفاداری باشگاه مشتریان">
+                        <a href="rewards" class="hidden xl:inline-flex items-center gap-1 bg-white/10 hover:bg-white/20 border border-white/20 px-3 py-1.5 rounded-full text-xs font-bold text-amber-300 transition-all" title="امتیاز وفاداری باشگاه مشتریان">
                             <span class="material-symbols-outlined text-sm text-amber-400">stars</span>
                             <span><?php echo number_format($user_points_balance); ?> امتیاز</span>
                         </a>
                     <?php else: ?>
-                        <a href="login.php" class="bg-secondary-container text-white px-5 py-2 rounded-xl text-xs font-bold shadow-md hover:shadow-lg transition-all flex items-center gap-1.5">
+                        <a href="login" class="bg-secondary-container text-white px-5 py-2 rounded-xl text-xs font-bold shadow-md hover:shadow-lg transition-all flex items-center gap-1.5">
                             <span class="material-symbols-outlined text-sm">login</span> ورود / ثبت‌نام
                         </a>
                     <?php endif; ?>
@@ -597,15 +597,15 @@ if (function_exists('get_curated_recommendations')) {
                         <span class="notification-badge-count hidden absolute top-0.5 right-0.5 bg-rose-500 text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-black shadow-sm">0</span>
                     </button>
 
-                    <a href="<?php echo isset($_SESSION['user_id']) ? 'profile.php' : 'login.php'; ?>" class="material-symbols-outlined text-white p-1.5 lg:p-2 hover:bg-white/10 rounded-full transition-colors flex text-xl lg:text-2xl" title="حساب کاربری">person</a>
+                    <a href="<?php echo isset($_SESSION['user_id']) ? 'profile' : 'login'; ?>" class="material-symbols-outlined text-white p-1.5 lg:p-2 hover:bg-white/10 rounded-full transition-colors flex text-xl lg:text-2xl" title="حساب کاربری">person</a>
                     
-                    <a href="cart.php" id="header-cart-btn" class="relative material-symbols-outlined text-white p-1.5 lg:p-2 hover:bg-white/10 rounded-full transition-colors flex text-xl lg:text-2xl" title="سبد خرید">
+                    <a href="cart" id="header-cart-btn" class="relative material-symbols-outlined text-white p-1.5 lg:p-2 hover:bg-white/10 rounded-full transition-colors flex text-xl lg:text-2xl" title="سبد خرید">
                         shopping_cart
                         <span id="header-cart-badge" class="header-cart-badge cart-badge-count absolute top-0 right-0 bg-secondary-container text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-bold shadow transition-transform duration-200 <?php echo ($cart_count > 0) ? '' : 'hidden'; ?>"><?php echo $cart_count; ?></span>
                     </a>
                 </div>
                 
-                <a href="index.php" class="flex items-center gap-2 group" dir="ltr" title="صفحه اصلی آسنا">
+                <a href="./" class="flex items-center gap-2 group" dir="ltr" title="صفحه اصلی آسنا">
                     <img src="assets/images/logo.png" alt="لوگوی آسنا" class="w-7 h-7 lg:w-9 lg:h-9 object-contain drop-shadow group-hover:scale-105 transition-transform duration-200">
                     <h1 class="text-lg lg:text-2xl font-black text-white tracking-tight group-hover:text-secondary-container transition-colors">ASENA</h1>
                 </a>
@@ -617,7 +617,7 @@ if (function_exists('get_curated_recommendations')) {
     <div id="mobile-menu" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] hidden opacity-0 transition-opacity duration-300">
         <div id="mobile-menu-panel" class="absolute top-0 right-0 h-full w-4/5 max-w-sm bg-surface-container-lowest shadow-2xl translate-x-full transition-transform duration-300 flex flex-col">
             <div class="p-6 border-b border-outline-variant/20 flex justify-between items-center bg-primary text-white">
-                <a href="index.php" class="flex items-center gap-2.5 text-white group">
+                <a href="./" class="flex items-center gap-2.5 text-white group">
                     <img src="assets/images/logo.png" alt="لوگوی آسنا" class="w-7 h-7 object-contain group-hover:scale-105 transition-transform">
                     <h2 class="text-xl font-bold">منوی کاربری</h2>
                 </a>
@@ -628,18 +628,18 @@ if (function_exists('get_curated_recommendations')) {
             
             <div class="p-6 overflow-y-auto custom-scrollbar flex-1 flex flex-col gap-6">
                 <!-- Mobile Search -->
-                <form action="shop.php" method="GET" class="flex items-center w-full bg-surface-container rounded-xl px-4 py-3">
+                <form action="shop" method="GET" class="flex items-center w-full bg-surface-container rounded-xl px-4 py-3">
                     <button type="submit" class="material-symbols-outlined text-lg text-primary bg-transparent border-none outline-none cursor-pointer flex items-center justify-center p-0">search</button>
                     <input name="q" value="<?php echo htmlspecialchars($_GET['q'] ?? ''); ?>" class="bg-transparent border-none focus:ring-0 text-sm w-full placeholder-on-surface-variant text-on-surface mr-3 font-medium" placeholder="جستجو..." type="text">
                 </form>
 
                 <!-- Mobile Links -->
                 <nav class="flex flex-col gap-2">
-                    <a class="flex items-center gap-4 text-on-surface font-bold p-3 rounded-xl hover:bg-primary-container/10 hover:text-primary transition-colors" href="index.php">
+                    <a class="flex items-center gap-4 text-on-surface font-bold p-3 rounded-xl hover:bg-primary-container/10 hover:text-primary transition-colors" href="./">
                         <span class="material-symbols-outlined text-outline">home</span> خانه
                     </a>
                     <?php if (Feature::has('petshop_catalog')): ?>
-                        <a class="flex items-center gap-4 text-on-surface font-bold p-3 rounded-xl hover:bg-primary-container/10 hover:text-primary transition-colors" href="shop.php">
+                        <a class="flex items-center gap-4 text-on-surface font-bold p-3 rounded-xl hover:bg-primary-container/10 hover:text-primary transition-colors" href="shop">
                             <span class="material-symbols-outlined text-outline">storefront</span> فروشگاه
                         </a>
                     <?php endif; ?>
@@ -649,25 +649,25 @@ if (function_exists('get_curated_recommendations')) {
                         </a>
                     <?php endif; ?>
                     <?php if (Feature::has('clinic_booking')): ?>
-                        <a class="flex items-center gap-4 text-on-surface font-bold p-3 rounded-xl hover:bg-primary-container/10 hover:text-primary transition-colors" href="booking.php">
+                        <a class="flex items-center gap-4 text-on-surface font-bold p-3 rounded-xl hover:bg-primary-container/10 hover:text-primary transition-colors" href="booking">
                             <span class="material-symbols-outlined text-outline">calendar_month</span> نوبت‌دهی آنلاین
                         </a>
-                        <a class="flex items-center gap-4 text-on-surface font-bold p-3 rounded-xl hover:bg-primary-container/10 hover:text-primary transition-colors" href="organizations.php">
+                        <a class="flex items-center gap-4 text-on-surface font-bold p-3 rounded-xl hover:bg-primary-container/10 hover:text-primary transition-colors" href="organizations">
                             <span class="material-symbols-outlined text-outline">local_hospital</span> مراکز درمانی و کلینیک‌ها
                         </a>
                     <?php endif; ?>
                     <?php if (Feature::has('autoship')): ?>
-                        <a class="flex items-center gap-4 text-on-surface font-bold p-3 rounded-xl hover:bg-primary-container/10 hover:text-primary transition-colors" href="subscriptions.php">
+                        <a class="flex items-center gap-4 text-on-surface font-bold p-3 rounded-xl hover:bg-primary-container/10 hover:text-primary transition-colors" href="subscriptions">
                             <span class="material-symbols-outlined text-outline">autorenew</span> اشتراک خودکار
                         </a>
                     <?php endif; ?>
                     <?php if (Feature::has('blog_engine')): ?>
-                        <a class="flex items-center gap-4 text-on-surface font-bold p-3 rounded-xl hover:bg-primary-container/10 hover:text-primary transition-colors" href="knowledge_base.php">
+                        <a class="flex items-center gap-4 text-on-surface font-bold p-3 rounded-xl hover:bg-primary-container/10 hover:text-primary transition-colors" href="knowledge_base">
                             <span class="material-symbols-outlined text-outline">menu_book</span> دانشنامه
                         </a>
                     <?php endif; ?>
                     <?php if (Feature::has('charity_campaigns')): ?>
-                        <a class="flex items-center gap-4 text-on-surface font-bold p-3 rounded-xl hover:bg-primary-container/10 hover:text-primary transition-colors" href="charity.php">
+                        <a class="flex items-center gap-4 text-on-surface font-bold p-3 rounded-xl hover:bg-primary-container/10 hover:text-primary transition-colors" href="charity">
                             <span class="material-symbols-outlined text-outline">volunteer_activism</span> خیریه
                         </a>
                     <?php endif; ?>
@@ -679,37 +679,37 @@ if (function_exists('get_curated_recommendations')) {
                 <div class="flex flex-col gap-3">
                     <?php if(isset($_SESSION['user_id'])): ?>
                         <div class="flex items-center justify-between bg-surface-container-high px-4 py-3 rounded-xl">
-                            <a href="profile.php" class="flex items-center gap-2 text-primary text-sm font-bold">
+                            <a href="profile" class="flex items-center gap-2 text-primary text-sm font-bold">
                                 <span class="material-symbols-outlined">person</span> حساب کاربری
                             </a>
-                            <a href="rewards.php" class="flex items-center gap-1 text-xs font-bold text-amber-700 bg-amber-50 px-2.5 py-1 rounded-full border border-amber-200">
+                            <a href="rewards" class="flex items-center gap-1 text-xs font-bold text-amber-700 bg-amber-50 px-2.5 py-1 rounded-full border border-amber-200">
                                 <span class="material-symbols-outlined text-sm text-amber-500">stars</span>
                                 <span><?php echo number_format($user_points_balance); ?> امتیاز</span>
                             </a>
                         </div>
                         <?php if(isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'admin'): ?>
-                            <a href="admin/index.php" class="flex items-center justify-center gap-2 bg-secondary-container text-white px-6 py-3.5 rounded-xl text-sm font-bold shadow-md">
+                            <a href="admin/" class="flex items-center justify-center gap-2 bg-secondary-container text-white px-6 py-3.5 rounded-xl text-sm font-bold shadow-md">
                                 <span class="material-symbols-outlined text-sm">admin_panel_settings</span> پنل مدیریت مرکزی
                             </a>
                         <?php elseif(isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'doctor'): ?>
-                            <a href="doctor/index.php" class="flex items-center justify-center gap-2 bg-secondary-container text-white px-6 py-3.5 rounded-xl text-sm font-bold shadow-md">
+                            <a href="doctor/" class="flex items-center justify-center gap-2 bg-secondary-container text-white px-6 py-3.5 rounded-xl text-sm font-bold shadow-md">
                                 <span class="material-symbols-outlined text-sm">stethoscope</span> پنل پزشک
                             </a>
                         <?php elseif(isset($_SESSION['user_role']) && in_array($_SESSION['user_role'], ['organization', 'organization_manager'])): ?>
-                            <a href="organization/index.php" class="flex items-center justify-center gap-2 bg-teal-600 text-white px-6 py-3.5 rounded-xl text-sm font-bold shadow-md">
+                            <a href="organization/" class="flex items-center justify-center gap-2 bg-teal-600 text-white px-6 py-3.5 rounded-xl text-sm font-bold shadow-md">
                                 <span class="material-symbols-outlined text-sm">domain</span> پنل مرکز درمانی
                             </a>
                         <?php elseif(isset($_SESSION['user_role']) && in_array($_SESSION['user_role'], ['pharmacist', 'pharmacy'])): ?>
-                            <a href="pharmacist/index.php" class="flex items-center justify-center gap-2 bg-indigo-600 text-white px-6 py-3.5 rounded-xl text-sm font-bold shadow-md">
+                            <a href="pharmacist/" class="flex items-center justify-center gap-2 bg-indigo-600 text-white px-6 py-3.5 rounded-xl text-sm font-bold shadow-md">
                                 <span class="material-symbols-outlined text-sm">medication</span> پنل داروساز
                             </a>
                         <?php elseif(isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'seller'): ?>
-                            <a href="seller/index.php" class="flex items-center justify-center gap-2 bg-amber-600 text-white px-6 py-3.5 rounded-xl text-sm font-bold shadow-md">
+                            <a href="seller/" class="flex items-center justify-center gap-2 bg-amber-600 text-white px-6 py-3.5 rounded-xl text-sm font-bold shadow-md">
                                 <span class="material-symbols-outlined text-sm">storefront</span> پنل فروشنده مارکت‌پلیس
                             </a>
                         <?php endif; ?>
                     <?php else: ?>
-                        <a href="login.php" class="flex items-center justify-center gap-2 bg-secondary-container text-white px-6 py-4 rounded-xl text-sm font-bold shadow-md">
+                        <a href="login" class="flex items-center justify-center gap-2 bg-secondary-container text-white px-6 py-4 rounded-xl text-sm font-bold shadow-md">
                             <span class="material-symbols-outlined">login</span> ورود / ثبت‌نام
                         </a>
                     <?php endif; ?>

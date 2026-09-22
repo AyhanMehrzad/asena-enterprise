@@ -97,7 +97,7 @@ try {
                 </div>
 
                 <!-- Tab Content 1: Vet Booking Form -->
-                <form action="booking.php" method="GET" id="heroFormVet" class="hero-tab-pane flex flex-col sm:flex-row gap-2.5">
+                <form action="booking" method="GET" id="heroFormVet" class="hero-tab-pane flex flex-col sm:flex-row gap-2.5">
                     <div class="flex-1 bg-white/15 rounded-2xl px-4 py-2.5 flex items-center gap-2.5 border border-white/10 focus-within:bg-white focus-within:text-slate-800 transition">
                         <span class="material-symbols-outlined text-lg opacity-60">pets</span>
                         <select name="animal" class="w-full bg-transparent text-xs outline-none border-none cursor-pointer">
@@ -125,7 +125,7 @@ try {
                 </form>
 
                 <!-- Tab Content 2: Pet Shop Form (Hidden by default) -->
-                <form action="shop.php" method="GET" id="heroFormShop" class="hero-tab-pane hidden flex flex-col sm:flex-row gap-2.5">
+                <form action="shop" method="GET" id="heroFormShop" class="hero-tab-pane hidden flex flex-col sm:flex-row gap-2.5">
                     <div class="flex-1 bg-white/15 rounded-2xl px-4 py-2.5 flex items-center gap-2.5 border border-white/10 focus-within:bg-white focus-within:text-slate-800 transition">
                         <span class="material-symbols-outlined text-lg opacity-60">search</span>
                         <input type="text" name="q" placeholder="نام غذا، برند (رویال کنین، رفلکس...) یا ملزومات..." class="w-full bg-transparent text-xs outline-none border-none placeholder-white/60 focus:placeholder-slate-400">
@@ -183,7 +183,7 @@ try {
                 <span class="material-symbols-outlined text-sm text-slate-400">domain_verification</span>
                 مراکز و بیمارستان‌های همکار مورد تأیید نظام دامپزشکی:
             </span>
-            <a href="organizations.php" class="text-primary hover:underline font-bold text-[11px]">مشاهده همه مراکز (<?= number_format($count_orgs) ?>) ➔</a>
+            <a href="organizations" class="text-primary hover:underline font-bold text-[11px]">مشاهده همه مراکز (<?= number_format($count_orgs) ?>) ➔</a>
         </div>
         <div class="flex items-center gap-8 overflow-x-auto no-scrollbar py-2 text-xs font-bold text-slate-600 whitespace-nowrap opacity-80">
             <span class="px-4 py-2 bg-slate-50 rounded-xl border border-slate-200 flex items-center gap-2">
@@ -225,7 +225,7 @@ try {
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
             
             <!-- Pillar 1: Booking & Clinics -->
-            <a href="booking.php" class="group bg-white p-8 rounded-3xl border border-slate-200 shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1 flex flex-col justify-between space-y-6 relative overflow-hidden">
+            <a href="booking" class="group bg-white p-8 rounded-3xl border border-slate-200 shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1 flex flex-col justify-between space-y-6 relative overflow-hidden">
                 <div class="absolute -right-8 -top-8 w-32 h-32 bg-blue-50 rounded-full group-hover:scale-125 transition-transform duration-500"></div>
                 <div class="relative z-10 space-y-4">
                     <div class="w-14 h-14 rounded-2xl bg-[#001a48] text-[#fd8100] flex items-center justify-center shadow-md">
@@ -245,7 +245,7 @@ try {
             </a>
 
             <!-- Pillar 2: Pet Shop -->
-            <a href="shop.php" class="group bg-white p-8 rounded-3xl border border-slate-200 shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1 flex flex-col justify-between space-y-6 relative overflow-hidden">
+            <a href="shop" class="group bg-white p-8 rounded-3xl border border-slate-200 shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1 flex flex-col justify-between space-y-6 relative overflow-hidden">
                 <div class="absolute -right-8 -top-8 w-32 h-32 bg-orange-50 rounded-full group-hover:scale-125 transition-transform duration-500"></div>
                 <div class="relative z-10 space-y-4">
                     <div class="w-14 h-14 rounded-2xl bg-[#fd8100] text-white flex items-center justify-center shadow-md">
@@ -302,7 +302,7 @@ try {
                     پزشکان و جراحان برتر دامپزشکی
                 </h2>
             </div>
-            <a href="booking.php" class="text-xs font-bold text-primary hover:text-[#fd8100] flex items-center gap-1 transition">
+            <a href="booking" class="text-xs font-bold text-primary hover:text-[#fd8100] flex items-center gap-1 transition">
                 <span>مشاهده همه متخصصین و نوبت‌دهی آنلاین</span>
                 <span class="material-symbols-outlined text-sm">arrow_back</span>
             </a>
@@ -337,7 +337,7 @@ try {
                     </div>
                 </div>
 
-                <a href="booking.php?doctor_id=<?= (int)$doc['id'] ?>" class="w-full py-2.5 rounded-xl bg-primary hover:bg-[#002d72] text-white text-xs font-bold text-center transition flex items-center justify-center gap-1.5 cursor-pointer shadow-xs">
+                <a href="booking?doctor_id=<?= (int)$doc['id'] ?>" class="w-full py-2.5 rounded-xl bg-primary hover:bg-[#002d72] text-white text-xs font-bold text-center transition flex items-center justify-center gap-1.5 cursor-pointer shadow-xs">
                     <span class="material-symbols-outlined text-sm">event_available</span>
                     <span>رزرو آنلاین نوبت</span>
                 </a>
@@ -362,7 +362,7 @@ try {
                     غذای خشک و ملزومات برتر پت
                 </h2>
             </div>
-            <a href="shop.php" class="text-xs font-bold text-primary hover:text-[#fd8100] flex items-center gap-1 transition">
+            <a href="shop" class="text-xs font-bold text-primary hover:text-[#fd8100] flex items-center gap-1 transition">
                 <span>مشاهده همه محصولات فروشگاه</span>
                 <span class="material-symbols-outlined text-sm">arrow_back</span>
             </a>
@@ -467,7 +467,7 @@ try {
                     </div>
                 </div>
 
-                <a href="calculator.php" class="relative z-10 mt-6 px-5 py-3 rounded-2xl bg-emerald-400 hover:bg-emerald-300 text-slate-950 text-xs font-black transition-all duration-200 flex items-center justify-between shadow-[0_6px_20px_rgba(52,211,153,0.4)] hover:shadow-[0_8px_25px_rgba(52,211,153,0.6)] active:translate-y-0.5 cursor-pointer">
+                <a href="calculator" class="relative z-10 mt-6 px-5 py-3 rounded-2xl bg-emerald-400 hover:bg-emerald-300 text-slate-950 text-xs font-black transition-all duration-200 flex items-center justify-between shadow-[0_6px_20px_rgba(52,211,153,0.4)] hover:shadow-[0_8px_25px_rgba(52,211,153,0.6)] active:translate-y-0.5 cursor-pointer">
                     <span class="flex items-center gap-1.5">
                         <span class="material-symbols-outlined text-base">clinical_notes</span>
                         <span>محاسبه کالری و کارنامه بالینی پت</span>
@@ -511,7 +511,7 @@ try {
                     </div>
                 </div>
 
-                <a href="interactions.php" class="relative z-10 mt-6 px-5 py-3 rounded-2xl bg-blue-400 hover:bg-blue-300 text-slate-950 text-xs font-black transition-all duration-200 flex items-center justify-between shadow-[0_6px_20px_rgba(96,165,250,0.4)] hover:shadow-[0_8px_25px_rgba(96,165,250,0.6)] active:translate-y-0.5 cursor-pointer">
+                <a href="interactions" class="relative z-10 mt-6 px-5 py-3 rounded-2xl bg-blue-400 hover:bg-blue-300 text-slate-950 text-xs font-black transition-all duration-200 flex items-center justify-between shadow-[0_6px_20px_rgba(96,165,250,0.4)] hover:shadow-[0_8px_25px_rgba(96,165,250,0.6)] active:translate-y-0.5 cursor-pointer">
                     <span class="flex items-center gap-1.5">
                         <span class="material-symbols-outlined text-base">medication</span>
                         <span>بررسی آنلاین تداخلات دارویی</span>
@@ -554,7 +554,7 @@ try {
                     </div>
                 </div>
 
-                <a href="subscriptions.php" class="relative z-10 mt-6 px-5 py-3 rounded-2xl bg-[#fd8100] hover:bg-[#e07300] text-white text-xs font-black transition-all duration-200 flex items-center justify-between shadow-[0_6px_20px_rgba(253,129,0,0.4)] hover:shadow-[0_8px_25px_rgba(253,129,0,0.6)] active:translate-y-0.5 cursor-pointer">
+                <a href="subscriptions" class="relative z-10 mt-6 px-5 py-3 rounded-2xl bg-[#fd8100] hover:bg-[#e07300] text-white text-xs font-black transition-all duration-200 flex items-center justify-between shadow-[0_6px_20px_rgba(253,129,0,0.4)] hover:shadow-[0_8px_25px_rgba(253,129,0,0.6)] active:translate-y-0.5 cursor-pointer">
                     <span class="flex items-center gap-1.5">
                         <span class="material-symbols-outlined text-base">autorenew</span>
                         <span>مشاهده و فعال‌سازی اشتراک</span>
@@ -710,7 +710,7 @@ try {
             </div>
 
             <div class="flex flex-wrap items-center gap-3 w-full lg:w-auto justify-end">
-                <a href="organizations.php" class="flex-1 sm:flex-initial px-5 py-3.5 rounded-2xl bg-white hover:bg-slate-100 text-rose-950 font-black text-xs transition shadow-lg hover:shadow-xl flex items-center justify-center gap-2 cursor-pointer whitespace-nowrap active:translate-y-0.5">
+                <a href="organizations" class="flex-1 sm:flex-initial px-5 py-3.5 rounded-2xl bg-white hover:bg-slate-100 text-rose-950 font-black text-xs transition shadow-lg hover:shadow-xl flex items-center justify-center gap-2 cursor-pointer whitespace-nowrap active:translate-y-0.5">
                     <span class="material-symbols-outlined text-base text-rose-700">local_hospital</span>
                     <span>مراکز اورژانس شبانه‌روزی</span>
                 </a>
