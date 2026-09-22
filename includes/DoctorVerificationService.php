@@ -14,7 +14,12 @@ require_once __DIR__ . '/functions.php';
 
 class DoctorVerificationService {
     private ?PDO $pdo;
-    private string $avalaiApiKey;
+    
+    // Multiple AI Provider Configurations (Prioritizing 100% Free & Low-Cost Tiers)
+    private ?string $geminiApiKey = null;
+    private ?string $openrouterApiKey = null;
+    private ?string $groqApiKey = null;
+    private ?string $avalaiApiKey = null;
     private string $avalaiUrl = 'https://api.avalai.ir/v1/chat/completions';
     private string $visionModel = 'gemini-1.5-flash';
 
@@ -47,9 +52,30 @@ class DoctorVerificationService {
     public function __construct(?PDO $pdo = null) {
         $this->pdo = $pdo ?? ($GLOBALS['pdo'] ?? null);
 
-        // Load environment keys
-        $dbKey = ($this->pdo instanceof PDO) ? get_setting($this->pdo, 'avalai_api_key', '') : '';
-        $this->avalaiApiKey = !empty($dbKey) ? $dbKey : (getenv('AVALAI_API_KEY') ?: 'aa-OYnaadEq49DVrgUetouRgFRhmNjSuS7ZknCL5FdEQqHAehsl');
+        // 1. Google Gemini Direct Free API (aistudio.google.com - 1,500 free calls/day, zero credit card)
+        $dbGemini = ($this->pdo instanceof PDO) ? get_setting($this->pdo, 'gemini_api_key', '') : '';
+        $geminiCandidate = !empty($dbGemini) ? $dbGemini : (getenv('GEMINI_API_KEY') ?: '');
+        if (!empty($geminiCandidate) && $geminiCandidate !== 'YOUR_GEMINI_API_KEY_HERE') {
+            $this->geminiApiKey = trim($geminiCandidate);
+        }
+
+        // 2. OpenRouter Free Tier (openrouter.ai - free vision models like gemini-2.0-flash-exp:free, qwen-2.5-vl)
+        $dbOpenRouter = ($this->pdo instanceof PDO) ? get_setting($this->pdo, 'openrouter_api_key', '') : '';
+        $openRouterCandidate = !empty($dbOpenRouter) ? $dbOpenRouter : (getenv('OPENROUTER_API_KEY') ?: '');
+        if (!empty($openRouterCandidate)) {
+            $this->openrouterApiKey = trim($openRouterCandidate);
+        }
+
+        // 3. Groq Cloud Free Tier (console.groq.com - free llama-3.2-11b-vision)
+        $dbGroq = ($this->pdo instanceof PDO) ? get_setting($this->pdo, 'groq_api_key', '') : '';
+        $groqCandidate = !empty($dbGroq) ? $dbGroq : (getenv('GROQ_API_KEY') ?: '');
+        if (!empty($groqCandidate)) {
+            $this->groqApiKey = trim($groqCandidate);
+        }
+
+        // 4. AvalAI Multi-Model Provider
+        $dbAvalAi = ($this->pdo instanceof PDO) ? get_setting($this->pdo, 'avalai_api_key', '') : '';
+        $this->avalaiApiKey = !empty($dbAvalAi) ? $dbAvalAi : (getenv('AVALAI_API_KEY') ?: 'aa-OYnaadEq49DVrgUetouRgFRhmNjSuS7ZknCL5FdEQqHAehsl');
         $this->visionModel = getenv('AVALAI_MODEL_VISION') ?: 'gemini-1.5-flash';
     }
 
@@ -86,13 +112,9 @@ class DoctorVerificationService {
     }
 
     /**
-     * Multimodal AI Vision Evaluation via AvalAI
+     * Multimodal AI Vision Evaluation across Free and Configured AI Providers
      */
     private function evaluateWithAiVision(string $filePath, array $doctorInfo): ?array {
-        if (empty($this->avalaiApiKey)) {
-            return null;
-        }
-
         $mime = mime_content_type($filePath) ?: 'image/jpeg';
         $allowedImages = ['image/jpeg', 'image/png', 'image/webp'];
 
@@ -114,6 +136,67 @@ class DoctorVerificationService {
         $base64 = base64_encode($fileData);
         $dataUri = "data:{$mime};base64,{$base64}";
 
+        // Priority 1: OpenRouter Free Models (e.g. google/gemini-2.0-flash-exp:free, qwen/qwen-2.5-vl-72b-instruct:free)
+        if (!empty($this->openrouterApiKey)) {
+            $freeModel = getenv('OPENROUTER_VISION_MODEL') ?: 'google/gemini-2.0-flash-exp:free';
+            $res = $this->executeOpenAiCompatibleCall(
+                'https://openrouter.ai/api/v1/chat/completions',
+                $this->openrouterApiKey,
+                $freeModel,
+                $dataUri,
+                $doctorInfo,
+                'openrouter_free'
+            );
+            if ($res !== null) return $res;
+        }
+
+        // Priority 2: Google Gemini Direct Free Tier (aistudio.google.com - 1,500 free calls/day)
+        if (!empty($this->geminiApiKey)) {
+            $res = $this->evaluateWithGeminiDirect($base64, $mime, $doctorInfo);
+            if ($res !== null) return $res;
+        }
+
+        // Priority 3: Groq Cloud Free Tier (console.groq.com - llama-3.2-11b-vision-preview)
+        if (!empty($this->groqApiKey)) {
+            $groqModel = getenv('GROQ_VISION_MODEL') ?: 'llama-3.2-11b-vision-preview';
+            $res = $this->executeOpenAiCompatibleCall(
+                'https://api.groq.com/openai/v1/chat/completions',
+                $this->groqApiKey,
+                $groqModel,
+                $dataUri,
+                $doctorInfo,
+                'groq_free'
+            );
+            if ($res !== null) return $res;
+        }
+
+        // Priority 4: AvalAI Multi-Model Gateway
+        if (!empty($this->avalaiApiKey)) {
+            $res = $this->executeOpenAiCompatibleCall(
+                $this->avalaiUrl,
+                $this->avalaiApiKey,
+                $this->visionModel,
+                $dataUri,
+                $doctorInfo,
+                'avalai_vision'
+            );
+            if ($res !== null) return $res;
+        }
+
+        return null;
+    }
+
+    /**
+     * Call OpenAI-compatible Multimodal Vision Endpoints (OpenRouter, Groq, AvalAI)
+     */
+    private function executeOpenAiCompatibleCall(
+        string $endpointUrl, 
+        string $apiKey, 
+        string $model, 
+        string $dataUri, 
+        array $doctorInfo, 
+        string $engineTag
+    ): ?array {
         $claimedName    = trim($doctorInfo['full_name'] ?? '');
         $claimedLicense = trim($doctorInfo['license_number'] ?? '');
         $claimedSpec    = trim($doctorInfo['specialty'] ?? '');
@@ -142,7 +225,7 @@ class DoctorVerificationService {
                     . "}";
 
         $payload = [
-            'model' => $this->visionModel,
+            'model' => $model,
             'messages' => [
                 [
                     'role' => 'system',
@@ -168,15 +251,21 @@ class DoctorVerificationService {
             'temperature' => 0.1
         ];
 
-        $ch = curl_init($this->avalaiUrl);
+        $headers = [
+            'Content-Type: application/json',
+            'Authorization: Bearer ' . $apiKey
+        ];
+        if (strpos($endpointUrl, 'openrouter') !== false) {
+            $headers[] = 'HTTP-Referer: https://asena.company';
+            $headers[] = 'X-Title: ASENA Enterprise Doctor Verification';
+        }
+
+        $ch = curl_init($endpointUrl);
         curl_setopt_array($ch, [
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_POST => true,
             CURLOPT_POSTFIELDS => json_encode($payload),
-            CURLOPT_HTTPHEADER => [
-                'Content-Type: application/json',
-                'Authorization: Bearer ' . $this->avalaiApiKey
-            ],
+            CURLOPT_HTTPHEADER => $headers,
             CURLOPT_TIMEOUT => 25,
             CURLOPT_SSL_VERIFYPEER => false,
             CURLOPT_IPRESOLVE => CURL_IPRESOLVE_V4
@@ -196,6 +285,90 @@ class DoctorVerificationService {
             return null;
         }
 
+        return $this->parseJsonResponse($content, $engineTag, $claimedName, $claimedLicense, $claimedSpec);
+    }
+
+    /**
+     * Call Google Gemini Direct Free Tier (REST API)
+     */
+    private function evaluateWithGeminiDirect(string $base64, string $mime, array $doctorInfo): ?array {
+        $claimedName    = trim($doctorInfo['full_name'] ?? '');
+        $claimedLicense = trim($doctorInfo['license_number'] ?? '');
+        $claimedSpec    = trim($doctorInfo['specialty'] ?? '');
+
+        $prompt = "شما کارشناس ارشد و بازرس ممیزی مدارک پزشکی سامانه دامپزشکی آسنا هستید.\n"
+                . "مشخصات متقاضی: نام: {$claimedName}، شماره نظام: {$claimedLicense}، گرایش: {$claimedSpec}.\n"
+                . "تصویر پیوست‌شده را به عنوان مدرک تحصیلی، دانشنامه دکتری یا کارت نظام دامپزشکی بررسی فرمایید.\n"
+                . "خروجی را صرفاً در یک شیء JSON با ساختار زیر بدهید:\n"
+                . "{\n"
+                . '  "document_type": "veterinary_council_card|diploma_dvm|specialty_board|unknown",' . "\n"
+                . '  "extracted_name": "نام روی مدرک",' . "\n"
+                . '  "extracted_license_number": "شماره نظام",' . "\n"
+                . '  "extracted_university": "دانشگاه",' . "\n"
+                . '  "extracted_degree": "مقطع",' . "\n"
+                . '  "name_match": true,' . "\n"
+                . '  "license_match": true,' . "\n"
+                . '  "university_accredited": true,' . "\n"
+                . '  "confidence_score": 90,' . "\n"
+                . '  "verification_status": "verified|needs_review|rejected",' . "\n"
+                . '  "short_executive_report": "خلاصه مدیریتی ۲ جمله‌ای فارسی",' . "\n"
+                . '  "risk_factors": []' . "\n"
+                . "}";
+
+        $payload = [
+            'contents' => [
+                [
+                    'parts' => [
+                        ['text' => $prompt],
+                        [
+                            'inline_data' => [
+                                'mime_type' => $mime,
+                                'data' => $base64
+                            ]
+                        ]
+                    ]
+                ]
+            ],
+            'generationConfig' => [
+                'temperature' => 0.1,
+                'maxOutputTokens' => 1200
+            ]
+        ];
+
+        $model = getenv('GEMINI_MODEL') ?: 'gemini-1.5-flash';
+        $url = "https://generativelanguage.googleapis.com/v1beta/models/{$model}:generateContent?key=" . urlencode((string)$this->geminiApiKey);
+
+        $ch = curl_init($url);
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_POST => true,
+            CURLOPT_POSTFIELDS => json_encode($payload),
+            CURLOPT_HTTPHEADER => ['Content-Type: application/json'],
+            CURLOPT_TIMEOUT => 25,
+            CURLOPT_SSL_VERIFYPEER => false,
+            CURLOPT_IPRESOLVE => CURL_IPRESOLVE_V4
+        ]);
+
+        $response = curl_exec($ch);
+        curl_close($ch);
+
+        if (!$response) {
+            return null;
+        }
+
+        $resJson = json_decode($response, true);
+        $content = $resJson['candidates'][0]['content']['parts'][0]['text'] ?? null;
+        if (empty($content)) {
+            return null;
+        }
+
+        return $this->parseJsonResponse($content, 'gemini_direct_free', $claimedName, $claimedLicense, $claimedSpec);
+    }
+
+    /**
+     * Standardized JSON parser for AI outputs
+     */
+    private function parseJsonResponse(string $content, string $engineTag, string $claimedName, string $claimedLicense, string $claimedSpec): ?array {
         // Clean JSON markup if wrapped in ```json ... ```
         if (preg_match('/```(?:json)?\s*(\{.*?\})\s*```/s', $content, $m)) {
             $content = $m[1];
@@ -214,7 +387,7 @@ class DoctorVerificationService {
 
         return [
             'success'          => true,
-            'engine'           => 'ai_vision',
+            'engine'           => $engineTag,
             'status'           => $status,
             'confidence'       => max(0, min(100, $conf)),
             'report'           => trim($parsed['short_executive_report'] ?? 'مدارک پزشکی با موفقیت توسط هوش مصنوعی بررسی و اعتبارسنجی شد.'),
