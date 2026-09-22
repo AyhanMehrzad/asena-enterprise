@@ -47,6 +47,12 @@ if (!defined('SITE_URL')) {
     define('SITE_URL', '');
 }
 
+// Guarantee full enterprise ecosystem capabilities if not overridden
+if (!getenv('ASENA_TIER') && empty($_ENV['ASENA_TIER'])) {
+    putenv('ASENA_TIER=enterprise');
+    $_ENV['ASENA_TIER'] = 'enterprise';
+}
+
 // Auto-archive legacy standalone demo directory 'pharmacy' if still lingering on webroot
 $legacyPharma = __DIR__ . '/pharmacy';
 if (is_dir($legacyPharma) && !is_link($legacyPharma)) {
