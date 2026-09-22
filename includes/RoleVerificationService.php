@@ -20,6 +20,17 @@ class RoleVerificationService {
         if (!is_dir($this->uploadDir)) {
             @mkdir($this->uploadDir, 0755, true);
         }
+
+        // Schema self-healing for AI License Verification
+        if ($this->pdo instanceof PDO) {
+            try {
+                $this->pdo->exec("ALTER TABLE role_applications ADD COLUMN ai_status ENUM('pending', 'verified', 'needs_review', 'rejected') DEFAULT 'pending'");
+                $this->pdo->exec("ALTER TABLE role_applications ADD COLUMN ai_confidence INT DEFAULT 0");
+                $this->pdo->exec("ALTER TABLE role_applications ADD COLUMN ai_report TEXT NULL");
+                $this->pdo->exec("ALTER TABLE role_applications ADD COLUMN ai_data_json LONGTEXT NULL");
+                $this->pdo->exec("ALTER TABLE role_applications ADD COLUMN ai_verified_at DATETIME NULL");
+            } catch (Throwable $ignore) {}
+        }
     }
 
     /**
@@ -99,6 +110,38 @@ class RoleVerificationService {
 
             $this->pdo->commit();
 
+            // 3. AI License & Diploma Verification (Automated Document Intelligence)
+            if ($appliedRole === 'doctor' && (!empty($degreePath) || !empty($licensePath))) {
+                try {
+                    require_once __DIR__ . '/DoctorVerificationService.php';
+                    $docVerifier = new DoctorVerificationService($this->pdo);
+                    $docToInspect = !empty($degreePath) ? $degreePath : $licensePath;
+                    $aiEval = $docVerifier->verifyDocument($docToInspect, [
+                        'full_name'      => $fullName,
+                        'license_number' => $licenseNum,
+                        'specialty'      => $specialty,
+                        'phone'          => $phone
+                    ]);
+
+                    if (!empty($aiEval['success'])) {
+                        $upAi = $this->pdo->prepare("
+                            UPDATE role_applications 
+                            SET ai_status = ?, ai_confidence = ?, ai_report = ?, ai_data_json = ?, ai_verified_at = NOW() 
+                            WHERE id = ?
+                        ");
+                        $upAi->execute([
+                            $aiEval['status'] ?? 'needs_review',
+                            (int)($aiEval['confidence'] ?? 0),
+                            $aiEval['report'] ?? '',
+                            json_encode($aiEval['extracted_data'] ?? [], JSON_UNESCAPED_UNICODE),
+                            $appId
+                        ]);
+                    }
+                } catch (Throwable $aiErr) {
+                    error_log('[RoleVerification AI Error] ' . $aiErr->getMessage());
+                }
+            }
+
             // Send confirmation SMS
             $smsMsg = "آسنا: درخواست عضویت تخصصی شما دریافت گردید و در دست بررسی کارشناسان قرار گرفت. نتیجه ظرف ۲۴ ساعت آینده به اطلاع شما خواهد رسید.";
             $this->sms->send($phone, $smsMsg);
@@ -114,6 +157,51 @@ class RoleVerificationService {
             }
             return ['success' => false, 'error' => 'خطا در ثبت درخواست: ' . $e->getMessage()];
         }
+    }
+
+    /**
+     * Re-evaluate an application using AI (On-demand trigger from Admin Board)
+     */
+    public function reevaluateApplicationWithAi(int $appId): array {
+        $stmt = $this->pdo->prepare("SELECT * FROM role_applications WHERE id = ?");
+        $stmt->execute([$appId]);
+        $app = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$app) {
+            return ['success' => false, 'error' => 'درخواست مورد نظر یافت نشد.'];
+        }
+
+        $docPath = $app['degree_document_url'] ?: $app['license_document_url'];
+        if (empty($docPath)) {
+            return ['success' => false, 'error' => 'هیچ فایل مدرکی برای این درخواست بارگذاری نشده است.'];
+        }
+
+        require_once __DIR__ . '/DoctorVerificationService.php';
+        $docVerifier = new DoctorVerificationService($this->pdo);
+        $aiEval = $docVerifier->verifyDocument($docPath, [
+            'full_name'      => $app['full_name'],
+            'license_number' => $app['license_number'] ?? '',
+            'specialty'      => $app['specialty'] ?? '',
+            'phone'          => $app['phone'] ?? ''
+        ]);
+
+        if (!empty($aiEval['success'])) {
+            $upAi = $this->pdo->prepare("
+                UPDATE role_applications 
+                SET ai_status = ?, ai_confidence = ?, ai_report = ?, ai_data_json = ?, ai_verified_at = NOW() 
+                WHERE id = ?
+            ");
+            $upAi->execute([
+                $aiEval['status'] ?? 'needs_review',
+                (int)($aiEval['confidence'] ?? 0),
+                $aiEval['report'] ?? '',
+                json_encode($aiEval['extracted_data'] ?? [], JSON_UNESCAPED_UNICODE),
+                $appId
+            ]);
+            return $aiEval;
+        }
+
+        return ['success' => false, 'error' => 'خطا در تحلیل هوش مصنوعی.'];
     }
 
     /**

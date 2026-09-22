@@ -151,9 +151,9 @@ require_once 'includes/header.php';
                 <span class="material-symbols-outlined text-[24px]">person</span>
                 اطلاعات حساب کاربری
             </a>
-            <a href="profile_settings.php" class="flex items-center gap-3 p-4 rounded-xl text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface font-bold text-body-md transition-colors">
+            <a href="profile.php?tab=personal-info#personal-info" class="flex items-center gap-3 p-4 rounded-xl text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface font-bold text-body-md transition-colors">
                 <span class="material-symbols-outlined text-[24px]">settings</span>
-                تنظیمات
+                تنظیمات حساب
             </a>
             <a href="rewards.php" class="flex items-center gap-3 p-4 rounded-xl bg-secondary-container text-on-secondary-container font-bold text-body-md transition-colors">
                 <span class="material-symbols-outlined text-[24px]">card_giftcard</span>

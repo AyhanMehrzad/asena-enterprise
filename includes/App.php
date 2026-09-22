@@ -31,6 +31,7 @@ require_once __DIR__ . '/DataSecurityService.php';
 require_once __DIR__ . '/BpmsService.php';
 require_once __DIR__ . '/ContractService.php';
 require_once __DIR__ . '/PromoCodeService.php';
+require_once __DIR__ . '/DoctorVerificationService.php';
 
 class App {
     private static ?PDO $db = null;
@@ -57,6 +58,7 @@ class App {
     private static ?ContractService $contract = null;
     private static ?PushNotificationService $notifications = null;
     private static ?PromoCodeService $promo = null;
+    private static ?DoctorVerificationService $doctorVerification = null;
 
 
 
@@ -231,6 +233,13 @@ class App {
             self::$promo = new PromoCodeService(self::db());
         }
         return self::$promo;
+    }
+
+    public static function doctorVerification(): DoctorVerificationService {
+        if (self::$doctorVerification === null) {
+            self::$doctorVerification = new DoctorVerificationService(self::db());
+        }
+        return self::$doctorVerification;
     }
 
     /**

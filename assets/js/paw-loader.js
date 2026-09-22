@@ -165,8 +165,12 @@
         }
         AsenaProgress.start();
         if (submitBtn) {
-            submitBtn.disabled = true;
-            submitBtn.style.opacity = '0.85';
+            setTimeout(function() {
+                try {
+                    submitBtn.disabled = true;
+                    submitBtn.style.opacity = '0.85';
+                } catch (e) {}
+            }, 0);
             const spinner = document.createElement('span');
             spinner.className = 'material-symbols-outlined text-base animate-spin inline-block align-middle ml-1.5';
             spinner.textContent = 'progress_activity';

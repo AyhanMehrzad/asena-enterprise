@@ -39,6 +39,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 $message = 'خطا در رد درخواست.';
                 $messageType = 'error';
             }
+        } elseif ($action === 'ai_reevaluate') {
+            $aiRes = $roleVerificationService->reevaluateApplicationWithAi($appId);
+            if (!empty($aiRes['success'])) {
+                $message = 'استعلام و تحلیل هوش مصنوعی با موفقیت انجام شد (ضریب اطمینان: ' . ($aiRes['confidence'] ?? 0) . '٪).';
+                $messageType = 'success';
+            } else {
+                $message = 'خطا در ارزیابی مجدد هوش مصنوعی: ' . ($aiRes['error'] ?? 'نامشخص');
+                $messageType = 'error';
+            }
         }
     }
 }
@@ -276,6 +285,84 @@ $totalOrgs = (int)$pdo->query("SELECT COUNT(*) FROM organizations")->fetchColumn
                                 <span class="text-xs text-slate-400 italic">مدرک فایلی پیوست نشده است.</span>
                             <?php endif; ?>
                         </div>
+
+                        <!-- AI Doctor License & Diploma Intelligence Card -->
+                        <?php if ($app['applied_role'] === 'doctor'): 
+                            $aiStatus = $app['ai_status'] ?? 'pending';
+                            $aiConf   = (int)($app['ai_confidence'] ?? 0);
+                            $aiData   = !empty($app['ai_data_json']) ? json_decode($app['ai_data_json'], true) : [];
+                            
+                            $aiBadgeClass = match($aiStatus) {
+                                'verified'     => 'bg-emerald-50/90 text-emerald-900 border-emerald-300',
+                                'needs_review' => 'bg-amber-50/90 text-amber-900 border-amber-300',
+                                'rejected'     => 'bg-rose-50/90 text-rose-900 border-rose-300',
+                                default        => 'bg-slate-50 text-slate-700 border-slate-200'
+                            };
+                            $aiIcon = match($aiStatus) {
+                                'verified'     => 'verified',
+                                'needs_review' => 'psychology',
+                                'rejected'     => 'warning',
+                                default        => 'hourglass_empty'
+                            };
+                            $aiTitle = match($aiStatus) {
+                                'verified'     => 'اصالت دانشنامه/پروانه توسط هوش مصنوعی تأیید شد',
+                                'needs_review' => 'نیازمند بازبینی کارشناس (ارزیابی الگوریتمی نظام دامپزشکی)',
+                                'rejected'     => 'مغایرت مدارک یا عدم احراز صلاحیت اولیه',
+                                default        => 'در انتظار تحلیل هوش مصنوعی'
+                            };
+                        ?>
+                            <div class="rounded-2xl border p-4 space-y-2.5 <?= $aiBadgeClass ?>">
+                                <div class="flex items-center justify-between gap-2 flex-wrap">
+                                    <div class="flex items-center gap-2">
+                                        <span class="material-symbols-outlined text-[22px]"><?= $aiIcon ?></span>
+                                        <span class="text-xs font-black"><?= $aiTitle ?></span>
+                                        <?php if ($aiConf > 0): ?>
+                                            <span class="px-2.5 py-0.5 rounded-full text-[11px] font-black bg-white/90 text-slate-800 shadow-xs border border-black/5">
+                                                ضریب اطمینان: <?= $aiConf ?>٪
+                                            </span>
+                                        <?php endif; ?>
+                                    </div>
+                                    <form method="POST" action="verifications.php" class="inline">
+                                        <?= csrf_field() ?>
+                                        <input type="hidden" name="action" value="ai_reevaluate">
+                                        <input type="hidden" name="application_id" value="<?= $app['id'] ?>">
+                                        <button type="submit" class="text-[11px] font-bold underline opacity-85 hover:opacity-100 flex items-center gap-1 cursor-pointer">
+                                            <span class="material-symbols-outlined text-[14px]">refresh</span>
+                                            استعلام مجدد هوش مصنوعی
+                                        </button>
+                                    </form>
+                                </div>
+
+                                <?php if (!empty($app['ai_report'])): ?>
+                                    <p class="text-xs leading-relaxed opacity-95 bg-white/60 p-2.5 rounded-xl border border-black/5">
+                                        <?= nl2br(htmlspecialchars($app['ai_report'])) ?>
+                                    </p>
+                                <?php endif; ?>
+
+                                <?php if (!empty($aiData)): ?>
+                                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-1 text-[11px]">
+                                        <div class="bg-white/70 p-2 rounded-lg border border-black/5">
+                                            <span class="opacity-70 block text-[10px]">دانشگاه صادرکننده:</span>
+                                            <span class="font-bold"><?= htmlspecialchars($aiData['extracted_university'] ?? 'دانشکده دامپزشکی') ?></span>
+                                        </div>
+                                        <div class="bg-white/70 p-2 rounded-lg border border-black/5">
+                                            <span class="opacity-70 block text-[10px]">شماره استخراج‌شده:</span>
+                                            <span class="font-bold dir-ltr inline-block"><?= htmlspecialchars($aiData['extracted_license_number'] ?? $app['license_number'] ?? '—') ?></span>
+                                        </div>
+                                        <div class="bg-white/70 p-2 rounded-lg border border-black/5">
+                                            <span class="opacity-70 block text-[10px]">عنوان مدرک / گرایش:</span>
+                                            <span class="font-bold"><?= htmlspecialchars($aiData['extracted_degree'] ?? 'دکترای دامپزشکی (DVM)') ?></span>
+                                        </div>
+                                        <div class="bg-white/70 p-2 rounded-lg border border-black/5">
+                                            <span class="opacity-70 block text-[10px]">تطابق مشخصات:</span>
+                                            <span class="font-bold <?= !empty($aiData['name_match']) ? 'text-emerald-700' : 'text-rose-700' ?>">
+                                                <?= !empty($aiData['name_match']) ? '✔ نام و شماره منطبق' : '✖ نیاز به بازبینی' ?>
+                                            </span>
+                                        </div>
+                                    </div>
+                                <?php endif; ?>
+                            </div>
+                        <?php endif; ?>
 
                         <?php if (!empty($app['admin_notes'])): ?>
                             <div class="text-xs text-slate-600 bg-amber-50/70 p-2.5 rounded-lg border border-amber-200/60">

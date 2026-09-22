@@ -552,11 +552,29 @@
     - **موتور اسکرو و تسویه وجوه ([`includes/MarketplaceEscrowService.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/includes/MarketplaceEscrowService.php)):** تنظیم نرخ کارمزد روی `commission_rate = 0.00` و `commission_amount = 0` برای سفارشات اتوشیپ، و واریز ۱۰۰٪ مبلغ به سهم فروشنده (`net_seller_amount = gross_amount`).
     - **ثبت سفارشات اتوشیپ ([`actions/complete_payment.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/actions/complete_payment.php)):** ثبت پایدار فیلدهای `order_type = 'autoship'` و `is_autoship = 1` در رکورد سفارش جهت همگام‌سازی بی‌نقص با موتور اسکرو.
     - **خودترمیمی دیتابیس نسخه ۶ ([`includes/db.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/includes/db.php)):** افزودن فیلدهای مربوطه به جداول `orders` و `order_items` و تعدیل عطف‌به‌ماسبق سفارش اتوشیپ قبلی #9 (تبدیل کارمزد از ۲۰۸,۲۵۰ تومان به ۰ و اعاده ۲,۰۸۲,۵۰۰ تومان کامل به سهم خالص فروشنده).
-54. **پاکسازی کامل فایل‌های زائد، تصاویر آزمایشی و ارتقای امنیت پوشه‌ها جهت پروداکشن (Repository Cleanup & Directory Hardening):**
-    - **حذف اسکرین‌شات‌ها و تصاویر زائد روت و پرزنتیشن:** حذف ۵ اسکرین‌شات باینری روت (`meal_plan_report_chart.png`, `profile_documents_view.png`, `profile_overview_widget.png`, `profile_pet_report.png`, `unified_health_hub_view.png`) و پوشه موکاپ‌های قدیمی `assets/presentation/` (شامل ۷ فایل باینری غیرقابل استفاده).
-    - **پاکسازی فایل‌های خروجی تستی آپلودها:** حذف گزارش‌های استاتیک تستی در `uploads/documents/` و `uploads/meal_plans/` و ایجاد `.gitkeep` برای حفظ ساختار پوشه‌ها.
-    - **حذف اسکریپت‌های یک‌بارمصرف:** حذف `scripts/download_svg_icons.py` و `scripts/localize_assets.php` و حذف نشانگر تستی قدیمی `includes/.schema_aligned_v2`.
-    - **مسدودسازی دسترسی مستقیم وب به پوشه تست‌ها:** ایجاد فایل [`tests/.htaccess`](file:///opt/lampp/htdocs/asena/asena-enterprise/tests/.htaccess) با دستور `Require all denied` جهت حفظ اجرای تست‌ها در CI و جلوگیری از دسترسی خارجی در پروداکشن.
+55. **اصلاح مسیریابی و پاکسازی پروفایل، حذف پسوند php از آدرس‌ها و سامانه هوشمند اعتبارسنجی پروانه و دانشنامه پزشکان با هوش مصنوعی (Clean URLs, Profile Routing Fixes & AI Doctor License Verification):**
+    - **اصلاح ریدایرکت‌های پروفایل و پاکسازی کدهای منسوخ ([`profile_settings.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/profile_settings.php)):**
+      - پاکسازی بیش از ۴۰۰ خط کد HTML/JS مرده و تبدیل فایل به یک روتر هوشمند و سبک جهت انتقال روان کاربر به تب مشخص شده در کوئری‌استرینگ (`?tab=...#...`).
+      - اصلاح لینک‌های ریدایرکت کسری نشانی در [`cart.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/cart.php) و [`payment.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/payment.php) از `profile_settings.php` به صورت مستقیم به `profile.php?tab=addresses#addresses`.
+      - اصلاح لینک تنظیمات در [`rewards.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/rewards.php) به `profile.php?tab=personal-info#personal-info`.
+    - **رفع باگ ارسال فرم‌ها در لودر پنجه ([`assets/js/paw-loader.js`](file:///opt/lampp/htdocs/asena/asena-enterprise/assets/js/paw-loader.js)):**
+      - به تعویق انداختن `submitBtn.disabled = true` با `setTimeout(..., 0)` تا مانع از ارسال مقادیر نام و دکمه کلیک‌شده در بدنه درخواست‌های POST نشود.
+    - **حذف پسوند `.php` و بهینه‌سازی مسیرها (Clean Extensionless URLs در [`.htaccess`](file:///opt/lampp/htdocs/asena/asena-enterprise/.htaccess)):**
+      - پیاده‌سازی ریدایرکت استاندارد ۳۰۱ خارجی برای متدهای GET و HEAD از آدرس‌های دارای پسوند به آدرس‌های تمیز، با مستثنی‌سازی دقیق پوشه‌های `/actions/` و `/api/` و درخواست‌های POST.
+      - بازنویسی داخلی هوشمند با پرچم `QSA` برای حفظ پارامترهای ارسالی در کلیه صفحات و زیرپوشه‌ها (`/admin/`, `/doctor/`, `/organization/`, `/pharmacist/`, `/seller/`).
+    - **موتور اعتبارسنجی هوشمند پروانه و دانشنامه پزشکان با هوش مصنوعی چندوجهی ([`includes/DoctorVerificationService.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/includes/DoctorVerificationService.php)):**
+      - توسعه سرویس مستقل بررسی بینایی (AI Vision) مدارک، دانشنامه‌ها و کارت‌های نظام دامپزشکی متقاضیان عضویت.
+      - استخراج مشخصات پزشک، شماره نظام دامپزشکی، دانشگاه صادرکننده، مقطع تحصیلی و انطباق با قواعد سازمان نظام دامپزشکی جمهوری اسلامی ایران (IRVC).
+      - مکانیزم جایگزین هوشمند (Heuristic Rule-Based Fallback) بر اساس ماتریس دانشکده‌های دامپزشکی معتبر ایران و فرمت استاندارد شماره نظام.
+      - صدور نمره اطمینان (۰ تا ۱۰۰)، وضعیت اعتبارسنجی (`verified`, `needs_review`, `rejected`) و گزارش مدیریتی فارسی.
+    - **یکپارچه‌سازی با ثبت‌نام و هیئت ممیزی ادمین ([`includes/RoleVerificationService.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/includes/RoleVerificationService.php) و [`admin/verifications.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/admin/verifications.php)):**
+      - اجرای خودکار ارزیابی هوش مصنوعی به محض بارگذاری مدارک پزشک در `submitApplication()`.
+      - افزودن اکشن استعلام مجدد هوش مصنوعی به صورت On-Demand در پنل مدیریت.
+      - طراحی کارت بصری لوکس وضعیت هوش مصنوعی همراه با بج رنگی، نمره اطمینان، متن گزارش کارشناسی و جدول مشخصات استخراج‌شده در کنار فرم تأیید ۱-کلیکی.
+    - **خودترمیمی دیتابیس نسخه ۷ ([`includes/db.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/includes/db.php)):**
+      - استقرار گیت خودکار ایجاد ستون‌های `ai_status`, `ai_confidence`, `ai_report`, `ai_data_json`, `ai_verified_at` در جدول `role_applications`.
+    - **مجموعه آزمون خودکار ([`tests/test_ai_license_verification.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/tests/test_ai_license_verification.php)):**
+      - اجرای ۱۵ تست موفق شامل بررسی فرمت شماره نظام، الگوریتم هوش مصنوعی، ریدایرکت آدرس‌ها و سلامت اسکریپت‌ها.
 
 ---
 

@@ -40,7 +40,7 @@ if ($isBooking) {
     // ── Standard & Autoship Cart Checkout ─────────────────────────────────────
     if (empty(trim((string)$currentUser['city'])) || empty(trim((string)$currentUser['address']))) {
         $_SESSION['profile_error'] = "لطفاً پیش از خرید، آدرس منزل و شهر خود را در پروفایل تکمیل کنید تا امکان ارسال مرسولات فراهم باشد.";
-        header('Location: profile_settings.php');
+        header('Location: profile.php?tab=addresses#addresses');
         exit;
     }
 

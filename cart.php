@@ -267,7 +267,7 @@ if (empty($wishlist_products)) {
 
     <!-- Alerts -->
     <?php if(isset($_SESSION['profile_error'])): ?>
-        <a href="profile_settings.php" class="block bg-error/10 text-error p-4 rounded-2xl mb-8 font-bold text-sm border border-error/20 flex items-center gap-2 hover:bg-error/20 transition-colors cursor-pointer group">
+        <a href="profile.php?tab=addresses#addresses" class="block bg-error/10 text-error p-4 rounded-2xl mb-8 font-bold text-sm border border-error/20 flex items-center gap-2 hover:bg-error/20 transition-colors cursor-pointer group">
             <span class="material-symbols-outlined group-hover:scale-110 transition-transform">error</span>
             <?php echo $_SESSION['profile_error']; unset($_SESSION['profile_error']); ?>
             <span class="material-symbols-outlined mr-auto">chevron_left</span>

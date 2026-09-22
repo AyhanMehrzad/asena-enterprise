@@ -410,6 +410,25 @@ if (!file_exists(__DIR__ . '/.schema_aligned_v6')) {
     } catch (Throwable $e) {}
 }
 
+// Schema alignment v7: Add AI License Verification columns to role_applications
+if (!file_exists(__DIR__ . '/.schema_aligned_v7')) {
+    try {
+        $colsToAddV7 = [
+            "ALTER TABLE `role_applications` ADD COLUMN `ai_status` ENUM('pending', 'verified', 'needs_review', 'rejected') DEFAULT 'pending'",
+            "ALTER TABLE `role_applications` ADD COLUMN `ai_confidence` INT DEFAULT 0",
+            "ALTER TABLE `role_applications` ADD COLUMN `ai_report` TEXT NULL",
+            "ALTER TABLE `role_applications` ADD COLUMN `ai_data_json` LONGTEXT NULL",
+            "ALTER TABLE `role_applications` ADD COLUMN `ai_verified_at` DATETIME NULL"
+        ];
+        foreach ($colsToAddV7 as $sql) {
+            try {
+                $pdo->exec($sql);
+            } catch (Throwable $ignore) {}
+        }
+        @touch(__DIR__ . '/.schema_aligned_v7');
+    } catch (Throwable $e) {}
+}
+
 
 require_once __DIR__ . '/Feature.php';
 require_once __DIR__ . '/functions.php';
