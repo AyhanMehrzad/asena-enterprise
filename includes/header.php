@@ -440,7 +440,7 @@ if (function_exists('get_curated_recommendations')) {
                         <a class="text-white text-sm font-semibold hover:text-secondary-container transition-all duration-200 <?php echo $current_page == 'shop.php' ? 'border-b-2 border-white pb-1 opacity-100' : 'opacity-90'; ?>" href="shop">فروشگاه</a>
                     <?php endif; ?>
                     <?php if (Feature::has('pharmacy_catalog')): ?>
-                        <a class="text-white text-sm font-semibold hover:text-secondary-container transition-all duration-200 <?php echo $current_page == 'pharmacy.php' ? 'border-b-2 border-white pb-1 opacity-100' : 'opacity-90'; ?>" href="pharmacy.php">داروخانه تخصصی</a>
+                        <a class="text-white text-sm font-semibold hover:text-secondary-container transition-all duration-200 <?php echo ($current_page == 'pharmacy.php' || $current_page == 'pharmacy') ? 'border-b-2 border-white pb-1 opacity-100' : 'opacity-90'; ?>" href="pharmacy">داروخانه تخصصی</a>
                     <?php endif; ?>
                     <?php if (Feature::has('clinic_booking')): ?>
                         <a class="text-white text-sm font-semibold hover:text-secondary-container transition-all duration-200 <?php echo $current_page == 'booking.php' ? 'border-b-2 border-white pb-1 opacity-100' : 'opacity-90'; ?>" href="booking">نوبت‌دهی</a>
@@ -644,7 +644,7 @@ if (function_exists('get_curated_recommendations')) {
                         </a>
                     <?php endif; ?>
                     <?php if (Feature::has('pharmacy_catalog')): ?>
-                        <a class="flex items-center gap-4 text-on-surface font-bold p-3 rounded-xl hover:bg-primary-container/10 hover:text-primary transition-colors" href="pharmacy.php">
+                        <a class="flex items-center gap-4 text-on-surface font-bold p-3 rounded-xl hover:bg-primary-container/10 hover:text-primary transition-colors" href="pharmacy">
                             <span class="material-symbols-outlined text-outline">medication</span> داروخانه تخصصی
                         </a>
                     <?php endif; ?>

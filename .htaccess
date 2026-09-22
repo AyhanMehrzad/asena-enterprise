@@ -1,5 +1,9 @@
 RewriteEngine On
 
+# 0. Pharmacy Enterprise Route Handling (neutralize trailing slash and guarantee routing to pharmacy.php)
+RewriteRule ^pharmacy/$ /pharmacy [R=301,L]
+RewriteRule ^pharmacy$ pharmacy.php [QSA,L]
+
 # 1. Allow authorization headers
 RewriteCond %{HTTP:Authorization} ^(.*)
 RewriteRule .* - [e=HTTP_AUTHORIZATION:%1]

@@ -587,6 +587,18 @@
     - **راستی‌آزمایی جامع شبکه (Network Verification):**
       - تست موفقیت‌آمیز تمامی روت‌های تمیز (`shop`, `booking`, `cart`, `calculator`, `interactions`, `subscriptions`, `organizations`, `knowledge_base`, `charity`, `contact`, `about`, `terms`, `privacy`) با دریافت کد HTTP 200 روی سرور عملیاتی.
 
+57. **اصلاح روت داروخانه، بایگانی خودکار پوشه دمو قدیمی و یکپارچه‌سازی کامل پیوندهای تمیز داروخانه (Pharmacy Clean URL Routing & Legacy Standalone Neutralization):**
+    - **ریشه‌یابی و خنثی‌سازی تعارض پوشه فیزیکی سرور:**
+      - مشخص گردید پوشه دمو مستقل و قدیمی `pharmacy/` که در کامیت‌های اولیه از گیت حذف شده بود، به دلیل رفتار دستور `cp -rf` در سی‌پنل همچنان روی سرور فیزیکی باقی مانده بود و وب‌سرور لایت‌اسپید با تشخیص دایرکتوری فیزیکی، درخواست‌های `/pharmacy` را به `/pharmacy/` ریدایرکت کرده و وب‌اپلیکیشن مستقل دمو با پوسته سبز را اجرا می‌نمود.
+    - **مکانیزم بایگانی خودکار در هسته پیکربندی ([`config.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/config.php)):**
+      - اضافه شدن قطعه کد خودترمیمی جهت تغییر نام و بایگانی آنی پوشه فیزیکی `pharmacy/` به `.legacy_pharmacy_archived_<timestamp>` و حذف فایل `index.php` قدیمی به محض اجرای هر درخواست PHP در وب‌سرور.
+    - **پاکسازی در فرایند استقرار سی‌پنل ([`.cpanel.yml`](file:///opt/lampp/htdocs/asena/asena-enterprise/.cpanel.yml)):**
+      - درج تسک پیش‌فرض حذف دائمی `/bin/rm -rf $DEPLOYPATH/pharmacy/ 2>/dev/null || true` پیش از رونوشت فایل‌ها.
+    - **هدایت اجباری و بازنویسی مسیر در [`.htaccess`](file:///opt/lampp/htdocs/asena/asena-enterprise/.htaccess):**
+      - افزودن قواعد صریح در ابتدای فایل جهت هدایت ۳۰۱ از `/pharmacy/` به `/pharmacy` و بازنویسی داخلی امن به `pharmacy.php`.
+    - **مهاجرت سراسری کلیه پیوندهای داروخانه به آدرس بدون پسوند (`pharmacy`):**
+      - به‌روزرسانی هدر (`includes/header.php`)، فوتر (`includes/footer.php`)، صفحه اصلی (`index.php`)، فروشگاه (`shop.php`)، صفحه محصول (`product_details.php`)، سبد خرید (`cart.php`)، داشبورد (`profile.php`)، پایش تداخلات (`interactions.php`)، نمایه مراکز (`organization_profile.php`)، جستجوی زنده (`actions/live_search.php`)، نقشه سایت (`sitemap.php`) و صفحه اختصاصی داروخانه (`pharmacy.php`).
+
 ---
 
 

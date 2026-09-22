@@ -46,4 +46,15 @@ if ($is_local) {
 if (!defined('SITE_URL')) {
     define('SITE_URL', '');
 }
+
+// Auto-archive legacy standalone demo directory 'pharmacy' if still lingering on webroot
+$legacyPharma = __DIR__ . '/pharmacy';
+if (is_dir($legacyPharma) && !is_link($legacyPharma)) {
+    $targetArchive = __DIR__ . '/.legacy_pharmacy_archived_' . date('YmdHis');
+    if (!@rename($legacyPharma, $targetArchive)) {
+        if (file_exists($legacyPharma . '/index.php')) {
+            @unlink($legacyPharma . '/index.php');
+        }
+    }
+}
 ?>

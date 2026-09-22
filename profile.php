@@ -730,7 +730,7 @@ $nextPayoutFormatted = $fmtDateText->format($nextThursday) . ' ساعت ۲۲:۰�
                     <span class="material-symbols-outlined text-base">receipt_long</span>
                     مشاهده فاکتور
                 </a>
-                <a href="pharmacy.php" class="bg-white/15 hover:bg-white/25 text-white px-4 py-2.5 rounded-xl font-bold text-xs transition-all border border-white/20 active:scale-95">
+                <a href="pharmacy" class="bg-white/15 hover:bg-white/25 text-white px-4 py-2.5 rounded-xl font-bold text-xs transition-all border border-white/20 active:scale-95">
                     داروخانه
                 </a>
             </div>
@@ -2011,7 +2011,7 @@ function switchSellerFin(period) {
                     <?php if (empty($orders)): ?>
                         <div class="text-center py-6 text-on-surface-variant space-y-2">
                             <p class="text-xs font-bold">هنوز سفارشی ثبت نکرده‌اید.</p>
-                            <a href="pharmacy.php" class="inline-flex items-center gap-1 text-xs font-bold text-primary hover:underline">
+                            <a href="pharmacy" class="inline-flex items-center gap-1 text-xs font-bold text-primary hover:underline">
                                 <span class="material-symbols-outlined text-sm">local_pharmacy</span> مشاهده داروخانه و پت‌شاپ
                             </a>
                         </div>
@@ -3376,7 +3376,7 @@ function switchSellerFin(period) {
                     <span class="material-symbols-outlined text-3xl">remove_shopping_cart</span>
                 </div>
                 <p class="font-bold text-sm">شما تاکنون هیچ سفارشی ثبت نکرده‌اید.</p>
-                <a href="pharmacy.php" class="inline-flex items-center gap-1.5 px-4 py-2 bg-primary text-white rounded-xl text-xs font-bold hover:bg-primary-container transition-colors shadow-sm">
+                <a href="pharmacy" class="inline-flex items-center gap-1.5 px-4 py-2 bg-primary text-white rounded-xl text-xs font-bold hover:bg-primary-container transition-colors shadow-sm">
                     <span class="material-symbols-outlined text-sm">local_pharmacy</span>
                     مشاهده داروخانه و پت‌شاپ
                 </a>
@@ -3591,7 +3591,7 @@ function switchSellerFin(period) {
                         <p class="text-[11px] text-on-surface-variant">پیگیری مراحل بررسی، قیمت‌گذاری و ارسال داروهای تجویزی</p>
                     </div>
                 </div>
-                <a href="pharmacy.php#prescriptionModal" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm">
+                <a href="pharmacy#prescriptionModal" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm">
                     <span class="material-symbols-outlined text-sm">add_circle</span>
                     <span>ارسال نسخه جدید</span>
                 </a>
@@ -3609,7 +3609,7 @@ function switchSellerFin(period) {
                                 تصویر یا فایل نسخه پزشک را در داروخانه آنلاین آسنا بارگذاری فرمایید تا پس از تأیید داروسازان، اقلام دارویی آماده تحویل یا ارسال با زنجیره سرد گردند.
                             </p>
                         </div>
-                        <a href="pharmacy.php" class="inline-flex items-center gap-2 px-5 py-2.5 bg-secondary-container text-white rounded-xl text-xs font-bold hover:bg-[#ea580c] transition-all shadow-md">
+                        <a href="pharmacy" class="inline-flex items-center gap-2 px-5 py-2.5 bg-secondary-container text-white rounded-xl text-xs font-bold hover:bg-[#ea580c] transition-all shadow-md">
                             <span class="material-symbols-outlined text-sm">local_pharmacy</span>
                             <span>ورود به داروخانه و ارسال نسخه</span>
                         </a>
@@ -3696,7 +3696,7 @@ function switchSellerFin(period) {
                                     <span>مشاهده تصویر نسخه</span>
                                 </a>
                                 <?php endif; ?>
-                                <a href="pharmacy.php" class="py-2 px-3 bg-secondary-container/10 hover:bg-secondary-container hover:text-white rounded-xl text-center text-xs font-bold text-secondary-container transition-all flex items-center justify-center gap-1" title="داروخانه">
+                                <a href="pharmacy" class="py-2 px-3 bg-secondary-container/10 hover:bg-secondary-container hover:text-white rounded-xl text-center text-xs font-bold text-secondary-container transition-all flex items-center justify-center gap-1" title="داروخانه">
                                     <span class="material-symbols-outlined text-sm">storefront</span>
                                 </a>
                             </div>

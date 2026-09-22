@@ -2,5 +2,6 @@
 deployment:
   tasks:
     - export DEPLOYPATH=/home/asencomp/public_html/
+    - /bin/rm -rf $DEPLOYPATH/pharmacy/ 2>/dev/null || true
     - /bin/cp -rf * $DEPLOYPATH
     - /bin/cp -f .htaccess $DEPLOYPATH 2>/dev/null || true

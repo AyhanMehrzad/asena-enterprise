@@ -42,7 +42,7 @@ if (!$product && Feature::has('pharmacy_catalog')) {
 }
 
 if (!$product) {
-    $redirect = Feature::has('petshop_catalog') ? 'shop.php' : 'pharmacy.php';
+    $redirect = Feature::has('petshop_catalog') ? 'shop' : 'pharmacy';
     header("Location: $redirect");
     exit;
 }
@@ -574,7 +574,7 @@ require_once 'includes/header.php';
                     <p class="text-xs text-on-surface-variant">پیشنهادات تخصصی برای <?php echo $animal_display; ?></p>
                 </div>
             </div>
-            <a href="<?php echo ($item_source === 'pharmacy') ? 'pharmacy.php' : 'shop.php?animal=' . urlencode($product['target_animal'] ?? ''); ?>" class="text-xs font-bold text-primary hover:underline">مشاهده همه محصولات این دسته ></a>
+            <a href="<?php echo ($item_source === 'pharmacy') ? 'pharmacy' : 'shop?animal=' . urlencode($product['target_animal'] ?? ''); ?>" class="text-xs font-bold text-primary hover:underline">مشاهده همه محصولات این دسته ></a>
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">

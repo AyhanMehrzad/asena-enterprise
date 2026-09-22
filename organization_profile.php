@@ -603,7 +603,7 @@ require_once __DIR__ . '/includes/header.php';
                         <span class="text-xs font-black text-slate-900">
                             <?= number_format((float)$item['effective_price']) ?> تومان
                         </span>
-                        <a href="pharmacy.php" class="p-1.5 rounded-lg bg-teal-50 text-teal-700 hover:bg-teal-600 hover:text-white transition-colors" title="خرید یا استعلام نسخه">
+                        <a href="pharmacy" class="p-1.5 rounded-lg bg-teal-50 text-teal-700 hover:bg-teal-600 hover:text-white transition-colors" title="خرید یا استعلام نسخه">
                             <span class="material-symbols-outlined text-sm">shopping_cart</span>
                         </a>
                     </div>

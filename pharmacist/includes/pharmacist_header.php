@@ -107,7 +107,7 @@ $orgId = (int)($linkedOrg['id'] ?? 1);
     <!-- Bottom Actions -->
     <div class="p-6 pt-2 flex flex-col gap-2">
         <div class="px-1 mb-2 space-y-1.5">
-            <a href="../pharmacy.php" target="_blank" class="flex items-center gap-2.5 px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-bold transition-all">
+            <a href="../pharmacy" target="_blank" class="flex items-center gap-2.5 px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-bold transition-all">
                 <span class="material-symbols-outlined text-[20px]">storefront</span>
                 <span>داروخانه عمومی سایت</span>
                 <span class="material-symbols-outlined text-xs mr-auto">north_east</span>

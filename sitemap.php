@@ -79,13 +79,13 @@ sitemapAdd($urls, "{$siteUrl}/basic/", '0.75', 'weekly');
 sitemapAdd($urls, "{$siteUrl}/pharmacy-basic/", '0.75', 'weekly');
 
 // 2. Primary Public Service Hubs
-sitemapAdd($urls, "{$siteUrl}/shop.php", '0.95', 'daily');
-sitemapAdd($urls, "{$siteUrl}/booking.php", '0.95', 'daily');
-sitemapAdd($urls, "{$siteUrl}/pharmacy.php", '0.95', 'daily');
-sitemapAdd($urls, "{$siteUrl}/subscriptions.php", '0.85', 'weekly');
-sitemapAdd($urls, "{$siteUrl}/charity.php", '0.85', 'weekly');
-sitemapAdd($urls, "{$siteUrl}/knowledge_base.php", '0.9', 'daily');
-sitemapAdd($urls, "{$siteUrl}/organizations.php", '0.85', 'daily');
+sitemapAdd($urls, "{$siteUrl}/shop", '0.95', 'daily');
+sitemapAdd($urls, "{$siteUrl}/booking", '0.95', 'daily');
+sitemapAdd($urls, "{$siteUrl}/pharmacy", '0.95', 'daily');
+sitemapAdd($urls, "{$siteUrl}/subscriptions", '0.85', 'weekly');
+sitemapAdd($urls, "{$siteUrl}/charity", '0.85', 'weekly');
+sitemapAdd($urls, "{$siteUrl}/knowledge_base", '0.9', 'daily');
+sitemapAdd($urls, "{$siteUrl}/organizations", '0.85', 'daily');
 
 // Tier-specific Service Hubs
 sitemapAdd($urls, "{$siteUrl}/standard/shop.php", '0.9', 'daily');
@@ -99,8 +99,8 @@ sitemapAdd($urls, "{$siteUrl}/pharmacy-standard/booking.php", '0.85', 'daily');
 // 3. Animal Category & Medical Tag Filter Hubs
 $animals = ['dog', 'cat', 'bird', 'smallpet', 'horse', 'cow'];
 foreach ($animals as $a) {
-    sitemapAdd($urls, "{$siteUrl}/shop.php?animal={$a}", '0.85', 'weekly');
-    sitemapAdd($urls, "{$siteUrl}/pharmacy.php?animal={$a}", '0.85', 'weekly');
+    sitemapAdd($urls, "{$siteUrl}/shop?animal={$a}", '0.85', 'weekly');
+    sitemapAdd($urls, "{$siteUrl}/pharmacy?animal={$a}", '0.85', 'weekly');
     sitemapAdd($urls, "{$siteUrl}/standard/shop.php?animal={$a}", '0.8', 'weekly');
     sitemapAdd($urls, "{$siteUrl}/pharmacy-standard/shop.php?animal={$a}", '0.8', 'weekly');
 }
@@ -108,7 +108,7 @@ foreach ($animals as $a) {
 $pharmacyTags = ['دارو', 'مکمل', 'واکسن', 'ضد انگل', 'بهداشتی', 'تجهیزات'];
 foreach ($pharmacyTags as $tag) {
     $encodedTag = urlencode($tag);
-    sitemapAdd($urls, "{$siteUrl}/pharmacy.php?tag={$encodedTag}", '0.85', 'weekly');
+    sitemapAdd($urls, "{$siteUrl}/pharmacy?tag={$encodedTag}", '0.85', 'weekly');
     sitemapAdd($urls, "{$siteUrl}/pharmacy-standard/shop.php?tag={$encodedTag}", '0.8', 'weekly');
 }
 

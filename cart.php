@@ -289,11 +289,11 @@ if (empty($wishlist_products)) {
             <h2 class="text-xl font-bold text-on-surface">سبد خرید شما در حال حاضر خالی است!</h2>
             <p class="text-sm text-on-surface-variant max-w-md mx-auto">می‌توانید انواع داروهای دامپزشکی، مکمل‌های تقویتی و محصولات حیوانات خانگی را از داروخانه و پت‌شاپ آسنا بررسی و انتخاب نمایید.</p>
             <div class="flex items-center justify-center gap-4 pt-4">
-                <a href="pharmacy.php" class="bg-primary text-white px-6 py-3 rounded-xl font-bold text-sm hover:bg-primary-container transition-all shadow-md flex items-center gap-2">
+                <a href="pharmacy" class="bg-primary text-white px-6 py-3 rounded-xl font-bold text-sm hover:bg-primary-container transition-all shadow-md flex items-center gap-2">
                     <span class="material-symbols-outlined text-sm">medication</span>
                     داروخانه تخصصی
                 </a>
-                <a href="shop.php" class="bg-surface-container hover:bg-surface-container-high text-primary px-6 py-3 rounded-xl font-bold text-sm transition-all border border-outline-variant/40 flex items-center gap-2">
+                <a href="shop" class="bg-surface-container hover:bg-surface-container-high text-primary px-6 py-3 rounded-xl font-bold text-sm transition-all border border-outline-variant/40 flex items-center gap-2">
                     <span class="material-symbols-outlined text-sm">storefront</span>
                     فروشگاه و پت‌شاپ
                 </a>

@@ -309,12 +309,12 @@ function buildUrl($updates) {
 <div class="bg-primary-container text-white border-t border-white/20 hidden md:block">
    <div class="max-w-container-max mx-auto px-margin-desktop flex items-center justify-between text-label-lg font-bold">
        <div class="flex gap-6 py-3">
-           <a href="pharmacy.php" class="hover:text-secondary-container transition-colors <?php echo empty($animal) ? 'text-secondary-container underline underline-offset-8' : ''; ?>">داروخانه کل حیوانات</a>
-           <a href="pharmacy.php?animal=dog" class="hover:text-secondary-container transition-colors <?php echo $animal == 'dog' ? 'text-secondary-container underline underline-offset-8' : ''; ?>">داروهای سگ</a>
-           <a href="pharmacy.php?animal=cat" class="hover:text-secondary-container transition-colors <?php echo $animal == 'cat' ? 'text-secondary-container underline underline-offset-8' : ''; ?>">داروهای گربه</a>
-           <a href="pharmacy.php?animal=horse" class="hover:text-secondary-container transition-colors <?php echo $animal == 'horse' ? 'text-secondary-container underline underline-offset-8' : ''; ?>">داروهای اسب</a>
-           <a href="pharmacy.php?animal=cow" class="hover:text-secondary-container transition-colors <?php echo $animal == 'cow' ? 'text-secondary-container underline underline-offset-8' : ''; ?>">داروهای دام و احشام</a>
-           <a href="pharmacy.php?animal=chick" class="hover:text-secondary-container transition-colors <?php echo $animal == 'chick' ? 'text-secondary-container underline underline-offset-8' : ''; ?>">داروهای طیور</a>
+           <a href="pharmacy" class="hover:text-secondary-container transition-colors <?php echo empty($animal) ? 'text-secondary-container underline underline-offset-8' : ''; ?>">داروخانه کل حیوانات</a>
+           <a href="pharmacy?animal=dog" class="hover:text-secondary-container transition-colors <?php echo $animal == 'dog' ? 'text-secondary-container underline underline-offset-8' : ''; ?>">داروهای سگ</a>
+           <a href="pharmacy?animal=cat" class="hover:text-secondary-container transition-colors <?php echo $animal == 'cat' ? 'text-secondary-container underline underline-offset-8' : ''; ?>">داروهای گربه</a>
+           <a href="pharmacy?animal=horse" class="hover:text-secondary-container transition-colors <?php echo $animal == 'horse' ? 'text-secondary-container underline underline-offset-8' : ''; ?>">داروهای اسب</a>
+           <a href="pharmacy?animal=cow" class="hover:text-secondary-container transition-colors <?php echo $animal == 'cow' ? 'text-secondary-container underline underline-offset-8' : ''; ?>">داروهای دام و احشام</a>
+           <a href="pharmacy?animal=chick" class="hover:text-secondary-container transition-colors <?php echo $animal == 'chick' ? 'text-secondary-container underline underline-offset-8' : ''; ?>">داروهای طیور</a>
        </div>
        <div class="flex items-center gap-2 text-xs bg-white/10 px-3 py-1.5 rounded-full">
            <span class="material-symbols-outlined text-[16px] text-status-warning">emergency</span>
@@ -427,7 +427,7 @@ function buildUrl($updates) {
     </div>
 
     <!-- Main Filter Form and Products Grid -->
-    <form id="pharmacy-filter-form" action="pharmacy.php" method="GET" class="flex flex-col md:flex-row gap-8">
+    <form id="pharmacy-filter-form" action="pharmacy" method="GET" class="flex flex-col md:flex-row gap-8">
         <?php if($search): ?><input type="hidden" name="q" value="<?php echo htmlspecialchars($search); ?>"><?php endif; ?>
         <?php if($animal): ?><input type="hidden" name="animal" value="<?php echo htmlspecialchars($animal); ?>"><?php endif; ?>
         <?php if($pharmacy_tag): ?><input type="hidden" name="tag" value="<?php echo htmlspecialchars($pharmacy_tag); ?>"><?php endif; ?>
@@ -454,7 +454,7 @@ function buildUrl($updates) {
                <div class="flex items-center justify-between mb-4">
                    <h2 class="text-title-lg font-bold hidden md:block">فیلترهای داروخانه</h2>
                    <?php if($search || $animal || $pharmacy_tag || $autoship_only || $min_rating > 0 || !empty($selected_brands) || !empty($price_ranges) || $in_stock): ?>
-                   <a href="pharmacy.php" class="text-xs text-error font-bold hover:underline">حذف همه فیلترها</a>
+                   <a href="pharmacy" class="text-xs text-error font-bold hover:underline">حذف همه فیلترها</a>
                    <?php endif; ?>
                </div>
            
@@ -809,7 +809,7 @@ function buildUrl($updates) {
                 <p class="text-xs text-on-surface-variant leading-relaxed">
                     جهت پیگیری وضعیت نسخه، صدور کد رهگیری و دریافت تأییدیه داروساز، لطفاً ابتدا وارد حساب کاربری خود شوید.
                 </p>
-                <a href="login.php?redirect=pharmacy.php" class="w-full bg-primary text-white py-3 rounded-xl font-bold hover:bg-primary-container transition-all block text-xs shadow-md">
+                <a href="login?redirect=pharmacy" class="w-full bg-primary text-white py-3 rounded-xl font-bold hover:bg-primary-container transition-all block text-xs shadow-md">
                     ورود یا ثبت‌نام در آسنا
                 </a>
             </div>
@@ -989,7 +989,7 @@ function buildUrl($updates) {
       "@graph": [
         {
           "@type": "Pharmacy",
-          "@id": "<?php echo $proto . '://' . $host; ?>/pharmacy.php#organization",
+          "@id": "<?php echo $proto . '://' . $host; ?>/pharmacy#organization",
           "name": "داروخانه آنلاین دامپزشکی آسنا",
           "description": "داروخانه تخصصی حیوانات خانگی و دام آسنا، تامین مستقیم انواع دارو، واکسن، مکمل و ضد انگل با تاییدیه دامپزشکی",
           "telephone": "+98-914-667-6978",
@@ -1026,7 +1026,7 @@ function buildUrl($updates) {
               "@type": "ListItem",
               "position": 2,
               "name": "داروخانه تخصصی دامپزشکی",
-              "item": "<?php echo $proto . '://' . $host; ?>/pharmacy.php"
+              "item": "<?php echo $proto . '://' . $host; ?>/pharmacy"
             }
           ]
         },

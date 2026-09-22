@@ -2,7 +2,7 @@
 require_once 'includes/db.php';
 if (!Feature::has('petshop_catalog')) {
     if (Feature::has('pharmacy_catalog')) {
-        header('Location: pharmacy.php');
+        header('Location: pharmacy');
         exit;
     }
     header('Location: index.php');
@@ -397,7 +397,7 @@ function buildUrlRemoveArrayItem($arrayName, $valueToRemove) {
        <a href="shop.php?category=غذای+گربه" class="py-3 hover:text-secondary-container transition-colors <?php echo $category == 'غذای گربه' ? 'text-secondary-container underline underline-offset-8' : ''; ?>">غذای گربه</a>
        <a href="shop.php?category=لوازم+بهداشتی" class="py-3 hover:text-secondary-container transition-colors <?php echo $category == 'لوازم بهداشتی' ? 'text-secondary-container underline underline-offset-8' : ''; ?>">بهداشتی و نظافت</a>
        <a href="shop.php?category=اسباب‌بازی" class="py-3 hover:text-secondary-container transition-colors <?php echo $category == 'اسباب‌بازی' ? 'text-secondary-container underline underline-offset-8' : ''; ?>">اسباب‌بازی و سرگرمی</a>
-       <a href="pharmacy.php" class="py-2 mr-auto flex items-center gap-1.5 text-secondary-container hover:text-white transition-all bg-white/10 hover:bg-secondary-container px-4 rounded-full text-xs font-bold shadow-sm">
+       <a href="pharmacy" class="py-2 mr-auto flex items-center gap-1.5 text-secondary-container hover:text-white transition-all bg-white/10 hover:bg-secondary-container px-4 rounded-full text-xs font-bold shadow-sm">
            <span class="material-symbols-outlined text-[16px]">local_pharmacy</span>
            ورود به داروخانه تخصصی دامپزشکی
        </a>
@@ -469,7 +469,7 @@ function buildUrlRemoveArrayItem($arrayName, $valueToRemove) {
                 </p>
             </div>
 
-            <a href="pharmacy.php" class="bg-secondary-container/20 hover:bg-secondary-container border border-secondary-container/40 text-white p-4 rounded-2xl transition-all shrink-0 flex items-center gap-3 group">
+            <a href="pharmacy" class="bg-secondary-container/20 hover:bg-secondary-container border border-secondary-container/40 text-white p-4 rounded-2xl transition-all shrink-0 flex items-center gap-3 group">
                 <span class="w-10 h-10 rounded-xl bg-secondary-container flex items-center justify-center text-white">
                     <span class="material-symbols-outlined text-xl">medication</span>
                 </span>

@@ -39,7 +39,7 @@ if (basename($_SERVER['SCRIPT_FILENAME'] ?? '') === basename(__FILE__)) {
                     <h4 class="font-bold text-base text-primary">فروشگاه و خدمات</h4>
                     <nav class="flex flex-col gap-2.5">
                         <a class="text-xs text-on-surface-variant hover:text-secondary-container transition-colors" href="shop">غذای خشک و کنسرو</a>
-                        <a class="text-xs text-on-surface-variant hover:text-secondary-container transition-colors" href="pharmacy.php">داروخانه و مکمل‌ها</a>
+                        <a class="text-xs text-on-surface-variant hover:text-secondary-container transition-colors" href="pharmacy">داروخانه و مکمل‌ها</a>
                         <a class="text-xs text-on-surface-variant hover:text-secondary-container transition-colors" href="booking">نوبت‌دهی کلینیک و گرومینگ</a>
                         <a class="text-xs text-on-surface-variant hover:text-secondary-container transition-colors" href="subscriptions">سفارش خودکار Autoship</a>
                     </nav>
@@ -178,7 +178,7 @@ if (basename($_SERVER['SCRIPT_FILENAME'] ?? '') === basename(__FILE__)) {
         </a>
 
         <!-- 2. دسته‌بندی‌ها (Categories Sheet) -->
-        <a href="shop" onclick="openMobileCategoriesSheet(); return false;" aria-label="دسته‌بندی‌های محصولات و خدمات" class="bottom-nav-link <?php echo in_array($current_page, ['shop.php', 'pharmacy.php']) ? 'active' : ''; ?>">
+        <a href="shop" onclick="openMobileCategoriesSheet(); return false;" aria-label="دسته‌بندی‌های محصولات و خدمات" class="bottom-nav-link <?php echo in_array($current_page, ['shop.php', 'pharmacy.php', 'shop', 'pharmacy']) ? 'active' : ''; ?>">
             <span class="material-symbols-outlined">grid_view</span>
             <span>دسته‌بندی‌ها</span>
         </a>

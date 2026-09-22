@@ -311,11 +311,11 @@ if ($userId > 0 && isset($pdo)) {
 
             <!-- Direct Bridge to Vet Booking or Pharmacy -->
             <div class="pt-2 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500 border-t border-slate-100">
-                <a href="booking.php" class="hover:text-blue-700 transition flex items-center gap-1.5 font-medium">
+                <a href="booking" class="hover:text-blue-700 transition flex items-center gap-1.5 font-medium">
                     <span class="material-symbols-outlined text-base text-amber-500">videocam</span>
                     <span>مشاوره ویزیت با دامپزشک آنلاین</span>
                 </a>
-                <a href="pharmacy.php" class="hover:text-blue-700 transition flex items-center gap-1.5 font-medium">
+                <a href="pharmacy" class="hover:text-blue-700 transition flex items-center gap-1.5 font-medium">
                     <span class="material-symbols-outlined text-base text-blue-600">local_pharmacy</span>
                     <span>داروخانه دامپزشکی آسنا</span>
                 </a>

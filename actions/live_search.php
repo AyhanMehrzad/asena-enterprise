@@ -190,7 +190,7 @@ if ($hasCatIntent && $hasFoodIntent) {
     $categories[] = [
         'title' => 'داروها و مکمل‌های دامپزشکی «' . htmlspecialchars($rawQ) . '»',
         'subtitle' => 'جستجو در داروخانه تخصصی آسنا',
-        'url' => 'pharmacy.php?q=' . $catQuery,
+        'url' => 'pharmacy?q=' . $catQuery,
         'icon' => 'medication',
         'type' => 'pharmacy'
     ];

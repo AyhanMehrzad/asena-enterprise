@@ -137,7 +137,7 @@ try {
                 </form>
 
                 <!-- Tab Content 3: Pharmacy Form (Hidden by default) -->
-                <form action="pharmacy.php" method="GET" id="heroFormPharmacy" class="hero-tab-pane hidden flex flex-col sm:flex-row gap-2.5">
+                <form action="pharmacy" method="GET" id="heroFormPharmacy" class="hero-tab-pane hidden flex flex-col sm:flex-row gap-2.5">
                     <div class="flex-1 bg-white/15 rounded-2xl px-4 py-2.5 flex items-center gap-2.5 border border-white/10 focus-within:bg-white focus-within:text-slate-800 transition">
                         <span class="material-symbols-outlined text-lg opacity-60">medication</span>
                         <input type="text" name="q" placeholder="نام داروی دامپزشکی، مکمل یا واکسن..." class="w-full bg-transparent text-xs outline-none border-none placeholder-white/60 focus:placeholder-slate-400">
@@ -265,7 +265,7 @@ try {
             </a>
 
             <!-- Pillar 3: Specialized Pharmacy -->
-            <a href="pharmacy.php" class="group bg-white p-8 rounded-3xl border border-slate-200 shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1 flex flex-col justify-between space-y-6 relative overflow-hidden">
+            <a href="pharmacy" class="group bg-white p-8 rounded-3xl border border-slate-200 shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1 flex flex-col justify-between space-y-6 relative overflow-hidden">
                 <div class="absolute -right-8 -top-8 w-32 h-32 bg-emerald-50 rounded-full group-hover:scale-125 transition-transform duration-500"></div>
                 <div class="relative z-10 space-y-4">
                     <div class="w-14 h-14 rounded-2xl bg-emerald-600 text-white flex items-center justify-center shadow-md">
