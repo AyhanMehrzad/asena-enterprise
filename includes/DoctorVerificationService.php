@@ -76,7 +76,7 @@ class DoctorVerificationService {
         // 4. AvalAI Multi-Model Provider
         $dbAvalAi = ($this->pdo instanceof PDO) ? get_setting($this->pdo, 'avalai_api_key', '') : '';
         $this->avalaiApiKey = !empty($dbAvalAi) ? $dbAvalAi : (getenv('AVALAI_API_KEY') ?: 'aa-OYnaadEq49DVrgUetouRgFRhmNjSuS7ZknCL5FdEQqHAehsl');
-        $this->visionModel = getenv('AVALAI_MODEL_VISION') ?: 'gemini-1.5-flash';
+        $this->visionModel = getenv('AVALAI_MODEL_VISION') ?: 'gemini-2.5-flash-lite';
     }
 
     /**
