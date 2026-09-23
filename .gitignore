@@ -5,6 +5,8 @@ node_modules/
 .env
 accounts_credentials.txt
 *credentials*.txt
+config/*key*.json
+config/google-indexing-key.json
 
 # System & OS
 .DS_Store

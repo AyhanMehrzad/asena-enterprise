@@ -83,6 +83,19 @@
 
 ## ۳. تاریخچه تغییرات اخیر (Change Log)
 
+### نسخه ۱.۰.۱۲ (سپتامبر ۲۰۲۶ - یکپارچه‌سازی وب‌سرویس نمایه آنی Google Indexing API v3، پروتکل IndexNow و بازتولید نقشه سایت)
+1. **وب‌سرویس نمایه آنی گوگل (Google Search Indexing API v3):**
+   - توسعه ماژول مستقل و بدون وابستگی [`includes/GoogleIndexingService.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/includes/GoogleIndexingService.php) با پیاده‌سازی امضای دیجیتال RS256 بر پایه OpenSSL، تولید توکن JWT و دریافت Access Token از `https://oauth2.googleapis.com/token`.
+   - ایجاد حساب سرویس `asena-indexing@asena-platform.iam.gserviceaccount.com` در Google Cloud Console و اعطای نقش Owner در سرچ کنسول دامنه `https://asena.company/`.
+   - ارسال مستقیم درخواست‌های ایندکسینگ به اندپوینت رسمی `https://indexing.googleapis.com/v3/urlNotifications:publish` با پشتیبانی از فال‌بک خودکار پراکسی محلی جهت مقابله با محدودیت‌های شبکه.
+2. **پروتکل ایندکسینگ فوری بینگ و موتورهای هوش مصنوعی (IndexNow Protocol):**
+   - پیاده‌سازی سرویس [`includes/IndexNowService.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/includes/IndexNowService.php) جهت ارسال بلادرنگ تغییرات و صفحات جدید به بینگ، یاندکس و کاوشگرهای هوش مصنوعی (ChatGPT Search / Copilot) از طریق `https://api.indexnow.org/indexnow`.
+   - ایجاد و استقرار کلید تایید هویت دامنه در فایل روت [`4a8f921e5c0840b59f3d9b62a71d87e2.txt`](file:///opt/lampp/htdocs/asena/asena-enterprise/4a8f921e5c0840b59f3d9b62a71d87e2.txt).
+3. **ابزار خط فرمان ایندکس دسته‌جمعی و حل مسئله صفحات ایندکس‌نشده (Batch Indexing CLI):**
+   - توسعه اسکریپت اجرایی [`bin/batch_index.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/bin/batch_index.php) و ارسال موفق ۸۵ آدرس هسته و صفحات در انتظار (Discovered - currently not indexed) به هر دو پروتکل IndexNow و Google Indexing API با وضعیت HTTP 200 و HTTP 202.
+4. **به‌روزرسانی و غنی‌سازی نقشه سایت (`sitemap.xml`):**
+   - به‌روزرسانی تاریخ‌های آخرین تغییر (`lastmod`) به ۲۰۲۶-۰۹-۲۳ و همگام‌سازی ۵۷۵ مسیر و تصویر کلیدی سامانه.
+
 ### نسخه ۱.۰.۱۱ (سپتامبر ۲۰۲۶ - یکپارچه‌سازی رابط کاربری هدر، تراز خودکار اسکیمای نسخه ۳ دیتابیس)
 1. **بهینه‌سازی رابط کاربری و حذف دکمه تکراری هدر:**
    - حذف دکمه زائد پیلی شکل «حساب کاربری» در هدر دسکتاپ [`includes/header.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/includes/header.php) برای کاربران عادی و اتکای کامل بر آیکون دایره‌ای استاندارد کاربر (`person`) در کنار سبد خرید و زنگوله اعلانات.
