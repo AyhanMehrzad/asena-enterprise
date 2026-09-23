@@ -66,6 +66,27 @@ $docCount = (int)$pdo->query("SELECT COUNT(*) FROM doctors")->fetchColumn();
 $sellerCount = (int)$pdo->query("SELECT COUNT(*) FROM users WHERE role = 'seller'")->fetchColumn();
 $totalClearedPayouts = (int)$pdo->query("SELECT COALESCE(SUM(balance_available_for_payout), 0) FROM seller_wallets")->fetchColumn();
 
+// Tax & Statutory VAT Compliance Overview
+$totalVatCollected = 0;
+$totalOrdersGross = 0;
+try {
+    $taxQ = $pdo->query("SELECT COALESCE(SUM(total_amount), 0) as gmv, COALESCE(SUM(tax_amount), 0) as vat FROM orders WHERE status != 'cancelled'")->fetch(PDO::FETCH_ASSOC);
+    $totalOrdersGross = (int)($taxQ['gmv'] ?? 0);
+    $totalVatCollected = (int)($taxQ['vat'] ?? 0);
+    if ($totalVatCollected === 0 && $totalOrdersGross > 0) {
+        $totalVatCollected = (int)round($totalOrdersGross - ($totalOrdersGross / 1.10));
+    }
+} catch (Throwable $e) {}
+
+// Solar Season & Tax Filing Deadline Calculation
+require_once '../includes/jdf.php';
+$nowTs = time();
+$jMonth = (int)jdate('m', $nowTs, '', 'Asia/Tehran', 'en');
+$jDay = (int)jdate('d', $nowTs, '', 'Asia/Tehran', 'en');
+$taxSeasonName = ($jMonth <= 3) ? 'بهار' : (($jMonth <= 6) ? 'تابستان' : (($jMonth <= 9) ? 'پاییز' : 'زمستان'));
+$taxDaysLeft = ($jMonth == 6 || $jMonth == 9) ? (30 - $jDay + 15) : (($jMonth == 12) ? (29 - $jDay + 15) : max(0, 15 - $jDay));
+$taxDeadlineLabel = ($jMonth <= 3) ? '۱۵ تیر' : (($jMonth <= 6) ? '۱۵ مهر' : (($jMonth <= 9) ? '۱۵ دی' : '۱۵ فروردین'));
+
 // Platform Health & Incident Alerts
 $openTicketsCount = (int)$pdo->query("SELECT COUNT(*) FROM tickets WHERE mode = 'admin' AND status = 'open'")->fetchColumn();
 $inTransitOrdersCount = (int)$pdo->query("SELECT COUNT(*) FROM orders WHERE status IN ('shipped', 'handed_over', 'out_for_delivery') AND (post_tracking_code IS NOT NULL OR tracking_code IS NOT NULL)")->fetchColumn();
@@ -194,6 +215,42 @@ $recentShipments = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 <span class="material-symbols-outlined text-2xl">account_balance_wallet</span>
             </div>
         </a>
+    </div>
+
+    <!-- Iranian Tax & VAT Compliance Executive Card -->
+    <div class="bg-gradient-to-l from-amber-500/10 via-amber-500/5 to-transparent p-5 sm:p-6 rounded-3xl border border-amber-300/80 dark:border-amber-800/60 shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div class="flex items-center gap-4">
+            <div class="w-13 h-13 rounded-2xl bg-amber-500/15 text-amber-700 dark:text-amber-400 flex items-center justify-center font-black shrink-0 shadow-xs">
+                <span class="material-symbols-outlined text-2xl">receipt_long</span>
+            </div>
+            <div>
+                <div class="flex items-center gap-2">
+                    <span class="text-sm font-black text-slate-900 dark:text-white">کنسول تکالیف مالیاتی، ۱۰٪ ارزش افزوده و ماده ۱۶۹</span>
+                    <span class="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-amber-100 text-amber-800 dark:bg-amber-900/60 dark:text-amber-200 border border-amber-300/60">فصل <?= $taxSeasonName ?></span>
+                </div>
+                <div class="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1.5 text-xs text-slate-600 dark:text-slate-300">
+                    <span>مجموع ارزش افزوده وصولی: <strong class="font-mono text-slate-900 dark:text-white font-black"><?= number_format($totalVatCollected) ?> تومان</strong></span>
+                    <span class="text-slate-300 dark:text-slate-700">|</span>
+                    <span>سپر دفاعی کارگزاری: <strong class="font-mono text-emerald-600 font-black">۸۵٪ امانی</strong> (درآمد مشمول: ۱۵٪ کارمزد)</span>
+                    <span class="text-slate-300 dark:text-slate-700">|</span>
+                    <span class="text-amber-800 dark:text-amber-300 font-bold flex items-center gap-1">
+                        <span class="material-symbols-outlined text-xs">schedule</span>
+                        <span><?= $taxDaysLeft ?> روز تا سررسید اظهارنامه (<?= $taxDeadlineLabel ?>)</span>
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-2.5 shrink-0">
+            <a href="finance_settings.php?export_tax_169=1" class="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center gap-1.5 transition shadow-2xs">
+                <span class="material-symbols-outlined text-base">download</span>
+                <span>فایل ماده ۱۶۹ (CSV)</span>
+            </a>
+            <a href="finance_settings.php#tax-section" class="px-4 py-2.5 rounded-xl bg-[#001a48] hover:bg-[#002d72] text-white font-bold text-xs flex items-center gap-1.5 transition shadow-2xs">
+                <span>کنسول کامل مالیاتی</span>
+                <span class="material-symbols-outlined text-base">arrow_back</span>
+            </a>
+        </div>
     </div>
 
     <!-- Platform Macro Incident & Quality Alert Strip -->

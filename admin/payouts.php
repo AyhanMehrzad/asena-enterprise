@@ -133,10 +133,16 @@ require_once __DIR__ . '/includes/admin_header.php';
         </div>
 
         <div class="flex flex-wrap items-center gap-3">
+            <!-- Tax & VAT Console Link -->
+            <a href="finance_settings.php#tax-section" class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 dark:bg-amber-950/40 dark:text-amber-200 dark:hover:bg-amber-900/50 text-xs font-bold shadow-sm transition border border-amber-300 dark:border-amber-800">
+                <span class="material-symbols-outlined text-sm text-[#fd8100]">receipt_long</span>
+                <span>کنسول مالیات (۱۰٪ و ماده ۱۶۹)</span>
+            </a>
+
             <!-- Finance Settings Link -->
             <a href="finance_settings.php" class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 dark:bg-slate-800 dark:text-white dark:hover:bg-slate-700 text-xs font-bold shadow-sm transition border border-slate-200 dark:border-slate-700">
-                <span class="material-symbols-outlined text-sm text-[#fd8100]">credit_card</span>
-                <span>تنظیمات کارت بانکی و خزانه‌داری</span>
+                <span class="material-symbols-outlined text-sm text-blue-600">credit_card</span>
+                <span>تنظیمات کارت و خزانه‌داری</span>
             </a>
 
             <!-- 1-Click Post Sync -->

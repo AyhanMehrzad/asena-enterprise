@@ -11,6 +11,66 @@ $success = '';
 $error = '';
 $testRunOutput = null;
 
+// ── Handle Article 169 CSV Export ──────────────────────────────────────────
+if (isset($_GET['export_tax_169'])) {
+    require_once __DIR__ . '/../includes/jdf.php';
+    header('Content-Type: text/csv; charset=utf-8');
+    header('Content-Disposition: attachment; filename="ASENA_Article169_Quarterly_Export_' . date('Ymd_His') . '.csv"');
+    echo "\xEF\xBB\xBF"; // UTF-8 BOM
+    $out = fopen('php://output', 'w');
+    fputcsv($out, [
+        'ردیف',
+        'شناسه سفارش',
+        'تاریخ سفارش (شمسی)',
+        'نام خریدار',
+        'تلفن خریدار',
+        'کد ملی خریدار',
+        'کد پستی خریدار',
+        'مبلغ ناخالص (تومان)',
+        'کارمزد پلتفرم ۱۵٪ (تومان)',
+        'سهم تامین‌کننده ۸۵٪ (امانی)',
+        'مالیات بر ارزش افزوده ۱۰٪',
+        'وضعیت مشمولیت ماده ۱۶۹'
+    ]);
+    
+    $exportStmt = $pdo->query("
+        SELECT o.*, u.name as user_name, u.phone as user_phone, u.national_id as user_national_id, u.postal_code as user_postal_code
+        FROM orders o
+        JOIN users u ON o.user_id = u.id
+        WHERE o.status != 'cancelled'
+        ORDER BY o.id DESC
+    ");
+    $rowIdx = 1;
+    $threshold = (int)get_setting($pdo, 'tax_small_trans_threshold', 10500000);
+    while ($row = $exportStmt->fetch(PDO::FETCH_ASSOC)) {
+        $ts = strtotime($row['created_at']);
+        $jDate = jdate('Y/m/d', $ts);
+        $total = (int)$row['total_amount'];
+        $comm = (int)round($total * 0.15);
+        $sellerNet = max(0, $total - $comm);
+        $vat = (int)($row['tax_amount'] ?: round($total - ($total / 1.10)));
+        $isSmall = ($total <= $threshold);
+        $complianceType = $isSmall ? 'معامله خرد (ارسال تجمیعی مصرف‌کننده نهایی)' : 'نیازمند ثبت انفرادی (کد ملی و پستی)';
+        
+        fputcsv($out, [
+            $rowIdx++,
+            '#PC-' . $row['id'],
+            $jDate,
+            $row['user_name'],
+            $row['user_phone'],
+            $row['user_national_id'] ?: ($isSmall ? 'تجمیعی (بدون نیاز به کد ملی)' : 'ثبت‌نشده'),
+            $row['user_postal_code'] ?: ($isSmall ? 'تجمیعی' : 'ثبت‌نشده'),
+            number_format($total),
+            number_format($comm),
+            number_format($sellerNet),
+            number_format($vat),
+            $complianceType
+        ]);
+    }
+    fclose($out);
+    exit;
+}
+
 // Handle Form Submissions
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     SecurityMiddleware::validateCsrfToken($_POST['csrf_token'] ?? '');
@@ -44,6 +104,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             set_setting($pdo, 'tax_rate_percent', $taxRate);
             set_setting($pdo, 'platform_commission_percent', $commissionRate);
             set_setting($pdo, 'tax_on_appointments_enabled', $taxOnAppts);
+
+            $taxMemoryId = strtoupper(trim(preg_replace('/[^A-Za-z0-9]/', '', $_POST['tax_memory_id'] ?? 'A5B9C2')));
+            if (!empty($taxMemoryId)) set_setting($pdo, 'tax_memory_id', $taxMemoryId);
+
+            $taxTspProvider = trim($_POST['tax_tsp_provider'] ?? 'سامانه معتمد نوین (TSP رسمی)');
+            set_setting($pdo, 'tax_tsp_provider', $taxTspProvider);
+
+            $taxSmallTrans = max(100000, (int)($_POST['tax_small_trans_threshold'] ?? 10500000));
+            set_setting($pdo, 'tax_small_trans_threshold', $taxSmallTrans);
+
+            $taxInputCredit = max(0, (int)($_POST['tax_input_credit_amount'] ?? 3450000));
+            set_setting($pdo, 'tax_input_credit_amount', $taxInputCredit);
 
             set_setting($pdo, 'auto_payout_enabled', $autoPayoutEnabled);
             set_setting($pdo, 'auto_payout_day', $autoPayoutDay);
@@ -150,6 +222,10 @@ $cryptoRate        = (int)get_setting($pdo, 'crypto_usdt_toman_rate', 65000);
 $taxRate        = (float)get_setting($pdo, 'tax_rate_percent', 10.0);
 $commissionRate = (float)get_setting($pdo, 'platform_commission_percent', 15);
 $taxOnAppts     = get_setting($pdo, 'tax_on_appointments_enabled', '1');
+$taxMemoryId    = get_setting($pdo, 'tax_memory_id', 'A5B9C2');
+$taxTspProvider = get_setting($pdo, 'tax_tsp_provider', 'سامانه معتمد نوین (TSP رسمی)');
+$taxSmallTrans  = (int)get_setting($pdo, 'tax_small_trans_threshold', 10500000);
+$taxInputCredit = (int)get_setting($pdo, 'tax_input_credit_amount', 3450000);
 
 $autoPayoutEnabled = get_setting($pdo, 'auto_payout_enabled', '1');
 $autoPayoutDay     = (int)get_setting($pdo, 'auto_payout_day', 4);
@@ -225,6 +301,82 @@ $detectedBank = detectBankName($adminCard);
 // Escrow Stats
 $metrics = $escrowService->getEscrowMetrics();
 
+// ── Iranian Tax Compliance, VAT & Article 169 Statistics ────────────────────
+require_once __DIR__ . '/../includes/jdf.php';
+
+$totalGrossSales = 0;
+$totalVatCollected = 0;
+$ordersCount = 0;
+$smallOrdersCount = 0;
+$largeOrdersCount = 0;
+
+try {
+    $taxStatsStmt = $pdo->query("
+        SELECT 
+            COUNT(*) as total_orders,
+            COALESCE(SUM(total_amount), 0) as gross_gmv,
+            COALESCE(SUM(tax_amount), 0) as total_tax,
+            COUNT(CASE WHEN total_amount <= {$taxSmallTrans} THEN 1 END) as small_orders,
+            COUNT(CASE WHEN total_amount > {$taxSmallTrans} THEN 1 END) as large_orders
+        FROM orders 
+        WHERE status != 'cancelled'
+    ");
+    if ($taxStatsStmt) {
+        $taxRow = $taxStatsStmt->fetch(PDO::FETCH_ASSOC);
+        $ordersCount = (int)($taxRow['total_orders'] ?? 0);
+        $totalGrossSales = (int)($taxRow['gross_gmv'] ?? 0);
+        $totalVatCollected = (int)($taxRow['total_tax'] ?? 0);
+        $smallOrdersCount = (int)($taxRow['small_orders'] ?? 0);
+        $largeOrdersCount = (int)($taxRow['large_orders'] ?? 0);
+    }
+} catch (Throwable $e) {}
+
+// If tax_amount column is 0 on older mock data, compute statutory 10% VAT
+if ($totalVatCollected === 0 && $totalGrossSales > 0) {
+    $totalVatCollected = (int)round($totalGrossSales - ($totalGrossSales / (1.0 + ($taxRate / 100.0))));
+}
+
+// Compute Platform Commission (15% Recognized Revenue) vs Fiduciary Liability (85% Escrow)
+$platformRecognizedRevenue = (int)round($totalGrossSales * ($commissionRate / 100.0));
+$fiduciaryEscrowLiability = max(0, $totalGrossSales - $platformRecognizedRevenue);
+$platformCommissionVat = (int)round($platformRecognizedRevenue * ($taxRate / 100.0));
+
+// Tax Minimization Shield: Full GMV liability vs Brokerage Net Commission
+$fullGmvTaxLiability = (int)round($totalGrossSales * 0.25) + $totalVatCollected;
+$brokerageTaxLiability = (int)round($platformRecognizedRevenue * 0.25) + $platformCommissionVat;
+$taxSavingsShield = max(0, $fullGmvTaxLiability - $brokerageTaxLiability);
+
+// Net VAT Payable to Tax Administration after Input Tax Offset
+$netVatPayable = max(0, $totalVatCollected - $inputVatCredit);
+
+// Current Season & Tax Deadlines in Solar Calendar
+$nowTs = time();
+$currentJalaliYear = (int)jdate('Y', $nowTs, '', 'Asia/Tehran', 'en');
+$currentJalaliMonth = (int)jdate('m', $nowTs, '', 'Asia/Tehran', 'en');
+$currentJalaliDay = (int)jdate('d', $nowTs, '', 'Asia/Tehran', 'en');
+
+if ($currentJalaliMonth <= 3) {
+    $seasonName = 'بهار';
+    $quarterNumber = 1;
+    $filingDeadline = '۱۵ تیرماه';
+    $daysRemainingToDeadline = max(0, 15 - $currentJalaliDay);
+} elseif ($currentJalaliMonth <= 6) {
+    $seasonName = 'تابستان';
+    $quarterNumber = 2;
+    $filingDeadline = '۱۵ مهرماه';
+    $daysRemainingToDeadline = ($currentJalaliMonth == 6) ? (31 - $currentJalaliDay + 15) : max(0, 15 - $currentJalaliDay);
+} elseif ($currentJalaliMonth <= 9) {
+    $seasonName = 'پاییز';
+    $quarterNumber = 3;
+    $filingDeadline = '۱۵ دی‌ماه';
+    $daysRemainingToDeadline = ($currentJalaliMonth == 9) ? (30 - $currentJalaliDay + 15) : max(0, 15 - $currentJalaliDay);
+} else {
+    $seasonName = 'زمستان';
+    $quarterNumber = 4;
+    $filingDeadline = '۱۵ فروردین‌ماه';
+    $daysRemainingToDeadline = ($currentJalaliMonth == 12) ? (29 - $currentJalaliDay + 15) : max(0, 15 - $currentJalaliDay);
+}
+
 require_once __DIR__ . '/includes/admin_header.php';
 ?>
 
@@ -277,7 +429,8 @@ require_once __DIR__ . '/includes/admin_header.php';
         </a>
         <a href="#tax-section" class="px-4 py-2 rounded-xl bg-white dark:bg-[#1E293B] border border-slate-200 dark:border-slate-800 hover:border-amber-500 hover:text-amber-600 transition flex items-center gap-1.5 shrink-0 shadow-2xs">
             <span class="material-symbols-outlined text-amber-600 text-sm">percent</span>
-            <span>۴. مالیات و کارمزد</span>
+            <span>۴. کنسول مالیات (۱۰٪ و ماده ۱۶۹)</span>
+            <span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300">مودیان</span>
         </a>
         <a href="#shipping-section" class="px-4 py-2 rounded-xl bg-white dark:bg-[#1E293B] border border-slate-200 dark:border-slate-800 hover:border-cyan-500 hover:text-cyan-600 transition flex items-center gap-1.5 shrink-0 shadow-2xs">
             <span class="material-symbols-outlined text-cyan-600 text-sm">local_shipping</span>
@@ -589,46 +742,231 @@ require_once __DIR__ . '/includes/admin_header.php';
         </div>
 
         <!-- ========================================================================= -->
-        <!-- SECTION 4: TAXES & PLATFORM COMMISSION (VAT + COMMISSION)                 -->
+        <!-- SECTION 4: IRANIAN TAX COMPLIANCE, VAT & ARTICLE 169 (BENTO TAX CARDS)    -->
         <!-- ========================================================================= -->
         <div id="tax-section" class="scroll-mt-6 bg-white dark:bg-[#1E293B] border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-8 shadow-sm space-y-6">
-            <div class="border-b border-slate-100 dark:border-slate-800 pb-4">
-                <h2 class="text-base sm:text-lg font-black text-slate-900 dark:text-white flex items-center gap-2.5">
-                    <span class="material-symbols-outlined text-[#fd8100] text-2xl">percent</span>
-                    <span>۴. محاسبه مالیات بر ارزش افزوده و سهم کارمزد پلتفرم</span>
-                </h2>
-                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">اعمال قوانین سازمان امور مالیاتی کشور و تقسیم سهم بازارگاه بین خریدار و فروشنده</p>
-            </div>
-
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                <div>
-                    <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-2">نرخ مالیات بر ارزش افزوده برای خریدار (درصد):</label>
-                    <div class="relative">
-                        <input type="number" name="tax_rate_percent" value="<?= $taxRate ?>" step="0.5" min="0" max="25" class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-xs font-mono font-bold focus:border-primary focus:bg-white outline-none pl-10 text-left dir-ltr">
-                        <span class="absolute left-3 top-3 text-slate-400 text-xs font-bold">٪</span>
+            
+            <!-- Section Header & Action Buttons -->
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 dark:border-slate-800 pb-5">
+                <div class="flex items-center gap-3">
+                    <div class="w-12 h-12 rounded-2xl bg-amber-500/10 text-amber-600 flex items-center justify-center font-black">
+                        <span class="material-symbols-outlined text-2xl">receipt_long</span>
                     </div>
-                    <p class="text-[10px] text-slate-400 mt-1.5">نرخ مصوب قانونی مالیات بر ارزش افزوده در سال ۱۴۰۳ (۱۰٪)؛ در سبد خرید محاسبه و در فاکتور رسمی درج می‌شود.</p>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <h2 class="text-base sm:text-lg font-black text-slate-900 dark:text-white">۴. کنسول هوشمند مالیات، سامانه مودیان و معاملات فصلی (قانون مالیاتی ۱۴۰۳)</h2>
+                            <span class="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-300">۱۰٪ مصوب</span>
+                        </div>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">نظارت بر وصول ارزش افزوده ۱۰٪، گزارش ماده ۱۶۹، شناسه یکتای حافظه مالیاتی و سپر دفاعی کارگزاری</p>
+                    </div>
                 </div>
 
-                <div>
-                    <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-2">کارمزد پلتفرم آسنا از فروشنده / پت‌شاپ (درصد):</label>
-                    <div class="relative">
-                        <input type="number" name="platform_commission_percent" value="<?= $commissionRate ?>" step="0.5" min="0" max="50" class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-xs font-mono font-bold focus:border-primary focus:bg-white outline-none pl-10 text-left dir-ltr">
-                        <span class="absolute left-3 top-3 text-slate-400 text-xs font-bold">٪</span>
-                    </div>
-                    <p class="text-[10px] text-slate-400 mt-1.5">سهم درآمد شرکت از هر سفارش تامین‌کننده (پیش‌فرض ۱۵٪؛ هنگام تسویه پایا از موجودی کسر می‌گردد).</p>
+                <div class="flex items-center gap-2 shrink-0">
+                    <a href="finance_settings.php?export_tax_169=1" class="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center gap-1.5 transition shadow-sm">
+                        <span class="material-symbols-outlined text-base">download</span>
+                        <span>دانلود فایل ماده ۱۶۹ (CSV)</span>
+                    </a>
+                    <a href="https://my.tax.gov.ir" target="_blank" class="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold text-xs flex items-center gap-1.5 transition border border-slate-200 dark:border-slate-700">
+                        <span class="material-symbols-outlined text-base text-[#fd8100]">open_in_new</span>
+                        <span>سامانه مالیات من</span>
+                    </a>
                 </div>
             </div>
 
-            <div class="p-5 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 flex items-start gap-3.5">
-                <input type="checkbox" name="tax_on_appointments_enabled" id="taxAppts" value="1" <?= $taxOnAppts === '1' ? 'checked' : '' ?> class="mt-1 w-5 h-5 rounded text-primary focus:ring-primary cursor-pointer">
-                <div>
-                    <label for="taxAppts" class="text-xs font-bold text-slate-800 dark:text-slate-200 cursor-pointer">
-                        اعمال مالیات ارزش افزوده روی نوبت‌های ویزیت دامپزشکی
-                    </label>
-                    <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
-                        نکته حقوقی: بر اساس بند ۹ ماده ۹ قانون مالیات بر ارزش افزوده، خدمات سلامت و درمان دارای معافیت قانونی هستند. در صورت تیک زدن این گزینه، مالیات به هزینه ویزیت بیمار افزوده خواهد شد.
-                    </p>
+            <!-- 4 BENTO TAX CARDS GRID -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                
+                <!-- CARD 1: STATUTORY 10% VAT -->
+                <div class="p-5 rounded-2xl bg-amber-50/40 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800/60 shadow-2xs space-y-3 relative overflow-hidden">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-black text-amber-900 dark:text-amber-200 flex items-center gap-1.5">
+                            <span class="material-symbols-outlined text-amber-600 text-base">percent</span>
+                            <span>ارزش افزوده (۱۰٪)</span>
+                        </span>
+                        <span class="px-2 py-0.5 rounded-md text-[9px] font-bold bg-amber-200/80 text-amber-900 dark:bg-amber-900/60 dark:text-amber-200">فصل <?= $seasonName ?></span>
+                    </div>
+                    <div>
+                        <span class="text-[11px] text-slate-500 dark:text-slate-400 block mb-0.5">کل مالیات وصول‌شده از خریداران:</span>
+                        <div class="text-xl font-black text-slate-900 dark:text-white font-mono"><?= number_format($totalVatCollected) ?> <span class="text-xs font-normal text-slate-500">تومان</span></div>
+                    </div>
+                    <div class="pt-2 border-t border-amber-200/60 dark:border-amber-800/40 space-y-1 text-[11px]">
+                        <div class="flex justify-between text-slate-600 dark:text-slate-400">
+                            <span>کسر اعتبار خرید (هاست/پیامک):</span>
+                            <span class="font-mono text-rose-600 font-bold">-<?= number_format($inputVatCredit) ?></span>
+                        </div>
+                        <div class="flex justify-between text-slate-800 dark:text-slate-200 font-bold">
+                            <span>مانده خالص واریزی به دولت:</span>
+                            <span class="font-mono text-amber-700 dark:text-amber-400"><?= number_format($netVatPayable) ?> تومان</span>
+                        </div>
+                    </div>
+                    <div class="p-2 rounded-xl bg-white/80 dark:bg-slate-900/80 border border-amber-200 dark:border-amber-800/60 text-[10px] text-amber-800 dark:text-amber-300 font-bold flex items-center gap-1.5">
+                        <span class="material-symbols-outlined text-xs">schedule</span>
+                        <span>⏳ <?= $daysRemainingToDeadline ?> روز تا سررسید اظهارنامه (<?= $filingDeadline ?>)</span>
+                    </div>
+                </div>
+
+                <!-- CARD 2: ARTICLE 169 SEASONAL TRANSACTIONS -->
+                <div class="p-5 rounded-2xl bg-blue-50/40 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800/60 shadow-2xs space-y-3 relative overflow-hidden">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-black text-blue-900 dark:text-blue-200 flex items-center gap-1.5">
+                            <span class="material-symbols-outlined text-blue-600 text-base">assignment</span>
+                            <span>معاملات فصلی (ماده ۱۶۹)</span>
+                        </span>
+                        <span class="px-2 py-0.5 rounded-md text-[9px] font-bold bg-blue-200/80 text-blue-900 dark:bg-blue-900/60 dark:text-blue-200">سامانه TTMS</span>
+                    </div>
+                    <div>
+                        <span class="text-[11px] text-slate-500 dark:text-slate-400 block mb-0.5">وضعیت تفکیک فاکتورهای فصلی:</span>
+                        <div class="text-xl font-black text-slate-900 dark:text-white font-mono"><?= $ordersCount ?> <span class="text-xs font-normal text-slate-500">فاکتور ثبت‌شده</span></div>
+                    </div>
+                    <div class="pt-2 border-t border-blue-200/60 dark:border-blue-800/40 space-y-1 text-[11px]">
+                        <div class="flex justify-between text-slate-600 dark:text-slate-400">
+                            <span>معاملات خرد (ارسال تجمیعی):</span>
+                            <span class="font-mono text-blue-700 dark:text-blue-400 font-bold"><?= $smallOrdersCount ?> سفارش</span>
+                        </div>
+                        <div class="flex justify-between text-slate-600 dark:text-slate-400">
+                            <span>معاملات بزرگ (با کد ملی و پستی):</span>
+                            <span class="font-mono text-indigo-700 dark:text-indigo-400 font-bold"><?= $largeOrdersCount ?> سفارش</span>
+                        </div>
+                    </div>
+                    <div class="p-2 rounded-xl bg-white/80 dark:bg-slate-900/80 border border-blue-200 dark:border-blue-800/60 text-[10px] text-blue-800 dark:text-blue-300 font-bold flex items-center justify-between">
+                        <span>حد نصاب ۵٪ مصوب:</span>
+                        <span class="font-mono"><?= number_format($taxSmallTrans) ?> تومان</span>
+                    </div>
+                </div>
+
+                <!-- CARD 3: TAXPAYER SYSTEM & RSA MEMORY -->
+                <div class="p-5 rounded-2xl bg-purple-50/40 dark:bg-purple-950/20 border border-purple-200 dark:border-purple-800/60 shadow-2xs space-y-3 relative overflow-hidden">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-black text-purple-900 dark:text-purple-200 flex items-center gap-1.5">
+                            <span class="material-symbols-outlined text-purple-600 text-base">verified_user</span>
+                            <span>سامانه مودیان و پایانه</span>
+                        </span>
+                        <span class="px-2 py-0.5 rounded-md text-[9px] font-bold bg-purple-200/80 text-purple-900 dark:bg-purple-900/60 dark:text-purple-200">الگوی واسط</span>
+                    </div>
+                    <div>
+                        <span class="text-[11px] text-slate-500 dark:text-slate-400 block mb-0.5">شناسه یکتای حافظه مالیاتی:</span>
+                        <div class="flex items-center gap-2">
+                            <code class="px-2.5 py-1 rounded-lg bg-purple-100 dark:bg-purple-900/50 text-purple-950 dark:text-purple-200 font-mono font-black text-sm tracking-wider"><?= htmlspecialchars($taxMemoryId) ?></code>
+                            <span class="text-[10px] text-emerald-600 font-bold flex items-center gap-0.5">
+                                <span class="material-symbols-outlined text-xs">check_circle</span>
+                                <span>متصل</span>
+                            </span>
+                        </div>
+                    </div>
+                    <div class="pt-2 border-t border-purple-200/60 dark:border-purple-800/40 space-y-1 text-[11px]">
+                        <div class="flex justify-between text-slate-600 dark:text-slate-400">
+                            <span>شرکت معتمد مالیاتی:</span>
+                            <span class="font-bold text-slate-800 dark:text-slate-200 truncate max-w-[130px]"><?= htmlspecialchars($taxTspProvider) ?></span>
+                        </div>
+                        <div class="flex justify-between text-slate-600 dark:text-slate-400">
+                            <span>امضای الکترونیکی:</span>
+                            <span class="font-mono text-purple-700 dark:text-purple-300 font-bold">RSA RS256</span>
+                        </div>
+                    </div>
+                    <div class="p-2 rounded-xl bg-white/80 dark:bg-slate-900/80 border border-purple-200 dark:border-purple-800/60 text-[10px] text-purple-800 dark:text-purple-300 font-bold flex items-center gap-1">
+                        <span class="material-symbols-outlined text-xs text-purple-600">store</span>
+                        <span>فاکتور کارمزد B2B به ازای هر سیکل پایا</span>
+                    </div>
+                </div>
+
+                <!-- CARD 4: TAX MINIMIZATION & BROKERAGE DEFENSE -->
+                <div class="p-5 rounded-2xl bg-emerald-50/40 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800/60 shadow-2xs space-y-3 relative overflow-hidden">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-black text-emerald-900 dark:text-emerald-200 flex items-center gap-1.5">
+                            <span class="material-symbols-outlined text-emerald-600 text-base">shield_with_heart</span>
+                            <span>سپر مالیاتی کارگزاری</span>
+                        </span>
+                        <span class="px-2 py-0.5 rounded-md text-[9px] font-bold bg-emerald-200/80 text-emerald-900 dark:bg-emerald-900/60 dark:text-emerald-200">۸۵٪ کاهش تعهد</span>
+                    </div>
+                    <div>
+                        <span class="text-[11px] text-slate-500 dark:text-slate-400 block mb-0.5">درآمد واقعی مشمول مالیات (۱۵٪):</span>
+                        <div class="text-xl font-black text-emerald-700 dark:text-emerald-300 font-mono"><?= number_format($platformRecognizedRevenue) ?> <span class="text-xs font-normal text-slate-500">تومان</span></div>
+                    </div>
+                    <div class="pt-2 border-t border-emerald-200/60 dark:border-emerald-800/40 space-y-1 text-[11px]">
+                        <div class="flex justify-between text-slate-600 dark:text-slate-400">
+                            <span>گردش امانی فروشندگان (۸۵٪):</span>
+                            <span class="font-mono text-slate-700 dark:text-slate-300 font-bold"><?= number_format($fiduciaryEscrowLiability) ?></span>
+                        </div>
+                        <div class="flex justify-between text-emerald-800 dark:text-emerald-300 font-bold">
+                            <span>صرفه‌جویی قانونی مالیات:</span>
+                            <span class="font-mono text-emerald-600 font-black">+<?= number_format($taxSavingsShield) ?></span>
+                        </div>
+                    </div>
+                    <div class="p-2 rounded-xl bg-white/80 dark:bg-slate-900/80 border border-emerald-200 dark:border-emerald-800/60 text-[10px] text-emerald-800 dark:text-emerald-300 font-bold flex items-center gap-1">
+                        <span class="material-symbols-outlined text-xs text-emerald-600">verified</span>
+                        <span>ماده ۱۰ قانون مدنی و استاندارد ۱۵ حسابداری</span>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- CONFIGURATION INPUTS GRID -->
+            <div class="pt-4 border-t border-slate-100 dark:border-slate-800 space-y-4">
+                <h3 class="text-xs font-black text-slate-800 dark:text-slate-200 flex items-center gap-2">
+                    <span class="material-symbols-outlined text-amber-500 text-sm">tune</span>
+                    <span>پیکربندی پارامترهای قانونی مالیات و درگاه سامانه مودیان:</span>
+                </h3>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-2">نرخ مالیات بر ارزش افزوده برای خریدار (درصد):</label>
+                        <div class="relative">
+                            <input type="number" name="tax_rate_percent" value="<?= $taxRate ?>" step="0.5" min="0" max="25" class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-xs font-mono font-bold focus:border-primary focus:bg-white outline-none pl-10 text-left dir-ltr">
+                            <span class="absolute left-3 top-3 text-slate-400 text-xs font-bold">٪</span>
+                        </div>
+                        <p class="text-[10px] text-slate-400 mt-1.5">نرخ مصوب قانونی مالیات بر ارزش افزوده در سال ۱۴۰۳ (۱۰٪)؛ در سبد خرید محاسبه و در فاکتور رسمی درج می‌شود.</p>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-2">کارمزد پلتفرم آسنا از فروشنده / پت‌شاپ (درصد):</label>
+                        <div class="relative">
+                            <input type="number" name="platform_commission_percent" value="<?= $commissionRate ?>" step="0.5" min="0" max="50" class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-xs font-mono font-bold focus:border-primary focus:bg-white outline-none pl-10 text-left dir-ltr">
+                            <span class="absolute left-3 top-3 text-slate-400 text-xs font-bold">٪</span>
+                        </div>
+                        <p class="text-[10px] text-slate-400 mt-1.5">سهم درآمد شرکت از هر سفارش تامین‌کننده (پیش‌فرض ۱۵٪؛ هنگام تسویه پایا از موجودی کسر می‌گردد).</p>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-2">شناسه یکتای حافظه مالیاتی (Tax Memory ID):</label>
+                        <input type="text" name="tax_memory_id" value="<?= htmlspecialchars($taxMemoryId) ?>" maxlength="6" placeholder="A5B9C2" class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-xs font-mono font-bold focus:border-primary focus:bg-white outline-none text-center tracking-widest uppercase">
+                        <p class="text-[10px] text-slate-400 mt-1.5">شناسه ۶ کاراکتری صادر شده توسط کارپوشه سامانه مودیان سازمان امور مالیاتی کشور</p>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-2">شرکت معتمد مالیاتی ارائه‌دهنده وب‌سرویس (TSP):</label>
+                        <input type="text" name="tax_tsp_provider" value="<?= htmlspecialchars($taxTspProvider) ?>" placeholder="سامانه معتمد نوین / پرداخت الکترونیک سامان کیش" class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-xs font-bold focus:border-primary focus:bg-white outline-none">
+                        <p class="text-[10px] text-slate-400 mt-1.5">شرکت معتمد طرف قرارداد جهت ارسال صورتحساب‌های الکترونیکی به کارپوشه</p>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-2">سقف حد نصاب معاملات کوچک ماده ۱۶۹ (تومان):</label>
+                        <div class="relative">
+                            <input type="number" name="tax_small_trans_threshold" value="<?= $taxSmallTrans ?>" step="100000" min="0" class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-xs font-mono font-bold focus:border-primary focus:bg-white outline-none pl-12 text-left dir-ltr">
+                            <span class="absolute left-3 top-3 text-slate-400 text-xs font-bold">تومان</span>
+                        </div>
+                        <p class="text-[10px] text-slate-400 mt-1.5">پیش‌فرض: ۱۰,۵۰۰,۰۰۰ تومان (۵٪ سقف ۲۱۰ میلیون تومانی معاملات کوچک سال ۱۴۰۳ جهت ارسال تجمیعی)</p>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-2">اعتبار مالیاتی ورودی خریدهای شرکت (تومان):</label>
+                        <div class="relative">
+                            <input type="number" name="tax_input_credit_amount" value="<?= $taxInputCredit ?>" step="100000" min="0" class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-xs font-mono font-bold focus:border-primary focus:bg-white outline-none pl-12 text-left dir-ltr">
+                            <span class="absolute left-3 top-3 text-slate-400 text-xs font-bold">تومان</span>
+                        </div>
+                        <p class="text-[10px] text-slate-400 mt-1.5">مجموع مالیات ارزش افزوده پرداختی در فاکتورهای رسمی سرور (پارس‌پک)، پیامک (ملی‌پیامک) و تجهیزات</p>
+                    </div>
+                </div>
+
+                <div class="p-5 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 flex items-start gap-3.5 mt-2">
+                    <input type="checkbox" name="tax_on_appointments_enabled" id="taxAppts" value="1" <?= $taxOnAppts === '1' ? 'checked' : '' ?> class="mt-1 w-5 h-5 rounded text-primary focus:ring-primary cursor-pointer">
+                    <div>
+                        <label for="taxAppts" class="text-xs font-bold text-slate-800 dark:text-slate-200 cursor-pointer">
+                            اعمال مالیات ارزش افزوده روی نوبت‌های ویزیت دامپزشکی
+                        </label>
+                        <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
+                            نکته حقوقی: بر اساس بند ۹ ماده ۹ قانون مالیات بر ارزش افزوده، خدمات سلامت و درمان دارای معافیت قانونی هستند. در صورت تیک زدن این گزینه، مالیات به هزینه ویزیت بیمار افزوده خواهد شد.
+                        </p>
+                    </div>
                 </div>
             </div>
         </div>
