@@ -3,9 +3,9 @@
 require_once __DIR__ . '/Env.php';
 
 // === OAUTH CONFIGURATION ===
-// Google OAuth Client ID & Secret strictly loaded from .env
-define('GOOGLE_CLIENT_ID', getenv('GOOGLE_CLIENT_ID') ?: '');
-define('GOOGLE_CLIENT_SECRET', getenv('GOOGLE_CLIENT_SECRET') ?: '');
+// Google OAuth Client ID & Secret strictly loaded from Env
+define('GOOGLE_CLIENT_ID', Env::get('GOOGLE_CLIENT_ID', ''));
+define('GOOGLE_CLIENT_SECRET', Env::get('GOOGLE_CLIENT_SECRET', ''));
 
 // Determine accurate protocol and host for callback URI (Google prohibits query params in Redirect URIs)
 $protocol = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') || (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https') ? "https" : "http";
@@ -15,8 +15,11 @@ $host = isset($_SERVER['HTTP_HOST']) ? $_SERVER['HTTP_HOST'] : 'asena.company';
 $script_path = $_SERVER['PHP_SELF'] ?? '';
 $suite_dir = preg_replace('#/(actions|includes|admin)(/.*)?$#i', '', dirname($script_path));
 $suite_dir = rtrim($suite_dir, '/\\');
+if ($suite_dir === '.' || $suite_dir === DIRECTORY_SEPARATOR) {
+    $suite_dir = '';
+}
 
-$envRedirect = getenv('GOOGLE_REDIRECT_URI');
+$envRedirect = Env::get('GOOGLE_REDIRECT_URI');
 define('GOOGLE_REDIRECT_URI', !empty($envRedirect) ? $envRedirect : ($protocol . '://' . $host . $suite_dir . '/actions/oauth_callback.php'));
 
 // Apple OAuth strictly loaded from .env

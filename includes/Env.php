@@ -47,24 +47,18 @@ class Env {
                     $key = trim($key);
                     $val = trim($val, " \t\n\r\0\x0B\"'");
 
-                    if (getenv($key) === false) {
-                        putenv("{$key}={$val}");
-                    }
-                    if (!isset($_ENV[$key])) {
-                        $_ENV[$key] = $val;
-                    }
-                    if (!isset($_SERVER[$key])) {
-                        $_SERVER[$key] = $val;
-                    }
+                    putenv("{$key}={$val}");
+                    $_ENV[$key] = $val;
+                    $_SERVER[$key] = $val;
                 }
             }
         }
 
         // Filter dummy placeholders from .env.example
-        $envHost = getenv('DB_HOST');
-        $envName = getenv('DB_NAME');
-        $envUser = getenv('DB_USER');
-        $envPass = getenv('DB_PASS');
+        $envHost = self::get('DB_HOST');
+        $envName = self::get('DB_NAME');
+        $envUser = self::get('DB_USER');
+        $envPass = self::get('DB_PASS');
 
         if ($envPass === 'your_db_password_here' || $envPass === 'your_password') $envPass = false;
         if ($envUser === 'your_username') $envUser = false;
@@ -87,11 +81,11 @@ class Env {
 
     public static function get(string $key, $default = null) {
         self::load();
-        $val = getenv($key);
-        if ($val === false) {
-            $val = $_ENV[$key] ?? $_SERVER[$key] ?? null;
+        $val = $_ENV[$key] ?? $_SERVER[$key] ?? getenv($key);
+        if ($val === false || $val === '' || $val === null) {
+            return $default;
         }
-        return $val !== null ? $val : $default;
+        return $val;
     }
 }
 

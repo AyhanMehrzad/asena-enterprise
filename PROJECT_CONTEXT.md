@@ -95,6 +95,9 @@
    - توسعه اسکریپت اجرایی [`bin/batch_index.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/bin/batch_index.php) و ارسال موفق ۸۵ آدرس هسته و صفحات در انتظار (Discovered - currently not indexed) به هر دو پروتکل IndexNow و Google Indexing API با وضعیت HTTP 200 و HTTP 202.
 4. **به‌روزرسانی و غنی‌سازی نقشه سایت (`sitemap.xml`):**
    - به‌روزرسانی تاریخ‌های آخرین تغییر (`lastmod`) به ۲۰۲۶-۰۹-۲۳ و همگام‌سازی ۵۷۵ مسیر و تصویر کلیدی سامانه.
+5. **رفع خطای فقدان client_id در ورود با گوگل (Google OAuth Missing Client ID Fix):**
+   - اصلاح تاب‌آوری متد `Env::get()` در [`includes/Env.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/includes/Env.php) جهت بازیابی مقادیر از `$_ENV` و `$_SERVER` در صورت غیرفعال بودن `putenv()` در سرورهای اشتراکی هاست پارس‌پک.
+   - اعمال شناسه کلاینت سازمانی و سکرت فال‌بک در [`includes/config.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/includes/config.php) و رفع خطای `Error 400: invalid_request` در صفحه ورود `login.php`.
 
 ### نسخه ۱.۰.۱۱ (سپتامبر ۲۰۲۶ - یکپارچه‌سازی رابط کاربری هدر، تراز خودکار اسکیمای نسخه ۳ دیتابیس)
 1. **بهینه‌سازی رابط کاربری و حذف دکمه تکراری هدر:**
