@@ -45,3 +45,8 @@ This document establishes the foundational architectural rules, coding standards
    - Enforce 48x48dp minimum touch targets, eliminate 300ms tap latency, and transform multi-column tables into structured mobile cards.
    - Maintain offline resilience with Stale-While-Revalidate service worker caching, dynamic theme-color synchronization, and intent-driven install prompts.
 
+10. **Iranian Tax & Marketplace Accounting Standards**:
+    - Strictly follow [`.agents/rules/iranian_tax_and_marketplace_accounting_standards.md`](file:///.agents/rules/iranian_tax_and_marketplace_accounting_standards.md).
+    - Enforce brokerage identity (15% commission as recognized revenue, 85% escrow liability).
+    - Ensure compliance with 10% statutory VAT, Article 169 seasonal transaction reporting, Taxpayer System (سامانه مودیان), Paya payout batch receipts, and legal tax minimization practices.
+
