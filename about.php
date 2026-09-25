@@ -9,7 +9,7 @@ require_once 'includes/db.php';
 require_once 'includes/functions.php';
 
 $page_title = 'درباره آسنا | معرفی زیست‌بوم جامع، مجوزهای رسمی و همراهی مهندسین مشاور سما شهر';
-$page_description = 'داستان شکل‌گیری آسنا، ارکان سلامت و درمان پت، پروانه سازمان نظام صنفی رایانه‌ای، روزنامه رسمی کشور، اینماد و همراهی راهبردی شرکت مهندسین مشاور سما شهر خاوران.';
+$page_description = 'داستان شکل‌گیری آسنا، ارکان سلامت و درمان پت، پروانه سازمان نظام صنفی رایانه‌ای، تاییدیه‌های پارک فناوری و امنیت افتا، اینماد و همراهی راهبردی شرکت مهندسین مشاور سما شهر خاوران.';
 
 require_once 'includes/header.php';
 ?>
@@ -256,13 +256,13 @@ require_once 'includes/header.php';
                     <span class="material-symbols-outlined text-sm">badge</span>
                     <span>سازمان نظام صنفی رایانه‌ای</span>
                 </button>
-                <button type="button" onclick="switchLicenseTab('gazette')" id="tabBtn-gazette" class="license-tab-btn py-2.5 px-3 rounded-xl text-xs font-bold text-center flex items-center justify-center gap-1.5 text-slate-600 hover:text-slate-900">
-                    <span class="material-symbols-outlined text-sm">newspaper</span>
-                    <span>روزنامه رسمی کشور</span>
+                <button type="button" onclick="switchLicenseTab('techpark')" id="tabBtn-techpark" class="license-tab-btn py-2.5 px-3 rounded-xl text-xs font-bold text-center flex items-center justify-center gap-1.5 text-slate-600 hover:text-slate-900">
+                    <span class="material-symbols-outlined text-sm">science</span>
+                    <span>مجوز واحد فناوری (وزارت علوم)</span>
                 </button>
-                <button type="button" onclick="switchLicenseTab('registry')" id="tabBtn-registry" class="license-tab-btn py-2.5 px-3 rounded-xl text-xs font-bold text-center flex items-center justify-center gap-1.5 text-slate-600 hover:text-slate-900">
-                    <span class="material-symbols-outlined text-sm">corporate_fare</span>
-                    <span>اداره ثبت شرکت‌ها</span>
+                <button type="button" onclick="switchLicenseTab('afta')" id="tabBtn-afta" class="license-tab-btn py-2.5 px-3 rounded-xl text-xs font-bold text-center flex items-center justify-center gap-1.5 text-slate-600 hover:text-slate-900">
+                    <span class="material-symbols-outlined text-sm">verified_user</span>
+                    <span>گواهی امنیتی افتا (ریاست جمهوری)</span>
                 </button>
                 <button type="button" onclick="switchLicenseTab('enamad')" id="tabBtn-enamad" class="license-tab-btn py-2.5 px-3 rounded-xl text-xs font-bold text-center flex items-center justify-center gap-1.5 text-slate-600 hover:text-slate-900">
                     <span class="material-symbols-outlined text-sm">credit_card</span>
@@ -276,24 +276,24 @@ require_once 'includes/header.php';
                     <div class="lg:col-span-7 space-y-4">
                         <div class="inline-flex items-center gap-1.5 bg-blue-50 text-blue-700 text-xs font-bold px-3 py-1 rounded-full border border-blue-200">
                             <span class="material-symbols-outlined text-sm">verified</span>
-                            <span>پروانه رسمی عضویت و فعالیت صنفی</span>
+                            <span>پروانه رسمی عضویت و فعالیت صنفی رایانه‌ای</span>
                         </div>
                         <h3 class="text-lg sm:text-xl font-black text-slate-900">
-                            پروانه فعالیت سازمان نظام صنفی رایانه‌ای استان آذربایجان شرقی
+                            پروانه فعالیت سازمان نظام صنفی رایانه‌ای کشور
                         </h3>
                         <p class="text-xs sm:text-sm text-slate-600 leading-relaxed">
-                            پروانه رسمی فعالیت شرکت مهندسین مشاور سما شهر خاوران به مدیریت <strong>مهندس جمال مهرزاد</strong> صادر شده از سوی سازمان نظام صنفی رایانه‌ای کشور، ناظر بر صلاحیت فنی، تولید نرم‌افزارهای تخصصی، پایش سیستم‌های اطلاعات جغرافیایی (GIS) و تطابق با استانداردهای فناوری اطلاعات.
+                            پروانه رسمی فعالیت شرکت مهندسین مشاور سما شهر خاوران به مدیریت <strong>مهندس جمال مهرزاد</strong> صادر شده از سوی سازمان نظام صنفی رایانه‌ای کشور (استان آذربایجان شرقی)، ناظر بر صلاحیت فنی، تولید نرم‌افزارهای تخصصی، سامانه‌های اطلاعات جغرافیایی (GIS) و تطابق با قوانین نظام صنفی رایانه‌ای کشور.
                         </p>
                         
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs bg-slate-50 p-4 rounded-2xl border border-slate-200">
                             <div>شماره پروانه نظام صنفی: <strong class="font-mono text-slate-900">14010608</strong></div>
-                            <div>شناسه ملی شرکت: <strong class="font-mono text-slate-900">14011425578</strong></div>
-                            <div>تاریخ اعتبار عضویت: <strong class="font-mono text-slate-900">1406/04/01</strong></div>
-                            <div>مرجع صادرکننده: <strong class="text-slate-900">نظام صنفی رایانه‌ای آذربایجان شرقی</strong></div>
+                            <div>شناسه ملی شرکت: <strong class="font-mono text-slate-900">14011482578</strong></div>
+                            <div>تاریخ اعتبار عضویت: <strong class="font-mono text-slate-900">1405/04/01</strong></div>
+                            <div>مرجع صادرکننده: <strong class="text-slate-900">سازمان نظام صنفی رایانه‌ای کشور</strong></div>
                         </div>
 
                         <div class="flex items-center gap-3 pt-2">
-                            <button type="button" onclick="openDocModal('assets/images/partners/samashahr-license.jpg', 'پروانه سازمان نظام صنفی رایانه‌ای - شرکت سما شهر خاوران')" class="px-5 py-2.5 rounded-xl bg-primary text-white font-bold text-xs hover:bg-primary-light transition flex items-center gap-2">
+                            <button type="button" onclick="openDocModal('assets/images/partners/samashahr-guild-license.jpg', 'پروانه سازمان نظام صنفی رایانه‌ای کشور - شرکت سما شهر خاوران')" class="px-5 py-2.5 rounded-xl bg-primary text-white font-bold text-xs hover:bg-primary-light transition flex items-center gap-2">
                                 <span class="material-symbols-outlined text-sm">zoom_in</span>
                                 <span>بزرگ‌نمایی و مشاهده گواهینامه</span>
                             </button>
@@ -305,13 +305,13 @@ require_once 'includes/header.php';
                     </div>
 
                     <div class="lg:col-span-5">
-                        <div class="relative group cursor-pointer overflow-hidden rounded-2xl border border-slate-200 bg-slate-100 shadow-md hover:shadow-xl transition-all" onclick="openDocModal('assets/images/partners/samashahr-license.jpg', 'پروانه سازمان نظام صنفی رایانه‌ای - شرکت سما شهر خاوران')">
-                            <img src="assets/images/partners/samashahr-license.jpg" alt="پروانه نظام صنفی رایانه‌ای سما شهر خاوران" class="w-full h-64 object-cover object-top group-hover:scale-102 transition-transform duration-300">
+                        <div class="relative group cursor-pointer overflow-hidden rounded-2xl border border-slate-200 bg-slate-100 shadow-md hover:shadow-xl transition-all" onclick="openDocModal('assets/images/partners/samashahr-guild-license.jpg', 'پروانه سازمان نظام صنفی رایانه‌ای کشور - شرکت سما شهر خاوران')">
+                            <img src="assets/images/partners/samashahr-guild-license.jpg" alt="پروانه نظام صنفی رایانه‌ای سما شهر خاوران" class="w-full h-64 object-cover object-top group-hover:scale-102 transition-transform duration-300">
                             <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent flex items-end p-4">
                                 <div class="text-white flex items-center justify-between w-full">
                                     <span class="text-xs font-bold flex items-center gap-1.5 text-amber-300">
                                         <span class="material-symbols-outlined text-sm">open_in_full</span>
-                                        کلیک برای مشاهده با کیفیت اصلی
+                                        مشاهده با کیفیت اصلی
                                     </span>
                                     <span class="text-[10px] bg-white/20 px-2 py-0.5 rounded-full font-mono">14010608</span>
                                 </div>
@@ -321,46 +321,46 @@ require_once 'includes/header.php';
                 </div>
             </div>
 
-            <!-- Tab 2: Official Gazette -->
-            <div id="licenseContent-gazette" class="space-y-6 hidden">
+            <!-- Tab 2: Science & Tech Park License (وزارت علوم) -->
+            <div id="licenseContent-techpark" class="space-y-6 hidden">
                 <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
                     <div class="lg:col-span-7 space-y-4">
-                        <div class="inline-flex items-center gap-1.5 bg-amber-50 text-amber-800 text-xs font-bold px-3 py-1 rounded-full border border-amber-200">
-                            <span class="material-symbols-outlined text-sm">newspaper</span>
-                            <span>آگهی قوه قضائیه - روزنامه رسمی جمهوری اسلامی ایران</span>
+                        <div class="inline-flex items-center gap-1.5 bg-emerald-50 text-emerald-800 text-xs font-bold px-3 py-1 rounded-full border border-emerald-200">
+                            <span class="material-symbols-outlined text-sm">science</span>
+                            <span>وزارت علوم، تحقیقات و فناوری - پارک علم و فناوری</span>
                         </div>
                         <h3 class="text-lg sm:text-xl font-black text-slate-900">
-                            آگهی رسمی تاسیس شرکت در روزنامه رسمی کشور
+                            مجوز رسمی واحد فناوری در پارک علم و فناوری آذربایجان شرقی
                         </h3>
                         <p class="text-xs sm:text-sm text-slate-600 leading-relaxed">
-                            درج آگهی رسمی تاسیس شرکت سما شهر خاوران در <strong>روزنامه رسمی کشور (شماره ۲۲۵۷۰، صفحه ۹۸، مورخ ۱۴۰۱/۰۶/۱۴)</strong>، با موضوع رسمی برنامه‌ریزی شهری، شهرسازی، سیستم‌های جامع اطلاعات جغرافیایی (GIS)، سنجش از دور و فتوگرامتری، و تولید نرم‌افزارهای کاربردی تخصصی.
+                            اعطای پروانه رسمی فعالیت به شرکت مهندسین مشاور سما شهر خاوران به عنوان <strong>واحد فناوری مستقر در پارک علم و فناوری</strong>، در زمینه تولید سامانه‌های نرم‌افزاری هوشمند، شهرسازی و مدیریت درآمد سازمانی، زیر نظر وزارت علوم، تحقیقات و فناوری جمهوری اسلامی ایران.
                         </p>
 
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs bg-slate-50 p-4 rounded-2xl border border-slate-200">
-                            <div>شماره ثبت آگهی روزنامه رسمی: <strong class="font-mono text-slate-900">140130404075007443</strong></div>
-                            <div>شماره روزنامه رسمی: <strong class="font-mono text-slate-900">22570 (صفحه 98)</strong></div>
-                            <div>تاریخ انتشار روزنامه رسمی: <strong class="font-mono text-slate-900">1401/06/14</strong></div>
-                            <div>سامانه رسمی پیگیری: <strong class="font-mono text-slate-900">RRK.ir / Dastour.ir</strong></div>
+                            <div>شماره رسمی مجوز واحد فناور: <strong class="font-mono text-slate-900">2302</strong></div>
+                            <div>شناسه ملی شرکت: <strong class="font-mono text-slate-900">14011482578</strong></div>
+                            <div>تاریخ صدور پروانه: <strong class="font-mono text-slate-900">1403/03/02</strong></div>
+                            <div>مرجع اعطا: <strong class="text-slate-900">پارک علم و فناوری آذربایجان شرقی</strong></div>
                         </div>
 
                         <div class="pt-2">
-                            <button type="button" onclick="openDocModal('assets/images/partners/samashahr-official-gazette.jpg', 'آگهی تاسیس روزنامه رسمی جمهوری اسلامی ایران - شرکت سما شهر خاوران')" class="px-5 py-2.5 rounded-xl bg-primary text-white font-bold text-xs hover:bg-primary-light transition flex items-center gap-2">
+                            <button type="button" onclick="openDocModal('assets/images/partners/samashahr-techpark-license.jpg', 'مجوز رسمی واحد فناوری پارک علم و فناوری - شرکت سما شهر خاوران')" class="px-5 py-2.5 rounded-xl bg-primary text-white font-bold text-xs hover:bg-primary-light transition flex items-center gap-2">
                                 <span class="material-symbols-outlined text-sm">zoom_in</span>
-                                <span>مشاهده برگ روزنامه رسمی کشور</span>
+                                <span>مشاهده سند مجوز واحد فناوری</span>
                             </button>
                         </div>
                     </div>
 
                     <div class="lg:col-span-5">
-                        <div class="relative group cursor-pointer overflow-hidden rounded-2xl border border-slate-200 bg-slate-100 shadow-md hover:shadow-xl transition-all" onclick="openDocModal('assets/images/partners/samashahr-official-gazette.jpg', 'آگهی تاسیس روزنامه رسمی جمهوری اسلامی ایران - شرکت سما شهر خاوران')">
-                            <img src="assets/images/partners/samashahr-official-gazette.jpg" alt="روزنامه رسمی کشور شرکت سما شهر خاوران" class="w-full h-64 object-cover object-top group-hover:scale-102 transition-transform duration-300">
+                        <div class="relative group cursor-pointer overflow-hidden rounded-2xl border border-slate-200 bg-slate-100 shadow-md hover:shadow-xl transition-all" onclick="openDocModal('assets/images/partners/samashahr-techpark-license.jpg', 'مجوز رسمی واحد فناوری پارک علم و فناوری - شرکت سما شهر خاوران')">
+                            <img src="assets/images/partners/samashahr-techpark-license.jpg" alt="مجوز واحد فناوری پارک علم و فناوری" class="w-full h-64 object-cover object-top group-hover:scale-102 transition-transform duration-300">
                             <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent flex items-end p-4">
                                 <div class="text-white flex items-center justify-between w-full">
                                     <span class="text-xs font-bold flex items-center gap-1.5 text-amber-300">
                                         <span class="material-symbols-outlined text-sm">open_in_full</span>
-                                        مشاهده متن کامل روزنامه رسمی
+                                        مشاهده متن پروانه واحد فناوری
                                     </span>
-                                    <span class="text-[10px] bg-white/20 px-2 py-0.5 rounded-full font-mono">شماره ۲۲۵۷۰</span>
+                                    <span class="text-[10px] bg-white/20 px-2 py-0.5 rounded-full font-mono">مجوز ۲۳۰۲</span>
                                 </div>
                             </div>
                         </div>
@@ -368,46 +368,46 @@ require_once 'includes/header.php';
                 </div>
             </div>
 
-            <!-- Tab 3: Company Registry -->
-            <div id="licenseContent-registry" class="space-y-6 hidden">
+            <!-- Tab 3: AFTA Security Evaluation Certificate (نهاد ریاست جمهوری) -->
+            <div id="licenseContent-afta" class="space-y-6 hidden">
                 <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
                     <div class="lg:col-span-7 space-y-4">
-                        <div class="inline-flex items-center gap-1.5 bg-emerald-50 text-emerald-800 text-xs font-bold px-3 py-1 rounded-full border border-emerald-200">
-                            <span class="material-symbols-outlined text-sm">corporate_fare</span>
-                            <span>سازمان ثبت اسناد و املاک کشور - قوه قضائیه</span>
+                        <div class="inline-flex items-center gap-1.5 bg-indigo-50 text-indigo-800 text-xs font-bold px-3 py-1 rounded-full border border-indigo-200">
+                            <span class="material-symbols-outlined text-sm">shield</span>
+                            <span>ریاست جمهوری - مرکز مدیریت راهبردی افتا</span>
                         </div>
                         <h3 class="text-lg sm:text-xl font-black text-slate-900">
-                            آگهی تاسیس و شرکتنامه رسمی ثبت شرکت‌ها
+                            گواهی رسمی ارزیابی امنیتی محصول از مرکز مدیریت راهبردی افتا
                         </h3>
                         <p class="text-xs sm:text-sm text-slate-600 leading-relaxed">
-                            سند رسمی ثبت شرکت مهندسین مشاور سما شهر خاوران در <strong>اداره ثبت شرکت‌ها و موسسات غیرتجاری تبریز</strong> با شماره ثبت ۵۶۳۰۶ و شناسه ملی ۱۴۰۱۱۴۲۵۵۷۸ همراه با تعیین ارکان مدیریت و حق امضای اسناد رسمی.
+                            اعطای گواهی رسمی ارزیابی امنیتی محصول به استناد مصوبه جلسه ۱۰۷ شورای عالی فضای مجازی کشور با هدف ارتقای امنیت فضای تبادل اطلاعات به شرکت سما شهر خاوران، تاییدشده پس از آزمون‌های ارزیابی امنیتی و نفوذپذیری توسط آزمایشگاه تخصصی فناوران توسعه امن ناجی.
                         </p>
 
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs bg-slate-50 p-4 rounded-2xl border border-slate-200">
-                            <div>شماره ثبت اداره شرکت‌ها: <strong class="font-mono text-slate-900">56306 تبریز</strong></div>
-                            <div>شناسه ملی اشخاص حقوقی: <strong class="font-mono text-slate-900">14011425578</strong></div>
-                            <div>شماره مکانیزه ثبتی: <strong class="font-mono text-slate-900">140130404075007343</strong></div>
-                            <div>سامانه استعلام ثبت: <strong class="font-mono text-slate-900">irshekat.ssaa.ir</strong></div>
+                            <div>شماره گواهی امنیتی افتا: <strong class="font-mono text-slate-900">AFTA-2621-PSA-1059</strong></div>
+                            <div>شناسه ملی شرکت: <strong class="font-mono text-slate-900">14011482578</strong></div>
+                            <div>آزمایشگاه ارزیاب امنیت: <strong class="text-slate-900">فناوران توسعه امن ناجی</strong></div>
+                            <div>مرجع عالی صدور: <strong class="text-slate-900">مرکز مدیریت راهبردی افتای ریاست جمهوری</strong></div>
                         </div>
 
                         <div class="pt-2">
-                            <button type="button" onclick="openDocModal('assets/images/partners/samashahr-registration.jpg', 'آگهی ثبتی شرکت مهندسین مشاور سما شهر خاوران - اداره ثبت شرکت‌ها')" class="px-5 py-2.5 rounded-xl bg-primary text-white font-bold text-xs hover:bg-primary-light transition flex items-center gap-2">
+                            <button type="button" onclick="openDocModal('assets/images/partners/samashahr-afta-cert.jpg', 'گواهی ارزیابی امنیتی محصول - مرکز مدیریت راهبردی افتای ریاست جمهوری')" class="px-5 py-2.5 rounded-xl bg-primary text-white font-bold text-xs hover:bg-primary-light transition flex items-center gap-2">
                                 <span class="material-symbols-outlined text-sm">zoom_in</span>
-                                <span>مشاهده سند اداره ثبت شرکت‌ها</span>
+                                <span>مشاهده برگ گواهی ارزیابی افتا</span>
                             </button>
                         </div>
                     </div>
 
                     <div class="lg:col-span-5">
-                        <div class="relative group cursor-pointer overflow-hidden rounded-2xl border border-slate-200 bg-slate-100 shadow-md hover:shadow-xl transition-all" onclick="openDocModal('assets/images/partners/samashahr-registration.jpg', 'آگهی ثبتی شرکت مهندسین مشاور سما شهر خاوران - اداره ثبت شرکت‌ها')">
-                            <img src="assets/images/partners/samashahr-registration.jpg" alt="آگهی اداره ثبت شرکت‌ها سما شهر خاوران" class="w-full h-64 object-cover object-top group-hover:scale-102 transition-transform duration-300">
+                        <div class="relative group cursor-pointer overflow-hidden rounded-2xl border border-slate-200 bg-slate-100 shadow-md hover:shadow-xl transition-all" onclick="openDocModal('assets/images/partners/samashahr-afta-cert.jpg', 'گواهی ارزیابی امنیتی محصول - مرکز مدیریت راهبردی افتای ریاست جمهوری')">
+                            <img src="assets/images/partners/samashahr-afta-cert.jpg" alt="گواهی ارزیابی امنیتی افتا سما شهر خاوران" class="w-full h-64 object-cover object-top group-hover:scale-102 transition-transform duration-300">
                             <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent flex items-end p-4">
                                 <div class="text-white flex items-center justify-between w-full">
                                     <span class="text-xs font-bold flex items-center gap-1.5 text-amber-300">
                                         <span class="material-symbols-outlined text-sm">open_in_full</span>
-                                        مشاهده برگ اداره ثبت شرکت‌ها
+                                        مشاهده گواهی امنیتی افتا
                                     </span>
-                                    <span class="text-[10px] bg-white/20 px-2 py-0.5 rounded-full font-mono">ثبت ۵۶۳۰۶</span>
+                                    <span class="text-[10px] bg-white/20 px-2 py-0.5 rounded-full font-mono">AFTA-1059</span>
                                 </div>
                             </div>
                         </div>
@@ -502,7 +502,7 @@ require_once 'includes/header.php';
                                 </div>
                                 <div>
                                     <h3 class="font-black text-white text-base sm:text-lg">شرکت مهندسین مشاور سما شهر خاوران</h3>
-                                    <div class="text-[11px] text-slate-300 font-mono">شماره ثبت: ۵۶۳۰۶ تبریز • شناسه ملی: ۱۴۰۱۱۴۲۵۵۷۸</div>
+                                    <div class="text-[11px] text-slate-300 font-mono">شناسه ملی: ۱۴۰۱۱۴۸۲۵۷۸ • شماره نظام صنفی: ۱۴۰۱۰۶۰۸</div>
                                 </div>
                             </div>
                             <span class="inline-flex items-center gap-1 bg-emerald-500/20 text-emerald-300 border border-emerald-400/40 text-[10px] font-bold px-2.5 py-1 rounded-full shrink-0">
@@ -561,33 +561,33 @@ require_once 'includes/header.php';
                         </div>
                     </div>
 
-                    <!-- 3 Document Mini Previews -->
+                    <!-- 3 Document Mini Previews (Public Licenses from samashahr.ir) -->
                     <div class="space-y-2">
                         <div class="text-[11px] font-bold text-slate-300 flex items-center justify-between">
-                            <span>مدارک و اسناد ثبتی (کلیک برای مشاهده):</span>
-                            <span class="text-[10px] text-amber-400 font-mono">3 اسناد رسمی</span>
+                            <span>مجوزها و تاییدیه‌های رسمی (کلیک برای مشاهده):</span>
+                            <span class="text-[10px] text-amber-400 font-mono">3 گواهی رسمی</span>
                         </div>
 
                         <div class="grid grid-cols-3 gap-2">
-                            <div onclick="openDocModal('assets/images/partners/samashahr-license.jpg', 'پروانه سازمان نظام صنفی رایانه‌ای - شرکت سما شهر خاوران')" class="group cursor-pointer rounded-xl overflow-hidden border border-white/20 bg-slate-800 p-1 hover:border-amber-400 transition-colors text-center">
-                                <img src="assets/images/partners/samashahr-license.jpg" alt="پروانه نظام صنفی" class="w-full h-16 object-cover object-top rounded-lg group-hover:scale-105 transition-transform">
-                                <span class="text-[10px] text-slate-300 block truncate mt-1">پروانه صنفی</span>
+                            <div onclick="openDocModal('assets/images/partners/samashahr-guild-license.jpg', 'پروانه سازمان نظام صنفی رایانه‌ای کشور - شرکت سما شهر خاوران')" class="group cursor-pointer rounded-xl overflow-hidden border border-white/20 bg-slate-800 p-1 hover:border-amber-400 transition-colors text-center">
+                                <img src="assets/images/partners/samashahr-guild-license.jpg" alt="پروانه نظام صنفی" class="w-full h-16 object-cover object-top rounded-lg group-hover:scale-105 transition-transform">
+                                <span class="text-[10px] text-slate-300 block truncate mt-1">نظام صنفی</span>
                             </div>
 
-                            <div onclick="openDocModal('assets/images/partners/samashahr-official-gazette.jpg', 'آگهی تاسیس روزنامه رسمی جمهوری اسلامی ایران - شرکت سما شهر خاوران')" class="group cursor-pointer rounded-xl overflow-hidden border border-white/20 bg-slate-800 p-1 hover:border-amber-400 transition-colors text-center">
-                                <img src="assets/images/partners/samashahr-official-gazette.jpg" alt="روزنامه رسمی کشور" class="w-full h-16 object-cover object-top rounded-lg group-hover:scale-105 transition-transform">
-                                <span class="text-[10px] text-slate-300 block truncate mt-1">روزنامه رسمی</span>
+                            <div onclick="openDocModal('assets/images/partners/samashahr-techpark-license.jpg', 'مجوز رسمی واحد فناوری پارک علم و فناوری - شرکت سما شهر خاوران')" class="group cursor-pointer rounded-xl overflow-hidden border border-white/20 bg-slate-800 p-1 hover:border-amber-400 transition-colors text-center">
+                                <img src="assets/images/partners/samashahr-techpark-license.jpg" alt="مجوز واحد فناوری" class="w-full h-16 object-cover object-top rounded-lg group-hover:scale-105 transition-transform">
+                                <span class="text-[10px] text-slate-300 block truncate mt-1">واحد فناوری</span>
                             </div>
 
-                            <div onclick="openDocModal('assets/images/partners/samashahr-registration.jpg', 'آگهی ثبتی شرکت مهندسین مشاور سما شهر خاوران - اداره ثبت شرکت‌ها')" class="group cursor-pointer rounded-xl overflow-hidden border border-white/20 bg-slate-800 p-1 hover:border-amber-400 transition-colors text-center">
-                                <img src="assets/images/partners/samashahr-registration.jpg" alt="ثبت شرکت‌ها" class="w-full h-16 object-cover object-top rounded-lg group-hover:scale-105 transition-transform">
-                                <span class="text-[10px] text-slate-300 block truncate mt-1">ثبت شرکت‌ها</span>
+                            <div onclick="openDocModal('assets/images/partners/samashahr-afta-cert.jpg', 'گواهی ارزیابی امنیتی محصول افتا - شرکت سما شهر خاوران')" class="group cursor-pointer rounded-xl overflow-hidden border border-white/20 bg-slate-800 p-1 hover:border-amber-400 transition-colors text-center">
+                                <img src="assets/images/partners/samashahr-afta-cert.jpg" alt="گواهی امنیتی افتا" class="w-full h-16 object-cover object-top rounded-lg group-hover:scale-105 transition-transform">
+                                <span class="text-[10px] text-slate-300 block truncate mt-1">امنیتی افتا</span>
                             </div>
                         </div>
                     </div>
 
                     <div class="pt-2 border-t border-white/10 flex items-center justify-between text-[11px] text-slate-400">
-                        <span>اعتبار پروانه صنفی: ۱۴۰۶/۰۴/۰۱</span>
+                        <span>اعتبار پروانه صنفی: ۱۴۰۵/۰۴/۰۱</span>
                         <a href="https://samashahr.ir/" target="_blank" rel="noopener noreferrer" class="text-amber-300 hover:text-white font-bold inline-flex items-center gap-1 transition-colors">
                             <span>سامانه سما شهر</span>
                             <span class="material-symbols-outlined text-xs">north_east</span>
@@ -595,6 +595,61 @@ require_once 'includes/header.php';
                     </div>
                 </div>
 
+            </div>
+
+            <!-- Client Ecosystem from samashahr.ir -->
+            <div class="relative z-10 pt-6 border-t border-white/10 space-y-4">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-2 text-xs font-bold text-slate-200">
+                        <span class="material-symbols-outlined text-base text-[#fd8100]">domain</span>
+                        <span>بیش از ۵۰ سازمان، وزارتخانه و نهاد حاکمیتی همکار با سما شهر</span>
+                    </div>
+                    <span class="text-[10px] text-slate-400">بهره‌برداران سیستم‌های شهری و مکانی</span>
+                </div>
+
+                <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3 items-center">
+                    <!-- استانداری آذربایجان شرقی -->
+                    <div class="bg-white/10 backdrop-blur-md rounded-2xl p-3 border border-white/10 flex flex-col items-center justify-center gap-2 hover:bg-white/15 transition-all text-center h-24">
+                        <img src="assets/images/partners/clients/ostandari.png" alt="استانداری آذربایجان شرقی" class="h-10 w-auto object-contain brightness-0 invert opacity-90">
+                        <span class="text-[10px] text-slate-300 truncate w-full">استانداری آ.ش</span>
+                    </div>
+
+                    <!-- سازمان نقشه برداری کشور -->
+                    <div class="bg-white/10 backdrop-blur-md rounded-2xl p-3 border border-white/10 flex flex-col items-center justify-center gap-2 hover:bg-white/15 transition-all text-center h-24">
+                        <img src="assets/images/partners/clients/naghshe-bardari.png" alt="سازمان نقشه برداری کشور" class="h-10 w-auto object-contain brightness-0 invert opacity-90">
+                        <span class="text-[10px] text-slate-300 truncate w-full">نقشه‌برداری کشور</span>
+                    </div>
+
+                    <!-- وزارت جهاد کشاورزی -->
+                    <div class="bg-white/10 backdrop-blur-md rounded-2xl p-3 border border-white/10 flex flex-col items-center justify-center gap-2 hover:bg-white/15 transition-all text-center h-24">
+                        <img src="assets/images/partners/clients/jahad.jpg" alt="وزارت جهاد کشاورزی" class="h-10 w-auto object-contain rounded-full bg-white p-0.5">
+                        <span class="text-[10px] text-slate-300 truncate w-full">جهاد کشاورزی</span>
+                    </div>
+
+                    <!-- وزارت نفت -->
+                    <div class="bg-white/10 backdrop-blur-md rounded-2xl p-3 border border-white/10 flex flex-col items-center justify-center gap-2 hover:bg-white/15 transition-all text-center h-24">
+                        <img src="assets/images/partners/clients/naft.jpg" alt="وزارت نفت" class="h-10 w-auto object-contain rounded-full bg-white p-0.5">
+                        <span class="text-[10px] text-slate-300 truncate w-full">وزارت نفت</span>
+                    </div>
+
+                    <!-- وزارت ارتباطات و فناوری اطلاعات -->
+                    <div class="bg-white/10 backdrop-blur-md rounded-2xl p-3 border border-white/10 flex flex-col items-center justify-center gap-2 hover:bg-white/15 transition-all text-center h-24">
+                        <img src="assets/images/partners/clients/fanavari.jpg" alt="وزارت فناوری اطلاعات" class="h-10 w-auto object-contain rounded-lg bg-white p-0.5">
+                        <span class="text-[10px] text-slate-300 truncate w-full">وزارت ارتباطات</span>
+                    </div>
+
+                    <!-- وزارت نیرو -->
+                    <div class="bg-white/10 backdrop-blur-md rounded-2xl p-3 border border-white/10 flex flex-col items-center justify-center gap-2 hover:bg-white/15 transition-all text-center h-24">
+                        <img src="assets/images/partners/clients/niroo.jpg" alt="وزارت نیرو" class="h-10 w-auto object-contain rounded-full bg-white p-0.5">
+                        <span class="text-[10px] text-slate-300 truncate w-full">وزارت نیرو</span>
+                    </div>
+
+                    <!-- شهرداری کلانشهر تبریز -->
+                    <div class="bg-white/10 backdrop-blur-md rounded-2xl p-3 border border-white/10 flex flex-col items-center justify-center gap-2 hover:bg-white/15 transition-all text-center h-24">
+                        <img src="assets/images/partners/clients/shahrdari-tabriz.svg" alt="شهرداری تبریز" class="h-10 w-auto object-contain brightness-0 invert opacity-90">
+                        <span class="text-[10px] text-slate-300 truncate w-full">شهرداری تبریز</span>
+                    </div>
+                </div>
             </div>
         </section>
 
@@ -764,9 +819,9 @@ require_once 'includes/header.php';
                     </div>
                     <div>
                         <h2 class="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-                            مسئولیت اجتماعی؛ سهمی برای فرشتگان بی‌پناه
+                            مسئولیت اجتماعی؛ گامی ماندگار در سلامت و درمان حیوانات حمایتی
                         </h2>
-                        <div class="text-xs text-slate-500 font-medium">بخشی از هر تراکنش در آسنا، وقف درمان و واکسیناسیون حیوانات پناهگاه‌ها می‌شود.</div>
+                        <div class="text-xs text-slate-500 font-medium">بخشی از عواید خدمات آسنا، به درمان، واکسیناسیون دوره‌ای و مراقبت‌های بالینی حیوانات حمایتی در نقاهتگاه‌ها اختصاص می‌یابد.</div>
                     </div>
                 </div>
                 <div class="shrink-0">
@@ -779,12 +834,12 @@ require_once 'includes/header.php';
 
             <div class="grid grid-cols-1 md:grid-cols-3 gap-5 text-xs text-slate-600 leading-relaxed">
                 <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200/70 space-y-1.5">
-                    <span class="font-bold text-slate-900 block text-xs">واکسیناسیون رایگان پناهگاه‌ها</span>
-                    <p class="text-[11px] text-slate-500">تامین واکسن‌های هاری و چندگانه برای مراکز نگهداری حیوانات بی‌پناه تحت نظارت پزشکان معتمد آسنا.</p>
+                    <span class="font-bold text-slate-900 block text-xs">تامین رایگان واکسیناسیون نقاهتگاه‌ها</span>
+                    <p class="text-[11px] text-slate-500">تامین واکسن‌های هاری و چندگانه برای مراکز نگهداری و نقاهتگاه‌های حیوانات حمایتی تحت نظارت پزشکان معتمد آسنا.</p>
                 </div>
                 <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200/70 space-y-1.5">
-                    <span class="font-bold text-slate-900 block text-xs">صندوق امداد جراحی و تروما</span>
-                    <p class="text-[11px] text-slate-500">پوشش هزینه جراحی‌های اورژانسی سگ‌ها و گربه‌های خیابانی تصادفی بدون صاحب با همکاری کلینیک‌های همکار.</p>
+                    <span class="font-bold text-slate-900 block text-xs">صندوق درمان جراحی و ترومای حیوانات حمایتی</span>
+                    <p class="text-[11px] text-slate-500">پوشش هزینه جراحی‌های اورژانسی سگ‌ها و گربه‌های حمایتی دچار تروما و نیازمند درمان فوری با همکاری کلینیک‌های همکار.</p>
                 </div>
                 <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200/70 space-y-1.5">
                     <span class="font-bold text-slate-900 block text-xs">شفافیت کامل گزارش‌های مالی</span>
@@ -845,7 +900,7 @@ require_once 'includes/header.php';
         </div>
 
         <div class="flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500 pt-1">
-            <span>شماره ثبت: <strong class="font-mono text-slate-800">56306 تبریز</strong> • شناسه ملی: <strong class="font-mono text-slate-800">14011425578</strong> • پروانه صنفی: <strong class="font-mono text-slate-800">14010608</strong></span>
+            <span>شناسه ملی: <strong class="font-mono text-slate-800">14011482578</strong> • پروانه نظام صنفی: <strong class="font-mono text-slate-800">14010608</strong> • تاییدیه امنیتی افتا: <strong class="font-mono text-slate-800">AFTA-2621-PSA-1059</strong></span>
             <a href="https://samashahr.ir/" target="_blank" rel="noopener noreferrer" class="text-primary font-bold hover:underline inline-flex items-center gap-1">
                 <span>تارنمای رسمی شرکت مهندسین مشاور سما شهر خاوران</span>
                 <span class="material-symbols-outlined text-xs">open_in_new</span>
@@ -857,7 +912,7 @@ require_once 'includes/header.php';
 <script>
 // Switch License Tabs
 function switchLicenseTab(tabKey) {
-    const tabs = ['guild', 'gazette', 'registry', 'enamad'];
+    const tabs = ['guild', 'techpark', 'afta', 'enamad'];
     tabs.forEach(t => {
         const btn = document.getElementById('tabBtn-' + t);
         const content = document.getElementById('licenseContent-' + t);

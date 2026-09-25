@@ -309,7 +309,7 @@ if (basename($_SERVER['SCRIPT_FILENAME'] ?? '') === basename(__FILE__)) {
                     </div>
                     <div>
                         <div class="text-xs font-black text-slate-900 group-hover:text-emerald-700 transition-colors">خیریه و امداد حیوانات</div>
-                        <div class="text-[10px] text-slate-500 line-clamp-1 mt-0.5">پویش درمان حیوانات بی‌پناه</div>
+                        <div class="text-[10px] text-slate-500 line-clamp-1 mt-0.5">پویش درمان حیوانات حمایتی</div>
                     </div>
                 </a>
 
