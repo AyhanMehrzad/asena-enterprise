@@ -3,8 +3,16 @@
  * ASENA Payment Gateway — Dual Mode: ZarinPal Production & Local Mock Simulator
  */
 
-define('ZARINPAL_MERCHANT_ID', getenv('ZARINPAL_MERCHANT_ID') ?: '00000000-0000-0000-0000-000000000000');
-define('ZARINPAL_SANDBOX', (bool)(getenv('ZARINPAL_SANDBOX') ?: true));
+require_once __DIR__ . '/Env.php';
+Env::load();
+
+if (!defined('ZARINPAL_MERCHANT_ID')) {
+    define('ZARINPAL_MERCHANT_ID', getenv('ZARINPAL_MERCHANT_ID') ?: '00000000-0000-0000-0000-000000000000');
+}
+if (!defined('ZARINPAL_SANDBOX')) {
+    $sandboxEnv = getenv('ZARINPAL_SANDBOX');
+    define('ZARINPAL_SANDBOX', ($sandboxEnv === 'true' || $sandboxEnv === '1'));
+}
 
 class ZarinPalGateway
 {

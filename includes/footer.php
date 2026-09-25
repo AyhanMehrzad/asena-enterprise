@@ -47,7 +47,7 @@ if (basename($_SERVER['SCRIPT_FILENAME'] ?? '') === basename(__FILE__)) {
                 <div class="flex flex-col gap-4">
                     <h4 class="font-bold text-base text-primary">قوانین و امور مشتریان</h4>
                     <nav class="flex flex-col gap-2.5">
-                        <a class="text-xs text-on-surface-variant hover:text-secondary-container transition-colors" href="about">درباره ما و مجوزها</a>
+                        <a class="text-xs text-on-surface-variant hover:text-secondary-container transition-colors" href="about">درباره آسنا و همکاران</a>
                         <a class="text-xs text-on-surface-variant hover:text-secondary-container transition-colors font-bold text-primary" href="contact">تماس با ما و ثبت شکایات</a>
                         <a class="text-xs text-on-surface-variant hover:text-secondary-container transition-colors" href="terms">قوانین و شرایط خدمات (مهلت ۷ روزه)</a>
                         <a class="text-xs text-on-surface-variant hover:text-secondary-container transition-colors" href="privacy">سیاست حفظ حریم خصوصی</a>

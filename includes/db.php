@@ -126,6 +126,25 @@ if (!$connected) {
     }
 }
 
+if (!$connected && !empty($is_local)) {
+    try {
+        $sqliteDir = __DIR__ . '/../database';
+        if (!is_dir($sqliteDir)) {
+            @mkdir($sqliteDir, 0777, true);
+        }
+        $sqliteFile = $sqliteDir . '/local_dev.sqlite';
+        $pdo = new PDO("sqlite:$sqliteFile", null, null, [
+            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC
+        ]);
+        $pdo->exec("CREATE TABLE IF NOT EXISTS site_settings (key TEXT PRIMARY KEY, value TEXT)");
+        $pdo->exec("CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY, role TEXT, loyalty_points INTEGER, password TEXT, last_monthly_points_date TEXT, verification_status TEXT, contract_accepted_version TEXT, contract_accepted_at TEXT)");
+        $connected = true;
+    } catch (Throwable $eSqlite) {
+        $lastError .= ' | SQLite fallback failed: ' . $eSqlite->getMessage();
+    }
+}
+
 if (!$connected || !isset($pdo)) {
     error_log('[Database Connection Error] ' . $lastError);
     if (isset($_GET['debug_db'])) {

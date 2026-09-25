@@ -27,6 +27,7 @@ uploads/.autoship_last_run
 includes/.schema_aligned*
 .tempmediaStorage/
 database/backups/
+*.sqlite
 *.cache
 *.metadata.json
 scratch/

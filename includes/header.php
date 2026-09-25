@@ -533,6 +533,16 @@ if (function_exists('get_curated_recommendations')) {
                                     </div>
                                 </a>
 
+                                <a href="about" class="flex items-center gap-3 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 hover:text-primary transition-colors border-t border-slate-100">
+                                    <div class="w-8 h-8 rounded-lg bg-blue-50 text-primary flex items-center justify-center shrink-0">
+                                        <span class="material-symbols-outlined text-lg">info</span>
+                                    </div>
+                                    <div>
+                                        <div class="font-bold text-xs text-slate-800">درباره آسنا و همکاران</div>
+                                        <div class="text-[10px] text-slate-400">معرفی، مجوزها و شرکای فناوری</div>
+                                    </div>
+                                </a>
+
                             </div>
                         </div>
                     </div>
@@ -671,6 +681,9 @@ if (function_exists('get_curated_recommendations')) {
                             <span class="material-symbols-outlined text-outline">volunteer_activism</span> خیریه
                         </a>
                     <?php endif; ?>
+                    <a class="flex items-center gap-4 text-on-surface font-bold p-3 rounded-xl hover:bg-primary-container/10 hover:text-primary transition-colors" href="about">
+                        <span class="material-symbols-outlined text-outline">info</span> درباره آسنا
+                    </a>
                 </nav>
 
                 <div class="h-px w-full bg-outline-variant/20 my-2"></div>
