@@ -15,7 +15,7 @@ require_once 'includes/header.php';
 ?>
 
 <style>
-/* Scoped Enterprise Aesthetics & Mobile Ergonomics for About Page */
+/* Scoped Enterprise Aesthetics & Resilient Layouts for About Page */
 .about-hero-mesh {
     background: radial-gradient(circle at 12% 18%, rgba(253, 129, 0, 0.20) 0%, transparent 45%),
                 radial-gradient(circle at 88% 82%, rgba(56, 189, 248, 0.18) 0%, transparent 45%),
@@ -29,19 +29,160 @@ require_once 'includes/header.php';
     border: 1px solid rgba(226, 232, 240, 0.9);
 }
 
+/* Tab Bar Architecture (Balanced 100% Width on Desktop, Touch-Scrollable on Mobile) */
+.license-tabs-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: stretch;
+    gap: 8px;
+    background: #f1f5f9;
+    padding: 6px;
+    border-radius: 16px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.license-tab-btn {
+    flex: 1 1 0%;
+    min-width: 0;
+    width: 100%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 11px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #475569;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    white-space: nowrap;
+    text-align: center;
+    touch-action: manipulation;
+}
+
 .license-tab-btn.active {
     background-color: #001a48;
     color: #ffffff;
     box-shadow: 0 4px 14px rgba(0, 26, 72, 0.2);
 }
 
-.license-tab-btn {
-    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-    touch-action: manipulation;
+.license-tab-btn:not(.active):hover {
+    color: #0f172a;
+    background-color: rgba(255, 255, 255, 0.7);
 }
 
 .license-tab-btn:active {
     transform: scale(0.97);
+}
+
+@media (max-width: 768px) {
+    .license-tabs-wrapper {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        gap: 6px;
+        padding: 4px;
+        scrollbar-width: none;
+    }
+    .license-tabs-wrapper::-webkit-scrollbar {
+        display: none;
+    }
+    .license-tab-btn {
+        flex: 0 0 auto;
+        width: auto;
+        padding: 9px 14px;
+        font-size: 11.5px;
+    }
+}
+
+/* Two-Column Responsive Layouts */
+.license-two-col-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 24px;
+    align-items: center;
+}
+@media (min-width: 1024px) {
+    .license-two-col-grid {
+        grid-template-columns: 7fr 5fr;
+    }
+}
+
+.samashahr-bento-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 24px;
+    align-items: stretch;
+}
+@media (min-width: 1024px) {
+    .samashahr-bento-grid {
+        grid-template-columns: 7fr 5fr;
+    }
+}
+
+/* Client Logos Grid System */
+.client-logos-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    align-items: center;
+}
+@media (min-width: 480px) {
+    .client-logos-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+@media (min-width: 768px) {
+    .client-logos-grid {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 12px;
+    }
+}
+@media (min-width: 1024px) {
+    .client-logos-grid {
+        grid-template-columns: repeat(7, minmax(0, 1fr));
+    }
+}
+
+.client-logo-card {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-radius: 16px;
+    padding: 10px 8px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    text-align: center;
+    height: 94px;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.client-logo-card:hover {
+    background: rgba(255, 255, 255, 0.16);
+    transform: translateY(-2px);
+}
+.client-logo-card:active {
+    transform: scale(0.98);
+}
+.client-logo-img {
+    height: 40px;
+    width: auto;
+    max-width: 46px;
+    object-fit: contain;
+}
+.client-logo-title {
+    font-size: 10px;
+    color: #cbd5e1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    width: 100%;
 }
 
 .matrix-row:hover {
@@ -262,30 +403,30 @@ require_once 'includes/header.php';
                 </div>
             </div>
 
-            <!-- Tabbed Navigation for 4 Official Licences (Mobile Touch Swipable Track) -->
-            <div class="flex sm:grid sm:grid-cols-4 gap-1.5 sm:gap-2 bg-slate-100/90 p-1.5 rounded-xl sm:rounded-2xl overflow-x-auto no-scrollbar scroll-smooth">
-                <button type="button" onclick="switchLicenseTab('guild')" id="tabBtn-guild" class="license-tab-btn active shrink-0 whitespace-nowrap sm:whitespace-normal py-2.5 px-3.5 sm:px-2 rounded-xl text-xs font-bold text-center flex items-center justify-center gap-1.5 min-h-[44px]">
+            <!-- Tabbed Navigation for 4 Official Licences (100% Balanced on Desktop, Smooth Touch Scroll on Mobile) -->
+            <div class="license-tabs-wrapper">
+                <button type="button" onclick="switchLicenseTab('guild')" id="tabBtn-guild" class="license-tab-btn active">
                     <span class="material-symbols-outlined text-sm">badge</span>
-                    <span>نظام صنفی رایانه‌ای</span>
+                    <span>سازمان نظام صنفی رایانه‌ای</span>
                 </button>
-                <button type="button" onclick="switchLicenseTab('techpark')" id="tabBtn-techpark" class="license-tab-btn shrink-0 whitespace-nowrap sm:whitespace-normal py-2.5 px-3.5 sm:px-2 rounded-xl text-xs font-bold text-center flex items-center justify-center gap-1.5 text-slate-600 hover:text-slate-900 min-h-[44px]">
+                <button type="button" onclick="switchLicenseTab('techpark')" id="tabBtn-techpark" class="license-tab-btn">
                     <span class="material-symbols-outlined text-sm">science</span>
                     <span>واحد فناوری (وزارت علوم)</span>
                 </button>
-                <button type="button" onclick="switchLicenseTab('afta')" id="tabBtn-afta" class="license-tab-btn shrink-0 whitespace-nowrap sm:whitespace-normal py-2.5 px-3.5 sm:px-2 rounded-xl text-xs font-bold text-center flex items-center justify-center gap-1.5 text-slate-600 hover:text-slate-900 min-h-[44px]">
+                <button type="button" onclick="switchLicenseTab('afta')" id="tabBtn-afta" class="license-tab-btn">
                     <span class="material-symbols-outlined text-sm">verified_user</span>
-                    <span>تاییدیه امنیتی افتا</span>
+                    <span>تاییدیه امنیتی افتا (ریاست جمهوری)</span>
                 </button>
-                <button type="button" onclick="switchLicenseTab('enamad')" id="tabBtn-enamad" class="license-tab-btn shrink-0 whitespace-nowrap sm:whitespace-normal py-2.5 px-3.5 sm:px-2 rounded-xl text-xs font-bold text-center flex items-center justify-center gap-1.5 text-slate-600 hover:text-slate-900 min-h-[44px]">
+                <button type="button" onclick="switchLicenseTab('enamad')" id="tabBtn-enamad" class="license-tab-btn">
                     <span class="material-symbols-outlined text-sm">credit_card</span>
-                    <span>اینماد و شاپرک</span>
+                    <span>اینماد و درگاه شاپرک</span>
                 </button>
             </div>
 
             <!-- Tab 1: Computer Guild License -->
             <div id="licenseContent-guild" class="space-y-6">
-                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
-                    <div class="lg:col-span-7 space-y-3.5 sm:space-y-4">
+                <div class="license-two-col-grid">
+                    <div class="space-y-3.5 sm:space-y-4">
                         <div class="inline-flex items-center gap-1.5 bg-blue-50 text-blue-700 text-xs font-bold px-3 py-1 rounded-full border border-blue-200">
                             <span class="material-symbols-outlined text-sm">verified</span>
                             <span>پروانه رسمی عضویت و فعالیت صنفی رایانه‌ای</span>
@@ -316,7 +457,7 @@ require_once 'includes/header.php';
                         </div>
                     </div>
 
-                    <div class="lg:col-span-5">
+                    <div>
                         <div class="relative group cursor-pointer overflow-hidden rounded-2xl border border-slate-200 bg-slate-100 shadow-md hover:shadow-xl transition-all" onclick="openDocModal('assets/images/partners/samashahr-guild-license.jpg', 'پروانه سازمان نظام صنفی رایانه‌ای کشور - شرکت سما شهر خاوران')">
                             <img src="assets/images/partners/samashahr-guild-license.jpg" alt="پروانه نظام صنفی رایانه‌ای سما شهر خاوران" class="w-full h-52 sm:h-64 object-cover object-top group-hover:scale-102 transition-transform duration-300">
                             <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent flex items-end p-3.5 sm:p-4">
@@ -335,8 +476,8 @@ require_once 'includes/header.php';
 
             <!-- Tab 2: Science & Tech Park License (وزارت علوم) -->
             <div id="licenseContent-techpark" class="space-y-6 hidden">
-                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
-                    <div class="lg:col-span-7 space-y-3.5 sm:space-y-4">
+                <div class="license-two-col-grid">
+                    <div class="space-y-3.5 sm:space-y-4">
                         <div class="inline-flex items-center gap-1.5 bg-emerald-50 text-emerald-800 text-xs font-bold px-3 py-1 rounded-full border border-emerald-200">
                             <span class="material-symbols-outlined text-sm">science</span>
                             <span>وزارت علوم، تحقیقات و فناوری - پارک علم و فناوری</span>
@@ -363,7 +504,7 @@ require_once 'includes/header.php';
                         </div>
                     </div>
 
-                    <div class="lg:col-span-5">
+                    <div>
                         <div class="relative group cursor-pointer overflow-hidden rounded-2xl border border-slate-200 bg-slate-100 shadow-md hover:shadow-xl transition-all" onclick="openDocModal('assets/images/partners/samashahr-techpark-license.jpg', 'مجوز رسمی واحد فناوری پارک علم و فناوری - شرکت سما شهر خاوران')">
                             <img src="assets/images/partners/samashahr-techpark-license.jpg" alt="مجوز واحد فناوری پارک علم و فناوری" class="w-full h-52 sm:h-64 object-cover object-top group-hover:scale-102 transition-transform duration-300">
                             <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent flex items-end p-3.5 sm:p-4">
@@ -382,8 +523,8 @@ require_once 'includes/header.php';
 
             <!-- Tab 3: AFTA Security Evaluation Certificate (نهاد ریاست جمهوری) -->
             <div id="licenseContent-afta" class="space-y-6 hidden">
-                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
-                    <div class="lg:col-span-7 space-y-3.5 sm:space-y-4">
+                <div class="license-two-col-grid">
+                    <div class="space-y-3.5 sm:space-y-4">
                         <div class="inline-flex items-center gap-1.5 bg-indigo-50 text-indigo-800 text-xs font-bold px-3 py-1 rounded-full border border-indigo-200">
                             <span class="material-symbols-outlined text-sm">shield</span>
                             <span>ریاست جمهوری - مرکز مدیریت راهبردی افتا</span>
@@ -410,7 +551,7 @@ require_once 'includes/header.php';
                         </div>
                     </div>
 
-                    <div class="lg:col-span-5">
+                    <div>
                         <div class="relative group cursor-pointer overflow-hidden rounded-2xl border border-slate-200 bg-slate-100 shadow-md hover:shadow-xl transition-all" onclick="openDocModal('assets/images/partners/samashahr-afta-cert.jpg', 'گواهی ارزیابی امنیتی محصول - مرکز مدیریت راهبردی افتای ریاست جمهوری')">
                             <img src="assets/images/partners/samashahr-afta-cert.jpg" alt="گواهی ارزیابی امنیتی افتا سما شهر خاوران" class="w-full h-52 sm:h-64 object-cover object-top group-hover:scale-102 transition-transform duration-300">
                             <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent flex items-end p-3.5 sm:p-4">
@@ -429,8 +570,8 @@ require_once 'includes/header.php';
 
             <!-- Tab 4: Enamad & Shaparak -->
             <div id="licenseContent-enamad" class="space-y-6 hidden">
-                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
-                    <div class="lg:col-span-7 space-y-3.5 sm:space-y-4">
+                <div class="license-two-col-grid">
+                    <div class="space-y-3.5 sm:space-y-4">
                         <div class="inline-flex items-center gap-1.5 bg-sky-50 text-sky-800 text-xs font-bold px-3 py-1 rounded-full border border-sky-200">
                             <span class="material-symbols-outlined text-sm">verified_user</span>
                             <span>مرکز توسعه تجارت الکترونیکی (وزارت صمت) و شاپرک</span>
@@ -457,7 +598,7 @@ require_once 'includes/header.php';
                         </div>
                     </div>
 
-                    <div class="lg:col-span-5 bg-slate-50 p-5 sm:p-6 rounded-2xl border border-slate-200 text-center space-y-3 sm:space-y-4">
+                    <div class="bg-slate-50 p-5 sm:p-6 rounded-2xl border border-slate-200 text-center space-y-3 sm:space-y-4">
                         <div class="w-16 h-16 sm:w-20 sm:h-20 mx-auto rounded-2xl bg-white p-3 shadow-sm border border-slate-200 flex items-center justify-center">
                             <span class="material-symbols-outlined text-3xl sm:text-4xl text-primary">security</span>
                         </div>
@@ -502,10 +643,10 @@ require_once 'includes/header.php';
             </div>
 
             <!-- Bento Layout: Sama Shahr Moat -->
-            <div class="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-5 sm:gap-6 items-stretch">
+            <div class="relative z-10 samashahr-bento-grid">
                 
                 <!-- Left 7 Cols: The Engineering Value Add -->
-                <div class="lg:col-span-7 bg-white/5 backdrop-blur-md rounded-xl sm:rounded-2xl p-4 sm:p-8 border border-white/10 flex flex-col justify-between space-y-5 sm:space-y-6">
+                <div class="bg-white/5 backdrop-blur-md rounded-xl sm:rounded-2xl p-4 sm:p-8 border border-white/10 flex flex-col justify-between space-y-5 sm:space-y-6">
                     <div class="space-y-3.5 sm:space-y-4">
                         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                             <div class="flex items-center gap-3">
@@ -557,7 +698,7 @@ require_once 'includes/header.php';
                 </div>
 
                 <!-- Right 5 Cols: Leadership & Interactive Documents -->
-                <div class="lg:col-span-5 bg-white/5 backdrop-blur-md rounded-xl sm:rounded-2xl p-4 sm:p-8 border border-white/10 flex flex-col justify-between space-y-4 sm:space-y-5">
+                <div class="bg-white/5 backdrop-blur-md rounded-xl sm:rounded-2xl p-4 sm:p-8 border border-white/10 flex flex-col justify-between space-y-4 sm:space-y-5">
                     
                     <div class="space-y-2.5 sm:space-y-3">
                         <div class="flex items-center justify-between">
@@ -619,47 +760,47 @@ require_once 'includes/header.php';
                     <span class="text-[10px] text-slate-400">بهره‌برداران سیستم‌های شهری و مکانی</span>
                 </div>
 
-                <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-2.5 sm:gap-3 items-center">
+                <div class="client-logos-grid">
                     <!-- استانداری آذربایجان شرقی -->
-                    <div class="bg-white/10 backdrop-blur-md rounded-xl sm:rounded-2xl p-2.5 sm:p-3 border border-white/10 flex flex-col items-center justify-center gap-1.5 sm:gap-2 hover:bg-white/15 active:scale-[0.98] transition-all text-center h-20 sm:h-24">
-                        <img src="assets/images/partners/clients/ostandari.png" alt="استانداری آذربایجان شرقی" class="h-8 sm:h-10 w-auto object-contain brightness-0 invert opacity-90">
-                        <span class="text-[9.5px] sm:text-[10px] text-slate-300 truncate w-full">استانداری آ.ش</span>
+                    <div class="client-logo-card">
+                        <img src="assets/images/partners/clients/ostandari.png" alt="استانداری آذربایجان شرقی" class="client-logo-img rounded-full bg-white p-0.5">
+                        <span class="client-logo-title">استانداری آ.ش</span>
                     </div>
 
                     <!-- سازمان نقشه برداری کشور -->
-                    <div class="bg-white/10 backdrop-blur-md rounded-xl sm:rounded-2xl p-2.5 sm:p-3 border border-white/10 flex flex-col items-center justify-center gap-1.5 sm:gap-2 hover:bg-white/15 active:scale-[0.98] transition-all text-center h-20 sm:h-24">
-                        <img src="assets/images/partners/clients/naghshe-bardari.png" alt="سازمان نقشه برداری کشور" class="h-8 sm:h-10 w-auto object-contain brightness-0 invert opacity-90">
-                        <span class="text-[9.5px] sm:text-[10px] text-slate-300 truncate w-full">نقشه‌برداری کشور</span>
+                    <div class="client-logo-card">
+                        <img src="assets/images/partners/clients/naghshe-bardari.png" alt="سازمان نقشه برداری کشور" class="client-logo-img brightness-0 invert opacity-90">
+                        <span class="client-logo-title">نقشه‌برداری کشور</span>
                     </div>
 
                     <!-- وزارت جهاد کشاورزی -->
-                    <div class="bg-white/10 backdrop-blur-md rounded-xl sm:rounded-2xl p-2.5 sm:p-3 border border-white/10 flex flex-col items-center justify-center gap-1.5 sm:gap-2 hover:bg-white/15 active:scale-[0.98] transition-all text-center h-20 sm:h-24">
-                        <img src="assets/images/partners/clients/jahad.jpg" alt="وزارت جهاد کشاورزی" class="h-8 sm:h-10 w-auto object-contain rounded-full bg-white p-0.5">
-                        <span class="text-[9.5px] sm:text-[10px] text-slate-300 truncate w-full">جهاد کشاورزی</span>
+                    <div class="client-logo-card">
+                        <img src="assets/images/partners/clients/jahad.jpg" alt="وزارت جهاد کشاورزی" class="client-logo-img rounded-full bg-white p-0.5">
+                        <span class="client-logo-title">جهاد کشاورزی</span>
                     </div>
 
                     <!-- وزارت نفت -->
-                    <div class="bg-white/10 backdrop-blur-md rounded-xl sm:rounded-2xl p-2.5 sm:p-3 border border-white/10 flex flex-col items-center justify-center gap-1.5 sm:gap-2 hover:bg-white/15 active:scale-[0.98] transition-all text-center h-20 sm:h-24">
-                        <img src="assets/images/partners/clients/naft.jpg" alt="وزارت نفت" class="h-8 sm:h-10 w-auto object-contain rounded-full bg-white p-0.5">
-                        <span class="text-[9.5px] sm:text-[10px] text-slate-300 truncate w-full">وزارت نفت</span>
+                    <div class="client-logo-card">
+                        <img src="assets/images/partners/clients/naft.jpg" alt="وزارت نفت" class="client-logo-img rounded-full bg-white p-0.5">
+                        <span class="client-logo-title">وزارت نفت</span>
                     </div>
 
                     <!-- وزارت ارتباطات و فناوری اطلاعات -->
-                    <div class="bg-white/10 backdrop-blur-md rounded-xl sm:rounded-2xl p-2.5 sm:p-3 border border-white/10 flex flex-col items-center justify-center gap-1.5 sm:gap-2 hover:bg-white/15 active:scale-[0.98] transition-all text-center h-20 sm:h-24">
-                        <img src="assets/images/partners/clients/fanavari.jpg" alt="وزارت فناوری اطلاعات" class="h-8 sm:h-10 w-auto object-contain rounded-lg bg-white p-0.5">
-                        <span class="text-[9.5px] sm:text-[10px] text-slate-300 truncate w-full">وزارت ارتباطات</span>
+                    <div class="client-logo-card">
+                        <img src="assets/images/partners/clients/fanavari.jpg" alt="وزارت فناوری اطلاعات" class="client-logo-img rounded-lg bg-white p-0.5">
+                        <span class="client-logo-title">وزارت ارتباطات</span>
                     </div>
 
                     <!-- وزارت نیرو -->
-                    <div class="bg-white/10 backdrop-blur-md rounded-xl sm:rounded-2xl p-2.5 sm:p-3 border border-white/10 flex flex-col items-center justify-center gap-1.5 sm:gap-2 hover:bg-white/15 active:scale-[0.98] transition-all text-center h-20 sm:h-24">
-                        <img src="assets/images/partners/clients/niroo.jpg" alt="وزارت نیرو" class="h-8 sm:h-10 w-auto object-contain rounded-full bg-white p-0.5">
-                        <span class="text-[9.5px] sm:text-[10px] text-slate-300 truncate w-full">وزارت نیرو</span>
+                    <div class="client-logo-card">
+                        <img src="assets/images/partners/clients/niroo.jpg" alt="وزارت نیرو" class="client-logo-img rounded-full bg-white p-0.5">
+                        <span class="client-logo-title">وزارت نیرو</span>
                     </div>
 
                     <!-- شهرداری کلانشهر تبریز -->
-                    <div class="bg-white/10 backdrop-blur-md rounded-xl sm:rounded-2xl p-2.5 sm:p-3 border border-white/10 flex flex-col items-center justify-center gap-1.5 sm:gap-2 hover:bg-white/15 active:scale-[0.98] transition-all text-center h-20 sm:h-24">
-                        <img src="assets/images/partners/clients/shahrdari-tabriz.svg" alt="شهرداری تبریز" class="h-8 sm:h-10 w-auto object-contain brightness-0 invert opacity-90">
-                        <span class="text-[9.5px] sm:text-[10px] text-slate-300 truncate w-full">شهرداری تبریز</span>
+                    <div class="client-logo-card">
+                        <img src="assets/images/partners/clients/shahrdari-tabriz.svg" alt="شهرداری تبریز" class="client-logo-img brightness-0 invert opacity-90">
+                        <span class="client-logo-title">شهرداری تبریز</span>
                     </div>
                 </div>
             </div>
@@ -1120,10 +1261,8 @@ function switchLicenseTab(tabKey) {
         if (btn) {
             if (t === tabKey) {
                 btn.classList.add('active');
-                btn.classList.remove('text-slate-600');
             } else {
                 btn.classList.remove('active');
-                btn.classList.add('text-slate-600');
             }
         }
         if (content) {
