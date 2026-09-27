@@ -2087,62 +2087,87 @@ function switchSellerFin(period) {
 
                 <!-- Clinical Meal Plans & Health Reports Widget -->
                 <?php 
-                    $mealPlanDocs = array_filter($documents, function($d) {
-                        return str_contains($d['title'] ?? '', 'برنامه غذایی') || str_ends_with($d['file_path'] ?? '', '.html');
+                    $clinicalDocs = array_filter($documents, function($d) {
+                        $t = $d['title'] ?? '';
+                        $p = $d['file_path'] ?? '';
+                        return str_contains($t, 'برنامه غذایی') || str_contains($t, 'تداخل') || str_contains($p, 'drug_report') || str_contains($p, 'meal_plan') || str_ends_with($p, '.html');
                     });
                 ?>
-                <div class="bg-surface-container-lowest rounded-3xl border border-outline-variant shadow-sm p-6 space-y-4">
+                <div class="bg-surface-container-lowest rounded-3xl border border-outline-variant shadow-sm p-4 sm:p-6 space-y-4">
                     <div class="flex items-center justify-between pb-3 border-b border-outline-variant/50">
                         <div class="flex items-center gap-2">
-                            <span class="material-symbols-outlined text-emerald-600">restaurant</span>
+                            <span class="material-symbols-outlined text-emerald-600">health_and_safety</span>
                             <h3 class="text-sm font-black text-primary">رژیم غذایی و کارنامه‌های بالینی</h3>
                         </div>
-                        <a href="calculator.php" class="text-xs font-bold text-emerald-700 hover:underline flex items-center gap-0.5">
-                            <span class="material-symbols-outlined text-sm">calculate</span>
-                            محاسبه‌گر
-                        </a>
+                        <div class="flex items-center gap-2">
+                            <a href="calculator.php" class="text-[11px] sm:text-xs font-bold text-emerald-700 hover:underline flex items-center gap-0.5" title="محاسبه‌گر تغذیه">
+                                <span class="material-symbols-outlined text-sm">calculate</span>
+                                <span>تغذیه</span>
+                            </a>
+                            <span class="text-slate-300">•</span>
+                            <a href="interactions.php" class="text-[11px] sm:text-xs font-bold text-amber-700 hover:underline flex items-center gap-0.5" title="پایشگر تداخل دارویی">
+                                <span class="material-symbols-outlined text-sm">medication</span>
+                                <span>داروها</span>
+                            </a>
+                        </div>
                     </div>
 
-                    <?php if (empty($mealPlanDocs)): ?>
-                        <div class="p-3.5 bg-emerald-50/60 rounded-2xl border border-emerald-100 space-y-2 text-right">
+                    <?php if (empty($clinicalDocs)): ?>
+                        <div class="p-3.5 bg-emerald-50/60 rounded-2xl border border-emerald-100 space-y-2.5 text-right">
                             <div class="flex items-center gap-2 text-emerald-900 font-bold text-xs">
                                 <span class="material-symbols-outlined text-sm text-emerald-600">verified</span>
-                                <span>محاسبه استاندارد WSAVA برای <?= count($pets) > 0 ? htmlspecialchars($pets[0]['name']) : 'پت شما' ?></span>
+                                <span>ابزارهای هوشمند بالینی آسنا برای <?= count($pets) > 0 ? htmlspecialchars($pets[0]['name']) : 'پت شما' ?></span>
                             </div>
                             <p class="text-[11px] text-emerald-800 leading-relaxed">
-                                تعیین دقیق کالری روزانه (RER/MER)، گرم غذای خشک، آب آشامیدنی و جدول زمان‌بندی وعده‌ها.
+                                تعیین دقیق کالری روزانه، برنامه غذایی و پایش همزمان تداخلات دارویی و هشدارهای سلامتی.
                             </p>
-                            <a href="calculator.php" class="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl transition-colors flex items-center justify-center gap-1.5 shadow-sm">
-                                <span class="material-symbols-outlined text-sm">calculate</span>
-                                دریافت و صدور کارنامه بالینی
-                            </a>
+                            <div class="grid grid-cols-2 gap-2 pt-1">
+                                <a href="calculator.php" class="py-2.5 px-2 bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold rounded-xl transition-colors flex items-center justify-center gap-1 shadow-sm text-center">
+                                    <span class="material-symbols-outlined text-sm">calculate</span>
+                                    <span>رژیم غذایی</span>
+                                </a>
+                                <a href="interactions.php" class="py-2.5 px-2 bg-amber-600 hover:bg-amber-700 text-white text-[11px] font-bold rounded-xl transition-colors flex items-center justify-center gap-1 shadow-sm text-center">
+                                    <span class="material-symbols-outlined text-sm">medication</span>
+                                    <span>تداخل دارویی</span>
+                                </a>
+                            </div>
                         </div>
                     <?php else: ?>
                         <div class="space-y-2.5">
-                            <?php foreach (array_slice($mealPlanDocs, 0, 2) as $mpDoc): 
-                                $mpUrl = 'view_meal_plan.php?file=' . urlencode(basename($mpDoc['file_path'] ?? ''));
+                            <?php foreach (array_slice($clinicalDocs, 0, 3) as $cDoc): 
+                                $t = $cDoc['title'] ?? '';
+                                $p = $cDoc['file_path'] ?? '';
+                                $isDrug = str_contains($t, 'تداخل') || str_contains($p, 'drug_report');
+                                $cUrl = $isDrug 
+                                    ? 'view_drug_report.php?file=' . urlencode(basename($p))
+                                    : 'view_meal_plan.php?file=' . urlencode(basename($p));
+                                $icon = $isDrug ? 'medication' : 'restaurant';
+                                $badge = $isDrug ? 'تداخل دارویی' : 'رژیم غذایی';
+                                $badgeCls = $isDrug ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800';
+                                $bgHover = $isDrug ? 'bg-amber-50/50 hover:bg-amber-50 border-amber-100 hover:border-amber-300' : 'bg-emerald-50/50 hover:bg-emerald-50 border-emerald-100 hover:border-emerald-300';
+                                $iconBg = $isDrug ? 'bg-amber-600' : 'bg-emerald-600';
                             ?>
-                                <a href="<?= $mpUrl ?>" target="_blank" rel="noopener noreferrer" class="flex items-center gap-3 p-3 rounded-2xl bg-emerald-50/50 hover:bg-emerald-50 border border-emerald-100 hover:border-emerald-300 transition-all group">
-                                    <div class="w-9 h-9 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-sm group-hover:scale-105 transition-transform">
-                                        <span class="material-symbols-outlined text-lg">restaurant</span>
+                                <a href="<?= $cUrl ?>" target="_blank" rel="noopener noreferrer" class="flex items-center gap-3 p-3 rounded-2xl <?= $bgHover ?> border transition-all group">
+                                    <div class="w-9 h-9 rounded-xl <?= $iconBg ?> text-white flex items-center justify-center shrink-0 shadow-sm group-hover:scale-105 transition-transform">
+                                        <span class="material-symbols-outlined text-lg"><?= $icon ?></span>
                                     </div>
                                     <div class="flex-1 min-w-0">
-                                        <div class="flex items-center gap-1.5">
-                                            <h4 class="text-xs font-black text-slate-900 truncate"><?= htmlspecialchars($mpDoc['pet_name']) ?></h4>
-                                            <span class="text-[9px] bg-emerald-200 text-emerald-900 px-1.5 py-0.2 rounded font-bold">نسخه بالینی</span>
+                                        <div class="flex items-center gap-1.5 flex-wrap">
+                                            <h4 class="text-xs font-black text-slate-900 truncate"><?= htmlspecialchars($cDoc['pet_name']) ?></h4>
+                                            <span class="text-[9px] <?= $badgeCls ?> px-1.5 py-0.5 rounded font-bold"><?= $badge ?></span>
                                         </div>
-                                        <p class="text-[10px] text-slate-500 font-medium truncate mt-0.5"><?= htmlspecialchars($mpDoc['title']) ?></p>
+                                        <p class="text-[10px] text-slate-500 font-medium truncate mt-0.5"><?= htmlspecialchars($t) ?></p>
                                     </div>
-                                    <span class="material-symbols-outlined text-emerald-600 text-base group-hover:-translate-x-0.5 transition-transform">open_in_new</span>
+                                    <span class="material-symbols-outlined text-slate-400 group-hover:text-primary text-base group-hover:-translate-x-0.5 transition-transform">open_in_new</span>
                                 </a>
                             <?php endforeach; ?>
                             <div class="flex items-center gap-2 pt-1">
-                                <button type="button" onclick="switchCustomerView('pets')" class="flex-1 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-600 hover:text-primary hover:border-primary transition-colors text-center">
-                                    مشاهده سوابق (<?= count($mealPlanDocs) ?>)
+                                <button type="button" onclick="switchCustomerView('pets'); setTimeout(() => { const el = document.getElementById('petMedicalArchiveHub'); if(el) el.scrollIntoView({behavior: 'smooth'}); }, 100);" class="flex-1 py-2.5 border border-slate-200 rounded-xl text-xs font-bold text-slate-600 hover:text-primary hover:border-primary transition-colors text-center min-h-[44px]">
+                                    مشاهده سوابق و پرونده (<?= count($clinicalDocs) ?>)
                                 </button>
-                                <a href="calculator.php" class="px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl transition-colors flex items-center gap-1">
+                                <a href="calculator.php" class="px-3 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl transition-colors flex items-center gap-1 min-h-[44px]">
                                     <span class="material-symbols-outlined text-sm">add</span>
-                                    جدید
+                                    <span>محاسبه‌گر</span>
                                 </a>
                             </div>
                         </div>
@@ -2929,7 +2954,7 @@ function switchSellerFin(period) {
     <!-- ═══════════════════════════════════════════════════════════════════════ -->
     <!-- UNIFIED PET MEDICAL & CLINICAL RECORDS HUB (سازمان، داروخانه، پزشک، محاسبه‌گر و سرپرست) -->
     <!-- ═══════════════════════════════════════════════════════════════════════ -->
-    <div class="bg-surface-container-lowest rounded-3xl border border-outline-variant shadow-md overflow-hidden scroll-mt-24">
+    <div id="petMedicalArchiveHub" class="bg-surface-container-lowest rounded-3xl border border-outline-variant shadow-md overflow-hidden scroll-mt-24">
         <!-- Main Hub Header -->
         <div class="p-6 bg-gradient-to-r from-slate-900 via-[#001a48] to-slate-900 text-white flex flex-col lg:flex-row lg:items-center justify-between gap-4">
             <div class="space-y-1.5">
@@ -3124,31 +3149,33 @@ function switchSellerFin(period) {
                             </div>
                         </div>
 
-                        <!-- Left: Action Buttons -->
-                        <div class="flex items-center gap-2 shrink-0 self-end sm:self-center">
+                        <!-- Left: Action Buttons (Mobile-first responsive thumb targets) -->
+                        <div class="w-full sm:w-auto flex items-center justify-between sm:justify-end gap-2 shrink-0 pt-3 sm:pt-0 border-t border-slate-100 sm:border-0">
                             <?php if (!empty($rec['view_url']) && $rec['view_url'] !== '#'): ?>
-                                <a href="<?= $rec['view_url'] ?>" target="_blank" rel="noopener noreferrer" class="px-3.5 py-2 bg-primary/10 hover:bg-primary text-primary hover:text-white rounded-xl text-xs font-bold transition-all flex items-center gap-1 shadow-sm">
+                                <a href="<?= $rec['view_url'] ?>" target="_blank" rel="noopener noreferrer" class="flex-1 sm:flex-initial justify-center px-4 py-2.5 bg-primary/10 hover:bg-primary text-primary hover:text-white rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm min-h-[44px]">
                                     <span>مشاهده و بررسی</span>
                                     <span class="material-symbols-outlined text-sm">open_in_new</span>
                                 </a>
                             <?php endif; ?>
 
-                            <?php if (!empty($rec['file_path'])): ?>
-                                <a href="<?= htmlspecialchars($rec['file_path']) ?>" download class="p-2 rounded-xl text-slate-500 hover:text-primary hover:bg-slate-100 transition-colors border border-transparent hover:border-slate-200" title="دانلود فایل">
-                                    <span class="material-symbols-outlined text-lg">download</span>
-                                </a>
-                            <?php endif; ?>
+                            <div class="flex items-center gap-1.5">
+                                <?php if (!empty($rec['file_path'])): ?>
+                                    <a href="<?= htmlspecialchars($rec['file_path']) ?>" download class="w-11 h-11 rounded-xl text-slate-500 hover:text-primary hover:bg-slate-100 bg-slate-50 sm:bg-transparent transition-colors border border-slate-200/60 sm:border-transparent hover:border-slate-200 flex items-center justify-center cursor-pointer" title="دانلود فایل">
+                                        <span class="material-symbols-outlined text-lg">download</span>
+                                    </a>
+                                <?php endif; ?>
 
-                            <?php if ($rec['can_delete']): ?>
-                                <form action="actions/profile_action.php" method="POST" onsubmit="return confirm('آیا از حذف این مدرک از پرونده سلامت اطمینان دارید؟');" class="inline m-0">
-                                    <?= csrf_field() ?>
-                                    <input type="hidden" name="action" value="delete_document">
-                                    <input type="hidden" name="doc_id" value="<?= (int)$rec['raw_id'] ?>">
-                                    <button type="submit" class="p-2 rounded-xl text-slate-400 hover:text-error hover:bg-rose-50 transition-colors border border-transparent hover:border-rose-200" title="حذف مدرک">
-                                        <span class="material-symbols-outlined text-lg">delete</span>
-                                    </button>
-                                </form>
-                            <?php endif; ?>
+                                <?php if ($rec['can_delete']): ?>
+                                    <form action="actions/profile_action.php" method="POST" onsubmit="return confirm('آیا از حذف این مدرک از پرونده سلامت اطمینان دارید؟');" class="inline m-0">
+                                        <?= csrf_field() ?>
+                                        <input type="hidden" name="action" value="delete_document">
+                                        <input type="hidden" name="doc_id" value="<?= (int)$rec['raw_id'] ?>">
+                                        <button type="submit" class="w-11 h-11 rounded-xl text-slate-400 hover:text-error hover:bg-rose-50 bg-slate-50 sm:bg-transparent transition-colors border border-slate-200/60 sm:border-transparent hover:border-rose-200 flex items-center justify-center cursor-pointer" title="حذف مدرک">
+                                            <span class="material-symbols-outlined text-lg">delete</span>
+                                        </button>
+                                    </form>
+                                <?php endif; ?>
+                            </div>
                         </div>
                     </div>
                 <?php endforeach; ?>
@@ -5576,21 +5603,38 @@ function switchSellerFin(period) {
         }
     }
 
+    function resolveCustomerTab(tab) {
+        if (!tab) return 'overview';
+        if (tab === 'records' || tab === 'view-records' || tab === 'health-hub') {
+            switchCustomerView('pets');
+            setTimeout(() => {
+                const el = document.getElementById('petMedicalArchiveHub');
+                if (el) el.scrollIntoView({ behavior: 'smooth' });
+            }, 150);
+            return 'pets';
+        }
+        if (validCustomerTabs.includes(tab)) {
+            switchCustomerView(tab);
+            return tab;
+        }
+        return 'overview';
+    }
+
     // Auto-detect view from URL Param (tab) or URL Hash on page load and hashchange
     window.addEventListener('DOMContentLoaded', () => {
         const urlParams = new URLSearchParams(window.location.search);
         const urlTab = urlParams.get('tab');
         const rawHash = window.location.hash.replace('#', '').trim();
         const activeTab = urlTab || rawHash;
-        if (activeTab && validCustomerTabs.includes(activeTab)) {
-            switchCustomerView(activeTab);
+        if (activeTab) {
+            resolveCustomerTab(activeTab);
         }
     });
 
     window.addEventListener('hashchange', () => {
         const rawHash = window.location.hash.replace('#', '').trim();
-        if (rawHash && validCustomerTabs.includes(rawHash)) {
-            switchCustomerView(rawHash);
+        if (rawHash) {
+            resolveCustomerTab(rawHash);
         }
     });
 

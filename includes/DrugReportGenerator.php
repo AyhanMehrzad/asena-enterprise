@@ -229,22 +229,34 @@ class DrugReportGenerator
             align-items: center;
             justify-content: space-between;
             color: #ffffff;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .action-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
         }
 
         .action-btn {
             background: rgba(255, 255, 255, 0.15);
             border: 1px solid rgba(255, 255, 255, 0.2);
             color: #ffffff;
-            padding: 8px 16px;
+            padding: 9px 16px;
             border-radius: 12px;
             font-size: 12px;
             font-weight: 700;
             cursor: pointer;
             display: inline-flex;
             align-items: center;
+            justify-content: center;
             gap: 6px;
             text-decoration: none;
             transition: all 0.2s;
+            min-height: 42px;
+            -webkit-tap-highlight-color: transparent;
         }
 
         .action-btn:hover {
@@ -837,15 +849,217 @@ class DrugReportGenerator
             color: var(--text-muted);
         }
 
-        /* Disclaimer */
-        .disclaimer-text {
-            margin-top: 20px;
-            text-align: center;
-            font-size: 11px;
-            color: #94a3b8;
-            line-height: 1.6;
-            border-top: 1px solid #f1f5f9;
-            padding-top: 14px;
+        /* Comprehensive Mobile Responsiveness Overhaul */
+        @media (max-width: 640px) {
+            body {
+                padding: 8px 6px;
+            }
+            .document-container {
+                border-radius: 18px;
+            }
+            .action-bar {
+                padding: 12px 14px;
+                flex-direction: column;
+                align-items: stretch;
+                gap: 10px;
+            }
+            .action-group {
+                width: 100%;
+                flex-direction: column;
+                align-items: stretch;
+                gap: 8px;
+            }
+            .action-btn {
+                width: 100%;
+                min-height: 48px;
+                font-size: 13px;
+                padding: 12px 16px;
+            }
+            .header-strip {
+                padding: 22px 16px 20px;
+            }
+            .header-badge {
+                font-size: 10.5px;
+                margin-bottom: 10px;
+            }
+            .header-title {
+                font-size: 18px;
+                line-height: 1.4;
+            }
+            .header-subtitle {
+                font-size: 11.5px;
+                line-height: 1.6;
+            }
+            .serial-badge {
+                position: static;
+                margin-top: 14px;
+                text-align: right;
+                display: flex;
+                flex-direction: row-reverse;
+                justify-content: space-between;
+                align-items: center;
+                background: rgba(255, 255, 255, 0.08);
+                border: 1px solid rgba(255, 255, 255, 0.12);
+                padding: 8px 12px;
+                border-radius: 12px;
+            }
+            .serial-badge .date-text {
+                margin-top: 0;
+            }
+            .patient-card {
+                padding: 14px 14px;
+                grid-template-columns: repeat(2, 1fr);
+                gap: 10px;
+            }
+            .patient-item-label {
+                font-size: 10px;
+            }
+            .patient-item-value {
+                font-size: 12px;
+            }
+            .body-section {
+                padding: 16px 12px;
+            }
+            .status-banner {
+                padding: 16px 14px;
+                flex-direction: column;
+                gap: 12px;
+                border-radius: 16px;
+            }
+            .status-icon-wrap {
+                width: 44px;
+                height: 44px;
+                border-radius: 12px;
+            }
+            .status-heading {
+                font-size: 14px;
+                flex-wrap: wrap;
+            }
+            .status-desc {
+                font-size: 12px;
+                line-height: 1.7;
+            }
+            .metrics-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 8px;
+                margin-bottom: 20px;
+            }
+            .metric-card {
+                padding: 12px 10px;
+                border-radius: 14px;
+            }
+            .metric-card-label {
+                font-size: 10px;
+            }
+            .metric-card-val {
+                font-size: 18px;
+            }
+            .metric-card-sub {
+                font-size: 9px;
+            }
+            .section-title {
+                font-size: 13.5px;
+                margin-bottom: 12px;
+            }
+            .drugs-roster-grid {
+                grid-template-columns: 1fr;
+                gap: 8px;
+                margin-bottom: 22px;
+            }
+            .drug-chip-card {
+                padding: 10px 12px;
+                border-radius: 12px;
+            }
+            .interaction-card {
+                padding: 14px 12px;
+                border-radius: 14px;
+            }
+            .interaction-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 6px;
+            }
+            .pair-drugs {
+                font-size: 12.5px;
+                flex-wrap: wrap;
+                width: 100%;
+            }
+            .pair-tag {
+                font-size: 11px;
+                padding: 2px 7px;
+            }
+            .sev-badge {
+                align-self: flex-start;
+            }
+            .interaction-title {
+                font-size: 12px;
+            }
+            .interaction-mechanism {
+                font-size: 11px;
+                padding: 8px 10px;
+                line-height: 1.6;
+            }
+            .interaction-guidance {
+                font-size: 11px;
+                padding: 8px 10px;
+                line-height: 1.6;
+            }
+            .contra-box {
+                padding: 14px 12px;
+                border-radius: 14px;
+                margin-bottom: 22px;
+            }
+            .contra-title {
+                font-size: 12.5px;
+            }
+            .contra-item {
+                font-size: 11px;
+            }
+            .two-col-grid {
+                grid-template-columns: 1fr;
+                gap: 12px;
+                margin-bottom: 22px;
+            }
+            .box-panel {
+                padding: 14px 12px;
+                border-radius: 14px;
+            }
+            .box-panel-title {
+                font-size: 12.5px;
+            }
+            .box-list li {
+                font-size: 11px;
+                line-height: 1.6;
+            }
+            .signoff-section {
+                grid-template-columns: 1fr;
+                gap: 12px;
+                padding-top: 18px;
+                margin-top: 18px;
+            }
+            .stamp-box {
+                min-height: 75px;
+                padding: 12px;
+            }
+            .disclaimer-text {
+                font-size: 10.5px !important;
+                padding: 12px 14px !important;
+            }
+        }
+
+        /* Ultra-compact screens (< 380px) */
+        @media (max-width: 380px) {
+            .patient-card {
+                grid-template-columns: 1fr;
+            }
+            .metrics-grid {
+                grid-template-columns: 1fr;
+            }
+            .serial-badge {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 4px;
+            }
         }
 
         /* Print Media Styles */
@@ -874,7 +1088,7 @@ class DrugReportGenerator
 
     <!-- Action Bar -->
     <div class="action-bar">
-        <div style="display: flex; align-items: center; gap: 8px;">
+        <div class="action-group">
             <a href="profile.php?tab=pets#pets" class="action-btn">
                 <span class="material-symbols-outlined" style="font-size: 16px;">arrow_forward</span>
                 <span>بازگشت به پرونده سلامت</span>
@@ -884,7 +1098,7 @@ class DrugReportGenerator
                 <span>پایش مجدد در سامانه</span>
             </a>
         </div>
-        <div style="display: flex; align-items: center; gap: 8px;">
+        <div class="action-group">
             <button onclick="window.print()" class="action-btn primary">
                 <span class="material-symbols-outlined" style="font-size: 16px;">print</span>
                 <span>چاپ و ذخیره رسمی (PDF)</span>

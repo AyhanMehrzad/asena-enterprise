@@ -6,7 +6,7 @@ $calcIsPaid = (bool)(int)get_setting($pdo, 'calculator_is_paid', 0);
 $calcPrice = (int)get_setting($pdo, 'calculator_price_toman', 49000);
 ?>
 
-<main class="max-w-container-max mx-auto overflow-hidden py-8 px-margin-desktop min-h-[80vh]">
+<main class="max-w-container-max mx-auto overflow-hidden py-4 sm:py-8 px-3 sm:px-margin-desktop min-h-[80vh]">
 
     <!-- Breadcrumbs -->
     <div class="flex items-center gap-2 text-xs text-on-surface-variant mb-6">
@@ -18,8 +18,8 @@ $calcPrice = (int)get_setting($pdo, 'calculator_price_toman', 49000);
     </div>
 
     <!-- Hero / Title Header -->
-    <div class="text-center max-w-3xl mx-auto mb-10 space-y-3">
-        <div class="inline-flex items-center gap-2 px-4 py-1.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full text-xs font-bold shadow-2xs">
+    <div class="text-center max-w-3xl mx-auto mb-8 sm:mb-10 space-y-3">
+        <div class="inline-flex items-center gap-2 px-3.5 py-1.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full text-xs font-bold shadow-2xs">
             <span class="material-symbols-outlined text-sm text-emerald-600">calculate</span>
             <span>استاندارد بین‌المللی دامپزشکی FEDIAF & WSAVA</span>
         </div>
@@ -32,15 +32,15 @@ $calcPrice = (int)get_setting($pdo, 'calculator_price_toman', 49000);
     </div>
 
     <!-- Main Calculator Component -->
-    <div class="bg-gradient-to-br from-[#001a48] via-[#002d72] to-slate-900 rounded-[2.5rem] p-6 sm:p-10 lg:p-12 text-white shadow-2xl relative overflow-hidden border border-white/10 mb-12">
+    <div class="bg-gradient-to-br from-[#001a48] via-[#002d72] to-slate-900 rounded-3xl sm:rounded-[2.5rem] p-4 sm:p-10 lg:p-12 text-white shadow-2xl relative overflow-hidden border border-white/10 mb-12">
         <!-- Background Decorative Glows -->
         <div class="absolute -top-24 -left-24 w-96 h-96 bg-emerald-500/15 rounded-full blur-3xl pointer-events-none"></div>
         <div class="absolute -bottom-24 -right-24 w-96 h-96 bg-[#fd8100]/15 rounded-full blur-3xl pointer-events-none"></div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 relative z-10">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-12 relative z-10">
             
             <!-- Left Column: Interactive Inputs Form (7 cols) -->
-            <div class="lg:col-span-7 space-y-6">
+            <div class="lg:col-span-7 space-y-5 sm:space-y-6">
                 
                 <!-- 1. Pet Species -->
                 <div class="space-y-2.5">
@@ -48,20 +48,20 @@ $calcPrice = (int)get_setting($pdo, 'calculator_price_toman', 49000);
                         <span class="w-6 h-6 rounded-lg bg-white/15 flex items-center justify-center text-xs">۱</span>
                         انتخاب گونه پت:
                     </label>
-                    <div class="grid grid-cols-2 gap-3">
-                        <button type="button" onclick="setCalcSpecies('dog')" id="calcBtnDog" class="calc-species-btn py-3.5 px-4 rounded-2xl font-black text-sm flex items-center justify-center gap-2.5 border-2 transition-all bg-emerald-500 text-white border-emerald-400 shadow-lg shadow-emerald-500/25 cursor-pointer">
-                            <span class="text-xl">🐕</span>
+                    <div class="grid grid-cols-2 gap-2.5 sm:gap-3">
+                        <button type="button" onclick="setCalcSpecies('dog')" id="calcBtnDog" class="calc-species-btn py-3 px-3 sm:py-3.5 sm:px-4 rounded-2xl font-black text-xs sm:text-sm flex items-center justify-center gap-2 border-2 transition-all bg-emerald-500 text-white border-emerald-400 shadow-lg shadow-emerald-500/25 cursor-pointer min-h-[48px]">
+                            <span class="text-lg sm:text-xl">🐕</span>
                             <span>سگ (Canine)</span>
                         </button>
-                        <button type="button" onclick="setCalcSpecies('cat')" id="calcBtnCat" class="calc-species-btn py-3.5 px-4 rounded-2xl font-black text-sm flex items-center justify-center gap-2.5 border-2 transition-all bg-white/10 text-white/80 border-white/15 hover:bg-white/15 cursor-pointer">
-                            <span class="text-xl">🐈</span>
+                        <button type="button" onclick="setCalcSpecies('cat')" id="calcBtnCat" class="calc-species-btn py-3 px-3 sm:py-3.5 sm:px-4 rounded-2xl font-black text-xs sm:text-sm flex items-center justify-center gap-2 border-2 transition-all bg-white/10 text-white/80 border-white/15 hover:bg-white/15 cursor-pointer min-h-[48px]">
+                            <span class="text-lg sm:text-xl">🐈</span>
                             <span>گربه (Feline)</span>
                         </button>
                     </div>
                 </div>
 
                 <!-- 2. Pet Breed / Race Selection -->
-                <div class="space-y-3 bg-white/5 p-5 rounded-2xl border border-white/10">
+                <div class="space-y-3 bg-white/5 p-4 sm:p-5 rounded-2xl border border-white/10">
                     <div class="flex items-center justify-between">
                         <label class="text-xs sm:text-sm font-bold text-white/90 flex items-center gap-2">
                             <span class="w-6 h-6 rounded-lg bg-white/15 flex items-center justify-center text-xs">۲</span>
@@ -78,15 +78,15 @@ $calcPrice = (int)get_setting($pdo, 'calculator_price_toman', 49000);
                     </div>
 
                     <!-- Search or Custom Breed Input -->
-                    <div class="flex items-center gap-2 pt-2 border-t border-white/10">
+                    <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 pt-2 border-t border-white/10">
                         <div class="relative flex-1">
                             <span class="material-symbols-outlined absolute right-3 top-2.5 text-xs text-white/50">search</span>
-                            <input type="text" id="calcBreedCustomInput" list="breedDatalist" placeholder="جستجو یا تایپ نام نژاد..." oninput="handleBreedInputChange(this.value)" class="w-full bg-white/10 border border-white/15 rounded-xl pr-8 pl-3 py-2 text-xs text-white placeholder:text-white/40 focus:outline-none focus:border-emerald-400">
+                            <input type="text" id="calcBreedCustomInput" list="breedDatalist" placeholder="جستجو یا تایپ نام نژاد..." oninput="handleBreedInputChange(this.value)" class="w-full bg-white/10 border border-white/15 rounded-xl pr-8 pl-3 py-2 text-xs text-white placeholder:text-white/40 focus:outline-none focus:border-emerald-400 min-h-[40px]">
                             <datalist id="breedDatalist">
                                 <!-- Populated dynamically -->
                             </datalist>
                         </div>
-                        <button type="button" onclick="triggerAiBreedAnalysis()" id="btnQuickAiAnalyze" class="px-3 py-2 bg-gradient-to-r from-emerald-500 to-teal-500 hover:opacity-90 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shrink-0 shadow-sm shadow-emerald-500/30 cursor-pointer">
+                        <button type="button" onclick="triggerAiBreedAnalysis()" id="btnQuickAiAnalyze" class="px-3 py-2 bg-gradient-to-r from-emerald-500 to-teal-500 hover:opacity-90 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 shrink-0 shadow-sm shadow-emerald-500/30 cursor-pointer min-h-[40px]">
                             <span class="material-symbols-outlined text-sm">psychology</span>
                             <span>تحلیل نژاد با AI</span>
                         </button>
@@ -131,21 +131,21 @@ $calcPrice = (int)get_setting($pdo, 'calculator_price_toman', 49000);
                         <span class="w-6 h-6 rounded-lg bg-white/15 flex items-center justify-center text-xs">۴</span>
                         مرحله زندگی و سن:
                     </label>
-                    <div class="grid grid-cols-3 gap-2.5">
-                        <button type="button" onclick="setCalcStage('puppy')" id="stageBtnPuppy" class="calc-stage-btn p-3 rounded-xl border border-white/15 bg-white/10 hover:bg-white/15 text-xs font-bold text-center transition-all cursor-pointer">
+                    <div class="grid grid-cols-3 gap-2 sm:gap-2.5">
+                        <button type="button" onclick="setCalcStage('puppy')" id="stageBtnPuppy" class="calc-stage-btn p-2 sm:p-3 rounded-xl border border-white/15 bg-white/10 hover:bg-white/15 text-xs font-bold text-center transition-all cursor-pointer min-h-[46px]">
                             <div class="text-sm mb-0.5">🍼</div>
-                            <div class="font-black" id="labelPuppy">توله / رشد</div>
-                            <div class="text-[10px] text-white/60">زیر ۱ سال</div>
+                            <div class="font-black text-[11px] sm:text-xs" id="labelPuppy">توله / رشد</div>
+                            <div class="text-[9px] sm:text-[10px] text-white/60">زیر ۱ سال</div>
                         </button>
-                        <button type="button" onclick="setCalcStage('adult')" id="stageBtnAdult" class="calc-stage-btn p-3 rounded-xl border-2 border-emerald-400 bg-emerald-500/20 text-emerald-200 text-xs font-bold text-center transition-all shadow-md cursor-pointer">
+                        <button type="button" onclick="setCalcStage('adult')" id="stageBtnAdult" class="calc-stage-btn p-2 sm:p-3 rounded-xl border-2 border-emerald-400 bg-emerald-500/20 text-emerald-200 text-xs font-bold text-center transition-all shadow-md cursor-pointer min-h-[46px]">
                             <div class="text-sm mb-0.5">⭐</div>
-                            <div class="font-black">بالغ</div>
-                            <div class="text-[10px] text-white/60">۱ تا ۷ سال</div>
+                            <div class="font-black text-[11px] sm:text-xs">بالغ</div>
+                            <div class="text-[9px] sm:text-[10px] text-white/60">۱ تا ۷ سال</div>
                         </button>
-                        <button type="button" onclick="setCalcStage('senior')" id="stageBtnSenior" class="calc-stage-btn p-3 rounded-xl border border-white/15 bg-white/10 hover:bg-white/15 text-xs font-bold text-center transition-all cursor-pointer">
+                        <button type="button" onclick="setCalcStage('senior')" id="stageBtnSenior" class="calc-stage-btn p-2 sm:p-3 rounded-xl border border-white/15 bg-white/10 hover:bg-white/15 text-xs font-bold text-center transition-all cursor-pointer min-h-[46px]">
                             <div class="text-sm mb-0.5">👑</div>
-                            <div class="font-black">مسن / ارشد</div>
-                            <div class="text-[10px] text-white/60">بالای ۷ سال</div>
+                            <div class="font-black text-[11px] sm:text-xs">مسن / ارشد</div>
+                            <div class="text-[9px] sm:text-[10px] text-white/60">بالای ۷ سال</div>
                         </button>
                     </div>
                 </div>
@@ -157,21 +157,21 @@ $calcPrice = (int)get_setting($pdo, 'calculator_price_toman', 49000);
                         وضعیت تحرک و فیزیولوژیک:
                     </label>
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-                        <button type="button" onclick="setCalcActivity('neutered')" id="actBtnNeutered" class="calc-act-btn p-3 rounded-xl border-2 border-emerald-400 bg-emerald-500/20 text-emerald-200 text-xs font-bold text-right transition-all flex items-center gap-2.5 cursor-pointer shadow-md">
+                        <button type="button" onclick="setCalcActivity('neutered')" id="actBtnNeutered" class="calc-act-btn p-3 rounded-xl border-2 border-emerald-400 bg-emerald-500/20 text-emerald-200 text-xs font-bold text-right transition-all flex items-center gap-2.5 cursor-pointer shadow-md min-h-[46px]">
                             <span class="material-symbols-outlined text-base">check_circle</span>
                             <div>
                                 <div class="font-black">عقیم‌شده / معمول</div>
                                 <div class="text-[10px] text-white/60">تحرک آپارتمانی</div>
                             </div>
                         </button>
-                        <button type="button" onclick="setCalcActivity('active')" id="actBtnActive" class="calc-act-btn p-3 rounded-xl border border-white/15 bg-white/10 hover:bg-white/15 text-white/80 text-xs font-bold text-right transition-all flex items-center gap-2.5 cursor-pointer">
+                        <button type="button" onclick="setCalcActivity('active')" id="actBtnActive" class="calc-act-btn p-3 rounded-xl border border-white/15 bg-white/10 hover:bg-white/15 text-white/80 text-xs font-bold text-right transition-all flex items-center gap-2.5 cursor-pointer min-h-[46px]">
                             <span class="material-symbols-outlined text-base opacity-70">directions_run</span>
                             <div>
                                 <div class="font-black">بسیار پرتحرک</div>
                                 <div class="text-[10px] text-white/60">فعالیت و پیاده‌روی</div>
                             </div>
                         </button>
-                        <button type="button" onclick="setCalcActivity('diet')" id="actBtnDiet" class="calc-act-btn p-3 rounded-xl border border-white/15 bg-white/10 hover:bg-white/15 text-white/80 text-xs font-bold text-right transition-all flex items-center gap-2.5 cursor-pointer">
+                        <button type="button" onclick="setCalcActivity('diet')" id="actBtnDiet" class="calc-act-btn p-3 rounded-xl border border-white/15 bg-white/10 hover:bg-white/15 text-white/80 text-xs font-bold text-right transition-all flex items-center gap-2.5 cursor-pointer min-h-[46px]">
                             <span class="material-symbols-outlined text-base opacity-70">scale</span>
                             <div>
                                 <div class="font-black">کم‌تحرک / استراحت</div>
@@ -182,7 +182,7 @@ $calcPrice = (int)get_setting($pdo, 'calculator_price_toman', 49000);
                 </div>
 
                 <!-- 6. Body Condition Score (BCS 1 to 9 & BMI) -->
-                <div class="space-y-2.5 bg-white/5 p-5 rounded-2xl border border-white/10">
+                <div class="space-y-2.5 bg-white/5 p-4 sm:p-5 rounded-2xl border border-white/10">
                     <div class="flex justify-between items-center">
                         <label class="text-xs sm:text-sm font-bold text-white/90 flex items-center gap-2">
                             <span class="w-6 h-6 rounded-lg bg-white/15 flex items-center justify-center text-xs">۶</span>
@@ -193,36 +193,36 @@ $calcPrice = (int)get_setting($pdo, 'calculator_price_toman', 49000);
                         </span>
                     </div>
                     <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1">
-                        <button type="button" onclick="setCalcBcs(2)" id="bcsBtnUnder" class="calc-bcs-btn p-3 rounded-xl border border-white/15 bg-white/10 hover:bg-white/15 text-xs text-right transition-all cursor-pointer">
-                            <div class="text-base mb-1">🦴</div>
-                            <div class="font-black text-amber-200">BCS 1-3: لاغر</div>
-                            <div class="text-[10px] text-white/60">دنده‌ها کاملاً نمایان</div>
+                        <button type="button" onclick="setCalcBcs(2)" id="bcsBtnUnder" class="calc-bcs-btn p-2.5 sm:p-3 rounded-xl border border-white/15 bg-white/10 hover:bg-white/15 text-xs text-right transition-all cursor-pointer min-h-[46px]">
+                            <div class="text-base mb-0.5 sm:mb-1">🦴</div>
+                            <div class="font-black text-[11px] sm:text-xs text-amber-200">BCS 1-3: لاغر</div>
+                            <div class="text-[9px] sm:text-[10px] text-white/60">دنده‌ها کاملاً نمایان</div>
                         </button>
-                        <button type="button" onclick="setCalcBcs(5)" id="bcsBtnIdeal" class="calc-bcs-btn p-3 rounded-xl border-2 border-emerald-400 bg-emerald-500/20 text-emerald-200 text-xs text-right transition-all shadow-md cursor-pointer">
-                            <div class="text-base mb-1">⚖️</div>
-                            <div class="font-black text-emerald-300">BCS 4-5: ایده‌آل</div>
-                            <div class="text-[10px] text-white/60">گودی کمر و تناسب عالی</div>
+                        <button type="button" onclick="setCalcBcs(5)" id="bcsBtnIdeal" class="calc-bcs-btn p-2.5 sm:p-3 rounded-xl border-2 border-emerald-400 bg-emerald-500/20 text-emerald-200 text-xs text-right transition-all shadow-md cursor-pointer min-h-[46px]">
+                            <div class="text-base mb-0.5 sm:mb-1">⚖️</div>
+                            <div class="font-black text-[11px] sm:text-xs text-emerald-300">BCS 4-5: ایده‌آل</div>
+                            <div class="text-[9px] sm:text-[10px] text-white/60">گودی کمر و تناسب عالی</div>
                         </button>
-                        <button type="button" onclick="setCalcBcs(7)" id="bcsBtnOver" class="calc-bcs-btn p-3 rounded-xl border border-white/15 bg-white/10 hover:bg-white/15 text-xs text-right transition-all cursor-pointer">
-                            <div class="text-base mb-1">🧈</div>
-                            <div class="font-black text-amber-300">BCS 6-7: اضافه‌وزن</div>
-                            <div class="text-[10px] text-white/60">دنده‌ها زیر چربی پنهان</div>
+                        <button type="button" onclick="setCalcBcs(7)" id="bcsBtnOver" class="calc-bcs-btn p-2.5 sm:p-3 rounded-xl border border-white/15 bg-white/10 hover:bg-white/15 text-xs text-right transition-all cursor-pointer min-h-[46px]">
+                            <div class="text-base mb-0.5 sm:mb-1">🧈</div>
+                            <div class="font-black text-[11px] sm:text-xs text-amber-300">BCS 6-7: اضافه‌وزن</div>
+                            <div class="text-[9px] sm:text-[10px] text-white/60">دنده‌ها زیر چربی پنهان</div>
                         </button>
-                        <button type="button" onclick="setCalcBcs(9)" id="bcsBtnObese" class="calc-bcs-btn p-3 rounded-xl border border-white/15 bg-white/10 hover:bg-white/15 text-xs text-right transition-all cursor-pointer">
-                            <div class="text-base mb-1">🚨</div>
-                            <div class="font-black text-rose-300">BCS 8-9: چاقی مفرط</div>
-                            <div class="text-[10px] text-white/60">نیازمند رژیم بالینی</div>
+                        <button type="button" onclick="setCalcBcs(9)" id="bcsBtnObese" class="calc-bcs-btn p-2.5 sm:p-3 rounded-xl border border-white/15 bg-white/10 hover:bg-white/15 text-xs text-right transition-all cursor-pointer min-h-[46px]">
+                            <div class="text-base mb-0.5 sm:mb-1">🚨</div>
+                            <div class="font-black text-[11px] sm:text-xs text-rose-300">BCS 8-9: چاقی مفرط</div>
+                            <div class="text-[9px] sm:text-[10px] text-white/60">نیازمند رژیم بالینی</div>
                         </button>
                     </div>
                 </div>
 
                 <!-- 7. Personalized Pet Name (Optional for Official Certificate) -->
-                <div class="space-y-2 bg-white/5 p-4 rounded-2xl border border-white/10 flex flex-col sm:flex-row items-center justify-between gap-3">
+                <div class="space-y-2 bg-white/5 p-4 rounded-2xl border border-white/10 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
                     <label for="calcPetName" class="text-xs font-bold text-white/80 flex items-center gap-2 shrink-0">
                         <span class="material-symbols-outlined text-sm text-emerald-400">badge</span>
                         <span>نام پت (جهت درج رسمی در کارنامه بالینی):</span>
                     </label>
-                    <input type="text" id="calcPetName" value="تدی" placeholder="مثال: لوسی، تدی، میلو..." oninput="calcState.petName = this.value || 'پت من'; recalculateNutrition();" class="w-full sm:w-48 bg-white/10 border border-white/20 rounded-xl px-3 py-1.5 text-xs text-white font-bold text-center focus:outline-none focus:border-emerald-400">
+                    <input type="text" id="calcPetName" value="تدی" placeholder="مثال: لوسی، تدی، میلو..." oninput="calcState.petName = this.value || 'پت من'; recalculateNutrition();" class="w-full sm:w-48 bg-white/10 border border-white/20 rounded-xl px-3 py-2 sm:py-1.5 text-xs text-white font-bold text-center focus:outline-none focus:border-emerald-400 min-h-[40px]">
                 </div>
 
                 <!-- 8. Pet Clinical Condition & Dietary History (User Input) -->
@@ -240,90 +240,90 @@ $calcPrice = (int)get_setting($pdo, 'calculator_price_toman', 49000);
             </div>
 
             <!-- Right Column: Diagnostic Output & Single Action Button (5 cols) -->
-            <div class="lg:col-span-5 flex flex-col justify-between bg-white/10 backdrop-blur-2xl rounded-[2.2rem] p-6 sm:p-8 border border-white/20 shadow-2xl relative overflow-hidden">
+            <div class="lg:col-span-5 flex flex-col justify-between bg-white/10 backdrop-blur-2xl rounded-3xl sm:rounded-[2.2rem] p-4 sm:p-8 border border-white/20 shadow-2xl relative overflow-hidden">
                 <!-- Background ambient glow -->
                 <div class="absolute -top-20 -right-20 w-64 h-64 bg-emerald-500/15 rounded-full blur-3xl pointer-events-none"></div>
 
                 <div class="space-y-4 relative z-10">
                     
                     <!-- Dynamic Diagnostic Strip -->
-                    <div class="flex items-center justify-between border-b border-white/10 pb-3.5">
-                        <div class="flex items-center gap-2.5">
-                            <span class="text-3xl" id="resPetEmoji">🐕</span>
+                    <div class="flex items-center justify-between border-b border-white/10 pb-3">
+                        <div class="flex items-center gap-2 sm:gap-2.5">
+                            <span class="text-2xl sm:text-3xl" id="resPetEmoji">🐕</span>
                             <div>
-                                <h3 class="text-sm font-black text-white" id="resPetTitle">شناسایی مشخصات بیومتریک پت</h3>
-                                <p class="text-[11px] text-emerald-300 font-bold flex items-center gap-1.5 mt-0.5" id="resPetSubtitle">
+                                <h3 class="text-xs sm:text-sm font-black text-white" id="resPetTitle">شناسایی مشخصات بیومتریک پت</h3>
+                                <p class="text-[10px] sm:text-[11px] text-emerald-300 font-bold flex items-center gap-1.5 mt-0.5" id="resPetSubtitle">
                                     <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
                                     <span>تحلیل متابولیک و جیره غذایی آماده است</span>
                                 </p>
                             </div>
                         </div>
-                        <span class="bg-emerald-500/20 text-emerald-300 text-[10px] font-mono px-2.5 py-1 rounded-full border border-emerald-400/30">
+                        <span class="bg-emerald-500/20 text-emerald-300 text-[9px] sm:text-[10px] font-mono px-2 sm:px-2.5 py-1 rounded-full border border-emerald-400/30">
                             WSAVA & FEDIAF
                         </span>
                     </div>
 
                     <!-- 4 Live Diagnostic Output Cards -->
-                    <div class="grid grid-cols-2 gap-2.5">
+                    <div class="grid grid-cols-2 gap-2 sm:gap-2.5">
                         
-                        <div class="bg-white/10 p-3.5 rounded-2xl border border-white/10 relative overflow-hidden">
-                            <div class="text-[11px] text-white/70 font-medium mb-1">کالری متابولیک (MER):</div>
+                        <div class="bg-white/10 p-2.5 sm:p-3.5 rounded-xl sm:rounded-2xl border border-white/10 relative overflow-hidden">
+                            <div class="text-[10px] sm:text-[11px] text-white/70 font-medium mb-0.5 sm:mb-1">کالری متابولیک (MER):</div>
                             <div class="text-xs sm:text-sm font-black text-amber-300 flex items-baseline gap-1">
-                                <span id="teaserMerVal" class="text-base font-mono">۵۵۰</span>
-                                <span class="text-[10px] text-white/70 font-sans">kcal/روز</span>
+                                <span id="teaserMerVal" class="text-sm sm:text-base font-mono">۵۵۰</span>
+                                <span class="text-[9px] sm:text-[10px] text-white/70 font-sans">kcal/روز</span>
                             </div>
-                            <div class="text-[9px] text-white/50 mt-1">تثبیت بر پایه استاندارد FEDIAF</div>
+                            <div class="text-[8px] sm:text-[9px] text-white/50 mt-1">بر پایه FEDIAF</div>
                         </div>
 
-                        <div class="bg-white/10 p-3.5 rounded-2xl border border-white/10 relative overflow-hidden">
-                            <div class="text-[11px] text-white/70 font-medium mb-1">گرم غذای خشک روزانه:</div>
+                        <div class="bg-white/10 p-2.5 sm:p-3.5 rounded-xl sm:rounded-2xl border border-white/10 relative overflow-hidden">
+                            <div class="text-[10px] sm:text-[11px] text-white/70 font-medium mb-0.5 sm:mb-1">غذای خشک روزانه:</div>
                             <div class="text-xs sm:text-sm font-black text-emerald-300 flex items-baseline gap-1">
-                                <span id="teaserKibbleVal" class="text-base font-mono">۱۴۵</span>
-                                <span class="text-[10px] text-white/70 font-sans">گرم در روز</span>
+                                <span id="teaserKibbleVal" class="text-sm sm:text-base font-mono">۱۴۵</span>
+                                <span class="text-[9px] sm:text-[10px] text-white/70 font-sans">گرم در روز</span>
                             </div>
-                            <div class="text-[9px] text-white/50 mt-1">محاسبه بر پایه ۳.۷۵ kcal/g</div>
+                            <div class="text-[8px] sm:text-[9px] text-white/50 mt-1">پایه ۳.۷۵ kcal/g</div>
                         </div>
 
-                        <div class="bg-white/10 p-3.5 rounded-2xl border border-white/10 relative overflow-hidden">
-                            <div class="text-[11px] text-white/70 font-medium mb-1">آب مصرفی روزانه:</div>
+                        <div class="bg-white/10 p-2.5 sm:p-3.5 rounded-xl sm:rounded-2xl border border-white/10 relative overflow-hidden">
+                            <div class="text-[10px] sm:text-[11px] text-white/70 font-medium mb-0.5 sm:mb-1">آب مصرفی روزانه:</div>
                             <div class="text-xs sm:text-sm font-black text-sky-300 flex items-baseline gap-1">
-                                <span id="teaserWaterVal" class="text-base font-mono">۵۱۰</span>
-                                <span class="text-[10px] text-white/70 font-sans">میلی‌لیتر</span>
+                                <span id="teaserWaterVal" class="text-sm sm:text-base font-mono">۵۱۰</span>
+                                <span class="text-[9px] sm:text-[10px] text-white/70 font-sans">میلی‌لیتر</span>
                             </div>
-                            <div class="text-[9px] text-white/50 mt-1">هیدراتاسیون فیزیولوژیک</div>
+                            <div class="text-[8px] sm:text-[9px] text-white/50 mt-1">هیدراتاسیون فیزیولوژیک</div>
                         </div>
 
-                        <div class="bg-white/10 p-3.5 rounded-2xl border border-white/10 relative overflow-hidden">
-                            <div class="text-[11px] text-white/70 font-medium mb-1">وزن ایده‌آل و هدف:</div>
+                        <div class="bg-white/10 p-2.5 sm:p-3.5 rounded-xl sm:rounded-2xl border border-white/10 relative overflow-hidden">
+                            <div class="text-[10px] sm:text-[11px] text-white/70 font-medium mb-0.5 sm:mb-1">وزن ایده‌آل و هدف:</div>
                             <div class="text-xs sm:text-sm font-black text-purple-300 flex items-baseline gap-1">
-                                <span id="teaserWeightVal" class="text-base font-mono">۸.۵</span>
-                                <span class="text-[10px] text-white/70 font-sans">کیلوگرم</span>
+                                <span id="teaserWeightVal" class="text-sm sm:text-base font-mono">۸.۵</span>
+                                <span class="text-[9px] sm:text-[10px] text-white/70 font-sans">کیلوگرم</span>
                             </div>
-                            <div class="text-[9px] text-white/50 mt-1">تطبیق با شاخص سلامت BCS</div>
+                            <div class="text-[8px] sm:text-[9px] text-white/50 mt-1">تطبیق با شاخص BCS</div>
                         </div>
 
                     </div>
 
                     <!-- Clean Meal Schedule Preview Card -->
-                    <div class="rounded-2xl border border-white/20 bg-slate-900/60 p-4 shadow-xl space-y-2.5">
+                    <div class="rounded-xl sm:rounded-2xl border border-white/20 bg-slate-900/60 p-3 sm:p-4 shadow-xl space-y-2 sm:space-y-2.5">
                         <div class="flex items-center justify-between text-xs font-bold text-white/90 border-b border-white/10 pb-2">
                             <span class="flex items-center gap-1.5">
                                 <span class="material-symbols-outlined text-sm text-emerald-400">schedule</span>
-                                <span>زمان‌بندی و مقادیر وعده‌های غذایی پت:</span>
+                                <span class="text-[11px] sm:text-xs">زمان‌بندی و مقادیر وعده‌های غذایی پت:</span>
                             </span>
-                            <span class="text-[10px] text-emerald-300">بالانس ارگونومیک</span>
+                            <span class="text-[9px] sm:text-[10px] text-emerald-300">بالانس ارگونومیک</span>
                         </div>
                         <div class="space-y-1.5 text-xs">
-                            <div class="flex justify-between items-center bg-white/10 px-3 py-2 rounded-xl text-[11px]">
+                            <div class="flex justify-between items-center bg-white/10 px-2.5 sm:px-3 py-2 rounded-xl text-[10px] sm:text-[11px]">
                                 <span>وعده ۱: صبح (۰۸:۳۰)</span>
-                                <span class="font-bold text-emerald-400"><span id="mealPortionMorning">۶۵</span> گرم غذای خشک + آب تازه</span>
+                                <span class="font-bold text-emerald-400"><span id="mealPortionMorning">۶۵</span> گرم خشک + آب</span>
                             </div>
-                            <div class="flex justify-between items-center bg-white/10 px-3 py-2 rounded-xl text-[11px]">
+                            <div class="flex justify-between items-center bg-white/10 px-2.5 sm:px-3 py-2 rounded-xl text-[10px] sm:text-[11px]">
                                 <span>وعده ۲: عصر / شب (۲۰:۰۰)</span>
                                 <span class="font-bold text-emerald-400"><span id="mealPortionNoon">۸۰</span> گرم غذای خشک</span>
                             </div>
-                            <div class="flex justify-between items-center bg-white/5 px-3 py-1.5 rounded-xl text-[10px] text-white/70">
-                                <span>سقف مجاز تشویقی و پاداش:</span>
+                            <div class="flex justify-between items-center bg-white/5 px-2.5 sm:px-3 py-1.5 rounded-xl text-[9px] sm:text-[10px] text-white/70">
+                                <span>سقف مجاز تشویقی:</span>
                                 <span class="font-mono text-amber-300"><span id="mealTreatGrams">۵۵</span> kcal (زیر ۱۰٪ جیره)</span>
                             </div>
                         </div>
@@ -336,9 +336,9 @@ $calcPrice = (int)get_setting($pdo, 'calculator_price_toman', 49000);
                     </div>
 
                     <!-- AI Metabolic Summary Hint -->
-                    <div class="bg-indigo-950/50 p-3 rounded-xl border border-indigo-400/25 flex items-start gap-2 text-xs">
+                    <div class="bg-indigo-950/50 p-2.5 sm:p-3 rounded-xl border border-indigo-400/25 flex items-start gap-2 text-xs">
                         <span class="material-symbols-outlined text-indigo-300 text-sm mt-0.5 shrink-0">psychology</span>
-                        <div class="text-[11px] text-indigo-100 leading-relaxed" id="teaserAiMetabolicSummary">
+                        <div class="text-[10px] sm:text-[11px] text-indigo-100 leading-relaxed" id="teaserAiMetabolicSummary">
                             ارزیابی بیومکانیک نژاد و فک پت توسط هوش مصنوعی تکمیل شده و در فایل ارسالی به پرونده شما ثبت گردیده است.
                         </div>
                     </div>
@@ -348,13 +348,13 @@ $calcPrice = (int)get_setting($pdo, 'calculator_price_toman', 49000);
                 <!-- Single High-Converting Action Button (No Clutter) -->
                 <div class="pt-4 mt-4 border-t border-white/10 relative z-10 space-y-3">
                     <?php if ($calcIsPaid): ?>
-                        <button type="button" onclick="issueAndSendMealPlanToProfile()" id="btnIssueMealPlan" class="w-full bg-gradient-to-r from-blue-600 via-indigo-600 to-primary hover:from-blue-500 hover:to-indigo-500 text-white py-4 px-6 rounded-2xl font-black text-xs sm:text-sm text-center shadow-xl shadow-blue-600/30 transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-98">
-                            <span class="material-symbols-outlined text-xl">payments</span>
+                        <button type="button" onclick="issueAndSendMealPlanToProfile()" id="btnIssueMealPlan" class="w-full bg-gradient-to-r from-blue-600 via-indigo-600 to-primary hover:from-blue-500 hover:to-indigo-500 text-white py-3.5 sm:py-4 px-4 sm:px-6 rounded-2xl font-black text-xs sm:text-sm text-center shadow-xl shadow-blue-600/30 transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-98 min-h-[48px]">
+                            <span class="material-symbols-outlined text-lg sm:text-xl">payments</span>
                             <span>پرداخت هزینه<?= $calcPrice > 0 ? ' (' . number_format($calcPrice) . ' تومان)' : '' ?> و صدور کارنامه بالینی</span>
                         </button>
                     <?php else: ?>
-                        <button type="button" onclick="issueAndSendMealPlanToProfile()" id="btnIssueMealPlan" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-4 px-6 rounded-2xl font-black text-xs sm:text-sm text-center shadow-xl shadow-emerald-600/30 transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-98">
-                            <span class="material-symbols-outlined text-xl">folder_shared</span>
+                        <button type="button" onclick="issueAndSendMealPlanToProfile()" id="btnIssueMealPlan" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-3.5 sm:py-4 px-4 sm:px-6 rounded-2xl font-black text-xs sm:text-sm text-center shadow-xl shadow-emerald-600/30 transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-98 min-h-[48px]">
+                            <span class="material-symbols-outlined text-lg sm:text-xl">folder_shared</span>
                             <span>صدور و ذخیره رایگان در پرونده سلامت</span>
                         </button>
                     <?php endif; ?>
@@ -495,58 +495,58 @@ $calcPrice = (int)get_setting($pdo, 'calculator_price_toman', 49000);
 <!-- ========================================================================= -->
 <!-- OFFICIAL ASENA CLINICAL NUTRITION ASSESSMENT & CERTIFICATE MODAL          -->
 <!-- ========================================================================= -->
-<div id="nutritionReportModal" style="display: none; position: fixed !important; top: 0 !important; right: 0 !important; bottom: 0 !important; left: 0 !important; width: 100vw !important; height: 100vh !important; z-index: 9999999 !important; background-color: rgba(15, 23, 42, 0.88) !important; backdrop-filter: blur(8px) !important; -webkit-backdrop-filter: blur(8px) !important; align-items: center !important; justify-content: center !important; padding: 1rem !important; overflow-y: auto !important; margin: 0 !important;" class="rtl text-right" onclick="if(event.target === this) closeNutritionReportModal();">
-    <div style="position: relative !important; z-index: 10000000 !important; background-color: #ffffff !important; border-radius: 1.5rem !important; max-width: 42rem !important; width: 100% !important; box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.7) !important; overflow: hidden !important; border: 1px solid #cbd5e1 !important; margin: auto !important;" class="animate-in fade-in zoom-in-95 duration-200">
+<div id="nutritionReportModal" style="display: none; position: fixed !important; inset: 0 !important; width: 100vw !important; height: 100vh !important; z-index: 9999999 !important; background-color: rgba(15, 23, 42, 0.88) !important; backdrop-filter: blur(8px) !important; -webkit-backdrop-filter: blur(8px) !important; align-items: center !important; justify-content: center !important; padding: 0.5rem !important; overflow-y: auto !important; margin: 0 !important;" class="rtl text-right" onclick="if(event.target === this) closeNutritionReportModal();">
+    <div style="position: relative !important; z-index: 10000000 !important; background-color: #ffffff !important; border-radius: 1.25rem !important; max-width: 42rem !important; width: 100% !important; box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.7) !important; overflow: hidden !important; border: 1px solid #cbd5e1 !important; margin: auto !important;" class="animate-in fade-in zoom-in-95 duration-200">
         
         <!-- Header Ribbon -->
-        <div style="background: linear-gradient(135deg, #001a48 0%, #002d72 50%, #001336 100%) !important; color: #ffffff !important; padding: 1.5rem !important; position: relative !important;">
+        <div style="background: linear-gradient(135deg, #001a48 0%, #002d72 50%, #001336 100%) !important; color: #ffffff !important; padding: 1.25rem 1rem !important; position: relative !important;">
             <div class="flex items-center justify-between">
-                <div class="flex items-center gap-3">
-                    <div class="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center text-2xl border border-white/20">
+                <div class="flex items-center gap-2.5 sm:gap-3">
+                    <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-white/10 flex items-center justify-center text-xl sm:text-2xl border border-white/20 shrink-0">
                         🐾
                     </div>
                     <div>
-                        <div class="flex items-center gap-2">
-                            <h2 class="text-base sm:text-lg font-black tracking-tight text-white">شناسنامه و کارنامه تغذیه بالینی پت</h2>
-                            <span class="bg-emerald-400/20 text-emerald-300 text-[10px] font-black px-2.5 py-0.5 rounded-full border border-emerald-400/40">تاییدیه WSAVA</span>
+                        <div class="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+                            <h2 class="text-sm sm:text-lg font-black tracking-tight text-white">شناسنامه و کارنامه تغذیه بالینی پت</h2>
+                            <span class="bg-emerald-400/20 text-emerald-300 text-[9px] sm:text-[10px] font-black px-2 py-0.5 rounded-full border border-emerald-400/40">تاییدیه WSAVA</span>
                         </div>
-                        <p class="text-xs text-white/70 mt-0.5">زیست‌بوم جامع سلامت و خدمات دامپزشکی آسنا (ASENA Medical)</p>
+                        <p class="text-[11px] sm:text-xs text-white/70 mt-0.5">زیست‌بوم جامع سلامت و خدمات دامپزشکی آسنا</p>
                     </div>
                 </div>
-                <button type="button" onclick="closeNutritionReportModal()" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition cursor-pointer">
+                <button type="button" onclick="closeNutritionReportModal()" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition cursor-pointer shrink-0">
                     <span class="material-symbols-outlined text-lg">close</span>
                 </button>
             </div>
-            <div class="flex justify-between items-center mt-4 pt-3 border-t border-white/10 text-[11px] text-white/60 font-mono">
+            <div class="flex justify-between items-center mt-3 pt-2.5 border-t border-white/10 text-[10px] sm:text-[11px] text-white/60 font-mono">
                 <span>شماره پرونده: <span id="certSerial" class="text-amber-300 font-bold">ASENA-NUT-82A7</span></span>
                 <span>تاریخ صدور: <span id="certDate" class="text-white">امروز</span></span>
             </div>
         </div>
 
         <!-- Certificate Body Content (Printable Area) -->
-        <div class="p-6 sm:p-8 space-y-6" id="printableCertificateArea">
+        <div class="p-4 sm:p-8 space-y-4 sm:space-y-6 max-h-[75vh] overflow-y-auto" id="printableCertificateArea">
             
             <!-- Patient Identification Strip -->
-            <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200 grid grid-cols-2 sm:grid-cols-5 gap-3 text-xs">
+            <div class="bg-slate-50 p-3 sm:p-4 rounded-2xl border border-slate-200 grid grid-cols-2 sm:grid-cols-5 gap-2.5 sm:gap-3 text-xs">
                 <div>
-                    <span class="text-slate-400 block text-[11px]">نام بیمار (پت):</span>
-                    <span class="font-black text-slate-800 text-sm" id="certPetName">تدی</span>
+                    <span class="text-slate-400 block text-[10px] sm:text-[11px]">نام بیمار (پت):</span>
+                    <span class="font-black text-slate-800 text-xs sm:text-sm" id="certPetName">تدی</span>
                 </div>
                 <div>
-                    <span class="text-slate-400 block text-[11px]">گونه و رده:</span>
-                    <span class="font-bold text-slate-700" id="certSpecies">سگ بالغ</span>
+                    <span class="text-slate-400 block text-[10px] sm:text-[11px]">گونه و رده:</span>
+                    <span class="font-bold text-slate-700 text-[11px] sm:text-xs" id="certSpecies">سگ بالغ</span>
                 </div>
                 <div>
-                    <span class="text-slate-400 block text-[11px]">نژاد پت:</span>
-                    <span class="font-black text-emerald-700" id="certBreed">ژرمن شپرد</span>
+                    <span class="text-slate-400 block text-[10px] sm:text-[11px]">نژاد پت:</span>
+                    <span class="font-black text-emerald-700 text-[11px] sm:text-xs" id="certBreed">ژرمن شپرد</span>
                 </div>
                 <div>
-                    <span class="text-slate-400 block text-[11px]">وزن ثبت‌شده:</span>
-                    <span class="font-bold text-slate-700" id="certCurrentWeight">۸.۵ کیلوگرم</span>
+                    <span class="text-slate-400 block text-[10px] sm:text-[11px]">وزن ثبت‌شده:</span>
+                    <span class="font-bold text-slate-700 text-[11px] sm:text-xs" id="certCurrentWeight">۸.۵ کیلوگرم</span>
                 </div>
-                <div>
-                    <span class="text-slate-400 block text-[11px]">شاخص وضعیت بدنی:</span>
-                    <span class="font-bold text-emerald-600" id="certBcsDisplay">امتیاز ۵ (ایده‌آل)</span>
+                <div class="col-span-2 sm:col-span-1">
+                    <span class="text-slate-400 block text-[10px] sm:text-[11px]">شاخص وضعیت بدنی:</span>
+                    <span class="font-bold text-emerald-600 text-[11px] sm:text-xs" id="certBcsDisplay">امتیاز ۵ (ایده‌آل)</span>
                 </div>
             </div>
 
@@ -556,47 +556,47 @@ $calcPrice = (int)get_setting($pdo, 'calculator_price_toman', 49000);
                     <span class="material-symbols-outlined text-sm text-[#fd8100]">prescriptions</span>
                     <span>نسخه و پروتکل اختصاصی جیره غذایی ۲۴ ساعته:</span>
                 </h3>
-                <div class="border border-slate-200 rounded-2xl overflow-hidden text-xs">
-                    <table class="w-full text-right divide-y divide-slate-200">
+                <div class="border border-slate-200 rounded-2xl overflow-x-auto text-xs">
+                    <table class="w-full text-right divide-y divide-slate-200 min-w-[340px]">
                         <thead class="bg-slate-100 text-slate-600 font-bold">
                             <tr>
-                                <th class="p-3">عنصر رژیم غذایی</th>
-                                <th class="p-3">مقدار مجاز روزانه</th>
-                                <th class="p-3">دستور مصرف بالینی</th>
+                                <th class="p-2.5 sm:p-3">عنصر رژیم غذایی</th>
+                                <th class="p-2.5 sm:p-3">مقدار مجاز روزانه</th>
+                                <th class="p-2.5 sm:p-3">دستور مصرف بالینی</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100 text-slate-700 font-medium">
                             <tr>
-                                <td class="p-3 font-bold flex items-center gap-1.5">
-                                    <span class="w-2 h-2 rounded-full bg-amber-400"></span>
+                                <td class="p-2.5 sm:p-3 font-bold flex items-center gap-1.5">
+                                    <span class="w-2 h-2 rounded-full bg-amber-400 shrink-0"></span>
                                     <span>انرژی مورد نیاز (MER)</span>
                                 </td>
-                                <td class="p-3 font-mono font-bold text-slate-900" id="certKcal">۵۴۰ kcal</td>
-                                <td class="p-3 text-slate-500">حفظ نرخ متابولیک پایه و فعالیت</td>
+                                <td class="p-2.5 sm:p-3 font-mono font-bold text-slate-900" id="certKcal">۵۴۰ kcal</td>
+                                <td class="p-2.5 sm:p-3 text-slate-500 text-[11px]">حفظ نرخ متابولیک پایه و فعالیت</td>
                             </tr>
                             <tr>
-                                <td class="p-3 font-bold flex items-center gap-1.5">
-                                    <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                                <td class="p-2.5 sm:p-3 font-bold flex items-center gap-1.5">
+                                    <span class="w-2 h-2 rounded-full bg-emerald-500 shrink-0"></span>
                                     <span>غذای خشک استاندارد</span>
                                 </td>
-                                <td class="p-3 font-mono font-bold text-emerald-700" id="certKibble">۱۴۵ گرم</td>
-                                <td class="p-3 text-slate-500" id="certMeals">۲ وعده صبح و شب (هر وعده ۷۲ گرم)</td>
+                                <td class="p-2.5 sm:p-3 font-mono font-bold text-emerald-700" id="certKibble">۱۴۵ گرم</td>
+                                <td class="p-2.5 sm:p-3 text-slate-500 text-[11px]" id="certMeals">۲ وعده صبح و شب (هر وعده ۷۲ گرم)</td>
                             </tr>
                             <tr>
-                                <td class="p-3 font-bold flex items-center gap-1.5">
-                                    <span class="w-2 h-2 rounded-full bg-sky-400"></span>
+                                <td class="p-2.5 sm:p-3 font-bold flex items-center gap-1.5">
+                                    <span class="w-2 h-2 rounded-full bg-sky-400 shrink-0"></span>
                                     <span>آب تازه تصفیه‌شده</span>
                                 </td>
-                                <td class="p-3 font-mono font-bold text-sky-700" id="certWater">۵۱۰ میلی‌لیتر</td>
-                                <td class="p-3 text-slate-500">در دسترس دائم در ظرف استیل یا سرامیک</td>
+                                <td class="p-2.5 sm:p-3 font-mono font-bold text-sky-700" id="certWater">۵۱۰ میلی‌لیتر</td>
+                                <td class="p-2.5 sm:p-3 text-slate-500 text-[11px]">در دسترس دائم در ظرف استیل یا سرامیک</td>
                             </tr>
                             <tr>
-                                <td class="p-3 font-bold flex items-center gap-1.5">
-                                    <span class="w-2 h-2 rounded-full bg-purple-400"></span>
+                                <td class="p-2.5 sm:p-3 font-bold flex items-center gap-1.5">
+                                    <span class="w-2 h-2 rounded-full bg-purple-400 shrink-0"></span>
                                     <span>سقف تشویقی (Treats)</span>
                                 </td>
-                                <td class="p-3 font-mono font-bold text-purple-700" id="certTreat">۵۴ kcal</td>
-                                <td class="p-3 text-slate-500">حداکثر ۱۰٪ کالری کل جهت جلوگیری از چاقی</td>
+                                <td class="p-2.5 sm:p-3 font-mono font-bold text-purple-700" id="certTreat">۵۴ kcal</td>
+                                <td class="p-2.5 sm:p-3 text-slate-500 text-[11px]">حداکثر ۱۰٪ کالری کل جهت جلوگیری از چاقی</td>
                             </tr>
                         </tbody>
                     </table>
@@ -604,7 +604,7 @@ $calcPrice = (int)get_setting($pdo, 'calculator_price_toman', 49000);
             </div>
 
             <!-- AI Clinical Nutritionist Dossier Section (WSAVA / Breed Specific) -->
-            <div class="bg-gradient-to-br from-slate-900 to-indigo-950 p-5 rounded-2xl border border-indigo-500/30 text-white space-y-3 shadow-md">
+            <div class="bg-gradient-to-br from-slate-900 to-indigo-950 p-4 sm:p-5 rounded-2xl border border-indigo-500/30 text-white space-y-3 shadow-md">
                 <div class="flex items-center justify-between border-b border-white/15 pb-2">
                     <div class="flex items-center gap-2">
                         <span class="material-symbols-outlined text-indigo-400 text-lg">psychology</span>
@@ -625,7 +625,7 @@ $calcPrice = (int)get_setting($pdo, 'calculator_price_toman', 49000);
             </div>
 
             <!-- Target Weight & Clinical Prognosis -->
-            <div class="bg-gradient-to-r from-emerald-50 via-teal-50 to-emerald-50 p-4 rounded-2xl border border-emerald-200 space-y-1.5 text-xs text-emerald-950">
+            <div class="bg-gradient-to-r from-emerald-50 via-teal-50 to-emerald-50 p-3.5 sm:p-4 rounded-2xl border border-emerald-200 space-y-1 text-xs text-emerald-950">
                 <div class="flex items-center justify-between font-black">
                     <span class="flex items-center gap-1.5">
                         <span class="material-symbols-outlined text-sm text-emerald-700">insights</span>
@@ -639,53 +639,55 @@ $calcPrice = (int)get_setting($pdo, 'calculator_price_toman', 49000);
             </div>
 
             <!-- Official Seal & Advisory Stamp -->
-            <div class="flex items-center justify-between pt-4 border-t border-slate-200 text-xs">
+            <div class="flex items-center justify-between pt-3 sm:pt-4 border-t border-slate-200 text-xs">
                 <div class="space-y-1">
-                    <div class="font-black text-slate-800 text-[11px]">مهر تاییدیه کمیته فارماکولوژی و تغذیه دامپزشکی آسنا</div>
-                    <div class="text-[10px] text-slate-400">شماره ثبت استانداردهای بالینی: IR-VET-7819</div>
+                    <div class="font-black text-slate-800 text-[10px] sm:text-[11px]">مهر تاییدیه کمیته فارماکولوژی و تغذیه دامپزشکی آسنا</div>
+                    <div class="text-[9px] sm:text-[10px] text-slate-400">شماره ثبت استانداردهای بالینی: IR-VET-7819</div>
                 </div>
                 <div class="flex items-center gap-2">
-                    <div class="w-12 h-12 rounded-xl bg-slate-100 border border-slate-300 flex items-center justify-center text-center p-1 text-[8px] font-mono text-slate-400 leading-tight">
+                    <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-slate-100 border border-slate-300 flex items-center justify-center text-center p-1 text-[7px] sm:text-[8px] font-mono text-slate-400 leading-tight">
                         [QR-VERIFY]
                     </div>
-                    <div class="w-12 h-12 rounded-full bg-emerald-100 border-2 border-dashed border-emerald-500 flex items-center justify-center text-emerald-700 text-xs font-black rotate-[-12deg] shadow-2xs">
+                    <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-emerald-100 border-2 border-dashed border-emerald-500 flex items-center justify-center text-emerald-700 text-[10px] sm:text-xs font-black rotate-[-12deg] shadow-2xs">
                         ASENA
                     </div>
                 </div>
             </div>
 
             <!-- Mandatory Medical Disclaimer & Health Warning -->
-            <div class="p-3.5 bg-rose-50 border border-rose-200 rounded-2xl text-[11px] text-rose-800 space-y-1">
+            <div class="p-3 bg-rose-50 border border-rose-200 rounded-2xl text-[10px] sm:text-[11px] text-rose-800 space-y-1">
                 <div class="flex items-center gap-1.5 font-black text-rose-900">
                     <span class="material-symbols-outlined text-sm">gavel</span>
                     <span>سلب مسئولیت پزشکی و هشدار سلامت:</span>
                 </div>
-                <p class="leading-relaxed">
+                <p class="leading-relaxed text-[10.5px]">
                     این ابزار صرفاً جنبه محاسبات تغذیه و شاخص بدنی دارد. تجویز هرگونه دارو، قرص ضدانگل، قطره ضدکک یا واکسیناسیون باید منحصراً توسط دکتر دامپزشک پس از معاینه بالینی حضوری انجام پذیرد. مصرف خودسرانه داروهای انسانی برای پتها خطر مسمومیت مرگبار دارد.
                 </p>
             </div>
 
         </div>
 
-        <!-- Footer Actions -->
-        <div class="p-6 bg-slate-50 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3">
-            <div class="flex items-center gap-1.5 text-xs text-slate-500">
+        <!-- Footer Actions (Mobile-Optimized) -->
+        <div class="p-4 sm:p-6 bg-slate-50 border-t border-slate-200 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+            <div class="flex items-center gap-1.5 text-xs text-slate-500 justify-center sm:justify-start">
                 <span class="material-symbols-outlined text-emerald-600 text-base">verified</span>
                 <span>سند رسمی ارزیابی و جیره بالینی تغذیه پت</span>
             </div>
-            <div class="flex flex-wrap items-center gap-2 w-full sm:w-auto">
-                <button type="button" onclick="consultAiAboutDiet()" class="flex-1 sm:flex-none px-3.5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-sm active:scale-95 cursor-pointer">
-                    <span class="material-symbols-outlined text-sm">smart_toy</span>
-                    <span>مشاوره با هوش مصنوعی</span>
-                </button>
-                <button type="button" onclick="window.print()" class="flex-1 sm:flex-none px-4 py-2.5 rounded-xl border border-slate-300 hover:bg-white text-slate-700 text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs">
-                    <span class="material-symbols-outlined text-sm">print</span>
-                    <span>چاپ / ذخیره PDF</span>
-                </button>
-                <button type="button" onclick="saveNutritionReportToProfile()" id="btnSaveReport" class="flex-1 sm:flex-none px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black transition flex items-center justify-center gap-1.5 shadow-md shadow-emerald-600/20 active:scale-95 cursor-pointer">
+            <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
+                <button type="button" onclick="saveNutritionReportToProfile()" id="btnSaveReport" class="w-full sm:w-auto px-5 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black transition flex items-center justify-center gap-1.5 shadow-md shadow-emerald-600/20 active:scale-95 cursor-pointer min-h-[46px] order-1 sm:order-3">
                     <span class="material-symbols-outlined text-sm">save</span>
                     <span>ذخیره در پرونده سلامت پت</span>
                 </button>
+                <div class="grid grid-cols-2 sm:flex items-center gap-2 order-2 sm:order-1">
+                    <button type="button" onclick="consultAiAboutDiet()" class="px-3 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition flex items-center justify-center gap-1 shadow-sm active:scale-95 cursor-pointer min-h-[42px]">
+                        <span class="material-symbols-outlined text-sm">smart_toy</span>
+                        <span>مشاوره AI</span>
+                    </button>
+                    <button type="button" onclick="window.print()" class="px-3.5 py-2.5 rounded-xl border border-slate-300 hover:bg-white text-slate-700 text-xs font-bold transition flex items-center justify-center gap-1 cursor-pointer shadow-2xs min-h-[42px]">
+                        <span class="material-symbols-outlined text-sm">print</span>
+                        <span>چاپ PDF</span>
+                    </button>
+                </div>
             </div>
         </div>
 
@@ -695,28 +697,28 @@ $calcPrice = (int)get_setting($pdo, 'calculator_price_toman', 49000);
 <!-- ========================================================================= -->
 <!-- MEAL PLAN SUCCESS & PROFILE DELIVERY MODAL                                -->
 <!-- ========================================================================= -->
-<div id="mealPlanSuccessModal" style="display: none; position: fixed !important; inset: 0 !important; width: 100vw !important; height: 100vh !important; z-index: 9999999 !important; background-color: rgba(15, 23, 42, 0.88) !important; backdrop-filter: blur(8px) !important; -webkit-backdrop-filter: blur(8px) !important; align-items: center !important; justify-content: center !important; padding: 1rem !important; overflow-y: auto !important; margin: 0 !important;" class="rtl text-right" onclick="if(event.target === this) closeMealPlanSuccessModal();">
+<div id="mealPlanSuccessModal" style="display: none; position: fixed !important; inset: 0 !important; width: 100vw !important; height: 100vh !important; z-index: 9999999 !important; background-color: rgba(15, 23, 42, 0.88) !important; backdrop-filter: blur(8px) !important; -webkit-backdrop-filter: blur(8px) !important; align-items: center !important; justify-content: center !important; padding: 0.75rem !important; overflow-y: auto !important; margin: 0 !important;" class="rtl text-right" onclick="if(event.target === this) closeMealPlanSuccessModal();">
     <div style="position: relative !important; z-index: 10000000 !important; background-color: #ffffff !important; border-radius: 1.5rem !important; max-width: 32rem !important; width: 100% !important; box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.8) !important; overflow: hidden !important; border: 1px solid #cbd5e1 !important; margin: auto !important;" class="animate-in fade-in zoom-in-95 duration-200">
         <!-- Top Celebration Header -->
-        <div style="background: linear-gradient(135deg, #059669 0%, #0d9488 50%, #002d72 100%) !important; color: #ffffff !important; padding: 1.5rem !important; text-align: center !important; position: relative !important; overflow: hidden !important;">
+        <div style="background: linear-gradient(135deg, #059669 0%, #0d9488 50%, #002d72 100%) !important; color: #ffffff !important; padding: 1.25rem 1rem !important; text-align: center !important; position: relative !important; overflow: hidden !important;">
             <div class="absolute -top-10 -left-10 w-32 h-32 bg-white/10 rounded-full blur-xl pointer-events-none"></div>
-            <button type="button" onclick="closeMealPlanSuccessModal()" class="w-8 h-8 rounded-full bg-white/15 hover:bg-white/25 flex items-center justify-center text-white transition cursor-pointer" style="position: absolute !important; top: 1rem !important; left: 1rem !important;">
+            <button type="button" onclick="closeMealPlanSuccessModal()" class="w-8 h-8 rounded-full bg-white/15 hover:bg-white/25 flex items-center justify-center text-white transition cursor-pointer" style="position: absolute !important; top: 0.75rem !important; left: 0.75rem !important;">
                 <span class="material-symbols-outlined text-lg">close</span>
             </button>
-            <div class="w-16 h-16 rounded-3xl bg-white/20 border-2 border-white/40 flex items-center justify-center text-3xl mx-auto mb-3 shadow-lg">
-                <span class="material-symbols-outlined text-3xl text-emerald-100">verified</span>
+            <div class="w-14 h-14 rounded-2xl bg-white/20 border-2 border-white/40 flex items-center justify-center text-3xl mx-auto mb-2.5 shadow-lg">
+                <span class="material-symbols-outlined text-2xl text-emerald-100">verified</span>
             </div>
-            <h2 class="text-lg sm:text-xl font-black text-white">جدول برنامه غذایی با موفقیت صادر شد!</h2>
+            <h2 class="text-base sm:text-xl font-black text-white">جدول برنامه غذایی با موفقیت صادر شد!</h2>
             <p class="text-xs text-emerald-100/90 mt-1">فایل اختصاصی رژیم غذایی در پرونده سلامت پت شما ذخیره گردید.</p>
-            <div class="mt-3 inline-flex items-center gap-2 bg-white/15 border border-white/20 px-3 py-1 rounded-xl text-xs font-mono">
+            <div class="mt-2.5 inline-flex items-center gap-2 bg-white/15 border border-white/20 px-3 py-1 rounded-xl text-xs font-mono">
                 <span>شناسه پرونده:</span>
                 <span id="successModalSerial" class="font-bold text-amber-300">ASENA-NUT-XXXX</span>
             </div>
         </div>
 
         <!-- Content Details -->
-        <div class="p-6 space-y-4 text-xs bg-white text-slate-800">
-            <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-2">
+        <div class="p-4 sm:p-6 space-y-4 text-xs bg-white text-slate-800">
+            <div class="bg-slate-50 p-3.5 sm:p-4 rounded-2xl border border-slate-200 space-y-2">
                 <div class="flex items-center gap-2 font-bold text-slate-800">
                     <span class="material-symbols-outlined text-emerald-600 text-base">task_alt</span>
                     <span>محتوای سند ذخیره شده در پرونده شما:</span>
@@ -729,14 +731,14 @@ $calcPrice = (int)get_setting($pdo, 'calculator_price_toman', 49000);
                 </ul>
             </div>
 
-            <!-- Action Buttons -->
-            <div class="space-y-2.5 pt-2">
-                <a id="successModalViewLink" href="#" target="_blank" rel="noopener noreferrer" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-3.5 px-4 rounded-xl font-black text-xs text-center shadow-lg shadow-emerald-600/25 transition flex items-center justify-center gap-2">
+            <!-- Action Buttons (Thumb Friendly) -->
+            <div class="space-y-2.5 pt-1">
+                <a id="successModalViewLink" href="#" target="_blank" rel="noopener noreferrer" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-3.5 px-4 rounded-xl font-black text-xs text-center shadow-lg shadow-emerald-600/25 transition flex items-center justify-center gap-2 min-h-[48px]">
                     <span class="material-symbols-outlined text-base">open_in_new</span>
                     <span>مشاهده و چاپ فایل جدول برنامه غذایی</span>
                 </a>
 
-                <a href="profile.php#view-records" class="w-full bg-[#002d72] hover:bg-[#001a48] text-white py-3.5 px-4 rounded-xl font-bold text-xs text-center transition flex items-center justify-center gap-2">
+                <a href="profile.php#view-records" class="w-full bg-[#002d72] hover:bg-[#001a48] text-white py-3.5 px-4 rounded-xl font-bold text-xs text-center transition flex items-center justify-center gap-2 min-h-[48px]">
                     <span class="material-symbols-outlined text-base">folder_shared</span>
                     <span>مشاهده در سوابق پزشکی و پروفایل من</span>
                 </a>
@@ -748,36 +750,36 @@ $calcPrice = (int)get_setting($pdo, 'calculator_price_toman', 49000);
 <!-- ========================================================================= -->
 <!-- AUTHENTICATION REQUIRED MODAL (FOR GUEST USERS)                           -->
 <!-- ========================================================================= -->
-<div id="mealPlanAuthModal" style="display: none; position: fixed !important; inset: 0 !important; width: 100vw !important; height: 100vh !important; z-index: 9999999 !important; background-color: rgba(15, 23, 42, 0.88) !important; backdrop-filter: blur(8px) !important; -webkit-backdrop-filter: blur(8px) !important; align-items: center !important; justify-content: center !important; padding: 1rem !important; overflow-y: auto !important; margin: 0 !important;" class="rtl text-right" onclick="if(event.target === this) closeMealPlanAuthModal();">
+<div id="mealPlanAuthModal" style="display: none; position: fixed !important; inset: 0 !important; width: 100vw !important; height: 100vh !important; z-index: 9999999 !important; background-color: rgba(15, 23, 42, 0.88) !important; backdrop-filter: blur(8px) !important; -webkit-backdrop-filter: blur(8px) !important; align-items: center !important; justify-content: center !important; padding: 0.75rem !important; overflow-y: auto !important; margin: 0 !important;" class="rtl text-right" onclick="if(event.target === this) closeMealPlanAuthModal();">
     <div style="position: relative !important; z-index: 10000000 !important; background-color: #ffffff !important; border-radius: 1.5rem !important; max-width: 28rem !important; width: 100% !important; box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.8) !important; overflow: hidden !important; border: 1px solid #cbd5e1 !important; margin: auto !important;" class="animate-in fade-in zoom-in-95 duration-200">
         <!-- Solid Deep Navy Header -->
-        <div style="background: linear-gradient(135deg, #001a48 0%, #002d72 100%) !important; color: #ffffff !important; padding: 1.5rem !important; text-align: center !important; position: relative !important;">
-            <button type="button" onclick="closeMealPlanAuthModal()" class="w-8 h-8 rounded-full bg-white/15 hover:bg-white/25 flex items-center justify-center text-white transition cursor-pointer" style="position: absolute !important; top: 1rem !important; left: 1rem !important;">
+        <div style="background: linear-gradient(135deg, #001a48 0%, #002d72 100%) !important; color: #ffffff !important; padding: 1.25rem 1rem !important; text-align: center !important; position: relative !important;">
+            <button type="button" onclick="closeMealPlanAuthModal()" class="w-8 h-8 rounded-full bg-white/15 hover:bg-white/25 flex items-center justify-center text-white transition cursor-pointer" style="position: absolute !important; top: 0.75rem !important; left: 0.75rem !important;">
                 <span class="material-symbols-outlined text-lg">close</span>
             </button>
-            <div class="w-14 h-14 rounded-2xl bg-amber-500/20 border border-amber-400/40 text-amber-300 flex items-center justify-center text-2xl mx-auto mb-3 shadow-sm">
+            <div class="w-12 h-12 rounded-2xl bg-amber-500/20 border border-amber-400/40 text-amber-300 flex items-center justify-center text-xl mx-auto mb-2.5 shadow-sm">
                 <span class="material-symbols-outlined text-2xl">lock_open</span>
             </div>
-            <h3 class="text-base font-black text-white">صدور و ذخیره در پرونده اختصاصی پت</h3>
+            <h3 class="text-sm sm:text-base font-black text-white">صدور و ذخیره در پرونده اختصاصی پت</h3>
             <p class="text-xs text-white/80 mt-1">جهت ارسال فایل جدول برنامه غذایی و بایگانی دائمی در سوابق پزشکی، لطفاً وارد شوید.</p>
         </div>
 
         <!-- Solid Crisp Body -->
-        <div class="p-6 space-y-3 text-xs bg-white text-slate-800">
-            <div class="bg-amber-50 border border-amber-200 p-3.5 rounded-xl text-amber-900 text-[11px] leading-relaxed font-medium">
+        <div class="p-4 sm:p-6 space-y-3 text-xs bg-white text-slate-800">
+            <div class="bg-amber-50 border border-amber-200 p-3 rounded-xl text-amber-900 text-[11px] leading-relaxed font-medium">
                 اطلاعات واردشده پت شما محفوظ است و بلافاصله پس از ورود، فایل جدول برنامه غذایی در پروفایل شما ثبت خواهد گردید.
             </div>
 
             <div class="space-y-2 pt-2">
-                <a href="login.php?redirect=calculator.php%3Fauto_issue%3D1" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-3 px-4 rounded-xl font-black text-xs text-center shadow-md transition flex items-center justify-center gap-2">
+                <a href="login.php?redirect=calculator.php%3Fauto_issue%3D1" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-3.5 px-4 rounded-xl font-black text-xs text-center shadow-md transition flex items-center justify-center gap-2 min-h-[48px]">
                     <span class="material-symbols-outlined text-base">login</span>
                     <span>ورود با شماره موبایل / حساب کاربری</span>
                 </a>
-                <a href="register.php?redirect=calculator.php%3Fauto_issue%3D1" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-800 py-3 px-4 rounded-xl font-bold text-xs text-center transition flex items-center justify-center gap-2 border border-slate-200">
+                <a href="register.php?redirect=calculator.php%3Fauto_issue%3D1" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-800 py-3.5 px-4 rounded-xl font-bold text-xs text-center transition flex items-center justify-center gap-2 border border-slate-200 min-h-[48px]">
                     <span class="material-symbols-outlined text-base">person_add</span>
                     <span>ثبت‌نام سریع در آسنا (رایگان)</span>
                 </a>
-                <button type="button" onclick="closeMealPlanAuthModal()" class="w-full text-center text-xs text-slate-400 hover:text-slate-600 font-bold py-1.5 transition cursor-pointer">
+                <button type="button" onclick="closeMealPlanAuthModal()" class="w-full text-center text-xs text-slate-400 hover:text-slate-600 font-bold py-2 transition cursor-pointer">
                     انصراف و بازگشت به محاسبه‌گر
                 </button>
             </div>

@@ -154,22 +154,34 @@ class MealPlanGenerator
             align-items: center;
             justify-content: space-between;
             color: #ffffff;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .action-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
         }
 
         .action-btn {
             background: rgba(255, 255, 255, 0.15);
             border: 1px solid rgba(255, 255, 255, 0.2);
             color: #ffffff;
-            padding: 8px 16px;
+            padding: 9px 16px;
             border-radius: 12px;
             font-size: 12px;
             font-weight: 700;
             cursor: pointer;
             display: inline-flex;
             align-items: center;
+            justify-content: center;
             gap: 6px;
             text-decoration: none;
             transition: all 0.2s;
+            min-height: 42px;
+            -webkit-tap-highlight-color: transparent;
         }
 
         .action-btn:hover {
@@ -564,6 +576,185 @@ class MealPlanGenerator
             transform: rotate(-10deg);
         }
 
+        /* Comprehensive Mobile Responsiveness Overhaul */
+        @media (max-width: 640px) {
+            body {
+                padding: 8px 6px;
+            }
+            .document-container {
+                border-radius: 18px;
+            }
+            .action-bar {
+                padding: 12px 14px;
+                flex-direction: column;
+                align-items: stretch;
+                gap: 10px;
+            }
+            .action-group {
+                width: 100%;
+                flex-direction: column;
+                align-items: stretch;
+                gap: 8px;
+            }
+            .action-btn {
+                width: 100%;
+                min-height: 48px;
+                font-size: 13px;
+                padding: 12px 16px;
+            }
+            .header-strip {
+                padding: 22px 16px 20px;
+            }
+            .header-badge {
+                font-size: 10.5px;
+                margin-bottom: 10px;
+            }
+            .header-title {
+                font-size: 18px;
+                line-height: 1.4;
+            }
+            .header-subtitle {
+                font-size: 11.5px;
+                line-height: 1.6;
+            }
+            .serial-badge {
+                position: static;
+                margin-top: 14px;
+                text-align: right;
+                display: flex;
+                flex-direction: row-reverse;
+                justify-content: space-between;
+                align-items: center;
+                background: rgba(255, 255, 255, 0.08);
+                border: 1px solid rgba(255, 255, 255, 0.12);
+                padding: 8px 12px;
+                border-radius: 12px;
+            }
+            .serial-badge .date-text {
+                margin-top: 0;
+            }
+            .patient-card {
+                padding: 14px 14px;
+                grid-template-columns: repeat(2, 1fr);
+                gap: 10px;
+            }
+            .patient-item-label {
+                font-size: 10px;
+            }
+            .patient-item-value {
+                font-size: 12px;
+            }
+            .body-section {
+                padding: 16px 12px;
+            }
+            .metrics-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 8px;
+                margin-bottom: 20px;
+            }
+            .metric-card {
+                padding: 12px 10px;
+                border-radius: 14px;
+            }
+            .metric-card-label {
+                font-size: 10px;
+            }
+            .metric-card-val {
+                font-size: 18px;
+            }
+            .metric-card-sub {
+                font-size: 9px;
+            }
+            .section-title {
+                font-size: 13.5px;
+                margin-bottom: 12px;
+            }
+            /* Cardified Meal Table for Phones */
+            .meal-table-wrapper {
+                border: none;
+                background: transparent;
+                box-shadow: none;
+                margin-bottom: 20px;
+            }
+            .meal-table, .meal-table tbody, .meal-table tr, .meal-table td {
+                display: block;
+                width: 100% !important;
+            }
+            .meal-table thead {
+                display: none;
+            }
+            .meal-table tr {
+                background: #ffffff;
+                border: 1px solid var(--border);
+                border-radius: 16px;
+                margin-bottom: 12px;
+                padding: 14px;
+                box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
+            }
+            .meal-table td {
+                padding: 7px 0 !important;
+                border-bottom: 1px dashed #f1f5f9 !important;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                font-size: 12px;
+            }
+            .meal-table td:last-child {
+                border-bottom: none !important;
+                display: block;
+                margin-top: 6px;
+            }
+            .portion-val {
+                font-size: 15px;
+            }
+            .transition-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 8px;
+                margin-bottom: 20px;
+            }
+            .transition-card {
+                padding: 10px 12px;
+                border-radius: 12px;
+            }
+            .detail-grid {
+                grid-template-columns: 1fr;
+                gap: 12px;
+                margin-bottom: 20px;
+            }
+            .detail-box {
+                padding: 14px 12px;
+                border-radius: 14px;
+            }
+            .footer-seal {
+                flex-direction: column;
+                gap: 14px;
+                text-align: center;
+                padding: 18px 14px;
+            }
+            .seal-stamp {
+                flex-direction: column;
+                gap: 8px;
+            }
+        }
+
+        /* Ultra-compact screens (< 380px) */
+        @media (max-width: 380px) {
+            .patient-card {
+                grid-template-columns: 1fr;
+            }
+            .metrics-grid {
+                grid-template-columns: 1fr;
+            }
+            .transition-grid {
+                grid-template-columns: 1fr;
+            }
+            .serial-badge {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 4px;
+            }
+        }
+
         @media print {
             body {
                 background: #ffffff;
@@ -588,16 +779,16 @@ class MealPlanGenerator
 
         <!-- Top Action Bar (Web Only) -->
         <div class="action-bar">
-            <div style="display: flex; align-items: center; gap: 8px;">
+            <div class="action-group">
                 <span class="material-symbols-outlined" style="color: #10b981;">verified</span>
                 <span style="font-size: 13px; font-weight: 800;">پرونده رسمی تغذیه و جدول رژیم غذایی بالینی پت (آسنا)</span>
             </div>
-            <div style="display: flex; items-center; gap: 8px;">
+            <div class="action-group">
                 <button onclick="window.print()" class="action-btn">
                     <span class="material-symbols-outlined" style="font-size: 16px;">print</span>
                     <span>چاپ / ذخیره PDF</span>
                 </button>
-                <a href="../../profile.php" class="action-btn primary">
+                <a href="profile.php?tab=pets#pets" class="action-btn primary">
                     <span class="material-symbols-outlined" style="font-size: 16px;">account_circle</span>
                     <span>بازگشت به پروفایل من</span>
                 </a>

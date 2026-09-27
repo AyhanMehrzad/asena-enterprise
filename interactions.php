@@ -27,7 +27,7 @@ if ($userId > 0 && isset($pdo)) {
 }
 ?>
 
-<main class="max-w-container-max mx-auto overflow-hidden py-8 px-margin-desktop min-h-[85vh]">
+<main class="max-w-container-max mx-auto overflow-hidden py-4 sm:py-8 px-3 sm:px-margin-desktop min-h-[85vh]">
 
     <!-- Breadcrumbs -->
     <div class="flex items-center gap-2 text-xs text-on-surface-variant mb-6">
@@ -53,7 +53,7 @@ if ($userId > 0 && isset($pdo)) {
     </div>
 
     <!-- Main Drug Interaction Component -->
-    <div class="max-w-4xl mx-auto bg-white rounded-3xl p-6 sm:p-10 shadow-xl border border-slate-200/80 mb-12 space-y-8">
+    <div class="max-w-4xl mx-auto bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-8 md:p-10 shadow-xl border border-slate-200/80 mb-8 sm:mb-12 space-y-6 sm:space-y-8">
 
         <!-- 1. Pet Species Selector -->
         <div class="space-y-2.5">
@@ -62,23 +62,23 @@ if ($userId > 0 && isset($pdo)) {
                 <span>گونه حیوان خانگی را مشخص کنید:</span>
             </label>
             <div class="flex flex-wrap sm:flex-nowrap gap-2 sm:gap-3">
-                <button type="button" onclick="setDrugSpecies('dog')" id="drugSpeciesDog" class="drug-species-btn flex-1 min-w-[75px] py-2.5 px-2 rounded-2xl font-bold text-xs flex flex-row items-center justify-center gap-1.5 border transition cursor-pointer bg-[#001a48] text-white border-[#001a48] shadow-sm">
+                <button type="button" onclick="setDrugSpecies('dog')" id="drugSpeciesDog" class="drug-species-btn flex-1 min-w-[75px] min-h-[44px] py-2.5 px-2 rounded-2xl font-bold text-xs flex flex-row items-center justify-center gap-1.5 border transition cursor-pointer bg-[#001a48] text-white border-[#001a48] shadow-sm">
                     <span class="text-base sm:text-lg">🐕</span>
                     <span>سگ</span>
                 </button>
-                <button type="button" onclick="setDrugSpecies('cat')" id="drugSpeciesCat" class="drug-species-btn flex-1 min-w-[75px] py-2.5 px-2 rounded-2xl font-bold text-xs flex flex-row items-center justify-center gap-1.5 border transition cursor-pointer bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200">
+                <button type="button" onclick="setDrugSpecies('cat')" id="drugSpeciesCat" class="drug-species-btn flex-1 min-w-[75px] min-h-[44px] py-2.5 px-2 rounded-2xl font-bold text-xs flex flex-row items-center justify-center gap-1.5 border transition cursor-pointer bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200">
                     <span class="text-base sm:text-lg">🐈</span>
                     <span>گربه</span>
                 </button>
-                <button type="button" onclick="setDrugSpecies('horse')" id="drugSpeciesHorse" class="drug-species-btn flex-1 min-w-[75px] py-2.5 px-2 rounded-2xl font-bold text-xs flex flex-row items-center justify-center gap-1.5 border transition cursor-pointer bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200">
+                <button type="button" onclick="setDrugSpecies('horse')" id="drugSpeciesHorse" class="drug-species-btn flex-1 min-w-[75px] min-h-[44px] py-2.5 px-2 rounded-2xl font-bold text-xs flex flex-row items-center justify-center gap-1.5 border transition cursor-pointer bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200">
                     <span class="text-base sm:text-lg">🐎</span>
                     <span>اسب</span>
                 </button>
-                <button type="button" onclick="setDrugSpecies('bird')" id="drugSpeciesBird" class="drug-species-btn flex-1 min-w-[75px] py-2.5 px-2 rounded-2xl font-bold text-xs flex flex-row items-center justify-center gap-1.5 border transition cursor-pointer bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200">
+                <button type="button" onclick="setDrugSpecies('bird')" id="drugSpeciesBird" class="drug-species-btn flex-1 min-w-[75px] min-h-[44px] py-2.5 px-2 rounded-2xl font-bold text-xs flex flex-row items-center justify-center gap-1.5 border transition cursor-pointer bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200">
                     <span class="text-base sm:text-lg">🦜</span>
                     <span>پرنده</span>
                 </button>
-                <button type="button" onclick="setDrugSpecies('exotic')" id="drugSpeciesExotic" class="drug-species-btn flex-1 min-w-[75px] py-2.5 px-2 rounded-2xl font-bold text-xs flex flex-row items-center justify-center gap-1.5 border transition cursor-pointer bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200">
+                <button type="button" onclick="setDrugSpecies('exotic')" id="drugSpeciesExotic" class="drug-species-btn flex-1 min-w-[75px] min-h-[44px] py-2.5 px-2 rounded-2xl font-bold text-xs flex flex-row items-center justify-center gap-1.5 border transition cursor-pointer bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200">
                     <span class="text-base sm:text-lg">🐇</span>
                     <span>اگزوتیک</span>
                 </button>
@@ -95,15 +95,17 @@ if ($userId > 0 && isset($pdo)) {
                 <span class="text-[11px] text-slate-500 font-normal">حداقل ۲ قلم جهت بررسی تداخل</span>
             </label>
 
-            <!-- Search Input with Autocomplete Dropdown -->
+            <!-- Search Input with Autocomplete Dropdown (Responsive Mobile Layout) -->
             <div class="relative">
-                <div class="flex items-center bg-slate-50 border-2 border-slate-200 rounded-2xl overflow-hidden p-1 focus-within:border-blue-600 focus-within:bg-white focus-within:ring-4 focus-within:ring-blue-100 transition">
-                    <span class="material-symbols-outlined text-slate-400 px-3.5 text-2xl">search</span>
-                    <input type="text" id="drugSearchInput" 
-                           placeholder="نام دارو را جستجو یا تایپ کنید (مثلاً: کارپروفن، پردنیزولون، انروفلوکساسین...)" 
-                           autocomplete="off"
-                           class="w-full py-3 text-xs sm:text-sm text-slate-800 bg-transparent focus:outline-none placeholder-slate-400">
-                    <button type="button" onclick="addCustomDrugFromInput()" class="bg-[#001a48] hover:bg-[#002d72] text-white text-xs sm:text-sm font-bold px-5 py-2.5 rounded-xl transition flex items-center gap-1 shrink-0 cursor-pointer shadow-sm">
+                <div class="flex flex-col sm:flex-row items-stretch sm:items-center bg-slate-50 border-2 border-slate-200 rounded-2xl overflow-hidden p-1.5 gap-1.5 focus-within:border-blue-600 focus-within:bg-white focus-within:ring-4 focus-within:ring-blue-100 transition">
+                    <div class="flex items-center flex-1 min-w-0">
+                        <span class="material-symbols-outlined text-slate-400 px-2.5 sm:px-3.5 text-2xl shrink-0">search</span>
+                        <input type="text" id="drugSearchInput" 
+                               placeholder="نام دارو را جستجو یا تایپ کنید (مثلاً: کارپروفن، پردنیزولون...)" 
+                               autocomplete="off"
+                               class="w-full py-2.5 sm:py-3 text-xs sm:text-sm text-slate-800 bg-transparent focus:outline-none placeholder-slate-400">
+                    </div>
+                    <button type="button" onclick="addCustomDrugFromInput()" class="w-full sm:w-auto bg-[#001a48] hover:bg-[#002d72] text-white text-xs sm:text-sm font-bold px-5 py-3 sm:py-2.5 rounded-xl transition flex items-center justify-center gap-1 shrink-0 cursor-pointer shadow-sm min-h-[46px]">
                         <span class="material-symbols-outlined text-lg">add</span>
                         <span>افزودن دارو</span>
                     </button>
@@ -240,8 +242,8 @@ if ($userId > 0 && isset($pdo)) {
 
         <!-- 4. Primary Action Button -->
         <div>
-            <button type="button" onclick="runDrugInteractionAnalysis()" id="btnRunDrugAnalysis" class="w-full bg-[#001a48] hover:bg-[#002d72] text-white py-4 px-6 rounded-2xl font-black text-sm text-center shadow-lg shadow-blue-950/20 hover:shadow-xl transition-all flex items-center justify-center gap-2.5 cursor-pointer active:scale-98">
-                <span class="material-symbols-outlined text-2xl">psychology</span>
+            <button type="button" onclick="runDrugInteractionAnalysis()" id="btnRunDrugAnalysis" class="w-full bg-[#001a48] hover:bg-[#002d72] text-white py-3.5 sm:py-4 px-4 sm:px-6 rounded-2xl font-black text-xs sm:text-sm text-center shadow-lg shadow-blue-950/20 hover:shadow-xl transition-all flex items-center justify-center gap-2.5 cursor-pointer active:scale-98 min-h-[48px]">
+                <span class="material-symbols-outlined text-xl sm:text-2xl">psychology</span>
                 <span>شروع پایش و تحلیل بالینی تداخلات دارویی</span>
             </button>
         </div>
@@ -299,11 +301,11 @@ if ($userId > 0 && isset($pdo)) {
 
             <!-- Action Buttons: Save to Dossier & Print -->
             <div class="pt-2 grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <button type="button" onclick="saveDrugReportToProfile()" id="btnSaveReport" class="w-full bg-[#001a48] hover:bg-[#002d72] text-white py-3 px-4 rounded-xl font-bold text-xs sm:text-sm transition flex items-center justify-center gap-2 shadow-sm cursor-pointer">
+                <button type="button" onclick="saveDrugReportToProfile()" id="btnSaveReport" class="w-full bg-[#001a48] hover:bg-[#002d72] text-white py-3.5 px-4 rounded-xl font-bold text-xs sm:text-sm transition flex items-center justify-center gap-2 shadow-sm cursor-pointer min-h-[48px]">
                     <span class="material-symbols-outlined text-lg">save</span>
                     <span>ثبت در پرونده سلامت پت</span>
                 </button>
-                <button type="button" onclick="window.print()" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 py-3 px-4 rounded-xl font-bold text-xs sm:text-sm transition flex items-center justify-center gap-2 border border-slate-200 cursor-pointer">
+                <button type="button" onclick="window.print()" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 py-3.5 px-4 rounded-xl font-bold text-xs sm:text-sm transition flex items-center justify-center gap-2 border border-slate-200 cursor-pointer min-h-[48px]">
                     <span class="material-symbols-outlined text-lg">print</span>
                     <span>چاپ نسخه بالینی</span>
                 </button>
@@ -417,6 +419,96 @@ if ($userId > 0 && isset($pdo)) {
                 <p>
                     در نژادهای گله نظیر کالی، استرالین شپرد و شلتی، جهش ژن MDR1 موجب نقص پمپ دفع دارویی در سد خونی-مغزی می‌شود. داروهایی مانند آیورمکتین و لوپرامید در این نژادها منجر به مسمومیت شدید عصبی و کما می‌گردد.
                 </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- DRUG REPORT SUCCESS & PROFILE DELIVERY MODAL                              -->
+    <!-- ========================================================================= -->
+    <div id="drugReportSuccessModal" style="display: none; position: fixed !important; inset: 0 !important; width: 100vw !important; height: 100vh !important; z-index: 9999999 !important; background-color: rgba(15, 23, 42, 0.88) !important; backdrop-filter: blur(8px) !important; -webkit-backdrop-filter: blur(8px) !important; align-items: center !important; justify-content: center !important; padding: 0.75rem !important; overflow-y: auto !important; margin: 0 !important;" class="rtl text-right" onclick="if(event.target === this) closeDrugReportSuccessModal();">
+        <div style="position: relative !important; z-index: 10000000 !important; background-color: #ffffff !important; border-radius: 1.5rem !important; max-width: 32rem !important; width: 100% !important; box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.8) !important; overflow: hidden !important; border: 1px solid #cbd5e1 !important; margin: auto !important;" class="animate-in fade-in zoom-in-95 duration-200">
+            <!-- Top Celebration Header -->
+            <div style="background: linear-gradient(135deg, #001a48 0%, #002d72 50%, #0284c7 100%) !important; color: #ffffff !important; padding: 1.25rem 1rem !important; text-align: center !important; position: relative !important; overflow: hidden !important;">
+                <div class="absolute -top-10 -left-10 w-32 h-32 bg-white/10 rounded-full blur-xl pointer-events-none"></div>
+                <button type="button" onclick="closeDrugReportSuccessModal()" class="w-8 h-8 rounded-full bg-white/15 hover:bg-white/25 flex items-center justify-center text-white transition cursor-pointer" style="position: absolute !important; top: 0.75rem !important; left: 0.75rem !important;">
+                    <span class="material-symbols-outlined text-lg">close</span>
+                </button>
+                <div class="w-14 h-14 rounded-2xl bg-white/20 border-2 border-white/40 flex items-center justify-center text-3xl mx-auto mb-2.5 shadow-lg">
+                    <span class="material-symbols-outlined text-2xl text-amber-300">verified</span>
+                </div>
+                <h2 class="text-base sm:text-xl font-black text-white">کارنامه تداخلات دارویی با موفقیت صادر شد!</h2>
+                <p class="text-xs text-blue-100/90 mt-1">گزارش ارزیابی فارماکوکینتیک در پرونده سلامت پت ذخیره گردید.</p>
+                <div class="mt-2.5 inline-flex items-center gap-2 bg-white/15 border border-white/20 px-3 py-1 rounded-xl text-xs font-mono">
+                    <span>شناسه پرونده:</span>
+                    <span id="drugSuccessModalSerial" class="font-bold text-amber-300">ASENA-INT-XXXX</span>
+                </div>
+            </div>
+
+            <!-- Content Details -->
+            <div class="p-4 sm:p-6 space-y-4 text-xs bg-white text-slate-800">
+                <div class="bg-slate-50 p-3.5 sm:p-4 rounded-2xl border border-slate-200 space-y-2">
+                    <div class="flex items-center gap-2 font-bold text-slate-800">
+                        <span class="material-symbols-outlined text-blue-600 text-base">task_alt</span>
+                        <span>محتوای سند ذخیره شده در پرونده شما:</span>
+                    </div>
+                    <ul class="text-[11px] text-slate-600 space-y-1.5 pr-5 list-disc">
+                        <li>ارزیابی جامع تداخلات جفت‌دارویی و شدت ریسک‌های بالینی</li>
+                        <li>منع مصرف‌های فیزیولوژیک ویژه گونه <span id="drugSuccessModalSpecies" class="font-bold text-blue-700"></span></li>
+                        <li>جدول دقیق فاصله زمانی مصرف داروها (ساعات تجویز مجزا)</li>
+                        <li>توصیه‌های تکمیلی مراقبت و هشدارهای دکتر دامپزشک</li>
+                    </ul>
+                </div>
+
+                <!-- Action Buttons (Thumb Friendly) -->
+                <div class="space-y-2.5 pt-1">
+                    <a id="drugSuccessModalViewLink" href="#" target="_blank" rel="noopener noreferrer" class="w-full bg-blue-600 hover:bg-blue-500 text-white py-3.5 px-4 rounded-xl font-black text-xs text-center shadow-lg shadow-blue-600/25 transition flex items-center justify-center gap-2 min-h-[48px]">
+                        <span class="material-symbols-outlined text-base">open_in_new</span>
+                        <span>مشاهده و چاپ فایل کارنامه رسمی بالینی</span>
+                    </a>
+
+                    <a href="profile.php#view-records" class="w-full bg-[#001a48] hover:bg-[#002d72] text-white py-3.5 px-4 rounded-xl font-bold text-xs text-center transition flex items-center justify-center gap-2 min-h-[48px]">
+                        <span class="material-symbols-outlined text-base">folder_shared</span>
+                        <span>مشاهده در سوابق پزشکی و پروفایل من</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- AUTHENTICATION REQUIRED MODAL (FOR GUEST USERS)                           -->
+    <!-- ========================================================================= -->
+    <div id="drugReportAuthModal" style="display: none; position: fixed !important; inset: 0 !important; width: 100vw !important; height: 100vh !important; z-index: 9999999 !important; background-color: rgba(15, 23, 42, 0.88) !important; backdrop-filter: blur(8px) !important; -webkit-backdrop-filter: blur(8px) !important; align-items: center !important; justify-content: center !important; padding: 0.75rem !important; overflow-y: auto !important; margin: 0 !important;" class="rtl text-right" onclick="if(event.target === this) closeDrugReportAuthModal();">
+        <div style="position: relative !important; z-index: 10000000 !important; background-color: #ffffff !important; border-radius: 1.5rem !important; max-width: 28rem !important; width: 100% !important; box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.8) !important; overflow: hidden !important; border: 1px solid #cbd5e1 !important; margin: auto !important;" class="animate-in fade-in zoom-in-95 duration-200">
+            <!-- Header -->
+            <div style="background: linear-gradient(135deg, #001a48 0%, #002d72 100%) !important; color: #ffffff !important; padding: 1.25rem 1rem !important; text-align: center !important; position: relative !important;">
+                <button type="button" onclick="closeDrugReportAuthModal()" class="w-8 h-8 rounded-full bg-white/15 hover:bg-white/25 flex items-center justify-center text-white transition cursor-pointer" style="position: absolute !important; top: 0.75rem !important; left: 0.75rem !important;">
+                    <span class="material-symbols-outlined text-lg">close</span>
+                </button>
+                <div class="w-12 h-12 rounded-2xl bg-amber-500/20 border border-amber-400/40 text-amber-300 flex items-center justify-center text-xl mx-auto mb-2.5 shadow-sm">
+                    <span class="material-symbols-outlined text-2xl">lock_open</span>
+                </div>
+                <h3 class="text-sm sm:text-base font-black text-white">صدور و ذخیره در پرونده اختصاصی پت</h3>
+                <p class="text-xs text-white/80 mt-1">جهت بایگانی دائمی گزارش پایش دارویی در سوابق پزشکی پت، لطفاً وارد شوید.</p>
+            </div>
+
+            <!-- Body -->
+            <div class="p-4 sm:p-6 space-y-3 text-xs bg-white text-slate-800">
+                <div class="bg-amber-50 border border-amber-200 p-3 rounded-xl text-amber-900 text-[11px] leading-relaxed font-medium">
+                    تحلیل‌های دارویی پت شما محفوظ می‌ماند و پس از ورود، بلافاصله سند در پرونده سلامت ثبت خواهد گردید.
+                </div>
+
+                <div class="space-y-2 pt-2">
+                    <a href="login.php?redirect=interactions.php" class="w-full bg-blue-600 hover:bg-blue-500 text-white py-3.5 px-4 rounded-xl font-black text-xs text-center shadow-md transition flex items-center justify-center gap-2 min-h-[48px]">
+                        <span class="material-symbols-outlined text-base">login</span>
+                        <span>ورود به حساب کاربری آسنا</span>
+                    </a>
+                    <a href="register.php?redirect=interactions.php" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 py-3.5 px-4 rounded-xl font-bold text-xs text-center transition flex items-center justify-center gap-2 min-h-[48px]">
+                        <span class="material-symbols-outlined text-base">person_add</span>
+                        <span>ایجاد حساب کاربری جدید</span>
+                    </a>
+                </div>
             </div>
         </div>
     </div>
@@ -576,7 +668,7 @@ if ($userId > 0 && isset($pdo)) {
                 <span class="material-symbols-outlined text-blue-600 text-sm">medication</span>
                 <span>${escapeHtml(d.name)}</span>
                 ${d.category ? `<span class="text-[9px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded">${escapeHtml(d.category)}</span>` : ''}
-                <button type="button" onclick="removeDrug(${idx})" class="w-4 h-4 rounded-full bg-slate-100 hover:bg-red-500 hover:text-white text-slate-500 flex items-center justify-center text-[10px] transition cursor-pointer">✕</button>
+                <button type="button" onclick="removeDrug(${idx})" class="w-5 h-5 rounded-full bg-slate-100 hover:bg-red-500 hover:text-white text-slate-500 flex items-center justify-center text-xs transition cursor-pointer p-0.5" title="حذف دارو">✕</button>
             `;
             selectedContainer.appendChild(chip);
         });
@@ -834,8 +926,8 @@ if ($userId > 0 && isset($pdo)) {
                     ? 'p-4 sm:p-5 rounded-2xl bg-rose-50/70 border border-rose-200 text-xs space-y-2 text-slate-800'
                     : 'p-4 sm:p-5 rounded-2xl bg-amber-50/70 border border-amber-200 text-xs space-y-2 text-slate-800';
                 card.innerHTML = `
-                    <div class="flex items-center justify-between">
-                        <span class="font-bold text-slate-800 flex items-center gap-1.5">
+                    <div class="flex flex-wrap items-center justify-between gap-1.5">
+                        <span class="font-bold text-slate-800 flex flex-wrap items-center gap-1.5">
                             <span class="px-2 py-0.5 rounded-md bg-white border border-slate-200 font-mono text-[11px] text-slate-700">${escapeHtml(it.drug1)}</span>
                             <span class="text-amber-500 font-bold">⇄</span>
                             <span class="px-2 py-0.5 rounded-md bg-white border border-slate-200 font-mono text-[11px] text-slate-700">${escapeHtml(it.drug2)}</span>
@@ -969,6 +1061,46 @@ if ($userId > 0 && isset($pdo)) {
         }
     }
 
+    // Modal control functions
+    window.closeDrugReportSuccessModal = function() {
+        const modal = document.getElementById('drugReportSuccessModal');
+        if (modal) {
+            modal.style.setProperty('display', 'none', 'important');
+        }
+    };
+
+    window.closeDrugReportAuthModal = function() {
+        const modal = document.getElementById('drugReportAuthModal');
+        if (modal) {
+            modal.style.setProperty('display', 'none', 'important');
+        }
+    };
+
+    window.showDrugReportSuccessModal = function(serial, viewUrl, species) {
+        const modal = document.getElementById('drugReportSuccessModal');
+        const serialEl = document.getElementById('drugSuccessModalSerial');
+        const viewLinkEl = document.getElementById('drugSuccessModalViewLink');
+        const speciesEl = document.getElementById('drugSuccessModalSpecies');
+
+        if (serialEl) serialEl.textContent = serial || 'ASENA-INT-REF';
+        if (viewLinkEl) viewLinkEl.href = viewUrl || '#';
+        if (speciesEl) {
+            const specNames = { cat: 'گربه', dog: 'سگ', horse: 'اسب', bird: 'پرنده', exotic: 'اگزوتیک' };
+            speciesEl.textContent = specNames[species] || 'حیوان خانگی';
+        }
+
+        if (modal) {
+            modal.style.setProperty('display', 'flex', 'important');
+        }
+    };
+
+    window.showDrugReportAuthModal = function() {
+        const modal = document.getElementById('drugReportAuthModal');
+        if (modal) {
+            modal.style.setProperty('display', 'flex', 'important');
+        }
+    };
+
     // Save report to pet health dossier in profile
     window.saveDrugReportToProfile = async function() {
         if (!state.latestReport) return;
@@ -1016,12 +1148,9 @@ if ($userId > 0 && isset($pdo)) {
 
             if (data && data.success) {
                 const viewUrl = data.view_url || 'profile.php?tab=pets#pets';
-                if (confirm('✅ کارنامه بررسی تداخلات دارویی با موفقیت در پرونده سلامت پت شما ذخیره گردید.\n\nآیا مایلید هم‌اکنون کارنامه رسمی بالینی را مشاهده فرمایید؟')) {
-                    window.open(viewUrl, '_blank');
-                }
+                showDrugReportSuccessModal(data.serial || state.latestReport.report_serial, viewUrl, state.species);
             } else if (data && data.require_login) {
-                alert('جهت بایگانی کارنامه در پرونده سلامت، لطفاً ابتدا وارد حساب کاربری خود شوید.');
-                window.location.href = 'login.php?redirect=' + encodeURIComponent('interactions.php');
+                showDrugReportAuthModal();
             } else {
                 alert((data && data.message) || 'خطا در ثبت سند.');
             }
