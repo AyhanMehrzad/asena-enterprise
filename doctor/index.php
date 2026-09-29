@@ -643,6 +643,122 @@ try {
         </div>
     <?php endif; ?>
 
+    <?php
+    // Rule 11: Compute Live Shift Current Active Patient Cockpit
+    $currentActiveAppt = null;
+    $nextUpcomingAppt = null;
+    foreach ($todayAppts as $a) {
+        if (in_array($a['status'], ['confirmed', 'approved', 'in_progress'])) {
+            if (!$currentActiveAppt) {
+                $currentActiveAppt = $a;
+            } elseif (!$nextUpcomingAppt) {
+                $nextUpcomingAppt = $a;
+            }
+        }
+    }
+    if (!$currentActiveAppt && !empty($todayAppts)) {
+        $currentActiveAppt = $todayAppts[0];
+    }
+    ?>
+
+    <!-- DOCTOR LIVE SHIFT COCKPIT (Rule 11: Shift-Centric Single Cockpit) -->
+    <div class="bg-gradient-to-br from-[#001a48] via-[#002868] to-[#001438] text-white rounded-3xl p-6 sm:p-7 shadow-xl border border-white/10 relative overflow-hidden space-y-5">
+        <!-- Background Ambient Glow -->
+        <div class="absolute -top-24 -left-24 w-72 h-72 bg-emerald-500/15 rounded-full blur-3xl pointer-events-none"></div>
+        <div class="absolute -bottom-24 -right-24 w-72 h-72 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+        <!-- Top Bar: Shift Status & Quick Actions -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative z-10 border-b border-white/10 pb-4">
+            <div class="flex items-center gap-3">
+                <div class="w-12 h-12 rounded-2xl bg-emerald-500/20 border border-emerald-400/30 text-emerald-400 flex items-center justify-center font-black shadow-inner">
+                    <span class="material-symbols-outlined text-2xl">stethoscope</span>
+                </div>
+                <div>
+                    <div class="flex items-center gap-2">
+                        <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-400/30">
+                            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                            <span>شیفت فعال درمان و ویزیت</span>
+                        </span>
+                        <span class="text-xs text-slate-300">| اتاق معاینه تخصصی</span>
+                    </div>
+                    <h2 class="text-base sm:text-lg font-black text-white mt-1"><?= htmlspecialchars($doctorName) ?> (<?= htmlspecialchars($doctorProfile['specialty'] ?? 'دامپزشک') ?>)</h2>
+                </div>
+            </div>
+
+            <!-- Emergency Slot Block Button -->
+            <div class="flex items-center gap-2 flex-wrap">
+                <button type="button" onclick="openEmergencyBlockModal()" class="px-4 py-2.5 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-400/40 text-xs font-bold transition-all flex items-center gap-2 shadow-xs active:scale-95">
+                    <span class="material-symbols-outlined text-base text-rose-400">event_busy</span>
+                    <span>مسدودسازی فوری نوبت (اورژانس جراحی)</span>
+                </button>
+                <div class="px-3 py-2 rounded-xl bg-white/5 border border-white/10 text-xs text-slate-300 flex items-center gap-1.5 font-mono">
+                    <span class="material-symbols-outlined text-sm text-cyan-400">schedule</span>
+                    <span><?= $fmtDate->format(new DateTime()) ?></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Patient in Session / Cockpit Card -->
+        <div class="relative z-10">
+            <?php if ($currentActiveAppt): 
+                $activePetName = $currentActiveAppt['pet_name'] ?: ($currentActiveAppt['pet_type'] ?: 'بیمار');
+                $activeOwner = $currentActiveAppt['owner_name'] ?: 'سرپرست محترم';
+                $activeWeight = !empty($currentActiveAppt['pet_weight']) ? $currentActiveAppt['pet_weight'] . ' کیلوگرم' : 'ثبت‌نشده';
+                $activeAllergies = !empty($currentActiveAppt['profile_pet_allergies']) ? $currentActiveAppt['profile_pet_allergies'] : null;
+                $activeJson = htmlspecialchars(json_encode($currentActiveAppt, JSON_UNESCAPED_UNICODE), ENT_QUOTES, 'UTF-8');
+            ?>
+            <div class="p-5 rounded-2xl bg-white/10 backdrop-blur-md border border-white/15 flex flex-col lg:flex-row lg:items-center justify-between gap-5">
+                <div class="flex items-start gap-4">
+                    <div class="w-16 h-16 rounded-2xl bg-white/10 border border-white/20 overflow-hidden flex items-center justify-center shrink-0 shadow-sm">
+                        <?php if (!empty($currentActiveAppt['pet_image'])): ?>
+                            <img src="../<?= ltrim($currentActiveAppt['pet_image'], '/') ?>" class="w-full h-full object-cover" alt="">
+                        <?php else: ?>
+                            <span class="material-symbols-outlined text-3xl text-emerald-300">pets</span>
+                        <?php endif; ?>
+                    </div>
+                    <div class="space-y-1.5">
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <span class="text-xs px-2.5 py-0.5 rounded-lg bg-emerald-500 text-white font-black">بیمار در حال ویزیت</span>
+                            <h3 class="text-base font-black text-white"><?= htmlspecialchars($activePetName) ?></h3>
+                            <span class="text-xs text-slate-300">(<?= htmlspecialchars($currentActiveAppt['pet_breed'] ?: $currentActiveAppt['pet_type'] ?: 'حیوان خانگی') ?>)</span>
+                        </div>
+                        <div class="flex items-center gap-4 text-xs text-slate-300 flex-wrap">
+                            <span>👤 سرپرست: <strong class="text-white"><?= htmlspecialchars($activeOwner) ?></strong></span>
+                            <span>📞 تماس: <a href="tel:<?= htmlspecialchars($currentActiveAppt['phone'] ?? '') ?>" class="text-cyan-300 font-mono hover:underline"><?= htmlspecialchars($currentActiveAppt['phone'] ?? '-') ?></a></span>
+                            <span>⚖️ وزن: <strong class="text-white"><?= $activeWeight ?></strong></span>
+                            <span>⏰ ساعت نوبت: <strong class="text-emerald-300 font-mono"><?= htmlspecialchars($currentActiveAppt['appointment_time']) ?></strong></span>
+                        </div>
+                        <?php if ($activeAllergies): ?>
+                            <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-rose-500/20 text-rose-300 border border-rose-400/30 text-[11px] font-bold">
+                                <span class="material-symbols-outlined text-xs">warning</span>
+                                <span>هشدار حساسیت دارویی: <?= htmlspecialchars($activeAllergies) ?></span>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+                </div>
+
+                <!-- 1-Click Action Buttons -->
+                <div class="flex items-center gap-2.5 flex-wrap lg:justify-end shrink-0">
+                    <button type="button" onclick='openAppointmentModal(<?= $activeJson ?>)' class="px-5 py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-bold text-xs shadow-lg shadow-emerald-900/30 flex items-center gap-2 transition-all active:scale-95">
+                        <span class="material-symbols-outlined text-lg">clinical_notes</span>
+                        <span>ویزیت بالینی، EMR و ثبت نسخه</span>
+                    </button>
+                    <button type="button" onclick='openBpmsFromAppt(<?= $activeJson ?>)' class="px-4 py-3 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs border border-white/20 flex items-center gap-1.5 transition-all">
+                        <span class="material-symbols-outlined text-lg text-indigo-300">medication</span>
+                        <span>صدور نسخه BPMS</span>
+                    </button>
+                </div>
+            </div>
+            <?php else: ?>
+            <div class="p-6 rounded-2xl bg-white/5 border border-white/10 text-center space-y-2">
+                <span class="material-symbols-outlined text-4xl text-slate-400">check_circle</span>
+                <p class="text-sm font-bold text-slate-200">در حال حاضر هیچ بیماری در صف انتظار لحظه‌ای قرار ندارد.</p>
+                <p class="text-xs text-slate-400">می‌توانید تقویم نوبت‌ها را بررسی نموده یا در صورت نیاز زمان‌های آتی را مسدود نمایید.</p>
+            </div>
+            <?php endif; ?>
+        </div>
+    </div>
+
     <!-- Header Stats Cards -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
         <!-- Card 1: Today Appointments -->
@@ -1348,6 +1464,93 @@ try {
                 <?php endif; ?>
             </div>
         </div>
+    </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- EMERGENCY SLOT BLOCK MODAL (Rule 11) -->
+<!-- ========================================================================= -->
+<div id="emergencyBlockModal" class="fixed inset-0 z-[110] hidden items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto">
+    <div class="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in duration-200 border border-rose-200">
+        <!-- Header -->
+        <div class="px-6 py-5 bg-gradient-to-r from-rose-600 to-rose-700 text-white flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
+                    <span class="material-symbols-outlined text-2xl text-white">emergency</span>
+                </div>
+                <div>
+                    <h3 class="font-black text-base">مسدودسازی فوری نوبت (اورژانس جراحی)</h3>
+                    <p class="text-xs text-rose-100">غیرفعال‌سازی آنی نوبت‌های امروز جهت جلوگیری از رزرو مراجعین</p>
+                </div>
+            </div>
+            <button type="button" onclick="closeEmergencyBlockModal()" class="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors">
+                <span class="material-symbols-outlined text-lg">close</span>
+            </button>
+        </div>
+
+        <!-- Form -->
+        <form method="POST" class="p-6 space-y-4">
+            <?= csrf_field() ?>
+            <input type="hidden" name="action" value="block_slot">
+            <input type="hidden" name="block_date" value="<?= date('Y-m-d') ?>">
+
+            <!-- Quick Presets -->
+            <div class="space-y-2">
+                <label class="block text-xs font-bold text-slate-700">انتخاب بازه مسدودی سریع:</label>
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    <button type="button" onclick="setEmergencyPreset(1)" class="px-2.5 py-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-bold transition-all text-center">
+                        ⚡ ۱ ساعت آینده
+                    </button>
+                    <button type="button" onclick="setEmergencyPreset(2)" class="px-2.5 py-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-bold transition-all text-center">
+                        ⚡ ۲ ساعت آینده
+                    </button>
+                    <button type="button" onclick="setEmergencyPreset(4)" class="px-2.5 py-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-bold transition-all text-center">
+                        ⚡ ۴ ساعت آینده
+                    </button>
+                    <button type="button" onclick="setEmergencyFullDay()" class="px-2.5 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition-all text-center shadow-xs">
+                        ⛔ کل امروز
+                    </button>
+                </div>
+            </div>
+
+            <!-- Custom Hours -->
+            <div class="grid grid-cols-2 gap-3 pt-2">
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 mb-1">از ساعت</label>
+                    <input type="time" name="start_time" id="emg_start_time" value="<?= date('H:i') ?>" class="w-full p-2.5 rounded-xl border border-slate-200 text-xs font-mono bg-slate-50 outline-none focus:ring-2 focus:ring-rose-500" dir="ltr" required>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 mb-1">تا ساعت</label>
+                    <input type="time" name="end_time" id="emg_end_time" value="<?= date('H:i', strtotime('+2 hours')) ?>" class="w-full p-2.5 rounded-xl border border-slate-200 text-xs font-mono bg-slate-50 outline-none focus:ring-2 focus:ring-rose-500" dir="ltr" required>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-2 pt-1">
+                <input type="checkbox" name="is_full_day" id="emg_is_full_day" value="1" class="w-4 h-4 rounded text-rose-600 focus:ring-rose-500">
+                <label for="emg_is_full_day" class="text-xs font-bold text-slate-700 cursor-pointer">مسدودسازی تمام نوبت‌های باقی‌مانده شیفت امروز</label>
+            </div>
+
+            <!-- Reason -->
+            <div class="space-y-1.5 pt-1">
+                <label class="block text-xs font-bold text-slate-700">علت مسدودسازی فوری:</label>
+                <input type="text" name="reason" id="emg_reason" value="عمل جراحی اورژانسی خارج از برنامه" required class="w-full p-2.5 rounded-xl border border-slate-200 text-xs bg-white outline-none focus:ring-2 focus:ring-rose-500">
+                <div class="flex gap-1.5 flex-wrap">
+                    <button type="button" onclick="document.getElementById('emg_reason').value='عمل جراحی اورژانسی خارج از برنامه'" class="px-2 py-0.5 rounded-lg bg-slate-100 text-[11px] text-slate-700 hover:bg-rose-50 hover:text-rose-700">🩺 جراحی اورژانس</button>
+                    <button type="button" onclick="document.getElementById('emg_reason').value='احیا و بستری فوری کیس بدحال'" class="px-2 py-0.5 rounded-lg bg-slate-100 text-[11px] text-slate-700 hover:bg-rose-50 hover:text-rose-700">🚨 کیس بدحال</button>
+                    <button type="button" onclick="document.getElementById('emg_reason').value='تداخل زمان معاینات تخصصی'" class="px-2 py-0.5 rounded-lg bg-slate-100 text-[11px] text-slate-700 hover:bg-rose-50 hover:text-rose-700">⏳ تداخل معاینه</button>
+                </div>
+            </div>
+
+            <div class="pt-3 flex items-center justify-end gap-3 border-t border-slate-100">
+                <button type="button" onclick="closeEmergencyBlockModal()" class="px-4 py-2.5 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 text-xs font-bold transition-all">
+                    انصراف
+                </button>
+                <button type="submit" class="px-5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold shadow-lg shadow-rose-900/20 flex items-center gap-1.5 transition-all">
+                    <span class="material-symbols-outlined text-base">lock</span>
+                    <span>مسدودسازی فوری نوبت‌ها</span>
+                </button>
+            </div>
+        </form>
     </div>
 </div>
 
@@ -2067,6 +2270,70 @@ function addDrugRow() {
     `;
     container.appendChild(div);
     div.querySelector('input[name="drug_name[]"]').focus();
+}
+
+// ── Rule 11: Doctor Cockpit & Emergency Helper Functions ─────────────────────
+function openAppointmentModal(appt) {
+    if (typeof openSmartPatientDossier === 'function') {
+        openSmartPatientDossier(appt);
+    }
+}
+
+function openEmergencyBlockModal() {
+    const modal = document.getElementById('emergencyBlockModal');
+    if (modal) {
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+    }
+}
+
+function closeEmergencyBlockModal() {
+    const modal = document.getElementById('emergencyBlockModal');
+    if (modal) {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+    }
+}
+
+function setEmergencyPreset(hours) {
+    const now = new Date();
+    const pad = n => String(n).padStart(2, '0');
+    const startStr = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
+    now.setHours(now.getHours() + hours);
+    const endStr = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
+    
+    const startTimeInp = document.getElementById('emg_start_time');
+    const endTimeInp = document.getElementById('emg_end_time');
+    const isFullDay = document.getElementById('emg_is_full_day');
+    if (startTimeInp) startTimeInp.value = startStr;
+    if (endTimeInp) endTimeInp.value = endStr;
+    if (isFullDay) isFullDay.checked = false;
+}
+
+function setEmergencyFullDay() {
+    const startTimeInp = document.getElementById('emg_start_time');
+    const endTimeInp = document.getElementById('emg_end_time');
+    const isFullDay = document.getElementById('emg_is_full_day');
+    if (startTimeInp) startTimeInp.value = '00:00';
+    if (endTimeInp) endTimeInp.value = '23:59';
+    if (isFullDay) isFullDay.checked = true;
+}
+
+function openBpmsFromAppt(appt) {
+    if (!appt) return;
+    const userIdInp = document.getElementById('bpms_user_id');
+    const petIdInp = document.getElementById('bpms_pet_id');
+    const diagInp = document.querySelector('textarea[name="diagnosis"]');
+    
+    if (userIdInp && appt.user_id) userIdInp.value = appt.user_id;
+    if (petIdInp && appt.pet_id) petIdInp.value = appt.pet_id;
+    if (diagInp && appt.pet_name) {
+        diagInp.value = `ویزیت بالینی بیمار ${appt.pet_name} (${appt.pet_breed || appt.pet_type || 'پت'})`;
+    }
+    
+    if (typeof switchTab === 'function') {
+        switchTab('bpms-tab');
+    }
 }
 </script>
 

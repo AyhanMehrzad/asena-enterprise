@@ -235,6 +235,27 @@ $ordersQuery = $pdo->prepare("
 $ordersQuery->execute([$sellerId, $currentUser['role']]);
 $sellerOrders = $ordersQuery->fetchAll(PDO::FETCH_ASSOC);
 
+// Rule 11: Calculate 4-Stage Fulfillment Pipeline Counts
+$stageCounts = [
+    'all'       => count($sellerOrders),
+    'new'       => 0, // pending_payment, paid, processing
+    'packing'   => 0, // confirmed, picking, packed
+    'shipped'   => 0, // handed_over, shipped, out_for_delivery
+    'delivered' => 0, // delivered
+];
+foreach ($sellerOrders as $ord) {
+    $st = $ord['order_status'];
+    if (in_array($st, ['pending_payment', 'paid', 'processing'])) {
+        $stageCounts['new']++;
+    } elseif (in_array($st, ['confirmed', 'picking', 'packed'])) {
+        $stageCounts['packing']++;
+    } elseif (in_array($st, ['handed_over', 'shipped', 'out_for_delivery'])) {
+        $stageCounts['shipped']++;
+    } elseif ($st === 'delivered') {
+        $stageCounts['delivered']++;
+    }
+}
+
 // ── Fetch Seller Products ─────────────────────────────────────────────────────
 $productsQuery = $pdo->prepare("
     SELECT * FROM products 
@@ -367,33 +388,69 @@ foreach ($sellerProducts as $p) {
             </div>
         </div>
 
-        <!-- Simplified 3-Step Fulfillment Guide for Non-Technical Sellers -->
-        <div class="bg-gradient-to-r from-orange-500/10 via-amber-500/5 to-transparent border border-orange-200/60 rounded-2xl p-4 sm:p-5">
-            <div class="flex items-center gap-2 mb-3">
-                <span class="material-symbols-outlined text-orange-600 text-xl">route</span>
-                <h3 class="text-sm font-black text-slate-800">راهنمای ساده و ۳ مرحله‌ای ارسال کالا (ویژه پت‌شاپ‌ها و فروشندگان)</h3>
+        <!-- Rule 11: 4-Stage Visual Fulfillment Pipeline Stepper -->
+        <div class="space-y-3">
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                <button type="button" onclick="filterOrdersByStage('new')" data-stage="new" class="stage-btn text-right p-4 rounded-2xl bg-white border border-slate-200/80 hover:border-amber-400 stat-card-shadow transition-all group flex items-start justify-between cursor-pointer">
+                    <div class="space-y-1">
+                        <span class="text-xs font-bold text-slate-500 block">مرحله ۱: سفارش جدید</span>
+                        <span class="text-base sm:text-lg font-black text-slate-800 block">تأیید و صدور</span>
+                        <span class="text-[11px] text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md font-bold inline-block">نیاز به اقدام فروشنده</span>
+                    </div>
+                    <div class="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-600 flex items-center justify-center font-black shrink-0">
+                        <span class="text-sm font-black"><?= $stageCounts['new'] ?></span>
+                    </div>
+                </button>
+
+                <button type="button" onclick="filterOrdersByStage('packing')" data-stage="packing" class="stage-btn text-right p-4 rounded-2xl bg-white border border-slate-200/80 hover:border-blue-400 stat-card-shadow transition-all group flex items-start justify-between cursor-pointer">
+                    <div class="space-y-1">
+                        <span class="text-xs font-bold text-slate-500 block">مرحله ۲: آماده‌سازی</span>
+                        <span class="text-base sm:text-lg font-black text-slate-800 block">بسته‌بندی و چاپ لیبل</span>
+                        <span class="text-[11px] text-blue-700 bg-blue-50 px-2 py-0.5 rounded-md font-bold inline-block">آماده برای پست</span>
+                    </div>
+                    <div class="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-600 flex items-center justify-center font-black shrink-0">
+                        <span class="text-sm font-black"><?= $stageCounts['packing'] ?></span>
+                    </div>
+                </button>
+
+                <button type="button" onclick="filterOrdersByStage('shipped')" data-stage="shipped" class="stage-btn text-right p-4 rounded-2xl bg-white border border-slate-200/80 hover:border-cyan-400 stat-card-shadow transition-all group flex items-start justify-between cursor-pointer">
+                    <div class="space-y-1">
+                        <span class="text-xs font-bold text-slate-500 block">مرحله ۳: ارسال شده</span>
+                        <span class="text-base sm:text-lg font-black text-slate-800 block">دارای بارکد پستی</span>
+                        <span class="text-[11px] text-cyan-700 bg-cyan-50 px-2 py-0.5 rounded-md font-bold inline-block">در مسیر به مقصد</span>
+                    </div>
+                    <div class="w-10 h-10 rounded-xl bg-cyan-500/10 text-cyan-600 flex items-center justify-center font-black shrink-0">
+                        <span class="text-sm font-black"><?= $stageCounts['shipped'] ?></span>
+                    </div>
+                </button>
+
+                <button type="button" onclick="filterOrdersByStage('delivered')" data-stage="delivered" class="stage-btn text-right p-4 rounded-2xl bg-white border border-slate-200/80 hover:border-emerald-400 stat-card-shadow transition-all group flex items-start justify-between cursor-pointer">
+                    <div class="space-y-1">
+                        <span class="text-xs font-bold text-slate-500 block">مرحله ۴: تحویل نهایی</span>
+                        <span class="text-base sm:text-lg font-black text-slate-800 block">تسویه اسکرو</span>
+                        <span class="text-[11px] text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md font-bold inline-block">واریز به کیف‌پول</span>
+                    </div>
+                    <div class="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center font-black shrink-0">
+                        <span class="text-sm font-black"><?= $stageCounts['delivered'] ?></span>
+                    </div>
+                </button>
             </div>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
-                <div class="bg-white/85 backdrop-blur rounded-xl p-3 border border-orange-100 flex items-start gap-2.5 shadow-xs">
-                    <span class="w-6 h-6 rounded-full bg-orange-500 text-white font-black flex items-center justify-center text-xs shrink-0">۱</span>
-                    <div>
-                        <strong class="text-slate-800 block mb-0.5">مشاهده نشانی و کپی کد پستی</strong>
-                        <span class="text-slate-500 text-[11px] leading-relaxed">کد پستی ۱۰ رقمی خریدار را با یک کلیک کپی کرده و آدرس و موقعیت نقشه را بررسی کنید.</span>
-                    </div>
+
+            <!-- Stage Filter Reset & Guidance Bar -->
+            <div class="flex items-center justify-between gap-3 bg-gradient-to-r from-orange-500/10 via-amber-500/5 to-transparent border border-orange-200/60 rounded-2xl p-3 sm:p-4 text-xs">
+                <div class="flex items-center gap-2">
+                    <span class="material-symbols-outlined text-orange-600 text-lg">route</span>
+                    <span class="font-bold text-slate-800">جریان سفارشات فعال:</span>
+                    <button type="button" onclick="filterOrdersByStage('all')" data-stage="all" class="stage-btn px-2.5 py-1 rounded-lg bg-slate-800 text-white font-bold text-[11px] transition-all">
+                        مشاهده همه (<?= $stageCounts['all'] ?>)
+                    </button>
                 </div>
-                <div class="bg-white/85 backdrop-blur rounded-xl p-3 border border-orange-100 flex items-start gap-2.5 shadow-xs">
-                    <span class="w-6 h-6 rounded-full bg-orange-500 text-white font-black flex items-center justify-center text-xs shrink-0">۲</span>
-                    <div>
-                        <strong class="text-slate-800 block mb-0.5">چاپ برچسب پستی کارتن</strong>
-                        <span class="text-slate-500 text-[11px] leading-relaxed">روی «چاپ برچسب» کلیک کرده و برگه آماده A5 یا برچسب حرارتی را مستقیم روی بسته بچسبانید.</span>
-                    </div>
-                </div>
-                <div class="bg-white/85 backdrop-blur rounded-xl p-3 border border-orange-100 flex items-start gap-2.5 shadow-xs">
-                    <span class="w-6 h-6 rounded-full bg-orange-500 text-white font-black flex items-center justify-center text-xs shrink-0">۳</span>
-                    <div>
-                        <strong class="text-slate-800 block mb-0.5">ثبت بارکد پس از تحویل به پست</strong>
-                        <span class="text-slate-500 text-[11px] leading-relaxed">پس از تحویل به پست یا تیپاکس، بارکد رهگیری را ثبت کنید تا پیامک خودکار برای خریدار برود.</span>
-                    </div>
+                <div class="hidden sm:flex items-center gap-3 text-slate-500 text-[11px]">
+                    <span>۱. کپی کدپستی خریدار</span>
+                    <span>←</span>
+                    <span>۲. چاپ برچسب A5</span>
+                    <span>←</span>
+                    <span>۳. ثبت بارکد پس از تحویل پست</span>
                 </div>
             </div>
         </div>
@@ -406,7 +463,8 @@ foreach ($sellerProducts as $p) {
                 <p class="text-xs text-slate-400 mt-1">با تکمیل ویترین محصولات و قیمت‌گذاری مناسب، فروش خود را آغاز کنید.</p>
             </div>
             <?php else: ?>
-            <div class="overflow-x-auto">
+            <!-- Desktop Table View (>= lg) -->
+            <div class="hidden lg:block overflow-x-auto">
                 <table class="w-full text-right text-xs">
                     <thead class="bg-slate-50 text-slate-600 font-bold border-b border-slate-100">
                         <tr>
@@ -427,8 +485,33 @@ foreach ($sellerProducts as $p) {
                             $destPostal = $ord['buyer_postal_code'] ?? '';
                             $destLat = $ord['buyer_lat'] ?? null;
                             $destLng = $ord['buyer_lng'] ?? null;
+
+                            $st = $ord['order_status'];
+                            $ordStage = 'new';
+                            if (in_array($st, ['pending_payment', 'paid', 'processing'])) {
+                                $ordStage = 'new';
+                            } elseif (in_array($st, ['confirmed', 'picking', 'packed'])) {
+                                $ordStage = 'packing';
+                            } elseif (in_array($st, ['handed_over', 'shipped', 'out_for_delivery'])) {
+                                $ordStage = 'shipped';
+                            } elseif ($st === 'delivered') {
+                                $ordStage = 'delivered';
+                            }
+
+                            $badgeClass = match($ord['order_status']) {
+                                'delivered' => 'bg-emerald-50 text-emerald-700 border-emerald-200',
+                                'shipped'   => 'bg-blue-50 text-blue-700 border-blue-200',
+                                'cancelled' => 'bg-rose-50 text-rose-700 border-rose-200',
+                                default     => 'bg-amber-50 text-amber-700 border-amber-200'
+                            };
+                            $statusLabel = match($ord['order_status']) {
+                                'delivered' => 'تحویل شده',
+                                'shipped'   => 'ارسال شده',
+                                'cancelled' => 'لغو شده',
+                                default     => 'در انتظار ارسال'
+                            };
                         ?>
-                        <tr class="hover:bg-slate-50/50 transition-colors">
+                        <tr class="order-row-item hover:bg-slate-50/50 transition-colors" data-stage="<?= $ordStage ?>">
                             <td class="p-3.5 font-black text-on-surface">#<?= $ord['order_id'] ?></td>
                             <td class="p-3.5 text-slate-500"><?= htmlspecialchars(substr($ord['order_date'], 0, 16)) ?></td>
                             <td class="p-3.5 max-w-xs">
@@ -463,23 +546,9 @@ foreach ($sellerProducts as $p) {
                                 <span class="text-slate-400 font-bold mr-1">(×<?= (int)$ord['quantity'] ?>)</span>
                             </td>
                             <td class="p-3.5 font-black text-emerald-600">
-                                <?= number_format($ord['seller_net_amount'] ?: ($ord['price_at_purchase'] * $ord['quantity'] * 0.95)) ?>
+                                <?= number_format($ord['seller_net_amount'] ?: ($ord['price_at_purchase'] * $ord['quantity'] * ($sellerNetShare / 100))) ?>
                             </td>
                             <td class="p-3.5">
-                                <?php
-                                $badgeClass = match($ord['order_status']) {
-                                    'delivered' => 'bg-emerald-50 text-emerald-700 border-emerald-200',
-                                    'shipped'   => 'bg-blue-50 text-blue-700 border-blue-200',
-                                    'cancelled' => 'bg-rose-50 text-rose-700 border-rose-200',
-                                    default     => 'bg-amber-50 text-amber-700 border-amber-200'
-                                };
-                                $statusLabel = match($ord['order_status']) {
-                                    'delivered' => 'تحویل شده',
-                                    'shipped'   => 'ارسال شده',
-                                    'cancelled' => 'لغو شده',
-                                    default     => 'در انتظار ارسال'
-                                };
-                                ?>
                                 <span class="inline-block px-2.5 py-1 rounded-lg text-[11px] font-bold border <?= $badgeClass ?>">
                                     <?= $statusLabel ?>
                                 </span>
@@ -520,6 +589,125 @@ foreach ($sellerProducts as $p) {
                         <?php endforeach; ?>
                     </tbody>
                 </table>
+            </div>
+
+            <!-- Mobile Cards Layout (< lg) (Rule 9: PWA & Android Responsive UI) -->
+            <div class="lg:hidden divide-y divide-slate-100 p-3 space-y-3">
+                <?php foreach ($sellerOrders as $ord): 
+                    $destCity = $ord['buyer_city'] ?? '';
+                    $destAddress = $ord['buyer_address'] ?? $ord['shipping_address'] ?? '';
+                    $destPostal = $ord['buyer_postal_code'] ?? '';
+                    $destLat = $ord['buyer_lat'] ?? null;
+                    $destLng = $ord['buyer_lng'] ?? null;
+
+                    $st = $ord['order_status'];
+                    $ordStage = 'new';
+                    if (in_array($st, ['pending_payment', 'paid', 'processing'])) {
+                        $ordStage = 'new';
+                    } elseif (in_array($st, ['confirmed', 'picking', 'packed'])) {
+                        $ordStage = 'packing';
+                    } elseif (in_array($st, ['handed_over', 'shipped', 'out_for_delivery'])) {
+                        $ordStage = 'shipped';
+                    } elseif ($st === 'delivered') {
+                        $ordStage = 'delivered';
+                    }
+
+                    $badgeClass = match($ord['order_status']) {
+                        'delivered' => 'bg-emerald-50 text-emerald-700 border-emerald-200',
+                        'shipped'   => 'bg-blue-50 text-blue-700 border-blue-200',
+                        'cancelled' => 'bg-rose-50 text-rose-700 border-rose-200',
+                        default     => 'bg-amber-50 text-amber-700 border-amber-200'
+                    };
+                    $statusLabel = match($ord['order_status']) {
+                        'delivered' => 'تحویل شده',
+                        'shipped'   => 'ارسال شده',
+                        'cancelled' => 'لغو شده',
+                        default     => 'در انتظار ارسال'
+                    };
+                ?>
+                <div class="order-row-item p-4 rounded-2xl bg-white border border-slate-200/80 shadow-xs space-y-3" data-stage="<?= $ordStage ?>">
+                    <!-- Card Top: Order ID, Date, Status -->
+                    <div class="flex items-center justify-between gap-2 border-b border-slate-100 pb-2.5">
+                        <div>
+                            <span class="font-black text-slate-900 text-sm">سفارش #<?= $ord['order_id'] ?></span>
+                            <span class="text-[11px] text-slate-400 block"><?= htmlspecialchars(substr($ord['order_date'], 0, 16)) ?></span>
+                        </div>
+                        <span class="px-2.5 py-1 rounded-lg text-[11px] font-bold border <?= $badgeClass ?>">
+                            <?= $statusLabel ?>
+                        </span>
+                    </div>
+
+                    <!-- Buyer & Shipping Info -->
+                    <div class="space-y-1.5 text-xs">
+                        <div class="flex items-center justify-between">
+                            <span class="font-bold text-slate-800">👤 <?= htmlspecialchars($ord['buyer_name'] ?: 'کاربر آسنا') ?></span>
+                            <?php if (!empty($ord['buyer_phone'])): ?>
+                                <a href="tel:<?= htmlspecialchars($ord['buyer_phone']) ?>" class="px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 font-mono font-bold text-[11px] flex items-center gap-1">
+                                    <span class="material-symbols-outlined text-xs">call</span>
+                                    <span><?= htmlspecialchars($ord['buyer_phone']) ?></span>
+                                </a>
+                            <?php endif; ?>
+                        </div>
+                        <?php if (!empty($destCity) || !empty($destAddress)): ?>
+                            <p class="text-[11px] text-slate-600 leading-relaxed bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                                📍 <?= !empty($destCity) ? '<strong>' . htmlspecialchars($destCity) . ':</strong> ' : '' ?>
+                                <?= htmlspecialchars($destAddress) ?>
+                            </p>
+                        <?php endif; ?>
+                        <div class="flex items-center gap-2 flex-wrap pt-1">
+                            <?php if (!empty($destPostal)): ?>
+                                <button type="button" onclick="copyText('<?= htmlspecialchars($destPostal) ?>', this)" class="inline-flex items-center gap-1 font-mono text-[10px] font-bold text-slate-700 bg-slate-100 px-2 py-1 rounded-lg border border-slate-200">
+                                    <span class="material-symbols-outlined text-xs">content_copy</span>
+                                    <span>کدپستی: <?= htmlspecialchars($destPostal) ?></span>
+                                </button>
+                            <?php endif; ?>
+                            <?php if (!empty($destLat) && !empty($destLng)): ?>
+                                <a href="https://nshn.ir/?lat=<?= $destLat ?>&lng=<?= $destLng ?>" target="_blank" class="inline-flex items-center gap-0.5 text-[10px] text-blue-600 bg-blue-50 px-2 py-1 rounded-lg border border-blue-200 hover:underline">
+                                    <span class="material-symbols-outlined text-xs">location_on</span>
+                                    <span>مسیریابی نشان</span>
+                                </a>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+
+                    <!-- Product & Net Payout -->
+                    <div class="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 border border-slate-100 text-xs">
+                        <div>
+                            <span class="font-bold text-slate-800 block truncate max-w-[180px]"><?= htmlspecialchars($ord['product_name_snapshot'] ?: 'کالای فروشگاه') ?></span>
+                            <span class="text-[11px] text-slate-500">تعداد: ×<?= (int)$ord['quantity'] ?></span>
+                        </div>
+                        <div class="text-left">
+                            <span class="text-[10px] text-slate-400 block">سهم خالص فروشنده:</span>
+                            <span class="font-black text-emerald-600 font-mono text-sm"><?= number_format($ord['seller_net_amount'] ?: ($ord['price_at_purchase'] * $ord['quantity'] * ($sellerNetShare / 100))) ?> <span class="text-[10px]">تومان</span></span>
+                        </div>
+                    </div>
+
+                    <!-- Tracking Display if Shipped -->
+                    <?php if (!empty($ord['post_tracking_code'])): ?>
+                        <div class="text-xs bg-cyan-50/60 p-2 rounded-xl border border-cyan-100 flex items-center justify-between">
+                            <div>
+                                <span class="text-[10px] text-cyan-800 font-bold block"><?= htmlspecialchars($ord['carrier_name'] ?: 'پستکس') ?>:</span>
+                                <span class="font-mono text-xs font-bold text-slate-700"><?= htmlspecialchars($ord['post_tracking_code']) ?></span>
+                            </div>
+                            <button type="button" onclick="copyText('<?= htmlspecialchars($ord['post_tracking_code']) ?>', this)" class="p-1.5 rounded-lg bg-white text-slate-600 hover:text-cyan-700 border border-cyan-200">
+                                <span class="material-symbols-outlined text-xs">content_copy</span>
+                            </button>
+                        </div>
+                    <?php endif; ?>
+
+                    <!-- Thumb Zone Action Buttons -->
+                    <div class="grid grid-cols-2 gap-2 pt-1">
+                        <a href="../actions/print_shipping_label.php?order_id=<?= $ord['order_id'] ?>" target="_blank" class="py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs flex items-center justify-center gap-1.5 transition-all">
+                            <span class="material-symbols-outlined text-base">print</span>
+                            <span>چاپ برچسب</span>
+                        </a>
+                        <button onclick="openTrackingModal(<?= $ord['order_id'] ?>, '<?= htmlspecialchars(addslashes($ord['post_tracking_code'] ?? '')) ?>', '<?= htmlspecialchars(addslashes($ord['carrier_name'] ?? 'شرکت ملی پست / پستکس')) ?>')" class="py-2.5 rounded-xl bg-secondary-container hover:bg-orange-600 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm transition-all">
+                            <span class="material-symbols-outlined text-base">local_shipping</span>
+                            <span><?= !empty($ord['post_tracking_code']) ? 'ویرایش بارکد' : 'ثبت بارکد پست' ?></span>
+                        </button>
+                    </div>
+                </div>
+                <?php endforeach; ?>
             </div>
             <?php endif; ?>
         </div>
@@ -619,7 +807,7 @@ foreach ($sellerProducts as $p) {
 
         <!-- 1. Detailed Inventory Table View (Default) -->
         <div id="inventoryTableView" class="bg-surface-container-lowest rounded-2xl stat-card-shadow border border-outline-variant/10 overflow-hidden">
-            <div class="overflow-x-auto">
+            <div class="hidden lg:block overflow-x-auto">
                 <table class="w-full text-right text-xs">
                     <thead class="bg-slate-50 text-slate-600 font-bold border-b border-slate-100">
                         <tr>
@@ -736,6 +924,83 @@ foreach ($sellerProducts as $p) {
                         <?php endforeach; ?>
                     </tbody>
                 </table>
+            </div>
+
+            <!-- Mobile Cards Layout for Inventory (< lg) (Rule 9: PWA & Android Responsive UI) -->
+            <div class="lg:hidden divide-y divide-slate-100 p-3 space-y-3" id="inventoryMobileList">
+                <?php foreach ($sellerProducts as $prod): 
+                    $stk = (int)($prod['stock'] ?? 0);
+                    $thresh = (int)($prod['low_stock_threshold'] ?? 5);
+                    if ($thresh <= 0) $thresh = 5;
+
+                    $stockStatus = 'in_stock';
+                    if ($stk === 0) $stockStatus = 'out_of_stock';
+                    elseif ($stk <= $thresh) $stockStatus = 'low_stock';
+
+                    $statusBadge = match($stockStatus) {
+                        'out_of_stock' => '<span class="px-2 py-0.5 rounded-lg text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200">ناموجود</span>',
+                        'low_stock'    => '<span class="px-2 py-0.5 rounded-lg text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200">کسری انبار</span>',
+                        default        => '<span class="px-2 py-0.5 rounded-lg text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">موجود</span>'
+                    };
+                ?>
+                <div class="inv-row p-3.5 rounded-2xl bg-white border border-slate-200/80 shadow-xs space-y-3"
+                    data-stock-status="<?= $stockStatus ?>" 
+                    data-autoship="<?= !empty($prod['is_autoship']) ? '1' : '0' ?>"
+                    data-name="<?= htmlspecialchars($prod['name']) ?>"
+                    data-category="<?= htmlspecialchars($prod['category']) ?>"
+                    data-sku="<?= htmlspecialchars($prod['sku'] ?? '') ?>">
+                    <div class="flex items-start gap-3">
+                        <div class="w-14 h-14 rounded-xl bg-slate-100 border border-slate-200 overflow-hidden shrink-0 flex items-center justify-center">
+                            <img src="<?= !empty($prod['image_url']) ? htmlspecialchars(str_starts_with($prod['image_url'], 'http') ? $prod['image_url'] : '../' . ltrim($prod['image_url'], '/')) : '../assets/images/default-product.png' ?>" class="w-full h-full object-cover" onerror="this.src='../assets/images/default-product.png'" alt="">
+                        </div>
+                        <div class="min-w-0 flex-1 space-y-1">
+                            <div class="flex items-center justify-between gap-1">
+                                <span class="font-bold text-slate-900 text-xs truncate"><?= htmlspecialchars($prod['name']) ?></span>
+                                <?= $statusBadge ?>
+                            </div>
+                            <div class="flex items-center gap-2 text-[10px] text-slate-500">
+                                <span><?= htmlspecialchars($prod['category']) ?></span>
+                                <span>•</span>
+                                <span class="font-mono"><?= !empty($prod['sku']) ? htmlspecialchars($prod['sku']) : 'PRD-' . $prod['id'] ?></span>
+                            </div>
+                            <div class="font-black text-emerald-600 text-xs font-mono">
+                                <?= number_format($prod['price']) ?> <span class="text-[10px] font-normal">تومان</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quick Stepper & Edit in Thumb Zone -->
+                    <div class="flex items-center justify-between pt-2 border-t border-slate-100 gap-2">
+                        <div class="inline-flex items-center gap-1.5">
+                            <form method="POST" class="inline m-0">
+                                <input type="hidden" name="action" value="update_stock">
+                                <input type="hidden" name="product_id" value="<?= $prod['id'] ?>">
+                                <input type="hidden" name="stock_delta" value="-1">
+                                <button type="submit" class="w-8 h-8 rounded-lg bg-slate-100 hover:bg-rose-50 text-slate-700 font-bold flex items-center justify-center text-sm">-۱</button>
+                            </form>
+                            <span class="font-mono text-xs font-bold text-slate-800 px-2"><?= $stk ?> عدد</span>
+                            <form method="POST" class="inline m-0">
+                                <input type="hidden" name="action" value="update_stock">
+                                <input type="hidden" name="product_id" value="<?= $prod['id'] ?>">
+                                <input type="hidden" name="stock_delta" value="1">
+                                <button type="submit" class="w-8 h-8 rounded-lg bg-slate-100 hover:bg-emerald-50 text-slate-700 font-bold flex items-center justify-center text-sm">+۱</button>
+                            </form>
+                        </div>
+                        <button type="button" onclick="openEditInventoryModal(<?= htmlspecialchars(json_encode([
+                            'id' => $prod['id'],
+                            'name' => $prod['name'],
+                            'price' => $prod['price'],
+                            'stock' => $prod['stock'],
+                            'sku' => $prod['sku'] ?? ('PRD-' . $prod['id']),
+                            'low_stock_threshold' => $thresh,
+                            'category' => $prod['category']
+                        ])) ?>)" class="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-secondary-container hover:text-white text-slate-700 font-bold text-xs flex items-center gap-1">
+                            <span class="material-symbols-outlined text-sm">edit</span>
+                            <span>ویرایش</span>
+                        </button>
+                    </div>
+                </div>
+                <?php endforeach; ?>
             </div>
         </div>
 
@@ -965,6 +1230,12 @@ foreach ($sellerProducts as $p) {
 
             <div>
                 <label class="block text-xs font-bold text-slate-700 mb-1">شرکت پستی یا حامل</label>
+                <div class="flex items-center gap-1.5 mb-2 flex-wrap">
+                    <button type="button" onclick="setCarrier('پستکس')" class="px-2.5 py-1 rounded-lg bg-orange-50 hover:bg-orange-100 text-orange-800 text-[11px] font-bold border border-orange-200 transition-colors">📦 پست پیشتاز (پستکس)</button>
+                    <button type="button" onclick="setCarrier('تیپاکس')" class="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-[11px] font-bold border border-slate-200 transition-colors">⚡ تیپاکس</button>
+                    <button type="button" onclick="setCarrier('پیک')" class="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-[11px] font-bold border border-slate-200 transition-colors">🛵 پیک شهری</button>
+                    <button type="button" onclick="setCarrier('باربری')" class="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-[11px] font-bold border border-slate-200 transition-colors">🚛 باربری</button>
+                </div>
                 <select id="modalCarrier" name="carrier_name" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-secondary-container outline-none font-bold">
                     <option value="شرکت ملی پست / پستکس">شرکت ملی پست / سامانه پستکس (پیشتاز)</option>
                     <option value="تیپاکس">تیپاکس (Tipax)</option>
@@ -1037,7 +1308,7 @@ foreach ($sellerProducts as $p) {
             <div class="grid grid-cols-2 gap-4">
                 <div>
                     <label class="block text-xs font-bold text-slate-700 mb-1">قیمت فروش (تومان) *</label>
-                    <input type="number" name="price" required min="1000" step="any" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-bold focus:ring-2 focus:ring-secondary-container outline-none" placeholder="250000">
+                    <input type="text" name="price" required class="currency-input w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-bold font-mono focus:ring-2 focus:ring-secondary-container outline-none" placeholder="250,000" dir="ltr">
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-slate-700 mb-1">موجودی اولیه انبار *</label>
@@ -1104,7 +1375,7 @@ foreach ($sellerProducts as $p) {
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-slate-700 mb-1">قیمت فروش (تومان) *</label>
-                    <input type="number" name="price" id="editModalPrice" required min="1000" step="any" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-bold focus:ring-2 focus:ring-secondary-container outline-none">
+                    <input type="text" name="price" id="editModalPrice" required class="currency-input w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-bold font-mono focus:ring-2 focus:ring-secondary-container outline-none" dir="ltr">
                 </div>
             </div>
 
@@ -1151,11 +1422,48 @@ function closeNewProductModal() {
     document.getElementById('newProductModal').classList.add('hidden');
 }
 
+// Rule 11: Seller Portal UX Helpers
+function setCarrier(name) {
+    const sel = document.getElementById('modalCarrier');
+    if (!sel) return;
+    for (let i = 0; i < sel.options.length; i++) {
+        if (sel.options[i].value.includes(name) || name.includes(sel.options[i].value)) {
+            sel.selectedIndex = i;
+            break;
+        }
+    }
+}
+
+let activeOrderStage = 'all';
+function filterOrdersByStage(stage) {
+    activeOrderStage = stage;
+    document.querySelectorAll('.stage-btn').forEach(btn => {
+        if (btn.getAttribute('data-stage') === stage) {
+            btn.classList.add('ring-2', 'ring-secondary-container', 'shadow-md');
+        } else {
+            btn.classList.remove('ring-2', 'ring-secondary-container', 'shadow-md');
+        }
+    });
+
+    const rows = document.querySelectorAll('.order-row-item');
+    rows.forEach(r => {
+        const rowStage = r.getAttribute('data-stage');
+        if (stage === 'all' || rowStage === stage) {
+            r.style.display = '';
+        } else {
+            r.style.display = 'none';
+        }
+    });
+}
+
 function openEditInventoryModal(prod) {
     document.getElementById('editModalProductId').value = prod.id;
     document.getElementById('editModalName').value = prod.name || '';
     document.getElementById('editModalSku').value = prod.sku || '';
-    document.getElementById('editModalPrice').value = prod.price || '';
+    const priceInp = document.getElementById('editModalPrice');
+    if (priceInp) {
+        priceInp.value = Number(prod.price || 0).toLocaleString('en-US');
+    }
     document.getElementById('editModalStock').value = prod.stock ?? 0;
     document.getElementById('editModalThreshold').value = prod.low_stock_threshold ?? 5;
     document.getElementById('editInventoryModal').classList.remove('hidden');

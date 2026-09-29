@@ -749,6 +749,36 @@
 
 ---
 
+63. **جداسازی سه‌رقمی تمام اعداد، قیمت‌ها و ورودی‌های پولی سامانه (Universal 3-by-3 Currency Formatting & Live Comma Input Engine):**
+    - **موتور فرمت‌دهی زنده مبالغ در ورودی‌ها ([`assets/js/currency-formatter.js`](file:///opt/lampp/htdocs/asena/asena-enterprise/assets/js/currency-formatter.js)):**
+      - توسعه کتابخانه سراسری و خودکار جهت جداسازی ۳ رقم ۳ رقم ارقام هنگام تایپ در تمامی فیلدهای پولی با کلاس `.currency-input` یا صفت `data-currency-input`.
+      - تبدیل هوشمند ارقام فارسی (۰-۹) و عربی به ارقام انگلیسی استاندارد، حذف فاصله‌ها و کاراکترهای نامعتبر، درج ویرگول‌های سه‌رقمی و حفظ دقیق موقعیت نشانگر متن (Cursor) بدون پرش.
+      - الصاق راهنمای حباب متنی مبالغ به حروف فارسی زیر فیلدها جهت خوانایی بی‌نقص مبالغ کلان.
+    - **تابع سمت سرور پاکسازی مبالغ ورودی ([`includes/functions.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/includes/functions.php)):**
+      - پیاده‌سازی متد سراسری `clean_toman_amount($val)` جهت تبدیل ارقام و حذف کاماها قبل از درج در پایگاه داده.
+    - **تجهیز تمامی فرم‌ها و اینپوت‌های پولی پلتفرم:**
+      - اعمال در [`admin/finance_settings.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/admin/finance_settings.php)، [`admin/clinic_management.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/admin/clinic_management.php)، [`organization/doctors.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/organization/doctors.php)، [`seller/index.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/seller/index.php)، [`pharmacist/index.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/pharmacist/index.php) و [`profile.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/profile.php).
+    - **تست خودکار جامع پولی ([`tests/test_currency_formatting.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/tests/test_currency_formatting.php)):**
+      - پاس شدن صددرصدی تست‌های تبدیل رشته‌های با فرمت فارسی، عربی و ویرگول‌دار به عدد صحیح تمیز.
+
+---
+
+64. **تدوین قانون ۱۱ معماری، بازطراحی ارگونومیک پرتال‌های تخصصی و ارتقای چشمگیر UX پزشک، فروشنده و داروساز (Rule 11: Multi-Role Panel UX & Cockpit Architecture):**
+    - **تدوین و استقرار قانون ۱۱ معماری در سیستم ([`.agents/rules/multi_role_panel_ux_standards.md`](file:///.agents/rules/multi_role_panel_ux_standards.md) و [`AGENTS.md`](file:///opt/lampp/htdocs/asena/asena-enterprise/AGENTS.md)):**
+      - تعریف استاندارد کاکپیت شیفت زنده (Live Shift Cockpit)، پل مستقیم EMR به BPMS با ۱ کلیک، حذف اتلاف وقت ورود مجدد شناسه‌ها، طراحی خط لوله ۴ مرحله‌ای سفارشات، دیده‌بان پایش زنجیره سرد (Cold-Chain) و تبدیل الزامی جدول‌های عریض به کارت‌های لمسی ارگونومیک موبایل با تاچ‌تارگت حداقل ۴۸x۴۸ پیکسل.
+    - **ارتقای جامع پرتال پزشک و جراح ([`doctor/index.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/doctor/index.php)):**
+      - **کاکپیت شیفت زنده پزشک:** بنر هدر هوشمند نمایش بیمار فعلی در اتاق معاینه با مشخصات نژاد، وزن، هشدارهای آلرژی و دکمه‌های سریع ۱ کلیکه صدور نسخه BPMS و ویزیت EMR.
+      - **مودال و دکمه مسدودسازی فوری نوبت اورژانس (Emergency Slot Block):** کلید اضطراری مسدودسازی بازه‌های زمانی با میانبرهای ۱ ساعت، ۲ ساعت، ۴ ساعت و کل روز جهت جلوگیری فوری از رزرو نوبت مراجعین در صورت ورود کیس‌های بدحال و جراحی‌های خارج از نوبت.
+    - **ارتقای جامع پرتال فروشندگان و پت‌شاپ‌ها ([`seller/index.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/seller/index.php)):**
+      - **خط لوله ۴ مرحله‌ای پردازش سفارش (Fulfillment Pipeline):** نمایش تعاملی مراحل ۴گانه (سفارش جدید -> آماده‌سازی و چاپ لیبل -> تحویل پست با بارکد -> تحویل نهایی و تسویه) با شمارنده‌های زنده و فیلتر فوری سفارشات با ۱ کلیک.
+      - **دکمه‌های میانبر انتخاب حامل پستی:** کلیدهای ۱ تپ «پست پیشتاز (پستکس)»، «تیپاکس»، «پیک شهری» و «باربری» در مودال ثبت بارکد.
+      - **تبدیل واکنش‌گرای جدول سفارشات و انبار به کارت‌های لمسی موبایل:** حذف نیاز به اسکرول افقی روی گوشی‌های همراه و تسهیل عملیات چاپ و ثبت بارکد در ناحیه شست دست.
+    - **ارتقای جامع پرتال داروسازان و داروخانه بیمارستانی ([`pharmacist/index.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/pharmacist/index.php)):**
+      - **دیده‌بان زنجیره سرد (Cold-Chain Watchdog):** نشانگر زنده پایش دمای یخچال دارویی (۴.۲°C) و شمارنده واکسن‌ها و بیولوژیک‌های تحت پایش.
+      - **دیده‌بان هشدارهای انقضا:** هشدارهای رنگی داروهای زیر ۳۰ روز (🚨 بحرانی) و زیر ۶۰ روز (⚠️ هشدار).
+      - **کارت‌های ارگونومیک موبایل کارتابل توزیع نسخه و انبار داروها:** تبدیل جدول نسخه‌ها به کارت‌های مرحله‌ای با دکمه‌های تکی آماده‌سازی و تحویل دارو.
+
+---
 
 ## ۴. پروتکل ثبت تغییرات آینده (Maintenance Rule)
 > **دستورالعمل برای هوش مصنوعی در ادامه کار:**  

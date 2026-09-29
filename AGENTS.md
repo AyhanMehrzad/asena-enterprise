@@ -50,3 +50,9 @@ This document establishes the foundational architectural rules, coding standards
     - Enforce brokerage identity (15% commission as recognized revenue, 85% escrow liability).
     - Ensure compliance with 10% statutory VAT, Article 169 seasonal transaction reporting, Taxpayer System (سامانه مودیان), Paya payout batch receipts, and legal tax minimization practices.
 
+11. **Multi-Role Panel UI/UX & Workflow Standards**:
+    - Strictly follow [`.agents/rules/multi_role_panel_ux_standards.md`](file:///.agents/rules/multi_role_panel_ux_standards.md).
+    - Enforce the Shift-Centric Single Cockpit pattern at the top of all specialized portals (`doctor/`, `seller/`, `pharmacist/`).
+    - Eliminate tab fragmentation (e.g., unify EMR patient lookup directly with BPMS electronic prescription issuance).
+    - Enforce mobile card transformations for tables, thumb-zone CTAs, role-specific visual semantics (Emerald for Doctors, Orange for Sellers, Purple for Pharmacists), and 3-by-3 currency separation.
+

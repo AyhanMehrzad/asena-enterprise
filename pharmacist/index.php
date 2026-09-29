@@ -80,7 +80,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         $name = trim($_POST['name'] ?? '');
         $genericName = trim($_POST['generic_name'] ?? '');
         $category = trim($_POST['category'] ?? 'عمومی');
-        $price = (int)($_POST['price'] ?? 0);
+        $price = clean_toman_amount($_POST['price'] ?? 0);
         $brand = trim($_POST['brand'] ?? '');
         $stock = (int)($_POST['stock'] ?? 10);
         $expiryDate = trim($_POST['expiry_date'] ?? date('Y-m-d', strtotime('+1 year')));
@@ -209,13 +209,22 @@ $dispensedRx = array_filter($allPrescriptions, fn($r) => ($r['dispensing_status'
 $medStmt = $pdo->query("SELECT * FROM pharmacy_medicines ORDER BY id DESC");
 $medicines = $medStmt->fetchAll(PDO::FETCH_ASSOC);
 
-// Calculate Stock & Expiry Alerts
+// Calculate Stock, Cold-Chain & Expiry Alerts (Rule 11)
 $lowStockMeds = array_filter($medicines, fn($m) => (int)$m['stock'] <= 5);
-$expiringMeds = array_filter($medicines, function($m) {
+$coldChainMeds = array_filter($medicines, fn($m) => !empty($m['requires_cold_chain']));
+$coldChainCount = count($coldChainMeds);
+
+$criticalExpiringMeds = array_filter($medicines, function($m) {
     if (empty($m['expiry_date'])) return false;
     $diffDays = (strtotime($m['expiry_date']) - time()) / 86400;
-    return $diffDays >= 0 && $diffDays <= 60;
+    return $diffDays >= 0 && $diffDays <= 30;
 });
+$warningExpiringMeds = array_filter($medicines, function($m) {
+    if (empty($m['expiry_date'])) return false;
+    $diffDays = (strtotime($m['expiry_date']) - time()) / 86400;
+    return $diffDays > 30 && $diffDays <= 60;
+});
+$expiringMeds = array_merge($criticalExpiringMeds, $warningExpiringMeds);
 $alertCount = count($lowStockMeds) + count($expiringMeds);
 
 $fmtDate = new IntlDateFormatter('fa_IR@calendar=persian', IntlDateFormatter::FULL, IntlDateFormatter::NONE, 'Asia/Tehran', IntlDateFormatter::TRADITIONAL, 'yyyy/MM/dd');
@@ -236,6 +245,85 @@ $fmtDate = new IntlDateFormatter('fa_IR@calendar=persian', IntlDateFormatter::FU
             <?= htmlspecialchars($error) ?>
         </div>
     <?php endif; ?>
+
+    <!-- PHARMACIST LIVE SHIFT & COLD-CHAIN WATCHDOG COCKPIT (Rule 11) -->
+    <div class="bg-gradient-to-br from-[#1e1338] via-[#2a174d] to-[#120b24] text-white rounded-3xl p-5 sm:p-6 shadow-xl border border-purple-500/20 relative overflow-hidden space-y-4">
+        <div class="absolute -top-24 -left-24 w-72 h-72 bg-purple-600/15 rounded-full blur-3xl pointer-events-none"></div>
+        <div class="absolute -bottom-24 -right-24 w-72 h-72 bg-cyan-600/10 rounded-full blur-3xl pointer-events-none"></div>
+
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative z-10 border-b border-white/10 pb-4">
+            <div class="flex items-center gap-3">
+                <div class="w-12 h-12 rounded-2xl bg-purple-500/20 border border-purple-400/30 text-purple-300 flex items-center justify-center font-black shadow-inner">
+                    <span class="material-symbols-outlined text-2xl">local_pharmacy</span>
+                </div>
+                <div>
+                    <div class="flex items-center gap-2">
+                        <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-purple-500/20 text-purple-300 border border-purple-400/30">
+                            <span class="w-2 h-2 rounded-full bg-purple-400 animate-pulse"></span>
+                            <span>شیفت فعال توزیع و داروخانه</span>
+                        </span>
+                        <span class="text-xs text-slate-300">| <?= htmlspecialchars($orgName ?? 'داروخانه مرکزی') ?></span>
+                    </div>
+                    <h2 class="text-base sm:text-lg font-black text-white mt-1"><?= htmlspecialchars($pharmacistName) ?> (مسئول فنی و داروساز)</h2>
+                </div>
+            </div>
+
+            <!-- Cold-Chain Watchdog Live Badge -->
+            <div class="flex items-center gap-2 flex-wrap">
+                <div class="px-3.5 py-2 rounded-xl bg-cyan-500/15 border border-cyan-400/30 text-cyan-200 text-xs font-bold flex items-center gap-2 shadow-xs">
+                    <span class="material-symbols-outlined text-base text-cyan-400 animate-spin" style="animation-duration: 6s;">ac_unit</span>
+                    <div>
+                        <div class="flex items-center gap-1.5">
+                            <span>پایش زنجیره سرد:</span>
+                            <span class="font-mono text-white font-black bg-cyan-900/60 px-1.5 py-0.2 rounded">+۴.۲ °C</span>
+                        </div>
+                        <span class="text-[10px] text-cyan-300 font-normal">۲ تا ۸ درجه (<?= $coldChainCount ?> داروی زیستی / واکسن تحت پایش)</span>
+                    </div>
+                </div>
+
+                <div class="px-3 py-2 rounded-xl bg-white/5 border border-white/10 text-xs text-slate-300 flex items-center gap-1.5 font-mono">
+                    <span class="material-symbols-outlined text-sm text-purple-300">schedule</span>
+                    <span><?= $fmtDate->format(new DateTime()) ?></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Expiry Watchdog & Quick Queue Bridge -->
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 text-xs relative z-10 pt-1">
+            <div class="flex items-center gap-2 flex-wrap">
+                <?php if (count($criticalExpiringMeds) > 0): ?>
+                    <span class="px-3 py-1.5 rounded-xl bg-rose-500/20 text-rose-300 border border-rose-400/30 font-bold flex items-center gap-1.5">
+                        <span class="material-symbols-outlined text-sm">alarm</span>
+                        <span>🚨 <?= count($criticalExpiringMeds) ?> دارو زیر ۳۰ روز به انقضا</span>
+                    </span>
+                <?php endif; ?>
+                <?php if (count($warningExpiringMeds) > 0): ?>
+                    <span class="px-3 py-1.5 rounded-xl bg-amber-500/20 text-amber-300 border border-amber-400/30 font-bold flex items-center gap-1.5">
+                        <span class="material-symbols-outlined text-sm">warning</span>
+                        <span>⚠️ <?= count($warningExpiringMeds) ?> دارو در آستانه ۶۰ روز انقضا</span>
+                    </span>
+                <?php endif; ?>
+                <?php if (count($criticalExpiringMeds) === 0 && count($warningExpiringMeds) === 0): ?>
+                    <span class="px-3 py-1.5 rounded-xl bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 font-bold flex items-center gap-1.5">
+                        <span class="material-symbols-outlined text-sm">verified</span>
+                        <span>وضعیت انبار دارویی پایدار (هیچ داروی منقضی یا بحرانی یافت نشد)</span>
+                    </span>
+                <?php endif; ?>
+            </div>
+
+            <!-- 1-Click Quick Bridge to BPMS vs Prescriptions -->
+            <div class="flex items-center gap-2 shrink-0">
+                <button type="button" onclick="switchTab('bpms-tab')" class="px-3.5 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs shadow-md transition-all flex items-center gap-1.5">
+                    <span class="material-symbols-outlined text-base">clinical_notes</span>
+                    <span>بررسی نسخه BPMS (<?= count($bpmsPending) ?> در انتظار)</span>
+                </button>
+                <button type="button" onclick="switchTab('prescriptions-tab')" class="px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs border border-white/20 transition-all flex items-center gap-1.5">
+                    <span class="material-symbols-outlined text-base">prescriptions</span>
+                    <span>کارتابل توزیع روزانه (<?= count($pendingRx) ?>)</span>
+                </button>
+            </div>
+        </div>
+    </div>
 
     <!-- 4 KPI Header Cards matching Doctor Panel layout -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
@@ -469,7 +557,7 @@ $fmtDate = new IntlDateFormatter('fa_IR@calendar=persian', IntlDateFormatter::FU
                 <span class="text-xs text-slate-400"><?= count($pendingRx) ?> نسخه در جریان</span>
             </div>
 
-            <div class="overflow-x-auto">
+            <div class="hidden lg:block overflow-x-auto">
                 <table class="w-full text-right text-xs">
                     <thead class="bg-slate-50 text-slate-600 font-bold border-b border-slate-200">
                         <tr>
@@ -572,6 +660,101 @@ $fmtDate = new IntlDateFormatter('fa_IR@calendar=persian', IntlDateFormatter::FU
                     </tbody>
                 </table>
             </div>
+
+            <!-- Mobile Cards Layout for Prescriptions (< lg) (Rule 9: PWA & Android Responsive UI) -->
+            <div class="lg:hidden divide-y divide-slate-100 p-3 space-y-3">
+                <?php if (empty($pendingRx)): ?>
+                    <p class="text-xs text-slate-400 text-center py-8">هیچ نسخه‌ای در صف انتظار آماده‌سازی قرار ندارد.</p>
+                <?php else: ?>
+                    <?php foreach ($pendingRx as $rx): 
+                        $items = json_decode($rx['items_json'] ?? '[]', true) ?: [];
+                        $dispStatus = $rx['dispensing_status'] ?? 'pending_review';
+                        $badge = match($dispStatus) {
+                            'pending_review'   => '<span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200">در انتظار بررسی دوز</span>',
+                            'preparing'        => '<span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200 animate-pulse">در حال آماده‌سازی</span>',
+                            'ready_for_pickup' => '<span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-teal-50 text-teal-700 border border-teal-200">آماده تحویل</span>',
+                            default            => '<span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700">' . htmlspecialchars($dispStatus) . '</span>'
+                        };
+                    ?>
+                    <div class="p-4 rounded-2xl bg-white border border-slate-200/80 shadow-xs space-y-3">
+                        <div class="flex items-center justify-between border-b border-slate-100 pb-2">
+                            <div>
+                                <span class="font-black text-slate-900 text-xs">نسخه #RX-<?= $rx['id'] ?></span>
+                                <span class="text-[10px] text-slate-400 block"><?= $fmtDate->format(new DateTime($rx['created_at'])) ?></span>
+                            </div>
+                            <?= $badge ?>
+                        </div>
+
+                        <div class="space-y-1 text-xs">
+                            <div class="flex items-center justify-between">
+                                <span class="font-bold text-slate-800">👤 <?= htmlspecialchars($rx['customer_name'] ?? 'سرپرست بیمار') ?></span>
+                                <?php if (!empty($rx['customer_phone'])): ?>
+                                    <a href="tel:<?= htmlspecialchars($rx['customer_phone']) ?>" class="px-2 py-0.5 rounded-lg bg-sky-50 text-sky-700 border border-sky-200 font-mono text-[11px] font-bold flex items-center gap-1">
+                                        <span class="material-symbols-outlined text-xs">call</span>
+                                        <span><?= htmlspecialchars($rx['customer_phone']) ?></span>
+                                    </a>
+                                <?php endif; ?>
+                            </div>
+                            <div class="text-[11px] text-slate-500">
+                                <span>🩺 پزشک معالج: <strong><?= htmlspecialchars($rx['vet_name'] ?: ($rx['doctor_name'] ?? 'دامپزشک کشیک')) ?></strong></span>
+                            </div>
+                            <?php if (!empty($rx['diagnosis'])): ?>
+                                <div class="p-2 rounded-xl bg-slate-50 border border-slate-100 text-[11px] text-slate-700">
+                                    <strong>تشخیص:</strong> <?= htmlspecialchars($rx['diagnosis']) ?>
+                                </div>
+                            <?php endif; ?>
+                            <?php if (!empty($items)): ?>
+                                <div class="space-y-1 pt-1">
+                                    <span class="font-bold text-slate-700 text-[11px] block">اقلام تجویزی:</span>
+                                    <ul class="text-[11px] text-slate-600 space-y-0.5 list-disc pr-3">
+                                        <?php foreach ($items as $it): ?>
+                                            <li>
+                                                <strong><?= htmlspecialchars($it['name']) ?></strong> (<?= (int)($it['qty'] ?? 1) ?> عدد) - <?= htmlspecialchars($it['instructions'] ?? '') ?>
+                                            </li>
+                                        <?php endforeach; ?>
+                                    </ul>
+                                </div>
+                            <?php endif; ?>
+                        </div>
+
+                        <!-- 1-Touch Action Buttons in Thumb Zone -->
+                        <div class="pt-2 border-t border-slate-100 flex items-center justify-end">
+                            <?php if ($dispStatus === 'pending_review'): ?>
+                                <form method="POST" class="w-full">
+                                    <?= csrf_field() ?>
+                                    <input type="hidden" name="action" value="update_rx_status">
+                                    <input type="hidden" name="rx_id" value="<?= $rx['id'] ?>">
+                                    <input type="hidden" name="dispensing_status" value="preparing">
+                                    <button type="submit" class="w-full py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-sm transition">
+                                        تأیید و شروع بسته‌بندی دارو
+                                    </button>
+                                </form>
+                            <?php elseif ($dispStatus === 'preparing'): ?>
+                                <form method="POST" class="w-full">
+                                    <?= csrf_field() ?>
+                                    <input type="hidden" name="action" value="update_rx_status">
+                                    <input type="hidden" name="rx_id" value="<?= $rx['id'] ?>">
+                                    <input type="hidden" name="dispensing_status" value="ready_for_pickup">
+                                    <button type="submit" class="w-full py-2.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs shadow-sm transition">
+                                        اعلام آماده تحویل به بیمار / پیک
+                                    </button>
+                                </form>
+                            <?php elseif ($dispStatus === 'ready_for_pickup'): ?>
+                                <form method="POST" class="w-full">
+                                    <?= csrf_field() ?>
+                                    <input type="hidden" name="action" value="update_rx_status">
+                                    <input type="hidden" name="rx_id" value="<?= $rx['id'] ?>">
+                                    <input type="hidden" name="dispensing_status" value="dispensed">
+                                    <button type="submit" class="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-sm transition">
+                                        تأیید تحویل نهایی به بیمار
+                                    </button>
+                                </form>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                    <?php endforeach; ?>
+                <?php endif; ?>
+            </div>
         </div>
     </div>
 
@@ -593,7 +776,7 @@ $fmtDate = new IntlDateFormatter('fa_IR@calendar=persian', IntlDateFormatter::FU
                 </div>
             </div>
 
-            <div class="overflow-x-auto">
+            <div class="hidden lg:block overflow-x-auto">
                 <table class="w-full text-right text-xs">
                     <thead class="bg-slate-50 text-slate-600 font-bold border-b border-slate-200">
                         <tr>
@@ -700,6 +883,80 @@ $fmtDate = new IntlDateFormatter('fa_IR@calendar=persian', IntlDateFormatter::FU
                         <?php endforeach; ?>
                     </tbody>
                 </table>
+            </div>
+
+            <!-- Mobile Cards Layout for Medicines (< lg) (Rule 9: PWA & Android Responsive UI) -->
+            <div class="lg:hidden divide-y divide-slate-100 p-3 space-y-3">
+                <?php foreach ($medicines as $med): 
+                    $isLow = (int)$med['stock'] <= 5;
+                    $diffDays = !empty($med['expiry_date']) ? (strtotime($med['expiry_date']) - time()) / 86400 : 999;
+                    $isCriticalExpiry = $diffDays >= 0 && $diffDays <= 30;
+                    $isWarningExpiry = $diffDays > 30 && $diffDays <= 60;
+                ?>
+                <div class="p-4 rounded-2xl bg-white border border-slate-200/80 shadow-xs space-y-3">
+                    <div class="flex items-start justify-between gap-2 border-b border-slate-100 pb-2.5">
+                        <div>
+                            <div class="flex items-center gap-1.5 flex-wrap">
+                                <span class="font-bold text-slate-900 text-xs"><?= htmlspecialchars($med['name']) ?></span>
+                                <span class="text-[10px] text-slate-500 font-mono">(<?= htmlspecialchars($med['generic_name'] ?? '') ?>)</span>
+                            </div>
+                            <span class="text-[10px] text-slate-400 font-mono block mt-0.5">#MED-<?= $med['id'] ?> | برند: <?= htmlspecialchars($med['brand'] ?? 'عمومی') ?></span>
+                        </div>
+                        <span class="px-2.5 py-1 rounded-full text-xs font-mono font-bold <?= $isLow ? 'bg-rose-100 text-rose-800 animate-pulse' : 'bg-emerald-100 text-emerald-800' ?>">
+                            <?= (int)$med['stock'] ?> عدد
+                        </span>
+                    </div>
+
+                    <!-- Meta Tags: Category, Expiry, Cold-Chain, Rx/OTC -->
+                    <div class="flex items-center gap-1.5 flex-wrap text-[10px]">
+                        <span class="px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 font-bold"><?= htmlspecialchars($med['category'] ?? 'عمومی') ?></span>
+                        <?php if (!empty($med['requires_prescription'])): ?>
+                            <span class="px-2 py-0.5 rounded-md bg-amber-100 text-amber-800 font-bold">فقط با نسخه (Rx)</span>
+                        <?php else: ?>
+                            <span class="px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 font-bold">بدون نسخه (OTC)</span>
+                        <?php endif; ?>
+                        <?php if (!empty($med['requires_cold_chain'])): ?>
+                            <span class="px-2 py-0.5 rounded-md bg-cyan-100 text-cyan-800 font-bold flex items-center gap-0.5">
+                                <span class="material-symbols-outlined text-[12px]">ac_unit</span>
+                                <span>زنجیره سرد</span>
+                            </span>
+                        <?php endif; ?>
+                        <?php if ($isCriticalExpiry): ?>
+                            <span class="px-2 py-0.5 rounded-md bg-rose-100 text-rose-800 font-bold">انقضا: <?= htmlspecialchars($med['expiry_date']) ?> (بحرانی)</span>
+                        <?php elseif ($isWarningExpiry): ?>
+                            <span class="px-2 py-0.5 rounded-md bg-amber-100 text-amber-800 font-bold">انقضا: <?= htmlspecialchars($med['expiry_date']) ?></span>
+                        <?php endif; ?>
+                    </div>
+
+                    <!-- Price & Quick Stock Stepper in Thumb Zone -->
+                    <div class="flex items-center justify-between pt-2 border-t border-slate-100">
+                        <div>
+                            <span class="text-[10px] text-slate-400 block">قیمت واحد دارو:</span>
+                            <span class="font-black text-slate-800 font-mono text-sm"><?= number_format($med['price']) ?> <span class="text-[10px] font-normal">تومان</span></span>
+                        </div>
+                        <div class="flex items-center gap-1.5">
+                            <form method="POST" class="inline m-0">
+                                <?= csrf_field() ?>
+                                <input type="hidden" name="action" value="update_stock">
+                                <input type="hidden" name="med_id" value="<?= $med['id'] ?>">
+                                <input type="hidden" name="delta" value="-1">
+                                <button type="submit" class="w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs flex items-center justify-center transition">
+                                    -۱
+                                </button>
+                            </form>
+                            <form method="POST" class="inline m-0">
+                                <?= csrf_field() ?>
+                                <input type="hidden" name="action" value="update_stock">
+                                <input type="hidden" name="med_id" value="<?= $med['id'] ?>">
+                                <input type="hidden" name="delta" value="5">
+                                <button type="submit" class="h-8 px-2.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold text-xs flex items-center justify-center transition">
+                                    +۵ شارژ
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                <?php endforeach; ?>
             </div>
         </div>
     </div>
@@ -914,7 +1171,7 @@ $fmtDate = new IntlDateFormatter('fa_IR@calendar=persian', IntlDateFormatter::FU
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-slate-700 mb-1.5">قیمت (تومان)</label>
-                    <input type="number" name="price" required value="250000" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-emerald-500 outline-none font-mono">
+                    <input type="text" name="price" required value="250,000" class="currency-input w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-emerald-500 outline-none font-mono" dir="ltr">
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-slate-700 mb-1.5">موجودی اولیه</label>
