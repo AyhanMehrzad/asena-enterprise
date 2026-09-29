@@ -56,7 +56,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POST['action'])) {
         $doctorId = (int)($_POST['doctor_id'] ?? 0);
         $aptDate = trim($_POST['appointment_date'] ?? date('Y-m-d'));
         $aptTime = trim($_POST['appointment_time'] ?? date('H:i'));
-        $fee = (int)($_POST['fee'] ?? 350000);
+        $fee = clean_toman_amount($_POST['fee'] ?? 350000);
         if ($fee <= 0) $fee = 350000;
         $comm = round($fee * ($effectiveOrgRate / 100.0));
         $net = $fee - $comm; // clinic net

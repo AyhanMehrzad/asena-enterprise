@@ -50,7 +50,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif ($action === 'add_product') {
         $name = trim($_POST['name'] ?? '');
         $category = trim($_POST['category'] ?? 'لوازم جانبی');
-        $price = (int)($_POST['price'] ?? 0);
+        $price = clean_toman_amount($_POST['price'] ?? 0);
         $stock = (int)($_POST['stock'] ?? 1);
         $description = trim($_POST['description'] ?? '');
         $brand = trim($_POST['brand'] ?? 'عمومی');
@@ -90,7 +90,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif ($action === 'update_inventory_item') {
         $productId = (int)($_POST['product_id'] ?? 0);
         $name = trim($_POST['name'] ?? '');
-        $price = (int)($_POST['price'] ?? 0);
+        $price = clean_toman_amount($_POST['price'] ?? 0);
         $stock = max(0, (int)($_POST['stock'] ?? 0));
         $sku = trim($_POST['sku'] ?? '');
         $threshold = max(1, (int)($_POST['low_stock_threshold'] ?? 5));

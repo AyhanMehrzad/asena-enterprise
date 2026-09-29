@@ -245,7 +245,7 @@ if (!$userDigitalWallet) {
 // Handle User Digital Wallet Charge Action
 if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POST['action']) && $_POST['action'] === 'charge_user_wallet') {
     csrf_verify();
-    $amount = (int)($_POST['amount'] ?? 0);
+    $amount = clean_toman_amount($_POST['amount'] ?? 0);
     if ($amount >= 10000) {
         $upd = $pdo->prepare("UPDATE user_wallets SET balance = balance + ?, updated_at = NOW() WHERE id = ?");
         $upd->execute([$amount, $userDigitalWallet['id']]);
@@ -4141,14 +4141,15 @@ function switchSellerFin(period) {
             <input type="hidden" name="action" value="charge_user_wallet">
             <div>
                 <label class="block text-xs font-bold text-slate-700 mb-1.5">مبلغ شارژ (تومان)</label>
-                <input type="number" name="amount" id="charge_amount_input" min="10000" step="any" required value="200000" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-indigo-500 font-mono outline-none">
+                <input type="text" inputmode="numeric" name="amount" id="charge_amount_input" required value="200,000" class="currency-input w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-indigo-500 font-mono outline-none">
+                <div id="charge_amount_input_preview" class="text-[11px] text-indigo-600 font-bold mt-1 dir-rtl"></div>
             </div>
             <!-- Quick Preset Pills -->
             <div class="flex items-center gap-2 flex-wrap">
-                <button type="button" onclick="document.getElementById('charge_amount_input').value=100000" class="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-[11px] font-bold text-slate-700">۱۰۰ هزار</button>
-                <button type="button" onclick="document.getElementById('charge_amount_input').value=250000" class="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-[11px] font-bold text-slate-700">۲۵۰ هزار</button>
-                <button type="button" onclick="document.getElementById('charge_amount_input').value=500000" class="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-[11px] font-bold text-slate-700">۵۰۰ هزار</button>
-                <button type="button" onclick="document.getElementById('charge_amount_input').value=1000000" class="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-[11px] font-bold text-slate-700">۱ میلیون</button>
+                <button type="button" onclick="const inp=document.getElementById('charge_amount_input'); inp.value='100,000'; inp.dispatchEvent(new Event('input'));" class="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-[11px] font-bold text-slate-700">۱۰۰ هزار</button>
+                <button type="button" onclick="const inp=document.getElementById('charge_amount_input'); inp.value='250,000'; inp.dispatchEvent(new Event('input'));" class="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-[11px] font-bold text-slate-700">۲۵۰ هزار</button>
+                <button type="button" onclick="const inp=document.getElementById('charge_amount_input'); inp.value='500,000'; inp.dispatchEvent(new Event('input'));" class="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-[11px] font-bold text-slate-700">۵۰۰ هزار</button>
+                <button type="button" onclick="const inp=document.getElementById('charge_amount_input'); inp.value='1,000,000'; inp.dispatchEvent(new Event('input'));" class="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-[11px] font-bold text-slate-700">۱ میلیون</button>
             </div>
             <div class="pt-2 flex justify-end gap-2">
                 <button type="button" onclick="document.getElementById('chargeWalletModal').classList.add('hidden')" class="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-xs font-bold text-slate-700">انصراف</button>

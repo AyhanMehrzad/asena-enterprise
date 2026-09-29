@@ -15,7 +15,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     if ($action === 'add_doctor') {
         $user_id = (int)$_POST['user_id'];
         $specialty = trim(strip_tags($_POST['specialty']));
-        $price = (int)$_POST['price'];
+        $price = clean_toman_amount($_POST['price'] ?? 0);
         
         // Fetch user info to get name
         $stmt = $pdo->prepare("SELECT name FROM users WHERE id = ? AND role = 'doctor'");
@@ -59,7 +59,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     } elseif ($action === 'edit_doctor') {
         $doc_id = (int)$_POST['doctor_id'];
         $specialty = trim(strip_tags($_POST['specialty']));
-        $price = (int)$_POST['price'];
+        $price = clean_toman_amount($_POST['price'] ?? 0);
         $phone = trim($_POST['phone'] ?? '');
         $baseline_rating = !empty($_POST['baseline_rating']) ? (float)$_POST['baseline_rating'] : 4.9;
         

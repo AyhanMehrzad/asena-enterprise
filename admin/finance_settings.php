@@ -118,10 +118,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             $taxTspProvider = trim($_POST['tax_tsp_provider'] ?? 'سامانه معتمد نوین (TSP رسمی)');
             set_setting($pdo, 'tax_tsp_provider', $taxTspProvider);
 
-            $taxSmallTrans = max(100000, (int)($_POST['tax_small_trans_threshold'] ?? 10500000));
+            $taxSmallTrans = max(100000, clean_toman_amount($_POST['tax_small_trans_threshold'] ?? 10500000));
             set_setting($pdo, 'tax_small_trans_threshold', $taxSmallTrans);
 
-            $taxInputCredit = max(0, (int)($_POST['tax_input_credit_amount'] ?? 3450000));
+            $taxInputCredit = max(0, clean_toman_amount($_POST['tax_input_credit_amount'] ?? 3450000));
             set_setting($pdo, 'tax_input_credit_amount', $taxInputCredit);
 
             set_setting($pdo, 'auto_payout_enabled', $autoPayoutEnabled);
@@ -144,13 +144,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             $cardGatewayShaba = strtoupper(preg_replace('/[^A-Z0-9]/', '', $_POST['card_gateway_shaba'] ?? ''));
             if (!empty($cardGatewayShaba)) set_setting($pdo, 'card_gateway_shaba', $cardGatewayShaba);
 
-            $cardAutoThreshold = max(0, (int)($_POST['card_auto_verify_threshold'] ?? 0));
+            $cardAutoThreshold = max(0, clean_toman_amount($_POST['card_auto_verify_threshold'] ?? 0));
             set_setting($pdo, 'card_auto_verify_threshold', $cardAutoThreshold);
 
             $cryptoWallet = trim($_POST['crypto_usdt_trc20_wallet'] ?? '');
             if (!empty($cryptoWallet)) set_setting($pdo, 'crypto_usdt_trc20_wallet', $cryptoWallet);
 
-            $cryptoRate = max(1000, (int)($_POST['crypto_usdt_toman_rate'] ?? 65000));
+            $cryptoRate = max(1000, clean_toman_amount($_POST['crypto_usdt_toman_rate'] ?? 65000));
             set_setting($pdo, 'crypto_usdt_toman_rate', $cryptoRate);
 
             $enamadCode = trim($_POST['enamad_html_code'] ?? '');
@@ -166,15 +166,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 $calculatorIsPaid = (isset($_POST['calculator_is_paid']) && $_POST['calculator_is_paid'] === '1') ? '1' : '0';
             }
 
-            $calculatorPrice = max(0, (int)($_POST['calculator_price_toman'] ?? 49000));
+            $calculatorPrice = max(0, clean_toman_amount($_POST['calculator_price_toman'] ?? 49000));
 
             set_setting($pdo, 'calculator_is_paid', $calculatorIsPaid);
             set_setting($pdo, 'calculator_price_toman', $calculatorPrice);
 
             // Logistics, Shipping Costs & Free Shipping Threshold
             $freeShippingEnabled = isset($_POST['free_shipping_enabled']) ? '1' : '0';
-            $freeShippingThreshold = max(0, (int)($_POST['free_shipping_threshold_toman'] ?? 600000));
-            $standardShippingCost = max(0, (int)($_POST['standard_shipping_cost_toman'] ?? 49000));
+            $freeShippingThreshold = max(0, clean_toman_amount($_POST['free_shipping_threshold_toman'] ?? 600000));
+            $standardShippingCost = max(0, clean_toman_amount($_POST['standard_shipping_cost_toman'] ?? 49000));
             $supportPhone = trim($_POST['support_phone_fixed'] ?? '02191000000');
 
             set_setting($pdo, 'free_shipping_enabled', $freeShippingEnabled);
@@ -627,9 +627,10 @@ require_once __DIR__ . '/includes/admin_header.php';
                 <div class="max-w-md">
                     <label class="block text-xs font-bold text-slate-800 dark:text-slate-200 mb-2">مبلغ کارنامه تغذیه بالینی (تومان):</label>
                     <div class="relative">
-                        <input type="number" name="calculator_price_toman" id="calcPriceInput" value="<?= $calculatorPrice ?>" min="0" step="any" class="w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-mono font-bold focus:border-rose-500 outline-none pl-14 text-left dir-ltr">
+                        <input type="text" inputmode="numeric" name="calculator_price_toman" id="calcPriceInput" value="<?= number_format($calculatorPrice) ?>" class="currency-input w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-mono font-bold focus:border-rose-500 outline-none pl-14 text-left dir-ltr">
                         <span class="absolute left-3 top-3 text-slate-400 text-xs font-bold">تومان</span>
                     </div>
+                    <div id="calcPriceInput_preview" class="text-[11px] text-rose-600 dark:text-rose-400 font-bold mt-1.5 dir-rtl transition-all"></div>
                     <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-2 leading-relaxed">
                         مبلغی که روی دکمه صدور در صفحه محاسبه‌گر درج می‌شود و کاربر پیش از صدور و ثبت در پرونده، از طریق درگاه پرداخت آنلاین شاپرک پرداخت خواهد نمود (پیش‌فرض: ۴۹,۰۰۰ تومان).
                     </p>
@@ -965,16 +966,16 @@ require_once __DIR__ . '/includes/admin_header.php';
                     </div>
                     <div>
                         <span class="text-[11px] text-slate-500 dark:text-slate-400 block mb-0.5">وضعیت تفکیک فاکتورهای فصلی:</span>
-                        <div class="text-xl font-black text-slate-900 dark:text-white font-mono"><?= $ordersCount ?> <span class="text-xs font-normal text-slate-500">فاکتور ثبت‌شده</span></div>
+                        <div class="text-xl font-black text-slate-900 dark:text-white font-mono"><?= number_format($ordersCount) ?> <span class="text-xs font-normal text-slate-500">فاکتور ثبت‌شده</span></div>
                     </div>
                     <div class="pt-2 border-t border-blue-200/60 dark:border-blue-800/40 space-y-1 text-[11px]">
                         <div class="flex justify-between text-slate-600 dark:text-slate-400">
                             <span>معاملات خرد (ارسال تجمیعی):</span>
-                            <span class="font-mono text-blue-700 dark:text-blue-400 font-bold"><?= $smallOrdersCount ?> سفارش</span>
+                            <span class="font-mono text-blue-700 dark:text-blue-400 font-bold"><?= number_format($smallOrdersCount) ?> سفارش</span>
                         </div>
                         <div class="flex justify-between text-slate-600 dark:text-slate-400">
                             <span>معاملات بزرگ (با کد ملی و پستی):</span>
-                            <span class="font-mono text-indigo-700 dark:text-indigo-400 font-bold"><?= $largeOrdersCount ?> سفارش</span>
+                            <span class="font-mono text-indigo-700 dark:text-indigo-400 font-bold"><?= number_format($largeOrdersCount) ?> سفارش</span>
                         </div>
                     </div>
                     <div class="p-2 rounded-xl bg-white/80 dark:bg-slate-900/80 border border-blue-200 dark:border-blue-800/60 text-[10px] text-blue-800 dark:text-blue-300 font-bold flex items-center justify-between">
@@ -1093,18 +1094,20 @@ require_once __DIR__ . '/includes/admin_header.php';
                     <div>
                         <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-2">سقف حد نصاب معاملات کوچک ماده ۱۶۹ (تومان):</label>
                         <div class="relative">
-                            <input type="number" name="tax_small_trans_threshold" value="<?= $taxSmallTrans ?>" step="any" min="0" class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-xs font-mono font-bold focus:border-primary focus:bg-white outline-none pl-12 text-left dir-ltr">
+                            <input type="text" inputmode="numeric" name="tax_small_trans_threshold" id="tax_small_trans_threshold" value="<?= number_format($taxSmallTrans) ?>" class="currency-input w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-xs font-mono font-bold focus:border-primary focus:bg-white outline-none pl-12 text-left dir-ltr">
                             <span class="absolute left-3 top-3 text-slate-400 text-xs font-bold">تومان</span>
                         </div>
+                        <div id="tax_small_trans_threshold_preview" class="text-[11px] text-primary dark:text-cyan-400 font-bold mt-1.5 dir-rtl transition-all"></div>
                         <p class="text-[10px] text-slate-400 mt-1.5">پیش‌فرض: ۱۰,۵۰۰,۰۰۰ تومان (۵٪ سقف ۲۱۰ میلیون تومانی معاملات کوچک سال ۱۴۰۳ جهت ارسال تجمیعی)</p>
                     </div>
 
                     <div>
                         <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-2">اعتبار مالیاتی ورودی خریدهای شرکت (تومان):</label>
                         <div class="relative">
-                            <input type="number" name="tax_input_credit_amount" value="<?= $taxInputCredit ?>" step="any" min="0" class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-xs font-mono font-bold focus:border-primary focus:bg-white outline-none pl-12 text-left dir-ltr">
+                            <input type="text" inputmode="numeric" name="tax_input_credit_amount" id="tax_input_credit_amount" value="<?= number_format($taxInputCredit) ?>" class="currency-input w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-xs font-mono font-bold focus:border-primary focus:bg-white outline-none pl-12 text-left dir-ltr">
                             <span class="absolute left-3 top-3 text-slate-400 text-xs font-bold">تومان</span>
                         </div>
+                        <div id="tax_input_credit_amount_preview" class="text-[11px] text-primary dark:text-cyan-400 font-bold mt-1.5 dir-rtl transition-all"></div>
                         <p class="text-[10px] text-slate-400 mt-1.5">مجموع مالیات ارزش افزوده پرداختی در فاکتورهای رسمی سرور (پارس‌پک)، پیامک (ملی‌پیامک) و تجهیزات</p>
                     </div>
                 </div>
@@ -1152,9 +1155,10 @@ require_once __DIR__ . '/includes/admin_header.php';
                     <div>
                         <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-2">حداقل مبلغ سبد برای ارسال رایگان (تومان):</label>
                         <div class="relative">
-                            <input type="number" name="free_shipping_threshold_toman" value="<?= $freeShippingThreshold ?>" min="0" step="any" class="w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-mono font-bold focus:border-cyan-500 outline-none pl-12 text-left dir-ltr">
+                            <input type="text" inputmode="numeric" name="free_shipping_threshold_toman" id="free_shipping_threshold_toman" value="<?= number_format($freeShippingThreshold) ?>" class="currency-input w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-mono font-bold focus:border-cyan-500 outline-none pl-12 text-left dir-ltr">
                             <span class="absolute left-3 top-3 text-slate-400 text-xs font-bold">تومان</span>
                         </div>
+                        <div id="free_shipping_threshold_toman_preview" class="text-[11px] text-cyan-600 dark:text-cyan-400 font-bold mt-1.5 dir-rtl transition-all"></div>
                         <p class="text-[10px] text-slate-400 mt-1">پیش‌فرض: ۶۰۰,۰۰۰ تومان (در صورت خرید بیشتر، کرایه پست رایگان محاسبه می‌شود).</p>
                     </div>
                 </div>
@@ -1164,9 +1168,10 @@ require_once __DIR__ . '/includes/admin_header.php';
                     <div>
                         <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-2">هزینه ثابت ارسال برای خریدهای زیر سقف (تومان):</label>
                         <div class="relative">
-                            <input type="number" name="standard_shipping_cost_toman" value="<?= $standardShippingCost ?>" min="0" step="any" class="w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-mono font-bold focus:border-primary outline-none pl-12 text-left dir-ltr">
+                            <input type="text" inputmode="numeric" name="standard_shipping_cost_toman" id="standard_shipping_cost_toman" value="<?= number_format($standardShippingCost) ?>" class="currency-input w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-mono font-bold focus:border-primary outline-none pl-12 text-left dir-ltr">
                             <span class="absolute left-3 top-3 text-slate-400 text-xs font-bold">تومان</span>
                         </div>
+                        <div id="standard_shipping_cost_toman_preview" class="text-[11px] text-primary dark:text-cyan-400 font-bold mt-1.5 dir-rtl transition-all"></div>
                         <p class="text-[10px] text-slate-400 mt-1">کرایه پایه بسته‌بندی و پست پیشتاز برای سبدهای زیر سقف (مثلاً ۴۹,۰۰۰ تومان).</p>
                     </div>
 

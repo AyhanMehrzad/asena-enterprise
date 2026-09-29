@@ -41,7 +41,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POST['action'])) {
     } elseif ($action === 'update_visibility_settings') {
         $hideRoster = isset($_POST['hide_doctors_roster']) ? 1 : 0;
         $directBooking = isset($_POST['direct_booking_enabled']) ? 1 : 0;
-        $fee = (int)($_POST['consultation_fee'] ?? 0);
+        $fee = clean_toman_amount($_POST['consultation_fee'] ?? 0);
         $up = $pdo->prepare("UPDATE organizations SET hide_doctors_roster = ?, direct_booking_enabled = ?, consultation_fee = ? WHERE id = ?");
         if ($up->execute([$hideRoster, $directBooking, $fee, $orgId])) {
             $message = 'تنظیمات نمایش کادر و نوبت‌دهی مستقیم مرکز با موفقیت ذخیره شد.';

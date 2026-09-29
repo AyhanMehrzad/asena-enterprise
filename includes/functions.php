@@ -433,6 +433,17 @@ function to_english_digits($input): string {
 }
 
 /**
+ * Clean and parse monetary/currency inputs: converts Persian/Arabic numerals,
+ * strips commas, spaces, currency symbols, and returns a sanitized integer.
+ */
+function clean_toman_amount($input, int $default = 0): int {
+    if ($input === null || $input === '') return $default;
+    $clean = to_english_digits($input);
+    $clean = preg_replace('/[^\d]/', '', $clean);
+    return ($clean !== '' && is_numeric($clean)) ? (int)$clean : $default;
+}
+
+/**
  * Chewy-Style Pet Allergen Collision Detection Engine
  * Matches registered pet health profile allergies against item name, description, brand, category, or generic name.
  */
