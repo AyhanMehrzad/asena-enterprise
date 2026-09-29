@@ -93,8 +93,10 @@ try {
         $doctor_id = null;
     }
     
-    // Calculate 15% platform interest / commission and 85% clinic net share
-    $commission_rate_pct = (float)get_setting($pdo, 'platform_commission_percent', 15);
+    // Calculate platform interest / commission (default 5% or 0% during marketing campaign)
+    $commission_rate_pct = function_exists('get_effective_platform_commission_rate') 
+        ? get_effective_platform_commission_rate($pdo) 
+        : ((get_setting($pdo, 'platform_commission_enabled', '1') !== '0') ? (float)get_setting($pdo, 'platform_commission_percent', 5) : 0.0);
     $commission_amount = (int)round($doctor_price * ($commission_rate_pct / 100.0));
     $net_amount = $doctor_price - $commission_amount;
 

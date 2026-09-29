@@ -174,7 +174,7 @@ $adminName = $adminCheck['name'] ?? 'مدیر سیستم';
                 'rfq_management'  => ['icon' => 'request_quote', 'title' => 'استعلام‌های عمده (RFQ)', 'url' => 'rfq_management.php'],
             ],
             'مالی و تسویه پایا' => [
-                'payouts'          => ['icon' => 'account_balance_wallet', 'title' => 'تسویه پایا و کارمزد ۱۵٪', 'url' => 'payouts.php'],
+                'payouts'          => ['icon' => 'account_balance_wallet', 'title' => 'تسویه پایا و کارمزد پلتفرم', 'url' => 'payouts.php'],
                 'promo_codes'      => ['icon' => 'confirmation_number', 'title' => 'کدهای تخفیف و پروموشن', 'url' => 'promo_codes.php'],
                 'finance_settings' => ['icon' => 'settings_suggest', 'title' => 'تنظیمات حساب آسنا و مالیات', 'url' => 'finance_settings.php'],
                 'analytics'        => ['icon' => 'analytics', 'title' => 'تحلیل و آمار کلان', 'url' => 'analytics.php'],

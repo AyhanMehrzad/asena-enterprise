@@ -85,8 +85,11 @@ try {
     $orgId = (int)($doctor['organization_id'] ?: 1);
     $clinicName = $doctor['clinic_name'] ?: ($doctor['org_name'] ?: 'مرکز درمانی آسنا');
 
-    // Commission calculations (5% platform fee)
-    $commissionRate = 0.05;
+    // Commission calculations (default 5% platform fee or 0% during marketing campaign)
+    $effectiveRatePct = function_exists('get_effective_platform_commission_rate')
+        ? get_effective_platform_commission_rate($pdo)
+        : ((get_setting($pdo, 'platform_commission_enabled', '1') !== '0') ? (float)get_setting($pdo, 'platform_commission_percent', 5) : 0.0);
+    $commissionRate = $effectiveRatePct / 100.0;
     $commissionAmount = (int)round($doctorPrice * $commissionRate);
     $netAmount = $doctorPrice - $commissionAmount;
 

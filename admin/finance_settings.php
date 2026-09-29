@@ -83,7 +83,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         $holderName = trim($_POST['admin_bank_holder'] ?? 'شرکت توسعه تجارت الکترونیک آسنا');
         
         $taxRate = max(0, min(100, (float)($_POST['tax_rate_percent'] ?? 10)));
-        $commissionRate = max(0, min(100, (float)($_POST['platform_commission_percent'] ?? 15)));
+        $commissionRate = max(0, min(100, (float)($_POST['platform_commission_percent'] ?? 5)));
+        $commissionEnabled = isset($_POST['platform_commission_enabled']) ? '1' : '0';
         $taxOnAppts = isset($_POST['tax_on_appointments_enabled']) ? '1' : '0';
 
         $autoPayoutEnabled = isset($_POST['auto_payout_enabled']) ? '1' : '0';
@@ -103,6 +104,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
 
             set_setting($pdo, 'tax_rate_percent', $taxRate);
             set_setting($pdo, 'platform_commission_percent', $commissionRate);
+            set_setting($pdo, 'platform_commission_enabled', $commissionEnabled);
             set_setting($pdo, 'tax_on_appointments_enabled', $taxOnAppts);
 
             $taxMemoryId = strtoupper(trim(preg_replace('/[^A-Za-z0-9]/', '', $_POST['tax_memory_id'] ?? 'A5B9C2')));
@@ -220,7 +222,9 @@ $cryptoWallet      = get_setting($pdo, 'crypto_usdt_trc20_wallet', 'TYDskj3920sd
 $cryptoRate        = (int)get_setting($pdo, 'crypto_usdt_toman_rate', 65000);
 
 $taxRate        = (float)get_setting($pdo, 'tax_rate_percent', 10.0);
-$commissionRate = (float)get_setting($pdo, 'platform_commission_percent', 15);
+$commissionRate = (float)get_setting($pdo, 'platform_commission_percent', 5.0);
+$commissionEnabled = (get_setting($pdo, 'platform_commission_enabled', '1') !== '0');
+$effectiveCommissionRate = $commissionEnabled ? $commissionRate : 0.0;
 $taxOnAppts     = get_setting($pdo, 'tax_on_appointments_enabled', '1');
 $taxMemoryId    = get_setting($pdo, 'tax_memory_id', 'A5B9C2');
 $taxTspProvider = get_setting($pdo, 'tax_tsp_provider', 'سامانه معتمد نوین (TSP رسمی)');
@@ -336,8 +340,8 @@ if ($totalVatCollected === 0 && $totalGrossSales > 0) {
     $totalVatCollected = (int)round($totalGrossSales - ($totalGrossSales / (1.0 + ($taxRate / 100.0))));
 }
 
-// Compute Platform Commission (15% Recognized Revenue) vs Fiduciary Liability (85% Escrow)
-$platformRecognizedRevenue = (int)round($totalGrossSales * ($commissionRate / 100.0));
+// Compute Platform Commission (Recognized Revenue) vs Fiduciary Liability (Escrow)
+$platformRecognizedRevenue = (int)round($totalGrossSales * ($effectiveCommissionRate / 100.0));
 $fiduciaryEscrowLiability = max(0, $totalGrossSales - $platformRecognizedRevenue);
 $platformCommissionVat = (int)round($platformRecognizedRevenue * ($taxRate / 100.0));
 
@@ -419,30 +423,35 @@ require_once __DIR__ . '/includes/admin_header.php';
             <span class="material-symbols-outlined text-emerald-600 text-sm">calculate</span>
             <span>۱. وضعیت محاسبه‌گر (رایگان/پولی)</span>
         </a>
+        <a href="#commission-section" class="px-4 py-2 rounded-xl bg-white dark:bg-[#1E293B] border border-slate-200 dark:border-slate-800 hover:border-primary hover:text-primary transition flex items-center gap-1.5 shrink-0 shadow-2xs">
+            <span class="material-symbols-outlined text-primary text-sm">percent</span>
+            <span>۲. کارمزد پلتفرم و مارکتینگ</span>
+            <span class="px-1.5 py-0.5 rounded text-[9px] font-bold <?= $commissionEnabled ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300' : 'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300' ?>"><?= $commissionEnabled ? ($commissionRate . '٪') : '۰٪ مارکتینگ' ?></span>
+        </a>
         <a href="#bank-section" class="px-4 py-2 rounded-xl bg-white dark:bg-[#1E293B] border border-slate-200 dark:border-slate-800 hover:border-blue-500 hover:text-blue-600 transition flex items-center gap-1.5 shrink-0 shadow-2xs">
             <span class="material-symbols-outlined text-blue-600 text-sm">credit_card</span>
-            <span>۲. کارت و حساب بانکی</span>
+            <span>۳. کارت و حساب بانکی</span>
         </a>
         <a href="#gateway-section" class="px-4 py-2 rounded-xl bg-white dark:bg-[#1E293B] border border-slate-200 dark:border-slate-800 hover:border-indigo-500 hover:text-indigo-600 transition flex items-center gap-1.5 shrink-0 shadow-2xs">
             <span class="material-symbols-outlined text-indigo-600 text-sm">payments</span>
-            <span>۳. درگاه پرداخت شاپرک</span>
+            <span>۴. درگاه پرداخت شاپرک</span>
         </a>
         <a href="#tax-section" class="px-4 py-2 rounded-xl bg-white dark:bg-[#1E293B] border border-slate-200 dark:border-slate-800 hover:border-amber-500 hover:text-amber-600 transition flex items-center gap-1.5 shrink-0 shadow-2xs">
-            <span class="material-symbols-outlined text-amber-600 text-sm">percent</span>
-            <span>۴. کنسول مالیات (۱۰٪ و ماده ۱۶۹)</span>
+            <span class="material-symbols-outlined text-amber-600 text-sm">balance</span>
+            <span>۵. کنسول مالیات (۱۰٪ و ماده ۱۶۹)</span>
             <span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300">مودیان</span>
         </a>
         <a href="#shipping-section" class="px-4 py-2 rounded-xl bg-white dark:bg-[#1E293B] border border-slate-200 dark:border-slate-800 hover:border-cyan-500 hover:text-cyan-600 transition flex items-center gap-1.5 shrink-0 shadow-2xs">
             <span class="material-symbols-outlined text-cyan-600 text-sm">local_shipping</span>
-            <span>۵. لجستیک و ارسال رایگان</span>
+            <span>۶. لجستیک و ارسال رایگان</span>
         </a>
         <a href="#payout-section" class="px-4 py-2 rounded-xl bg-white dark:bg-[#1E293B] border border-slate-200 dark:border-slate-800 hover:border-emerald-500 hover:text-emerald-600 transition flex items-center gap-1.5 shrink-0 shadow-2xs">
             <span class="material-symbols-outlined text-emerald-600 text-sm">schedule</span>
-            <span>۶. تسویه خودکار پایا</span>
+            <span>۷. تسویه خودکار پایا</span>
         </a>
         <a href="#enamad-section" class="px-4 py-2 rounded-xl bg-white dark:bg-[#1E293B] border border-slate-200 dark:border-slate-800 hover:border-purple-500 hover:text-purple-600 transition flex items-center gap-1.5 shrink-0 shadow-2xs">
             <span class="material-symbols-outlined text-purple-600 text-sm">verified</span>
-            <span>۷. نماد اعتماد اینماد</span>
+            <span>۸. نماد اعتماد اینماد</span>
         </a>
     </div>
 
@@ -625,13 +634,148 @@ require_once __DIR__ . '/includes/admin_header.php';
         </div>
 
         <!-- ========================================================================= -->
-        <!-- SECTION 2: CENTRAL TREASURY BANK CARD & SHABA (2-COLUMN SPACIOUS LAYOUT)  -->
+        <!-- SECTION 2: PLATFORM COMMISSION / INTEREST & MARKETING TOGGLE SWITCH       -->
+        <!-- ========================================================================= -->
+        <div id="commission-section" class="scroll-mt-6 bg-white dark:bg-[#1E293B] border-2 <?= $commissionEnabled ? 'border-primary/40 dark:border-primary/30' : 'border-amber-400 dark:border-amber-500' ?> rounded-3xl p-6 sm:p-8 shadow-sm transition-all relative overflow-hidden">
+            <!-- Background Glow for Marketing Mode -->
+            <div class="absolute -top-16 -left-16 w-56 h-56 <?= $commissionEnabled ? 'bg-primary/5' : 'bg-amber-400/10' ?> rounded-full blur-3xl pointer-events-none transition-all"></div>
+            
+            <!-- Top Header -->
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 dark:border-slate-800 pb-5 mb-6 relative z-10">
+                <div class="flex items-center gap-3.5">
+                    <div class="w-12 h-12 rounded-2xl <?= $commissionEnabled ? 'bg-primary/10 text-primary' : 'bg-amber-500/15 text-amber-600' ?> flex items-center justify-center font-black">
+                        <span class="material-symbols-outlined text-2xl">percent</span>
+                    </div>
+                    <div>
+                        <h2 class="text-lg font-black text-slate-900 dark:text-white flex items-center gap-2">
+                            <span>۲. مدیریت نرخ کارمزد پلتفرم و کلید معافیت مارکتینگ</span>
+                        </h2>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                            تنظیم درصد کارمزد پلتفرم از سفارشات و نوبت‌ها، و کلید فعال/غیرفعال‌سازی فوری کارمزد جهت <strong>کمپین‌های جذب و مارکتینگ</strong>.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-3 shrink-0">
+                    <span id="commStatusBadge" class="px-4 py-1.5 rounded-full text-xs font-black font-mono <?= $commissionEnabled ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' : 'bg-amber-100 text-amber-800 border border-amber-300' ?>">
+                        <?= $commissionEnabled ? ('🟢 کارمزد فعال: ' . $commissionRate . '٪') : '🎁 کمپین مارکتینگ فعال: کارمزد ۰٪ (معاف)' ?>
+                    </span>
+                </div>
+            </div>
+
+            <!-- Two Interactive Cards: Switch & Input -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 relative z-10">
+                
+                <!-- Card 1: ON/OFF Marketing Switch (Col 5) -->
+                <div class="lg:col-span-5 p-6 rounded-2xl border-2 <?= $commissionEnabled ? 'border-primary/30 bg-slate-50/60 dark:bg-slate-900/40' : 'border-amber-400 bg-amber-50/40 dark:bg-amber-950/20 ring-2 ring-amber-400/20' ?> transition-all flex flex-col justify-between gap-5">
+                    <div>
+                        <div class="flex items-center justify-between gap-3 mb-3">
+                            <span class="text-xs font-black text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                                <span class="material-symbols-outlined text-base <?= $commissionEnabled ? 'text-primary' : 'text-amber-500' ?>">toggle_on</span>
+                                <span>کلید وضعیت کارمزد (روشن / خاموش):</span>
+                            </span>
+                            <span id="toggleTextLabel" class="text-[11px] font-bold <?= $commissionEnabled ? 'text-emerald-700 dark:text-emerald-400' : 'text-amber-700 dark:text-amber-400' ?>">
+                                <?= $commissionEnabled ? 'روشن (دریافت کارمزد)' : 'خاموش (معافیت مارکتینگ)' ?>
+                            </span>
+                        </div>
+
+                        <!-- Big Interactive Switch UI -->
+                        <div class="flex items-center justify-between p-4 rounded-xl bg-white dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700">
+                            <div>
+                                <span class="text-sm font-black text-slate-900 dark:text-white block">کارمزد پلتفرم آسنا</span>
+                                <span class="text-[10px] text-slate-400 block mt-0.5">غیرفعال = پرداخت ۱۰۰٪ به ارائه‌دهندگان</span>
+                            </div>
+                            <!-- Switch Button -->
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" name="platform_commission_enabled" id="commToggleInput" value="1" <?= $commissionEnabled ? 'checked' : '' ?> onchange="handleCommissionToggle(this.checked)" class="sr-only peer">
+                                <div class="w-14 h-8 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-7 after:w-7 after:transition-all dark:border-slate-600 peer-checked:bg-emerald-600"></div>
+                            </label>
+                        </div>
+
+                        <p id="commToggleDescription" class="text-[11px] text-slate-500 dark:text-slate-400 mt-3 leading-relaxed">
+                            <?= $commissionEnabled 
+                                ? 'در این حالت کارمزد با نرخ مصوب از هر تراکنش کسر شده و مابقی به سهم خالص ارائه‌دهنده واریز می‌شود.' 
+                                : 'حالت مارکتینگ فعال است: پلتفرم هیچ کارمزدی کسر نمی‌کند (۰٪) و ۱۰۰٪ مبلغ سفارشات و نوبت‌ها به ارائه‌دهندگان واریز می‌گردد.' ?>
+                        </p>
+                    </div>
+
+                    <div class="pt-3 border-t border-slate-200/60 dark:border-slate-700/60 flex items-center justify-between text-xs">
+                        <span class="text-slate-400 font-bold">ذخیره و تغییر آنی:</span>
+                        <button type="button" onclick="ajaxToggleCommission()" id="btnInstantToggle" class="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold transition flex items-center gap-1 active:scale-95">
+                            <span class="material-symbols-outlined text-sm">bolt</span>
+                            <span id="instantToggleBtnText"><?= $commissionEnabled ? 'فعال‌سازی حالت مارکتینگ (۰٪)' : 'برقراری مجدد کارمزد' ?></span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Card 2: Percentage Input & Live Preview (Col 7) -->
+                <div class="lg:col-span-7 p-6 rounded-2xl border-2 border-slate-200 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-900/40 flex flex-col justify-between gap-5">
+                    <div>
+                        <div class="flex items-center justify-between gap-3 mb-3">
+                            <label class="block text-xs font-black text-slate-800 dark:text-slate-200">
+                                درصد کارمزد پلتفرم آسنا (درصد):
+                            </label>
+                            <span class="text-[10px] text-primary font-mono font-bold">نرخ پیش‌فرض مصوب: ۵٪</span>
+                        </div>
+
+                        <!-- Number Input Box -->
+                        <div class="flex items-center gap-3">
+                            <div class="relative flex-1">
+                                <input type="number" name="platform_commission_percent" id="commPercentInput" value="<?= $commissionRate ?>" step="0.1" min="0" max="100" oninput="updateCommissionLivePreview(this.value)" class="w-full px-4 py-3.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm font-mono font-black focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none pl-12 text-left dir-ltr shadow-xs">
+                                <span class="absolute left-4 top-3.5 text-slate-500 font-bold text-sm">٪</span>
+                            </div>
+                            <button type="button" onclick="ajaxSaveCommissionPercentage()" id="btnSavePercentInstant" class="px-4 py-3.5 rounded-xl bg-primary hover:bg-[#002d72] text-white text-xs font-black transition flex items-center gap-1.5 shadow-sm active:scale-95 shrink-0">
+                                <span class="material-symbols-outlined text-base">save</span>
+                                <span>ذخیره نرخ</span>
+                            </button>
+                        </div>
+
+                        <!-- Quick Presets -->
+                        <div class="flex flex-wrap items-center gap-2 mt-3 text-xs">
+                            <span class="text-[10px] text-slate-400 font-bold">میانبرهای سریع:</span>
+                            <button type="button" onclick="setPresetCommission(0)" class="px-2.5 py-1 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-800 text-[11px] font-bold border border-amber-200 transition">🎁 ۰٪ (مارکتینگ)</button>
+                            <button type="button" onclick="setPresetCommission(5)" class="px-2.5 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-[11px] font-bold border border-emerald-200 transition">⭐ ۵٪ (استاندارد)</button>
+                            <button type="button" onclick="setPresetCommission(10)" class="px-2.5 py-1 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-800 text-[11px] font-bold border border-blue-200 transition">۱۰٪ (تجاری)</button>
+                            <button type="button" onclick="setPresetCommission(15)" class="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-[11px] font-bold border border-slate-300 transition">۱۵٪ (تعرفه پیشین)</button>
+                        </div>
+                    </div>
+
+                    <!-- Live Calculation Breakdown Preview -->
+                    <div class="p-4 rounded-xl bg-white dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700 space-y-2">
+                        <div class="flex items-center justify-between text-xs font-bold text-slate-500 border-b border-slate-100 dark:border-slate-700 pb-2">
+                            <span>پیش‌نمایش تسهیم بر مبنای سفارش نمونه ۱,۰۰۰,۰۰۰ تومانی:</span>
+                            <span id="previewEffectiveBadge" class="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300">
+                                نرخ موثر: <?= $effectiveCommissionRate ?>٪
+                            </span>
+                        </div>
+                        <div class="grid grid-cols-2 gap-3 text-xs pt-1">
+                            <div>
+                                <span class="text-slate-400 text-[11px] block">سهم درآمد کارمزد پلتفرم:</span>
+                                <span id="previewPlatformShare" class="font-mono font-black text-primary text-sm">
+                                    <?= number_format((int)round(1000000 * ($effectiveCommissionRate / 100.0))) ?> تومان (<?= $effectiveCommissionRate ?>٪)
+                                </span>
+                            </div>
+                            <div>
+                                <span class="text-slate-400 text-[11px] block">سهم خالص ارائه‌دهنده (پت‌شاپ/پزشک):</span>
+                                <span id="previewProviderShare" class="font-mono font-black text-emerald-600 text-sm">
+                                    <?= number_format(1000000 - (int)round(1000000 * ($effectiveCommissionRate / 100.0))) ?> تومان (<?= 100 - $effectiveCommissionRate ?>٪)
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- ========================================================================= -->
+        <!-- SECTION 3: CENTRAL TREASURY BANK CARD & SHABA (2-COLUMN SPACIOUS LAYOUT)  -->
         <!-- ========================================================================= -->
         <div id="bank-section" class="scroll-mt-6 bg-white dark:bg-[#1E293B] border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-8 shadow-sm space-y-6">
             <div class="border-b border-slate-100 dark:border-slate-800 pb-4">
                 <h2 class="text-base sm:text-lg font-black text-slate-900 dark:text-white flex items-center gap-2.5">
                     <span class="material-symbols-outlined text-[#001a48] dark:text-blue-400 text-2xl">credit_card</span>
-                    <span>۲. اطلاعات حساب بانکی و کارت متمرکز حقوقی شرکت</span>
+                    <span>۳. اطلاعات حساب بانکی و کارت متمرکز حقوقی شرکت</span>
                 </h2>
                 <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">مشخصات شماره کارت و شبای خزانه‌داری آسنا جهت درج در رسیدهای واریز و حواله‌های پایا</p>
             </div>
@@ -920,10 +1064,13 @@ require_once __DIR__ . '/includes/admin_header.php';
                     <div>
                         <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-2">کارمزد پلتفرم آسنا از فروشنده / پت‌شاپ (درصد):</label>
                         <div class="relative">
-                            <input type="number" name="platform_commission_percent" value="<?= $commissionRate ?>" step="0.5" min="0" max="50" class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-xs font-mono font-bold focus:border-primary focus:bg-white outline-none pl-10 text-left dir-ltr">
+                            <input type="number" id="taxSectionCommInput" value="<?= $commissionRate ?>" step="0.5" min="0" max="100" oninput="document.getElementById('commPercentInput').value = this.value; updateCommissionLivePreview(this.value);" class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-xs font-mono font-bold focus:border-primary focus:bg-white outline-none pl-10 text-left dir-ltr">
                             <span class="absolute left-3 top-3 text-slate-400 text-xs font-bold">٪</span>
                         </div>
-                        <p class="text-[10px] text-slate-400 mt-1.5">سهم درآمد شرکت از هر سفارش تامین‌کننده (پیش‌فرض ۱۵٪؛ هنگام تسویه پایا از موجودی کسر می‌گردد).</p>
+                        <p class="text-[10px] text-slate-400 mt-1.5 flex items-center justify-between">
+                            <span>پیش‌فرض: ۵٪ (نرخ موثر: <?= $effectiveCommissionRate ?>٪)</span>
+                            <a href="#commission-section" class="text-primary hover:underline font-bold">کنسول مارکتینگ و اهرم کارمزد ↑</a>
+                        </p>
                     </div>
 
                     <div>
@@ -1217,6 +1364,192 @@ document.getElementById('adminBankNameInput')?.addEventListener('input', functio
         preview.textContent = e.target.value || 'بانک سامان';
     }
 });
+
+// Commission & Marketing Switch Controllers
+function handleCommissionToggle(checked) {
+    const isEnabled = !!checked;
+    const badge = document.getElementById('commStatusBadge');
+    const label = document.getElementById('toggleTextLabel');
+    const desc = document.getElementById('commToggleDescription');
+    const btnInstant = document.getElementById('instantToggleBtnText');
+    const rateInput = document.getElementById('commPercentInput');
+    const rate = parseFloat(rateInput ? rateInput.value : 5) || 5;
+
+    if (isEnabled) {
+        if (badge) {
+            badge.className = 'px-4 py-1.5 rounded-full text-xs font-black font-mono bg-emerald-100 text-emerald-800 border border-emerald-300';
+            badge.textContent = '🟢 کارمزد فعال: ' + rate + '٪';
+        }
+        if (label) {
+            label.className = 'text-[11px] font-bold text-emerald-700 dark:text-emerald-400';
+            label.textContent = 'روشن (دریافت کارمزد)';
+        }
+        if (desc) {
+            desc.textContent = 'در این حالت کارمزد با نرخ مصوب از هر تراکنش کسر شده و مابقی به سهم خالص ارائه‌دهنده واریز می‌شود.';
+        }
+        if (btnInstant) {
+            btnInstant.textContent = 'فعال‌سازی حالت مارکتینگ (۰٪)';
+        }
+    } else {
+        if (badge) {
+            badge.className = 'px-4 py-1.5 rounded-full text-xs font-black font-mono bg-amber-100 text-amber-800 border border-amber-300';
+            badge.textContent = '🎁 کمپین مارکتینگ فعال: کارمزد ۰٪ (معاف)';
+        }
+        if (label) {
+            label.className = 'text-[11px] font-bold text-amber-700 dark:text-amber-400';
+            label.textContent = 'خاموش (معافیت مارکتینگ)';
+        }
+        if (desc) {
+            desc.textContent = 'حالت مارکتینگ فعال است: پلتفرم هیچ کارمزدی کسر نمی‌کند (۰٪) و ۱۰۰٪ مبلغ سفارشات و نوبت‌ها به ارائه‌دهندگان واریز می‌گردد.';
+        }
+        if (btnInstant) {
+            btnInstant.textContent = 'برقراری مجدد کارمزد';
+        }
+    }
+    updateCommissionLivePreview(rate);
+}
+
+function setPresetCommission(val) {
+    const input = document.getElementById('commPercentInput');
+    const taxInput = document.getElementById('taxSectionCommInput');
+    if (input) {
+        input.value = val;
+    }
+    if (taxInput) {
+        taxInput.value = val;
+    }
+    updateCommissionLivePreview(val);
+}
+
+function updateCommissionLivePreview(rateVal) {
+    const check = document.getElementById('commToggleInput');
+    const isEnabled = check ? check.checked : true;
+    let rate = parseFloat(rateVal) || 0;
+    rate = Math.max(0, Math.min(100, rate));
+
+    const effectiveRate = isEnabled ? rate : 0;
+    const providerShare = 100 - effectiveRate;
+
+    const sampleAmount = 1000000;
+    const platformAmt = Math.round(sampleAmount * (effectiveRate / 100));
+    const providerAmt = sampleAmount - platformAmt;
+
+    const badge = document.getElementById('commStatusBadge');
+    if (badge && isEnabled) {
+        badge.textContent = '🟢 کارمزد فعال: ' + rate + '٪';
+    }
+
+    const previewEffective = document.getElementById('previewEffectiveBadge');
+    if (previewEffective) {
+        previewEffective.textContent = 'نرخ موثر: ' + effectiveRate.toLocaleString('fa-IR') + '٪' + (!isEnabled ? ' (مارکتینگ)' : '');
+    }
+
+    const previewPlatform = document.getElementById('previewPlatformShare');
+    if (previewPlatform) {
+        previewPlatform.textContent = platformAmt.toLocaleString('fa-IR') + ' تومان (' + effectiveRate.toLocaleString('fa-IR') + '٪)';
+    }
+
+    const previewProvider = document.getElementById('previewProviderShare');
+    if (previewProvider) {
+        previewProvider.textContent = providerAmt.toLocaleString('fa-IR') + ' تومان (' + providerShare.toLocaleString('fa-IR') + '٪)';
+    }
+}
+
+function showFinanceGlassToast(message, type = 'success') {
+    let existing = document.getElementById('financeToastContainer');
+    if (!existing) {
+        existing = document.createElement('div');
+        existing.id = 'financeToastContainer';
+        existing.className = 'fixed bottom-6 left-6 z-50 flex flex-col gap-2 pointer-events-none dir-rtl';
+        document.body.appendChild(existing);
+    }
+
+    const toast = document.createElement('div');
+    const isSuccess = (type === 'success');
+    toast.className = 'pointer-events-auto flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-xl backdrop-blur-md transition-all duration-300 transform translate-y-4 opacity-0 border text-xs font-bold ' + 
+        (isSuccess ? 'bg-slate-900/90 text-white border-emerald-500/40 shadow-emerald-950/20' : 'bg-rose-900/90 text-white border-rose-500/40');
+    
+    toast.innerHTML = `
+        <span class="material-symbols-outlined text-base ${isSuccess ? 'text-emerald-400' : 'text-rose-400'}">${isSuccess ? 'check_circle' : 'error'}</span>
+        <span>${message}</span>
+    `;
+
+    existing.appendChild(toast);
+    requestAnimationFrame(() => {
+        toast.classList.remove('translate-y-4', 'opacity-0');
+    });
+
+    setTimeout(() => {
+        toast.classList.add('opacity-0', 'translate-y-2');
+        setTimeout(() => toast.remove(), 350);
+    }, 4500);
+}
+
+function ajaxToggleCommission() {
+    const check = document.getElementById('commToggleInput');
+    const newChecked = check ? !check.checked : true;
+    if (check) check.checked = newChecked;
+    handleCommissionToggle(newChecked);
+
+    const csrfToken = document.querySelector('input[name="csrf_token"]')?.value || '';
+    const formData = new FormData();
+    formData.append('action', 'toggle_marketing_commission');
+    formData.append('enabled', newChecked ? '1' : '0');
+    formData.append('csrf_token', csrfToken);
+
+    fetch('../actions/marketing_commission_action.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            showFinanceGlassToast(data.message, 'success');
+        } else {
+            showFinanceGlassToast(data.message || 'خطا در ثبت تغییرات', 'error');
+            if (check) check.checked = !newChecked;
+            handleCommissionToggle(!newChecked);
+        }
+    })
+    .catch(err => {
+        showFinanceGlassToast('خطا در ارتباط با سرور', 'error');
+        if (check) check.checked = !newChecked;
+        handleCommissionToggle(!newChecked);
+    });
+}
+
+function ajaxSaveCommissionPercentage() {
+    const input = document.getElementById('commPercentInput');
+    const val = input ? parseFloat(input.value) : 5;
+    const csrfToken = document.querySelector('input[name="csrf_token"]')?.value || '';
+
+    const formData = new FormData();
+    formData.append('action', 'update_commission_percentage');
+    formData.append('percentage', val);
+    formData.append('csrf_token', csrfToken);
+
+    const btn = document.getElementById('btnSavePercentInstant');
+    if (btn) btn.disabled = true;
+
+    fetch('../actions/marketing_commission_action.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (btn) btn.disabled = false;
+        if (data.success) {
+            showFinanceGlassToast(data.message, 'success');
+            updateCommissionLivePreview(val);
+        } else {
+            showFinanceGlassToast(data.message || 'خطا در ذخیره نرخ کارمزد', 'error');
+        }
+    })
+    .catch(err => {
+        if (btn) btn.disabled = false;
+        showFinanceGlassToast('خطا در ارتباط با سرور', 'error');
+    });
+}
 </script>
 
 <?php require_once __DIR__ . '/includes/admin_footer.php'; ?>

@@ -12,11 +12,35 @@
 
 class MarketplaceEscrowService {
     private PDO $db;
-    public const DEFAULT_COMMISSION_RATE = 15.00; // 15% platform commission
+    public const DEFAULT_COMMISSION_RATE = 5.00; // 5% platform commission (reduced from 15%)
     public const ESCROW_HOLD_DAYS = 7; // 7 days under Iranian E-Commerce Law
 
     public function __construct(PDO $db) {
         $this->db = $db;
+    }
+
+    /**
+     * Get dynamic platform interest / commission rate taking marketing toggle into account
+     */
+    public function getEffectiveCommissionRate(): float {
+        try {
+            if (function_exists('get_effective_platform_commission_rate')) {
+                return get_effective_platform_commission_rate($this->db);
+            }
+            $stmt = $this->db->prepare("SELECT setting_value FROM site_settings WHERE setting_key = 'platform_commission_enabled' LIMIT 1");
+            $stmt->execute();
+            $enabled = $stmt->fetchColumn();
+            if ($enabled !== false && $enabled !== null && ($enabled === '0' || $enabled === 0 || $enabled === 'false')) {
+                return 0.00; // Marketing mode: 0% interest
+            }
+            $stmt = $this->db->prepare("SELECT setting_value FROM site_settings WHERE setting_key = 'platform_commission_percent' LIMIT 1");
+            $stmt->execute();
+            $rate = $stmt->fetchColumn();
+            if ($rate !== false && $rate !== null && is_numeric($rate)) {
+                return max(0.0, (float)$rate);
+            }
+        } catch (Throwable $e) {}
+        return self::DEFAULT_COMMISSION_RATE;
     }
 
     /**
@@ -64,7 +88,7 @@ class MarketplaceEscrowService {
             $grossAmount = $price * $quantity;
 
             // Autoship Policy: ASENA waives 100% of platform commission on Autoship subscriptions.
-            // The 15% discount given to the buyer is funded by ASENA waiving its 15% commission margin.
+            // The discount given to the buyer is funded by ASENA waiving its commission margin.
             // ASENA receives 0% commission (0 Toman interest), and seller receives 100% of the money!
             $isAutoship = false;
             if (!empty($item['is_autoship'])) {
@@ -101,9 +125,17 @@ class MarketplaceEscrowService {
                 $commissionAmount = 0;
                 $netSellerAmount = $grossAmount; // Seller receives 100% of product money!
             } else {
-                $commissionRate = isset($item['commission_rate']) ? (float)$item['commission_rate'] : self::DEFAULT_COMMISSION_RATE;
-                $commissionAmount = (int)round($grossAmount * ($commissionRate / 100.0));
-                $netSellerAmount = max(0, $grossAmount - $commissionAmount);
+                $effectiveRate = $this->getEffectiveCommissionRate();
+                if ($effectiveRate <= 0.0001) {
+                    // Marketing zero-commission policy active: 100% payout to sellers
+                    $commissionRate = 0.00;
+                    $commissionAmount = 0;
+                    $netSellerAmount = $grossAmount;
+                } else {
+                    $commissionRate = isset($item['commission_rate']) ? (float)$item['commission_rate'] : $effectiveRate;
+                    $commissionAmount = (int)round($grossAmount * ($commissionRate / 100.0));
+                    $netSellerAmount = max(0, $grossAmount - $commissionAmount);
+                }
             }
 
             // Update order_items table

@@ -259,7 +259,7 @@ $auditHash = strtoupper(substr(hash('sha256', $batchCode . $totalSettled . $asen
                             <th class="p-2.5">شناسه مرجع</th>
                             <th class="p-2.5">شرح قلم / خدمات</th>
                             <th class="p-2.5 text-center">مبلغ ناخالص</th>
-                            <th class="p-2.5 text-center text-red-600">کارمزد پلتفرم (۱۵٪)</th>
+                            <th class="p-2.5 text-center text-red-600">کارمزد پلتفرم</th>
                             <th class="p-2.5 text-center text-emerald-700">مبلغ خالص واریزی</th>
                         </tr>
                     </thead>

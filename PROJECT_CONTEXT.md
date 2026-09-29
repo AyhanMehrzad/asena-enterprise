@@ -688,6 +688,24 @@
       - ارتقای ویجت کارنامه‌های بالینی در تب پیشخوان جهت نمایش همزمان هر دو نوع سند (رژیم غذایی و کارنامه‌های پایش تداخلات دارویی) با آیکون‌های اختصاصی و لینک‌های مستقیم بازبینی.
       - ریسپانسیوسازی دکمه‌های اقدام سوابق پزشکی (`.doc-record-row`): تمام‌عرض شدن دکمه «مشاهده و بررسی» در موبایل با ارتفاع لمسی ۴۴ پیکسل و پد لمسی ۴۴x۴۴ برای دکمه‌های دانلود و حذف.
       - اضافه شدن شناسه `petMedicalArchiveHub` و حل خودکار هشتگ‌های `#view-records`، `#records` و `#health-hub` جهت سوییچ نرم به تب پت‌ها و اسکرول مستقیم به سوابق سلامت.
+60. **کاهش نرخ کارمزد پیش‌فرض پلتفرم از ۱۵٪ به ۵٪ و تعبیه پنل مدیریتی کلید روشن/خاموش مارکتینگ و فیلد ورودی درصد جدید (Platform Interest 5% Reduction, Marketing Toggle Switch & Custom Rate Input):**
+    - **کاهش نرخ کارمزد پیش‌فرض به ۵٪ در کل اکوسیستم:**
+      - کاهش `DEFAULT_COMMISSION_RATE` در [`includes/MarketplaceEscrowService.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/includes/MarketplaceEscrowService.php) از ۱۵.۰۰ به ۵.۰۰ درصد (۵٪).
+      - ارتقای [`includes/functions.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/includes/functions.php) با توابع تاب‌آور `get_setting` و `set_setting` (سازگار با MySQL و SQLite) و افزودن تابع سراسری `get_effective_platform_commission_rate($pdo)` با پیش‌فرض ۵٪.
+      - همگام‌سازی محاسبات کارمزد در [`actions/booking_action.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/actions/booking_action.php) و [`actions/process_landing_booking.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/actions/process_landing_booking.php) جهت تبعیت پویا از نرخ ۵٪ و کلید مارکتینگ.
+      - حذف موارد هاردکد شده ۱۵٪ در [`partner_interactions.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/partner_interactions.php)، [`verify_payout.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/verify_payout.php) و [`admin/includes/admin_header.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/admin/includes/admin_header.php).
+      - پویاسازی پیشخوان مدیریت کلان در [`admin/index.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/admin/index.php) جهت بازتاب نرخ موثر و سهم امانی (سپر ۹۵٪ امانی و ۵٪ کارمزد یا ۱۰۰٪ امانی در حالت مارکتینگ).
+    - **پنل مدیریت پیشرفته، کلید تعاملی روشن/خاموش مارکتینگ و فیلد ورودی درصد ([`admin/finance_settings.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/admin/finance_settings.php)):**
+      - طراحی کارت اختصاصی قهرمان (Section 2: `#commission-section`) با بنتوگرید شکیل، بج‌های وضعیت پویا و جلوه نوری مارکتینگ.
+      - **کلید تعاملی روشن/خاموش (ON/OFF Switch):** امکان فعال‌سازی یا غیرفعال‌سازی فوری کارمزد جهت کمپین‌های تبلیغاتی و مارکتینگ پلتفرم. در حالت خاموش (کمپین مارکتینگ)، کارمزد ۰٪ اعمال شده و ۱۰۰٪ درآمد حاصل از فروش و ویزیت‌ها بدون کسر حتی ۱ ریال کارمزد مستقیماً به حساب فروشندگان و پزشکان واریز می‌گردد.
+      - **فیلد ورودی دریافت درصد کارمزد جدید (`platform_commission_percent`):** امکان تعریف دقیق هر درصد دلخواه به صورت اعشاری با گام‌های ۰.۱، اعتبارسنجی ۰ تا ۱۰۰، دکمه ذخیره فوری و پیش‌نمایش زنده ریاضی بر مبنای سفارش فرضی ۱,۰۰۰,۰۰۰ تومانی (سهم کارمزد پلتفرم در برابر سهم خالص فروشنده).
+      - **دکمه‌های میانبر پرکاربرد (Quick Presets):** `[۰٪ مارکتینگ]`, `[۵٪ استاندارد آسنا]`, `[۱۰٪ تجاری]`, `[۱۵٪ تعرفه پیشین]`.
+    - **اندپوینت AJAX اختصاصی ([`actions/marketing_commission_action.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/actions/marketing_commission_action.php)):**
+      - پیاده‌سازی متدهای ایمن با اعتبارسنجی CSRF و نقش `admin` جهت تغییر وضعیت آنی کلید مارکتینگ و ذخیره نرخ کارمزد با به‌روزرسانی آپتیمیستیک رابط کاربری و توست شیشه‌ای فلوتینگ (`showFinanceGlassToast`).
+    - **اسکریپت مایگریشن ۲۱ دیتابیس ([`database/migrations/21_marketing_commission_toggle_and_5_percent_interest.sql`](file:///opt/lampp/htdocs/asena/asena-enterprise/database/migrations/21_marketing_commission_toggle_and_5_percent_interest.sql)):**
+      - درج مقادیر پیش‌فرض `platform_commission_percent = '5'` و `platform_commission_enabled = '1'` در جدول `site_settings` و تعدیل نرخ پیش‌فرض نوبت‌ها در جدول `organizations` به ۵.۰۰٪.
+    - **مجموعه آزمون خودکار ([`tests/test_marketing_commission_toggle.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/tests/test_marketing_commission_toggle.php)):**
+      - اجرای ۶ تست موفقیت‌آمیز شامل راستی‌آزمایی نرخ ثابت ۵٪، کلید خاموش مارکتینگ، به‌روزرسانی مقادیر سفارشی و محاسبات سهم ۹۵٪ و ۱۰۰٪ شرکا.
 
 ---
 

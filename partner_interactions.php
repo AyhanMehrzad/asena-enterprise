@@ -205,12 +205,16 @@ $commAptsStmt->execute([$userId, $userId]);
 $appointmentItems = $commAptsStmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Totals of Commission
+$commissionRatePct = (float)get_setting($pdo, 'platform_commission_percent', 5);
+$commissionEnabled = (get_setting($pdo, 'platform_commission_enabled', '1') !== '0');
+$effectiveCommissionRate = $commissionEnabled ? $commissionRatePct : 0.0;
+
 $totalCommissionPaid = 0;
 foreach ($ledgerItems as $li) {
     $totalCommissionPaid += (int)$li['commission_amount'];
 }
 foreach ($appointmentItems as $ai) {
-    $totalCommissionPaid += (int)($ai['commission_amount'] ?: round((int)$ai['fee'] * 0.15));
+    $totalCommissionPaid += (int)($ai['commission_amount'] ?: round((int)$ai['fee'] * ($effectiveCommissionRate / 100.0)));
 }
 
 // 2. Fetch SMS Purchases & Usage Logs
@@ -366,7 +370,7 @@ if (!in_array($activeTab, ['overview', 'debits', 'payouts', 'sms', 'tickets'])) 
             <div>
                 <span class="text-xs font-bold text-slate-500 block mb-1">کل پرداختی شما به آسنا (کارمزد+پیامک):</span>
                 <span class="text-xl font-black text-rose-600 font-mono"><?= number_format($totalCommissionPaid + $smsSpentTotal) ?> تومان</span>
-                <span class="text-[10px] text-slate-400 block mt-1">کارمزد ۱۵٪: <?= number_format($totalCommissionPaid) ?> ت</span>
+                <span class="text-[10px] text-slate-400 block mt-1">کارمزد پلتفرم: <?= number_format($totalCommissionPaid) ?> ت</span>
             </div>
             <div class="w-12 h-12 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center shrink-0">
                 <span class="material-symbols-outlined text-2xl">receipt</span>
@@ -530,16 +534,16 @@ if (!in_array($activeTab, ['overview', 'debits', 'payouts', 'sms', 'tickets'])) 
     </div>
     <?php endif; ?>
 
-    <!-- TAB 2: DEBITS & 15% COMMISSION BREAKDOWN -->
+    <!-- TAB 2: DEBITS & COMMISSION BREAKDOWN -->
     <?php if ($activeTab === 'debits'): ?>
     <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-6">
         <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-2 border-b border-slate-100 pb-4">
             <div>
                 <h3 class="font-bold text-slate-900 text-sm flex items-center gap-2">
                     <span class="material-symbols-outlined text-rose-600 text-base">point_of_sale</span>
-                    ریز اقلام کارمزدهای کسر شده (سهم ۱۵٪ پلتفرم آسنا)
+                    ریز اقلام کارمزدهای کسر شده (سهم پلتفرم آسنا: <?= $effectiveCommissionRate ?>٪)
                 </h3>
-                <p class="text-xs text-slate-500 mt-0.5">کارمزد ۱۵٪ بابت خدمات بازاریابی، پشتیبانی، هاستینگ و زیرساخت پرداخت از مبالغ فروش کسر می‌گردد.</p>
+                <p class="text-xs text-slate-500 mt-0.5">کارمزد پلتفرم بابت خدمات بازاریابی، پشتیبانی، هاستینگ و زیرساخت پرداخت از مبالغ فروش کسر می‌گردد.</p>
             </div>
             <span class="font-bold text-xs text-rose-700 bg-rose-50 px-3 py-1.5 rounded-xl border border-rose-100">
                 مجموع کارمزدهای کسر شده: <?= number_format($totalCommissionPaid) ?> تومان
@@ -554,8 +558,8 @@ if (!in_array($activeTab, ['overview', 'debits', 'payouts', 'sms', 'tickets'])) 
                         <th class="p-3">شناسه سفارش / نوبت</th>
                         <th class="p-3">تاریخ ثبت</th>
                         <th class="p-3 text-center">مبلغ ناخالص فروش</th>
-                        <th class="p-3 text-center text-rose-600">کارمزد پلتفرم آسنا (۱۵٪)</th>
-                        <th class="p-3 text-center text-emerald-700">سهم خالص شما (۸۵٪)</th>
+                        <th class="p-3 text-center text-rose-600">کارمزد پلتفرم آسنا</th>
+                        <th class="p-3 text-center text-emerald-700">سهم خالص شما</th>
                         <th class="p-3 text-center">وضعیت تسویه</th>
                     </tr>
                 </thead>
@@ -578,7 +582,7 @@ if (!in_array($activeTab, ['overview', 'debits', 'payouts', 'sms', 'tickets'])) 
 
                     <?php foreach ($appointmentItems as $apt): 
                         $fee = (int)$apt['fee'];
-                        $comm = (int)($apt['commission_amount'] ?: round($fee * 0.05));
+                        $comm = (int)($apt['commission_amount'] ?: round($fee * ($effectiveCommissionRate / 100.0)));
                         $net = (int)($apt['net_amount'] ?: ($fee - $comm));
                     ?>
                     <tr class="hover:bg-slate-50">

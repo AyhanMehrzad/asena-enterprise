@@ -66,6 +66,12 @@ $docCount = (int)$pdo->query("SELECT COUNT(*) FROM doctors")->fetchColumn();
 $sellerCount = (int)$pdo->query("SELECT COUNT(*) FROM users WHERE role = 'seller'")->fetchColumn();
 $totalClearedPayouts = (int)$pdo->query("SELECT COALESCE(SUM(balance_available_for_payout), 0) FROM seller_wallets")->fetchColumn();
 
+// Platform Commission & Marketing Status
+$commissionEnabled = (get_setting($pdo, 'platform_commission_enabled', '1') !== '0');
+$commissionRate = (float)get_setting($pdo, 'platform_commission_percent', 5.0);
+$effectiveCommRate = $commissionEnabled ? $commissionRate : 0.0;
+$providerShareRate = 100.0 - $effectiveCommRate;
+
 // Tax & Statutory VAT Compliance Overview
 $totalVatCollected = 0;
 $totalOrdersGross = 0;
@@ -209,7 +215,7 @@ $recentShipments = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     <span class="text-2xl font-black text-emerald-600 group-hover:text-emerald-700 transition-colors"><?= number_format($totalClearedPayouts) ?></span>
                     <span class="text-xs text-slate-400 font-bold">تومان</span>
                 </div>
-                <p class="text-[11px] text-slate-400">محاسبه‌شده با کسر ۱۵٪ کارمزد پلتفرم</p>
+                <p class="text-[11px] text-slate-400"><?= $effectiveCommRate > 0 ? ('محاسبه‌شده با کسر ' . $effectiveCommRate . '٪ کارمزد پلتفرم') : 'معاف از کارمزد (کمپین مارکتینگ فعال)' ?></p>
             </div>
             <div class="w-12 h-12 rounded-2xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center">
                 <span class="material-symbols-outlined text-2xl">account_balance_wallet</span>
@@ -231,7 +237,7 @@ $recentShipments = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 <div class="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1.5 text-xs text-slate-600 dark:text-slate-300">
                     <span>مجموع ارزش افزوده وصولی: <strong class="font-mono text-slate-900 dark:text-white font-black"><?= number_format($totalVatCollected) ?> تومان</strong></span>
                     <span class="text-slate-300 dark:text-slate-700">|</span>
-                    <span>سپر دفاعی کارگزاری: <strong class="font-mono text-emerald-600 font-black">۸۵٪ امانی</strong> (درآمد مشمول: ۱۵٪ کارمزد)</span>
+                    <span>سپر دفاعی کارگزاری: <strong class="font-mono text-emerald-600 font-black"><?= $providerShareRate ?>٪ امانی</strong> (درآمد مشمول: <?= $effectiveCommRate ?>٪ کارمزد)</span>
                     <span class="text-slate-300 dark:text-slate-700">|</span>
                     <span class="text-amber-800 dark:text-amber-300 font-bold flex items-center gap-1">
                         <span class="material-symbols-outlined text-xs">schedule</span>

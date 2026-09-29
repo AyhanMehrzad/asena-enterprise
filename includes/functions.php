@@ -293,21 +293,36 @@ function get_curated_recommendations(PDO $pdo, string $slot_type, int $limit = 4
  */
 function get_setting(PDO $pdo, string $key, $default = null) {
     try {
-        $stmt = $pdo->prepare("SELECT setting_value FROM site_settings WHERE setting_key = ?");
+        $stmt = $pdo->prepare("SELECT setting_value FROM site_settings WHERE setting_key = ? LIMIT 1");
         $stmt->execute([$key]);
-        $row = $stmt->fetch(PDO::FETCH_ASSOC);
-        if ($row !== false && $row['setting_value'] !== null) {
-            return $row['setting_value'];
+        $val = $stmt->fetchColumn();
+        if ($val !== false && $val !== null) {
+            return $val;
+        }
+        $stmt = $pdo->prepare("SELECT value FROM site_settings WHERE key = ? LIMIT 1");
+        $stmt->execute([$key]);
+        $val = $stmt->fetchColumn();
+        if ($val !== false && $val !== null) {
+            return $val;
         }
     } catch (Exception $e) {
-        // Table might not exist yet, create it
+        // Fallback for key column schema
         try {
-            $pdo->exec("CREATE TABLE IF NOT EXISTS site_settings (
-                setting_key VARCHAR(100) NOT NULL PRIMARY KEY,
-                setting_value TEXT DEFAULT NULL,
-                updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
-        } catch (Exception $ex) {}
+            $stmt = $pdo->prepare("SELECT value FROM site_settings WHERE key = ? LIMIT 1");
+            $stmt->execute([$key]);
+            $val = $stmt->fetchColumn();
+            if ($val !== false && $val !== null) {
+                return $val;
+            }
+        } catch (Exception $e2) {
+            try {
+                $pdo->exec("CREATE TABLE IF NOT EXISTS site_settings (
+                    setting_key VARCHAR(100) NOT NULL PRIMARY KEY,
+                    setting_value TEXT DEFAULT NULL,
+                    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+            } catch (Exception $ex) {}
+        }
     }
     return $default;
 }
@@ -316,9 +331,28 @@ function get_setting(PDO $pdo, string $key, $default = null) {
  * Save setting to site_settings table
  */
 function set_setting(PDO $pdo, string $key, $value): bool {
+    $driver = '';
+    try {
+        $driver = $pdo->getAttribute(PDO::ATTR_DRIVER_NAME);
+    } catch (Throwable $t) {}
+
+    if ($driver === 'sqlite') {
+        try {
+            $stmt = $pdo->prepare("INSERT OR REPLACE INTO site_settings (setting_key, setting_value, key, value) VALUES (?, ?, ?, ?)");
+            return $stmt->execute([$key, (string)$value, $key, (string)$value]);
+        } catch (Exception $e) {
+            try {
+                $stmt = $pdo->prepare("INSERT OR REPLACE INTO site_settings (key, value) VALUES (?, ?)");
+                return $stmt->execute([$key, (string)$value]);
+            } catch (Exception $e2) {
+                return false;
+            }
+        }
+    }
+
     try {
         $stmt = $pdo->prepare("INSERT INTO site_settings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)");
-        return $stmt->execute([$key, $value]);
+        return $stmt->execute([$key, (string)$value]);
     } catch (Exception $e) {
         try {
             $pdo->exec("CREATE TABLE IF NOT EXISTS site_settings (
@@ -327,12 +361,27 @@ function set_setting(PDO $pdo, string $key, $value): bool {
                 updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
             $stmt = $pdo->prepare("INSERT INTO site_settings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)");
-            return $stmt->execute([$key, $value]);
+            return $stmt->execute([$key, (string)$value]);
         } catch (Exception $ex) {
             return false;
         }
     }
 }
+
+/**
+ * Retrieve effective platform interest / commission percentage
+ * If platform_commission_enabled is '0', interest is 0.0% (marketing campaign mode)
+ * Otherwise returns configured platform_commission_percent (defaults to 5.0%)
+ */
+function get_effective_platform_commission_rate(PDO $pdo): float {
+    $enabled = get_setting($pdo, 'platform_commission_enabled', '1');
+    if ($enabled === '0' || $enabled === 0 || $enabled === 'false') {
+        return 0.00; // Disabled for marketing campaign
+    }
+    $rate = get_setting($pdo, 'platform_commission_percent', 5.0);
+    return max(0.0, (float)$rate);
+}
+
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Persian Localization & Number/Currency Helpers
