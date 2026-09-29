@@ -9,6 +9,11 @@ $success = $_SESSION['profile_success'] ?? '';
 $error = $_SESSION['profile_error'] ?? '';
 unset($_SESSION['profile_success'], $_SESSION['profile_error']);
 
+$platformCommRate = get_effective_platform_commission_rate($pdo);
+$sellerShareRate = 100.0 - $platformCommRate;
+$displayCommRate = rtrim(rtrim(number_format($platformCommRate, 2), '0'), '.');
+$displaySellerRate = rtrim(rtrim(number_format($sellerShareRate, 2), '0'), '.');
+
 // Suppress bulky marketing footer and notification banner in operational profile workspace
 $hideMarketingFooter = true;
 $hideMarketingHeader = true;
@@ -762,7 +767,7 @@ $nextPayoutFormatted = $fmtDateText->format($nextThursday) . ' ساعت ۲۲:۰�
                     <span class="material-symbols-outlined text-xs">verified</span>
                     فروشنده رسمی بازارگاه
                 </span>
-                <span class="text-xs text-on-surface-variant font-medium">• کارمزد پلتفرم: ۱۵٪ امانی</span>
+                <span class="text-xs text-on-surface-variant font-medium">• <?= $platformCommRate > 0 ? ('کارمزد پلتفرم: ' . $displayCommRate . '٪ امانی') : 'معاف از کارمزد (کمپین مارکتینگ)' ?></span>
             </div>
             <h2 class="text-xl sm:text-2xl font-black text-slate-900"><?= htmlspecialchars($user['name'] ?? 'فروشگاه شما') ?></h2>
             <p class="text-xs text-on-surface-variant mt-0.5">مدیریت سفارشات دریافتی، صدور فاکتور رسمی و چرخه تسویه هفتگی پنج‌شنبه‌ها</p>
@@ -1177,7 +1182,7 @@ $nextPayoutFormatted = $fmtDateText->format($nextThursday) . ' ساعت ۲۲:۰�
                 </div>
                 <div class="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200 shrink-0">
                     <span class="material-symbols-outlined text-xs">verified_user</span>
-                    تسویه با کارمزد ۱۵٪ پلتفرم
+                    <?= $platformCommRate > 0 ? ('تسویه با کارمزد ' . $displayCommRate . '٪ پلتفرم') : 'تسویه بدون کارمزد (کمپین مارکتینگ)' ?>
                 </div>
             </div>
 
@@ -1465,8 +1470,8 @@ function switchSellerFin(period) {
                 $isShipped = ($so['order_status'] ?? '') === 'shipped';
                 $isDelivered = ($so['order_status'] ?? '') === 'delivered';
                 $grossPrice = (float)($so['price_at_purchase'] * $so['quantity']);
-                $commission = (float)($so['commission_amount'] ?: ($grossPrice * 0.15));
-                $netShare = (float)($so['seller_net_amount'] ?: ($grossPrice - $commission));
+                $commission = (float)($so['commission_amount'] !== null ? $so['commission_amount'] : ($grossPrice * ($platformCommRate / 100.0)));
+                $netShare = (float)($so['seller_net_amount'] !== null ? $so['seller_net_amount'] : ($grossPrice - $commission));
                 ?>
                 <div class="border border-outline-variant/70 rounded-2xl p-5 bg-white shadow-sm hover:border-primary/40 transition-all space-y-4">
                     <!-- Top Metadata -->
@@ -1541,11 +1546,11 @@ function switchSellerFin(period) {
                                 <span class="font-bold text-slate-700"><?= number_format($grossPrice) ?> تومان</span>
                             </div>
                             <div>
-                                <span class="text-[10px] text-red-500 block">کارمزد پلتفرم (۱۵٪):</span>
+                                <span class="text-[10px] text-red-500 block">کارمزد پلتفرم (<?= $platformCommRate > 0 ? ($displayCommRate . '٪') : '۰٪' ?>):</span>
                                 <span class="font-bold text-red-600">-<?= number_format($commission) ?> تومان</span>
                             </div>
                             <div class="bg-emerald-50 px-3 py-1.5 rounded-xl border border-emerald-200">
-                                <span class="text-[10px] text-emerald-800 block font-bold">سهم خالص شما (۸۵٪):</span>
+                                <span class="text-[10px] text-emerald-800 block font-bold">سهم خالص شما (<?= $platformCommRate > 0 ? ($displaySellerRate . '٪') : '۱۰۰٪' ?>):</span>
                                 <span class="font-black text-emerald-700 text-sm">+<?= number_format($netShare) ?> تومان</span>
                             </div>
                         </div>

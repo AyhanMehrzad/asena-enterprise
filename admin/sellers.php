@@ -5,6 +5,10 @@ AuthGuard::requireRole('admin');
 
 $pdo = App::db();
 $currentPage = 'sellers';
+$effectiveCommissionRate = get_effective_platform_commission_rate($pdo);
+$sellerShareRate = 100.0 - $effectiveCommissionRate;
+$displayCommRate = rtrim(rtrim(number_format($effectiveCommissionRate, 2), '0'), '.');
+$displaySellerRate = rtrim(rtrim(number_format($sellerShareRate, 2), '0'), '.');
 
 // ── Search & Filter ───────────────────────────────────────────────────────────
 $search = trim($_GET['search'] ?? '');
@@ -67,10 +71,17 @@ require_once __DIR__ . '/includes/admin_header.php';
         </div>
 
         <div class="flex items-center gap-2">
-            <span class="px-3.5 py-1.5 rounded-xl bg-amber-50 text-amber-800 border border-amber-200 text-xs font-bold flex items-center gap-1.5">
-                <span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
-                <span>کارمزد پلتفرم: ۱۵٪ (۸۵٪ سهم فروشنده)</span>
-            </span>
+            <?php if ($effectiveCommissionRate <= 0.0): ?>
+                <span class="px-3.5 py-1.5 rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-bold flex items-center gap-1.5 animate-pulse">
+                    <span class="material-symbols-outlined text-sm text-emerald-600">campaign</span>
+                    <span>کمپین مارکتینگ فعال: کارمزد ۰٪ (۱۰۰٪ سهم فروشنده)</span>
+                </span>
+            <?php else: ?>
+                <span class="px-3.5 py-1.5 rounded-xl bg-amber-50 text-amber-800 border border-amber-200 text-xs font-bold flex items-center gap-1.5">
+                    <span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
+                    <span>کارمزد پلتفرم: <?= $displayCommRate ?>٪ (<?= $displaySellerRate ?>٪ سهم فروشنده)</span>
+                </span>
+            <?php endif; ?>
         </div>
     </div>
 

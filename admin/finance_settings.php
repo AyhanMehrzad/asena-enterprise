@@ -17,6 +17,11 @@ if (isset($_GET['export_tax_169'])) {
     header('Content-Type: text/csv; charset=utf-8');
     header('Content-Disposition: attachment; filename="ASENA_Article169_Quarterly_Export_' . date('Ymd_His') . '.csv"');
     echo "\xEF\xBB\xBF"; // UTF-8 BOM
+    $effectiveCommRate = get_effective_platform_commission_rate($pdo);
+    $sellerShareRate = 100.0 - $effectiveCommRate;
+    $commRateLabel = rtrim(rtrim(number_format($effectiveCommRate, 2), '0'), '.');
+    $sellerShareLabel = rtrim(rtrim(number_format($sellerShareRate, 2), '0'), '.');
+
     $out = fopen('php://output', 'w');
     fputcsv($out, [
         'ردیف',
@@ -27,8 +32,8 @@ if (isset($_GET['export_tax_169'])) {
         'کد ملی خریدار',
         'کد پستی خریدار',
         'مبلغ ناخالص (تومان)',
-        'کارمزد پلتفرم ۱۵٪ (تومان)',
-        'سهم تامین‌کننده ۸۵٪ (امانی)',
+        "کارمزد پلتفرم {$commRateLabel}٪ (تومان)",
+        "سهم تامین‌کننده {$sellerShareLabel}٪ (امانی)",
         'مالیات بر ارزش افزوده ۱۰٪',
         'وضعیت مشمولیت ماده ۱۶۹'
     ]);
@@ -46,7 +51,7 @@ if (isset($_GET['export_tax_169'])) {
         $ts = strtotime($row['created_at']);
         $jDate = jdate('Y/m/d', $ts);
         $total = (int)$row['total_amount'];
-        $comm = (int)round($total * 0.15);
+        $comm = (int)round($total * ($effectiveCommRate / 100.0));
         $sellerNet = max(0, $total - $comm);
         $vat = (int)($row['tax_amount'] ?: round($total - ($total / 1.10)));
         $isSmall = ($total <= $threshold);
@@ -1020,15 +1025,15 @@ require_once __DIR__ . '/includes/admin_header.php';
                             <span class="material-symbols-outlined text-emerald-600 text-base">shield_with_heart</span>
                             <span>سپر مالیاتی کارگزاری</span>
                         </span>
-                        <span class="px-2 py-0.5 rounded-md text-[9px] font-bold bg-emerald-200/80 text-emerald-900 dark:bg-emerald-900/60 dark:text-emerald-200">۸۵٪ کاهش تعهد</span>
+                        <span class="px-2 py-0.5 rounded-md text-[9px] font-bold bg-emerald-200/80 text-emerald-900 dark:bg-emerald-900/60 dark:text-emerald-200"><?= rtrim(rtrim(number_format($sellerEscrowRatio, 2), '0'), '.') ?>٪ کاهش تعهد</span>
                     </div>
                     <div>
-                        <span class="text-[11px] text-slate-500 dark:text-slate-400 block mb-0.5">درآمد واقعی مشمول مالیات (۱۵٪):</span>
+                        <span class="text-[11px] text-slate-500 dark:text-slate-400 block mb-0.5">درآمد واقعی مشمول مالیات (<?= rtrim(rtrim(number_format($effectiveCommissionRate, 2), '0'), '.') ?>٪):</span>
                         <div class="text-xl font-black text-emerald-700 dark:text-emerald-300 font-mono"><?= number_format($platformRecognizedRevenue) ?> <span class="text-xs font-normal text-slate-500">تومان</span></div>
                     </div>
                     <div class="pt-2 border-t border-emerald-200/60 dark:border-emerald-800/40 space-y-1 text-[11px]">
                         <div class="flex justify-between text-slate-600 dark:text-slate-400">
-                            <span>گردش امانی فروشندگان (۸۵٪):</span>
+                            <span>گردش امانی فروشندگان (<?= rtrim(rtrim(number_format($sellerEscrowRatio, 2), '0'), '.') ?>٪):</span>
                             <span class="font-mono text-slate-700 dark:text-slate-300 font-bold"><?= number_format($fiduciaryEscrowLiability) ?></span>
                         </div>
                         <div class="flex justify-between text-emerald-800 dark:text-emerald-300 font-bold">

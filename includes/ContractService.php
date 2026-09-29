@@ -207,6 +207,21 @@ class ContractService
     {
         $role = self::normalizeRole($role);
 
+        $pdo = null;
+        if (class_exists('App')) {
+            try { $pdo = App::db(); } catch (Throwable $e) {}
+        }
+        if (!$pdo) {
+            global $pdo;
+        }
+        $commRate = 5.0;
+        if ($pdo instanceof PDO && function_exists('get_effective_platform_commission_rate')) {
+            $commRate = get_effective_platform_commission_rate($pdo);
+        }
+        $sellerShare = 100.0 - $commRate;
+        $commStr = rtrim(rtrim(number_format($commRate, 2), '0'), '.');
+        $sellerStr = rtrim(rtrim(number_format($sellerShare, 2), '0'), '.');
+
         $contracts = [
             'user' => [
                 'role_fa' => 'سرپرستان پت و خریداران عمومی',
@@ -279,7 +294,7 @@ class ContractService
                     ],
                     'profit_for_platform' => [
                         'ارتقای اعتبار علمی، تشخیصی و درمانی اکوسیستم سلامت آسنا با حضور دامپزشکان متخصص',
-                        'دریافت کارمزد استاندارد پلتفرم (۱۵٪) جهت پوشش هزینه‌های زیرساخت سرور و بازاریابی',
+                        "دریافت کارمزد پلتفرم ({$commStr}٪) جهت پوشش هزینه‌های زیرساخت سرور و بازاریابی",
                         'مصونیت کامل حقوقی پلتفرم از خطاهای تشخیصی و شبه‌جرم پزشکی به عنوان حامل بستر فناوری'
                     ]
                 ],
@@ -312,7 +327,7 @@ class ContractService
                     [
                         'num' => '۶',
                         'title' => 'نظام مالی، کارمزد و تسویه حساب هفتگی پایا',
-                        'content' => 'کارمزد سهم آسنا معادل ۱۵٪ و سهم پزشک ۸۵٪ از مبلغ هر ویزیت است. خالص دریافتی هر هفته پنج‌شنبه از طریق حواله پایا به شماره شبای بانکی پزشک تسویه می‌شود. انجام تکالیف مالیاتی و سامانه مودیان قانوناً بر عهده شخص پزشک است.'
+                        'content' => "کارمزد سهم آسنا معادل {$commStr}٪ و سهم پزشک {$sellerStr}٪ از مبلغ هر ویزیت است." . ($commRate <= 0 ? " (در دوره فعال بودن کمپین مارکتینگ، کارمزد ۰٪ و سهم پزشک ۱۰۰٪ است)." : "") . " خالص دریافتی هر هفته پنج‌شنبه از طریق حواله پایا به شماره شبای بانکی پزشک تسویه می‌شود. انجام تکالیف مالیاتی و سامانه مودیان قانوناً بر عهده شخص پزشک است."
                     ],
                     [
                         'num' => '۷',

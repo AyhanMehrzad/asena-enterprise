@@ -28,6 +28,9 @@ $asenaSheba = get_setting($pdo, 'admin_bank_sheba', 'IR120560000000100000000001'
 $asenaBank  = get_setting($pdo, 'admin_bank_name', 'بانک سامان');
 $asenaHolder= get_setting($pdo, 'admin_bank_holder', 'شرکت توسعه تجارت الکترونیک آسنا');
 
+$effectiveCommRate = get_effective_platform_commission_rate($pdo);
+$displayCommRate = rtrim(rtrim(number_format($effectiveCommRate, 2), '0'), '.');
+
 // Target seller filter
 $targetSellerId = (int)($_GET['seller_id'] ?? 0);
 
@@ -240,7 +243,7 @@ $auditHash = strtoupper(substr(hash('sha256', $batchCode . $totalSettled . $asen
                 <?= number_format($totalSettled) ?> <span class="text-base text-slate-200 font-normal">تومان</span>
             </div>
             <p class="text-xs text-slate-300 mt-2">
-                معادل <span class="font-bold text-white"><?= number_format($totalSettled * 10) ?></span> ریال تمام — کسر کارمزد پلتفرم (۱۵٪) قبلاً در صورت‌حساب اعمال گردیده است.
+                معادل <span class="font-bold text-white"><?= number_format($totalSettled * 10) ?></span> ریال تمام — <?= $effectiveCommRate > 0 ? ('کسر کارمزد پلتفرم (' . $displayCommRate . '٪) قبلاً در صورت‌حساب اعمال گردیده است.') : 'بدون کسر کارمزد (کمپین مارکتینگ فعال).' ?>
             </p>
         </div>
 

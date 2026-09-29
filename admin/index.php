@@ -542,7 +542,7 @@ $recentShipments = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     <a href="payouts.php" class="w-full py-2.5 px-3.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-bold flex items-center justify-between transition-colors">
                         <span class="flex items-center gap-2">
                             <span class="material-symbols-outlined text-sm text-emerald-400">payments</span>
-                            <span>صدور حواله‌های تسویه پایا (۱۵٪ کارمزد)</span>
+                            <span>صدور حواله‌های تسویه پایا (<?= $effectiveCommRate > 0 ? ($effectiveCommRate . '٪ کارمزد') : '۰٪ مارکتینگ' ?>)</span>
                         </span>
                         <span class="material-symbols-outlined text-xs">arrow_back</span>
                     </a>

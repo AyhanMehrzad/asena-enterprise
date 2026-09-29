@@ -5,6 +5,8 @@ AuthGuard::requireRole('admin');
 
 $pdo = App::db();
 $currentPage = 'organizations';
+$effectiveCommissionRate = get_effective_platform_commission_rate($pdo);
+$displayCommRate = rtrim(rtrim(number_format($effectiveCommissionRate, 2), '0'), '.');
 
 // Handle Organization Actions (Status Toggle & Banking Details Update)
 if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POST['action'])) {
@@ -309,7 +311,7 @@ require_once __DIR__ . '/includes/admin_header.php';
                     <span class="text-2xl font-black text-slate-800"><?= number_format($totalLifetimeSettled) ?></span>
                     <span class="text-xs text-on-surface-variant font-bold">تومان</span>
                 </div>
-                <p class="text-[11px] text-slate-400">با کسر ۱۵٪ کارمزد پلتفرم</p>
+                <p class="text-[11px] text-slate-400"><?= $effectiveCommissionRate > 0 ? ('با کسر ' . $displayCommRate . '٪ کارمزد پلتفرم') : 'معاف از کارمزد (کمپین مارکتینگ)' ?></p>
             </div>
             <div class="w-12 h-12 rounded-2xl bg-amber-500/10 text-amber-600 flex items-center justify-center">
                 <span class="material-symbols-outlined text-2xl">account_balance</span>

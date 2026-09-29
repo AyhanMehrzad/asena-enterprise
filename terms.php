@@ -2,6 +2,11 @@
 require_once 'includes/db.php';
 require_once 'includes/ContractService.php';
 
+$effectiveCommissionRate = get_effective_platform_commission_rate($pdo);
+$docShareRate = 100.0 - $effectiveCommissionRate;
+$displayComm = rtrim(rtrim(number_format($effectiveCommissionRate, 2), '0'), '.');
+$displayDoc = rtrim(rtrim(number_format($docShareRate, 2), '0'), '.');
+
 // Supported roles & Legal Chapters
 $roleKeys = ['consumer', 'doctor', 'pharmacist', 'seller', 'organization', 'general'];
 $roleTitles = [
@@ -251,7 +256,7 @@ require_once 'includes/header.php';
                             <div class="space-y-1">
                                 <h3 class="font-bold text-slate-900">نظام مالی، کارمزد و تسویه حساب هفتگی پایا</h3>
                                 <p class="text-xs text-slate-600 leading-relaxed">
-                                    سهم پزشک از هر ویزیت ۸۵٪ و کارمزد نگهداری زیرساخت پلتفرم ۱۵٪ است. وجوه ویزیت‌های انجام‌شده هر هفته پنج‌شنبه از طریق سامانه پایا بانک مرکزی به شماره شبای ثبت‌شده در پروفایل واریز می‌گردد. تکالیف مالیاتی مربوط به درآمدهای پزشکی طبق قوانین سازمان امور مالیاتی کشور بر عهده پزشک است.
+                                    سهم پزشک از هر ویزیت <?= $displayDoc ?>٪ و کارمزد نگهداری زیرساخت پلتفرم <?= $displayComm ?>٪ است.<?= $effectiveCommissionRate <= 0 ? ' (در طول کمپین‌های ویژه مارکتینگ، کارمزد پلتفرم معاف و سهم پزشک ۱۰۰٪ محاسبه می‌گردد).' : '' ?> وجوه ویزیت‌های انجام‌شده هر هفته پنج‌شنبه از طریق سامانه پایا بانک مرکزی به شماره شبای ثبت‌شده در پروفایل واریز می‌گردد. تکالیف مالیاتی مربوط به درآمدهای پزشکی طبق قوانین سازمان امور مالیاتی کشور بر عهده پزشک است.
                                 </p>
                             </div>
                         </div>

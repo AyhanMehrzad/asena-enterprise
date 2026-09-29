@@ -1,5 +1,7 @@
 <?php
 require_once 'includes/db.php';
+$platformCommRate = get_effective_platform_commission_rate($pdo);
+$displayCommRate = rtrim(rtrim(number_format($platformCommRate, 2), '0'), '.');
 if (!Feature::has('clinic_booking')) {
     header('Location: index.php');
     exit;
@@ -602,7 +604,7 @@ $booked_slots_json = json_encode($booked_slots);
                             <div class="flex justify-between items-center text-[11px] text-emerald-800 bg-emerald-100/60 px-2.5 py-1.5 rounded-xl">
                                 <span class="flex items-center gap-1">
                                     <span class="material-symbols-outlined text-sm text-emerald-600">verified</span>
-                                    <span>سهم پلتفرم (۱۵٪ تضمین و پیامک):</span>
+                                    <span><?= $platformCommRate > 0 ? ('سهم پلتفرم (' . $displayCommRate . '٪ تضمین و پیامک):') : 'پلتفرم آسنا (تضمین و پیامک):' ?></span>
                                 </span>
                                 <span id="summary-commission" class="font-mono font-black text-emerald-900">شامل در تعرفه</span>
                             </div>

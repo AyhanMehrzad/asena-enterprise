@@ -208,6 +208,7 @@ $appointmentItems = $commAptsStmt->fetchAll(PDO::FETCH_ASSOC);
 $commissionRatePct = (float)get_setting($pdo, 'platform_commission_percent', 5);
 $commissionEnabled = (get_setting($pdo, 'platform_commission_enabled', '1') !== '0');
 $effectiveCommissionRate = $commissionEnabled ? $commissionRatePct : 0.0;
+$displayCommRate = rtrim(rtrim(number_format($effectiveCommissionRate, 2), '0'), '.');
 
 $totalCommissionPaid = 0;
 foreach ($ledgerItems as $li) {
@@ -341,7 +342,7 @@ if (!in_array($activeTab, ['overview', 'debits', 'payouts', 'sms', 'tickets'])) 
                 </div>
                 <h1 class="text-xl lg:text-2xl font-black">تعاملات مالی، صورت‌حساب کارمزد و خدمات با پلتفرم آسنا</h1>
                 <p class="text-xs text-slate-300 mt-1 max-w-2xl leading-relaxed">
-                    شفافیت کامل در مبالغ پرداختی به آسنا (کارمزد ۱۵٪ کاتالوگ و بسته‌های پیامک)، واریزی‌های هفتگی پایا، مانده پیامک اختصاصی و تیکت‌های پشتیبانی با خزانه‌داری
+                    شفافیت کامل در مبالغ پرداختی به آسنا (<?= $effectiveCommissionRate > 0 ? ('کارمزد ' . $displayCommRate . '٪ کاتالوگ و بسته‌های پیامک') : 'معاف از کارمزد در کمپین مارکتینگ و بسته‌های پیامک' ?>)، واریزی‌های هفتگی پایا، مانده پیامک اختصاصی و تیکت‌های پشتیبانی با خزانه‌داری
                 </p>
             </div>
 
@@ -422,7 +423,7 @@ if (!in_array($activeTab, ['overview', 'debits', 'payouts', 'sms', 'tickets'])) 
         </a>
         <a href="?tab=debits" class="tab-btn px-4 py-2.5 rounded-xl font-bold text-xs flex items-center gap-1.5 text-slate-600 hover:text-primary transition <?= $activeTab === 'debits' ? 'active' : 'bg-white' ?>">
             <span class="material-symbols-outlined text-base">point_of_sale</span>
-            <span>آنچه باید به آسنا بپردازید (کارمزد ۱۵٪)</span>
+            <span>آنچه باید به آسنا بپردازید (<?= $effectiveCommissionRate > 0 ? ('کارمزد ' . $displayCommRate . '٪') : 'کارمزد ۰٪ مارکتینگ' ?>)</span>
         </a>
         <a href="?tab=payouts" class="tab-btn px-4 py-2.5 rounded-xl font-bold text-xs flex items-center gap-1.5 text-slate-600 hover:text-primary transition <?= $activeTab === 'payouts' ? 'active' : 'bg-white' ?>">
             <span class="material-symbols-outlined text-base">receipt_long</span>
@@ -458,7 +459,7 @@ if (!in_array($activeTab, ['overview', 'debits', 'payouts', 'sms', 'tickets'])) 
                 </div>
 
                 <div class="flex justify-between items-center p-3 rounded-xl bg-rose-50/70 border border-rose-100 text-rose-900">
-                    <span class="font-bold">سهم کارمزد پلتفرم آسنا (۱۵٪):</span>
+                    <span class="font-bold">سهم کارمزد پلتفرم آسنا (<?= $effectiveCommissionRate > 0 ? ($displayCommRate . '٪') : '۰٪' ?>):</span>
                     <span class="font-mono font-bold text-rose-700">-<?= number_format($totalCommissionPaid) ?> تومان</span>
                 </div>
 
@@ -523,7 +524,7 @@ if (!in_array($activeTab, ['overview', 'debits', 'payouts', 'sms', 'tickets'])) 
                     <span class="text-[10px] text-slate-400">پاسخگویی مستقیم</span>
                 </div>
                 <p class="text-xs text-slate-500 leading-relaxed">
-                    هرگونه مغایرت در تسویه، تغییر شماره شبا یا سوال در مورد کارمزد ۱۵٪ را مستقیماً از طریق تیکت اختصاصی مطرح نمایید.
+                    هرگونه مغایرت در تسویه، تغییر شماره شبا یا سوال در مورد کارمزد <?= $effectiveCommissionRate > 0 ? ($displayCommRate . '٪') : 'پلتفرم' ?> را مستقیماً از طریق تیکت اختصاصی مطرح نمایید.
                 </p>
                 <a href="?tab=tickets" class="w-full bg-[#001a48] hover:bg-[#002d72] text-white py-3 rounded-xl font-bold text-xs flex items-center justify-center gap-2 shadow-sm transition">
                     <span class="material-symbols-outlined text-sm">chat</span>
@@ -872,7 +873,7 @@ if (!in_array($activeTab, ['overview', 'debits', 'payouts', 'sms', 'tickets'])) 
                     <select name="department" class="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs font-bold bg-slate-50 outline-none">
                         <option value="امور مالی و تسویه پایا">امور مالی و تسویه پایا پنج‌شنبه‌ها</option>
                         <option value="شارژ پنل پیامک و فاکتور">شارژ پنل پیامک و فاکتور</option>
-                        <option value="استعلام کارمزد و کاتالوگ">استعلام کارمزد ۱۵٪ و مغایرت سفارش</option>
+                        <option value="استعلام کارمزد و کاتالوگ">استعلام کارمزد <?= $effectiveCommissionRate > 0 ? ($displayCommRate . '٪') : 'پلتفرم' ?> و مغایرت سفارش</option>
                         <option value="پشتیبانی فنی پلتفرم">پشتیبانی فنی و دسترسی</option>
                     </select>
                 </div>

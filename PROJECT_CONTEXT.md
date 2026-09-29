@@ -709,7 +709,24 @@
 
 ---
 
+61. **پویاسازی جامع و هوشمند کلیه عناوین، برچسب‌ها و متون کارمزد در تمامی سطوح پلتفرم (Dynamic Interest & Commission Texts Everywhere):**
+    - **حل مشکل متون ثابت و هاردکد شده کارمزد در پنل ادمین و پرتال‌های همکاران:**
+      - **صفحه تسویه‌ها و وجوه امانی ([`admin/payouts.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/admin/payouts.php)):** پویاسازی نشان وضعیت `نرخ کارمزد فعال: X٪ پلتفرم` (یا نشان ویژه پالس‌دار `نرخ کارمزد فعال: ۰٪ (کمپین مارکتینگ فعال)`) در هدر اتوماسیون تسویه خودکار، و پویاسازی متن راهنمای کسر کارمزد در مودال حواله تکی پایا.
+      - **صفحه فروشندگان مارکت‌پلیس ([`admin/sellers.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/admin/sellers.php)):** تبدیل برچسب کارمزد به متغیر پویا (`کارمزد پلتفرم: X٪ (Y٪ سهم فروشنده)` و حالت مارکتینگ ۰٪ با ۱۰۰٪ سهم فروشنده).
+      - **صفحه مراکز درمانی و کلینیک‌ها ([`admin/organizations.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/admin/organizations.php)):** تبدیل یادداشت تسویه تجمیعی به درصد پویا یا معافیت مارکتینگ.
+      - **میزکار مدیریت ارشد ([`admin/index.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/admin/index.php)):** به‌روزرسانی لینک میانبر صدور حواله‌های تسویه پایا با درصد پویای فعال یا ۰٪ مارکتینگ.
+      - **تنظیمات مالی و تکالیف مالیاتی ([`admin/finance_settings.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/admin/finance_settings.php)):** پویاسازی عناوین ستون‌های خروجی CSV ماده ۱۶۹ فصلی و برچسب‌های کارت سپر مالیاتی کارگزاری (درآمد واقعی مشمول مالیات و گردش امانی فروشندگان بر اساس نرخ موثر).
+      - **داشبورد فروشندگان و تأمین‌کنندگان ([`seller/index.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/seller/index.php)):** پویاسازی نشان کارمزد بالای جدول سفارشات بر مبنای نرخ تنظیمی یا بنر سبز معافیت مارکتینگ.
+      - **نوبت‌دهی و پذیرش حضوری مراکز ([`organization/appointments.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/organization/appointments.php)):** استفاده از نرخ موثر سازمان در ثبت پذیرش حضوری، پیام‌های تأیید، سرستون‌های جدول، برچسب‌های ریز کارمزد و راهنمای ثبت نوبت.
+      - **کیف‌پول و امور مالی مراکز ([`organization/wallet.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/organization/wallet.php)):** جایگزینی محاسبات ثابت ۰.۱۵ با نرخ موثر، پویاسازی کارت متریک کارمزد پلتفرم، تب نوبت‌ها و ستون‌های کارمزد خدمات و کالاها.
+      - **پرتال تعاملات مالی با آسنا ([`partner_interactions.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/partner_interactions.php)):** پویاسازی عنوان تب‌ها، متن توضیحات هدر، سهم کارمزد در ترازنامه مالی، راهنمای تیکت مالی و گزینه‌های دپارتمان تیکت.
+      - **رسید دیجیتال و رسمی حواله پایا ([`actions/generate_payout_receipt.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/actions/generate_payout_receipt.php)):** پویاسازی سرستون درصد کارمزد جدول اقلام و توضیحات وضعیت کسر کارمزد یا معافیت مارکتینگ.
+      - **استعلام عمومی حواله پایا ([`verify_payout.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/verify_payout.php)):** پویاسازی توضیحات کسر کارمزد بر مبنای نرخ فعال سامانه.
+      - **منشور حقوقی و شرایط استفاده ([`terms.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/terms.php) و [`includes/ContractService.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/includes/ContractService.php)):** محاسبه بلادرنگ سهم پزشک و کارمزد نگهداری پلتفرم در بند نظام مالی ماده ۶ قراردادها.
+      - **صفحه عمومی رزرو نوبت ([`booking.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/booking.php)):** هماهنگ‌سازی متن سهم پلتفرم و تضمین بازپرداخت با درصد پویا بدون افشای غیراستاندارد.
+      - **ناحیه کاربری و پروفایل همکاران ([`profile.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/profile.php)):** پویاسازی بج کارمزد پلتفرم امانی در هدر فروشنده، تب تنظیمات حساب بانکی شبا، و کارت‌های سفارشات با محاسبه دقیق سهم خالص و کسر کارمزد.
 
+---
 
 
 ## ۴. پروتکل ثبت تغییرات آینده (Maintenance Rule)

@@ -36,6 +36,9 @@ $asenaSheba = get_setting($pdo, 'admin_bank_sheba', 'IR120560000000100000000001'
 $asenaBank  = get_setting($pdo, 'admin_bank_name', 'بانک سامان');
 $asenaHolder= get_setting($pdo, 'admin_bank_holder', 'شرکت توسعه تجارت الکترونیک آسنا');
 
+$effectiveCommRate = get_effective_platform_commission_rate($pdo);
+$displayCommRate = rtrim(rtrim(number_format($effectiveCommRate, 2), '0'), '.');
+
 // Parse all recipients from Paya export content
 $tsvLines = explode("\r\n", trim($batch['paya_export_content'] ?? ''));
 $payaRecipients = [];
@@ -311,7 +314,7 @@ $viewMode = $_GET['view'] ?? 'beneficiary'; // 'beneficiary' or 'master'
             </td>
             <th>کارمزد پلتفرم:</th>
             <td style="color: #475569; font-weight: bold;">
-                ۱۵٪ کارمزد بازاریابی و زیرساخت پلتفرم آسنا کسر گردید
+                <?= $effectiveCommRate > 0 ? ($displayCommRate . '٪ کارمزد بازاریابی و زیرساخت پلتفرم آسنا کسر گردید') : 'معاف از کارمزد (کمپین مارکتینگ آسنا - واریز ۱۰۰٪)' ?>
             </td>
         </tr>
     </table>
@@ -352,7 +355,7 @@ $viewMode = $_GET['view'] ?? 'beneficiary'; // 'beneficiary' or 'master'
                     <th style="width: 18%;">شناسه مرجع</th>
                     <th style="width: 24%;">کد رهگیری / شرح</th>
                     <th style="width: 14%;">مبلغ ناخالص</th>
-                    <th style="width: 12%;">کارمزد (۱۵٪)</th>
+                    <th style="width: 12%;">کارمزد (<?= $effectiveCommRate > 0 ? ($displayCommRate . '٪') : '۰٪' ?>)</th>
                     <th style="width: 16%;">مبلغ خالص واریزی</th>
                 </tr>
             </thead>
@@ -393,8 +396,13 @@ $viewMode = $_GET['view'] ?? 'beneficiary'; // 'beneficiary' or 'master'
                     <td><span style="background: #f1f5f9; color: #475569; padding: 2px 5px; border-radius: 4px; font-weight: bold; font-size: 9px;">کیف‌پول</span></td>
                     <td style="font-family: monospace; font-weight: bold;"><?= htmlspecialchars($batchCode) ?></td>
                     <td>تسویه هفتگی کیف‌پول الکترونیک (پایا بانک مرکزی)</td>
-                    <td><?= number_format(round($totalSettledForRecipient / 0.95)) ?> تومان</td>
-                    <td style="color: #dc2626;">-<?= number_format(round($totalSettledForRecipient / 0.95 * 0.05)) ?></td>
+                    <?php
+                    $grossDivisor = (100.0 - $effectiveCommRate) > 0 ? ((100.0 - $effectiveCommRate) / 100.0) : 1.0;
+                    $fbGross = (int)round($totalSettledForRecipient / $grossDivisor);
+                    $fbComm = (int)round($fbGross * ($effectiveCommRate / 100.0));
+                    ?>
+                    <td><?= number_format($fbGross) ?> تومان</td>
+                    <td style="color: #dc2626;">-<?= number_format($fbComm) ?></td>
                     <td style="font-weight: bold; color: #059669;"><?= number_format($totalSettledForRecipient) ?> تومان</td>
                 </tr>
                 <?php endif; ?>

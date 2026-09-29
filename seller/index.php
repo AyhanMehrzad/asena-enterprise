@@ -3,6 +3,10 @@ require_once __DIR__ . '/includes/seller_header.php';
 
 $msg = '';
 $msgType = 'info';
+$effectiveCommRate = get_effective_platform_commission_rate($pdo);
+$sellerNetShare = 100.0 - $effectiveCommRate;
+$displayCommRate = rtrim(rtrim(number_format($effectiveCommRate, 2), '0'), '.');
+$displaySellerNet = rtrim(rtrim(number_format($sellerNetShare, 2), '0'), '.');
 
 // ── Handle Post Actions ───────────────────────────────────────────────────────
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -350,9 +354,16 @@ foreach ($sellerProducts as $p) {
                     <span class="material-symbols-outlined text-sm" id="postexSyncIcon">sync</span>
                     <span id="postexSyncText">استعلام زنده پستکس</span>
                 </button>
-                <span class="px-3 py-1.5 rounded-xl bg-amber-50 text-amber-700 border border-amber-200 text-xs font-bold">
-                    کارمزد پلتفرم: ۱۵٪ (۸۵٪ سهم خالص فروشنده)
-                </span>
+                <?php if ($effectiveCommRate <= 0.0): ?>
+                    <span class="px-3 py-1.5 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-bold flex items-center gap-1.5 animate-pulse">
+                        <span class="material-symbols-outlined text-sm text-emerald-600">campaign</span>
+                        <span>کمپین مارکتینگ آسنا: کارمزد ۰٪ (۱۰۰٪ سهم فروشنده)</span>
+                    </span>
+                <?php else: ?>
+                    <span class="px-3 py-1.5 rounded-xl bg-amber-50 text-amber-700 border border-amber-200 text-xs font-bold">
+                        کارمزد پلتفرم: <?= $displayCommRate ?>٪ (<?= $displaySellerNet ?>٪ سهم خالص فروشنده)
+                    </span>
+                <?php endif; ?>
             </div>
         </div>
 
