@@ -1037,7 +1037,7 @@ foreach ($sellerProducts as $p) {
             <div class="grid grid-cols-2 gap-4">
                 <div>
                     <label class="block text-xs font-bold text-slate-700 mb-1">قیمت فروش (تومان) *</label>
-                    <input type="number" name="price" required min="1000" step="1000" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-bold focus:ring-2 focus:ring-secondary-container outline-none" placeholder="250000">
+                    <input type="number" name="price" required min="1000" step="any" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-bold focus:ring-2 focus:ring-secondary-container outline-none" placeholder="250000">
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-slate-700 mb-1">موجودی اولیه انبار *</label>
@@ -1104,7 +1104,7 @@ foreach ($sellerProducts as $p) {
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-slate-700 mb-1">قیمت فروش (تومان) *</label>
-                    <input type="number" name="price" id="editModalPrice" required min="1000" step="1000" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-bold focus:ring-2 focus:ring-secondary-container outline-none">
+                    <input type="number" name="price" id="editModalPrice" required min="1000" step="any" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-bold focus:ring-2 focus:ring-secondary-container outline-none">
                 </div>
             </div>
 

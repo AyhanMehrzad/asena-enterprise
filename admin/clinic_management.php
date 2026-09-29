@@ -384,7 +384,7 @@ $pendingAppointments = count(array_filter($appointments, fn($a) => $a['status'] 
 
                 <div class="space-y-2">
                     <label class="text-sm font-bold text-on-surface-variant">هزینه ویزیت (تومان)</label>
-                    <input type="number" name="price" required min="0" step="10000" class="w-full text-sm rounded-lg border-outline-variant focus:ring-primary focus:border-primary p-2" dir="ltr">
+                    <input type="number" name="price" required min="0" step="any" class="w-full text-sm rounded-lg border-outline-variant focus:ring-primary focus:border-primary p-2" dir="ltr">
                 </div>
                 
                 <div class="space-y-2">
@@ -431,7 +431,7 @@ $pendingAppointments = count(array_filter($appointments, fn($a) => $a['status'] 
 
                 <div class="space-y-2">
                     <label class="text-sm font-bold text-on-surface-variant">هزینه ویزیت (تومان)</label>
-                    <input type="number" name="price" id="edit_price" required min="0" step="10000" class="w-full text-sm rounded-lg border-outline-variant focus:ring-primary focus:border-primary p-2" dir="ltr">
+                    <input type="number" name="price" id="edit_price" required min="0" step="any" class="w-full text-sm rounded-lg border-outline-variant focus:ring-primary focus:border-primary p-2" dir="ltr">
                 </div>
                 
                 <div class="space-y-2">

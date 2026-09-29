@@ -728,6 +728,16 @@
 
 ---
 
+62. **رفع محدودیت اعتبارسنجی گام عددی فرم‌ها (Relax HTML5 Input Step Constraints to `step="any"`):**
+    - **رفع خطای اعتبارسنجی مرورگر ("Please enter a valid value. The two nearest valid values are...") در پنل مدیریت مالی ([`admin/finance_settings.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/admin/finance_settings.php)):**
+      - تغییر صفت `step="100000"` به `step="any"` در فیلد ورودی «اعتبار مالیاتی ورودی خریدهای شرکت» (`tax_input_credit_amount`) جهت پذیرش هرگونه مبلغ اعتباری دلخواه بدون مقید بودن به مضارب ۱۰۰ هزار تومان (مانند ۳,۴۵۰,۰۰۰ تومان).
+      - تغییر صفت `step="100000"` در «سقف حد نصاب معاملات کوچک ماده ۱۶۹» (`tax_small_trans_threshold`) به `step="any"`.
+      - تغییر صفت `step="10000"` در «سقف سبد ارسال رایگان» (`free_shipping_threshold_toman`) و `step="1000"` در «هزینه ثابت ارسال» (`standard_shipping_cost_toman`) به `step="any"`.
+      - تغییر صفت `step` در درصدهای کارمزد و مالیات به `step="any"`.
+    - استانداردسازی سایر ورودی‌های مبالغ ریالی و تومانی در [`admin/clinic_management.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/admin/clinic_management.php)، [`organization/doctors.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/organization/doctors.php)، [`seller/index.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/seller/index.php) و [`profile.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/profile.php) جهت آزادی عمل کامل کاربر در درج هر مبلغ عددی بدون تداخل خطای اعتبارسنجی کلاینت.
+
+---
+
 
 ## ۴. پروتکل ثبت تغییرات آینده (Maintenance Rule)
 > **دستورالعمل برای هوش مصنوعی در ادامه کار:**  

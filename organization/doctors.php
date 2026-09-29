@@ -152,7 +152,7 @@ $countSellers = count($orgService->getDoctors($orgId, 'seller')) + count($orgSer
 
                 <div class="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-2">
                     <label class="block text-xs font-bold text-slate-200">تعرفه ویزیت پیش‌فرض مرکز (تومان)</label>
-                    <input type="number" name="consultation_fee" min="0" step="10000" value="<?= (int)($orgSettings['consultation_fee'] ?? 250000) ?>" class="w-full px-3 py-2 rounded-xl bg-white/10 border border-white/20 text-white font-bold text-xs outline-none focus:border-indigo-400">
+                    <input type="number" name="consultation_fee" min="0" step="any" value="<?= (int)($orgSettings['consultation_fee'] ?? 250000) ?>" class="w-full px-3 py-2 rounded-xl bg-white/10 border border-white/20 text-white font-bold text-xs outline-none focus:border-indigo-400">
                     <span class="text-[10px] text-slate-400 block">در رزرو مستقیم با کلینیک مبنا قرار می‌گیرد.</span>
                 </div>
             </div>

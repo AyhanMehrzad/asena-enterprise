@@ -627,7 +627,7 @@ require_once __DIR__ . '/includes/admin_header.php';
                 <div class="max-w-md">
                     <label class="block text-xs font-bold text-slate-800 dark:text-slate-200 mb-2">مبلغ کارنامه تغذیه بالینی (تومان):</label>
                     <div class="relative">
-                        <input type="number" name="calculator_price_toman" id="calcPriceInput" value="<?= $calculatorPrice ?>" min="0" step="1000" class="w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-mono font-bold focus:border-rose-500 outline-none pl-14 text-left dir-ltr">
+                        <input type="number" name="calculator_price_toman" id="calcPriceInput" value="<?= $calculatorPrice ?>" min="0" step="any" class="w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-mono font-bold focus:border-rose-500 outline-none pl-14 text-left dir-ltr">
                         <span class="absolute left-3 top-3 text-slate-400 text-xs font-bold">تومان</span>
                     </div>
                     <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-2 leading-relaxed">
@@ -726,7 +726,7 @@ require_once __DIR__ . '/includes/admin_header.php';
                         <!-- Number Input Box -->
                         <div class="flex items-center gap-3">
                             <div class="relative flex-1">
-                                <input type="number" name="platform_commission_percent" id="commPercentInput" value="<?= $commissionRate ?>" step="0.1" min="0" max="100" oninput="updateCommissionLivePreview(this.value)" class="w-full px-4 py-3.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm font-mono font-black focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none pl-12 text-left dir-ltr shadow-xs">
+                                <input type="number" name="platform_commission_percent" id="commPercentInput" value="<?= $commissionRate ?>" step="any" min="0" max="100" oninput="updateCommissionLivePreview(this.value)" class="w-full px-4 py-3.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm font-mono font-black focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none pl-12 text-left dir-ltr shadow-xs">
                                 <span class="absolute left-4 top-3.5 text-slate-500 font-bold text-sm">٪</span>
                             </div>
                             <button type="button" onclick="ajaxSaveCommissionPercentage()" id="btnSavePercentInstant" class="px-4 py-3.5 rounded-xl bg-primary hover:bg-[#002d72] text-white text-xs font-black transition flex items-center gap-1.5 shadow-sm active:scale-95 shrink-0">
@@ -1060,7 +1060,7 @@ require_once __DIR__ . '/includes/admin_header.php';
                     <div>
                         <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-2">نرخ مالیات بر ارزش افزوده برای خریدار (درصد):</label>
                         <div class="relative">
-                            <input type="number" name="tax_rate_percent" value="<?= $taxRate ?>" step="0.5" min="0" max="25" class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-xs font-mono font-bold focus:border-primary focus:bg-white outline-none pl-10 text-left dir-ltr">
+                            <input type="number" name="tax_rate_percent" value="<?= $taxRate ?>" step="any" min="0" max="25" class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-xs font-mono font-bold focus:border-primary focus:bg-white outline-none pl-10 text-left dir-ltr">
                             <span class="absolute left-3 top-3 text-slate-400 text-xs font-bold">٪</span>
                         </div>
                         <p class="text-[10px] text-slate-400 mt-1.5">نرخ مصوب قانونی مالیات بر ارزش افزوده در سال ۱۴۰۳ (۱۰٪)؛ در سبد خرید محاسبه و در فاکتور رسمی درج می‌شود.</p>
@@ -1069,7 +1069,7 @@ require_once __DIR__ . '/includes/admin_header.php';
                     <div>
                         <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-2">کارمزد پلتفرم آسنا از فروشنده / پت‌شاپ (درصد):</label>
                         <div class="relative">
-                            <input type="number" id="taxSectionCommInput" value="<?= $commissionRate ?>" step="0.5" min="0" max="100" oninput="document.getElementById('commPercentInput').value = this.value; updateCommissionLivePreview(this.value);" class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-xs font-mono font-bold focus:border-primary focus:bg-white outline-none pl-10 text-left dir-ltr">
+                            <input type="number" id="taxSectionCommInput" value="<?= $commissionRate ?>" step="any" min="0" max="100" oninput="document.getElementById('commPercentInput').value = this.value; updateCommissionLivePreview(this.value);" class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-xs font-mono font-bold focus:border-primary focus:bg-white outline-none pl-10 text-left dir-ltr">
                             <span class="absolute left-3 top-3 text-slate-400 text-xs font-bold">٪</span>
                         </div>
                         <p class="text-[10px] text-slate-400 mt-1.5 flex items-center justify-between">
@@ -1093,7 +1093,7 @@ require_once __DIR__ . '/includes/admin_header.php';
                     <div>
                         <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-2">سقف حد نصاب معاملات کوچک ماده ۱۶۹ (تومان):</label>
                         <div class="relative">
-                            <input type="number" name="tax_small_trans_threshold" value="<?= $taxSmallTrans ?>" step="100000" min="0" class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-xs font-mono font-bold focus:border-primary focus:bg-white outline-none pl-12 text-left dir-ltr">
+                            <input type="number" name="tax_small_trans_threshold" value="<?= $taxSmallTrans ?>" step="any" min="0" class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-xs font-mono font-bold focus:border-primary focus:bg-white outline-none pl-12 text-left dir-ltr">
                             <span class="absolute left-3 top-3 text-slate-400 text-xs font-bold">تومان</span>
                         </div>
                         <p class="text-[10px] text-slate-400 mt-1.5">پیش‌فرض: ۱۰,۵۰۰,۰۰۰ تومان (۵٪ سقف ۲۱۰ میلیون تومانی معاملات کوچک سال ۱۴۰۳ جهت ارسال تجمیعی)</p>
@@ -1102,7 +1102,7 @@ require_once __DIR__ . '/includes/admin_header.php';
                     <div>
                         <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-2">اعتبار مالیاتی ورودی خریدهای شرکت (تومان):</label>
                         <div class="relative">
-                            <input type="number" name="tax_input_credit_amount" value="<?= $taxInputCredit ?>" step="100000" min="0" class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-xs font-mono font-bold focus:border-primary focus:bg-white outline-none pl-12 text-left dir-ltr">
+                            <input type="number" name="tax_input_credit_amount" value="<?= $taxInputCredit ?>" step="any" min="0" class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-xs font-mono font-bold focus:border-primary focus:bg-white outline-none pl-12 text-left dir-ltr">
                             <span class="absolute left-3 top-3 text-slate-400 text-xs font-bold">تومان</span>
                         </div>
                         <p class="text-[10px] text-slate-400 mt-1.5">مجموع مالیات ارزش افزوده پرداختی در فاکتورهای رسمی سرور (پارس‌پک)، پیامک (ملی‌پیامک) و تجهیزات</p>
@@ -1152,7 +1152,7 @@ require_once __DIR__ . '/includes/admin_header.php';
                     <div>
                         <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-2">حداقل مبلغ سبد برای ارسال رایگان (تومان):</label>
                         <div class="relative">
-                            <input type="number" name="free_shipping_threshold_toman" value="<?= $freeShippingThreshold ?>" min="0" step="10000" class="w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-mono font-bold focus:border-cyan-500 outline-none pl-12 text-left dir-ltr">
+                            <input type="number" name="free_shipping_threshold_toman" value="<?= $freeShippingThreshold ?>" min="0" step="any" class="w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-mono font-bold focus:border-cyan-500 outline-none pl-12 text-left dir-ltr">
                             <span class="absolute left-3 top-3 text-slate-400 text-xs font-bold">تومان</span>
                         </div>
                         <p class="text-[10px] text-slate-400 mt-1">پیش‌فرض: ۶۰۰,۰۰۰ تومان (در صورت خرید بیشتر، کرایه پست رایگان محاسبه می‌شود).</p>
@@ -1164,7 +1164,7 @@ require_once __DIR__ . '/includes/admin_header.php';
                     <div>
                         <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-2">هزینه ثابت ارسال برای خریدهای زیر سقف (تومان):</label>
                         <div class="relative">
-                            <input type="number" name="standard_shipping_cost_toman" value="<?= $standardShippingCost ?>" min="0" step="1000" class="w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-mono font-bold focus:border-primary outline-none pl-12 text-left dir-ltr">
+                            <input type="number" name="standard_shipping_cost_toman" value="<?= $standardShippingCost ?>" min="0" step="any" class="w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-mono font-bold focus:border-primary outline-none pl-12 text-left dir-ltr">
                             <span class="absolute left-3 top-3 text-slate-400 text-xs font-bold">تومان</span>
                         </div>
                         <p class="text-[10px] text-slate-400 mt-1">کرایه پایه بسته‌بندی و پست پیشتاز برای سبدهای زیر سقف (مثلاً ۴۹,۰۰۰ تومان).</p>
