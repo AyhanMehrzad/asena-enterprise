@@ -98,9 +98,10 @@
    - بلوک‌های مدرن آژانسی: نشان پالس زنده پذیرش (`🟢 پذیرش فعال - نوبت‌دهی آنلاین`)، بنتو گرید نامتقارن امکانات اتاق عمل و تجهیزات کلینیک، نوار شمارنده‌های اعتماد اجتماعی (+۱۵,۰۰۰ ویزیت)، ویجت تله‌هلث مشاوره تصویری، باکس آپلود نسخه الکترونیک با زنجیره سرد (۲-۸°C)، معرفی بسته اشتراکی اتوشیپ (۱۰٪ تخفیف) و بنر باشگاه مراجعین وفادار (۵۰ امتیاز آسنا کلاب).
    - اتصال مستقیم به درگاه متمرکز پرداخت و اسکرو آسنا (`asena.company`) بدون امکان تعریف درگاه مجزا، تضمین معافیت مالیاتی و آسودگی حقوقی کاربر.
 4. **استودیوی سفارشی‌ساز دیداری دوطرفه بدون کد ([`includes/site_builder_studio.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/includes/site_builder_studio.php)):**
-   - محیط اسپلیت‌اسکرین با پیش‌نمایش زنده در سایزهای دسکتاپ، تبلت و موبایل به همراه سوییچر تب شناور در موبایل (تنظیمات در برابر پیش‌نمایش).
+   - معماری فضای کاری حداکثری (Maximized Canvas Architecture): پنل جانبی تنظیمات و جعبه‌های متن به صورت پیش‌فرض کاملاً بسته (`sidebar-closed`) است تا ۱۰۰٪ پهنای نمایشگر در اختیار پیش‌نمایش زنده و واقع‌گرایانه سایت قرار گیرد و از شلوغی و ازدحام فرم‌ها جلوگیری شود.
+   - باز شدن نرم و روان پنل جانبی (Smooth Slide-Out) به عرض ۴۲۰ پیکسل در دسکتاپ و دراور تمام‌صفحه در موبایل به محض کلیک کاربر روی هر بخش از سایت یا فشردن دکمه تاگل هدر / پیل شناور روی پیش‌نمایش.
+   - اسکرول خودکار و هایلایت زمردی بلوک انتخاب‌شده در پنل به همراه دکمه اختصاصی «بستن پنل» و کلید میانبر `Escape` جهت بازگشت سریع به پیش‌نمایش تمام‌صفحه.
    - دکمه هوشمند «اعمال چیدمان و بلوک‌های پیشنهادی این نسخه» جهت بازچینی خودکار بلوک‌ها بر اساس Tier انتخاب‌شده.
-   - پشتیبانی از تعامل «کلیک روی هر بخش جهت ویرایش فوری» (Click to Edit) با مکانیزم ایونت‌های دوطرفه `postMessage`.
    - استقرار در ۴ پنل تخصصی: [`doctor/site_builder.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/doctor/site_builder.php)، [`organization/site_builder.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/organization/site_builder.php)، [`pharmacist/site_builder.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/pharmacist/site_builder.php) و [`seller/site_builder.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/seller/site_builder.php).
 5. **یکپارچه‌سازی و نمایش وب‌سایت در پروفایل‌های عمومی:**
    - افزودن نشان و بنر وب‌سایت رسمی با نشانی ساب‌دامین آسنا در پرونده پزشکان ([`doctor_profile.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/doctor_profile.php)) و صفحه کلینیک‌ها ([`organization_profile.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/organization_profile.php)).

@@ -19,6 +19,55 @@ $previewUrl = "../site.php?slug=" . urlencode($site['slug']) . "&preview=1";
 $publicUrl = "../site.php?slug=" . urlencode($site['slug']);
 ?>
 
+<style>
+    /* Responsive Collapsible Sidebar */
+    #studio-sidebar {
+        transition: width 0.35s cubic-bezier(0.16, 1, 0.3, 1), 
+                    min-width 0.35s cubic-bezier(0.16, 1, 0.3, 1), 
+                    max-width 0.35s cubic-bezier(0.16, 1, 0.3, 1), 
+                    opacity 0.25s ease, 
+                    transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+        will-change: width, opacity;
+    }
+
+    #studio-sidebar.sidebar-closed {
+        width: 0 !important;
+        min-width: 0 !important;
+        max-width: 0 !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
+        border-left-width: 0 !important;
+        border-right-width: 0 !important;
+        overflow: hidden !important;
+        visibility: hidden !important;
+    }
+
+    #studio-sidebar.sidebar-open {
+        width: 100% !important;
+        opacity: 1 !important;
+        pointer-events: auto !important;
+        visibility: visible !important;
+    }
+
+    @media (min-width: 1024px) {
+        #studio-sidebar.sidebar-open {
+            width: 420px !important;
+            min-width: 420px !important;
+            max-width: 420px !important;
+        }
+    }
+
+    @media (max-width: 1023px) {
+        #studio-sidebar.sidebar-open {
+            position: absolute;
+            inset: 0;
+            z-index: 40;
+            width: 100% !important;
+            max-width: 100% !important;
+        }
+    }
+</style>
+
 <div class="h-[calc(100vh-80px)] flex flex-col bg-slate-100 overflow-hidden relative" id="site-builder-app">
     
     <!-- Studio Top Action Bar -->
@@ -60,8 +109,14 @@ $publicUrl = "../site.php?slug=" . urlencode($site['slug']);
             </button>
         </div>
 
-        <!-- Action Buttons -->
+        <!-- Action Buttons & Sidebar Toggle -->
         <div class="flex items-center gap-2 sm:gap-3">
+            <button type="button" onclick="toggleSidebar()" id="btn-toggle-sidebar" class="px-3 sm:px-3.5 py-2 rounded-xl border border-slate-200 hover:border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold transition-all flex items-center gap-1.5 sm:gap-2 shadow-sm active:scale-95">
+                <span class="material-symbols-outlined text-base text-emerald-600 transition-transform duration-300" id="sidebar-toggle-icon">tune</span>
+                <span id="sidebar-toggle-text">ویرایش محتوا و بلوک‌ها</span>
+                <span class="text-[10px] px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-600 font-normal transition-colors" id="sidebar-status-badge">بسته</span>
+            </button>
+
             <a href="<?= $publicUrl ?>" target="_blank" class="hidden sm:flex px-3.5 py-2 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-bold transition-colors items-center gap-1.5">
                 <span class="material-symbols-outlined text-base">visibility</span>
                 <span>مشاهده سایت</span>
@@ -75,21 +130,42 @@ $publicUrl = "../site.php?slug=" . urlencode($site['slug']);
 
     <!-- Mobile Screen View Switcher (Controls vs Live Preview) -->
     <div class="lg:hidden flex bg-white border-b border-slate-200 text-xs font-bold p-1">
-        <button type="button" onclick="switchMobileStudioView('controls')" id="m-btn-controls" class="flex-1 py-2 rounded-xl bg-slate-900 text-white flex items-center justify-center gap-1.5 transition-all">
-            <span class="material-symbols-outlined text-base">tune</span>
-            <span>تنظیمات و محتوا</span>
-        </button>
-        <button type="button" onclick="switchMobileStudioView('preview')" id="m-btn-preview" class="flex-1 py-2 rounded-xl text-slate-600 hover:bg-slate-100 flex items-center justify-center gap-1.5 transition-all">
+        <button type="button" onclick="closeSidebar()" id="m-btn-preview" class="flex-1 py-2 rounded-xl bg-slate-900 text-white flex items-center justify-center gap-1.5 transition-all">
             <span class="material-symbols-outlined text-base">preview</span>
             <span>پیش‌نمایش زنده</span>
+        </button>
+        <button type="button" onclick="openSidebar()" id="m-btn-controls" class="flex-1 py-2 rounded-xl text-slate-600 hover:bg-slate-100 flex items-center justify-center gap-1.5 transition-all">
+            <span class="material-symbols-outlined text-base">tune</span>
+            <span>تنظیمات و محتوا</span>
         </button>
     </div>
 
     <!-- Main Workspace (Sidebar + Live Preview) -->
     <div class="flex-1 flex overflow-hidden relative">
         
-        <!-- Controls Sidebar -->
-        <aside id="studio-sidebar" class="w-full lg:w-96 bg-white border-l border-slate-200 flex flex-col shrink-0 z-20 shadow-lg overflow-hidden transition-all">
+        <!-- Mobile Backdrop -->
+        <div id="sidebar-backdrop" onclick="closeSidebar()" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-30 lg:hidden hidden transition-opacity"></div>
+
+        <!-- Controls Sidebar (Closed by default for spacious live preview) -->
+        <aside id="studio-sidebar" class="sidebar-closed bg-white border-l border-slate-200 flex flex-col shrink-0 z-30 shadow-2xl overflow-hidden transition-all">
+            
+            <!-- Sidebar Header with Close Button -->
+            <div class="h-14 px-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between shrink-0">
+                <div class="flex items-center gap-2">
+                    <div class="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center">
+                        <span class="material-symbols-outlined text-base">tune</span>
+                    </div>
+                    <div>
+                        <div class="text-xs font-black text-slate-800">پنل تنظیمات و ویرایش</div>
+                        <div class="text-[10px] text-slate-400">بلوک‌ها، رنگ و ویژگی‌های اختصاصی</div>
+                    </div>
+                </div>
+                <button type="button" onclick="closeSidebar()" class="px-2.5 py-1.5 rounded-xl bg-slate-200/80 hover:bg-slate-300 text-slate-700 hover:text-slate-900 transition-colors flex items-center gap-1 text-[11px] font-bold" title="بستن پنل و پیش‌نمایش تمام‌صفحه (Esc)">
+                    <span>بستن پنل</span>
+                    <span class="material-symbols-outlined text-sm">close</span>
+                </button>
+            </div>
+
             <!-- Sidebar Tabs -->
             <div class="flex border-b border-slate-200 bg-slate-50 text-xs font-bold shrink-0">
                 <button type="button" onclick="switchSidebarTab('blocks')" id="tab-btn-blocks" class="flex-1 py-3 text-center border-b-2 border-emerald-600 text-emerald-800 bg-white transition-all flex items-center justify-center gap-1">
@@ -502,8 +578,20 @@ $publicUrl = "../site.php?slug=" . urlencode($site['slug']);
             </div>
         </aside>
 
-        <!-- Live Preview Sandbox Area -->
+        <!-- Live Preview Sandbox Area (Expansive Canvas) -->
         <main id="studio-preview-main" class="flex-1 bg-slate-200/70 p-2 sm:p-4 lg:p-6 flex items-center justify-center overflow-hidden relative">
+            
+            <!-- Floating Quick Edit Pill for fast access -->
+            <div id="floating-edit-pill" class="absolute top-4 right-4 z-20 flex items-center gap-2.5 bg-slate-900/85 hover:bg-slate-900 text-white text-xs px-4 py-2.5 rounded-2xl shadow-xl backdrop-blur-md border border-white/10 transition-all duration-300 cursor-pointer group active:scale-95" onclick="openSidebar('blocks')">
+                <span class="relative flex h-2 w-2">
+                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                    <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                </span>
+                <span class="material-symbols-outlined text-emerald-400 text-base">edit_note</span>
+                <span class="font-bold">ویرایش محتوا و بلوک‌ها</span>
+                <span class="text-[11px] text-slate-300 border-r border-white/20 pr-2 mr-1 hidden sm:inline group-hover:text-white transition-colors">یا مستقیم روی هر بخش کلیک کنید</span>
+            </div>
+
             <div id="viewport-wrapper" class="w-full h-full max-w-full bg-white rounded-2xl lg:rounded-3xl shadow-2xl overflow-hidden border border-slate-300/80 transition-all duration-300 relative flex flex-col">
                 <!-- Sandbox Browser Header -->
                 <div class="h-9 bg-slate-100 border-b border-slate-200 px-4 flex items-center justify-between shrink-0">
@@ -515,7 +603,11 @@ $publicUrl = "../site.php?slug=" . urlencode($site['slug']);
                     <div class="px-6 py-1 rounded-lg bg-white border border-slate-200/80 text-[11px] font-mono text-slate-500 text-center max-w-md w-full truncate">
                         https://<?= $slug ?>.asena.company
                     </div>
-                    <div class="w-8"></div>
+                    <div class="flex items-center gap-1">
+                        <button type="button" onclick="document.getElementById('site-preview-iframe').contentWindow.location.reload()" class="p-1 text-slate-400 hover:text-slate-600 rounded transition-colors" title="بارگذاری مجدد پیش‌نمایش">
+                            <span class="material-symbols-outlined text-sm">refresh</span>
+                        </button>
+                    </div>
                 </div>
 
                 <!-- Iframe -->
@@ -530,44 +622,119 @@ $publicUrl = "../site.php?slug=" . urlencode($site['slug']);
 const currentSiteId = <?= (int)$site['id'] ?>;
 const tenantType = '<?= $builderTenantType ?>';
 const tenantId = <?= (int)$builderTenantId ?>;
+let isSidebarOpen = false;
 
-function switchSidebarTab(tab) {
-    ['blocks', 'design', 'settings'].forEach(t => {
-        document.getElementById(`tab-panel-${t}`).classList.add('hidden');
-        document.getElementById(`tab-btn-${t}`).className = 'flex-1 py-3 text-center border-b-2 border-transparent text-slate-500 hover:text-slate-800 transition-all flex items-center justify-center gap-1';
-    });
-    document.getElementById(`tab-panel-${tab}`).classList.remove('hidden');
-    document.getElementById(`tab-btn-${tab}`).className = 'flex-1 py-3 text-center border-b-2 border-emerald-600 text-emerald-800 bg-white transition-all flex items-center justify-center gap-1';
+function toggleSidebar() {
+    if (isSidebarOpen) {
+        closeSidebar();
+    } else {
+        openSidebar();
+    }
+}
+
+function openSidebar(tab = null) {
+    isSidebarOpen = true;
+    const sidebar = document.getElementById('studio-sidebar');
+    const toggleText = document.getElementById('sidebar-toggle-text');
+    const toggleIcon = document.getElementById('sidebar-toggle-icon');
+    const toggleBadge = document.getElementById('sidebar-status-badge');
+    const floatingPill = document.getElementById('floating-edit-pill');
+    const backdrop = document.getElementById('sidebar-backdrop');
+    const mBtnControls = document.getElementById('m-btn-controls');
+    const mBtnPreview = document.getElementById('m-btn-preview');
+
+    if (sidebar) {
+        sidebar.classList.remove('sidebar-closed');
+        sidebar.classList.add('sidebar-open');
+    }
+
+    if (toggleText) toggleText.innerText = 'بستن پنل ویرایش';
+    if (toggleIcon) toggleIcon.innerText = 'close';
+    if (toggleBadge) {
+        toggleBadge.innerText = 'باز';
+        toggleBadge.className = 'text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold transition-colors';
+    }
+    if (floatingPill) {
+        floatingPill.classList.add('opacity-0', 'pointer-events-none');
+    }
+    if (backdrop) {
+        backdrop.classList.remove('hidden');
+    }
+    if (mBtnControls && mBtnPreview) {
+        mBtnControls.className = 'flex-1 py-2 rounded-xl bg-slate-900 text-white flex items-center justify-center gap-1.5 transition-all';
+        mBtnPreview.className = 'flex-1 py-2 rounded-xl text-slate-600 hover:bg-slate-100 flex items-center justify-center gap-1.5 transition-all';
+    }
+
+    if (tab) {
+        switchSidebarTab(tab);
+    }
+}
+
+function closeSidebar() {
+    isSidebarOpen = false;
+    const sidebar = document.getElementById('studio-sidebar');
+    const toggleText = document.getElementById('sidebar-toggle-text');
+    const toggleIcon = document.getElementById('sidebar-toggle-icon');
+    const toggleBadge = document.getElementById('sidebar-status-badge');
+    const floatingPill = document.getElementById('floating-edit-pill');
+    const backdrop = document.getElementById('sidebar-backdrop');
+    const mBtnControls = document.getElementById('m-btn-controls');
+    const mBtnPreview = document.getElementById('m-btn-preview');
+
+    if (sidebar) {
+        sidebar.classList.remove('sidebar-open');
+        sidebar.classList.add('sidebar-closed');
+    }
+
+    if (toggleText) toggleText.innerText = 'ویرایش محتوا و بلوک‌ها';
+    if (toggleIcon) toggleIcon.innerText = 'tune';
+    if (toggleBadge) {
+        toggleBadge.innerText = 'بسته';
+        toggleBadge.className = 'text-[10px] px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-600 font-normal transition-colors';
+    }
+    if (floatingPill) {
+        floatingPill.classList.remove('opacity-0', 'pointer-events-none');
+    }
+    if (backdrop) {
+        backdrop.classList.add('hidden');
+    }
+    if (mBtnControls && mBtnPreview) {
+        mBtnPreview.className = 'flex-1 py-2 rounded-xl bg-slate-900 text-white flex items-center justify-center gap-1.5 transition-all';
+        mBtnControls.className = 'flex-1 py-2 rounded-xl text-slate-600 hover:bg-slate-100 flex items-center justify-center gap-1.5 transition-all';
+    }
 }
 
 function switchMobileStudioView(mode) {
-    const sidebar = document.getElementById('studio-sidebar');
-    const preview = document.getElementById('studio-preview-main');
-    const btnC = document.getElementById('m-btn-controls');
-    const btnP = document.getElementById('m-btn-preview');
-
     if (mode === 'preview') {
-        sidebar.classList.add('hidden');
-        preview.classList.remove('hidden');
-        btnP.className = 'flex-1 py-2 rounded-xl bg-slate-900 text-white flex items-center justify-center gap-1.5 transition-all';
-        btnC.className = 'flex-1 py-2 rounded-xl text-slate-600 hover:bg-slate-100 flex items-center justify-center gap-1.5 transition-all';
+        closeSidebar();
     } else {
-        sidebar.classList.remove('hidden');
-        preview.classList.add('hidden');
-        btnC.className = 'flex-1 py-2 rounded-xl bg-slate-900 text-white flex items-center justify-center gap-1.5 transition-all';
-        btnP.className = 'flex-1 py-2 rounded-xl text-slate-600 hover:bg-slate-100 flex items-center justify-center gap-1.5 transition-all';
+        openSidebar();
     }
+}
+
+function switchSidebarTab(tab) {
+    ['blocks', 'design', 'settings'].forEach(t => {
+        const p = document.getElementById(`tab-panel-${t}`);
+        const b = document.getElementById(`tab-btn-${t}`);
+        if (p) p.classList.add('hidden');
+        if (b) b.className = 'flex-1 py-3 text-center border-b-2 border-transparent text-slate-500 hover:text-slate-800 transition-all flex items-center justify-center gap-1';
+    });
+    const activePanel = document.getElementById(`tab-panel-${tab}`);
+    const activeBtn = document.getElementById(`tab-btn-${tab}`);
+    if (activePanel) activePanel.classList.remove('hidden');
+    if (activeBtn) activeBtn.className = 'flex-1 py-3 text-center border-b-2 border-emerald-600 text-emerald-800 bg-white transition-all flex items-center justify-center gap-1';
 }
 
 function toggleAccordion(id) {
     const content = document.getElementById(`content-${id}`);
     const arrow = document.getElementById(`arrow-${id}`);
+    if (!content) return;
     if (content.classList.contains('hidden')) {
         content.classList.remove('hidden');
-        arrow.style.transform = 'rotate(180deg)';
+        if (arrow) arrow.style.transform = 'rotate(180deg)';
     } else {
         content.classList.add('hidden');
-        arrow.style.transform = 'rotate(0deg)';
+        if (arrow) arrow.style.transform = 'rotate(0deg)';
     }
 }
 
@@ -589,21 +756,30 @@ function setViewport(size) {
     }
 }
 
-// Click-to-edit listener from iframe
+// Click-to-edit listener from iframe: automatically opens sidebar on click and highlights block!
 window.addEventListener('message', function(event) {
     if (event.data && event.data.type === 'BLOCK_CLICKED') {
         const blockId = event.data.blockId;
-        switchSidebarTab('blocks');
+        openSidebar('blocks');
         const section = document.getElementById(`section-${blockId}`);
         if (section) {
             const content = document.getElementById(`content-${blockId}`);
             if (content && content.classList.contains('hidden')) {
                 toggleAccordion(blockId);
             }
-            section.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            section.classList.add('ring-2', 'ring-emerald-500');
-            setTimeout(() => section.classList.remove('ring-2', 'ring-emerald-500'), 1500);
+            setTimeout(() => {
+                section.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                section.classList.add('ring-2', 'ring-emerald-500');
+                setTimeout(() => section.classList.remove('ring-2', 'ring-emerald-500'), 1500);
+            }, 100);
         }
+    }
+});
+
+// Close sidebar on Escape key
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && isSidebarOpen) {
+        closeSidebar();
     }
 });
 
