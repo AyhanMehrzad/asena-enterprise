@@ -135,7 +135,6 @@ if (!$doctorProfile) {
                 <span class="font-label-sm text-label-sm">خروج از حساب</span>
             </a>
         </div>
-    </div>
 </aside>
 
 <!-- Main Content Wrapper -->

@@ -242,7 +242,7 @@ $publicUrl = "../site.php?slug=" . urlencode($site['slug']);
                     
                     <!-- 0. Emergency Hotline Bar Block -->
                     <div class="border border-red-200 rounded-2xl overflow-hidden bg-white shadow-sm" id="section-emergency_bar">
-                        <button type="button" onclick="toggleAccordion('emergency_bar')" class="w-full p-4 flex items-center justify-between bg-red-50 hover:bg-red-100 transition-colors text-right">
+                        <div onclick="toggleAccordion('emergency_bar')" class="w-full p-4 flex items-center justify-between bg-red-50 hover:bg-red-100 transition-colors text-right cursor-pointer select-none">
                             <div class="flex items-center gap-2.5">
                                 <span class="material-symbols-outlined text-red-600 text-lg">e911_emergency</span>
                                 <span class="text-xs font-bold text-red-950">نوار اورژانس شبانه‌روزی (۲۴/۷)</span>
@@ -256,7 +256,7 @@ $publicUrl = "../site.php?slug=" . urlencode($site['slug']);
                                 </button>
                                 <span class="material-symbols-outlined text-red-400 text-base transition-transform" id="arrow-emergency_bar">expand_more</span>
                             </div>
-                        </button>
+                        </div>
                         <div class="p-4 space-y-3 border-t border-red-100 hidden" id="content-emergency_bar">
                             <label class="flex items-center gap-2 text-xs font-bold text-slate-700">
                                 <input type="checkbox" id="input-emergency-enabled" <?= !empty($layout['emergency_bar']['enabled']) ? 'checked' : '' ?> class="rounded text-red-600">
@@ -279,7 +279,7 @@ $publicUrl = "../site.php?slug=" . urlencode($site['slug']);
 
                     <!-- 1. Hero Block -->
                     <div class="border border-slate-200 rounded-2xl overflow-hidden bg-white shadow-sm" id="section-hero">
-                        <button type="button" onclick="toggleAccordion('hero')" class="w-full p-4 flex items-center justify-between bg-slate-50 hover:bg-slate-100 transition-colors text-right">
+                        <div onclick="toggleAccordion('hero')" class="w-full p-4 flex items-center justify-between bg-slate-50 hover:bg-slate-100 transition-colors text-right cursor-pointer select-none">
                             <div class="flex items-center gap-2.5">
                                 <span class="material-symbols-outlined text-slate-600 text-lg">view_carousel</span>
                                 <span class="text-xs font-bold text-slate-800">بنر قهرمان اصلی (Hero)</span>
@@ -293,7 +293,7 @@ $publicUrl = "../site.php?slug=" . urlencode($site['slug']);
                                 </button>
                                 <span class="material-symbols-outlined text-slate-400 text-base transition-transform" id="arrow-hero">expand_more</span>
                             </div>
-                        </button>
+                        </div>
                         <div class="p-4 space-y-3 border-t border-slate-100 hidden" id="content-hero">
                             <div>
                                 <label class="block text-[11px] font-bold text-slate-700 mb-1">نشان اعتبار یا برچسب بالینی</label>
@@ -355,7 +355,7 @@ $publicUrl = "../site.php?slug=" . urlencode($site['slug']);
 
                     <!-- 1.5. Shift & Duty Hours Block -->
                     <div class="border border-slate-200 rounded-2xl overflow-hidden bg-white shadow-sm" id="section-duty_hours">
-                        <button type="button" onclick="toggleAccordion('duty_hours')" class="w-full p-4 flex items-center justify-between bg-slate-50 hover:bg-slate-100 transition-colors text-right">
+                        <div onclick="toggleAccordion('duty_hours')" class="w-full p-4 flex items-center justify-between bg-slate-50 hover:bg-slate-100 transition-colors text-right cursor-pointer select-none">
                             <div class="flex items-center gap-2.5">
                                 <span class="material-symbols-outlined text-slate-600 text-lg">schedule</span>
                                 <span class="text-xs font-bold text-slate-800">ویجت شیفت کاری و پذیرش زنده</span>
@@ -369,7 +369,7 @@ $publicUrl = "../site.php?slug=" . urlencode($site['slug']);
                                 </button>
                                 <span class="material-symbols-outlined text-slate-400 text-base transition-transform" id="arrow-duty_hours">expand_more</span>
                             </div>
-                        </button>
+                        </div>
                         <div class="p-4 space-y-3 border-t border-slate-100 hidden" id="content-duty_hours">
                             <label class="flex items-center gap-2 text-xs font-bold text-slate-700">
                                 <input type="checkbox" id="input-duty-enabled" <?= !empty($layout['duty_hours']['enabled']) ? 'checked' : '' ?> class="rounded text-emerald-600">
@@ -394,7 +394,7 @@ $publicUrl = "../site.php?slug=" . urlencode($site['slug']);
 
                     <!-- 2. Bento Facilities Block -->
                     <div class="border border-slate-200 rounded-2xl overflow-hidden bg-white shadow-sm" id="section-bento_facilities">
-                        <button type="button" onclick="toggleAccordion('bento_facilities')" class="w-full p-4 flex items-center justify-between bg-slate-50 hover:bg-slate-100 transition-colors text-right">
+                        <div onclick="toggleAccordion('bento_facilities')" class="w-full p-4 flex items-center justify-between bg-slate-50 hover:bg-slate-100 transition-colors text-right cursor-pointer select-none">
                             <div class="flex items-center gap-2.5">
                                 <span class="material-symbols-outlined text-slate-600 text-lg">grid_view</span>
                                 <span class="text-xs font-bold text-slate-800">بنتو گرید تجهیزات و بخش‌ها</span>
@@ -408,7 +408,7 @@ $publicUrl = "../site.php?slug=" . urlencode($site['slug']);
                                 </button>
                                 <span class="material-symbols-outlined text-slate-400 text-base transition-transform" id="arrow-bento_facilities">expand_more</span>
                             </div>
-                        </button>
+                        </div>
                         <div class="p-4 space-y-3 border-t border-slate-100 hidden" id="content-bento_facilities">
                             <label class="flex items-center gap-2 text-xs font-bold text-slate-700">
                                 <input type="checkbox" id="input-bento-enabled" <?= !empty($layout['bento_facilities']['enabled']) ? 'checked' : '' ?> class="rounded text-emerald-600">
@@ -423,7 +423,7 @@ $publicUrl = "../site.php?slug=" . urlencode($site['slug']);
 
                     <!-- 3. Telehealth & Consultation Block -->
                     <div class="border border-slate-200 rounded-2xl overflow-hidden bg-white shadow-sm" id="section-telehealth">
-                        <button type="button" onclick="toggleAccordion('telehealth')" class="w-full p-4 flex items-center justify-between bg-slate-50 hover:bg-slate-100 transition-colors text-right">
+                        <div onclick="toggleAccordion('telehealth')" class="w-full p-4 flex items-center justify-between bg-slate-50 hover:bg-slate-100 transition-colors text-right cursor-pointer select-none">
                             <div class="flex items-center gap-2.5">
                                 <span class="material-symbols-outlined text-slate-600 text-lg">videocam</span>
                                 <span class="text-xs font-bold text-slate-800">مشاوره آنلاین و تله‌هلث</span>
@@ -437,7 +437,7 @@ $publicUrl = "../site.php?slug=" . urlencode($site['slug']);
                                 </button>
                                 <span class="material-symbols-outlined text-slate-400 text-base transition-transform" id="arrow-telehealth">expand_more</span>
                             </div>
-                        </button>
+                        </div>
                         <div class="p-4 space-y-3 border-t border-slate-100 hidden" id="content-telehealth">
                             <label class="flex items-center gap-2 text-xs font-bold text-slate-700">
                                 <input type="checkbox" id="input-telehealth-enabled" <?= !empty($layout['telehealth_launcher']['enabled']) ? 'checked' : '' ?> class="rounded text-emerald-600">
@@ -448,7 +448,7 @@ $publicUrl = "../site.php?slug=" . urlencode($site['slug']);
 
                     <!-- 4. Autoship Recurring Subscription -->
                     <div class="border border-slate-200 rounded-2xl overflow-hidden bg-white shadow-sm" id="section-autoship">
-                        <button type="button" onclick="toggleAccordion('autoship')" class="w-full p-4 flex items-center justify-between bg-slate-50 hover:bg-slate-100 transition-colors text-right">
+                        <div onclick="toggleAccordion('autoship')" class="w-full p-4 flex items-center justify-between bg-slate-50 hover:bg-slate-100 transition-colors text-right cursor-pointer select-none">
                             <div class="flex items-center gap-2.5">
                                 <span class="material-symbols-outlined text-slate-600 text-lg">autorenew</span>
                                 <span class="text-xs font-bold text-slate-800">اشتراک دوره‌ای اتوشیپ (Autoship)</span>
@@ -462,7 +462,7 @@ $publicUrl = "../site.php?slug=" . urlencode($site['slug']);
                                 </button>
                                 <span class="material-symbols-outlined text-slate-400 text-base transition-transform" id="arrow-autoship">expand_more</span>
                             </div>
-                        </button>
+                        </div>
                         <div class="p-4 space-y-3 border-t border-slate-100 hidden" id="content-autoship">
                             <label class="flex items-center gap-2 text-xs font-bold text-slate-700">
                                 <input type="checkbox" id="input-autoship-enabled" <?= !empty($layout['autoship_showcase']['enabled']) ? 'checked' : '' ?> class="rounded text-emerald-600">
@@ -473,7 +473,7 @@ $publicUrl = "../site.php?slug=" . urlencode($site['slug']);
 
                     <!-- 5. About Block -->
                     <div class="border border-slate-200 rounded-2xl overflow-hidden bg-white shadow-sm" id="section-about">
-                        <button type="button" onclick="toggleAccordion('about')" class="w-full p-4 flex items-center justify-between bg-slate-50 hover:bg-slate-100 transition-colors text-right">
+                        <div onclick="toggleAccordion('about')" class="w-full p-4 flex items-center justify-between bg-slate-50 hover:bg-slate-100 transition-colors text-right cursor-pointer select-none">
                             <div class="flex items-center gap-2.5">
                                 <span class="material-symbols-outlined text-slate-600 text-lg">badge</span>
                                 <span class="text-xs font-bold text-slate-800">درباره ما و سوابق بالینی</span>
@@ -487,7 +487,7 @@ $publicUrl = "../site.php?slug=" . urlencode($site['slug']);
                                 </button>
                                 <span class="material-symbols-outlined text-slate-400 text-base transition-transform" id="arrow-about">expand_more</span>
                             </div>
-                        </button>
+                        </div>
                         <div class="p-4 space-y-3 border-t border-slate-100 hidden" id="content-about">
                             <div>
                                 <label class="block text-[11px] font-bold text-slate-700 mb-1">عنوان بخش</label>
@@ -506,7 +506,7 @@ $publicUrl = "../site.php?slug=" . urlencode($site['slug']);
 
                     <!-- 5.5. Cost Calculator Block -->
                     <div class="border border-amber-200 rounded-2xl overflow-hidden bg-white shadow-sm" id="section-cost_calculator">
-                        <button type="button" onclick="toggleAccordion('cost_calculator')" class="w-full p-4 flex items-center justify-between bg-amber-50/70 hover:bg-amber-100/70 transition-colors text-right">
+                        <div onclick="toggleAccordion('cost_calculator')" class="w-full p-4 flex items-center justify-between bg-amber-50/70 hover:bg-amber-100/70 transition-colors text-right cursor-pointer select-none">
                             <div class="flex items-center gap-2.5">
                                 <span class="material-symbols-outlined text-amber-600 text-lg">calculate</span>
                                 <span class="text-xs font-bold text-amber-950">محاسبه‌گر هوشمند تعرفه خدمات</span>
@@ -520,7 +520,7 @@ $publicUrl = "../site.php?slug=" . urlencode($site['slug']);
                                 </button>
                                 <span class="material-symbols-outlined text-amber-500 text-base transition-transform" id="arrow-cost_calculator">expand_more</span>
                             </div>
-                        </button>
+                        </div>
                         <div class="p-4 space-y-3 border-t border-amber-100 hidden" id="content-cost_calculator">
                             <label class="flex items-center gap-2 text-xs font-bold text-slate-700">
                                 <input type="checkbox" id="input-calc-enabled" <?= !empty($layout['cost_calculator']['enabled']) ? 'checked' : '' ?> class="rounded text-amber-600">
@@ -539,7 +539,7 @@ $publicUrl = "../site.php?slug=" . urlencode($site['slug']);
 
                     <!-- 6. Booking Widget Block -->
                     <div class="border border-slate-200 rounded-2xl overflow-hidden bg-white shadow-sm" id="section-booking">
-                        <button type="button" onclick="toggleAccordion('booking')" class="w-full p-4 flex items-center justify-between bg-slate-50 hover:bg-slate-100 transition-colors text-right">
+                        <div onclick="toggleAccordion('booking')" class="w-full p-4 flex items-center justify-between bg-slate-50 hover:bg-slate-100 transition-colors text-right cursor-pointer select-none">
                             <div class="flex items-center gap-2.5">
                                 <span class="material-symbols-outlined text-slate-600 text-lg">calendar_month</span>
                                 <span class="text-xs font-bold text-slate-800">ویجت رزرو آنلاین نوبت</span>
@@ -553,7 +553,7 @@ $publicUrl = "../site.php?slug=" . urlencode($site['slug']);
                                 </button>
                                 <span class="material-symbols-outlined text-slate-400 text-base transition-transform" id="arrow-booking">expand_more</span>
                             </div>
-                        </button>
+                        </div>
                         <div class="p-4 space-y-3 border-t border-slate-100 hidden" id="content-booking">
                             <label class="flex items-center gap-2 text-xs font-bold text-slate-700">
                                 <input type="checkbox" id="input-booking-enabled" <?= !empty($layout['booking']['enabled']) ? 'checked' : '' ?> class="rounded text-emerald-600">
@@ -568,7 +568,7 @@ $publicUrl = "../site.php?slug=" . urlencode($site['slug']);
 
                     <!-- 7. Storefront & Inventory Block -->
                     <div class="border border-slate-200 rounded-2xl overflow-hidden bg-white shadow-sm" id="section-storefront">
-                        <button type="button" onclick="toggleAccordion('storefront')" class="w-full p-4 flex items-center justify-between bg-slate-50 hover:bg-slate-100 transition-colors text-right">
+                        <div onclick="toggleAccordion('storefront')" class="w-full p-4 flex items-center justify-between bg-slate-50 hover:bg-slate-100 transition-colors text-right cursor-pointer select-none">
                             <div class="flex items-center gap-2.5">
                                 <span class="material-symbols-outlined text-slate-600 text-lg">storefront</span>
                                 <span class="text-xs font-bold text-slate-800">ویترین کالاها و داروهای انبار</span>
@@ -582,7 +582,7 @@ $publicUrl = "../site.php?slug=" . urlencode($site['slug']);
                                 </button>
                                 <span class="material-symbols-outlined text-slate-400 text-base transition-transform" id="arrow-storefront">expand_more</span>
                             </div>
-                        </button>
+                        </div>
                         <div class="p-4 space-y-3 border-t border-slate-100 hidden" id="content-storefront">
                             <label class="flex items-center gap-2 text-xs font-bold text-slate-700">
                                 <input type="checkbox" id="input-storefront-enabled" <?= !empty($layout['storefront']['enabled']) ? 'checked' : '' ?> class="rounded text-emerald-600">
@@ -601,7 +601,7 @@ $publicUrl = "../site.php?slug=" . urlencode($site['slug']);
 
                     <!-- Doctors & Specialists Roster Block -->
                     <div class="border border-slate-200 rounded-2xl overflow-hidden bg-white shadow-sm" id="section-doctors_roster">
-                        <button type="button" onclick="toggleAccordion('doctors_roster')" class="w-full p-4 flex items-center justify-between bg-slate-50 hover:bg-slate-100 transition-colors text-right">
+                        <div onclick="toggleAccordion('doctors_roster')" class="w-full p-4 flex items-center justify-between bg-slate-50 hover:bg-slate-100 transition-colors text-right cursor-pointer select-none">
                             <div class="flex items-center gap-2.5">
                                 <span class="material-symbols-outlined text-slate-600 text-lg">medical_information</span>
                                 <span class="text-xs font-bold text-slate-800">کادر پزشکان و متخصصان مقیم</span>
@@ -615,7 +615,7 @@ $publicUrl = "../site.php?slug=" . urlencode($site['slug']);
                                 </button>
                                 <span class="material-symbols-outlined text-slate-400 text-base transition-transform" id="arrow-doctors_roster">expand_more</span>
                             </div>
-                        </button>
+                        </div>
                         <div class="p-4 space-y-3 border-t border-slate-100 hidden" id="content-doctors_roster">
                             <label class="flex items-center gap-2 text-xs font-bold text-slate-700">
                                 <input type="checkbox" id="input-doctors-enabled" <?= !empty($layout['doctors_roster']['enabled']) ? 'checked' : '' ?> class="rounded text-emerald-600">
@@ -634,7 +634,7 @@ $publicUrl = "../site.php?slug=" . urlencode($site['slug']);
 
                     <!-- Scientific Articles & Knowledge Base -->
                     <div class="border border-slate-200 rounded-2xl overflow-hidden bg-white shadow-sm" id="section-articles">
-                        <button type="button" onclick="toggleAccordion('articles')" class="w-full p-4 flex items-center justify-between bg-slate-50 hover:bg-slate-100 transition-colors text-right">
+                        <div onclick="toggleAccordion('articles')" class="w-full p-4 flex items-center justify-between bg-slate-50 hover:bg-slate-100 transition-colors text-right cursor-pointer select-none">
                             <div class="flex items-center gap-2.5">
                                 <span class="material-symbols-outlined text-slate-600 text-lg">menu_book</span>
                                 <span class="text-xs font-bold text-slate-800">دانشنامه سلامت و مقالات علمی</span>
@@ -648,7 +648,7 @@ $publicUrl = "../site.php?slug=" . urlencode($site['slug']);
                                 </button>
                                 <span class="material-symbols-outlined text-slate-400 text-base transition-transform" id="arrow-articles">expand_more</span>
                             </div>
-                        </button>
+                        </div>
                         <div class="p-4 space-y-3 border-t border-slate-100 hidden" id="content-articles">
                             <label class="flex items-center gap-2 text-xs font-bold text-slate-700">
                                 <input type="checkbox" id="input-articles-enabled" <?= !empty($layout['articles']['enabled']) ? 'checked' : '' ?> class="rounded text-emerald-600">
@@ -663,7 +663,7 @@ $publicUrl = "../site.php?slug=" . urlencode($site['slug']);
 
                     <!-- Loyalty Club Banner -->
                     <div class="border border-slate-200 rounded-2xl overflow-hidden bg-white shadow-sm" id="section-loyalty_club">
-                        <button type="button" onclick="toggleAccordion('loyalty_club')" class="w-full p-4 flex items-center justify-between bg-slate-50 hover:bg-slate-100 transition-colors text-right">
+                        <div onclick="toggleAccordion('loyalty_club')" class="w-full p-4 flex items-center justify-between bg-slate-50 hover:bg-slate-100 transition-colors text-right cursor-pointer select-none">
                             <div class="flex items-center gap-2.5">
                                 <span class="material-symbols-outlined text-slate-600 text-lg">loyalty</span>
                                 <span class="text-xs font-bold text-slate-800">باشگاه مشتریان و پاداش وفاداری</span>
@@ -677,7 +677,7 @@ $publicUrl = "../site.php?slug=" . urlencode($site['slug']);
                                 </button>
                                 <span class="material-symbols-outlined text-slate-400 text-base transition-transform" id="arrow-loyalty_club">expand_more</span>
                             </div>
-                        </button>
+                        </div>
                         <div class="p-4 space-y-3 border-t border-slate-100 hidden" id="content-loyalty_club">
                             <label class="flex items-center gap-2 text-xs font-bold text-slate-700">
                                 <input type="checkbox" id="input-loyalty-enabled" <?= !empty($layout['loyalty_club']['enabled']) ? 'checked' : '' ?> class="rounded text-emerald-600">
@@ -692,7 +692,7 @@ $publicUrl = "../site.php?slug=" . urlencode($site['slug']);
 
                     <!-- Reviews & Social Proof -->
                     <div class="border border-slate-200 rounded-2xl overflow-hidden bg-white shadow-sm" id="section-reviews">
-                        <button type="button" onclick="toggleAccordion('reviews')" class="w-full p-4 flex items-center justify-between bg-slate-50 hover:bg-slate-100 transition-colors text-right">
+                        <div onclick="toggleAccordion('reviews')" class="w-full p-4 flex items-center justify-between bg-slate-50 hover:bg-slate-100 transition-colors text-right cursor-pointer select-none">
                             <div class="flex items-center gap-2.5">
                                 <span class="material-symbols-outlined text-slate-600 text-lg">rate_review</span>
                                 <span class="text-xs font-bold text-slate-800">نظرات و رضایت‌سنجی مراجعین</span>
@@ -706,7 +706,7 @@ $publicUrl = "../site.php?slug=" . urlencode($site['slug']);
                                 </button>
                                 <span class="material-symbols-outlined text-slate-400 text-base transition-transform" id="arrow-reviews">expand_more</span>
                             </div>
-                        </button>
+                        </div>
                         <div class="p-4 space-y-3 border-t border-slate-100 hidden" id="content-reviews">
                             <label class="flex items-center gap-2 text-xs font-bold text-slate-700">
                                 <input type="checkbox" id="input-reviews-enabled" <?= !empty($layout['reviews']['enabled']) ? 'checked' : '' ?> class="rounded text-emerald-600">
@@ -721,7 +721,7 @@ $publicUrl = "../site.php?slug=" . urlencode($site['slug']);
 
                     <!-- 7.5. FAQ Accordion Block -->
                     <div class="border border-slate-200 rounded-2xl overflow-hidden bg-white shadow-sm" id="section-faq">
-                        <button type="button" onclick="toggleAccordion('faq')" class="w-full p-4 flex items-center justify-between bg-slate-50 hover:bg-slate-100 transition-colors text-right">
+                        <div onclick="toggleAccordion('faq')" class="w-full p-4 flex items-center justify-between bg-slate-50 hover:bg-slate-100 transition-colors text-right cursor-pointer select-none">
                             <div class="flex items-center gap-2.5">
                                 <span class="material-symbols-outlined text-slate-600 text-lg">quiz</span>
                                 <span class="text-xs font-bold text-slate-800">پرسش‌های متداول (FAQ)</span>
@@ -735,7 +735,7 @@ $publicUrl = "../site.php?slug=" . urlencode($site['slug']);
                                 </button>
                                 <span class="material-symbols-outlined text-slate-400 text-base transition-transform" id="arrow-faq">expand_more</span>
                             </div>
-                        </button>
+                        </div>
                         <div class="p-4 space-y-3 border-t border-slate-100 hidden" id="content-faq">
                             <label class="flex items-center gap-2 text-xs font-bold text-slate-700">
                                 <input type="checkbox" id="input-faq-enabled" <?= !empty($layout['faq']['enabled']) ? 'checked' : '' ?> class="rounded text-emerald-600">
@@ -750,7 +750,7 @@ $publicUrl = "../site.php?slug=" . urlencode($site['slug']);
 
                     <!-- 8. Contact & Hours Block -->
                     <div class="border border-slate-200 rounded-2xl overflow-hidden bg-white shadow-sm" id="section-contact">
-                        <button type="button" onclick="toggleAccordion('contact')" class="w-full p-4 flex items-center justify-between bg-slate-50 hover:bg-slate-100 transition-colors text-right">
+                        <div onclick="toggleAccordion('contact')" class="w-full p-4 flex items-center justify-between bg-slate-50 hover:bg-slate-100 transition-colors text-right cursor-pointer select-none">
                             <div class="flex items-center gap-2.5">
                                 <span class="material-symbols-outlined text-slate-600 text-lg">pin_drop</span>
                                 <span class="text-xs font-bold text-slate-800">تماس، ساعات کاری و آدرس</span>
@@ -764,7 +764,7 @@ $publicUrl = "../site.php?slug=" . urlencode($site['slug']);
                                 </button>
                                 <span class="material-symbols-outlined text-slate-400 text-base transition-transform" id="arrow-contact">expand_more</span>
                             </div>
-                        </button>
+                        </div>
                         <div class="p-4 space-y-3 border-t border-slate-100 hidden" id="content-contact">
                             <div>
                                 <label class="block text-[11px] font-bold text-slate-700 mb-1">نشانی دقیق مراجعه حضوری</label>
