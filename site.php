@@ -78,8 +78,11 @@ $defaultLayout = $tenantService->buildDefaultLayout($tenantType, [
 
 $layout = array_replace_recursive($defaultLayout, $site['layout']['blocks'] ?? []);
 $headerBlock = $layout['header'] ?? [];
+$emergencyBlock = $layout['emergency_bar'] ?? [];
 $heroBlock = $layout['hero'] ?? [];
 $statsBlock = $layout['stats_strip'] ?? [];
+$dutyBlock = $layout['duty_hours'] ?? [];
+$calculatorBlock = $layout['cost_calculator'] ?? [];
 $bentoBlock = $layout['bento_facilities'] ?? [];
 $aboutBlock = $layout['about'] ?? [];
 $servicesBlock = $layout['services'] ?? [];
@@ -92,6 +95,8 @@ $storefrontBlock = $layout['storefront'] ?? [];
 $articlesBlock = $layout['articles'] ?? [];
 $loyaltyBlock = $layout['loyalty_club'] ?? [];
 $reviewsBlock = $layout['reviews'] ?? [];
+$faqBlock = $layout['faq'] ?? [];
+$navHubBlock = $layout['navigation_hub'] ?? [];
 $contactBlock = $layout['contact'] ?? [];
 $mobileBarBlock = $layout['sticky_mobile_bar'] ?? [];
 $footerBlock = $layout['footer'] ?? [];
@@ -118,43 +123,78 @@ if (!empty($reviewsBlock['enabled'])) {
     $tenantReviews = $tenantService->getTenantReviews($tenantType, $tenantId, 3);
 }
 
-// Color Theme Palettes
+// Hydrate FAQs & Cost Calculator Config
+$tenantFaqs = !empty($faqBlock['items']) ? $faqBlock['items'] : $tenantService->getTenantFaqs($tenantType);
+$calcConfig = $tenantService->getCostCalculatorConfig($tenantType);
+
+// Dynamic Duty Shift Status Calculation (Tehran Time)
+date_default_timezone_set('Asia/Tehran');
+$currentHour = (int)date('G');
+$currentMinute = (int)date('i');
+$currentTotalMins = $currentHour * 60 + $currentMinute;
+
+$openTimeStr = $dutyBlock['open_time'] ?? '08:30';
+$closeTimeStr = $dutyBlock['close_time'] ?? '22:30';
+$openParts = explode(':', $openTimeStr);
+$closeParts = explode(':', $closeTimeStr);
+$openTotalMins = ((int)($openParts[0] ?? 8)) * 60 + ((int)($openParts[1] ?? 30));
+$closeTotalMins = ((int)($closeParts[0] ?? 22)) * 60 + ((int)($closeParts[1] ?? 30));
+
+$isEmergency24 = !empty($dutyBlock['emergency_open_24h']);
+$isCurrentlyOpen = $isEmergency24 || ($currentTotalMins >= $openTotalMins && $currentTotalMins < $closeTotalMins);
+
+if ($isEmergency24) {
+    $dutyCountdownText = 'پذیرش اورژانس ۲۴ ساعته فعال است';
+} elseif ($isCurrentlyOpen) {
+    $minsRemaining = $closeTotalMins - $currentTotalMins;
+    $hrsRemaining = floor($minsRemaining / 60);
+    $remMins = $minsRemaining % 60;
+    $dutyCountdownText = "تا پایان شیفت امروز: {$hrsRemaining} ساعت و {$remMins} دقیقه باقی‌مانده";
+} else {
+    $dutyCountdownText = "خارج از شیفت حضوری • شروع پذیرش فردا ساعت {$openTimeStr}";
+}
+
+// Color Theme Palettes with agency-grade tokens
 $paletteMap = [
     'emerald' => [
+        'name' => 'سبز کلینیک لوکس (Luxury Minimal Clinic)',
         'primary' => '#059669',
         'primary_hover' => '#047857',
         'primary_light' => '#ecfdf5',
         'primary_border' => '#a7f3d0',
         'accent' => '#fd8100',
-        'gradient' => 'from-emerald-600 to-teal-800',
-        'subtle_glow' => 'rgba(5, 150, 105, 0.12)'
+        'gradient' => 'from-emerald-600 via-teal-700 to-emerald-900',
+        'subtle_glow' => 'rgba(5, 150, 105, 0.15)'
     ],
     'navy' => [
+        'name' => 'سرمه‌ای آسنا (Hospital Corporate Navy)',
         'primary' => '#001a48',
         'primary_hover' => '#002666',
         'primary_light' => '#eff6ff',
         'primary_border' => '#bfdbfe',
         'accent' => '#fd8100',
-        'gradient' => 'from-[#001a48] to-[#0a3580]',
-        'subtle_glow' => 'rgba(0, 26, 72, 0.12)'
+        'gradient' => 'from-[#001a48] via-[#08296c] to-[#041535]',
+        'subtle_glow' => 'rgba(0, 26, 72, 0.15)'
     ],
     'orange' => [
+        'name' => 'نارنجی پت‌شاپ پویا (Vibrant Pet Companion)',
         'primary' => '#ea580c',
         'primary_hover' => '#c2410c',
         'primary_light' => '#fff7ed',
         'primary_border' => '#fed7aa',
         'accent' => '#001a48',
-        'gradient' => 'from-orange-600 to-amber-700',
-        'subtle_glow' => 'rgba(234, 88, 12, 0.12)'
+        'gradient' => 'from-orange-600 via-amber-600 to-rose-700',
+        'subtle_glow' => 'rgba(234, 88, 12, 0.15)'
     ],
     'purple' => [
+        'name' => 'بنفش لوکس دارویی (Midnight Velvet Luxury)',
         'primary' => '#7c3aed',
         'primary_hover' => '#6d28d9',
         'primary_light' => '#f5f3ff',
         'primary_border' => '#ddd6fe',
         'accent' => '#ea580c',
-        'gradient' => 'from-purple-600 to-indigo-800',
-        'subtle_glow' => 'rgba(124, 58, 237, 0.12)'
+        'gradient' => 'from-purple-700 via-indigo-800 to-slate-950',
+        'subtle_glow' => 'rgba(124, 58, 237, 0.15)'
     ]
 ];
 $theme = $paletteMap[$site['theme_palette']] ?? $paletteMap['emerald'];
@@ -267,6 +307,36 @@ $ctaHref = match($tenantType) {
         </div>
     </div>
 
+    <!-- 24/7 Red Emergency Hotline Bar -->
+    <?php if (!empty($emergencyBlock['enabled'])): ?>
+    <div class="bg-gradient-to-r from-red-600 via-rose-600 to-red-700 text-white py-2.5 px-4 shadow-md relative overflow-hidden z-40 border-b border-red-500/50" data-block-id="emergency_bar">
+        <div class="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-right">
+            <div class="flex items-center gap-2.5">
+                <span class="w-8 h-8 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center shrink-0 animate-pulse text-white shadow-inner">
+                    <span class="material-symbols-outlined text-lg">e911_emergency</span>
+                </span>
+                <div>
+                    <div class="flex items-center justify-center sm:justify-start gap-2">
+                        <span class="px-2 py-0.5 rounded-full bg-white/25 text-[10px] font-black tracking-wide"><?= htmlspecialchars($emergencyBlock['badge'] ?? 'اورژانس شبانه‌روزی (۲۴/۷)') ?></span>
+                        <h3 class="text-xs sm:text-sm font-black tracking-tight"><?= htmlspecialchars($emergencyBlock['headline'] ?? 'اورژانس ۲۴ ساعته و مراقبت‌های فوری حیوانات خانگی') ?></h3>
+                    </div>
+                    <p class="text-[11px] text-rose-100 hidden md:block mt-0.5"><?= htmlspecialchars($emergencyBlock['subheadline'] ?? 'پذیرش فوری تروما، تصادفات و مسمومیت‌ها با امکانات احیای بالینی پیشرفته') ?></p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2">
+                <?php $emPhone = !empty($emergencyBlock['phone']) ? $emergencyBlock['phone'] : ($contactBlock['emergency_phone'] ?? $contactBlock['phone'] ?? ''); ?>
+                <?php if (!empty($emPhone)): ?>
+                <a href="tel:<?= htmlspecialchars($emPhone) ?>" class="px-4 py-2 rounded-xl bg-white text-red-700 hover:bg-rose-50 text-xs font-black shadow-lg flex items-center gap-1.5 transition-transform active:scale-95 group">
+                    <span class="material-symbols-outlined text-sm group-hover:animate-bounce">call</span>
+                    <span>تماس مستقیم با اورژانس:</span>
+                    <span dir="ltr" class="font-mono font-bold"><?= htmlspecialchars($emPhone) ?></span>
+                </a>
+                <?php endif; ?>
+            </div>
+        </div>
+    </div>
+    <?php endif; ?>
+
     <!-- Header Navigation -->
     <header class="sticky top-0 z-40 bg-white/90 backdrop-blur-xl border-b border-slate-200/80 shadow-sm transition-all" data-block-id="header">
         <div class="max-w-6xl mx-auto px-4 h-20 flex items-center justify-between">
@@ -286,9 +356,15 @@ $ctaHref = match($tenantType) {
             </div>
 
             <!-- Desktop Nav Links -->
-            <nav class="hidden lg:flex items-center gap-6 text-xs font-bold text-slate-600">
+            <nav class="hidden lg:flex items-center gap-5 text-xs font-bold text-slate-600">
                 <a href="#about" class="hover:text-tenant-primary transition-colors">معرفی</a>
                 <a href="#services" class="hover:text-tenant-primary transition-colors">خدمات تخصصی</a>
+                <?php if (!empty($calculatorBlock['enabled'])): ?>
+                    <a href="#calculator" class="text-amber-600 hover:text-amber-700 transition-colors flex items-center gap-1 font-black">
+                        <span class="material-symbols-outlined text-sm">calculate</span>
+                        <span>محاسبه‌گر هزینه</span>
+                    </a>
+                <?php endif; ?>
                 <?php if (!empty($doctorsBlock['enabled']) && !empty($tenantDoctors)): ?>
                     <a href="#doctors" class="hover:text-tenant-primary transition-colors">پزشکان مرکز</a>
                 <?php endif; ?>
@@ -301,8 +377,8 @@ $ctaHref = match($tenantType) {
                 <?php if (!empty($storefrontBlock['enabled'])): ?>
                     <a href="#storefront" class="hover:text-tenant-primary transition-colors">کالاها و داروها</a>
                 <?php endif; ?>
-                <?php if (!empty($articlesBlock['enabled'])): ?>
-                    <a href="#articles" class="hover:text-tenant-primary transition-colors">دانشنامه سلامت</a>
+                <?php if (!empty($faqBlock['enabled'])): ?>
+                    <a href="#faq" class="hover:text-tenant-primary transition-colors">پرسش‌های متداول</a>
                 <?php endif; ?>
                 <?php if (!empty($reviewsBlock['enabled'])): ?>
                     <a href="#reviews" class="hover:text-tenant-primary transition-colors">نظرات مراجعین</a>
@@ -312,6 +388,11 @@ $ctaHref = match($tenantType) {
 
             <!-- Actions -->
             <div class="flex items-center gap-2.5">
+                <button type="button" onclick="openNavHubModal()" class="hidden xl:flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-all shadow-xs" title="مسیریابی با اپلیکیشن‌های بلد، نشان، ویز و گوگل مپ">
+                    <span class="material-symbols-outlined text-sm text-tenant-primary">near_me</span>
+                    <span>مسیریابی هوشمند</span>
+                </button>
+
                 <?php if (!empty($headerBlock['phone'])): ?>
                     <a href="tel:<?= htmlspecialchars($headerBlock['phone']) ?>" class="hidden sm:flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-colors">
                         <span class="material-symbols-outlined text-sm text-tenant-primary">call</span>
@@ -348,8 +429,14 @@ $ctaHref = match($tenantType) {
                 </a>
                 <a href="#services" onclick="toggleMobileDrawer()" class="flex items-center gap-3 p-3 rounded-2xl hover:bg-slate-50">
                     <span class="material-symbols-outlined text-tenant-primary">medical_services</span>
-                    <span>خدمات درمانی و بالینی</span>
+                    <span>خدمات تخصصی</span>
                 </a>
+                <?php if (!empty($calculatorBlock['enabled'])): ?>
+                <a href="#calculator" onclick="toggleMobileDrawer()" class="flex items-center gap-3 p-3 rounded-2xl hover:bg-amber-50 text-amber-700">
+                    <span class="material-symbols-outlined text-amber-600">calculate</span>
+                    <span>محاسبه‌گر هوشمند تعرفه خدمات</span>
+                </a>
+                <?php endif; ?>
                 <?php if (!empty($doctorsBlock['enabled']) && !empty($tenantDoctors)): ?>
                 <a href="#doctors" onclick="toggleMobileDrawer()" class="flex items-center gap-3 p-3 rounded-2xl hover:bg-slate-50">
                     <span class="material-symbols-outlined text-tenant-primary">person</span>
@@ -374,10 +461,10 @@ $ctaHref = match($tenantType) {
                     <span>داروخانه و محصولات پت‌شاپ</span>
                 </a>
                 <?php endif; ?>
-                <?php if (!empty($articlesBlock['enabled'])): ?>
-                <a href="#articles" onclick="toggleMobileDrawer()" class="flex items-center gap-3 p-3 rounded-2xl hover:bg-slate-50">
-                    <span class="material-symbols-outlined text-tenant-primary">menu_book</span>
-                    <span>دانشنامه سلامت پت</span>
+                <?php if (!empty($faqBlock['enabled'])): ?>
+                <a href="#faq" onclick="toggleMobileDrawer()" class="flex items-center gap-3 p-3 rounded-2xl hover:bg-slate-50">
+                    <span class="material-symbols-outlined text-tenant-primary">quiz</span>
+                    <span>پرسش‌های متداول</span>
                 </a>
                 <?php endif; ?>
                 <?php if (!empty($reviewsBlock['enabled'])): ?>
@@ -390,6 +477,10 @@ $ctaHref = match($tenantType) {
                     <span class="material-symbols-outlined text-tenant-primary">location_on</span>
                     <span>اطلاعات تماس و نشانی</span>
                 </a>
+                <button type="button" onclick="toggleMobileDrawer(); openNavHubModal();" class="w-full flex items-center gap-3 p-3 rounded-2xl bg-indigo-50 text-indigo-700 font-black">
+                    <span class="material-symbols-outlined text-indigo-600">near_me</span>
+                    <span>مسیریابی در بلد / نشان / ویز</span>
+                </button>
             </nav>
         </div>
     </div>
@@ -474,6 +565,40 @@ $ctaHref = match($tenantType) {
                         </div>
                     </div>
                 </div>
+
+                <!-- Floating Layered Badge 1: Verified Social Proof -->
+                <div class="absolute -top-3 -right-2 sm:-right-4 bg-white/95 backdrop-blur-md p-3 rounded-2xl shadow-xl border border-slate-200/90 flex items-center gap-2.5 z-20 transition-transform hover:-translate-y-1">
+                    <div class="w-9 h-9 rounded-xl bg-amber-50 text-amber-500 flex items-center justify-center shrink-0">
+                        <span class="material-symbols-outlined text-lg" style="font-variation-settings: 'FILL' 1;">star</span>
+                    </div>
+                    <div>
+                        <div class="text-xs font-black text-slate-900 flex items-center gap-1">
+                            <span>۴.۹</span>
+                            <span class="text-amber-400 text-[10px]">★★★★★</span>
+                        </div>
+                        <div class="text-[10px] text-slate-500 font-bold">بیش از ۱۸۰+ نظر تاییدشده</div>
+                    </div>
+                </div>
+
+                <!-- Floating Layered Badge 2: Accreditation Authority -->
+                <div class="absolute -bottom-4 -left-2 sm:-left-4 bg-white/95 backdrop-blur-md p-3 rounded-2xl shadow-xl border border-slate-200/90 flex items-center gap-2.5 z-20 transition-transform hover:translate-y-1">
+                    <div class="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+                        <span class="material-symbols-outlined text-lg">verified_user</span>
+                    </div>
+                    <div>
+                        <div class="text-xs font-black text-slate-900">
+                            <?= match($tenantType) {
+                                'pharmacist' => 'زنجیره سرد استاندارد (۲-۸°C)',
+                                'seller' => 'تضمین ۱۰۰٪ اصالت کالا',
+                                default => 'بورد تخصصی و مجهز به ICU'
+                            } ?>
+                        </div>
+                        <div class="text-[10px] text-emerald-600 font-bold flex items-center gap-1">
+                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                            <span>عضو رسمی شبکه ابری آسنا</span>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </section>
@@ -493,6 +618,47 @@ $ctaHref = match($tenantType) {
                     <div class="text-[11px] text-slate-500 font-bold"><?= htmlspecialchars($stat['label']) ?></div>
                 </div>
                 <?php endforeach; ?>
+            </div>
+        </div>
+    </section>
+    <?php endif; ?>
+
+    <!-- Live Shift Duty & Hours Widget -->
+    <?php if (!empty($dutyBlock['enabled'])): ?>
+    <section class="py-4 bg-gradient-to-r from-slate-900 via-slate-800 to-[#001a48] text-white border-b border-slate-700/60 shadow-inner" data-block-id="duty_hours">
+        <div class="max-w-6xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-2xl <?= $isCurrentlyOpen ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-amber-500/20 text-amber-400 border border-amber-500/30' ?> flex items-center justify-center shrink-0">
+                    <span class="material-symbols-outlined text-xl"><?= $isCurrentlyOpen ? 'schedule' : 'alarm_off' ?></span>
+                </div>
+                <div>
+                    <div class="flex items-center gap-2">
+                        <span class="relative flex h-2.5 w-2.5">
+                            <span class="<?= $isCurrentlyOpen ? 'animate-ping bg-emerald-400' : 'bg-amber-400' ?> absolute inline-flex h-full w-full rounded-full opacity-75"></span>
+                            <span class="relative inline-flex rounded-full h-2.5 w-2.5 <?= $isCurrentlyOpen ? 'bg-emerald-500' : 'bg-amber-500' ?>"></span>
+                        </span>
+                        <span class="text-xs sm:text-sm font-black <?= $isCurrentlyOpen ? 'text-emerald-300' : 'text-amber-300' ?>">
+                            <?= $isCurrentlyOpen ? 'هم‌اکنون فعال و پذیرش حضوری باز است' : 'هم‌اکنون خارج از شیفت کاری حضوری' ?>
+                        </span>
+                        <span class="text-[11px] text-slate-300 font-mono hidden md:inline">| <?= htmlspecialchars($dutyCountdownText) ?></span>
+                    </div>
+                    <div class="text-[11px] text-slate-400 mt-0.5">
+                        <span>ساعات کاری اعلامی: <?= htmlspecialchars($dutyBlock['hours_text'] ?? $contactBlock['hours'] ?? '۸:۳۰ الی ۲۲:۳۰') ?></span>
+                        <?php if (!$isCurrentlyOpen): ?>
+                            <span class="text-amber-200 mr-2 font-bold">(ثبت نوبت اینترنتی و درخواست مشاوره ۲۴ ساعته فعال است)</span>
+                        <?php endif; ?>
+                    </div>
+                </div>
+            </div>
+            <div class="flex items-center gap-2 shrink-0">
+                <button type="button" onclick="openNavHubModal()" class="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-white text-xs font-bold transition-all flex items-center gap-1.5 active:scale-95">
+                    <span class="material-symbols-outlined text-sm text-amber-300">near_me</span>
+                    <span>مسیریابی با بلد / نشان</span>
+                </button>
+                <a href="<?= $ctaHref ?>" class="px-4 py-2 rounded-xl bg-tenant-primary bg-tenant-primary-hover text-white text-xs font-black shadow-md flex items-center gap-1.5 transition-all active:scale-95">
+                    <span class="material-symbols-outlined text-sm">event_available</span>
+                    <span>رزرو شیفت آزاد</span>
+                </a>
             </div>
         </div>
     </section>
@@ -666,6 +832,142 @@ $ctaHref = match($tenantType) {
                     <p class="text-xs text-slate-600 leading-relaxed"><?= htmlspecialchars($srv['desc'] ?? '') ?></p>
                 </div>
                 <?php endforeach; ?>
+            </div>
+        </div>
+    </section>
+    <?php endif; ?>
+
+    <!-- Interactive Cost Estimator / Service Calculator Widget -->
+    <?php if (!empty($calculatorBlock['enabled']) && !empty($calcConfig)): ?>
+    <section id="calculator" class="py-16 bg-gradient-to-b from-slate-50 via-white to-slate-50 border-b border-slate-200/60" data-block-id="cost_calculator">
+        <div class="max-w-6xl mx-auto px-4">
+            <div class="text-center max-w-2xl mx-auto mb-12">
+                <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-50 border border-amber-200 text-amber-800 text-xs font-black mb-3">
+                    <span class="material-symbols-outlined text-sm">calculate</span>
+                    <span><?= htmlspecialchars($calculatorBlock['badge'] ?? 'محاسبه‌گر شفاف هزینه‌ها') ?></span>
+                </div>
+                <h3 class="text-2xl sm:text-3xl font-black text-slate-900"><?= htmlspecialchars($calculatorBlock['heading'] ?? 'تخمین هوشمند تعرفه خدمات بالینی و جراحی') ?></h3>
+                <p class="text-xs sm:text-sm text-slate-500 mt-2 leading-relaxed">
+                    <?= htmlspecialchars($calculatorBlock['subtitle'] ?? 'نوع حیوان و خدمت مورد نیاز را انتخاب کنید تا محدوده هزینه مصوب همراه با ۱۰٪ تخفیف ویژه رزرو آنلاین آسنا محاسبه گردد.') ?>
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+                
+                <!-- Left/Selection Column -->
+                <div class="lg:col-span-7 space-y-6">
+                    
+                    <!-- 1. Pet Type Selector -->
+                    <div class="bg-white p-5 rounded-3xl border border-slate-200 shadow-sm">
+                        <label class="block text-xs font-black text-slate-800 mb-3 flex items-center justify-between">
+                            <span class="flex items-center gap-1.5">
+                                <span class="w-6 h-6 rounded-lg bg-tenant-light text-tenant-primary flex items-center justify-center text-xs">۱</span>
+                                <span>نوع حیوان خانگی خود را انتخاب کنید:</span>
+                            </span>
+                            <span class="text-[11px] text-slate-400 font-medium" id="calc-pet-selected-title">سگ</span>
+                        </label>
+                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                            <?php foreach ($calcConfig['pet_types'] as $idx => $pType): ?>
+                            <button type="button" 
+                                    onclick="selectCalcPet('<?= $pType['id'] ?>', <?= $pType['multiplier'] ?>, '<?= htmlspecialchars($pType['title']) ?>')" 
+                                    id="calc-pet-btn-<?= $pType['id'] ?>"
+                                    class="calc-pet-btn p-3 rounded-2xl border-2 text-center transition-all flex flex-col items-center justify-center gap-1.5 <?= $idx === 0 ? 'border-emerald-600 bg-emerald-50 text-emerald-800 font-black shadow-sm' : 'border-slate-200 hover:border-slate-300 text-slate-700 font-bold bg-white' ?>">
+                                <span class="material-symbols-outlined text-2xl"><?= htmlspecialchars($pType['icon']) ?></span>
+                                <span class="text-xs"><?= htmlspecialchars($pType['title']) ?></span>
+                            </button>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
+
+                    <!-- 2. Service Category Selector -->
+                    <div class="bg-white p-5 rounded-3xl border border-slate-200 shadow-sm">
+                        <label class="block text-xs font-black text-slate-800 mb-3 flex items-center justify-between">
+                            <span class="flex items-center gap-1.5">
+                                <span class="w-6 h-6 rounded-lg bg-tenant-light text-tenant-primary flex items-center justify-center text-xs">۲</span>
+                                <span>خدمت مورد نظر را انتخاب فرمایید:</span>
+                            </span>
+                            <span class="text-[11px] text-slate-400 font-medium" id="calc-srv-selected-title">ویزیت و چکاپ کامل بالینی</span>
+                        </label>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <?php foreach ($calcConfig['services'] as $sIdx => $srv): ?>
+                            <div onclick="selectCalcService('<?= $srv['id'] ?>', <?= $srv['base_price'] ?>, '<?= htmlspecialchars($srv['title']) ?>')"
+                                 id="calc-srv-card-<?= $srv['id'] ?>"
+                                 class="calc-srv-card p-3.5 rounded-2xl border-2 transition-all cursor-pointer flex items-start gap-3 <?= $sIdx === 0 ? 'border-emerald-600 bg-emerald-50 text-emerald-800 shadow-sm' : 'border-slate-200 hover:border-slate-300 text-slate-700 bg-white' ?>">
+                                <div class="w-10 h-10 rounded-xl bg-white border border-slate-200/80 flex items-center justify-center shrink-0 text-tenant-primary shadow-2xs">
+                                    <span class="material-symbols-outlined text-xl"><?= htmlspecialchars($srv['icon']) ?></span>
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <div class="text-xs font-black text-slate-900 leading-snug"><?= htmlspecialchars($srv['title']) ?></div>
+                                    <div class="text-[10px] text-slate-500 line-clamp-1 mt-0.5"><?= htmlspecialchars($srv['desc']) ?></div>
+                                </div>
+                            </div>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Right/Cost Estimation Card -->
+                <div class="lg:col-span-5 bg-gradient-to-tr from-[#001a48] to-[#0a3580] text-white p-6 sm:p-7 rounded-3xl shadow-2xl relative overflow-hidden border border-blue-900/50">
+                    <div class="absolute -bottom-10 -left-10 w-44 h-44 rounded-full bg-emerald-500/10 blur-2xl pointer-events-none"></div>
+                    <div class="relative z-10 space-y-5">
+                        <div class="flex items-center justify-between pb-4 border-b border-white/10">
+                            <div>
+                                <span class="text-[10px] font-mono text-amber-300 uppercase tracking-wider block">تعرفه هوشمند شفاف</span>
+                                <h4 class="text-base font-black text-white mt-0.5">برآورد هزینه و اعمال تخفیف</h4>
+                            </div>
+                            <span class="px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 text-[11px] font-black border border-emerald-500/30 flex items-center gap-1">
+                                <span class="material-symbols-outlined text-xs">savings</span>
+                                <span><?= (int)($calculatorBlock['discount_percent'] ?? 10) ?>٪ تخفیف آنلاین</span>
+                            </span>
+                        </div>
+
+                        <!-- Summary of Selection -->
+                        <div class="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/15 space-y-2.5 text-xs">
+                            <div class="flex items-center justify-between text-slate-200">
+                                <span>حیوان انتخابی:</span>
+                                <span class="font-bold text-white font-mono" id="calc-display-pet">سگ</span>
+                            </div>
+                            <div class="flex items-center justify-between text-slate-200">
+                                <span>خدمت تشخیصی/درمانی:</span>
+                                <span class="font-bold text-white" id="calc-display-service">ویزیت و چکاپ کامل بالینی</span>
+                            </div>
+                            <div class="flex items-center justify-between text-slate-300 text-[11px] pt-2 border-t border-white/10">
+                                <span>تعرفه مصوب پایه:</span>
+                                <span class="line-through font-mono" id="calc-display-base-price">۲۵۰,۰۰۰ تومان</span>
+                            </div>
+                            <div class="flex items-center justify-between text-emerald-300 text-[11px]">
+                                <span>تخفیف ویژه رزرو در آسنا (<?= (int)($calculatorBlock['discount_percent'] ?? 10) ?>٪):</span>
+                                <span class="font-mono font-bold" id="calc-display-discount">-۲۵,۰۰۰ تومان</span>
+                            </div>
+                        </div>
+
+                        <!-- Final Estimated Amount -->
+                        <div class="p-4 rounded-2xl bg-white/5 border border-white/10 text-center">
+                            <div class="text-[11px] text-slate-300 font-bold mb-1">مبلغ تخمینی با تخفیف رزرو آنلاین:</div>
+                            <div class="text-2xl sm:text-3xl font-black text-amber-300 font-mono tracking-tight flex items-baseline justify-center gap-1.5">
+                                <span id="calc-display-final-price">۲۲۵,۰۰۰</span>
+                                <span class="text-xs text-white/80 font-normal">تومان</span>
+                            </div>
+                            <div class="text-[10px] text-slate-400 mt-1">تضمین بازگشت وجه و امانت‌داری توسط سامانه آسنا</div>
+                        </div>
+
+                        <!-- Booking Action -->
+                        <div class="pt-2">
+                            <a href="<?= $ctaHref ?>" id="calc-booking-cta-btn" class="w-full py-3.5 px-4 rounded-2xl bg-[#fd8100] hover:bg-[#ea580c] text-white text-xs font-black shadow-xl shadow-orange-950/30 flex items-center justify-center gap-2 active:scale-95 transition-all">
+                                <span class="material-symbols-outlined text-base">calendar_month</span>
+                                <span>رزرو آنلاین این خدمت با تخفیف</span>
+                                <span class="material-symbols-outlined text-sm">arrow_left</span>
+                            </a>
+                        </div>
+
+                        <!-- Regulatory Note -->
+                        <p class="text-[10px] text-slate-400 leading-relaxed text-justify">
+                            * تعرفه‌های فوق بر مبنای جدول خدمات استاندارد دامپزشکی برآورد گردیده است. هزینه نهایی ممکن است متناسب با وزن دقیق حیوان و در صورت نیاز به داروها یا بیهوشی خاص تنظیم گردد.
+                        </p>
+                    </div>
+                </div>
+
             </div>
         </div>
     </section>
@@ -928,54 +1230,186 @@ $ctaHref = match($tenantType) {
     </section>
     <?php endif; ?>
 
-    <!-- Contact & Operating Hours -->
+    <!-- Clinical & Store FAQ Accordion Block -->
+    <?php if (!empty($faqBlock['enabled']) && !empty($tenantFaqs)): ?>
+    <section id="faq" class="py-16 bg-white border-b border-slate-200/60" data-block-id="faq">
+        <div class="max-w-4xl mx-auto px-4">
+            <div class="text-center max-w-xl mx-auto mb-12">
+                <span class="text-xs font-black text-tenant-primary uppercase tracking-wider">راهنمای مراجعین و بیماران</span>
+                <h3 class="text-2xl sm:text-3xl font-black text-slate-900 mt-1"><?= htmlspecialchars($faqBlock['heading'] ?? 'پرسش‌های متداول') ?></h3>
+                <p class="text-xs sm:text-sm text-slate-500 mt-2"><?= htmlspecialchars($faqBlock['subtitle'] ?? 'پاسخ به سوالات متداول پیرامون نوبت‌دهی آنلاین، نسخه‌های الکترونیک و شرایط اورژانس') ?></p>
+            </div>
+
+            <div class="space-y-3.5">
+                <?php foreach ($tenantFaqs as $fIdx => $faq): ?>
+                <div class="border border-slate-200/90 rounded-2xl overflow-hidden bg-slate-50/70 hover:bg-white hover:border-slate-300 transition-all shadow-2xs">
+                    <button type="button" 
+                            onclick="toggleSiteFaq(<?= $fIdx ?>)" 
+                            class="w-full p-4 sm:p-5 text-right flex items-center justify-between gap-4 font-black text-xs sm:text-sm text-slate-800 transition-colors">
+                        <span class="flex items-center gap-3">
+                            <span class="w-6 h-6 rounded-lg bg-tenant-light text-tenant-primary flex items-center justify-center text-xs shrink-0 font-mono">؟</span>
+                            <span><?= htmlspecialchars($faq['q']) ?></span>
+                        </span>
+                        <span class="material-symbols-outlined text-slate-400 text-lg transition-transform duration-300 shrink-0" id="faq-chevron-<?= $fIdx ?>">expand_more</span>
+                    </button>
+                    <div id="faq-answer-<?= $fIdx ?>" class="hidden px-5 pb-5 pt-1 text-xs text-slate-600 leading-relaxed border-t border-slate-100 bg-white">
+                        <p><?= nl2br(htmlspecialchars($faq['a'])) ?></p>
+                    </div>
+                </div>
+                <?php endforeach; ?>
+            </div>
+        </div>
+    </section>
+
+    <!-- Schema.org FAQPage Structured Data for SEO -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        <?php 
+        $faqJsonItems = [];
+        foreach ($tenantFaqs as $fItem) {
+            $faqJsonItems[] = json_encode([
+                "@type" => "Question",
+                "name" => $fItem['q'],
+                "acceptedAnswer" => [
+                    "@type" => "Answer",
+                    "text" => $fItem['a']
+                ]
+            ], JSON_UNESCAPED_UNICODE);
+        }
+        echo implode(",\n        ", $faqJsonItems);
+        ?>
+      ]
+    }
+    </script>
+    <?php endif; ?>
+
+    <!-- Contact & Operating Hours & Navigation Hub -->
     <?php if (!empty($contactBlock['enabled'])): ?>
+    <?php 
+        $targetLat = $navHubBlock['lat'] ?? '35.7219';
+        $targetLng = $navHubBlock['lng'] ?? '51.3347';
+        $rawAddress = $contactBlock['address'] ?? 'تهران، مرکز پلتفرم آسنا';
+    ?>
     <section id="contact" class="py-16 bg-slate-50 border-b border-slate-200/60" data-block-id="contact">
         <div class="max-w-6xl mx-auto px-4">
             <div class="text-center max-w-xl mx-auto mb-10">
-                <span class="text-xs font-black text-tenant-primary uppercase tracking-wider">راه‌های ارتباطی</span>
+                <span class="text-xs font-black text-tenant-primary uppercase tracking-wider">راه‌های ارتباطی و مسیریابی</span>
                 <h3 class="text-2xl sm:text-3xl font-black text-slate-900 mt-1"><?= htmlspecialchars($contactBlock['heading'] ?? 'اطلاعات تماس و نشانی') ?></h3>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <!-- Address -->
-                <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm flex items-start gap-4">
-                    <div class="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
-                        <span class="material-symbols-outlined text-2xl">location_on</span>
-                    </div>
-                    <div>
-                        <h4 class="font-bold text-slate-900 text-sm mb-1">نشانی مراجعه حضوری</h4>
-                        <p class="text-xs text-slate-500 leading-relaxed"><?= htmlspecialchars($contactBlock['address'] ?? 'تهران') ?></p>
-                    </div>
-                </div>
-
-                <!-- Hours -->
-                <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm flex items-start gap-4">
-                    <div class="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
-                        <span class="material-symbols-outlined text-2xl">schedule</span>
-                    </div>
-                    <div>
-                        <h4 class="font-bold text-slate-900 text-sm mb-1">ساعات کاری و پذیرش</h4>
-                        <p class="text-xs text-slate-500 leading-relaxed"><?= htmlspecialchars($contactBlock['hours'] ?? 'شنبه تا پنجشنبه ۸ الی ۲۲') ?></p>
-                    </div>
-                </div>
-
-                <!-- Phone -->
-                <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm flex items-start gap-4">
-                    <div class="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
-                        <span class="material-symbols-outlined text-2xl">call</span>
-                    </div>
-                    <div>
-                        <h4 class="font-bold text-slate-900 text-sm mb-1">تلفن‌های تماس</h4>
-                        <div class="space-y-1">
-                            <?php if (!empty($contactBlock['phone'])): ?>
-                                <div><a href="tel:<?= htmlspecialchars($contactBlock['phone']) ?>" class="text-xs font-bold text-slate-700 hover:text-tenant-primary font-mono" dir="ltr"><?= htmlspecialchars($contactBlock['phone']) ?></a></div>
-                            <?php endif; ?>
-                            <?php if (!empty($contactBlock['emergency_phone'])): ?>
-                                <div class="text-[11px] text-red-600 font-bold">اورژانس: <span dir="ltr" class="font-mono"><?= htmlspecialchars($contactBlock['emergency_phone']) ?></span></div>
-                            <?php endif; ?>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <!-- Address Card -->
+                <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm flex flex-col justify-between">
+                    <div class="flex items-start gap-4">
+                        <div class="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
+                            <span class="material-symbols-outlined text-2xl">location_on</span>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-slate-900 text-sm mb-1">نشانی مراجعه حضوری</h4>
+                            <p class="text-xs text-slate-500 leading-relaxed"><?= htmlspecialchars($rawAddress) ?></p>
                         </div>
                     </div>
+                    <div class="pt-4 mt-4 border-t border-slate-100 flex items-center justify-between">
+                        <button type="button" onclick="copyAddressToClipboard('<?= addslashes($rawAddress) ?>')" class="text-[11px] text-tenant-primary font-bold hover:underline flex items-center gap-1">
+                            <span class="material-symbols-outlined text-xs">content_copy</span>
+                            <span>کپی نشانی</span>
+                        </button>
+                        <button type="button" onclick="openNavHubModal()" class="text-[11px] text-amber-600 font-bold hover:underline flex items-center gap-1">
+                            <span class="material-symbols-outlined text-xs">near_me</span>
+                            <span>مسیریابی</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Hours Card -->
+                <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm flex flex-col justify-between">
+                    <div class="flex items-start gap-4">
+                        <div class="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+                            <span class="material-symbols-outlined text-2xl">schedule</span>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-slate-900 text-sm mb-1">ساعات کاری و پذیرش</h4>
+                            <p class="text-xs text-slate-500 leading-relaxed"><?= htmlspecialchars($contactBlock['hours'] ?? 'شنبه تا پنجشنبه ۸ الی ۲۲') ?></p>
+                        </div>
+                    </div>
+                    <div class="pt-4 mt-4 border-t border-slate-100 flex items-center justify-between text-[11px]">
+                        <span class="flex items-center gap-1 <?= $isCurrentlyOpen ? 'text-emerald-600 font-bold' : 'text-slate-400' ?>">
+                            <span class="w-2 h-2 rounded-full <?= $isCurrentlyOpen ? 'bg-emerald-500 animate-pulse' : 'bg-slate-300' ?>"></span>
+                            <span><?= $isCurrentlyOpen ? 'هم‌اکنون باز است' : 'خارج از شیفت' ?></span>
+                        </span>
+                        <span class="text-slate-400 font-mono"><?= htmlspecialchars($dutyCountdownText) ?></span>
+                    </div>
+                </div>
+
+                <!-- Phone Card -->
+                <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm flex flex-col justify-between">
+                    <div class="flex items-start gap-4">
+                        <div class="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+                            <span class="material-symbols-outlined text-2xl">call</span>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-slate-900 text-sm mb-1">تلفن‌های تماس</h4>
+                            <div class="space-y-1">
+                                <?php if (!empty($contactBlock['phone'])): ?>
+                                    <div><a href="tel:<?= htmlspecialchars($contactBlock['phone']) ?>" class="text-xs font-bold text-slate-700 hover:text-tenant-primary font-mono" dir="ltr"><?= htmlspecialchars($contactBlock['phone']) ?></a></div>
+                                <?php endif; ?>
+                                <?php if (!empty($contactBlock['emergency_phone'])): ?>
+                                    <div class="text-[11px] text-red-600 font-bold">اورژانس: <span dir="ltr" class="font-mono"><?= htmlspecialchars($contactBlock['emergency_phone']) ?></span></div>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="pt-4 mt-4 border-t border-slate-100 flex items-center gap-3 text-xs">
+                        <?php if (!empty($contactBlock['phone'])): ?>
+                        <a href="tel:<?= htmlspecialchars($contactBlock['phone']) ?>" class="text-[11px] text-blue-600 font-bold hover:underline flex items-center gap-1">
+                            <span class="material-symbols-outlined text-xs">phone_in_talk</span>
+                            <span>تماس تلفنی</span>
+                        </a>
+                        <?php endif; ?>
+                        <button type="button" onclick="openNavHubModal()" class="text-[11px] text-slate-500 font-bold hover:text-slate-900 flex items-center gap-1">
+                            <span class="material-symbols-outlined text-xs">chat</span>
+                            <span>پیام‌رسان‌ها</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 1-Tap Navigation Strip -->
+            <div class="bg-gradient-to-r from-slate-900 to-indigo-950 rounded-3xl p-6 text-white shadow-xl flex flex-col md:flex-row items-center justify-between gap-6" id="navigation-hub">
+                <div class="flex items-center gap-4 text-center md:text-right">
+                    <div class="w-14 h-14 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center shrink-0 text-amber-300">
+                        <span class="material-symbols-outlined text-3xl">directions</span>
+                    </div>
+                    <div>
+                        <h4 class="text-base font-black">مسیریابی ۱ کلیکه با اپلیکیشن‌های نقشه</h4>
+                        <p class="text-xs text-slate-300 mt-0.5">مستقیماً موقعیت دقیق مجموعه را در مسیریاب‌های محبوب ایرانی و بین‌المللی باز نمایید.</p>
+                    </div>
+                </div>
+
+                <div class="flex flex-wrap items-center justify-center gap-2.5">
+                    <!-- Neshan -->
+                    <a href="https://neshan.org/maps/@<?= $targetLat ?>,<?= $targetLng ?>,16z" target="_blank" class="px-3.5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-md transition-all flex items-center gap-1.5 active:scale-95">
+                        <span class="material-symbols-outlined text-sm">navigation</span>
+                        <span>مسیریابی با نشان</span>
+                    </a>
+                    <!-- Balad -->
+                    <a href="https://balad.ir/location?latitude=<?= $targetLat ?>&longitude=<?= $targetLng ?>" target="_blank" class="px-3.5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-md transition-all flex items-center gap-1.5 active:scale-95">
+                        <span class="material-symbols-outlined text-sm">map</span>
+                        <span>مسیریابی با بلد</span>
+                    </a>
+                    <!-- Waze -->
+                    <a href="https://waze.com/ul?ll=<?= $targetLat ?>,<?= $targetLng ?>&navigate=yes" target="_blank" class="px-3.5 py-2.5 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-bold shadow-md transition-all flex items-center gap-1.5 active:scale-95">
+                        <span class="material-symbols-outlined text-sm">turn_right</span>
+                        <span>ویز (Waze)</span>
+                    </a>
+                    <!-- Google Maps -->
+                    <a href="https://maps.google.com/?q=<?= $targetLat ?>,<?= $targetLng ?>" target="_blank" class="px-3.5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold shadow-md transition-all flex items-center gap-1.5 active:scale-95">
+                        <span class="material-symbols-outlined text-sm">place</span>
+                        <span>گوگل مپ</span>
+                    </a>
                 </div>
             </div>
         </div>
@@ -1004,20 +1438,16 @@ $ctaHref = match($tenantType) {
     </footer>
 
     <!-- Mobile-First Thumb-Zone Sticky Conversion Bar (< 768px) -->
-    <div class="fixed bottom-0 inset-x-0 z-50 bg-white/95 backdrop-blur-xl border-t border-slate-200/80 p-3 flex md:hidden items-center justify-between gap-3 shadow-2xl">
+    <div class="fixed bottom-0 inset-x-0 z-50 bg-white/95 backdrop-blur-xl border-t border-slate-200/80 p-3 flex md:hidden items-center justify-between gap-2.5 shadow-2xl">
         <div class="flex items-center gap-2">
+            <button type="button" onclick="openNavHubModal()" class="w-11 h-11 rounded-2xl bg-indigo-50 text-indigo-700 border border-indigo-200/80 flex items-center justify-center shrink-0 active:scale-95 transition-transform" title="مسیریابی هوشمند">
+                <span class="material-symbols-outlined text-lg">near_me</span>
+            </button>
             <?php if (!empty($contactBlock['phone'])): ?>
-            <a href="tel:<?= htmlspecialchars($contactBlock['phone']) ?>" class="w-12 h-12 rounded-2xl bg-slate-100 text-slate-700 flex items-center justify-center shrink-0 shadow-sm active:scale-95 transition-transform" title="تماس تلفنی">
-                <span class="material-symbols-outlined text-xl">call</span>
+            <a href="tel:<?= htmlspecialchars($contactBlock['phone']) ?>" class="w-11 h-11 rounded-2xl bg-slate-100 text-slate-700 flex items-center justify-center shrink-0 shadow-sm active:scale-95 transition-transform" title="تماس تلفنی">
+                <span class="material-symbols-outlined text-lg">call</span>
             </a>
             <?php endif; ?>
-            <div class="text-[11px] leading-tight">
-                <span class="font-bold text-slate-800 block truncate max-w-[110px]"><?= htmlspecialchars($site['site_title']) ?></span>
-                <span class="text-emerald-600 font-medium flex items-center gap-1">
-                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block"></span>
-                    <span>پذیرش فعال</span>
-                </span>
-            </div>
         </div>
 
         <a href="<?= $ctaHref ?>" class="flex-1 py-3 px-4 rounded-2xl bg-tenant-primary text-white text-xs font-black shadow-lg shadow-emerald-900/20 flex items-center justify-center gap-1.5 active:scale-95 transition-transform">
@@ -1026,7 +1456,215 @@ $ctaHref = match($tenantType) {
         </a>
     </div>
 
+    <!-- Navigation Hub Modal -->
+    <div id="nav-hub-modal" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm hidden items-center justify-center p-4 transition-opacity">
+        <div class="bg-white rounded-3xl max-w-md w-full p-6 space-y-5 shadow-2xl border border-slate-100">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
+                        <span class="material-symbols-outlined text-lg">near_me</span>
+                    </div>
+                    <span class="font-black text-sm text-slate-800">مرکز مسیریابی و ارتباط مستقیم</span>
+                </div>
+                <button type="button" onclick="closeNavHubModal()" class="p-1 rounded-xl text-slate-400 hover:text-slate-600">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+
+            <!-- Address Display & Copy -->
+            <div class="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80">
+                <div class="text-[11px] text-slate-400 font-bold mb-1">نشانی ثبت‌شده:</div>
+                <div class="text-xs text-slate-700 leading-relaxed font-medium"><?= htmlspecialchars($contactBlock['address'] ?? 'تهران') ?></div>
+                <button type="button" onclick="copyAddressToClipboard('<?= addslashes($contactBlock['address'] ?? '') ?>')" class="mt-2.5 w-full py-2 px-3 rounded-xl bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 text-xs font-bold transition-all flex items-center justify-center gap-1.5">
+                    <span class="material-symbols-outlined text-xs text-slate-500">content_copy</span>
+                    <span>کپی آدرس به کلیپ‌بورد</span>
+                </button>
+            </div>
+
+            <!-- Routing Apps Grid -->
+            <div>
+                <label class="block text-xs font-bold text-slate-700 mb-2">انتخاب مسیریاب مورد نظر:</label>
+                <div class="grid grid-cols-2 gap-2.5">
+                    <a href="https://neshan.org/maps/@<?= $targetLat ?>,<?= $targetLng ?>,16z" target="_blank" class="p-3 rounded-2xl border border-slate-200 hover:border-blue-500 hover:bg-blue-50/30 flex items-center gap-2.5 transition-all text-right">
+                        <span class="w-8 h-8 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-xs">ن</span>
+                        <div>
+                            <div class="text-xs font-black text-slate-800">مسیریاب نشان</div>
+                            <div class="text-[10px] text-slate-400">Neshan Maps</div>
+                        </div>
+                    </a>
+                    <a href="https://balad.ir/location?latitude=<?= $targetLat ?>&longitude=<?= $targetLng ?>" target="_blank" class="p-3 rounded-2xl border border-slate-200 hover:border-emerald-500 hover:bg-emerald-50/30 flex items-center gap-2.5 transition-all text-right">
+                        <span class="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center font-bold text-xs">ب</span>
+                        <div>
+                            <div class="text-xs font-black text-slate-800">مسیریاب بلد</div>
+                            <div class="text-[10px] text-slate-400">Balad Maps</div>
+                        </div>
+                    </a>
+                    <a href="https://waze.com/ul?ll=<?= $targetLat ?>,<?= $targetLng ?>&navigate=yes" target="_blank" class="p-3 rounded-2xl border border-slate-200 hover:border-cyan-500 hover:bg-cyan-50/30 flex items-center gap-2.5 transition-all text-right">
+                        <span class="w-8 h-8 rounded-xl bg-cyan-100 text-cyan-600 flex items-center justify-center font-bold text-xs">W</span>
+                        <div>
+                            <div class="text-xs font-black text-slate-800">ویز (Waze)</div>
+                            <div class="text-[10px] text-slate-400">Live Traffic</div>
+                        </div>
+                    </a>
+                    <a href="https://maps.google.com/?q=<?= $targetLat ?>,<?= $targetLng ?>" target="_blank" class="p-3 rounded-2xl border border-slate-200 hover:border-slate-500 hover:bg-slate-50 flex items-center gap-2.5 transition-all text-right">
+                        <span class="w-8 h-8 rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center font-bold text-xs">G</span>
+                        <div>
+                            <div class="text-xs font-black text-slate-800">گوگل مپ</div>
+                            <div class="text-[10px] text-slate-400">Google Maps</div>
+                        </div>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Direct Messaging Links -->
+            <div class="pt-2 border-t border-slate-100">
+                <label class="block text-xs font-bold text-slate-700 mb-2">پیام‌رسان‌های پشتیبانی:</label>
+                <div class="flex items-center justify-center gap-3">
+                    <?php if (!empty($contactBlock['phone'])): ?>
+                    <a href="https://wa.me/<?= preg_replace('/\D/', '', $contactBlock['phone']) ?>" target="_blank" class="p-2.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-700 flex items-center gap-1.5 text-xs font-bold transition-colors" title="واتساپ">
+                        <span class="material-symbols-outlined text-sm">chat</span>
+                        <span>واتساپ</span>
+                    </a>
+                    <?php endif; ?>
+                    <?php if (!empty($contactBlock['telegram'])): ?>
+                    <a href="https://t.me/<?= ltrim(htmlspecialchars($contactBlock['telegram']), '@') ?>" target="_blank" class="p-2.5 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 flex items-center gap-1.5 text-xs font-bold transition-colors" title="تلگرام">
+                        <span class="material-symbols-outlined text-sm">send</span>
+                        <span>تلگرام</span>
+                    </a>
+                    <?php endif; ?>
+                    <a href="chat.php" class="p-2.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 flex items-center gap-1.5 text-xs font-bold transition-colors" title="چت درون‌برنامه‌ای آسنا">
+                        <span class="material-symbols-outlined text-sm">forum</span>
+                        <span>چت اختصاصی آسنا</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Client-Side Reactive Scripts -->
     <script>
+        // Interactive Cost Calculator State
+        let currentPetMultiplier = 1.0;
+        let currentPetTitle = 'سگ';
+        let currentServiceBase = 250000;
+        let currentServiceTitle = 'ویزیت و چکاپ کامل بالینی';
+        const discountPercent = <?= (int)($calculatorBlock['discount_percent'] ?? 10) ?>;
+
+        function selectCalcPet(id, mult, title) {
+            currentPetMultiplier = mult;
+            currentPetTitle = title;
+
+            document.querySelectorAll('.calc-pet-btn').forEach(btn => {
+                btn.className = 'calc-pet-btn p-3 rounded-2xl border-2 text-center transition-all flex flex-col items-center justify-center gap-1.5 border-slate-200 hover:border-slate-300 text-slate-700 font-bold bg-white';
+            });
+            const selBtn = document.getElementById('calc-pet-btn-' + id);
+            if (selBtn) {
+                selBtn.className = 'calc-pet-btn p-3 rounded-2xl border-2 text-center transition-all flex flex-col items-center justify-center gap-1.5 border-emerald-600 bg-emerald-50 text-emerald-800 font-black shadow-sm';
+            }
+            const petTitleEl = document.getElementById('calc-pet-selected-title');
+            if (petTitleEl) petTitleEl.innerText = title;
+            updateCalcDisplay();
+        }
+
+        function selectCalcService(id, base, title) {
+            currentServiceBase = base;
+            currentServiceTitle = title;
+
+            document.querySelectorAll('.calc-srv-card').forEach(card => {
+                card.className = 'calc-srv-card p-3.5 rounded-2xl border-2 transition-all cursor-pointer flex items-start gap-3 border-slate-200 hover:border-slate-300 text-slate-700 bg-white';
+            });
+            const selCard = document.getElementById('calc-srv-card-' + id);
+            if (selCard) {
+                selCard.className = 'calc-srv-card p-3.5 rounded-2xl border-2 transition-all cursor-pointer flex items-start gap-3 border-emerald-600 bg-emerald-50 text-emerald-800 shadow-sm';
+            }
+            const srvTitleEl = document.getElementById('calc-srv-selected-title');
+            if (srvTitleEl) srvTitleEl.innerText = title;
+            updateCalcDisplay();
+        }
+
+        function updateCalcDisplay() {
+            const rawPrice = Math.round(currentServiceBase * currentPetMultiplier);
+            const discountAmt = Math.round(rawPrice * (discountPercent / 100));
+            const finalPrice = rawPrice - discountAmt;
+
+            const dispPet = document.getElementById('calc-display-pet');
+            const dispSrv = document.getElementById('calc-display-service');
+            const dispBase = document.getElementById('calc-display-base-price');
+            const dispDisc = document.getElementById('calc-display-discount');
+            const dispFinal = document.getElementById('calc-display-final-price');
+            const btnCta = document.getElementById('calc-booking-cta-btn');
+
+            if (dispPet) dispPet.innerText = currentPetTitle;
+            if (dispSrv) dispSrv.innerText = currentServiceTitle;
+            if (dispBase) dispBase.innerText = rawPrice.toLocaleString('fa-IR') + ' تومان';
+            if (dispDisc) dispDisc.innerText = '-' + discountAmt.toLocaleString('fa-IR') + ' تومان';
+            if (dispFinal) dispFinal.innerText = finalPrice.toLocaleString('fa-IR');
+
+            if (btnCta) {
+                const baseHref = '<?= $ctaHref ?>';
+                const sep = baseHref.includes('?') ? '&' : '?';
+                btnCta.href = `${baseHref}${sep}service=${encodeURIComponent(currentServiceTitle)}&pet=${encodeURIComponent(currentPetTitle)}`;
+            }
+        }
+
+        // FAQ Accordion Toggle
+        function toggleSiteFaq(idx) {
+            const ans = document.getElementById('faq-answer-' + idx);
+            const chevron = document.getElementById('faq-chevron-' + idx);
+            if (!ans) return;
+
+            if (ans.classList.contains('hidden')) {
+                ans.classList.remove('hidden');
+                if (chevron) chevron.style.transform = 'rotate(180deg)';
+            } else {
+                ans.classList.add('hidden');
+                if (chevron) chevron.style.transform = 'rotate(0deg)';
+            }
+        }
+
+        // Navigation Hub Modal
+        function openNavHubModal() {
+            const modal = document.getElementById('nav-hub-modal');
+            if (modal) {
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+            }
+        }
+
+        function closeNavHubModal() {
+            const modal = document.getElementById('nav-hub-modal');
+            if (modal) {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            }
+        }
+
+        // Copy Address with Toast
+        function copyAddressToClipboard(text) {
+            if (!navigator.clipboard) {
+                const ta = document.createElement('textarea');
+                ta.value = text;
+                document.body.appendChild(ta);
+                ta.select();
+                document.execCommand('copy');
+                ta.remove();
+            } else {
+                navigator.clipboard.writeText(text);
+            }
+            showSiteToast('✓ نشانی با موفقیت در کلیپ‌بورد کپی شد.');
+        }
+
+        function showSiteToast(msg) {
+            const toast = document.createElement('div');
+            toast.className = 'fixed bottom-20 md:bottom-8 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-2xl text-xs font-bold text-white bg-slate-900/90 shadow-2xl backdrop-blur-md flex items-center gap-2 border border-white/20 transition-all';
+            toast.innerHTML = `<span class="material-symbols-outlined text-sm text-emerald-400">check_circle</span><span>${msg}</span>`;
+            document.body.appendChild(toast);
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                setTimeout(() => toast.remove(), 400);
+            }, 3000);
+        }
+
         function toggleMobileDrawer() {
             const drawer = document.getElementById('mobile-drawer');
             if (drawer.classList.contains('hidden')) {
@@ -1051,3 +1689,4 @@ $ctaHref = match($tenantType) {
     </script>
 </body>
 </html>
+

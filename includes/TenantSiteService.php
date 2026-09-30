@@ -256,12 +256,46 @@ class TenantSiteService {
         $isBasic = ($siteTier === 'basic');
         $isStandard = in_array($siteTier, ['standard', 'premium', 'pharmacy', 'enterprise']);
         $isPremium = in_array($siteTier, ['premium', 'enterprise']);
-        $isPharmacyTier = in_array($siteTier, ['pharmacy', 'enterprise']);
+        $isPharmacyTier = ($siteTier === 'pharmacy');
         $isEnterprise = ($siteTier === 'enterprise');
 
         $layout = [
-            'blocks_order' => ['hero', 'stats_strip', 'bento_facilities', 'about', 'services', 'doctors_roster', 'telehealth_launcher', 'rx_prescription_box', 'autoship_showcase', 'booking', 'storefront', 'articles', 'loyalty_club', 'reviews', 'contact'],
+            'blocks_order' => ['emergency_bar', 'hero', 'stats_strip', 'duty_hours', 'cost_calculator', 'bento_facilities', 'about', 'services', 'doctors_roster', 'telehealth_launcher', 'rx_prescription_box', 'autoship_showcase', 'booking', 'storefront', 'articles', 'loyalty_club', 'reviews', 'faq', 'contact'],
             'blocks' => [
+                'emergency_bar' => [
+                    'enabled' => in_array($tenantType, ['organization', 'doctor']) && !$isBasic,
+                    'headline' => 'اورژانس ۲۴ ساعته و مراقبت‌های فوری حیوانات خانگی',
+                    'subheadline' => 'پذیرش شبانه‌روزی حوادث، تروما، تصادفات و مسمومیت‌ها با امکانات احیای بالینی پیشرفته',
+                    'phone' => $info['emergency_phone'] ?? $phone,
+                    'badge' => 'پذیرش فوری اورژانس (۲۴/۷)'
+                ],
+                'duty_hours' => [
+                    'enabled' => !$isBasic,
+                    'heading' => 'وضعیت شیفت و پذیرش حضوری مراجعین',
+                    'hours_text' => $hours,
+                    'open_time' => '08:30',
+                    'close_time' => '22:30',
+                    'emergency_open_24h' => ($tenantType === 'organization')
+                ],
+                'cost_calculator' => [
+                    'enabled' => in_array($tenantType, ['doctor', 'organization']) && !$isBasic && !$isPharmacyTier,
+                    'heading' => 'تخمین هوشمند تعرفه خدمات بالینی و جراحی',
+                    'subtitle' => 'نوع حیوان و خدمت مورد نیاز را انتخاب نمایید تا هزینه تقریبی مصوب همراه با ۱۰٪ تخفیف ویژه رزرو آنلاین آسنا محاسبه گردد.',
+                    'discount_percent' => 10,
+                    'badge' => 'محاسبه‌گر شفاف هزینه‌ها'
+                ],
+                'faq' => [
+                    'enabled' => !$isBasic,
+                    'heading' => 'پرسش‌های متداول و راهنمای مراجعین',
+                    'subtitle' => 'پاسخ به سوالات پرتکرار پیرامون نوبت‌دهی آنلاین، نسخه‌های الکترونیک، مدارک و شرایط اورژانس',
+                    'items' => []
+                ],
+                'navigation_hub' => [
+                    'enabled' => true,
+                    'heading' => 'مسیریابی هوشمند و نشانی روی نقشه',
+                    'lat' => $info['latitude'] ?? '35.7219',
+                    'lng' => $info['longitude'] ?? '51.3347'
+                ],
                 'header' => [
                     'show_phone' => true,
                     'phone' => $phone,
@@ -805,6 +839,10 @@ class TenantSiteService {
 
         switch ($tier) {
             case 'basic':
+                if (isset($blocks['emergency_bar'])) $blocks['emergency_bar']['enabled'] = false;
+                if (isset($blocks['duty_hours'])) $blocks['duty_hours']['enabled'] = false;
+                if (isset($blocks['cost_calculator'])) $blocks['cost_calculator']['enabled'] = false;
+                if (isset($blocks['faq'])) $blocks['faq']['enabled'] = false;
                 if (isset($blocks['stats_strip'])) $blocks['stats_strip']['enabled'] = false;
                 if (isset($blocks['bento_facilities'])) $blocks['bento_facilities']['enabled'] = false;
                 if (isset($blocks['doctors_roster'])) $blocks['doctors_roster']['enabled'] = false;
@@ -818,6 +856,10 @@ class TenantSiteService {
                 break;
 
             case 'standard':
+                if (isset($blocks['emergency_bar'])) $blocks['emergency_bar']['enabled'] = false;
+                if (isset($blocks['duty_hours'])) $blocks['duty_hours']['enabled'] = true;
+                if (isset($blocks['cost_calculator'])) $blocks['cost_calculator']['enabled'] = in_array($tenantType, ['doctor', 'organization']);
+                if (isset($blocks['faq'])) $blocks['faq']['enabled'] = true;
                 if (isset($blocks['stats_strip'])) $blocks['stats_strip']['enabled'] = true;
                 if (isset($blocks['bento_facilities'])) $blocks['bento_facilities']['enabled'] = false;
                 if (isset($blocks['doctors_roster'])) $blocks['doctors_roster']['enabled'] = false;
@@ -830,6 +872,10 @@ class TenantSiteService {
                 break;
 
             case 'premium':
+                if (isset($blocks['emergency_bar'])) $blocks['emergency_bar']['enabled'] = in_array($tenantType, ['organization', 'doctor']);
+                if (isset($blocks['duty_hours'])) $blocks['duty_hours']['enabled'] = true;
+                if (isset($blocks['cost_calculator'])) $blocks['cost_calculator']['enabled'] = in_array($tenantType, ['doctor', 'organization']);
+                if (isset($blocks['faq'])) $blocks['faq']['enabled'] = true;
                 if (isset($blocks['stats_strip'])) $blocks['stats_strip']['enabled'] = true;
                 if (isset($blocks['bento_facilities'])) $blocks['bento_facilities']['enabled'] = true;
                 if (isset($blocks['doctors_roster'])) $blocks['doctors_roster']['enabled'] = ($tenantType === 'organization');
@@ -842,6 +888,10 @@ class TenantSiteService {
                 break;
 
             case 'pharmacy':
+                if (isset($blocks['emergency_bar'])) $blocks['emergency_bar']['enabled'] = false;
+                if (isset($blocks['duty_hours'])) $blocks['duty_hours']['enabled'] = true;
+                if (isset($blocks['cost_calculator'])) $blocks['cost_calculator']['enabled'] = false;
+                if (isset($blocks['faq'])) $blocks['faq']['enabled'] = true;
                 if (isset($blocks['stats_strip'])) $blocks['stats_strip']['enabled'] = true;
                 if (isset($blocks['bento_facilities'])) $blocks['bento_facilities']['enabled'] = false;
                 if (isset($blocks['doctors_roster'])) $blocks['doctors_roster']['enabled'] = false;
@@ -855,6 +905,10 @@ class TenantSiteService {
 
             case 'enterprise':
             default:
+                if (isset($blocks['emergency_bar'])) $blocks['emergency_bar']['enabled'] = in_array($tenantType, ['organization', 'doctor']);
+                if (isset($blocks['duty_hours'])) $blocks['duty_hours']['enabled'] = true;
+                if (isset($blocks['cost_calculator'])) $blocks['cost_calculator']['enabled'] = in_array($tenantType, ['doctor', 'organization']);
+                if (isset($blocks['faq'])) $blocks['faq']['enabled'] = true;
                 if (isset($blocks['stats_strip'])) $blocks['stats_strip']['enabled'] = true;
                 if (isset($blocks['bento_facilities'])) $blocks['bento_facilities']['enabled'] = in_array($tenantType, ['organization', 'doctor']);
                 if (isset($blocks['doctors_roster'])) $blocks['doctors_roster']['enabled'] = ($tenantType === 'organization');
@@ -870,5 +924,147 @@ class TenantSiteService {
 
         $currentLayout['blocks'] = $blocks;
         return $currentLayout;
+    }
+
+    /**
+     * Get Clinical & Operational FAQ questions and answers tailored to tenant archetype
+     */
+    public function getTenantFaqs(string $tenantType): array {
+        return match($tenantType) {
+            'doctor' => [
+                [
+                    'q' => 'نوبت‌دهی آنلاین چگونه تأیید می‌شود و آیا نیاز به تماس تلفنی است؟',
+                    'a' => 'پس از ثبت نوبت در تقویم آنلاین و پرداخت امن، پیامک رسمی تأیید حاوی ساعت دقیق و لینک پرونده سلامت برای شما ارسال می‌شود. نیازی به تماس تلفنی نبوده و سیستم آسنا وقت شما را به طور قطعی رزرو می‌کند.'
+                ],
+                [
+                    'q' => 'چه مدارک یا لوازمی برای جلسه معاینه حضوری پت لازم است؟',
+                    'a' => 'همراه داشتن شناسنامه بهداشتی پت، سوابق واکسیناسیون‌های پیشین و در صورت مصرف داروی خاص، جعبه یا عکس نسخه قبلی توصیه می‌شود. حیوان باید با باکس حمل یا قلاده مهار شده باشد.'
+                ],
+                [
+                    'q' => 'مشاوره آنلاین تصویری (تله‌هلث) چگونه انجام می‌گیرد؟',
+                    'a' => 'در ساعات تعیین‌شده، لینک تماس تصویری امن و اختصاصی بر بستر وب آسنا فعال می‌گردد. پس از ویزیت، نسخه الکترونیک و توصیه‌های پزشک مستقیماً در پروفایل سلامت حیوان ثبت می‌شود.'
+                ],
+                [
+                    'q' => 'در صورت بروز شرایط اضطراری در ساعات غیرکاری چه اقدامی انجام دهم؟',
+                    'a' => 'در شرایط حاد (مانند تنگی نفس شدید، تشنج یا مسمومیت)، فوراً با شماره اورژانس درج‌شده در بالای سایت تماس بگیرید یا به نزدیک‌ترین بیمارستان شبانه‌روزی شبکه آسنا مراجعه فرمایید.'
+                ]
+            ],
+            'pharmacist' => [
+                [
+                    'q' => 'شرایط نگهداری و ارسال داروهای زنجیره سرد (۲ الی ۸ درجه) چگونه است؟',
+                    'a' => 'کلیه واکسن‌ها، قطره‌ها و داروهای بیولوژیک در سردخانه‌های استاندارد نگهداری شده و در صورت ارسال شهری یا بین‌شهری، داخل جعبه‌های یونولیت ایزوله همراه با ژل یخ ویژه تحویل داده می‌شوند.'
+                ],
+                [
+                    'q' => 'چگونه می‌توانم نسخه دارویی صادرشده توسط دامپزشک را ارسال کنم؟',
+                    'a' => 'می‌توانید تصویر خوانا از نسخه پزشک یا کد رهگیری نسخه الکترونیک آسنا را در بخش آپلود نسخه بارگذاری کنید. داروساز مقیم پس از بررسی اصالت و انطباق دوز، سفارش را آماده و فاکتور می‌نماید.'
+                ],
+                [
+                    'q' => 'آیا داروها دارای ضمانت اصالت و تاریخ انقضای معتبر هستند؟',
+                    'a' => 'بله، تمامی اقلام دارویی مستقیماً از شرکت‌های پخش مجاز رسمی دامپزشکی تهیه شده و دارای هولوگرام سازمان دامپزشکی و حداقل ۶ ماه تا ۲ سال اعتبار مصرف می‌باشند.'
+                ],
+                [
+                    'q' => 'سفارشات پستی یا پیکی چه زمانی تحویل داده می‌شوند؟',
+                    'a' => 'سفارشات داخل شهری از طریق پیک موتوری در همان روز (کمتر از ۳ ساعت) و سفارشات سایر شهرستان‌ها با پست پیشتاز یا تیپاکس ظرف ۲۴ الی ۴۸ ساعت کاری تحویل می‌گردند.'
+                ]
+            ],
+            'seller' => [
+                [
+                    'q' => 'سرویس اشتراک دوره‌ای اتوشیپ (Autoship) چگونه کار می‌کند؟',
+                    'a' => 'با فعال‌سازی اتوشیپ روی غذای خشک، کنسرو یا خاک گربه، مرسوله به صورت ماهانه بدون نیاز به ثبت مجدد سفارش برای شما ارسال شده و از ۱۰٪ تخفیف دائمی ویژه مشترکین وفادار بهره‌مند می‌شوید.'
+                ],
+                [
+                    'q' => 'در صورت نارضایتی از کالا یا اشتباه در انتخاب سایز، امکان مرجوعی وجود دارد؟',
+                    'a' => 'بله، در صورت باز نشدن پلمپ کالا، کلیه لوازم جانبی، پوشاک و غذاهای پلمپ تا ۷ روز کاری با پشتیبانی هماهنگ و بدون قید و شرط تعویض یا مرجوع می‌گردند.'
+                ],
+                [
+                    'q' => 'چگونه می‌توانم از اصالت و تازگی غذای خشک خارجی مطمئن شوم؟',
+                    'a' => 'کلیه محصولات فروشگاه ما دارای برچسب اصالت، بارکد اصلی شرکت سازنده و تاریخ تولید معتبر بوده و در انبارهای مجهز به سیستم کنترل دما و رطوبت نگهداری می‌شوند.'
+                ],
+                [
+                    'q' => 'آیا امکان دریافت مشاوره تخصصی برای انتخاب بهترین رژیم غذایی وجود دارد؟',
+                    'a' => 'بله، کارشناسان تغذیه حیوانات ما از طریق تماس تلفنی یا پشتیبانی آنلاین آماده‌اند تا متناسب با نژاد، وزن، سن و آلرژی‌های احتمالی پت شما، بهترین رژیم را پیشنهاد دهند.'
+                ]
+            ],
+            default => [ // Organization / Clinic / Hospital
+                [
+                    'q' => 'آیا بخش اورژانس و پذیرش بیمارستان در روزهای تعطیل و جمعه‌ها فعال است؟',
+                    'a' => 'بله، بخش اورژانس، تریاژ، مراقبت‌های ویژه ICU و اتاق عمل بیمارستان به صورت ۲۴ ساعته در تمام روزهای سال (شامل جمعه‌ها و ایام تعطیلات رسمی) با پزشکان مقیم فعال است.'
+                ],
+                [
+                    'q' => 'پروتکل ناشتایی قبل از انجام اعمال جراحی یا آزمایش‌های خون چیست؟',
+                    'a' => 'برای اکثر اعمال جراحی با بیهوشی عمومی، ناشتایی ۸ الی ۱۲ ساعته از غذا و ۲ ساعته از آب ضروری است تا از خطرات آسپیراسیون ریوی پیشگیری شود. برای سونوگرافی شکمی نیز مثانه باید نیمه‌پر باشد.'
+                ],
+                [
+                    'q' => 'شرایط بستری و نقاهتگاه بیمارستان به چه صورت است؟',
+                    'a' => 'بخش بستری سگ‌ها و گربه‌ها کاملاً مجزا از یکدیگر با سیستم تهویه فشار منفی طراحی شده است. علائم حیاتی بیماران در تمام طول شبانه‌روز توسط تکنسین‌های ارشد بالینی مانیتور و ثبت می‌گردد.'
+                ],
+                [
+                    'q' => 'آیا هزینه‌ها شفاف بوده و فاکتور رسمی بیمه ارائه می‌شود؟',
+                    'a' => 'بله، تمامی تعرفه‌ها مصوب نظام دامپزشکی بوده و پس از اتمام درمان، صورت‌حساب ریز اقلام دارویی و خدمات با سربرگ رسمی و مهر جهت ارائه به شرکت‌های بیمه حیوانات خانگی صادر می‌شود.'
+                ],
+                [
+                    'q' => 'آیا امکان رزرو نوبت جراحی یا چکاپ از طریق وب‌سایت وجود دارد؟',
+                    'a' => 'بله، از طریق بخش نوبت‌دهی آنلاین می‌توانید پزشک متخصص، بخش مورد نظر و ساعت مراجعه را به صورت لحظه‌ای انتخاب کرده و بدون معطلی در بدو ورود پذیرش شوید.'
+                ]
+            ]
+        };
+    }
+
+    /**
+     * Get Cost Calculator Config & Services for Interactive Widget
+     */
+    public function getCostCalculatorConfig(string $tenantType): array {
+        return [
+            'pet_types' => [
+                ['id' => 'dog', 'title' => 'سگ', 'icon' => 'pets', 'multiplier' => 1.0],
+                ['id' => 'cat', 'title' => 'گربه', 'icon' => 'pets', 'multiplier' => 0.9],
+                ['id' => 'bird', 'title' => 'پرنده و طوطی‌سانان', 'icon' => 'raven', 'multiplier' => 0.75],
+                ['id' => 'exotic', 'title' => 'اگزوتیک / خرگوش', 'icon' => 'cruelty_free', 'multiplier' => 0.85]
+            ],
+            'services' => [
+                [
+                    'id' => 'checkup',
+                    'title' => 'ویزیت و چکاپ کامل بالینی',
+                    'icon' => 'stethoscope',
+                    'base_price' => 250000,
+                    'desc' => 'بررسی کامل دمای بدن، سمع قلب و ریه، گوش، چشم، مو و دهان'
+                ],
+                [
+                    'id' => 'vaccine',
+                    'title' => 'واکسیناسیون جامع + ضدانگل',
+                    'icon' => 'vaccines',
+                    'base_price' => 480000,
+                    'desc' => 'تزریق واکسن چندگانه معتبر و انگل‌زدایی خوراکی با ثبت شناسنامه'
+                ],
+                [
+                    'id' => 'dental',
+                    'title' => 'جرم‌گیری اولتراسونیک دندان',
+                    'icon' => 'dentistry',
+                    'base_price' => 1250000,
+                    'desc' => 'پاکسازی جرم‌های عمقی و پولیش دندان تحت بیهوشی استنشاقی ایمن'
+                ],
+                [
+                    'id' => 'neuter',
+                    'title' => 'عقیم‌سازی و جراحی انتخابی',
+                    'icon' => 'surgical',
+                    'base_price' => 2900000,
+                    'desc' => 'اتاق عمل ایزوله، بیهوشی ایزوفلوران، مانیتورینگ علائم و داروی ریکاوری'
+                ],
+                [
+                    'id' => 'biotech',
+                    'title' => 'آزمایش خون جامع و سونوگرافی',
+                    'icon' => 'biotech',
+                    'base_price' => 1750000,
+                    'desc' => 'شمارش سلولی CBC، پنل بیوشیمی کبد و کلیه، سونوگرافی اندام‌های داخلی'
+                ],
+                [
+                    'id' => 'grooming',
+                    'title' => 'آرایش بهداشتی، شستشو و ناخن',
+                    'icon' => 'content_cut',
+                    'base_price' => 580000,
+                    'desc' => 'کوتاهی مو با متد روز، شستشو با شامپوی درمانی و تخلیه کیسه مقعدی'
+                ]
+            ]
+        ];
     }
 }

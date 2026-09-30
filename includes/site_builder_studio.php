@@ -233,7 +233,48 @@ $publicUrl = "../site.php?slug=" . urlencode($site['slug']);
                 
                 <!-- TAB 1: BLOCKS ACCORDION -->
                 <div id="tab-panel-blocks" class="space-y-3">
+                    <div class="p-2.5 rounded-xl bg-indigo-50/70 border border-indigo-100 flex items-center gap-2 text-[11px] text-indigo-900 mb-1">
+                        <span class="material-symbols-outlined text-indigo-600 text-base">swap_vert</span>
+                        <span>با دکمه‌های فلش کنار هر بلوک، اولویت و ترتیب چیدمان بخش‌ها را به آسانی بالا و پایین جابجا کنید.</span>
+                    </div>
                     
+                    <!-- 0. Emergency Hotline Bar Block -->
+                    <div class="border border-red-200 rounded-2xl overflow-hidden bg-white shadow-sm" id="section-emergency_bar">
+                        <button type="button" onclick="toggleAccordion('emergency_bar')" class="w-full p-4 flex items-center justify-between bg-red-50 hover:bg-red-100 transition-colors text-right">
+                            <div class="flex items-center gap-2.5">
+                                <span class="material-symbols-outlined text-red-600 text-lg">e911_emergency</span>
+                                <span class="text-xs font-bold text-red-950">نوار اورژانس شبانه‌روزی (۲۴/۷)</span>
+                            </div>
+                            <div class="flex items-center gap-1" onclick="event.stopPropagation()">
+                                <button type="button" onclick="moveStudioBlock('section-emergency_bar', 'up')" title="انتقال به بالا" class="w-6 h-6 rounded-lg bg-red-200/70 hover:bg-red-300 text-red-800 flex items-center justify-center transition-colors">
+                                    <span class="material-symbols-outlined text-xs">keyboard_arrow_up</span>
+                                </button>
+                                <button type="button" onclick="moveStudioBlock('section-emergency_bar', 'down')" title="انتقال به پایین" class="w-6 h-6 rounded-lg bg-red-200/70 hover:bg-red-300 text-red-800 flex items-center justify-center transition-colors">
+                                    <span class="material-symbols-outlined text-xs">keyboard_arrow_down</span>
+                                </button>
+                                <span class="material-symbols-outlined text-red-400 text-base transition-transform" id="arrow-emergency_bar">expand_more</span>
+                            </div>
+                        </button>
+                        <div class="p-4 space-y-3 border-t border-red-100 hidden" id="content-emergency_bar">
+                            <label class="flex items-center gap-2 text-xs font-bold text-slate-700">
+                                <input type="checkbox" id="input-emergency-enabled" <?= !empty($layout['emergency_bar']['enabled']) ? 'checked' : '' ?> class="rounded text-red-600">
+                                <span>نمایش نوار قرمز اورژانس در بالای سایت</span>
+                            </label>
+                            <div>
+                                <label class="block text-[11px] font-bold text-slate-700 mb-1">تیتر نوار اورژانس</label>
+                                <input type="text" id="input-emergency-headline" value="<?= htmlspecialchars($layout['emergency_bar']['headline'] ?? 'اورژانس ۲۴ ساعته و مراقبت‌های فوری حیوانات خانگی') ?>" class="w-full text-xs p-2.5 rounded-xl border border-slate-200 focus:border-red-600 focus:outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-bold text-slate-700 mb-1">توضیحات خدمات اورژانسی</label>
+                                <input type="text" id="input-emergency-subheadline" value="<?= htmlspecialchars($layout['emergency_bar']['subheadline'] ?? 'پذیرش فوری تروما، تصادفات و مسمومیت‌ها با امکانات احیای بالینی پیشرفته') ?>" class="w-full text-xs p-2.5 rounded-xl border border-slate-200 focus:border-red-600 focus:outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-bold text-slate-700 mb-1">شماره تماس اضطراری</label>
+                                <input type="text" id="input-emergency-phone" value="<?= htmlspecialchars($layout['emergency_bar']['phone'] ?? '') ?>" class="w-full text-xs p-2.5 rounded-xl border border-slate-200 focus:border-red-600 focus:outline-none font-mono" dir="ltr" placeholder="021-91000000">
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- 1. Hero Block -->
                     <div class="border border-slate-200 rounded-2xl overflow-hidden bg-white shadow-sm" id="section-hero">
                         <button type="button" onclick="toggleAccordion('hero')" class="w-full p-4 flex items-center justify-between bg-slate-50 hover:bg-slate-100 transition-colors text-right">
@@ -241,7 +282,15 @@ $publicUrl = "../site.php?slug=" . urlencode($site['slug']);
                                 <span class="material-symbols-outlined text-slate-600 text-lg">view_carousel</span>
                                 <span class="text-xs font-bold text-slate-800">بنر قهرمان اصلی (Hero)</span>
                             </div>
-                            <span class="material-symbols-outlined text-slate-400 text-base transition-transform" id="arrow-hero">expand_more</span>
+                            <div class="flex items-center gap-1" onclick="event.stopPropagation()">
+                                <button type="button" onclick="moveStudioBlock('section-hero', 'up')" title="انتقال به بالا" class="w-6 h-6 rounded-lg bg-slate-200/70 hover:bg-slate-300 text-slate-600 flex items-center justify-center transition-colors">
+                                    <span class="material-symbols-outlined text-xs">keyboard_arrow_up</span>
+                                </button>
+                                <button type="button" onclick="moveStudioBlock('section-hero', 'down')" title="انتقال به پایین" class="w-6 h-6 rounded-lg bg-slate-200/70 hover:bg-slate-300 text-slate-600 flex items-center justify-center transition-colors">
+                                    <span class="material-symbols-outlined text-xs">keyboard_arrow_down</span>
+                                </button>
+                                <span class="material-symbols-outlined text-slate-400 text-base transition-transform" id="arrow-hero">expand_more</span>
+                            </div>
                         </button>
                         <div class="p-4 space-y-3 border-t border-slate-100 hidden" id="content-hero">
                             <div>
@@ -302,6 +351,45 @@ $publicUrl = "../site.php?slug=" . urlencode($site['slug']);
                         </div>
                     </div>
 
+                    <!-- 1.5. Shift & Duty Hours Block -->
+                    <div class="border border-slate-200 rounded-2xl overflow-hidden bg-white shadow-sm" id="section-duty_hours">
+                        <button type="button" onclick="toggleAccordion('duty_hours')" class="w-full p-4 flex items-center justify-between bg-slate-50 hover:bg-slate-100 transition-colors text-right">
+                            <div class="flex items-center gap-2.5">
+                                <span class="material-symbols-outlined text-slate-600 text-lg">schedule</span>
+                                <span class="text-xs font-bold text-slate-800">ویجت شیفت کاری و پذیرش زنده</span>
+                            </div>
+                            <div class="flex items-center gap-1" onclick="event.stopPropagation()">
+                                <button type="button" onclick="moveStudioBlock('section-duty_hours', 'up')" title="انتقال به بالا" class="w-6 h-6 rounded-lg bg-slate-200/70 hover:bg-slate-300 text-slate-600 flex items-center justify-center transition-colors">
+                                    <span class="material-symbols-outlined text-xs">keyboard_arrow_up</span>
+                                </button>
+                                <button type="button" onclick="moveStudioBlock('section-duty_hours', 'down')" title="انتقال به پایین" class="w-6 h-6 rounded-lg bg-slate-200/70 hover:bg-slate-300 text-slate-600 flex items-center justify-center transition-colors">
+                                    <span class="material-symbols-outlined text-xs">keyboard_arrow_down</span>
+                                </button>
+                                <span class="material-symbols-outlined text-slate-400 text-base transition-transform" id="arrow-duty_hours">expand_more</span>
+                            </div>
+                        </button>
+                        <div class="p-4 space-y-3 border-t border-slate-100 hidden" id="content-duty_hours">
+                            <label class="flex items-center gap-2 text-xs font-bold text-slate-700">
+                                <input type="checkbox" id="input-duty-enabled" <?= !empty($layout['duty_hours']['enabled']) ? 'checked' : '' ?> class="rounded text-emerald-600">
+                                <span>نمایش وضعیت باز/بسته بودن شیفت و روزشمار</span>
+                            </label>
+                            <div class="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block text-[11px] font-bold text-slate-700 mb-1">ساعت شروع شیفت</label>
+                                    <input type="text" id="input-duty-open-time" value="<?= htmlspecialchars($layout['duty_hours']['open_time'] ?? '08:30') ?>" class="w-full text-xs p-2.5 rounded-xl border border-slate-200 focus:border-emerald-600 focus:outline-none font-mono text-center" dir="ltr" placeholder="08:30">
+                                </div>
+                                <div>
+                                    <label class="block text-[11px] font-bold text-slate-700 mb-1">ساعت پایان شیفت</label>
+                                    <input type="text" id="input-duty-close-time" value="<?= htmlspecialchars($layout['duty_hours']['close_time'] ?? '22:30') ?>" class="w-full text-xs p-2.5 rounded-xl border border-slate-200 focus:border-emerald-600 focus:outline-none font-mono text-center" dir="ltr" placeholder="22:30">
+                                </div>
+                            </div>
+                            <label class="flex items-center gap-2 text-xs font-bold text-slate-700">
+                                <input type="checkbox" id="input-duty-24h" <?= !empty($layout['duty_hours']['emergency_open_24h']) ? 'checked' : '' ?> class="rounded text-emerald-600">
+                                <span>پذیرش اورژانس به صورت ۲۴ ساعته فعال است</span>
+                            </label>
+                        </div>
+                    </div>
+
                     <!-- 2. Bento Facilities Block -->
                     <div class="border border-slate-200 rounded-2xl overflow-hidden bg-white shadow-sm" id="section-bento_facilities">
                         <button type="button" onclick="toggleAccordion('bento_facilities')" class="w-full p-4 flex items-center justify-between bg-slate-50 hover:bg-slate-100 transition-colors text-right">
@@ -309,7 +397,15 @@ $publicUrl = "../site.php?slug=" . urlencode($site['slug']);
                                 <span class="material-symbols-outlined text-slate-600 text-lg">grid_view</span>
                                 <span class="text-xs font-bold text-slate-800">بنتو گرید تجهیزات و بخش‌ها</span>
                             </div>
-                            <span class="material-symbols-outlined text-slate-400 text-base transition-transform" id="arrow-bento_facilities">expand_more</span>
+                            <div class="flex items-center gap-1" onclick="event.stopPropagation()">
+                                <button type="button" onclick="moveStudioBlock('section-bento_facilities', 'up')" title="انتقال به بالا" class="w-6 h-6 rounded-lg bg-slate-200/70 hover:bg-slate-300 text-slate-600 flex items-center justify-center transition-colors">
+                                    <span class="material-symbols-outlined text-xs">keyboard_arrow_up</span>
+                                </button>
+                                <button type="button" onclick="moveStudioBlock('section-bento_facilities', 'down')" title="انتقال به پایین" class="w-6 h-6 rounded-lg bg-slate-200/70 hover:bg-slate-300 text-slate-600 flex items-center justify-center transition-colors">
+                                    <span class="material-symbols-outlined text-xs">keyboard_arrow_down</span>
+                                </button>
+                                <span class="material-symbols-outlined text-slate-400 text-base transition-transform" id="arrow-bento_facilities">expand_more</span>
+                            </div>
                         </button>
                         <div class="p-4 space-y-3 border-t border-slate-100 hidden" id="content-bento_facilities">
                             <label class="flex items-center gap-2 text-xs font-bold text-slate-700">
@@ -330,7 +426,15 @@ $publicUrl = "../site.php?slug=" . urlencode($site['slug']);
                                 <span class="material-symbols-outlined text-slate-600 text-lg">videocam</span>
                                 <span class="text-xs font-bold text-slate-800">مشاوره آنلاین و تله‌هلث</span>
                             </div>
-                            <span class="material-symbols-outlined text-slate-400 text-base transition-transform" id="arrow-telehealth">expand_more</span>
+                            <div class="flex items-center gap-1" onclick="event.stopPropagation()">
+                                <button type="button" onclick="moveStudioBlock('section-telehealth', 'up')" title="انتقال به بالا" class="w-6 h-6 rounded-lg bg-slate-200/70 hover:bg-slate-300 text-slate-600 flex items-center justify-center transition-colors">
+                                    <span class="material-symbols-outlined text-xs">keyboard_arrow_up</span>
+                                </button>
+                                <button type="button" onclick="moveStudioBlock('section-telehealth', 'down')" title="انتقال به پایین" class="w-6 h-6 rounded-lg bg-slate-200/70 hover:bg-slate-300 text-slate-600 flex items-center justify-center transition-colors">
+                                    <span class="material-symbols-outlined text-xs">keyboard_arrow_down</span>
+                                </button>
+                                <span class="material-symbols-outlined text-slate-400 text-base transition-transform" id="arrow-telehealth">expand_more</span>
+                            </div>
                         </button>
                         <div class="p-4 space-y-3 border-t border-slate-100 hidden" id="content-telehealth">
                             <label class="flex items-center gap-2 text-xs font-bold text-slate-700">
@@ -347,7 +451,15 @@ $publicUrl = "../site.php?slug=" . urlencode($site['slug']);
                                 <span class="material-symbols-outlined text-slate-600 text-lg">autorenew</span>
                                 <span class="text-xs font-bold text-slate-800">اشتراک دوره‌ای اتوشیپ (Autoship)</span>
                             </div>
-                            <span class="material-symbols-outlined text-slate-400 text-base transition-transform" id="arrow-autoship">expand_more</span>
+                            <div class="flex items-center gap-1" onclick="event.stopPropagation()">
+                                <button type="button" onclick="moveStudioBlock('section-autoship', 'up')" title="انتقال به بالا" class="w-6 h-6 rounded-lg bg-slate-200/70 hover:bg-slate-300 text-slate-600 flex items-center justify-center transition-colors">
+                                    <span class="material-symbols-outlined text-xs">keyboard_arrow_up</span>
+                                </button>
+                                <button type="button" onclick="moveStudioBlock('section-autoship', 'down')" title="انتقال به پایین" class="w-6 h-6 rounded-lg bg-slate-200/70 hover:bg-slate-300 text-slate-600 flex items-center justify-center transition-colors">
+                                    <span class="material-symbols-outlined text-xs">keyboard_arrow_down</span>
+                                </button>
+                                <span class="material-symbols-outlined text-slate-400 text-base transition-transform" id="arrow-autoship">expand_more</span>
+                            </div>
                         </button>
                         <div class="p-4 space-y-3 border-t border-slate-100 hidden" id="content-autoship">
                             <label class="flex items-center gap-2 text-xs font-bold text-slate-700">
@@ -364,7 +476,15 @@ $publicUrl = "../site.php?slug=" . urlencode($site['slug']);
                                 <span class="material-symbols-outlined text-slate-600 text-lg">badge</span>
                                 <span class="text-xs font-bold text-slate-800">درباره ما و سوابق بالینی</span>
                             </div>
-                            <span class="material-symbols-outlined text-slate-400 text-base transition-transform" id="arrow-about">expand_more</span>
+                            <div class="flex items-center gap-1" onclick="event.stopPropagation()">
+                                <button type="button" onclick="moveStudioBlock('section-about', 'up')" title="انتقال به بالا" class="w-6 h-6 rounded-lg bg-slate-200/70 hover:bg-slate-300 text-slate-600 flex items-center justify-center transition-colors">
+                                    <span class="material-symbols-outlined text-xs">keyboard_arrow_up</span>
+                                </button>
+                                <button type="button" onclick="moveStudioBlock('section-about', 'down')" title="انتقال به پایین" class="w-6 h-6 rounded-lg bg-slate-200/70 hover:bg-slate-300 text-slate-600 flex items-center justify-center transition-colors">
+                                    <span class="material-symbols-outlined text-xs">keyboard_arrow_down</span>
+                                </button>
+                                <span class="material-symbols-outlined text-slate-400 text-base transition-transform" id="arrow-about">expand_more</span>
+                            </div>
                         </button>
                         <div class="p-4 space-y-3 border-t border-slate-100 hidden" id="content-about">
                             <div>
@@ -382,6 +502,39 @@ $publicUrl = "../site.php?slug=" . urlencode($site['slug']);
                         </div>
                     </div>
 
+                    <!-- 5.5. Cost Calculator Block -->
+                    <div class="border border-amber-200 rounded-2xl overflow-hidden bg-white shadow-sm" id="section-cost_calculator">
+                        <button type="button" onclick="toggleAccordion('cost_calculator')" class="w-full p-4 flex items-center justify-between bg-amber-50/70 hover:bg-amber-100/70 transition-colors text-right">
+                            <div class="flex items-center gap-2.5">
+                                <span class="material-symbols-outlined text-amber-600 text-lg">calculate</span>
+                                <span class="text-xs font-bold text-amber-950">محاسبه‌گر هوشمند تعرفه خدمات</span>
+                            </div>
+                            <div class="flex items-center gap-1" onclick="event.stopPropagation()">
+                                <button type="button" onclick="moveStudioBlock('section-cost_calculator', 'up')" title="انتقال به بالا" class="w-6 h-6 rounded-lg bg-amber-200/70 hover:bg-amber-300 text-amber-800 flex items-center justify-center transition-colors">
+                                    <span class="material-symbols-outlined text-xs">keyboard_arrow_up</span>
+                                </button>
+                                <button type="button" onclick="moveStudioBlock('section-cost_calculator', 'down')" title="انتقال به پایین" class="w-6 h-6 rounded-lg bg-amber-200/70 hover:bg-amber-300 text-amber-800 flex items-center justify-center transition-colors">
+                                    <span class="material-symbols-outlined text-xs">keyboard_arrow_down</span>
+                                </button>
+                                <span class="material-symbols-outlined text-amber-500 text-base transition-transform" id="arrow-cost_calculator">expand_more</span>
+                            </div>
+                        </button>
+                        <div class="p-4 space-y-3 border-t border-amber-100 hidden" id="content-cost_calculator">
+                            <label class="flex items-center gap-2 text-xs font-bold text-slate-700">
+                                <input type="checkbox" id="input-calc-enabled" <?= !empty($layout['cost_calculator']['enabled']) ? 'checked' : '' ?> class="rounded text-amber-600">
+                                <span>فعال‌سازی ویجت تخمین آنلاین تعرفه و جراحی</span>
+                            </label>
+                            <div>
+                                <label class="block text-[11px] font-bold text-slate-700 mb-1">عنوان بخش محاسبه‌گر</label>
+                                <input type="text" id="input-calc-heading" value="<?= htmlspecialchars($layout['cost_calculator']['heading'] ?? 'تخمین هوشمند تعرفه خدمات بالینی و جراحی') ?>" class="w-full text-xs p-2.5 rounded-xl border border-slate-200 focus:border-amber-600 focus:outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-bold text-slate-700 mb-1">درصد تخفیف رزرو آنلاین آسنا</label>
+                                <input type="number" id="input-calc-discount" min="0" max="50" value="<?= htmlspecialchars((string)($layout['cost_calculator']['discount_percent'] ?? 10)) ?>" class="w-full text-xs p-2.5 rounded-xl border border-slate-200 focus:border-amber-600 focus:outline-none font-mono text-center" dir="ltr">
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- 6. Booking Widget Block -->
                     <div class="border border-slate-200 rounded-2xl overflow-hidden bg-white shadow-sm" id="section-booking">
                         <button type="button" onclick="toggleAccordion('booking')" class="w-full p-4 flex items-center justify-between bg-slate-50 hover:bg-slate-100 transition-colors text-right">
@@ -389,7 +542,15 @@ $publicUrl = "../site.php?slug=" . urlencode($site['slug']);
                                 <span class="material-symbols-outlined text-slate-600 text-lg">calendar_month</span>
                                 <span class="text-xs font-bold text-slate-800">ویجت رزرو آنلاین نوبت</span>
                             </div>
-                            <span class="material-symbols-outlined text-slate-400 text-base transition-transform" id="arrow-booking">expand_more</span>
+                            <div class="flex items-center gap-1" onclick="event.stopPropagation()">
+                                <button type="button" onclick="moveStudioBlock('section-booking', 'up')" title="انتقال به بالا" class="w-6 h-6 rounded-lg bg-slate-200/70 hover:bg-slate-300 text-slate-600 flex items-center justify-center transition-colors">
+                                    <span class="material-symbols-outlined text-xs">keyboard_arrow_up</span>
+                                </button>
+                                <button type="button" onclick="moveStudioBlock('section-booking', 'down')" title="انتقال به پایین" class="w-6 h-6 rounded-lg bg-slate-200/70 hover:bg-slate-300 text-slate-600 flex items-center justify-center transition-colors">
+                                    <span class="material-symbols-outlined text-xs">keyboard_arrow_down</span>
+                                </button>
+                                <span class="material-symbols-outlined text-slate-400 text-base transition-transform" id="arrow-booking">expand_more</span>
+                            </div>
                         </button>
                         <div class="p-4 space-y-3 border-t border-slate-100 hidden" id="content-booking">
                             <label class="flex items-center gap-2 text-xs font-bold text-slate-700">
@@ -410,7 +571,15 @@ $publicUrl = "../site.php?slug=" . urlencode($site['slug']);
                                 <span class="material-symbols-outlined text-slate-600 text-lg">storefront</span>
                                 <span class="text-xs font-bold text-slate-800">ویترین کالاها و داروهای انبار</span>
                             </div>
-                            <span class="material-symbols-outlined text-slate-400 text-base transition-transform" id="arrow-storefront">expand_more</span>
+                            <div class="flex items-center gap-1" onclick="event.stopPropagation()">
+                                <button type="button" onclick="moveStudioBlock('section-storefront', 'up')" title="انتقال به بالا" class="w-6 h-6 rounded-lg bg-slate-200/70 hover:bg-slate-300 text-slate-600 flex items-center justify-center transition-colors">
+                                    <span class="material-symbols-outlined text-xs">keyboard_arrow_up</span>
+                                </button>
+                                <button type="button" onclick="moveStudioBlock('section-storefront', 'down')" title="انتقال به پایین" class="w-6 h-6 rounded-lg bg-slate-200/70 hover:bg-slate-300 text-slate-600 flex items-center justify-center transition-colors">
+                                    <span class="material-symbols-outlined text-xs">keyboard_arrow_down</span>
+                                </button>
+                                <span class="material-symbols-outlined text-slate-400 text-base transition-transform" id="arrow-storefront">expand_more</span>
+                            </div>
                         </button>
                         <div class="p-4 space-y-3 border-t border-slate-100 hidden" id="content-storefront">
                             <label class="flex items-center gap-2 text-xs font-bold text-slate-700">
@@ -435,7 +604,15 @@ $publicUrl = "../site.php?slug=" . urlencode($site['slug']);
                                 <span class="material-symbols-outlined text-slate-600 text-lg">medical_information</span>
                                 <span class="text-xs font-bold text-slate-800">کادر پزشکان و متخصصان مقیم</span>
                             </div>
-                            <span class="material-symbols-outlined text-slate-400 text-base transition-transform" id="arrow-doctors_roster">expand_more</span>
+                            <div class="flex items-center gap-1" onclick="event.stopPropagation()">
+                                <button type="button" onclick="moveStudioBlock('section-doctors_roster', 'up')" title="انتقال به بالا" class="w-6 h-6 rounded-lg bg-slate-200/70 hover:bg-slate-300 text-slate-600 flex items-center justify-center transition-colors">
+                                    <span class="material-symbols-outlined text-xs">keyboard_arrow_up</span>
+                                </button>
+                                <button type="button" onclick="moveStudioBlock('section-doctors_roster', 'down')" title="انتقال به پایین" class="w-6 h-6 rounded-lg bg-slate-200/70 hover:bg-slate-300 text-slate-600 flex items-center justify-center transition-colors">
+                                    <span class="material-symbols-outlined text-xs">keyboard_arrow_down</span>
+                                </button>
+                                <span class="material-symbols-outlined text-slate-400 text-base transition-transform" id="arrow-doctors_roster">expand_more</span>
+                            </div>
                         </button>
                         <div class="p-4 space-y-3 border-t border-slate-100 hidden" id="content-doctors_roster">
                             <label class="flex items-center gap-2 text-xs font-bold text-slate-700">
@@ -460,7 +637,15 @@ $publicUrl = "../site.php?slug=" . urlencode($site['slug']);
                                 <span class="material-symbols-outlined text-slate-600 text-lg">menu_book</span>
                                 <span class="text-xs font-bold text-slate-800">دانشنامه سلامت و مقالات علمی</span>
                             </div>
-                            <span class="material-symbols-outlined text-slate-400 text-base transition-transform" id="arrow-articles">expand_more</span>
+                            <div class="flex items-center gap-1" onclick="event.stopPropagation()">
+                                <button type="button" onclick="moveStudioBlock('section-articles', 'up')" title="انتقال به بالا" class="w-6 h-6 rounded-lg bg-slate-200/70 hover:bg-slate-300 text-slate-600 flex items-center justify-center transition-colors">
+                                    <span class="material-symbols-outlined text-xs">keyboard_arrow_up</span>
+                                </button>
+                                <button type="button" onclick="moveStudioBlock('section-articles', 'down')" title="انتقال به پایین" class="w-6 h-6 rounded-lg bg-slate-200/70 hover:bg-slate-300 text-slate-600 flex items-center justify-center transition-colors">
+                                    <span class="material-symbols-outlined text-xs">keyboard_arrow_down</span>
+                                </button>
+                                <span class="material-symbols-outlined text-slate-400 text-base transition-transform" id="arrow-articles">expand_more</span>
+                            </div>
                         </button>
                         <div class="p-4 space-y-3 border-t border-slate-100 hidden" id="content-articles">
                             <label class="flex items-center gap-2 text-xs font-bold text-slate-700">
@@ -481,7 +666,15 @@ $publicUrl = "../site.php?slug=" . urlencode($site['slug']);
                                 <span class="material-symbols-outlined text-slate-600 text-lg">loyalty</span>
                                 <span class="text-xs font-bold text-slate-800">باشگاه مشتریان و پاداش وفاداری</span>
                             </div>
-                            <span class="material-symbols-outlined text-slate-400 text-base transition-transform" id="arrow-loyalty_club">expand_more</span>
+                            <div class="flex items-center gap-1" onclick="event.stopPropagation()">
+                                <button type="button" onclick="moveStudioBlock('section-loyalty_club', 'up')" title="انتقال به بالا" class="w-6 h-6 rounded-lg bg-slate-200/70 hover:bg-slate-300 text-slate-600 flex items-center justify-center transition-colors">
+                                    <span class="material-symbols-outlined text-xs">keyboard_arrow_up</span>
+                                </button>
+                                <button type="button" onclick="moveStudioBlock('section-loyalty_club', 'down')" title="انتقال به پایین" class="w-6 h-6 rounded-lg bg-slate-200/70 hover:bg-slate-300 text-slate-600 flex items-center justify-center transition-colors">
+                                    <span class="material-symbols-outlined text-xs">keyboard_arrow_down</span>
+                                </button>
+                                <span class="material-symbols-outlined text-slate-400 text-base transition-transform" id="arrow-loyalty_club">expand_more</span>
+                            </div>
                         </button>
                         <div class="p-4 space-y-3 border-t border-slate-100 hidden" id="content-loyalty_club">
                             <label class="flex items-center gap-2 text-xs font-bold text-slate-700">
@@ -502,7 +695,15 @@ $publicUrl = "../site.php?slug=" . urlencode($site['slug']);
                                 <span class="material-symbols-outlined text-slate-600 text-lg">rate_review</span>
                                 <span class="text-xs font-bold text-slate-800">نظرات و رضایت‌سنجی مراجعین</span>
                             </div>
-                            <span class="material-symbols-outlined text-slate-400 text-base transition-transform" id="arrow-reviews">expand_more</span>
+                            <div class="flex items-center gap-1" onclick="event.stopPropagation()">
+                                <button type="button" onclick="moveStudioBlock('section-reviews', 'up')" title="انتقال به بالا" class="w-6 h-6 rounded-lg bg-slate-200/70 hover:bg-slate-300 text-slate-600 flex items-center justify-center transition-colors">
+                                    <span class="material-symbols-outlined text-xs">keyboard_arrow_up</span>
+                                </button>
+                                <button type="button" onclick="moveStudioBlock('section-reviews', 'down')" title="انتقال به پایین" class="w-6 h-6 rounded-lg bg-slate-200/70 hover:bg-slate-300 text-slate-600 flex items-center justify-center transition-colors">
+                                    <span class="material-symbols-outlined text-xs">keyboard_arrow_down</span>
+                                </button>
+                                <span class="material-symbols-outlined text-slate-400 text-base transition-transform" id="arrow-reviews">expand_more</span>
+                            </div>
                         </button>
                         <div class="p-4 space-y-3 border-t border-slate-100 hidden" id="content-reviews">
                             <label class="flex items-center gap-2 text-xs font-bold text-slate-700">
@@ -516,6 +717,35 @@ $publicUrl = "../site.php?slug=" . urlencode($site['slug']);
                         </div>
                     </div>
 
+                    <!-- 7.5. FAQ Accordion Block -->
+                    <div class="border border-slate-200 rounded-2xl overflow-hidden bg-white shadow-sm" id="section-faq">
+                        <button type="button" onclick="toggleAccordion('faq')" class="w-full p-4 flex items-center justify-between bg-slate-50 hover:bg-slate-100 transition-colors text-right">
+                            <div class="flex items-center gap-2.5">
+                                <span class="material-symbols-outlined text-slate-600 text-lg">quiz</span>
+                                <span class="text-xs font-bold text-slate-800">پرسش‌های متداول (FAQ)</span>
+                            </div>
+                            <div class="flex items-center gap-1" onclick="event.stopPropagation()">
+                                <button type="button" onclick="moveStudioBlock('section-faq', 'up')" title="انتقال به بالا" class="w-6 h-6 rounded-lg bg-slate-200/70 hover:bg-slate-300 text-slate-600 flex items-center justify-center transition-colors">
+                                    <span class="material-symbols-outlined text-xs">keyboard_arrow_up</span>
+                                </button>
+                                <button type="button" onclick="moveStudioBlock('section-faq', 'down')" title="انتقال به پایین" class="w-6 h-6 rounded-lg bg-slate-200/70 hover:bg-slate-300 text-slate-600 flex items-center justify-center transition-colors">
+                                    <span class="material-symbols-outlined text-xs">keyboard_arrow_down</span>
+                                </button>
+                                <span class="material-symbols-outlined text-slate-400 text-base transition-transform" id="arrow-faq">expand_more</span>
+                            </div>
+                        </button>
+                        <div class="p-4 space-y-3 border-t border-slate-100 hidden" id="content-faq">
+                            <label class="flex items-center gap-2 text-xs font-bold text-slate-700">
+                                <input type="checkbox" id="input-faq-enabled" <?= !empty($layout['faq']['enabled']) ? 'checked' : '' ?> class="rounded text-emerald-600">
+                                <span>نمایش بخش پرسش‌های متداول و راهنمای مراجعین</span>
+                            </label>
+                            <div>
+                                <label class="block text-[11px] font-bold text-slate-700 mb-1">عنوان بخش پرسش‌ها</label>
+                                <input type="text" id="input-faq-heading" value="<?= htmlspecialchars($layout['faq']['heading'] ?? 'پرسش‌های متداول و راهنمای مراجعین') ?>" class="w-full text-xs p-2.5 rounded-xl border border-slate-200 focus:border-emerald-600 focus:outline-none">
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- 8. Contact & Hours Block -->
                     <div class="border border-slate-200 rounded-2xl overflow-hidden bg-white shadow-sm" id="section-contact">
                         <button type="button" onclick="toggleAccordion('contact')" class="w-full p-4 flex items-center justify-between bg-slate-50 hover:bg-slate-100 transition-colors text-right">
@@ -523,7 +753,15 @@ $publicUrl = "../site.php?slug=" . urlencode($site['slug']);
                                 <span class="material-symbols-outlined text-slate-600 text-lg">pin_drop</span>
                                 <span class="text-xs font-bold text-slate-800">تماس، ساعات کاری و آدرس</span>
                             </div>
-                            <span class="material-symbols-outlined text-slate-400 text-base transition-transform" id="arrow-contact">expand_more</span>
+                            <div class="flex items-center gap-1" onclick="event.stopPropagation()">
+                                <button type="button" onclick="moveStudioBlock('section-contact', 'up')" title="انتقال به بالا" class="w-6 h-6 rounded-lg bg-slate-200/70 hover:bg-slate-300 text-slate-600 flex items-center justify-center transition-colors">
+                                    <span class="material-symbols-outlined text-xs">keyboard_arrow_up</span>
+                                </button>
+                                <button type="button" onclick="moveStudioBlock('section-contact', 'down')" title="انتقال به پایین" class="w-6 h-6 rounded-lg bg-slate-200/70 hover:bg-slate-300 text-slate-600 flex items-center justify-center transition-colors">
+                                    <span class="material-symbols-outlined text-xs">keyboard_arrow_down</span>
+                                </button>
+                                <span class="material-symbols-outlined text-slate-400 text-base transition-transform" id="arrow-contact">expand_more</span>
+                            </div>
                         </button>
                         <div class="p-4 space-y-3 border-t border-slate-100 hidden" id="content-contact">
                             <div>
@@ -556,8 +794,8 @@ $publicUrl = "../site.php?slug=" . urlencode($site['slug']);
                                 <input type="radio" name="theme_palette" value="emerald" <?= $site['theme_palette'] === 'emerald' ? 'checked' : '' ?> class="hidden" onchange="updatePalettePreview('emerald')">
                                 <span class="w-5 h-5 rounded-full bg-emerald-600 shrink-0"></span>
                                 <div>
-                                    <div class="text-xs font-bold text-slate-800">سبز درمانی</div>
-                                    <div class="text-[10px] text-slate-400">Emerald Medical</div>
+                                    <div class="text-xs font-bold text-slate-800">کلینیک مینیمال لوکس</div>
+                                    <div class="text-[10px] text-slate-400">Luxury Minimal Clinic</div>
                                 </div>
                             </label>
 
@@ -565,8 +803,8 @@ $publicUrl = "../site.php?slug=" . urlencode($site['slug']);
                                 <input type="radio" name="theme_palette" value="navy" <?= $site['theme_palette'] === 'navy' ? 'checked' : '' ?> class="hidden" onchange="updatePalettePreview('navy')">
                                 <span class="w-5 h-5 rounded-full bg-[#001a48] shrink-0"></span>
                                 <div>
-                                    <div class="text-xs font-bold text-slate-800">سرمه‌ای آسنا</div>
-                                    <div class="text-[10px] text-slate-400">Corporate Navy</div>
+                                    <div class="text-xs font-bold text-slate-800">بیمارستانی سرمه‌ای</div>
+                                    <div class="text-[10px] text-slate-400">Hospital Corporate Navy</div>
                                 </div>
                             </label>
 
@@ -574,8 +812,8 @@ $publicUrl = "../site.php?slug=" . urlencode($site['slug']);
                                 <input type="radio" name="theme_palette" value="orange" <?= $site['theme_palette'] === 'orange' ? 'checked' : '' ?> class="hidden" onchange="updatePalettePreview('orange')">
                                 <span class="w-5 h-5 rounded-full bg-orange-500 shrink-0"></span>
                                 <div>
-                                    <div class="text-xs font-bold text-slate-800">نارنجی پت‌شاپ</div>
-                                    <div class="text-[10px] text-slate-400">Dynamic Orange</div>
+                                    <div class="text-xs font-bold text-slate-800">همیار پت پویا</div>
+                                    <div class="text-[10px] text-slate-400">Vibrant Pet Companion</div>
                                 </div>
                             </label>
 
@@ -583,8 +821,8 @@ $publicUrl = "../site.php?slug=" . urlencode($site['slug']);
                                 <input type="radio" name="theme_palette" value="purple" <?= $site['theme_palette'] === 'purple' ? 'checked' : '' ?> class="hidden" onchange="updatePalettePreview('purple')">
                                 <span class="w-5 h-5 rounded-full bg-purple-600 shrink-0"></span>
                                 <div>
-                                    <div class="text-xs font-bold text-slate-800">بنفش دارویی</div>
-                                    <div class="text-[10px] text-slate-400">Rx Pharmacy</div>
+                                    <div class="text-xs font-bold text-slate-800">مخمل بنفش اشرافی</div>
+                                    <div class="text-[10px] text-slate-400">Midnight Velvet Luxury</div>
                                 </div>
                             </label>
                         </div>
@@ -1074,8 +1312,20 @@ async function saveSiteConfig() {
     saveIcon.classList.add('animate-spin');
     saveText.innerText = 'در حال ذخیره و انتشار...';
 
+    // Extract blocks order from the current DOM order of sections
+    const blocksOrder = Array.from(document.querySelectorAll('#tab-panel-blocks > div[id^="section-"]'))
+        .map(el => el.id.replace('section-', ''))
+        .filter(Boolean);
+
     // Construct Layout Payload
     const layout = {
+        blocks_order: blocksOrder,
+        emergency_bar: {
+            enabled: document.getElementById('input-emergency-enabled')?.checked || false,
+            headline: document.getElementById('input-emergency-headline')?.value || '',
+            subheadline: document.getElementById('input-emergency-subheadline')?.value || '',
+            phone: document.getElementById('input-emergency-phone')?.value || ''
+        },
         header: {
             show_phone: true,
             phone: document.getElementById('input-contact-phone')?.value || ''
@@ -1088,12 +1338,23 @@ async function saveSiteConfig() {
             cta_primary_text: document.getElementById('input-hero-cta')?.value || '',
             image: document.getElementById('input-hero-image')?.value || ''
         },
+        duty_hours: {
+            enabled: document.getElementById('input-duty-enabled')?.checked || false,
+            open_time: document.getElementById('input-duty-open-time')?.value || '08:30',
+            close_time: document.getElementById('input-duty-close-time')?.value || '22:30',
+            emergency_open_24h: document.getElementById('input-duty-24h')?.checked || false
+        },
         stats_strip: {
             enabled: true
         },
         bento_facilities: {
             enabled: document.getElementById('input-bento-enabled')?.checked || false,
             heading: document.getElementById('input-bento-heading')?.value || 'تجهیزات مدرن و ظرفیت‌های بالینی مرکز'
+        },
+        cost_calculator: {
+            enabled: document.getElementById('input-calc-enabled')?.checked || false,
+            heading: document.getElementById('input-calc-heading')?.value || 'تخمین هوشمند تعرفه خدمات بالینی و جراحی',
+            discount_percent: parseInt(document.getElementById('input-calc-discount')?.value || '10')
         },
         telehealth_launcher: {
             enabled: document.getElementById('input-telehealth-enabled')?.checked || false
@@ -1131,6 +1392,10 @@ async function saveSiteConfig() {
         reviews: {
             enabled: document.getElementById('input-reviews-enabled')?.checked || false,
             heading: document.getElementById('input-reviews-heading')?.value || 'نظرات و بازخورد مراجعین تاییدشده'
+        },
+        faq: {
+            enabled: document.getElementById('input-faq-enabled')?.checked || false,
+            heading: document.getElementById('input-faq-heading')?.value || 'پرسش‌های متداول و راهنمای مراجعین'
         },
         contact: {
             enabled: true,
@@ -1200,8 +1465,17 @@ async function applySelectedTierPreset() {
 
         if (data.success && data.layout && data.layout.blocks) {
             const b = data.layout.blocks;
+            if (document.getElementById('input-emergency-enabled') && b.emergency_bar !== undefined) {
+                document.getElementById('input-emergency-enabled').checked = !!b.emergency_bar.enabled;
+            }
+            if (document.getElementById('input-duty-enabled') && b.duty_hours !== undefined) {
+                document.getElementById('input-duty-enabled').checked = !!b.duty_hours.enabled;
+            }
             if (document.getElementById('input-bento-enabled') && b.bento_facilities !== undefined) {
                 document.getElementById('input-bento-enabled').checked = !!b.bento_facilities.enabled;
+            }
+            if (document.getElementById('input-calc-enabled') && b.cost_calculator !== undefined) {
+                document.getElementById('input-calc-enabled').checked = !!b.cost_calculator.enabled;
             }
             if (document.getElementById('input-telehealth-enabled') && b.telehealth_launcher !== undefined) {
                 document.getElementById('input-telehealth-enabled').checked = !!b.telehealth_launcher.enabled;
@@ -1221,6 +1495,9 @@ async function applySelectedTierPreset() {
             if (document.getElementById('input-reviews-enabled') && b.reviews !== undefined) {
                 document.getElementById('input-reviews-enabled').checked = !!b.reviews.enabled;
             }
+            if (document.getElementById('input-faq-enabled') && b.faq !== undefined) {
+                document.getElementById('input-faq-enabled').checked = !!b.faq.enabled;
+            }
             if (document.getElementById('input-storefront-limit') && b.storefront !== undefined) {
                 document.getElementById('input-storefront-limit').value = b.storefront.item_limit || 6;
             }
@@ -1234,6 +1511,20 @@ async function applySelectedTierPreset() {
         btn.disabled = false;
         btn.innerHTML = originalText;
     }
+}
+
+function moveStudioBlock(sectionId, direction) {
+    const el = document.getElementById(sectionId);
+    if (!el) return;
+    if (direction === 'up' && el.previousElementSibling) {
+        el.parentNode.insertBefore(el, el.previousElementSibling);
+    } else if (direction === 'down' && el.nextElementSibling) {
+        el.parentNode.insertBefore(el.nextElementSibling, el);
+    }
+    el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    el.classList.add('ring-2', 'ring-emerald-500');
+    setTimeout(() => el.classList.remove('ring-2', 'ring-emerald-500'), 1000);
+    showToast('✓ ترتیب بلوک جابجا شد. برای اعمال روی پیش‌نمایش، «ذخیره و انتشار» را بزنید.', 'success');
 }
 
 function showToast(msg, type = 'success') {

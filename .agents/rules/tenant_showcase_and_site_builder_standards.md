@@ -42,3 +42,18 @@ Every tenant website must reflect one of the 5 official ASENA capability tiers d
 
 - All transactions must remain strictly bound to ASENA's centralized gateway (`asena.company`) and escrow engine.
 - Tenants cannot inject independent bank gateways; ASENA acts as the licensed brokerage platform handling 10% VAT and settling 85% net earnings into the provider's wallet.
+
+---
+
+## 5. Bespoke Luxury Feel & Anti-Generic Mandates
+
+- **Layered Visual Depth & Ambient Lighting**: Never render tenant websites as flat gray-and-white card stacks. Every section must have clear visual depth, subtle mesh radial lighting, and glassmorphic micro-borders.
+- **Layered Floating Badges over Imagery**: Every clinical hero section must feature layered floating trust badges (e.g. `⭐️ ۴.۹ از ۱۸۰ نظر`, `🩺 بورد تخصصی جراحی و داخلی`, `⚡ پاسخگویی فوری در ۵ دقیقه`).
+- **Interactive High-Intent Conversion Tools**:
+  1. **Service Cost Estimator / Price Calculator Widget**: Pet parents can select pet type (Dog, Cat, Bird, Exotic) and service (General checkup, comprehensive vaccination, dental cleaning, surgery, ultrasound) to receive an instant transparent fee estimate and 1-click discount booking.
+  2. **Dynamic Open/Closed Duty Widget**: Automatically computes whether the clinic is currently open, remaining minutes until shift closure, and the next available booking slot.
+  3. **24/7 Red Emergency Care Banner**: Prominent crimson alert banner with 1-tap dialer for poisonings, vehicular accidents, and urgent clinical triage.
+  4. **Structured FAQ Accordion**: Addresses top pet owner questions (fasting rules, pet passport requirements, home visits, medication cold-chain shipping).
+  5. **1-Tap Navigation Hub**: Direct modal routing to Neshan, Balad, Waze, and Google Maps, paired with instant chat buttons for WhatsApp, Telegram, Etaa, and Bale.
+- **Studio Drag/Arrow Block Reordering & Visibility Toggles**: The site builder studio must empower users to reorder any section via Up/Down buttons and toggle section visibility with single-click switches.
+
