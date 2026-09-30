@@ -12,7 +12,9 @@
 
 $tenantService = App::tenantSite();
 $site = $tenantService->getOrCreateDefault($builderTenantType, $builderTenantId, $builderTenantInfo ?? []);
-$layout = $site['layout']['blocks'] ?? [];
+$layout = !empty($site['layout']['blocks']) && is_array($site['layout']['blocks']) 
+    ? $site['layout']['blocks'] 
+    : (!empty($site['layout']) && is_array($site['layout']) ? $site['layout'] : []);
 $slug = htmlspecialchars($site['slug']);
 $siteTier = $site['site_tier'] ?? 'enterprise';
 $previewUrl = "../site.php?slug=" . urlencode($site['slug']) . "&preview=1";
@@ -1408,6 +1410,9 @@ async function saveSiteConfig() {
             enabled: true
         }
     };
+
+    // Attach blocks wrapper for complete backwards and forwards compatibility
+    layout.blocks = Object.assign({}, layout);
 
     const paletteEl = document.querySelector('input[name="theme_palette"]:checked');
     const selectedPalette = paletteEl ? paletteEl.value : 'emerald';

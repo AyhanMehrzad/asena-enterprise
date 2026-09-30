@@ -198,7 +198,7 @@ $booked_slots_json = json_encode($booked_slots);
 
                 <?php if ($selectedOrg): ?>
                 <!-- Direct Organization Booking Banner -->
-                <div id="org-direct-banner" class="bg-gradient-to-r from-sky-900 via-indigo-950 to-slate-900 text-white p-5 rounded-2xl shadow-lg border border-sky-400/30 mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div id="org-direct-banner" class="bg-gradient-to-r from-sky-900 via-indigo-950 to-slate-900 text-white p-5 rounded-2xl shadow-lg border border-sky-400/30 mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4" style="background: linear-gradient(135deg, #0c4a6e 0%, #1e1b4b 50%, #0f172a 100%) !important; color: #ffffff !important;">
                     <div class="flex items-center gap-3.5">
                         <div class="w-12 h-12 rounded-2xl bg-sky-500/20 text-sky-300 flex items-center justify-center border border-sky-400/30 shrink-0">
                             <span class="material-symbols-outlined text-2xl">local_hospital</span>

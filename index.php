@@ -710,9 +710,9 @@ try {
             </div>
 
             <div class="flex flex-wrap items-center gap-3 w-full lg:w-auto justify-end">
-                <a href="organizations" class="flex-1 sm:flex-initial px-5 py-3.5 rounded-2xl bg-white hover:bg-slate-100 text-rose-950 font-black text-xs transition shadow-lg hover:shadow-xl flex items-center justify-center gap-2 cursor-pointer whitespace-nowrap active:translate-y-0.5">
-                    <span class="material-symbols-outlined text-base text-rose-700">local_hospital</span>
-                    <span>مراکز اورژانس شبانه‌روزی</span>
+                <a href="organizations" class="flex-1 sm:flex-initial px-5 py-3.5 rounded-2xl bg-white hover:bg-slate-100 text-rose-950 font-black text-xs transition shadow-lg hover:shadow-xl flex items-center justify-center gap-2 cursor-pointer whitespace-nowrap active:translate-y-0.5" style="background-color: #ffffff !important; color: #4c0519 !important;">
+                    <span class="material-symbols-outlined text-base text-rose-700" style="color: #be123c !important;">local_hospital</span>
+                    <span style="color: #4c0519 !important;">مراکز اورژانس شبانه‌روزی</span>
                 </a>
                 <a href="tel:09146676978" class="flex-1 sm:flex-initial px-5 py-3.5 rounded-2xl bg-rose-500 hover:bg-rose-400 text-white font-black text-xs transition shadow-[0_6px_20px_rgba(244,63,94,0.4)] hover:shadow-[0_8px_25px_rgba(244,63,94,0.6)] border border-rose-300/40 flex items-center justify-center gap-2 cursor-pointer whitespace-nowrap active:translate-y-0.5">
                     <span class="material-symbols-outlined text-base animate-bounce">call</span>

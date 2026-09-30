@@ -203,3 +203,100 @@ body {
     text-align: start;
 }
 
+/* ==========================================================================
+   ASENA Global Color Contrast & Gradient Fallbacks
+   Ensures arbitrary Tailwind classes, -950 shades, aspect ratios, and dark gradients
+   render with perfect contrast across all browsers and static CSS builds.
+   ========================================================================== */
+
+/* 1. Aspect Ratio Fallbacks */
+.aspect-\[4\/3\] { aspect-ratio: 4 / 3 !important; }
+.aspect-\[16\/9\] { aspect-ratio: 16 / 9 !important; }
+.aspect-square { aspect-ratio: 1 / 1 !important; }
+.aspect-video { aspect-ratio: 16 / 9 !important; }
+
+/* 2. Deep -950 Shade Text Colors (Prevents white-on-white text in light pill buttons) */
+.text-orange-950 { color: #431407 !important; }
+.text-amber-950 { color: #451a03 !important; }
+.text-rose-950 { color: #4c0519 !important; }
+.text-slate-950 { color: #020617 !important; }
+.text-emerald-950 { color: #022c22 !important; }
+.text-indigo-950 { color: #1e1b4b !important; }
+.text-purple-950 { color: #3b0764 !important; }
+.text-blue-950 { color: #172554 !important; }
+.text-sky-950 { color: #082f49 !important; }
+.text-teal-950 { color: #042f2e !important; }
+
+/* 3. Deep -950 Shade Backgrounds */
+.bg-orange-950 { background-color: #431407 !important; }
+.bg-amber-950 { background-color: #451a03 !important; }
+.bg-rose-950 { background-color: #4c0519 !important; }
+.bg-slate-950 { background-color: #020617 !important; }
+.bg-emerald-950 { background-color: #022c22 !important; }
+.bg-indigo-950 { background-color: #1e1b4b !important; }
+.bg-purple-950 { background-color: #3b0764 !important; }
+.bg-blue-950 { background-color: #172554 !important; }
+.bg-sky-950 { background-color: #082f49 !important; }
+
+/* 4. Deep -950 Shade Borders */
+.border-orange-950 { border-color: #431407 !important; }
+.border-amber-950 { border-color: #451a03 !important; }
+.border-rose-950 { border-color: #4c0519 !important; }
+.border-slate-950 { border-color: #020617 !important; }
+.border-emerald-950 { border-color: #022c22 !important; }
+.border-indigo-950 { border-color: #1e1b4b !important; }
+.border-purple-950 { border-color: #3b0764 !important; }
+
+/* 5. Gradient Direction Engines */
+.bg-gradient-to-r { background-image: linear-gradient(to right, var(--tw-gradient-stops)) !important; }
+.bg-gradient-to-l { background-image: linear-gradient(to left, var(--tw-gradient-stops)) !important; }
+.bg-gradient-to-t { background-image: linear-gradient(to top, var(--tw-gradient-stops)) !important; }
+.bg-gradient-to-b { background-image: linear-gradient(to bottom, var(--tw-gradient-stops)) !important; }
+.bg-gradient-to-tr { background-image: linear-gradient(to top right, var(--tw-gradient-stops)) !important; }
+.bg-gradient-to-tl { background-image: linear-gradient(to top left, var(--tw-gradient-stops)) !important; }
+.bg-gradient-to-br { background-image: linear-gradient(to bottom right, var(--tw-gradient-stops)) !important; }
+.bg-gradient-to-bl { background-image: linear-gradient(to bottom left, var(--tw-gradient-stops)) !important; }
+
+/* 6. Tailwind Arbitrary Gradient Stops */
+.from-\[\#001a48\] { --tw-gradient-from: #001a48; --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to, rgba(0, 26, 72, 0)); }
+.to-\[\#042866\] { --tw-gradient-to: #042866; }
+.to-\[\#0a3580\] { --tw-gradient-to: #0a3580; }
+.to-\[\#002d72\] { --tw-gradient-to: #002d72; }
+.to-\[\#041535\] { --tw-gradient-to: #041535; }
+.from-\[\#001a44\] { --tw-gradient-from: #001a44; --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to, rgba(0, 26, 68, 0)); }
+.via-\[\#002d72\] { --tw-gradient-stops: var(--tw-gradient-from, #001a48), #002d72, var(--tw-gradient-to, #001a48); }
+.via-\[\#08296c\] { --tw-gradient-stops: var(--tw-gradient-from, #001a48), #08296c, var(--tw-gradient-to, #001a48); }
+
+.from-indigo-900 { --tw-gradient-from: #312e81; --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to, rgba(49, 46, 129, 0)); }
+.via-indigo-950 { --tw-gradient-stops: var(--tw-gradient-from, #312e81), #1e1b4b, var(--tw-gradient-to, #0f172a); }
+.from-indigo-950 { --tw-gradient-from: #1e1b4b; --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to, rgba(30, 27, 75, 0)); }
+.to-indigo-950 { --tw-gradient-to: #1e1b4b; }
+
+.from-purple-900 { --tw-gradient-from: #581c87; --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to, rgba(88, 28, 135, 0)); }
+.via-purple-950 { --tw-gradient-stops: var(--tw-gradient-from, #581c87), #3b0764, var(--tw-gradient-to, #0f172a); }
+.to-purple-950 { --tw-gradient-to: #3b0764; }
+
+.from-slate-900 { --tw-gradient-from: #0f172a; --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to, rgba(15, 23, 42, 0)); }
+.via-slate-800 { --tw-gradient-stops: var(--tw-gradient-from, #0f172a), #1e293b, var(--tw-gradient-to, #001a48); }
+.to-slate-900 { --tw-gradient-to: #0f172a; }
+.from-slate-950 { --tw-gradient-from: #020617; --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to, rgba(2, 6, 23, 0)); }
+.to-slate-950 { --tw-gradient-to: #020617; }
+
+.from-sky-950 { --tw-gradient-from: #082f49; --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to, rgba(8, 47, 73, 0)); }
+.from-sky-900 { --tw-gradient-from: #0c4a6e; --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to, rgba(12, 74, 110, 0)); }
+
+.from-amber-500 { --tw-gradient-from: #f59e0b; --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to, rgba(245, 158, 11, 0)); }
+.via-amber-600 { --tw-gradient-stops: var(--tw-gradient-from, #f59e0b), #d97706, var(--tw-gradient-to, #ea580c); }
+.via-orange-500 { --tw-gradient-stops: var(--tw-gradient-from, #f59e0b), #f97316, var(--tw-gradient-to, #d97706); }
+.to-orange-600 { --tw-gradient-to: #ea580c; }
+.to-amber-600 { --tw-gradient-to: #d97706; }
+
+.from-red-600 { --tw-gradient-from: #dc2626; --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to, rgba(220, 38, 38, 0)); }
+.via-rose-600 { --tw-gradient-stops: var(--tw-gradient-from, #dc2626), #e11d48, var(--tw-gradient-to, #b91c1c); }
+.to-red-700 { --tw-gradient-to: #b91c1c; }
+
+.from-emerald-600 { --tw-gradient-from: #059669; --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to, rgba(5, 150, 105, 0)); }
+.via-teal-700 { --tw-gradient-stops: var(--tw-gradient-from, #059669), #0f766e, var(--tw-gradient-to, #064e3b); }
+.to-emerald-900 { --tw-gradient-to: #064e3b; }
+
+

@@ -69,14 +69,23 @@ $tenantType = $site['tenant_type'];
 $tenantId = (int)$site['tenant_id'];
 $siteTier = $site['site_tier'] ?? 'enterprise';
 
+$savedBlocks = [];
+if (!empty($site['layout']['blocks']) && is_array($site['layout']['blocks'])) {
+    $savedBlocks = $site['layout']['blocks'];
+} elseif (!empty($site['layout']) && is_array($site['layout'])) {
+    if (isset($site['layout']['hero']) || isset($site['layout']['contact']) || isset($site['layout']['header'])) {
+        $savedBlocks = $site['layout'];
+    }
+}
+
 $defaultLayout = $tenantService->buildDefaultLayout($tenantType, [
     'name' => $site['site_title'],
-    'phone' => $site['layout']['blocks']['header']['phone'] ?? '',
-    'operating_hours' => $site['layout']['blocks']['contact']['hours'] ?? '',
+    'phone' => $savedBlocks['header']['phone'] ?? $savedBlocks['contact']['phone'] ?? '',
+    'operating_hours' => $savedBlocks['contact']['hours'] ?? '',
     'banner_url' => $site['banner_url']
 ], $siteTier)['blocks'];
 
-$layout = array_replace_recursive($defaultLayout, $site['layout']['blocks'] ?? []);
+$layout = array_replace_recursive($defaultLayout, $savedBlocks);
 $headerBlock = $layout['header'] ?? [];
 $emergencyBlock = $layout['emergency_bar'] ?? [];
 $heroBlock = $layout['hero'] ?? [];
@@ -252,6 +261,40 @@ $ctaHref = match($tenantType) {
                               radial-gradient(at 100% 100%, rgba(253, 129, 0, 0.08) 0px, transparent 50%);
         }
 
+        /* Luxury Semantic Gradient & Contrast Utility Tokens */
+        .bg-gradient-dark-navy {
+            background: linear-gradient(135deg, #001a48 0%, #08296c 50%, #001438 100%) !important;
+            color: #ffffff !important;
+        }
+        .bg-gradient-indigo {
+            background: linear-gradient(135deg, #1e1b4b 0%, #17153b 50%, #0f172a 100%) !important;
+            color: #ffffff !important;
+        }
+        .bg-gradient-purple {
+            background: linear-gradient(135deg, #3b0764 0%, #2e0854 50%, #0f172a 100%) !important;
+            color: #ffffff !important;
+        }
+        .bg-gradient-amber {
+            background: linear-gradient(135deg, #d97706 0%, #ea580c 100%) !important;
+            color: #ffffff !important;
+        }
+        .bg-gradient-red {
+            background: linear-gradient(135deg, #dc2626 0%, #e11d48 50%, #b91c1c 100%) !important;
+            color: #ffffff !important;
+        }
+        .bg-gradient-duty {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #001a48 100%) !important;
+            color: #ffffff !important;
+        }
+        .bg-gradient-navhub {
+            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%) !important;
+            color: #ffffff !important;
+        }
+        .text-orange-950 { color: #431407 !important; }
+        .text-amber-950 { color: #451a03 !important; }
+        .text-slate-950 { color: #020617 !important; }
+        .aspect-\[4\/3\] { aspect-ratio: 4 / 3 !important; min-height: 280px; }
+
         <?php if ($isPreview): ?>
         [data-block-id] {
             position: relative;
@@ -309,7 +352,7 @@ $ctaHref = match($tenantType) {
 
     <!-- 24/7 Red Emergency Hotline Bar -->
     <?php if (!empty($emergencyBlock['enabled'])): ?>
-    <div class="bg-gradient-to-r from-red-600 via-rose-600 to-red-700 text-white py-2.5 px-4 shadow-md relative overflow-hidden z-40 border-b border-red-500/50" data-block-id="emergency_bar">
+    <div class="bg-gradient-to-r from-red-600 via-rose-600 to-red-700 bg-gradient-red text-white py-2.5 px-4 shadow-md relative overflow-hidden z-40 border-b border-red-500/50" style="background: linear-gradient(135deg, #dc2626 0%, #e11d48 50%, #b91c1c 100%) !important; color: #ffffff !important;" data-block-id="emergency_bar">
         <div class="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-right">
             <div class="flex items-center gap-2.5">
                 <span class="w-8 h-8 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center shrink-0 animate-pulse text-white shadow-inner">
@@ -487,7 +530,7 @@ $ctaHref = match($tenantType) {
 
     <!-- Hero Authority Zone (Above-the-Fold) -->
     <?php if (!empty($heroBlock['enabled'])): ?>
-    <section class="relative py-12 md:py-20 overflow-hidden border-b border-slate-200/60 bg-gradient-to-b from-white via-slate-50 to-white mesh-ambient" data-block-id="hero">
+    <section class="relative py-12 md:py-20 overflow-hidden border-b border-slate-200/60 bg-gradient-to-b from-white via-slate-50 to-white mesh-ambient" style="background: linear-gradient(180deg, #ffffff 0%, #f8fafc 50%, #ffffff 100%) !important;" data-block-id="hero">
         <div class="max-w-6xl mx-auto px-4 relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
             
             <div class="lg:col-span-7 space-y-6 text-center lg:text-right">
@@ -551,9 +594,9 @@ $ctaHref = match($tenantType) {
             </div>
 
             <div class="lg:col-span-5 relative flex justify-center">
-                <div class="w-full max-w-md aspect-[4/3] rounded-3xl overflow-hidden shadow-2xl border-4 border-white bg-slate-100 relative group">
+                <div class="w-full max-w-md aspect-[4/3] rounded-3xl overflow-hidden shadow-2xl border-4 border-white bg-slate-100 relative group" style="aspect-ratio: 4 / 3; min-height: 280px; width: 100%;">
                     <?php $heroImg = !empty($heroBlock['image']) ? $heroBlock['image'] : $site['banner_url']; ?>
-                    <img src="<?= htmlspecialchars($heroImg ?: 'assets/images/clinic-banner.jpg') ?>" alt="<?= htmlspecialchars($site['site_title']) ?>" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700">
+                    <img src="<?= htmlspecialchars($heroImg ?: 'assets/images/clinic-banner.jpg') ?>" alt="<?= htmlspecialchars($site['site_title']) ?>" style="width: 100%; height: 100%; object-fit: cover;" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" onerror="this.onerror=null; this.src='assets/images/presentation-dog.jpg';">
                     <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent"></div>
                     <div class="absolute bottom-4 right-4 left-4 text-white p-3.5 rounded-2xl bg-white/10 backdrop-blur-xl border border-white/20">
                         <div class="flex items-center justify-between text-xs font-bold">
@@ -625,7 +668,7 @@ $ctaHref = match($tenantType) {
 
     <!-- Live Shift Duty & Hours Widget -->
     <?php if (!empty($dutyBlock['enabled'])): ?>
-    <section class="py-4 bg-gradient-to-r from-slate-900 via-slate-800 to-[#001a48] text-white border-b border-slate-700/60 shadow-inner" data-block-id="duty_hours">
+    <section class="py-4 bg-gradient-to-r from-slate-900 via-slate-800 to-[#001a48] bg-gradient-duty text-white border-b border-slate-700/60 shadow-inner" style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #001a48 100%) !important; color: #ffffff !important;" data-block-id="duty_hours">
         <div class="max-w-6xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
             <div class="flex items-center gap-3">
                 <div class="w-10 h-10 rounded-2xl <?= $isCurrentlyOpen ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-amber-500/20 text-amber-400 border border-amber-500/30' ?> flex items-center justify-center shrink-0">
@@ -694,7 +737,7 @@ $ctaHref = match($tenantType) {
 
     <!-- Telehealth Live Consultation Launcher (Premium & Enterprise) -->
     <?php if (!empty($telehealthBlock['enabled'])): ?>
-    <section class="py-12 bg-gradient-to-r from-indigo-900 via-indigo-950 to-slate-900 text-white border-b border-slate-800" data-block-id="telehealth_launcher">
+    <section class="py-12 bg-gradient-to-r from-indigo-900 via-indigo-950 to-slate-900 bg-gradient-indigo text-white border-b border-slate-800" style="background: linear-gradient(135deg, #1e1b4b 0%, #17153b 50%, #0f172a 100%) !important; color: #ffffff !important;" data-block-id="telehealth_launcher">
         <div class="max-w-6xl mx-auto px-4 flex flex-col md:flex-row items-center justify-between gap-8">
             <div class="space-y-2 text-center md:text-right">
                 <span class="px-3 py-1 rounded-full bg-indigo-500/20 text-indigo-300 text-[11px] font-bold border border-indigo-500/30">تله‌هلث و مشاوره تصویری هوشمند</span>
@@ -713,7 +756,7 @@ $ctaHref = match($tenantType) {
 
     <!-- Rx Prescription Photo Upload (Pharmacy & Enterprise) -->
     <?php if (!empty($rxBlock['enabled'])): ?>
-    <section class="py-12 bg-gradient-to-r from-purple-900 via-purple-950 to-slate-900 text-white border-b border-slate-800" data-block-id="rx_prescription_box">
+    <section class="py-12 bg-gradient-to-r from-purple-900 via-purple-950 to-slate-900 bg-gradient-purple text-white border-b border-slate-800" style="background: linear-gradient(135deg, #3b0764 0%, #2e0854 50%, #0f172a 100%) !important; color: #ffffff !important;" data-block-id="rx_prescription_box">
         <div class="max-w-6xl mx-auto px-4 flex flex-col md:flex-row items-center justify-between gap-8">
             <div class="space-y-2 text-center md:text-right">
                 <span class="px-3 py-1 rounded-full bg-purple-500/20 text-purple-300 text-[11px] font-bold border border-purple-500/30">داروخانه تخصصی با شرایط زنجیره سرد (۲-۸°C)</span>
@@ -732,7 +775,7 @@ $ctaHref = match($tenantType) {
 
     <!-- Autoship Periodic Delivery Showcase (Standard, Premium, Enterprise) -->
     <?php if (!empty($autoshipBlock['enabled'])): ?>
-    <section class="py-12 bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 text-white border-b border-orange-600 shadow-inner" data-block-id="autoship_showcase">
+    <section class="py-12 bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 bg-gradient-amber text-white border-b border-orange-600 shadow-inner" style="background: linear-gradient(135deg, #d97706 0%, #ea580c 50%, #b45309 100%) !important; color: #ffffff !important;" data-block-id="autoship_showcase">
         <div class="max-w-6xl mx-auto px-4 flex flex-col md:flex-row items-center justify-between gap-8">
             <div class="space-y-2 text-center md:text-right">
                 <span class="px-3 py-1 rounded-full bg-black/20 text-white text-[11px] font-black">مدل اختصاصی Chewy Autoship</span>
@@ -740,9 +783,9 @@ $ctaHref = match($tenantType) {
                 <p class="text-amber-100 text-xs sm:text-sm max-w-xl font-normal leading-relaxed"><?= htmlspecialchars($autoshipBlock['subtitle']) ?></p>
             </div>
             <div>
-                <a href="subscriptions.php" class="px-7 py-3.5 rounded-2xl bg-white hover:bg-slate-100 text-orange-950 font-black text-xs shadow-2xl transition-all flex items-center gap-2">
-                    <span class="material-symbols-outlined text-base text-orange-600">autorenew</span>
-                    <span>مشاهده پلن‌های تحویل دوره‌ای</span>
+                <a href="subscriptions.php" class="px-7 py-3.5 rounded-2xl bg-white hover:bg-slate-100 text-orange-950 font-black text-xs shadow-2xl transition-all flex items-center gap-2" style="background-color: #ffffff !important; color: #7c2d12 !important;">
+                    <span class="material-symbols-outlined text-base text-orange-600" style="color: #ea580c !important;">autorenew</span>
+                    <span style="color: #7c2d12 !important;">مشاهده پلن‌های تحویل دوره‌ای</span>
                 </a>
             </div>
         </div>
@@ -908,7 +951,7 @@ $ctaHref = match($tenantType) {
                 </div>
 
                 <!-- Right/Cost Estimation Card -->
-                <div class="lg:col-span-5 bg-gradient-to-tr from-[#001a48] to-[#0a3580] text-white p-6 sm:p-7 rounded-3xl shadow-2xl relative overflow-hidden border border-blue-900/50">
+                <div class="lg:col-span-5 bg-gradient-to-tr from-[#001a48] to-[#0a3580] bg-gradient-dark-navy text-white p-6 sm:p-7 rounded-3xl shadow-2xl relative overflow-hidden border border-blue-900/50" style="background: linear-gradient(135deg, #001a48 0%, #0a3580 100%) !important; color: #ffffff !important;">
                     <div class="absolute -bottom-10 -left-10 w-44 h-44 rounded-full bg-emerald-500/10 blur-2xl pointer-events-none"></div>
                     <div class="relative z-10 space-y-5">
                         <div class="flex items-center justify-between pb-4 border-b border-white/10">
@@ -1032,7 +1075,7 @@ $ctaHref = match($tenantType) {
 
     <!-- Booking Widget Block (Doctors & Clinics) -->
     <?php if (!empty($bookingBlock['enabled'])): ?>
-    <section id="booking" class="py-16 bg-gradient-to-r from-[#001a48] to-[#042866] text-white border-b border-slate-800" data-block-id="booking">
+    <section id="booking" class="py-16 bg-gradient-to-r from-[#001a48] to-[#042866] bg-gradient-dark-navy text-white border-b border-slate-800" style="background: linear-gradient(135deg, #001a48 0%, #08296c 50%, #001438 100%) !important; color: #ffffff !important;" data-block-id="booking">
         <div class="max-w-6xl mx-auto px-4 flex flex-col md:flex-row items-center justify-between gap-8">
             <div class="space-y-3 text-center md:text-right">
                 <span class="px-3 py-1 rounded-full bg-white/10 text-amber-300 text-xs font-bold">سامانه نوبت‌دهی آنلاین ۲۴ ساعته</span>
@@ -1042,9 +1085,9 @@ $ctaHref = match($tenantType) {
                 </p>
             </div>
             <div>
-                <a href="<?= $ctaHref ?>" class="px-8 py-4 rounded-2xl bg-[#fd8100] hover:bg-[#ea580c] text-white font-black text-sm shadow-2xl transition-all flex items-center gap-2">
-                    <span class="material-symbols-outlined text-lg">calendar_today</span>
-                    <span>ورود به تقویم نوبت‌دهی</span>
+                <a href="<?= $ctaHref ?>" class="px-8 py-4 rounded-2xl bg-[#fd8100] hover:bg-[#ea580c] text-white font-black text-sm shadow-2xl transition-all flex items-center gap-2" style="background-color: #fd8100 !important; color: #ffffff !important;">
+                    <span class="material-symbols-outlined text-lg" style="color: #ffffff !important;">calendar_today</span>
+                    <span style="color: #ffffff !important;">ورود به تقویم نوبت‌دهی</span>
                 </a>
             </div>
         </div>
@@ -1156,7 +1199,7 @@ $ctaHref = match($tenantType) {
 
     <!-- ASENA Loyalty Club Reward Strip -->
     <?php if (!empty($loyaltyBlock['enabled'])): ?>
-    <section class="py-10 bg-gradient-to-r from-amber-500 via-amber-600 to-orange-600 text-white shadow-inner border-b border-amber-600" data-block-id="loyalty_club">
+    <section class="py-10 bg-gradient-to-r from-amber-500 via-amber-600 to-orange-600 bg-gradient-amber text-white shadow-inner border-b border-amber-600" style="background: linear-gradient(135deg, #d97706 0%, #ea580c 100%) !important; color: #ffffff !important;" data-block-id="loyalty_club">
         <div class="max-w-6xl mx-auto px-4 flex flex-col md:flex-row items-center justify-between gap-6">
             <div class="flex items-center gap-4 text-center md:text-right">
                 <div class="w-16 h-16 rounded-2xl bg-white/20 backdrop-blur-md border border-white/30 flex items-center justify-center shrink-0 shadow-lg">
@@ -1169,9 +1212,9 @@ $ctaHref = match($tenantType) {
                 </div>
             </div>
             <div>
-                <a href="<?= $ctaHref ?>" class="px-6 py-3.5 rounded-xl bg-white text-orange-950 font-black text-xs hover:bg-amber-50 shadow-xl transition-all flex items-center gap-1.5 shrink-0">
-                    <span class="material-symbols-outlined text-base text-amber-600">stars</span>
-                    <span>شروع دریافت امتیازات</span>
+                <a href="<?= $ctaHref ?>" class="px-6 py-3.5 rounded-xl bg-white text-orange-950 font-black text-xs hover:bg-amber-50 shadow-xl transition-all flex items-center gap-1.5 shrink-0" style="background-color: #ffffff !important; color: #7c2d12 !important;">
+                    <span class="material-symbols-outlined text-base" style="color: #d97706 !important;">stars</span>
+                    <span style="color: #7c2d12 !important;">شروع دریافت امتیازات</span>
                 </a>
             </div>
         </div>
@@ -1291,7 +1334,10 @@ $ctaHref = match($tenantType) {
     <?php 
         $targetLat = $navHubBlock['lat'] ?? '35.7219';
         $targetLng = $navHubBlock['lng'] ?? '51.3347';
-        $rawAddress = $contactBlock['address'] ?? 'تهران، مرکز پلتفرم آسنا';
+        $rawAddress = !empty(trim($contactBlock['address'] ?? '')) ? $contactBlock['address'] : 'تهران، مرکز پلتفرم آسنا';
+        $hoursDisplay = !empty(trim($contactBlock['hours'] ?? '')) ? $contactBlock['hours'] : 'شنبه تا پنجشنبه ۸ الی ۲۲';
+        $phoneDisplay = !empty(trim($contactBlock['phone'] ?? '')) ? $contactBlock['phone'] : (!empty(trim($headerBlock['phone'] ?? '')) ? $headerBlock['phone'] : '۰۲۱-۸۸۸۸۹۹۹۹');
+        $emergencyDisplay = !empty(trim($contactBlock['emergency_phone'] ?? '')) ? $contactBlock['emergency_phone'] : (!empty(trim($emergencyBlock['phone'] ?? '')) ? $emergencyBlock['phone'] : '');
     ?>
     <section id="contact" class="py-16 bg-slate-50 border-b border-slate-200/60" data-block-id="contact">
         <div class="max-w-6xl mx-auto px-4">
@@ -1332,7 +1378,7 @@ $ctaHref = match($tenantType) {
                         </div>
                         <div>
                             <h4 class="font-bold text-slate-900 text-sm mb-1">ساعات کاری و پذیرش</h4>
-                            <p class="text-xs text-slate-500 leading-relaxed"><?= htmlspecialchars($contactBlock['hours'] ?? 'شنبه تا پنجشنبه ۸ الی ۲۲') ?></p>
+                            <p class="text-xs text-slate-500 leading-relaxed"><?= htmlspecialchars($hoursDisplay) ?></p>
                         </div>
                     </div>
                     <div class="pt-4 mt-4 border-t border-slate-100 flex items-center justify-between text-[11px]">
@@ -1353,22 +1399,18 @@ $ctaHref = match($tenantType) {
                         <div>
                             <h4 class="font-bold text-slate-900 text-sm mb-1">تلفن‌های تماس</h4>
                             <div class="space-y-1">
-                                <?php if (!empty($contactBlock['phone'])): ?>
-                                    <div><a href="tel:<?= htmlspecialchars($contactBlock['phone']) ?>" class="text-xs font-bold text-slate-700 hover:text-tenant-primary font-mono" dir="ltr"><?= htmlspecialchars($contactBlock['phone']) ?></a></div>
-                                <?php endif; ?>
-                                <?php if (!empty($contactBlock['emergency_phone'])): ?>
-                                    <div class="text-[11px] text-red-600 font-bold">اورژانس: <span dir="ltr" class="font-mono"><?= htmlspecialchars($contactBlock['emergency_phone']) ?></span></div>
+                                <div><a href="tel:<?= htmlspecialchars($phoneDisplay) ?>" class="text-xs font-bold text-slate-700 hover:text-tenant-primary font-mono" dir="ltr"><?= htmlspecialchars($phoneDisplay) ?></a></div>
+                                <?php if (!empty($emergencyDisplay)): ?>
+                                    <div class="text-[11px] text-red-600 font-bold">اورژانس: <span dir="ltr" class="font-mono"><?= htmlspecialchars($emergencyDisplay) ?></span></div>
                                 <?php endif; ?>
                             </div>
                         </div>
                     </div>
                     <div class="pt-4 mt-4 border-t border-slate-100 flex items-center gap-3 text-xs">
-                        <?php if (!empty($contactBlock['phone'])): ?>
-                        <a href="tel:<?= htmlspecialchars($contactBlock['phone']) ?>" class="text-[11px] text-blue-600 font-bold hover:underline flex items-center gap-1">
+                        <a href="tel:<?= htmlspecialchars($phoneDisplay) ?>" class="text-[11px] text-blue-600 font-bold hover:underline flex items-center gap-1">
                             <span class="material-symbols-outlined text-xs">phone_in_talk</span>
                             <span>تماس تلفنی</span>
                         </a>
-                        <?php endif; ?>
                         <button type="button" onclick="openNavHubModal()" class="text-[11px] text-slate-500 font-bold hover:text-slate-900 flex items-center gap-1">
                             <span class="material-symbols-outlined text-xs">chat</span>
                             <span>پیام‌رسان‌ها</span>
@@ -1378,7 +1420,7 @@ $ctaHref = match($tenantType) {
             </div>
 
             <!-- 1-Tap Navigation Strip -->
-            <div class="bg-gradient-to-r from-slate-900 to-indigo-950 rounded-3xl p-6 text-white shadow-xl flex flex-col md:flex-row items-center justify-between gap-6" id="navigation-hub">
+            <div class="bg-gradient-to-r from-slate-900 to-indigo-950 bg-gradient-navhub rounded-3xl p-6 text-white shadow-xl flex flex-col md:flex-row items-center justify-between gap-6" style="background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%) !important; color: #ffffff !important;" id="navigation-hub">
                 <div class="flex items-center gap-4 text-center md:text-right">
                     <div class="w-14 h-14 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center shrink-0 text-amber-300">
                         <span class="material-symbols-outlined text-3xl">directions</span>

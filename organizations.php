@@ -69,7 +69,7 @@ require_once __DIR__ . '/includes/header.php';
     <div class="max-w-7xl mx-auto space-y-8">
         
         <!-- Hero Header with Visual Atmosphere & Live Stats -->
-        <div class="bg-gradient-to-r from-sky-950 via-indigo-950 to-slate-900 rounded-3xl p-8 sm:p-12 text-white shadow-2xl relative overflow-hidden border border-white/10">
+        <div class="bg-gradient-to-r from-sky-950 via-indigo-950 to-slate-900 rounded-3xl p-8 sm:p-12 text-white shadow-2xl relative overflow-hidden border border-white/10" style="background: linear-gradient(135deg, #082f49 0%, #1e1b4b 50%, #0f172a 100%) !important; color: #ffffff !important;">
             <div class="absolute -left-10 -bottom-10 w-96 h-96 bg-sky-500/15 rounded-full blur-3xl pointer-events-none"></div>
             <div class="absolute -right-10 -top-10 w-80 h-80 bg-indigo-500/15 rounded-full blur-3xl pointer-events-none"></div>
 
@@ -434,7 +434,7 @@ require_once __DIR__ . '/includes/header.php';
         <?php endif; ?>
 
         <!-- Partner Banner CTA -->
-        <div class="bg-gradient-to-r from-sky-900 via-indigo-900 to-slate-900 rounded-3xl p-8 sm:p-10 text-white shadow-xl relative overflow-hidden flex flex-col md:flex-row items-center justify-between gap-6 border border-white/10">
+        <div class="bg-gradient-to-r from-sky-900 via-indigo-900 to-slate-900 rounded-3xl p-8 sm:p-10 text-white shadow-xl relative overflow-hidden flex flex-col md:flex-row items-center justify-between gap-6 border border-white/10" style="background: linear-gradient(135deg, #0c4a6e 0%, #312e81 50%, #0f172a 100%) !important; color: #ffffff !important;">
             <div class="space-y-2 text-center md:text-right max-w-xl">
                 <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/15 text-sky-200 text-xs font-bold backdrop-blur-md">
                     <span class="material-symbols-outlined text-sm">handshake</span>
