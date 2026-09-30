@@ -123,4 +123,51 @@ if ($action === 'apply_preset') {
     exit;
 }
 
+if ($action === 'upload_asset') {
+    if (!isset($_FILES['file']) && !isset($_FILES['image'])) {
+        echo json_encode(['success' => false, 'message' => 'فایلی برای بارگذاری ارسال نشده است.'], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+
+    $file = $_FILES['file'] ?? $_FILES['image'];
+    if ($file['error'] !== UPLOAD_ERR_OK) {
+        echo json_encode(['success' => false, 'message' => 'خطا در بارگذاری فایل از سمت مرورگر (کد: ' . $file['error'] . ')'], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+
+    $maxSize = 10 * 1024 * 1024; // 10MB
+    if ($file['size'] > $maxSize) {
+        echo json_encode(['success' => false, 'message' => 'حجم فایل بیش از سقف مجاز (۱۰ مگابایت) است.'], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+
+    $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+    $allowedExts = ['jpg', 'jpeg', 'png', 'webp', 'svg', 'gif'];
+    if (!in_array($ext, $allowedExts)) {
+        echo json_encode(['success' => false, 'message' => 'فرمت فایل غیرمجاز است. تنها فرمت‌های تصویری JPG, PNG, WebP, SVG مجاز هستند.'], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+
+    $uploadDir = dirname(__DIR__) . '/uploads/sites/';
+    if (!is_dir($uploadDir)) {
+        @mkdir($uploadDir, 0755, true);
+    }
+
+    $fileName = 'asset_' . $tenantType . '_' . $tenantId . '_' . time() . '_' . substr(md5(uniqid()), 0, 8) . '.' . $ext;
+    $destPath = $uploadDir . $fileName;
+
+    if (move_uploaded_file($file['tmp_name'], $destPath)) {
+        $relativePath = 'uploads/sites/' . $fileName;
+        echo json_encode([
+            'success' => true,
+            'url' => $relativePath,
+            'full_url' => '../' . $relativePath,
+            'message' => 'تصویر با موفقیت بارگذاری شد.'
+        ], JSON_UNESCAPED_UNICODE);
+    } else {
+        echo json_encode(['success' => false, 'message' => 'خطا در ذخیره‌سازی فایل در سرور.'], JSON_UNESCAPED_UNICODE);
+    }
+    exit;
+}
+
 echo json_encode(['success' => false, 'message' => 'اکشن نامعتبر است.'], JSON_UNESCAPED_UNICODE);

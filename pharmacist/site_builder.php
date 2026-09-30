@@ -20,10 +20,7 @@ $builderTenantInfo = [
     'banner_url' => 'assets/images/pharmacy-banner.jpg',
     'license_number' => $currentUser['vet_council_number'] ?? 'سازمان دامپزشکی کشور'
 ];
-
-echo '<main class="lg:mr-64 p-0 min-h-screen bg-slate-100 flex flex-col transition-all duration-300">';
 require_once dirname(__DIR__) . '/includes/site_builder_studio.php';
-echo '</main>';
 ?>
 </body>
 </html>

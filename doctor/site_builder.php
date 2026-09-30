@@ -19,10 +19,7 @@ $builderTenantInfo = [
     'vet_council_number' => $currentUser['vet_council_number'] ?? ''
 ];
 
-// Main Container
-echo '<main class="lg:mr-64 p-0 min-h-screen bg-slate-100 flex flex-col transition-all duration-300">';
 require_once dirname(__DIR__) . '/includes/site_builder_studio.php';
-echo '</main>';
 ?>
 </body>
 </html>

@@ -21,10 +21,7 @@ $builderTenantInfo = [
     'banner_url' => $currentOrg['banner_url'] ?? 'assets/images/clinic-banner.jpg',
     'license_number' => $currentOrg['license_number'] ?? ''
 ];
-
-echo '<main class="lg:mr-64 p-0 min-h-screen bg-slate-100 flex flex-col transition-all duration-300">';
 require_once dirname(__DIR__) . '/includes/site_builder_studio.php';
-echo '</main>';
 ?>
 </body>
 </html>

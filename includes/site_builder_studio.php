@@ -20,7 +20,38 @@ $publicUrl = "../site.php?slug=" . urlencode($site['slug']);
 ?>
 
 <style>
-    /* Responsive Collapsible Sidebar */
+    /* Collapse and hide dark navy portal sidebars in Studio Mode across all roles */
+    #doctor-sidebar,
+    #org-sidebar,
+    #pharmacist-sidebar,
+    #seller-sidebar {
+        transform: translateX(100%) !important;
+        z-index: 70 !important;
+        box-shadow: -4px 0 25px rgba(0, 0, 0, 0.25) !important;
+        transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    }
+
+    #doctor-sidebar.portal-sidebar-open,
+    #org-sidebar.portal-sidebar-open,
+    #pharmacist-sidebar.portal-sidebar-open,
+    #seller-sidebar.portal-sidebar-open {
+        transform: translateX(0) !important;
+    }
+
+    /* Zero out right margin on main wrappers across portals */
+    main.lg\:mr-64,
+    main {
+        margin-right: 0 !important;
+        padding: 0 !important;
+    }
+
+    /* Hide duplicate top app bar from portal layout */
+    body > main > header.sticky.top-0,
+    body > main > header.flex.justify-between {
+        display: none !important;
+    }
+
+    /* Studio Responsive Collapsible Sidebar */
     #studio-sidebar {
         transition: width 0.35s cubic-bezier(0.16, 1, 0.3, 1), 
                     min-width 0.35s cubic-bezier(0.16, 1, 0.3, 1), 
@@ -72,7 +103,19 @@ $publicUrl = "../site.php?slug=" . urlencode($site['slug']);
     
     <!-- Studio Top Action Bar -->
     <header class="h-16 bg-white border-b border-slate-200 px-4 sm:px-6 flex items-center justify-between z-30 shrink-0 shadow-sm">
-        <div class="flex items-center gap-3">
+        <div class="flex items-center gap-2 sm:gap-3">
+            <!-- Portal Navigation Drawer Toggle -->
+            <button type="button" onclick="togglePortalSidebar()" class="p-2 sm:px-3 sm:py-2 rounded-xl border border-slate-200 hover:bg-slate-100 text-slate-700 text-xs font-bold transition-all flex items-center gap-1.5 shadow-2xs group" title="مشاهده منوی اصلی پنل کاربری">
+                <span class="material-symbols-outlined text-lg text-slate-600 group-hover:text-slate-900">menu</span>
+                <span class="hidden md:inline">منوی پنل</span>
+            </button>
+            <a href="index.php" class="p-2 sm:px-3 sm:py-2 rounded-xl text-slate-500 hover:text-slate-800 hover:bg-slate-100 text-xs font-bold transition-all flex items-center gap-1" title="بازگشت به پیشخوان پنل">
+                <span class="material-symbols-outlined text-base">arrow_forward</span>
+                <span class="hidden md:inline">پیشخوان</span>
+            </a>
+
+            <div class="h-6 w-[1px] bg-slate-200 hidden sm:block"></div>
+
             <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-[#001a48] to-[#0a3580] flex items-center justify-center text-white shadow-md shrink-0">
                 <span class="material-symbols-outlined text-xl">web</span>
             </div>
@@ -109,12 +152,12 @@ $publicUrl = "../site.php?slug=" . urlencode($site['slug']);
             </button>
         </div>
 
-        <!-- Action Buttons & Sidebar Toggle -->
+        <!-- Action Buttons & Studio Sidebar Toggle -->
         <div class="flex items-center gap-2 sm:gap-3">
             <button type="button" onclick="toggleSidebar()" id="btn-toggle-sidebar" class="px-3 sm:px-3.5 py-2 rounded-xl border border-slate-200 hover:border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold transition-all flex items-center gap-1.5 sm:gap-2 shadow-sm active:scale-95">
                 <span class="material-symbols-outlined text-base text-emerald-600 transition-transform duration-300" id="sidebar-toggle-icon">tune</span>
-                <span id="sidebar-toggle-text">ویرایش محتوا و بلوک‌ها</span>
-                <span class="text-[10px] px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-600 font-normal transition-colors" id="sidebar-status-badge">بسته</span>
+                <span id="sidebar-toggle-text">پنل ویرایش محتوا</span>
+                <span class="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold transition-colors" id="sidebar-status-badge">باز</span>
             </button>
 
             <a href="<?= $publicUrl ?>" target="_blank" class="hidden sm:flex px-3.5 py-2 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-bold transition-colors items-center gap-1.5">
@@ -143,11 +186,14 @@ $publicUrl = "../site.php?slug=" . urlencode($site['slug']);
     <!-- Main Workspace (Sidebar + Live Preview) -->
     <div class="flex-1 flex overflow-hidden relative">
         
-        <!-- Mobile Backdrop -->
+        <!-- Portal Sidebar Backdrop -->
+        <div id="portal-backdrop" onclick="togglePortalSidebar()" class="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-[65] hidden transition-opacity"></div>
+
+        <!-- Mobile Backdrop for Studio Controls -->
         <div id="sidebar-backdrop" onclick="closeSidebar()" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-30 lg:hidden hidden transition-opacity"></div>
 
-        <!-- Controls Sidebar (Closed by default for spacious live preview) -->
-        <aside id="studio-sidebar" class="sidebar-closed bg-white border-l border-slate-200 flex flex-col shrink-0 z-30 shadow-2xl overflow-hidden transition-all">
+        <!-- Controls Sidebar (Open on desktop by default with full room) -->
+        <aside id="studio-sidebar" class="sidebar-open bg-white border-l border-slate-200 flex flex-col shrink-0 z-30 shadow-2xl overflow-hidden transition-all">
             
             <!-- Sidebar Header with Close Button -->
             <div class="h-14 px-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between shrink-0">
@@ -215,8 +261,43 @@ $publicUrl = "../site.php?slug=" . urlencode($site['slug']);
                                 <input type="text" id="input-hero-cta" value="<?= htmlspecialchars($layout['hero']['cta_primary_text'] ?? 'رزرو آنلاین نوبت') ?>" class="w-full text-xs p-2.5 rounded-xl border border-slate-200 focus:border-emerald-600 focus:outline-none">
                             </div>
                             <div>
-                                <label class="block text-[11px] font-bold text-slate-700 mb-1">آدرس تصویر شاخص بنر</label>
-                                <input type="text" id="input-hero-image" value="<?= htmlspecialchars($layout['hero']['image'] ?? $site['banner_url']) ?>" class="w-full text-xs p-2.5 rounded-xl border border-slate-200 focus:border-emerald-600 focus:outline-none font-mono" dir="ltr">
+                                <div class="flex items-center justify-between mb-1.5">
+                                    <label class="text-[11px] font-bold text-slate-700">تصویر شاخص بنر قهرمان (Hero)</label>
+                                    <div class="flex bg-slate-100 p-0.5 rounded-lg border border-slate-200 text-xs w-48">
+                                        <button type="button" id="hero-img-btn-mode-upload" onclick="switchImageInputMode('hero-img', 'upload')" class="flex-1 py-1 text-[11px] font-bold rounded-lg bg-white text-slate-800 shadow-xs border border-slate-200 transition-all">
+                                            <span>📤 آپلود فایل</span>
+                                        </button>
+                                        <button type="button" id="hero-img-btn-mode-link" onclick="switchImageInputMode('hero-img', 'link')" class="flex-1 py-1 text-[11px] font-bold rounded-lg text-slate-500 hover:text-slate-800 transition-all">
+                                            <span>🔗 درج لینک</span>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Live Thumbnail Preview -->
+                                <div class="flex items-center gap-3 p-2.5 rounded-2xl bg-slate-50 border border-slate-200/80 mb-2">
+                                    <div class="w-16 h-12 rounded-xl bg-slate-200 overflow-hidden border border-slate-300 shrink-0 flex items-center justify-center">
+                                        <img id="preview-thumb-hero" src="<?= !empty($layout['hero']['image']) ? (str_starts_with($layout['hero']['image'], 'http') ? htmlspecialchars($layout['hero']['image']) : '../' . ltrim(htmlspecialchars($layout['hero']['image']), '/')) : '../' . ltrim(htmlspecialchars($site['banner_url']), '/') ?>" class="w-full h-full object-cover" onerror="this.src='../assets/images/clinic-banner.jpg'">
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <div class="text-[11px] font-bold text-slate-700 truncate">تصویر فعال بنر اصلی</div>
+                                        <div id="input-hero-image-status" class="flex items-center gap-1 mt-0.5 text-[10px] text-slate-400">امکان آپلود مستقیم یا درج آدرس اینترنتی</div>
+                                    </div>
+                                </div>
+
+                                <!-- Upload Box -->
+                                <div id="hero-img-upload-box" class="space-y-1">
+                                    <label class="flex flex-col items-center justify-center p-3.5 border-2 border-dashed border-slate-300 hover:border-emerald-500 rounded-2xl cursor-pointer bg-white hover:bg-emerald-50/20 transition-all text-center group">
+                                        <span class="material-symbols-outlined text-2xl text-slate-400 group-hover:text-emerald-600 mb-1">cloud_upload</span>
+                                        <span class="text-xs font-bold text-slate-700 group-hover:text-emerald-700">انتخاب تصویر از دستگاه یا کشیدن فایل به اینجا</span>
+                                        <span class="text-[10px] text-slate-400 mt-0.5">فرمت‌های JPG، PNG، WebP یا SVG (حداکثر ۱۰ مگابایت)</span>
+                                        <input type="file" accept="image/*" class="hidden" onchange="handleImageUpload(this, 'input-hero-image', 'preview-thumb-hero')">
+                                    </label>
+                                </div>
+
+                                <!-- Link Box -->
+                                <div id="hero-img-link-box" class="hidden">
+                                    <input type="text" id="input-hero-image" value="<?= htmlspecialchars($layout['hero']['image'] ?? $site['banner_url']) ?>" oninput="updateThumbSrc('preview-thumb-hero', this.value)" class="w-full text-xs p-2.5 rounded-xl border border-slate-200 focus:border-emerald-600 focus:outline-none font-mono" dir="ltr" placeholder="https://example.com/banner.jpg">
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -509,14 +590,86 @@ $publicUrl = "../site.php?slug=" . urlencode($site['slug']);
                         </div>
                     </div>
 
+                    <!-- Dual-Mode Logo Upload / Link -->
                     <div>
-                        <label class="block text-xs font-bold text-slate-800 mb-1">لوگوی اختصاصی (URL)</label>
-                        <input type="text" id="input-site-logo" value="<?= htmlspecialchars($site['logo_url']) ?>" class="w-full text-xs p-2.5 rounded-xl border border-slate-200 focus:border-emerald-600 focus:outline-none font-mono" dir="ltr">
+                        <div class="flex items-center justify-between mb-1.5">
+                            <label class="text-xs font-bold text-slate-800">لوگوی اختصاصی وب‌سایت</label>
+                            <div class="flex bg-slate-100 p-0.5 rounded-lg border border-slate-200 text-xs w-48">
+                                <button type="button" id="logo-img-btn-mode-upload" onclick="switchImageInputMode('logo-img', 'upload')" class="flex-1 py-1 text-[11px] font-bold rounded-lg bg-white text-slate-800 shadow-xs border border-slate-200 transition-all">
+                                    <span>📤 آپلود فایل</span>
+                                </button>
+                                <button type="button" id="logo-img-btn-mode-link" onclick="switchImageInputMode('logo-img', 'link')" class="flex-1 py-1 text-[11px] font-bold rounded-lg text-slate-500 hover:text-slate-800 transition-all">
+                                    <span>🔗 درج لینک</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Live Thumbnail Preview -->
+                        <div class="flex items-center gap-3 p-2.5 rounded-2xl bg-slate-50 border border-slate-200/80 mb-2">
+                            <div class="w-12 h-12 rounded-xl bg-white p-1 border border-slate-300 shrink-0 flex items-center justify-center shadow-xs">
+                                <img id="preview-thumb-logo" src="<?= !empty($site['logo_url']) ? (str_starts_with($site['logo_url'], 'http') ? htmlspecialchars($site['logo_url']) : '../' . ltrim(htmlspecialchars($site['logo_url']), '/')) : '../assets/images/logo.png' ?>" class="w-full h-full object-contain" onerror="this.src='../assets/images/logo.png'">
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <div class="text-[11px] font-bold text-slate-700 truncate">لوگوی فعال وب‌سایت</div>
+                                <div id="input-site-logo-status" class="flex items-center gap-1 mt-0.5 text-[10px] text-slate-400">نمایش در هدر و فوتر وب‌سایت اختصاصی</div>
+                            </div>
+                        </div>
+
+                        <!-- Upload Box -->
+                        <div id="logo-img-upload-box" class="space-y-1">
+                            <label class="flex flex-col items-center justify-center p-3.5 border-2 border-dashed border-slate-300 hover:border-emerald-500 rounded-2xl cursor-pointer bg-white hover:bg-emerald-50/20 transition-all text-center group">
+                                <span class="material-symbols-outlined text-2xl text-slate-400 group-hover:text-emerald-600 mb-1">cloud_upload</span>
+                                <span class="text-xs font-bold text-slate-700 group-hover:text-emerald-700">انتخاب لوگو از دستگاه</span>
+                                <span class="text-[10px] text-slate-400 mt-0.5">فرمت PNG شفاف، WebP یا SVG (حداکثر ۵ مگابایت)</span>
+                                <input type="file" accept="image/*" class="hidden" onchange="handleImageUpload(this, 'input-site-logo', 'preview-thumb-logo')">
+                            </label>
+                        </div>
+
+                        <!-- Link Box -->
+                        <div id="logo-img-link-box" class="hidden">
+                            <input type="text" id="input-site-logo" value="<?= htmlspecialchars($site['logo_url']) ?>" oninput="updateThumbSrc('preview-thumb-logo', this.value)" class="w-full text-xs p-2.5 rounded-xl border border-slate-200 focus:border-emerald-600 focus:outline-none font-mono" dir="ltr" placeholder="https://example.com/logo.png">
+                        </div>
                     </div>
 
+                    <!-- Dual-Mode Banner Upload / Link -->
                     <div>
-                        <label class="block text-xs font-bold text-slate-800 mb-1">تصویر شاخص پس‌زمینه (URL)</label>
-                        <input type="text" id="input-site-banner" value="<?= htmlspecialchars($site['banner_url']) ?>" class="w-full text-xs p-2.5 rounded-xl border border-slate-200 focus:border-emerald-600 focus:outline-none font-mono" dir="ltr">
+                        <div class="flex items-center justify-between mb-1.5">
+                            <label class="text-xs font-bold text-slate-800">تصویر شاخص پس‌زمینه (Site Banner)</label>
+                            <div class="flex bg-slate-100 p-0.5 rounded-lg border border-slate-200 text-xs w-48">
+                                <button type="button" id="banner-img-btn-mode-upload" onclick="switchImageInputMode('banner-img', 'upload')" class="flex-1 py-1 text-[11px] font-bold rounded-lg bg-white text-slate-800 shadow-xs border border-slate-200 transition-all">
+                                    <span>📤 آپلود فایل</span>
+                                </button>
+                                <button type="button" id="banner-img-btn-mode-link" onclick="switchImageInputMode('banner-img', 'link')" class="flex-1 py-1 text-[11px] font-bold rounded-lg text-slate-500 hover:text-slate-800 transition-all">
+                                    <span>🔗 درج لینک</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Live Thumbnail Preview -->
+                        <div class="flex items-center gap-3 p-2.5 rounded-2xl bg-slate-50 border border-slate-200/80 mb-2">
+                            <div class="w-16 h-12 rounded-xl bg-slate-200 overflow-hidden border border-slate-300 shrink-0 flex items-center justify-center">
+                                <img id="preview-thumb-banner" src="<?= !empty($site['banner_url']) ? (str_starts_with($site['banner_url'], 'http') ? htmlspecialchars($site['banner_url']) : '../' . ltrim(htmlspecialchars($site['banner_url']), '/')) : '../assets/images/clinic-banner.jpg' ?>" class="w-full h-full object-cover" onerror="this.src='../assets/images/clinic-banner.jpg'">
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <div class="text-[11px] font-bold text-slate-700 truncate">بنر عمومی سایت</div>
+                                <div id="input-site-banner-status" class="flex items-center gap-1 mt-0.5 text-[10px] text-slate-400">تصویر عریض برای پس‌زمینه کارت‌ها و اشتراک‌گذاری</div>
+                            </div>
+                        </div>
+
+                        <!-- Upload Box -->
+                        <div id="banner-img-upload-box" class="space-y-1">
+                            <label class="flex flex-col items-center justify-center p-3.5 border-2 border-dashed border-slate-300 hover:border-emerald-500 rounded-2xl cursor-pointer bg-white hover:bg-emerald-50/20 transition-all text-center group">
+                                <span class="material-symbols-outlined text-2xl text-slate-400 group-hover:text-emerald-600 mb-1">cloud_upload</span>
+                                <span class="text-xs font-bold text-slate-700 group-hover:text-emerald-700">انتخاب بنر از دستگاه</span>
+                                <span class="text-[10px] text-slate-400 mt-0.5">فرمت‌های JPG، PNG، WebP (حداکثر ۱۰ مگابایت)</span>
+                                <input type="file" accept="image/*" class="hidden" onchange="handleImageUpload(this, 'input-site-banner', 'preview-thumb-banner')">
+                            </label>
+                        </div>
+
+                        <!-- Link Box -->
+                        <div id="banner-img-link-box" class="hidden">
+                            <input type="text" id="input-site-banner" value="<?= htmlspecialchars($site['banner_url']) ?>" oninput="updateThumbSrc('preview-thumb-banner', this.value)" class="w-full text-xs p-2.5 rounded-xl border border-slate-200 focus:border-emerald-600 focus:outline-none font-mono" dir="ltr" placeholder="https://example.com/banner.jpg">
+                        </div>
                     </div>
                 </div>
 
@@ -622,7 +775,112 @@ $publicUrl = "../site.php?slug=" . urlencode($site['slug']);
 const currentSiteId = <?= (int)$site['id'] ?>;
 const tenantType = '<?= $builderTenantType ?>';
 const tenantId = <?= (int)$builderTenantId ?>;
-let isSidebarOpen = false;
+// Studio sidebar is open by default on desktop, and closed on mobile
+let isSidebarOpen = window.innerWidth >= 1024;
+
+// Auto-adjust initial mobile vs desktop sidebar state on load
+document.addEventListener('DOMContentLoaded', () => {
+    if (window.innerWidth < 1024) {
+        closeSidebar();
+    }
+});
+
+function togglePortalSidebar() {
+    const sidebar = document.getElementById('doctor-sidebar') || 
+                    document.getElementById('org-sidebar') || 
+                    document.getElementById('pharmacist-sidebar') || 
+                    document.getElementById('seller-sidebar');
+    const backdrop = document.getElementById('portal-backdrop');
+    if (!sidebar) return;
+    if (sidebar.classList.contains('portal-sidebar-open')) {
+        sidebar.classList.remove('portal-sidebar-open');
+        if (backdrop) backdrop.classList.add('hidden');
+        document.body.style.overflow = '';
+    } else {
+        sidebar.classList.add('portal-sidebar-open');
+        if (backdrop) backdrop.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+    }
+}
+
+function updateThumbSrc(thumbId, url) {
+    const thumb = document.getElementById(thumbId);
+    if (!thumb) return;
+    if (!url) {
+        thumb.src = '../assets/images/clinic-banner.jpg';
+        return;
+    }
+    thumb.src = url.startsWith('http') ? url : ('../' + url.replace(/^\//, ''));
+}
+
+async function handleImageUpload(fileInput, targetInputId, previewImgId) {
+    if (!fileInput.files || !fileInput.files[0]) return;
+    const file = fileInput.files[0];
+
+    const targetInput = document.getElementById(targetInputId);
+    const previewImg = document.getElementById(previewImgId);
+    const statusEl = document.getElementById(targetInputId + '-status');
+
+    if (statusEl) {
+        statusEl.innerHTML = '<span class="material-symbols-outlined text-xs animate-spin text-emerald-600">sync</span> <span class="text-[11px] text-emerald-600 font-bold">در حال بارگذاری فایل...</span>';
+    }
+
+    const fd = new FormData();
+    fd.append('action', 'upload_asset');
+    fd.append('file', file);
+    fd.append('tenant_type', tenantType);
+
+    try {
+        const res = await fetch('../actions/site_builder_action.php', { method: 'POST', body: fd });
+        const data = await res.json();
+        if (data.success) {
+            targetInput.value = data.url;
+            if (previewImg) {
+                previewImg.src = data.full_url || ('../' + data.url);
+            }
+            if (statusEl) {
+                statusEl.innerHTML = '<span class="material-symbols-outlined text-xs text-emerald-600">check_circle</span> <span class="text-[11px] text-emerald-600 font-bold">با موفقیت بارگذاری شد.</span>';
+                setTimeout(() => { 
+                    statusEl.innerHTML = 'تصویر با موفقیت در فضای ابری آسنا ذخیره شد.';
+                }, 3000);
+            }
+            showToast('✓ تصویر با موفقیت بارگذاری شد. در حال ذخیره...', 'success');
+            // Auto save and update preview iframe
+            await saveSiteConfig();
+        } else {
+            if (statusEl) {
+                statusEl.innerHTML = `<span class="material-symbols-outlined text-xs text-rose-500">error</span> <span class="text-[11px] text-rose-500 font-bold">${data.message}</span>`;
+            }
+            showToast('✕ ' + data.message, 'error');
+        }
+    } catch (e) {
+        if (statusEl) {
+            statusEl.innerHTML = '<span class="material-symbols-outlined text-xs text-rose-500">error</span> <span class="text-[11px] text-rose-500 font-bold">خطا در ارتباط با سرور</span>';
+        }
+        showToast('✕ خطا در بارگذاری تصویر', 'error');
+    }
+}
+
+function switchImageInputMode(fieldKey, mode) {
+    const uploadBox = document.getElementById(`${fieldKey}-upload-box`);
+    const linkBox = document.getElementById(`${fieldKey}-link-box`);
+    const btnUpload = document.getElementById(`${fieldKey}-btn-mode-upload`);
+    const btnLink = document.getElementById(`${fieldKey}-btn-mode-link`);
+
+    if (!uploadBox || !linkBox) return;
+
+    if (mode === 'upload') {
+        uploadBox.classList.remove('hidden');
+        linkBox.classList.add('hidden');
+        btnUpload.className = 'flex-1 py-1 text-[11px] font-bold rounded-lg bg-white text-slate-800 shadow-xs border border-slate-200 transition-all';
+        btnLink.className = 'flex-1 py-1 text-[11px] font-bold rounded-lg text-slate-500 hover:text-slate-800 transition-all';
+    } else {
+        uploadBox.classList.add('hidden');
+        linkBox.classList.remove('hidden');
+        btnLink.className = 'flex-1 py-1 text-[11px] font-bold rounded-lg bg-white text-slate-800 shadow-xs border border-slate-200 transition-all';
+        btnUpload.className = 'flex-1 py-1 text-[11px] font-bold rounded-lg text-slate-500 hover:text-slate-800 transition-all';
+    }
+}
 
 function toggleSidebar() {
     if (isSidebarOpen) {
