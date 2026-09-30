@@ -531,7 +531,7 @@ $publicUrl = "../site.php?slug=" . urlencode($site['slug']);
                                 <input type="text" id="input-calc-heading" value="<?= htmlspecialchars($layout['cost_calculator']['heading'] ?? 'تخمین هوشمند تعرفه خدمات بالینی و جراحی') ?>" class="w-full text-xs p-2.5 rounded-xl border border-slate-200 focus:border-amber-600 focus:outline-none">
                             </div>
                             <div>
-                                <label class="block text-[11px] font-bold text-slate-700 mb-1">درصد تخفیف رزرو آنلاین آسنا</label>
+                                <label class="block text-[11px] font-bold text-slate-700 mb-1">درصد تخفیف رزرو آنلاین</label>
                                 <input type="number" id="input-calc-discount" min="0" max="50" value="<?= htmlspecialchars((string)($layout['cost_calculator']['discount_percent'] ?? 10)) ?>" class="w-full text-xs p-2.5 rounded-xl border border-slate-200 focus:border-amber-600 focus:outline-none font-mono text-center" dir="ltr">
                             </div>
                         </div>
@@ -586,7 +586,7 @@ $publicUrl = "../site.php?slug=" . urlencode($site['slug']);
                         <div class="p-4 space-y-3 border-t border-slate-100 hidden" id="content-storefront">
                             <label class="flex items-center gap-2 text-xs font-bold text-slate-700">
                                 <input type="checkbox" id="input-storefront-enabled" <?= !empty($layout['storefront']['enabled']) ? 'checked' : '' ?> class="rounded text-emerald-600">
-                                <span>نمایش کالاهای موجود در انبار آسنا</span>
+                                <span>نمایش محصولات و کالاهای موجود</span>
                             </label>
                             <div>
                                 <label class="block text-[11px] font-bold text-slate-700 mb-1">تعداد اقلام نمایشی</label>
@@ -681,7 +681,7 @@ $publicUrl = "../site.php?slug=" . urlencode($site['slug']);
                         <div class="p-4 space-y-3 border-t border-slate-100 hidden" id="content-loyalty_club">
                             <label class="flex items-center gap-2 text-xs font-bold text-slate-700">
                                 <input type="checkbox" id="input-loyalty-enabled" <?= !empty($layout['loyalty_club']['enabled']) ? 'checked' : '' ?> class="rounded text-emerald-600">
-                                <span>نمایش بنر اعطای ۵۰ امتیاز پاداش آسنا کلاب</span>
+                                <span>نمایش بنر اعطای ۵۰ امتیاز پاداش باشگاه مشتریان</span>
                             </label>
                             <div>
                                 <label class="block text-[11px] font-bold text-slate-700 mb-1">عنوان بنر باشگاه مشتریان</label>
@@ -947,12 +947,12 @@ $publicUrl = "../site.php?slug=" . urlencode($site['slug']);
                     </div>
 
                     <div>
-                        <label class="block text-xs font-bold text-slate-800 mb-1">شناسه و آدرس اختصاصی ساب‌دامین آسنا</label>
+                        <label class="block text-xs font-bold text-slate-800 mb-1">شناسه و آدرس اختصاصی ساب‌دامین</label>
                         <div class="flex items-center rounded-xl border border-slate-200 overflow-hidden bg-white focus-within:border-emerald-600">
                             <span class="px-3 text-xs text-slate-400 font-mono bg-slate-50 border-l border-slate-200">.asena.company</span>
                             <input type="text" id="input-site-slug" value="<?= $slug ?>" oninput="checkSlugLive(this.value)" class="flex-1 text-xs p-2.5 outline-none font-mono text-left font-bold" dir="ltr">
                         </div>
-                        <div id="slug-feedback" class="text-[11px] mt-1 font-medium text-emerald-600">✓ این آدرس در شبکه آسنا در دسترس است.</div>
+                        <div id="slug-feedback" class="text-[11px] mt-1 font-medium text-emerald-600">✓ این آدرس آزاد و در دسترس است.</div>
                     </div>
 
                     <div>
@@ -1081,7 +1081,7 @@ async function handleImageUpload(fileInput, targetInputId, previewImgId) {
             if (statusEl) {
                 statusEl.innerHTML = '<span class="material-symbols-outlined text-xs text-emerald-600">check_circle</span> <span class="text-[11px] text-emerald-600 font-bold">با موفقیت بارگذاری شد.</span>';
                 setTimeout(() => { 
-                    statusEl.innerHTML = 'تصویر با موفقیت در فضای ابری آسنا ذخیره شد.';
+                    statusEl.innerHTML = 'تصویر با موفقیت در فضای ابری ذخیره شد.';
                 }, 3000);
             }
             showToast('✓ تصویر با موفقیت بارگذاری شد. در حال ذخیره...', 'success');
@@ -1295,7 +1295,7 @@ function checkSlugLive(val) {
             const fb = document.getElementById('slug-feedback');
             if (data.available) {
                 fb.className = 'text-[11px] mt-1 font-medium text-emerald-600';
-                fb.innerText = '✓ این آدرس در شبکه آسنا در دسترس است.';
+                fb.innerText = '✓ این آدرس آزاد و در دسترس است.';
             } else {
                 fb.className = 'text-[11px] mt-1 font-medium text-red-600';
                 fb.innerText = '✕ این شناسه قبلاً ثبت شده یا غیرمجاز است.';

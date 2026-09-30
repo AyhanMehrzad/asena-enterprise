@@ -42,7 +42,7 @@ if (!$site) {
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>وب‌سایت یافت نشد | آسنا</title>
+        <title>وب‌سایت یافت نشد</title>
         <link rel="stylesheet" href="assets/css/style.css">
         <link rel="stylesheet" href="assets/css/geist.css">
         <link rel="stylesheet" href="assets/css/tailwind.output.css">
@@ -53,9 +53,9 @@ if (!$site) {
                 <span class="material-symbols-outlined text-3xl">domain_disabled</span>
             </div>
             <h1 class="text-xl font-bold mb-2">وب‌سایت مورد نظر یافت نشد</h1>
-            <p class="text-sm text-slate-500 mb-6">این نشانی هنوز در سامانه ابری آسنا راه‌اندازی نشده یا در حال آماده‌سازی است.</p>
-            <a href="index.php" class="inline-flex items-center gap-2 px-6 py-3 bg-[#001a48] text-white rounded-xl text-sm font-bold hover:bg-slate-800 transition-colors">
-                بازگشت به صفحه اصلی آسنا
+            <p class="text-sm text-slate-500 mb-6">این وب‌سایت در حال حاضر در دسترس نیست یا در حال آماده‌سازی است.</p>
+            <a href="javascript:history.back()" class="inline-flex items-center gap-2 px-6 py-3 bg-[#001a48] text-white rounded-xl text-sm font-bold hover:bg-slate-800 transition-colors">
+                بازگشت به صفحه قبل
             </a>
         </div>
     </body>
@@ -176,7 +176,7 @@ $paletteMap = [
         'subtle_glow' => 'rgba(5, 150, 105, 0.15)'
     ],
     'navy' => [
-        'name' => 'سرمه‌ای آسنا (Hospital Corporate Navy)',
+        'name' => 'سرمه‌ای کلاسیک (Hospital Corporate Navy)',
         'primary' => '#001a48',
         'primary_hover' => '#002666',
         'primary_light' => '#eff6ff',
@@ -210,7 +210,7 @@ $theme = $paletteMap[$site['theme_palette']] ?? $paletteMap['emerald'];
 
 // SEO & Meta
 $metaTitle = htmlspecialchars($site['site_title'] . (!empty($site['site_tagline']) ? ' - ' . $site['site_tagline'] : ''));
-$metaDesc = htmlspecialchars($site['meta_description'] ?: ($site['site_title'] . ' در شبکه رسمی سلامت و خدمات آسنا.'));
+$metaDesc = htmlspecialchars($site['meta_description'] ?: ($site['site_title'] . ' - وب‌سایت رسمی، خدمات تخصصی و نوبت‌دهی آنلاین.'));
 $siteLogo = !empty($site['logo_url']) ? $site['logo_url'] : 'assets/images/logo.png';
 
 $ctaHref = match($tenantType) {
@@ -325,27 +325,28 @@ $ctaHref = match($tenantType) {
 </head>
 <body class="bg-slate-50 text-slate-800 antialiased selection:bg-orange-500 selection:text-white pb-20 md:pb-0">
 
-    <!-- Top Announcement & Verified Institutional Strip -->
-    <div class="bg-[#001a48] text-white py-2 px-4 text-xs font-medium border-b border-slate-700/50">
+    <!-- Top Clinic Contact Strip -->
+    <div class="bg-slate-900 text-white py-2 px-4 text-xs font-medium border-b border-slate-800">
         <div class="max-w-6xl mx-auto flex items-center justify-between">
             <div class="flex items-center gap-2">
                 <span class="relative flex h-2 w-2">
                     <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                     <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
                 </span>
-                <span class="text-[11px] sm:text-xs">عضو رسمی شبکه خدمات و سلامت حیوانات خانگی آسنا (ASENA.company)</span>
+                <span class="text-[11px] sm:text-xs font-bold"><?= htmlspecialchars($site['site_title']) ?> | پذیرش فعال و نوبت‌دهی آنلاین</span>
             </div>
-            <div class="hidden sm:flex items-center gap-4 text-[11px]">
+            <div class="flex items-center gap-4 text-[11px]">
                 <?php if (!empty($contactBlock['emergency_phone'])): ?>
                 <a href="tel:<?= htmlspecialchars($contactBlock['emergency_phone']) ?>" class="text-rose-300 hover:text-white flex items-center gap-1 font-bold">
                     <span class="material-symbols-outlined text-xs">e911_emergency</span>
-                    <span>اورژانس: <span class="font-mono" dir="ltr"><?= htmlspecialchars($contactBlock['emergency_phone']) ?></span></span>
+                    <span>اورژانس شبانه‌روزی: <span class="font-mono" dir="ltr"><?= htmlspecialchars($contactBlock['emergency_phone']) ?></span></span>
+                </a>
+                <?php elseif (!empty($contactBlock['phone'])): ?>
+                <a href="tel:<?= htmlspecialchars($contactBlock['phone']) ?>" class="text-slate-300 hover:text-white flex items-center gap-1">
+                    <span class="material-symbols-outlined text-xs">call</span>
+                    <span>تماس: <span class="font-mono" dir="ltr"><?= htmlspecialchars($contactBlock['phone']) ?></span></span>
                 </a>
                 <?php endif; ?>
-                <a href="index.php" target="_blank" class="hover:text-amber-300 transition-colors flex items-center gap-0.5">
-                    <span>پرتال مرکزی</span>
-                    <span class="material-symbols-outlined text-xs">open_in_new</span>
-                </a>
             </div>
         </div>
     </div>
@@ -580,11 +581,11 @@ $ctaHref = match($tenantType) {
                 <div class="pt-6 flex flex-wrap items-center justify-center lg:justify-start gap-6 text-slate-500 text-xs font-semibold border-t border-slate-200/60">
                     <div class="flex items-center gap-1.5">
                         <span class="material-symbols-outlined text-emerald-600 text-base">shield</span>
-                        <span>پرداخت شاپرک متمرکز در آسنا</span>
+                        <span>درگاه امن پرداخت الکترونیک شاپرک</span>
                     </div>
                     <div class="flex items-center gap-1.5">
                         <span class="material-symbols-outlined text-emerald-600 text-base">sms</span>
-                        <span>پیامک تأیید نوبت ملی‌پیامک</span>
+                        <span>ارسال فوری پیامک تأیید نوبت</span>
                     </div>
                     <div class="flex items-center gap-1.5">
                         <span class="material-symbols-outlined text-emerald-600 text-base">support_agent</span>
@@ -602,9 +603,9 @@ $ctaHref = match($tenantType) {
                         <div class="flex items-center justify-between text-xs font-bold">
                             <span class="flex items-center gap-1.5">
                                 <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
-                                <span>سامانه خدمات هوشمند حیوانات</span>
+                                <span><?= htmlspecialchars($site['site_title']) ?></span>
                             </span>
-                            <span class="text-amber-300 font-mono">ASENA Powered</span>
+                            <span class="text-amber-300 font-bold"><?= htmlspecialchars($heroBlock['badge'] ?? 'پذیرش رسمی') ?></span>
                         </div>
                     </div>
                 </div>
@@ -638,7 +639,7 @@ $ctaHref = match($tenantType) {
                         </div>
                         <div class="text-[10px] text-emerald-600 font-bold flex items-center gap-1">
                             <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                            <span>عضو رسمی شبکه ابری آسنا</span>
+                            <span>دارای پروانه و صلاحیت رسمی بالینی</span>
                         </div>
                     </div>
                 </div>
@@ -833,20 +834,13 @@ $ctaHref = match($tenantType) {
                     <div class="w-20 h-20 mx-auto rounded-full bg-tenant-light border-2 border-tenant-primary flex items-center justify-center text-tenant-primary">
                         <span class="material-symbols-outlined text-4xl">verified_user</span>
                     </div>
-                    <h4 class="font-bold text-slate-900 text-base">ضمانت رسمی پلتفرم آسنا</h4>
+                    <h4 class="font-bold text-slate-900 text-base">تضمین کیفیت و استانداردهای درمانی</h4>
                     <p class="text-xs text-slate-500 leading-normal">
-                        کلیه خدمات پزشکی و فروشگاهی این وب‌سایت تحت پوشش قوانین امانت‌داری مالی (Escrow) آسنا و تضمین کیفیت ارائه می‌شود.
+                        تمامی خدمات تشخیصی، درمانی و جراحی با رعایت بالاترین استانداردهای بهداشتی و تجهیزات پیشرفته بالینی ارائه می‌گردد.
                     </p>
                     <div class="pt-2">
-                        <?php 
-                        $profileUrl = match($tenantType) {
-                            'doctor' => "doctor_profile.php?id={$tenantId}",
-                            'organization' => "organization_profile.php?id={$tenantId}",
-                            default => "organizations.php"
-                        };
-                        ?>
-                        <a href="<?= $profileUrl ?>" target="_blank" class="w-full py-2.5 px-4 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-800 text-xs font-bold flex items-center justify-center gap-1.5 transition-colors">
-                            <span>مشاهده پرونده در شبکه آسنا</span>
+                        <a href="<?= $ctaHref ?>" class="w-full py-2.5 px-4 rounded-xl bg-tenant-primary hover:bg-emerald-700 text-white text-xs font-bold flex items-center justify-center gap-1.5 transition-colors shadow-sm">
+                            <span>رزرو مستقیم نوبت و مشاوره</span>
                             <span class="material-symbols-outlined text-xs">arrow_left</span>
                         </a>
                     </div>
@@ -891,7 +885,7 @@ $ctaHref = match($tenantType) {
                 </div>
                 <h3 class="text-2xl sm:text-3xl font-black text-slate-900"><?= htmlspecialchars($calculatorBlock['heading'] ?? 'تخمین هوشمند تعرفه خدمات بالینی و جراحی') ?></h3>
                 <p class="text-xs sm:text-sm text-slate-500 mt-2 leading-relaxed">
-                    <?= htmlspecialchars($calculatorBlock['subtitle'] ?? 'نوع حیوان و خدمت مورد نیاز را انتخاب کنید تا محدوده هزینه مصوب همراه با ۱۰٪ تخفیف ویژه رزرو آنلاین آسنا محاسبه گردد.') ?>
+                    <?= htmlspecialchars($calculatorBlock['subtitle'] ?? 'نوع حیوان و خدمت مورد نیاز را انتخاب کنید تا محدوده هزینه مصوب همراه با ۱۰٪ تخفیف ویژه رزرو آنلاین محاسبه گردد.') ?>
                 </p>
             </div>
 
@@ -980,7 +974,7 @@ $ctaHref = match($tenantType) {
                                 <span class="line-through font-mono" id="calc-display-base-price">۲۵۰,۰۰۰ تومان</span>
                             </div>
                             <div class="flex items-center justify-between text-emerald-300 text-[11px]">
-                                <span>تخفیف ویژه رزرو در آسنا (<?= (int)($calculatorBlock['discount_percent'] ?? 10) ?>٪):</span>
+                                <span>تخفیف ویژه رزرو آنلاین (<?= (int)($calculatorBlock['discount_percent'] ?? 10) ?>٪):</span>
                                 <span class="font-mono font-bold" id="calc-display-discount">-۲۵,۰۰۰ تومان</span>
                             </div>
                         </div>
@@ -992,7 +986,7 @@ $ctaHref = match($tenantType) {
                                 <span id="calc-display-final-price">۲۲۵,۰۰۰</span>
                                 <span class="text-xs text-white/80 font-normal">تومان</span>
                             </div>
-                            <div class="text-[10px] text-slate-400 mt-1">تضمین بازگشت وجه و امانت‌داری توسط سامانه آسنا</div>
+                            <div class="text-[10px] text-slate-400 mt-1">تضمین کیفیت خدمات و بازگشت وجه در صورت انصراف</div>
                         </div>
 
                         <!-- Booking Action -->
@@ -1105,7 +1099,7 @@ $ctaHref = match($tenantType) {
                 </div>
                 <div class="text-xs text-slate-500 flex items-center gap-1">
                     <span class="material-symbols-outlined text-emerald-600 text-sm">inventory_2</span>
-                    <span>موجودی همگام با دیتابیس آسنا</span>
+                    <span>موجودی فعال و تحویل سریع</span>
                 </div>
             </div>
 
@@ -1206,7 +1200,7 @@ $ctaHref = match($tenantType) {
                     <span class="material-symbols-outlined text-3xl text-amber-200">loyalty</span>
                 </div>
                 <div>
-                    <div class="inline-block px-3 py-0.5 rounded-full bg-black/20 text-amber-100 text-[10px] font-black mb-1">باشگاه مراجعین وفادار آسنا (ASENA Club)</div>
+                    <div class="inline-block px-3 py-0.5 rounded-full bg-black/20 text-amber-100 text-[10px] font-black mb-1">باشگاه مراجعین وفادار (VIP Club)</div>
                     <h3 class="text-lg sm:text-xl font-black"><?= htmlspecialchars($loyaltyBlock['heading'] ?? '۵۰ امتیاز پاداش با هر ثبت نوبت یا خرید آنلاین') ?></h3>
                     <p class="text-xs text-amber-100 mt-1 max-w-xl"><?= htmlspecialchars($loyaltyBlock['subtitle'] ?? 'امتیازهای دریافتی بلافاصله در کیف‌پول ذخیره شده و در ویزیت‌ها و سفارش‌های بعدی به عنوان تخفیف نقدی قابل کسر است.') ?></p>
                 </div>
@@ -1228,7 +1222,7 @@ $ctaHref = match($tenantType) {
             <div class="text-center max-w-xl mx-auto mb-12">
                 <span class="text-xs font-black text-tenant-primary uppercase tracking-wider">اعتبار سنجی مراجعین</span>
                 <h3 class="text-2xl sm:text-3xl font-black text-slate-900 mt-1"><?= htmlspecialchars($reviewsBlock['heading'] ?? 'نظرات و بازخورد سرپرستان پت') ?></h3>
-                <p class="text-xs sm:text-sm text-slate-500 mt-2"><?= htmlspecialchars($reviewsBlock['subtitle'] ?? 'تجربه مراجعین واقعی با استناد به پرونده‌های ثبت‌شده در سامانه آسنا') ?></p>
+                <p class="text-xs sm:text-sm text-slate-500 mt-2"><?= htmlspecialchars($reviewsBlock['subtitle'] ?? 'تجربه مراجعین واقعی با استناد به ویزیت‌ها و مراجعات حضوری ثبت‌شده') ?></p>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -1334,7 +1328,7 @@ $ctaHref = match($tenantType) {
     <?php 
         $targetLat = $navHubBlock['lat'] ?? '35.7219';
         $targetLng = $navHubBlock['lng'] ?? '51.3347';
-        $rawAddress = !empty(trim($contactBlock['address'] ?? '')) ? $contactBlock['address'] : 'تهران، مرکز پلتفرم آسنا';
+        $rawAddress = !empty(trim($contactBlock['address'] ?? '')) ? $contactBlock['address'] : 'تهران، خیابان ولیعصر، نرسیده به میدان ونک';
         $hoursDisplay = !empty(trim($contactBlock['hours'] ?? '')) ? $contactBlock['hours'] : 'شنبه تا پنجشنبه ۸ الی ۲۲';
         $phoneDisplay = !empty(trim($contactBlock['phone'] ?? '')) ? $contactBlock['phone'] : (!empty(trim($headerBlock['phone'] ?? '')) ? $headerBlock['phone'] : '۰۲۱-۸۸۸۸۹۹۹۹');
         $emergencyDisplay = !empty(trim($contactBlock['emergency_phone'] ?? '')) ? $contactBlock['emergency_phone'] : (!empty(trim($emergencyBlock['phone'] ?? '')) ? $emergencyBlock['phone'] : '');
@@ -1466,15 +1460,12 @@ $ctaHref = match($tenantType) {
                     <?= htmlspecialchars($footerBlock['copyright_text'] ?? "کلیه حقوق برای {$site['site_title']} محفوظ است.") ?>
                 </p>
                 <p class="text-[11px] text-slate-400 mt-1">
-                    درگاه پرداخت و تسویه الکترونیک تحت لایسنس و نظارت شبکه متمرکز آسنا (ASENA Enterprise).
+                    کلیه خدمات این وب‌سایت دارای مجوزهای قانونی و درگاه امن پرداخت الکترونیک است.
                 </p>
             </div>
 
-            <div class="flex items-center gap-3">
-                <a href="index.php" target="_blank" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-colors">
-                    <img src="assets/images/logo.png" alt="ASENA" class="w-5 h-5 object-contain">
-                    <span>قدرت‌گرفته از اکوسیستم ابری آسنا</span>
-                </a>
+            <div class="flex items-center gap-3 text-xs text-slate-400">
+                <span>طراحی و میزبانی اختصاصی وب‌سایت</span>
             </div>
         </div>
     </footer>
@@ -1574,9 +1565,9 @@ $ctaHref = match($tenantType) {
                         <span>تلگرام</span>
                     </a>
                     <?php endif; ?>
-                    <a href="chat.php" class="p-2.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 flex items-center gap-1.5 text-xs font-bold transition-colors" title="چت درون‌برنامه‌ای آسنا">
+                    <a href="<?= $ctaHref ?>" class="p-2.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 flex items-center gap-1.5 text-xs font-bold transition-colors" title="گفتگوی آنلاین و نوبت‌دهی">
                         <span class="material-symbols-outlined text-sm">forum</span>
-                        <span>چت اختصاصی آسنا</span>
+                        <span>مشاوره و گفتگوی آنلاین</span>
                     </a>
                 </div>
             </div>
