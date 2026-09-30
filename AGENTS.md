@@ -56,3 +56,10 @@ This document establishes the foundational architectural rules, coding standards
     - Eliminate tab fragmentation (e.g., unify EMR patient lookup directly with BPMS electronic prescription issuance).
     - Enforce mobile card transformations for tables, thumb-zone CTAs, role-specific visual semantics (Emerald for Doctors, Orange for Sellers, Purple for Pharmacists), and 3-by-3 currency separation.
 
+12. **Tenant Showcase & Site Builder Standards**:
+    - Strictly follow [`.agents/rules/tenant_showcase_and_site_builder_standards.md`](file:///.agents/rules/tenant_showcase_and_site_builder_standards.md).
+    - Enforce 5-tier archetype alignment (Basic, Standard, Premium, Pharmacy, Enterprise) mapping directly to `config/tiers.php`.
+    - Prioritize mobile thumb-zone sticky CTAs, 48dp touch targets, and responsive dual-mode customizer studio.
+    - Implement agency-grade visual depth with bento grids, trust counter strips, and live pulsating duty indicators.
+
+

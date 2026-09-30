@@ -31,6 +31,8 @@ if (!$doctor) {
     exit;
 }
 
+$doctorSite = App::tenantSite()->getSiteByTenant('doctor', $doctorId);
+
 // Fetch affiliated clinics and hospitals
 $orgStmt = $pdo->prepare("
     SELECT o.*, od.is_head_physician, od.working_days, od.working_hours
@@ -154,6 +156,25 @@ require_once __DIR__ . '/includes/header.php';
                             </a>
                         <?php endif; ?>
                     </div>
+
+                    <?php if (!empty($doctorSite) && !empty($doctorSite['is_published'])): ?>
+                    <!-- Official Showcase Website Badge -->
+                    <div class="mt-4 p-4 rounded-2xl bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200/80 flex flex-col sm:flex-row items-center justify-between gap-3 text-right">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center shadow-sm shrink-0">
+                                <span class="material-symbols-outlined text-xl">language</span>
+                            </div>
+                            <div>
+                                <div class="text-xs font-bold text-slate-800">وب‌سایت رسمی و اختصاصی دکتر <?= htmlspecialchars($doctor['name']) ?></div>
+                                <div class="text-[11px] text-emerald-700 font-mono" dir="ltr"><?= htmlspecialchars($doctorSite['slug']) ?>.asena.company</div>
+                            </div>
+                        </div>
+                        <a href="site.php?slug=<?= urlencode($doctorSite['slug']) ?>" target="_blank" class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 shrink-0">
+                            <span>ورود به وب‌سایت</span>
+                            <span class="material-symbols-outlined text-xs">open_in_new</span>
+                        </a>
+                    </div>
+                    <?php endif; ?>
                 </div>
 
             </div>

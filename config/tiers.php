@@ -18,6 +18,7 @@ return [
                 'user_profile',
                 'basic_cart',
                 'online_payment',
+                'tenant_site_builder',
             ],
         ],
         'standard' => [
@@ -33,6 +34,7 @@ return [
                 'blog_engine',
                 'loyalty_points',
                 'reviews',
+                'tenant_site_builder',
             ],
         ],
         'premium' => [
@@ -55,6 +57,7 @@ return [
                 'charity_campaigns',
                 'sms_automation',
                 'organization_subadmins',
+                'tenant_site_builder',
             ],
         ],
         'pharmacy' => [
@@ -72,6 +75,7 @@ return [
                 'basic_cart',
                 'online_payment',
                 'sms_automation',
+                'tenant_site_builder',
             ],
         ],
         'enterprise' => [
@@ -98,6 +102,7 @@ return [
                 'charity_campaigns',
                 'sms_automation',
                 'organization_subadmins',
+                'tenant_site_builder',
             ],
         ],
     ],

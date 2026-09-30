@@ -34,6 +34,7 @@ $inventory = $orgService->getInventory($orgId);
 $reviews   = $orgService->getReviews($orgId);
 $isOpen    = $orgService->isOpenNow($org['operating_hours'] ?? '', (int)$org['is_24_7']);
 $isTop5    = App::leaderboard()->isTopOrganization($orgId);
+$orgSite   = App::tenantSite()->getSiteByTenant('organization', $orgId);
 
 // Facility types Persian map
 $typePersian = match($org['type']) {
@@ -219,7 +220,13 @@ require_once __DIR__ . '/includes/header.php';
                             </a>
                         <?php endif; ?>
 
-                        <?php if (!empty($org['website'])): ?>
+                        <?php if (!empty($orgSite) && !empty($orgSite['is_published'])): ?>
+                            <a href="site.php?slug=<?= urlencode($orgSite['slug']) ?>" target="_blank" class="px-4 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-black text-xs flex items-center gap-1.5 transition-all shadow-md shadow-emerald-600/20">
+                                <span class="material-symbols-outlined text-base">language</span>
+                                <span>وب‌سایت رسمی مرکز</span>
+                                <span class="material-symbols-outlined text-xs">open_in_new</span>
+                            </a>
+                        <?php elseif (!empty($org['website'])): ?>
                             <a href="<?= htmlspecialchars($org['website']) ?>" target="_blank" class="px-3.5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs flex items-center gap-1.5 transition-colors">
                                 <span class="material-symbols-outlined text-base">public</span>
                                 <span>وب‌سایت</span>

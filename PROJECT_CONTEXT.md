@@ -83,6 +83,32 @@
 
 ## ۳. تاریخچه تغییرات اخیر (Change Log)
 
+### نسخه ۱.۰.۱۶ (سپتامبر ۲۰۲۶ - ماژول وب‌سایت‌ساز ابری و میکروسایت‌های اختصاصی لوکس آسنا ASENA Site Builder)
+1. **معماری و زیرساخت دیتابیس چندمستأجری (`database/migrations/22_tenant_site_builder_schema.sql`):**
+   - ایجاد جدول `tenant_sites` با سازگاری دوگانه مای‌اس‌کیو‌ال (cPanel پروداکشن) و اس‌کیولایت (توسعه محلی) جهت ذخیره آدرس یکتای ساب‌دامین (`slug`)، پالت تم، رنگ‌های برند، فایل جیسون بلوک‌ها (`layout_json`)، سطح لایسنس (`site_tier`) و وضعیت انتشار.
+   - ثبت قابلیت `'tenant_site_builder'` در کلیه سطوح ماتریس لایسنس [`config/tiers.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/config/tiers.php) و اتصال به کانتینر مرکزی [`includes/App.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/includes/App.php) متد `App::tenantSite()`.
+2. **سرویس دامنه هسته و موتور نگاشت نسخه‌های پنج‌گانه (`includes/TenantSiteService.php`):**
+   - پیاده‌سازی متدهای ساخت پیش‌فرض هوشمند و نقش‌محور برای ۴ نقش کلیدی پلتفرم (پزشکان، کلینیک‌ها و بیمارستان‌ها، داروخانه‌ها، و پت‌شاپ‌ها/فروشندگان).
+   - انطباق دقیق بلوک‌ها با ۵ نسخه رسمی پلتفرم: پایه (`basic`)، استاندارد تجاری (`standard`)، حرفه‌ای کلینیک (`premium`)، تخصصی داروخانه (`pharmacy`) و اکوسیستم جامع (`enterprise`).
+   - اضافه شدن متدهای استخراج مقالات علمی دانشنامه سلامت (`getTenantArticles`)، نظرات بیزی و اعتبارسنجی‌شده با نژاد پت (`getTenantReviews`)، کادر پزشکان شیفت مرکز (`getOrganizationDoctors`) و اعمال آنی قالب نسخه (`applyTierPreset`).
+   - اعتبارسنجی بلادرنگ آدرس‌های ساب‌دامین (`isSlugAvailable`) و استخراج اقلام موجود انبار همان مرکز/فروشنده جهت جلوگیری از خروج از پلتفرم.
+3. **موتور عمومی رندرینگ وب‌سایت اختصاصی و ارگونومی موبایل ([`site.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/site.php)):**
+   - پشتیبانی از آدرس‌های تمیز `@slug` و `site/slug` در [`.htaccess`](file:///opt/lampp/htdocs/asena/asena-enterprise/.htaccess) و زیردامنه‌های وایلدکارد (`*.asena.company`) بدون نیاز به خرید دامنه جداگانه و هزینه اضافی برای کاربران.
+   - نوار چسبان شست‌رس موبایل (Thumb-Zone Sticky Conversion Bar) در نمایشگرهای زیر ۷۶۸ پیکسل با تاچ‌تارگت ۵۲ پیکسلی، تماس مستقیم یک‌لمسی و دکمه رزرو فوری.
+   - بلوک‌های مدرن آژانسی: نشان پالس زنده پذیرش (`🟢 پذیرش فعال - نوبت‌دهی آنلاین`)، بنتو گرید نامتقارن امکانات اتاق عمل و تجهیزات کلینیک، نوار شمارنده‌های اعتماد اجتماعی (+۱۵,۰۰۰ ویزیت)، ویجت تله‌هلث مشاوره تصویری، باکس آپلود نسخه الکترونیک با زنجیره سرد (۲-۸°C)، معرفی بسته اشتراکی اتوشیپ (۱۰٪ تخفیف) و بنر باشگاه مراجعین وفادار (۵۰ امتیاز آسنا کلاب).
+   - اتصال مستقیم به درگاه متمرکز پرداخت و اسکرو آسنا (`asena.company`) بدون امکان تعریف درگاه مجزا، تضمین معافیت مالیاتی و آسودگی حقوقی کاربر.
+4. **استودیوی سفارشی‌ساز دیداری دوطرفه بدون کد ([`includes/site_builder_studio.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/includes/site_builder_studio.php)):**
+   - محیط اسپلیت‌اسکرین با پیش‌نمایش زنده در سایزهای دسکتاپ، تبلت و موبایل به همراه سوییچر تب شناور در موبایل (تنظیمات در برابر پیش‌نمایش).
+   - دکمه هوشمند «اعمال چیدمان و بلوک‌های پیشنهادی این نسخه» جهت بازچینی خودکار بلوک‌ها بر اساس Tier انتخاب‌شده.
+   - پشتیبانی از تعامل «کلیک روی هر بخش جهت ویرایش فوری» (Click to Edit) با مکانیزم ایونت‌های دوطرفه `postMessage`.
+   - استقرار در ۴ پنل تخصصی: [`doctor/site_builder.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/doctor/site_builder.php)، [`organization/site_builder.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/organization/site_builder.php)، [`pharmacist/site_builder.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/pharmacist/site_builder.php) و [`seller/site_builder.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/seller/site_builder.php).
+5. **یکپارچه‌سازی و نمایش وب‌سایت در پروفایل‌های عمومی:**
+   - افزودن نشان و بنر وب‌سایت رسمی با نشانی ساب‌دامین آسنا در پرونده پزشکان ([`doctor_profile.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/doctor_profile.php)) و صفحه کلینیک‌ها ([`organization_profile.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/organization_profile.php)).
+6. **تدوین و الحاق قانون شماره ۱۲ استانداردهای وب‌سایت‌ساز:**
+   - تدوین سند قانونی [`.agents/rules/tenant_showcase_and_site_builder_standards.md`](file:///.agents/rules/tenant_showcase_and_site_builder_standards.md) و الحاق آن به بند ۱۲ دستورالعمل‌های عامل هوشمند در [`AGENTS.md`](file:///opt/lampp/htdocs/asena/asena-enterprise/AGENTS.md).
+7. **سوئیت تست و صحه‌گذاری عملکردی:**
+   - نگارش و اجرای موفقیت‌آمیز سوئیت جامع [`tests/test_tenant_site_builder_tiers.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/tests/test_tenant_site_builder_tiers.php) با پاس شدن ۱۰۰٪ ۴۰ آزمون تفکیک بلوک‌ها، تغییر سطوح نسخه و تزریق داده‌ها.
+
 ### نسخه ۱.۰.۱۵ (سپتامبر ۲۰۲۶ - مهاجرت IP سرور پروداکشن، به‌روزرسانی رکوردهای DNS کلودفلر و انطباق وب‌سرویس‌ها)
 1. **مهاجرت و به‌روزرسانی آدرس IP سرور پروداکشن (`193.36.85.56`):**
    - مهاجرت آدرس IP سرور اشتراکی هاستینگ پارس‌پک از `193.36.85.51` به `193.36.85.56` متعاقب رفع محدودیت‌های زیرساختی شبکه.

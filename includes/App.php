@@ -32,9 +32,11 @@ require_once __DIR__ . '/BpmsService.php';
 require_once __DIR__ . '/ContractService.php';
 require_once __DIR__ . '/PromoCodeService.php';
 require_once __DIR__ . '/DoctorVerificationService.php';
+require_once __DIR__ . '/TenantSiteService.php';
 
 class App {
     private static ?PDO $db = null;
+    private static ?TenantSiteService $tenantSite = null;
     private static ?CacheService $cache = null;
     private static ?RateLimiter $rateLimiter = null;
     private static ?SmsService $sms = null;
@@ -240,6 +242,13 @@ class App {
             self::$doctorVerification = new DoctorVerificationService(self::db());
         }
         return self::$doctorVerification;
+    }
+
+    public static function tenantSite(): TenantSiteService {
+        if (self::$tenantSite === null) {
+            self::$tenantSite = new TenantSiteService(self::db());
+        }
+        return self::$tenantSite;
     }
 
     /**

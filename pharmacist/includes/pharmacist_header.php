@@ -88,17 +88,19 @@ $orgId = (int)($linkedOrg['id'] ?? 1);
             'autoship'      => ['icon' => 'autorenew', 'title' => 'تکرار دارو و اتوشیپ مزمن', 'tab' => 'autoship-tab'],
             'interactions'  => ['icon' => 'sync_problem', 'title' => 'راهنمای تداخلات و هشدارها', 'tab' => 'interactions-tab'],
             'history'       => ['icon' => 'history', 'title' => 'آرشیو تحویل و سوابق دارویی', 'tab' => 'history-tab'],
+            'site_builder'  => ['icon' => 'web', 'title' => 'وب‌سایت اختصاصی داروخانه', 'url' => 'site_builder.php'],
             'settings'      => ['icon' => 'contact_phone', 'title' => 'اطلاعات تماس و پیامک', 'tab' => 'settings-tab'],
         ];
 
         foreach ($navItems as $key => $item):
-            $isActive = ($activeTabKey === $key);
+            $isActive = !empty($item['url']) ? (basename($_SERVER['PHP_SELF']) === $item['url']) : ($activeTabKey === $key);
             $classes = $isActive 
                 ? "flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-white font-bold bg-secondary-container shadow-sm transition-all"
                 : "flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-on-tertiary-container hover:bg-white/10 hover:text-white transition-all";
-            $onclick = "if(typeof switchTab === 'function') { switchTab('{$item['tab']}'); if(window.innerWidth < 1024) togglePharmacistSidebar(); return false; }";
+            $href = !empty($item['url']) ? $item['url'] : "index.php?tab={$key}";
+            $onclick = !empty($item['url']) ? "" : "if(typeof switchTab === 'function') { switchTab('{$item['tab']}'); if(window.innerWidth < 1024) togglePharmacistSidebar(); return false; }";
         ?>
-        <a id="nav-item-<?= $key ?>" class="<?= $classes ?>" href="index.php?tab=<?= $key ?>" onclick="<?= $onclick ?>">
+        <a id="nav-item-<?= $key ?>" class="<?= $classes ?>" href="<?= $href ?>" <?= !empty($onclick) ? 'onclick="'.$onclick.'"' : '' ?>>
             <span class="material-symbols-outlined text-[20px]"><?= $item['icon'] ?></span>
             <span class="text-xs font-bold leading-tight"><?= $item['title'] ?></span>
         </a>
