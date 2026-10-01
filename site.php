@@ -740,7 +740,7 @@ $ctaHref = match($tenantType) {
 
             <!-- Draggable Split Comparison Container -->
             <div class="max-w-3xl mx-auto">
-                <div class="relative w-full aspect-[16/10] sm:aspect-[16/9] rounded-3xl overflow-hidden shadow-2xl border-4 border-white bg-slate-900 select-none group" id="ba-comparison-wrapper" style="touch-action: pan-y;">
+                <div class="relative w-full rounded-3xl overflow-hidden shadow-2xl border-4 border-white bg-slate-900 select-none group" id="ba-comparison-wrapper" style="min-height: 420px; aspect-ratio: 16 / 9; touch-action: pan-y;">
                     <!-- AFTER Image (Base Layer) -->
                     <img src="<?= htmlspecialchars(!empty($beforeAfterBlock['image_after']) ? (str_starts_with($beforeAfterBlock['image_after'], 'http') ? $beforeAfterBlock['image_after'] : $beforeAfterBlock['image_after']) : 'assets/images/clinic-banner.jpg') ?>" 
                          id="live-ba-img-after" 
@@ -752,22 +752,20 @@ $ctaHref = match($tenantType) {
                     </div>
 
                     <!-- BEFORE Image (Clipped Overlay Layer) -->
-                    <div class="absolute inset-y-0 right-0 overflow-hidden" id="ba-before-layer" style="width: 50%;">
-                        <img src="<?= htmlspecialchars(!empty($beforeAfterBlock['image_before']) ? (str_starts_with($beforeAfterBlock['image_before'], 'http') ? $beforeAfterBlock['image_before'] : $beforeAfterBlock['image_before']) : 'assets/images/presentation-dog.jpg') ?>" 
-                             id="live-ba-img-before" 
-                             alt="قبل از درمان" 
-                             class="absolute top-0 right-0 h-full max-w-none object-cover" 
-                             style="width: 100%; height: 100%; object-fit: cover;"
-                             onerror="this.src='assets/images/presentation-dog.jpg'">
-                        <div class="absolute top-4 right-4 z-10 px-3 py-1.5 rounded-xl bg-black/70 backdrop-blur-md text-amber-300 text-xs font-black border border-amber-400/30 shadow-md">
-                            <span id="live-ba-label-before"><?= htmlspecialchars($beforeAfterBlock['label_before'] ?? 'قبل از درمان') ?></span>
-                        </div>
+                    <img src="<?= htmlspecialchars(!empty($beforeAfterBlock['image_before']) ? (str_starts_with($beforeAfterBlock['image_before'], 'http') ? $beforeAfterBlock['image_before'] : $beforeAfterBlock['image_before']) : 'assets/images/presentation-dog.jpg') ?>" 
+                         id="live-ba-img-before" 
+                         alt="قبل از درمان" 
+                         class="absolute inset-0 w-full h-full object-cover z-10" 
+                         style="clip-path: inset(0 0 0 50%); -webkit-clip-path: inset(0 0 0 50%);"
+                         onerror="this.src='assets/images/presentation-dog.jpg'">
+                    <div class="absolute top-4 right-4 z-20 px-3 py-1.5 rounded-xl bg-black/75 backdrop-blur-md text-amber-300 text-xs font-black border border-amber-400/30 shadow-md">
+                        <span id="live-ba-label-before"><?= htmlspecialchars($beforeAfterBlock['label_before'] ?? 'قبل از درمان') ?></span>
                     </div>
 
                     <!-- Split Handle Divider -->
-                    <div class="absolute inset-y-0 z-20 flex items-center justify-center pointer-events-none" id="ba-divider-line" style="right: 50%;">
-                        <div class="w-1 h-full bg-white shadow-[0_0_10px_rgba(0,0,0,0.5)]"></div>
-                        <div class="absolute w-10 h-10 rounded-full bg-white shadow-2xl border-2 border-slate-300 flex items-center justify-center text-slate-800 text-xs font-bold gap-0.5 pointer-events-auto cursor-ew-resize active:scale-110 transition-transform">
+                    <div class="absolute inset-y-0 z-20 flex items-center justify-center pointer-events-none transition-none" id="ba-divider-line" style="right: 50%;">
+                        <div class="w-1 h-full bg-white shadow-[0_0_12px_rgba(0,0,0,0.6)]"></div>
+                        <div class="absolute w-11 h-11 rounded-full bg-white shadow-2xl border-2 border-slate-300 flex items-center justify-center text-slate-800 text-xs font-bold gap-0.5 pointer-events-auto cursor-ew-resize active:scale-110 transition-transform">
                             <span class="material-symbols-outlined text-base">code</span>
                         </div>
                     </div>
@@ -1671,10 +1669,12 @@ $ctaHref = match($tenantType) {
 
         // Interactive Before/After slider updater
         function updateBeforeAfterSlider(val) {
-            const beforeLayer = document.getElementById('ba-before-layer');
+            const beforeImg = document.getElementById('live-ba-img-before');
             const dividerLine = document.getElementById('ba-divider-line');
-            if (beforeLayer && dividerLine) {
-                beforeLayer.style.width = val + '%';
+            if (beforeImg && dividerLine) {
+                const cutLeft = 100 - Number(val);
+                beforeImg.style.clipPath = 'inset(0 0 0 ' + cutLeft + '%)';
+                beforeImg.style.webkitClipPath = 'inset(0 0 0 ' + cutLeft + '%)';
                 dividerLine.style.right = val + '%';
             }
         }
