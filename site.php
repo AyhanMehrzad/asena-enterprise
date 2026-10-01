@@ -137,6 +137,30 @@ $ambientMode = $themeConfig['ambient_mode'] ?? 'atmospheric_glow';
 $cardRadius = $themeConfig['card_radius'] ?? 'rounded-3xl';
 $trustAnchorStyle = $themeConfig['trust_anchor'] ?? 'floating_pill';
 
+// Early Coordinates, Address and Navigation Links Initialization
+$targetLat = $navHubBlock['lat'] ?? '35.7219';
+$targetLng = $navHubBlock['lng'] ?? '51.3347';
+$rawAddress = !empty(trim($contactBlock['address'] ?? '')) ? $contactBlock['address'] : 'تهران، خیابان ولیعصر، نرسیده به میدان ونک';
+$addressMapLink = trim($contactBlock['map_link'] ?? ($navHubBlock['neshan_url'] ?? ($navHubBlock['balad_url'] ?? ($navHubBlock['google_maps_url'] ?? ''))));
+if (empty($addressMapLink) && !empty($targetLat) && !empty($targetLng)) {
+    $addressMapLink = "https://neshan.org/maps/@{$targetLat},{$targetLng},16z";
+}
+$navBtnText = !empty(trim($contactBlock['nav_btn_text'] ?? '')) ? $contactBlock['nav_btn_text'] : 'مسیریابی با بلد / نشان';
+
+// Normalizer for ASENA ecosystem live services to asena.company
+$normalizeAsenaUrl = function(?string $url): string {
+    if (empty($url)) return 'https://asena.company';
+    $url = trim($url);
+    if (str_starts_with($url, '#')) return $url;
+    if (str_starts_with($url, '../')) {
+        return 'https://asena.company/' . ltrim(substr($url, 3), '/');
+    }
+    if (!str_starts_with($url, 'http://') && !str_starts_with($url, 'https://')) {
+        return 'https://asena.company/' . ltrim($url, '/');
+    }
+    return $url;
+};
+
 // Hydrate live items from database (hydrate all available in preview mode for instantaneous zero-refresh toggling)
 $tenantProducts = [];
 if (!empty($storefrontBlock['enabled']) || $isPreview) {
@@ -375,11 +399,13 @@ $metaDesc = htmlspecialchars($site['meta_description'] ?: ($site['site_title'] .
 $siteLogo = !empty($site['logo_url']) ? $site['logo_url'] : 'assets/images/clinic-default-logo.svg';
 $asenaLogo = 'assets/images/logo.png';
 
-$ctaHref = match($tenantType) {
+$ctaHref = !empty($headerBlock['cta_url']) ? $headerBlock['cta_url'] : match($tenantType) {
     'doctor', 'organization' => '#booking',
     'pharmacist', 'seller' => (!empty($storefrontBlock['enabled']) ? '#storefront' : '#contact'),
     default => '#contact'
 };
+$heroPrimaryHref = !empty($heroBlock['cta_primary_url']) ? $heroBlock['cta_primary_url'] : $ctaHref;
+$heroSecondaryHref = !empty($heroBlock['cta_secondary_url']) ? $heroBlock['cta_secondary_url'] : (!empty($contactBlock['phone']) ? 'tel:' . preg_replace('/[^\d+]/', '', $contactBlock['phone']) : '#services');
 ?>
 <!DOCTYPE html>
 <html dir="rtl" lang="fa" class="scroll-smooth">
@@ -751,7 +777,7 @@ $ctaHref = match($tenantType) {
                     <span dir="ltr" id="live-header-phone" data-studio-editable="contact_phone" class="whitespace-nowrap"><?= htmlspecialchars($headerPhone) ?></span>
                 </a>
 
-                <a href="<?= $ctaHref ?>" class="hidden md:inline-flex px-4 py-2 rounded-xl bg-tenant-primary bg-tenant-primary-hover text-white text-xs font-bold shadow-md shadow-emerald-900/10 transition-transform active:scale-95 items-center gap-1.5 whitespace-nowrap shrink-0">
+                <a href="<?= $ctaHref ?>" id="live-header-cta-btn" class="hidden md:inline-flex px-4 py-2 rounded-xl bg-tenant-primary bg-tenant-primary-hover text-white text-xs font-bold shadow-md shadow-emerald-900/10 transition-transform active:scale-95 items-center gap-1.5 whitespace-nowrap shrink-0">
                     <span class="material-symbols-outlined text-sm">calendar_month</span>
                     <span id="live-header-cta-text" data-studio-editable="header_cta_text" class="whitespace-nowrap"><?= htmlspecialchars($headerBlock['cta_text'] ?? 'رزرو آنلاین نوبت') ?></span>
                 </a>
@@ -887,15 +913,15 @@ $ctaHref = match($tenantType) {
 
                 <!-- Dual High-Intent CTAs -->
                 <div class="pt-2 flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-3.5">
-                    <a href="<?= $ctaHref ?>" class="w-full sm:w-auto px-8 py-4 rounded-2xl bg-tenant-primary bg-tenant-primary-hover text-white text-sm font-black shadow-xl shadow-emerald-900/15 hover:shadow-2xl transition-all flex items-center justify-center gap-2 group">
+                    <a href="<?= htmlspecialchars($heroPrimaryHref) ?>" id="live-hero-primary-cta" target="<?= str_starts_with($heroPrimaryHref, '#') ? '_self' : '_blank' ?>" class="w-full sm:w-auto px-8 py-4 rounded-2xl bg-tenant-primary bg-tenant-primary-hover text-white text-sm font-black shadow-xl shadow-emerald-900/15 hover:shadow-2xl transition-all flex items-center justify-center gap-2 group">
                         <span id="live-hero-cta" data-studio-editable="hero_cta"><?= htmlspecialchars($heroBlock['cta_primary_text'] ?? 'رزرو آنلاین نوبت') ?></span>
                         <span class="material-symbols-outlined text-base group-hover:-translate-x-1 transition-transform">arrow_left</span>
                     </a>
                     
                     <?php if (!empty($heroBlock['cta_secondary_text'])): ?>
-                    <a href="#contact" class="w-full sm:w-auto px-7 py-4 rounded-2xl bg-white hover:bg-slate-100 text-slate-800 border border-slate-200 text-sm font-bold transition-all shadow-sm flex items-center justify-center gap-1.5">
+                    <a href="<?= htmlspecialchars($heroSecondaryHref) ?>" id="live-hero-secondary-cta" target="<?= str_starts_with($heroSecondaryHref, '#') || str_starts_with($heroSecondaryHref, 'tel:') ? '_self' : '_blank' ?>" class="w-full sm:w-auto px-7 py-4 rounded-2xl bg-white hover:bg-slate-100 text-slate-800 border border-slate-200 text-sm font-bold transition-all shadow-sm flex items-center justify-center gap-1.5">
                         <span class="material-symbols-outlined text-base text-slate-500">call</span>
-                        <span><?= htmlspecialchars($heroBlock['cta_secondary_text']) ?></span>
+                        <span id="live-hero-secondary-cta-text" data-studio-editable="hero_cta_secondary"><?= htmlspecialchars($heroBlock['cta_secondary_text']) ?></span>
                     </a>
                     <?php endif; ?>
                 </div>
@@ -1042,10 +1068,10 @@ $ctaHref = match($tenantType) {
                 </div>
             </div>
             <div class="flex items-center gap-2 shrink-0">
-                <button type="button" onclick="openNavHubModal()" class="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-white text-xs font-bold transition-all flex items-center gap-1.5 active:scale-95">
+                <a href="<?= !empty($addressMapLink) ? htmlspecialchars($addressMapLink) : 'javascript:openNavHubModal()' ?>" target="<?= !empty($addressMapLink) ? '_blank' : '_self' ?>" rel="noopener" id="live-duty-nav-btn" class="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-white text-xs font-bold transition-all flex items-center gap-1.5 active:scale-95 cursor-pointer" title="مسیریابی با اپلیکیشن‌های بلد، نشان، ویز و گوگل مپ" onclick="if (!this.getAttribute('href') || this.getAttribute('href').startsWith('javascript:')) openNavHubModal();">
                     <span class="material-symbols-outlined text-sm text-amber-300">near_me</span>
-                    <span>مسیریابی با بلد / نشان</span>
-                </button>
+                    <span id="live-duty-nav-text" data-studio-editable="contact_nav_btn_text"><?= htmlspecialchars($navBtnText) ?></span>
+                </a>
                 <a href="<?= $ctaHref ?>" class="px-4 py-2 rounded-xl bg-tenant-primary bg-tenant-primary-hover text-white text-xs font-black shadow-md flex items-center gap-1.5 transition-all active:scale-95">
                     <span class="material-symbols-outlined text-sm">event_available</span>
                     <span>رزرو شیفت آزاد</span>
@@ -1148,6 +1174,14 @@ $ctaHref = match($tenantType) {
                         <span class="inline-block px-2.5 py-0.5 rounded-md text-[10px] font-black bg-amber-50 text-amber-700 border border-amber-200/60"><?= htmlspecialchars($item['tag'] ?? 'تخصصی') ?></span>
                         <h4 class="text-base font-black text-slate-900"><?= htmlspecialchars($item['title'] ?? '') ?></h4>
                         <p class="text-xs text-slate-600 leading-relaxed"><?= htmlspecialchars($item['desc'] ?? '') ?></p>
+                        <?php if (!empty($item['url'])): ?>
+                        <div class="pt-1.5">
+                            <a href="<?= htmlspecialchars($item['url']) ?>" target="<?= str_starts_with($item['url'], '#') ? '_self' : '_blank' ?>" rel="noopener" class="inline-flex items-center gap-1 text-[11px] font-bold text-tenant-primary hover:underline">
+                                <span><?= htmlspecialchars(!empty($item['btn_text']) ? $item['btn_text'] : 'اطلاعات بیشتر') ?></span>
+                                <span class="material-symbols-outlined text-xs">arrow_left</span>
+                            </a>
+                        </div>
+                        <?php endif; ?>
                     </div>
                 </div>
                 <?php endforeach; ?>
@@ -1253,6 +1287,14 @@ $ctaHref = match($tenantType) {
                     </div>
                     <h4 class="font-black text-slate-900 text-base mb-2"><?= htmlspecialchars($srv['title'] ?? '') ?></h4>
                     <p class="text-xs text-slate-600 leading-relaxed"><?= htmlspecialchars($srv['desc'] ?? '') ?></p>
+                    <?php if (!empty($srv['url'])): ?>
+                    <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">
+                        <a href="<?= htmlspecialchars($srv['url']) ?>" target="<?= str_starts_with($srv['url'], '#') ? '_self' : '_blank' ?>" rel="noopener" class="inline-flex items-center gap-1 text-xs font-bold text-tenant-primary hover:underline">
+                            <span><?= htmlspecialchars(!empty($srv['btn_text']) ? $srv['btn_text'] : 'مشاهده و رزرو خدمت') ?></span>
+                            <span class="material-symbols-outlined text-xs">arrow_left</span>
+                        </a>
+                    </div>
+                    <?php endif; ?>
                 </div>
                 <?php endforeach; ?>
 
@@ -1307,7 +1349,7 @@ $ctaHref = match($tenantType) {
                             <?= htmlspecialchars($asenaServicesBlock['telehealth_desc'] ?? 'مشاوره تصویری و گفتگوی آنلاین مستقیم با دامپزشکان متخصص و ثبت نسخه الکترونیک') ?>
                         </p>
                     </div>
-                    <a href="<?= htmlspecialchars($asenaServicesBlock['telehealth_url'] ?? '../chat.php') ?>" class="w-full py-3 px-4 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black shadow-md shadow-emerald-600/20 flex items-center justify-center gap-1.5 transition-all group-hover:shadow-lg">
+                    <a href="<?= htmlspecialchars($normalizeAsenaUrl($asenaServicesBlock['telehealth_url'] ?? 'https://asena.company/chat.php')) ?>" id="live-telehealth-link" target="_blank" rel="noopener" class="w-full py-3 px-4 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black shadow-md shadow-emerald-600/20 flex items-center justify-center gap-1.5 transition-all group-hover:shadow-lg">
                         <span id="live-telehealth-btn" data-studio-editable="telehealth_btn"><?= htmlspecialchars($asenaServicesBlock['telehealth_btn'] ?? 'شروع ویزیت آنلاین') ?></span>
                         <span class="material-symbols-outlined text-sm group-hover:-translate-x-1 transition-transform">arrow_left</span>
                     </a>
@@ -1329,7 +1371,7 @@ $ctaHref = match($tenantType) {
                             <?= htmlspecialchars($asenaServicesBlock['pharmacy_desc'] ?? 'تأمین مطمئن انواع داروهای کمیاب، مکمل‌های تقویتی و واکسن‌ها با شرایط استاندارد دمایی ۲ الی ۸ درجه') ?>
                         </p>
                     </div>
-                    <a href="<?= htmlspecialchars($asenaServicesBlock['pharmacy_url'] ?? '../pharmacy.php') ?>" class="w-full py-3 px-4 rounded-2xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-black shadow-md shadow-purple-600/20 flex items-center justify-center gap-1.5 transition-all group-hover:shadow-lg">
+                    <a href="<?= htmlspecialchars($normalizeAsenaUrl($asenaServicesBlock['pharmacy_url'] ?? 'https://asena.company/pharmacy.php')) ?>" id="live-pharmacy-link" target="_blank" rel="noopener" class="w-full py-3 px-4 rounded-2xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-black shadow-md shadow-purple-600/20 flex items-center justify-center gap-1.5 transition-all group-hover:shadow-lg">
                         <span id="live-pharmacy-btn" data-studio-editable="pharmacy_btn"><?= htmlspecialchars($asenaServicesBlock['pharmacy_btn'] ?? 'سفارش دارو و مکمل') ?></span>
                         <span class="material-symbols-outlined text-sm group-hover:-translate-x-1 transition-transform">arrow_left</span>
                     </a>
@@ -1351,7 +1393,7 @@ $ctaHref = match($tenantType) {
                             <?= htmlspecialchars($asenaServicesBlock['autoship_desc'] ?? 'ارسال خودکار و منظم غذای خشک رژیمی، ضد انگل و مکمل‌ها با تخفیف دائمی ۱۰٪ و امکان لغو در هر زمان') ?>
                         </p>
                     </div>
-                    <a href="<?= htmlspecialchars($asenaServicesBlock['autoship_url'] ?? '../subscriptions.php') ?>" class="w-full py-3 px-4 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-black shadow-md shadow-blue-600/20 flex items-center justify-center gap-1.5 transition-all group-hover:shadow-lg">
+                    <a href="<?= htmlspecialchars($normalizeAsenaUrl($asenaServicesBlock['autoship_url'] ?? 'https://asena.company/subscriptions.php')) ?>" id="live-autoship-link" target="_blank" rel="noopener" class="w-full py-3 px-4 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-black shadow-md shadow-blue-600/20 flex items-center justify-center gap-1.5 transition-all group-hover:shadow-lg">
                         <span id="live-autoship-btn" data-studio-editable="autoship_btn"><?= htmlspecialchars($asenaServicesBlock['autoship_btn'] ?? 'فعالسازی تحویل دوره‌ای') ?></span>
                         <span class="material-symbols-outlined text-sm group-hover:-translate-x-1 transition-transform">arrow_left</span>
                     </a>
@@ -1373,7 +1415,7 @@ $ctaHref = match($tenantType) {
                             <?= htmlspecialchars($asenaServicesBlock['rewards_desc'] ?? 'کسب امتیاز وفاداری با هر نوبت ویزیت یا خرید دارو، قابل تبدیل به اعتبار درمانی و تخفیف نقدی') ?>
                         </p>
                     </div>
-                    <a href="<?= htmlspecialchars($asenaServicesBlock['rewards_url'] ?? '../rewards.php') ?>" class="w-full py-3 px-4 rounded-2xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-black shadow-md shadow-amber-600/20 flex items-center justify-center gap-1.5 transition-all group-hover:shadow-lg">
+                    <a href="<?= htmlspecialchars($normalizeAsenaUrl($asenaServicesBlock['rewards_url'] ?? 'https://asena.company/rewards.php')) ?>" id="live-rewards-link" target="_blank" rel="noopener" class="w-full py-3 px-4 rounded-2xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-black shadow-md shadow-amber-600/20 flex items-center justify-center gap-1.5 transition-all group-hover:shadow-lg">
                         <span id="live-rewards-btn" data-studio-editable="rewards_btn"><?= htmlspecialchars($asenaServicesBlock['rewards_btn'] ?? 'مشاهده امتیازها و پاداش') ?></span>
                         <span class="material-symbols-outlined text-sm group-hover:-translate-x-1 transition-transform">arrow_left</span>
                     </a>
@@ -1395,7 +1437,7 @@ $ctaHref = match($tenantType) {
                             <?= htmlspecialchars($asenaServicesBlock['charity_desc'] ?? 'مشارکت مستقیم و شفاف در هزینه‌های جراحی و بستری حیوانات بی‌سرپرست و آسیب‌دیده با حساب امانی آسنا') ?>
                         </p>
                     </div>
-                    <a href="<?= htmlspecialchars($asenaServicesBlock['charity_url'] ?? '../charity.php') ?>" class="w-full py-3 px-4 rounded-2xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-black shadow-md shadow-rose-600/20 flex items-center justify-center gap-1.5 transition-all group-hover:shadow-lg">
+                    <a href="<?= htmlspecialchars($normalizeAsenaUrl($asenaServicesBlock['charity_url'] ?? 'https://asena.company/charity.php')) ?>" id="live-charity-link" target="_blank" rel="noopener" class="w-full py-3 px-4 rounded-2xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-black shadow-md shadow-rose-600/20 flex items-center justify-center gap-1.5 transition-all group-hover:shadow-lg">
                         <span id="live-charity-btn" data-studio-editable="charity_btn"><?= htmlspecialchars($asenaServicesBlock['charity_btn'] ?? 'حمایت از درمان حیوانات') ?></span>
                         <span class="material-symbols-outlined text-sm group-hover:-translate-x-1 transition-transform">arrow_left</span>
                     </a>
@@ -1996,7 +2038,15 @@ $ctaHref = match($tenantType) {
                         </div>
                         <div>
                             <h4 class="font-bold text-slate-900 text-sm mb-1">نشانی مراجعه حضوری</h4>
-                            <p class="text-xs text-slate-500 leading-relaxed" id="live-contact-address" data-studio-editable="contact_address"><?= htmlspecialchars($rawAddress) ?></p>
+                            <p class="text-xs text-slate-500 leading-relaxed" id="live-contact-address" data-studio-editable="contact_address">
+                                <?php if (!empty($addressMapLink)): ?>
+                                    <a href="<?= htmlspecialchars($addressMapLink) ?>" target="_blank" rel="noopener" class="hover:text-tenant-primary hover:underline transition-colors" title="مشاهده موقعیت روی نقشه">
+                                        <?= htmlspecialchars($rawAddress) ?>
+                                    </a>
+                                <?php else: ?>
+                                    <?= htmlspecialchars($rawAddress) ?>
+                                <?php endif; ?>
+                            </p>
                         </div>
                     </div>
                     <div class="pt-4 mt-4 border-t border-slate-100 flex items-center justify-between">
@@ -2004,10 +2054,10 @@ $ctaHref = match($tenantType) {
                             <span class="material-symbols-outlined text-xs">content_copy</span>
                             <span>کپی نشانی</span>
                         </button>
-                        <button type="button" onclick="openNavHubModal()" class="text-[11px] text-amber-600 font-bold hover:underline flex items-center gap-1">
+                        <a href="<?= !empty($addressMapLink) ? htmlspecialchars($addressMapLink) : 'javascript:openNavHubModal()' ?>" target="<?= !empty($addressMapLink) ? '_blank' : '_self' ?>" rel="noopener" id="live-contact-nav-btn" class="text-[11px] text-amber-600 font-bold hover:underline flex items-center gap-1 cursor-pointer" onclick="if (!this.getAttribute('href') || this.getAttribute('href').startsWith('javascript:')) openNavHubModal();">
                             <span class="material-symbols-outlined text-xs">near_me</span>
-                            <span>مسیریابی</span>
-                        </button>
+                            <span id="live-contact-nav-text" data-studio-editable="contact_nav_btn_text"><?= htmlspecialchars($navBtnText) ?></span>
+                        </a>
                     </div>
                 </div>
 
@@ -2263,14 +2313,20 @@ $ctaHref = match($tenantType) {
                         <span class="material-symbols-outlined text-xs text-amber-400">location_on</span>
                         <span>نشانی و ساعات کاری</span>
                     </h4>
-                    <p class="text-xs text-slate-400 leading-relaxed font-normal">
-                        <?= htmlspecialchars($contactBlock['address'] ?? 'تهران، خیابان ولیعصر، نرسیده به میدان ونک') ?>
+                    <p class="text-xs text-slate-400 leading-relaxed font-normal" id="live-footer-address">
+                        <?php if (!empty($addressMapLink)): ?>
+                            <a href="<?= htmlspecialchars($addressMapLink) ?>" target="_blank" rel="noopener" class="hover:text-white transition-colors" title="مشاهده موقعیت روی نقشه">
+                                <?= htmlspecialchars($contactBlock['address'] ?? 'تهران، خیابان ولیعصر، نرسیده به میدان ونک') ?>
+                            </a>
+                        <?php else: ?>
+                            <?= htmlspecialchars($contactBlock['address'] ?? 'تهران، خیابان ولیعصر، نرسیده به میدان ونک') ?>
+                        <?php endif; ?>
                     </p>
                     <div class="pt-1">
-                        <button type="button" onclick="openNavHubModal()" class="w-full py-2 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold border border-slate-700 flex items-center justify-center gap-1.5 transition-colors cursor-pointer">
+                        <a href="<?= !empty($addressMapLink) ? htmlspecialchars($addressMapLink) : 'javascript:openNavHubModal()' ?>" target="<?= !empty($addressMapLink) ? '_blank' : '_self' ?>" rel="noopener" id="live-footer-nav-btn" class="w-full py-2 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold border border-slate-700 flex items-center justify-center gap-1.5 transition-colors cursor-pointer" onclick="if (!this.getAttribute('href') || this.getAttribute('href').startsWith('javascript:')) openNavHubModal();">
                             <span class="material-symbols-outlined text-sm text-emerald-400">near_me</span>
-                            <span>مسیریابی در نشان، بلد و ویز</span>
-                        </button>
+                            <span id="live-footer-nav-text"><?= htmlspecialchars($navBtnText) ?></span>
+                        </a>
                     </div>
                 </div>
 
@@ -2608,38 +2664,52 @@ $ctaHref = match($tenantType) {
             <div class="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80">
                 <div class="text-[11px] text-slate-400 font-bold mb-1">نشانی ثبت‌شده:</div>
                 <div class="text-xs text-slate-700 leading-relaxed font-medium"><?= htmlspecialchars($contactBlock['address'] ?? 'تهران') ?></div>
-                <button type="button" onclick="copyAddressToClipboard('<?= addslashes($contactBlock['address'] ?? '') ?>')" class="mt-2.5 w-full py-2 px-3 rounded-xl bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 text-xs font-bold transition-all flex items-center justify-center gap-1.5">
-                    <span class="material-symbols-outlined text-xs text-slate-500">content_copy</span>
-                    <span>کپی آدرس به کلیپ‌بورد</span>
-                </button>
+                <div class="mt-2.5 flex items-center gap-2">
+                    <?php if (!empty($addressMapLink)): ?>
+                    <a href="<?= htmlspecialchars($addressMapLink) ?>" target="_blank" rel="noopener" class="flex-1 py-2 px-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-sm">
+                        <span class="material-symbols-outlined text-xs">near_me</span>
+                        <span>مسیریابی مستقیم</span>
+                    </a>
+                    <?php endif; ?>
+                    <button type="button" onclick="copyAddressToClipboard('<?= addslashes($contactBlock['address'] ?? '') ?>')" class="py-2 px-3 rounded-xl bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 text-xs font-bold transition-all flex items-center justify-center gap-1.5 <?= !empty($addressMapLink) ? '' : 'w-full' ?>">
+                        <span class="material-symbols-outlined text-xs text-slate-500">content_copy</span>
+                        <span>کپی آدرس</span>
+                    </button>
+                </div>
             </div>
 
             <!-- Routing Apps Grid -->
             <div>
                 <label class="block text-xs font-bold text-slate-700 mb-2">انتخاب مسیریاب مورد نظر:</label>
                 <div class="grid grid-cols-2 gap-2.5">
-                    <a href="https://neshan.org/maps/@<?= $targetLat ?>,<?= $targetLng ?>,16z" target="_blank" class="p-3 rounded-2xl border border-slate-200 hover:border-blue-500 hover:bg-blue-50/30 flex items-center gap-2.5 transition-all text-right">
+                    <?php
+                        $neshanFinal = !empty($navHubBlock['neshan_url']) ? $navHubBlock['neshan_url'] : "https://neshan.org/maps/@{$targetLat},{$targetLng},16z";
+                        $baladFinal = !empty($navHubBlock['balad_url']) ? $navHubBlock['balad_url'] : "https://balad.ir/location?latitude={$targetLat}&longitude={$targetLng}";
+                        $wazeFinal = !empty($navHubBlock['waze_url']) ? $navHubBlock['waze_url'] : "https://waze.com/ul?ll={$targetLat},{$targetLng}&navigate=yes";
+                        $googleFinal = !empty($navHubBlock['google_maps_url']) ? $navHubBlock['google_maps_url'] : "https://maps.google.com/?q={$targetLat},{$targetLng}";
+                    ?>
+                    <a href="<?= htmlspecialchars($neshanFinal) ?>" target="_blank" rel="noopener" class="p-3 rounded-2xl border border-slate-200 hover:border-blue-500 hover:bg-blue-50/30 flex items-center gap-2.5 transition-all text-right">
                         <span class="w-8 h-8 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-xs">ن</span>
                         <div>
                             <div class="text-xs font-black text-slate-800">مسیریاب نشان</div>
                             <div class="text-[10px] text-slate-400">Neshan Maps</div>
                         </div>
                     </a>
-                    <a href="https://balad.ir/location?latitude=<?= $targetLat ?>&longitude=<?= $targetLng ?>" target="_blank" class="p-3 rounded-2xl border border-slate-200 hover:border-emerald-500 hover:bg-emerald-50/30 flex items-center gap-2.5 transition-all text-right">
+                    <a href="<?= htmlspecialchars($baladFinal) ?>" target="_blank" rel="noopener" class="p-3 rounded-2xl border border-slate-200 hover:border-emerald-500 hover:bg-emerald-50/30 flex items-center gap-2.5 transition-all text-right">
                         <span class="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center font-bold text-xs">ب</span>
                         <div>
                             <div class="text-xs font-black text-slate-800">مسیریاب بلد</div>
                             <div class="text-[10px] text-slate-400">Balad Maps</div>
                         </div>
                     </a>
-                    <a href="https://waze.com/ul?ll=<?= $targetLat ?>,<?= $targetLng ?>&navigate=yes" target="_blank" class="p-3 rounded-2xl border border-slate-200 hover:border-cyan-500 hover:bg-cyan-50/30 flex items-center gap-2.5 transition-all text-right">
+                    <a href="<?= htmlspecialchars($wazeFinal) ?>" target="_blank" rel="noopener" class="p-3 rounded-2xl border border-slate-200 hover:border-cyan-500 hover:bg-cyan-50/30 flex items-center gap-2.5 transition-all text-right">
                         <span class="w-8 h-8 rounded-xl bg-cyan-100 text-cyan-600 flex items-center justify-center font-bold text-xs">W</span>
                         <div>
                             <div class="text-xs font-black text-slate-800">ویز (Waze)</div>
                             <div class="text-[10px] text-slate-400">Live Traffic</div>
                         </div>
                     </a>
-                    <a href="https://maps.google.com/?q=<?= $targetLat ?>,<?= $targetLng ?>" target="_blank" class="p-3 rounded-2xl border border-slate-200 hover:border-slate-500 hover:bg-slate-50 flex items-center gap-2.5 transition-all text-right">
+                    <a href="<?= htmlspecialchars($googleFinal) ?>" target="_blank" rel="noopener" class="p-3 rounded-2xl border border-slate-200 hover:border-slate-500 hover:bg-slate-50 flex items-center gap-2.5 transition-all text-right">
                         <span class="w-8 h-8 rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center font-bold text-xs">G</span>
                         <div>
                             <div class="text-xs font-black text-slate-800">گوگل مپ</div>
@@ -4152,7 +4222,75 @@ $ctaHref = match($tenantType) {
                 }
                 case 'contact_address': {
                     const el = document.getElementById('live-contact-address');
-                    if (el) el.innerText = value || 'تهران، خیابان ولیعصر، نرسیده به میدان ونک';
+                    if (el) {
+                        const a = el.querySelector('a');
+                        if (a) a.innerText = value || 'تهران، خیابان ولیعصر، نرسیده به میدان ونک';
+                        else el.innerText = value || 'تهران، خیابان ولیعصر، نرسیده به میدان ونک';
+                    }
+                    const fEl = document.getElementById('live-footer-address');
+                    if (fEl) {
+                        const a = fEl.querySelector('a');
+                        if (a) a.innerText = value || 'تهران، خیابان ولیعصر، نرسیده به میدان ونک';
+                        else fEl.innerText = value || 'تهران، خیابان ولیعصر، نرسیده به میدان ونک';
+                    }
+                    break;
+                }
+                case 'contact_map_link': {
+                    const mapUrl = (value && value.trim()) ? value.trim() : '';
+                    // Update duty nav button
+                    const dutyNavBtn = document.getElementById('live-duty-nav-btn');
+                    if (dutyNavBtn) {
+                        dutyNavBtn.href = mapUrl ? mapUrl : 'javascript:openNavHubModal()';
+                        dutyNavBtn.target = mapUrl ? '_blank' : '_self';
+                    }
+                    // Update contact address link
+                    const contactAddr = document.getElementById('live-contact-address');
+                    if (contactAddr) {
+                        const existingText = contactAddr.innerText.trim();
+                        if (mapUrl) {
+                            contactAddr.innerHTML = `<a href="${escapePreviewHtml(mapUrl)}" target="_blank" rel="noopener" class="hover:text-tenant-primary hover:underline transition-colors" title="مشاهده موقعیت روی نقشه">${escapePreviewHtml(existingText)}</a>`;
+                        } else {
+                            contactAddr.innerText = existingText;
+                        }
+                    }
+                    // Update contact nav button
+                    const contactNavBtn = document.getElementById('live-contact-nav-btn');
+                    if (contactNavBtn) {
+                        contactNavBtn.href = mapUrl ? mapUrl : 'javascript:openNavHubModal()';
+                        contactNavBtn.target = mapUrl ? '_blank' : '_self';
+                    }
+                    // Update footer address link
+                    const footerAddr = document.getElementById('live-footer-address');
+                    if (footerAddr) {
+                        const existingText = footerAddr.innerText.trim();
+                        if (mapUrl) {
+                            footerAddr.innerHTML = `<a href="${escapePreviewHtml(mapUrl)}" target="_blank" rel="noopener" class="hover:text-white transition-colors" title="مشاهده موقعیت روی نقشه">${escapePreviewHtml(existingText)}</a>`;
+                        } else {
+                            footerAddr.innerText = existingText;
+                        }
+                    }
+                    // Update footer nav button
+                    const footerNavBtn = document.getElementById('live-footer-nav-btn');
+                    if (footerNavBtn) {
+                        footerNavBtn.href = mapUrl ? mapUrl : 'javascript:openNavHubModal()';
+                        footerNavBtn.target = mapUrl ? '_blank' : '_self';
+                    }
+                    // Update modal direct button if present
+                    const modalDirectBtn = document.getElementById('navhub-modal-direct-btn');
+                    if (modalDirectBtn) {
+                        modalDirectBtn.href = mapUrl || '#';
+                        modalDirectBtn.classList.toggle('hidden', !mapUrl);
+                    }
+                    break;
+                }
+                case 'contact_nav_btn_text': {
+                    const txt = (value && value.trim()) ? value.trim() : 'مسیریابی با بلد / نشان';
+                    const dutyTxt = document.getElementById('live-duty-nav-text');
+                    if (dutyTxt) dutyTxt.innerText = txt;
+                    const contactTxt = document.getElementById('live-contact-nav-text');
+                    if (contactTxt) contactTxt.innerText = txt;
+                    const footerTxt = document.getElementById('live-footer-nav-text');
+                    if (footerTxt) footerTxt.innerText = txt;
                     break;
                 }
                 case 'contact_hours': {
@@ -4190,6 +4328,32 @@ $ctaHref = match($tenantType) {
                 case 'header_cta_text': {
                     const el = document.getElementById('live-header-cta-text');
                     if (el) el.innerText = value || 'رزرو آنلاین نوبت';
+                    break;
+                }
+                case 'header_cta_url': {
+                    const el = document.getElementById('live-header-cta-btn');
+                    if (el) el.href = value || '#booking';
+                    break;
+                }
+                case 'hero_cta_url': {
+                    const el = document.getElementById('live-hero-primary-cta');
+                    if (el) {
+                        el.href = value || '#booking';
+                        el.target = (value && value.startsWith('#')) ? '_self' : '_blank';
+                    }
+                    break;
+                }
+                case 'hero_cta_secondary': {
+                    const el = document.getElementById('live-hero-secondary-cta-text');
+                    if (el) el.innerText = value || 'مشاهده خدمات و تخصص‌ها';
+                    break;
+                }
+                case 'hero_cta_secondary_url': {
+                    const el = document.getElementById('live-hero-secondary-cta');
+                    if (el) {
+                        el.href = value || '#services';
+                        el.target = (value && (value.startsWith('#') || value.startsWith('tel:'))) ? '_self' : '_blank';
+                    }
                     break;
                 }
                 case 'hero_badge': {
@@ -4370,6 +4534,11 @@ $ctaHref = match($tenantType) {
                     if (el) el.innerText = value || '';
                     break;
                 }
+                case 'telehealth_url': {
+                    const el = document.getElementById('live-telehealth-link');
+                    if (el) el.href = value || 'https://asena.company/chat.php';
+                    break;
+                }
                 case 'pharmacy_title': {
                     const el = document.getElementById('live-pharmacy-title');
                     if (el) el.innerText = value || '';
@@ -4383,6 +4552,11 @@ $ctaHref = match($tenantType) {
                 case 'pharmacy_btn': {
                     const el = document.getElementById('live-pharmacy-btn');
                     if (el) el.innerText = value || '';
+                    break;
+                }
+                case 'pharmacy_url': {
+                    const el = document.getElementById('live-pharmacy-link');
+                    if (el) el.href = value || 'https://asena.company/pharmacy.php';
                     break;
                 }
                 case 'autoship_title': {
@@ -4400,6 +4574,11 @@ $ctaHref = match($tenantType) {
                     if (el) el.innerText = value || '';
                     break;
                 }
+                case 'autoship_url': {
+                    const el = document.getElementById('live-autoship-link');
+                    if (el) el.href = value || 'https://asena.company/subscriptions.php';
+                    break;
+                }
                 case 'rewards_title': {
                     const el = document.getElementById('live-rewards-title');
                     if (el) el.innerText = value || '';
@@ -4415,6 +4594,11 @@ $ctaHref = match($tenantType) {
                     if (el) el.innerText = value || '';
                     break;
                 }
+                case 'rewards_url': {
+                    const el = document.getElementById('live-rewards-link');
+                    if (el) el.href = value || 'https://asena.company/rewards.php';
+                    break;
+                }
                 case 'charity_title': {
                     const el = document.getElementById('live-charity-title');
                     if (el) el.innerText = value || '';
@@ -4428,6 +4612,11 @@ $ctaHref = match($tenantType) {
                 case 'charity_btn': {
                     const el = document.getElementById('live-charity-btn');
                     if (el) el.innerText = value || '';
+                    break;
+                }
+                case 'charity_url': {
+                    const el = document.getElementById('live-charity-link');
+                    if (el) el.href = value || 'https://asena.company/charity.php';
                     break;
                 }
                 case 'vcard_title': {
@@ -4594,7 +4783,14 @@ $ctaHref = match($tenantType) {
                             <span class="material-symbols-outlined text-2xl">${escapePreviewHtml(srv.icon || 'star')}</span>
                         </div>
                         <h4 class="font-black text-slate-900 text-base mb-2">${escapePreviewHtml(srv.title || '')}</h4>
-                        <p class="text-xs text-slate-600 leading-relaxed">${escapePreviewHtml(srv.desc || '')}</p>
+                        <p class="text-xs text-slate-600 leading-relaxed mb-3">${escapePreviewHtml(srv.desc || '')}</p>
+                        ${srv.url ? `
+                        <div class="pt-3 border-t border-slate-100 mt-auto">
+                            <a href="${escapePreviewHtml(srv.url)}" ${srv.url.startsWith('http') ? 'target="_blank" rel="noopener"' : ''} class="inline-flex items-center gap-1.5 text-xs font-bold text-tenant-primary hover:text-tenant-primary-hover transition-colors">
+                                <span>${escapePreviewHtml(srv.btn_text || 'اطلاعات بیشتر و رزرو')}</span>
+                                <span class="material-symbols-outlined text-sm rtl:rotate-180">arrow_right_alt</span>
+                            </a>
+                        </div>` : ''}
                     </div>`;
                 });
                 html += `
@@ -4628,9 +4824,16 @@ $ctaHref = match($tenantType) {
                             <span class="material-symbols-outlined text-3xl">${escapePreviewHtml(item.icon || 'local_hospital')}</span>
                         </div>
                         <div class="space-y-1.5 flex-1 min-w-0">
-                            <span class="inline-block px-2.5 py-0.5 rounded-md text-[10px] font-black bg-amber-50 text-amber-700 border border-amber-200/60">${escapePreviewHtml(item.tag || 'تخصصی')}</span>
+                            <span class="inline-block px-2.5 py-0.5 rounded-md text-[10px] font-black bg-amber-50 text-amber-700 border border-amber-200/60">${escapePreviewHtml(item.badge || item.tag || 'تخصصی')}</span>
                             <h4 class="text-base font-black text-slate-900">${escapePreviewHtml(item.title || '')}</h4>
                             <p class="text-xs text-slate-600 leading-relaxed">${escapePreviewHtml(item.desc || '')}</p>
+                            ${item.url ? `
+                            <div class="pt-2">
+                                <a href="${escapePreviewHtml(item.url)}" ${item.url.startsWith('http') ? 'target="_blank" rel="noopener"' : ''} class="inline-flex items-center gap-1 text-[11px] font-bold text-tenant-primary hover:text-tenant-primary-hover transition-colors">
+                                    <span>${escapePreviewHtml(item.btn_text || 'مشاهده و جزئیات')}</span>
+                                    <span class="material-symbols-outlined text-xs rtl:rotate-180">arrow_forward</span>
+                                </a>
+                            </div>` : ''}
                         </div>
                     </div>`;
                 });

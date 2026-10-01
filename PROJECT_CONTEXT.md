@@ -83,6 +83,26 @@
 
 ## ۳. تاریخچه تغییرات اخیر (Change Log)
 
+### نسخه ۱.۰.۳۱ (اکتبر ۲۰۲۶ - تعبیه فیلدهای اختصاصی لینک آدرس، مسیریابی مستقیم با بلد و نشان، اتصال سرویس‌های لایو به asena.company و سیستم لینک‌دهی جامع در بخش‌های خدمات و بنتو)
+1. **فیلدهای اختصاصی لینک آدرس و مسیریابی مستقیم («مسیریابی با بلد / نشان»):**
+   - افزودن فیلدهای اختصاصی `map_link` و `nav_btn_text` به بلوک اطلاعات تماس (`contact`) در معماری پیش‌فرض و دیتابیس سایت‌ساز ([`includes/TenantSiteService.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/includes/TenantSiteService.php)).
+   - فعال‌سازی رفتار دوگانه هوشمند برای دکمه‌های «مسیریابی با بلد / نشان» در نوار کشیک/ساعات کاری (`#live-duty-nav-btn`)، کارت تماس شیشه‌ای (`#live-contact-nav-btn`) و فوتر سایت (`#live-footer-nav-btn`): در صورت تنظیم لینک سفارشی نقشه، کلیک روی دکمه یا متن آدرس مستقیماً کاربر را به اپلیکیشن یا لینک نقشه (بلد، نشان، گوگل‌مپ) در تب جدید با امنیت `target="_blank" rel="noopener"` هدایت می‌کند؛ در غیر این صورت، مدال چندمنظوره هاب مسیریابی باز می‌شود ([`site.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/site.php)).
+   - قابل کلیک شدن متن کامل آدرس در کارت تماس (`#live-contact-address`) و فوتر (`#live-footer-address`) با نشانگر هاور و استایل‌های بصری مدرن.
+2. **اتصال سراسری و کانونیکال سرویس‌های فعال به دامنه رسمی `https://asena.company`:**
+   - نرمال‌سازی هوشمند تمامی ۵ لینک کارت‌های اکوسیستم آسنا در ویترین سایت مستأجران: تله‌هلث و مشاوره آنلاین دامپزشکی (`telehealth_url -> https://asena.company/chat.php`)، داروخانه آنلاین تخصصی و مکمل‌ها (`pharmacy_url -> https://asena.company/pharmacy.php`)، سیستم عضویت و خرید ادواری اتوشیپ (`autoship_url -> https://asena.company/subscriptions.php`)، باشگاه وفاداری و جوایز (`rewards_url -> https://asena.company/rewards.php`)، و خیریه و حمایت از حیوانات آسیب‌دیده (`charity_url -> https://asena.company/charity.php`).
+   - تعبیه تابع کمکی تطبیق‌دهنده `$normalizeAsenaUrl` در سمت سرور برای تبدیل خودکار مسیرهای محلی به آدرس‌های معتبر پروتکل کامل روی دامنه مرکزی آسنا، همراه با باز شدن مطمئن در سربرگ مجزا.
+3. **سیستم لینک‌دهی جامع و اضافه کردن پیوند (`<a>`) به تمامی بخش‌ها:**
+   - افزودن پشتیبانی از فیلدهای سفارشی `url` و `btn_text` به آیتم‌های کارت‌های خدمات (`services.items`) و امکانات بنتو (`bento_facilities.items`) در تمام الگوهای مستأجران (پزشک، داروخانه، فروشنده، دیفالت).
+   - رندر خودکار دکمه‌ها و لینک‌های اکشن تعاملی با آیکون فلش شیک و پشتیبانی از انیمیشن‌های روان در صورت مقداردهی لینک برای هر کارت.
+   - اضافه شدن فیلدهای تنظیم لینک دکمه CTA هدر (`header.cta_url`)، دکمه اصلی قهرمان (`hero.cta_primary_url`) و دکمه/پیوند ثانویه قهرمان (`hero.cta_secondary_url`).
+4. **توسعه استودیو سایت‌ساز با کنترل‌های ویرایش سریع و هماهنگی بلادرنگ (Zero-Refresh Live Preview):**
+   - تعبیه فیلدهای لینک نقشه و متن دکمه مسیریابی و لینک‌های CTA در کارت‌های تب «⚡ ویرایش سریع» استودیو (`input-quick-contact-map-link`, `input-quick-contact-nav-btn-text`, `input-quick-header-cta-url`, `input-quick-hero-cta-url`, `input-quick-hero-cta-secondary`, `input-quick-hero-cta-secondary-url`).
+   - افزودن فیلدهای مستقیم آدرس‌های ۵ خدمت آسنا در کارت ۸ تب ویرایش سریع (`input-quick-telehealth-url`, `input-quick-pharmacy-url`, etc.).
+   - ارتقای مدال ریپیتر خدمات و بنتو در استودیو با فیلدهای «پیوند اکشن / اینترنتی (اختیاری)» و «متن دکمه اکشن» (`input-rep-service-url`, `input-rep-service-btn`, `input-rep-bento-url`, `input-rep-bento-btn`).
+   - ثبت در `quickSyncPairs` برای همگام‌سازی دوسویه میان تب‌های استودیو و اتصال به موتور پیام‌رسانی آی‌فریم (`applyLiveFieldUpdate` و `renderLiveRepeaterSection`) جهت بازتاب آنی بدون رفرش صفحه.
+5. **سوئیت آزمون‌های خودکار و تضمین کیفیت ۱۰۰٪ ([`tests/test_address_links_and_asena_company.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/tests/test_address_links_and_asena_company.php)):**
+   - نگارش ۳۶ تست جامع خودکار در ۳ گروه شامل اسکیمای TenantSiteService، منطق رندرینگ و نرمال‌سازی URL در site.php، و عناصر ورودی و سریالایزر استودیو. پاس شدن ۱۰۰٪ تمامی آزمون‌ها در کنار کلیه تست‌های رگرسیون قبلی.
+
 ### نسخه ۱.۰.۳۰ (اکتبر ۲۰۲۶ - مدیریت یکپارچه شبکه‌های اجتماعی و پیام‌رسان‌ها، ارتقای کارت ویزیت دیجیتال فوق‌لوکس با اشتراک کانال‌ها و موتور سراسری Undo/Redo و بازیابی تغییرات تصادفی در استودیو)
 1. **مدیریت کامل لینک‌ها و شبکه‌های اجتماعی و پیام‌رسان‌های ایرانی و بین‌المللی (Social Media & Messengers Suite):**
    - پشتیبانی از ۱۰ پلتفرم ارتباطی در استودیو و وب‌سایت: اینستاگرام (`instagram`)، تلگرام (`telegram`)، واتساپ (`whatsapp`)، بله (`bale`)، ایتا (`eitaa`)، روبیکا (`rubika`)، آپارات (`aparat`)، یوتیوب (`youtube`)، لینکدین (`linkedin`) و لینک سفارشی (`custom`).
