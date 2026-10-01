@@ -105,6 +105,9 @@ if (isset($savedBlocks['stats_strip']['stats']) && is_array($savedBlocks['stats_
 if (isset($savedBlocks['doctors_roster']['items']) && is_array($savedBlocks['doctors_roster']['items'])) {
     $layout['doctors_roster']['items'] = $savedBlocks['doctors_roster']['items'];
 }
+if (isset($savedBlocks['social_links']['items']) && is_array($savedBlocks['social_links']['items'])) {
+    $layout['social_links']['items'] = $savedBlocks['social_links']['items'];
+}
 if (isset($savedBlocks['reviews']['items']) && is_array($savedBlocks['reviews']['items'])) {
     $layout['reviews']['items'] = $savedBlocks['reviews']['items'];
 }
@@ -126,6 +129,7 @@ $reviewsBlock = $layout['reviews'] ?? [];
 $faqBlock = $layout['faq'] ?? [];
 $navHubBlock = $layout['navigation_hub'] ?? [];
 $contactBlock = $layout['contact'] ?? [];
+$socialLinksBlock = $layout['social_links'] ?? [];
 $mobileBarBlock = $layout['sticky_mobile_bar'] ?? [];
 $footerBlock = $layout['footer'] ?? [];
 $themeConfig = $layout['theme'] ?? ($site['layout']['theme'] ?? []);
@@ -199,6 +203,30 @@ $vcardCleanPhone = preg_replace('/[^\d+]/', '', $vcardPhone);
 $vcardAddress = $savedBlocks['contact']['address'] ?? ($site['address'] ?? '');
 $vcardTagline = $site['site_tagline'] ?? 'مرکز خدمات تخصصی حیوانات خانگی';
 
+// Social Media & Channels Configuration
+$rawSocialLinks = [];
+if (!empty($layout['social_links']['items']) && is_array($layout['social_links']['items'])) {
+    $rawSocialLinks = $layout['social_links']['items'];
+} elseif (!empty($savedBlocks['social_links']['items']) && is_array($savedBlocks['social_links']['items'])) {
+    $rawSocialLinks = $savedBlocks['social_links']['items'];
+} elseif (is_array($layout['social_links'] ?? null) && isset($layout['social_links'][0])) {
+    $rawSocialLinks = $layout['social_links'];
+} elseif (!empty($savedBlocks['contact']['social_links']) && is_array($savedBlocks['contact']['social_links'])) {
+    $rawSocialLinks = $savedBlocks['contact']['social_links'];
+}
+if (empty($rawSocialLinks)) {
+    $cleanPhoneDigits = preg_replace('/[^\d]/', '', $vcardPhone);
+    $tenantHandle = $slug ?: ($tenantType . '_clinic');
+    $rawSocialLinks = [
+        ['id' => 'instagram', 'platform' => 'instagram', 'title' => 'اینستاگرام رسمی', 'handle' => '@' . $tenantHandle, 'url' => 'https://instagram.com/' . $tenantHandle, 'icon' => 'photo_camera', 'color' => '#E1306C', 'enabled' => true],
+        ['id' => 'telegram', 'platform' => 'telegram', 'title' => 'کانال تلگرام', 'handle' => '@' . $tenantHandle, 'url' => 'https://t.me/' . $tenantHandle, 'icon' => 'send', 'color' => '#229ED9', 'enabled' => true],
+        ['id' => 'whatsapp', 'platform' => 'whatsapp', 'title' => 'پشتیبانی واتساپ', 'handle' => $vcardPhone, 'url' => (!empty($cleanPhoneDigits) ? 'https://wa.me/' . $cleanPhoneDigits : ''), 'icon' => 'chat', 'color' => '#25D366', 'enabled' => !empty($cleanPhoneDigits)],
+        ['id' => 'bale', 'platform' => 'bale', 'title' => 'پیام‌رسان بله', 'handle' => '@' . $tenantHandle, 'url' => 'https://ble.ir/' . $tenantHandle, 'icon' => 'mark_chat_read', 'color' => '#00897B', 'enabled' => true],
+        ['id' => 'eitaa', 'platform' => 'eitaa', 'title' => 'کانال ایتا', 'handle' => '@' . $tenantHandle, 'url' => 'https://eitaa.com/' . $tenantHandle, 'icon' => 'forum', 'color' => '#E65100', 'enabled' => true]
+    ];
+}
+$socialLinks = $rawSocialLinks;
+
 // Build RFC 2426 vCard 3.0 content with UTF-8 BOM
 $vcardFileContent = "\xEF\xBB\xBFBEGIN:VCARD\r\nVERSION:3.0\r\nFN;CHARSET=UTF-8:" . $site['site_title'] . "\r\nORG;CHARSET=UTF-8:" . $site['site_title'] . "\r\n";
 if (!empty($vcardTagline)) {
@@ -212,6 +240,15 @@ if (!empty($vcardAddress)) {
 }
 $vcardFileContent .= "URL:" . $siteCanonicalUrl . "\r\n";
 $vcardFileContent .= "NOTE;CHARSET=UTF-8:عضو رسمی شبکه سلامت آسنا\r\n";
+
+// Embed Social Profiles in standard vCard format for iOS and Android Contacts
+foreach ($socialLinks as $slink) {
+    if (!empty($slink['enabled']) && !empty($slink['url'])) {
+        $pName = strtolower($slink['platform'] ?? 'social');
+        $sUrl = trim($slink['url']);
+        $vcardFileContent .= "X-SOCIALPROFILE;type=" . $pName . ":" . $sUrl . "\r\n";
+    }
+}
 $vcardFileContent .= "END:VCARD\r\n";
 
 // Handle direct vCard download
@@ -1861,6 +1898,78 @@ $ctaHref = match($tenantType) {
     </script>
     <?php endif; ?>
 
+    <!-- Social Media & Digital Visit Card Hub Section -->
+    <?php 
+        $socialBlockEnabled = !empty($socialLinksBlock['enabled'] ?? true);
+        $socialHeading = $socialLinksBlock['heading'] ?? 'شبکه‌های اجتماعی و ارتباط آنلاین';
+        $socialSubtitle = $socialLinksBlock['subtitle'] ?? 'جهت ارتباط مستقیم، مشاهده جدیدترین ویدئوها، اخبار و رزرو مشاوره ما را دنبال فرمایید.';
+    ?>
+    <section id="social-links" class="py-16 bg-gradient-to-b from-white via-purple-50/20 to-white border-b border-slate-200/60 relative overflow-hidden <?= (!$socialBlockEnabled && $isPreview) ? 'hidden' : '' ?>" style="<?= (!$socialBlockEnabled && $isPreview) ? 'display: none !important;' : '' ?>" data-block-id="social_links">
+        <div class="max-w-6xl mx-auto px-4 relative z-10">
+            <div class="text-center max-w-2xl mx-auto mb-10">
+                <span class="text-xs font-black text-purple-700 bg-purple-100/70 border border-purple-200/60 px-3 py-1 rounded-full uppercase tracking-wider inline-flex items-center gap-1.5 shadow-2xs">
+                    <span class="material-symbols-outlined text-sm">share</span>
+                    <span>کانال‌های رسمی و ارتباط دیجیتال</span>
+                </span>
+                <h3 class="text-2xl sm:text-3xl font-black text-slate-900 mt-3" id="live-social-heading" data-studio-editable="social_heading"><?= htmlspecialchars($socialHeading) ?></h3>
+                <p class="text-xs sm:text-sm text-slate-500 mt-2 leading-relaxed" id="live-social-subtitle" data-studio-editable="social_subtitle"><?= htmlspecialchars($socialSubtitle) ?></p>
+            </div>
+
+            <!-- Social Links Grid -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" id="live-social-grid">
+                <?php foreach ($socialLinks as $slink): ?>
+                <?php if (!empty($slink['enabled']) || !isset($slink['enabled'])): ?>
+                <div class="bg-white p-4 rounded-3xl border border-slate-200/80 shadow-sm hover:shadow-md hover:border-purple-200 transition-all flex items-center justify-between group">
+                    <div class="flex items-center gap-3 min-w-0 flex-1 pl-2">
+                        <div class="w-11 h-11 rounded-2xl flex items-center justify-center text-white shrink-0 shadow-sm transition-transform group-hover:scale-105" style="background: <?= htmlspecialchars($slink['color'] ?? '#7c3aed') ?>;">
+                            <span class="material-symbols-outlined text-xl"><?= htmlspecialchars($slink['icon'] ?? 'share') ?></span>
+                        </div>
+                        <div class="min-w-0 flex-1">
+                            <div class="text-xs font-black text-slate-800 truncate"><?= htmlspecialchars($slink['title'] ?? 'شبکه اجتماعی') ?></div>
+                            <?php if (!empty($slink['badge'])): ?>
+                            <div class="text-[10px] text-purple-700 font-bold truncate"><?= htmlspecialchars($slink['badge']) ?></div>
+                            <?php elseif (!empty($slink['handle'])): ?>
+                            <div class="text-[10px] text-slate-400 font-mono truncate" dir="ltr"><?= htmlspecialchars($slink['handle']) ?></div>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-1.5 shrink-0">
+                        <?php if (!empty($slink['handle'])): ?>
+                        <button type="button" onclick="copySocialHandle('<?= htmlspecialchars($slink['handle'], ENT_QUOTES) ?>')" title="کپی آیدی" class="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-all cursor-pointer">
+                            <span class="material-symbols-outlined text-sm">content_copy</span>
+                        </button>
+                        <?php endif; ?>
+                        <?php if (!empty($slink['url'])): ?>
+                        <a href="<?= htmlspecialchars($slink['url']) ?>" target="_blank" rel="noopener noreferrer" class="px-3 py-2 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-800 text-xs font-black transition-all flex items-center gap-1">
+                            <span>ورود</span>
+                            <span class="material-symbols-outlined text-sm">arrow_left</span>
+                        </a>
+                        <?php endif; ?>
+                    </div>
+                </div>
+                <?php endif; ?>
+                <?php endforeach; ?>
+            </div>
+
+            <!-- Digital Business Card Teaser Pill -->
+            <div class="mt-8 p-4 rounded-3xl bg-slate-900 text-white flex flex-col sm:flex-row items-center justify-between gap-4 shadow-xl">
+                <div class="flex items-center gap-3 text-right">
+                    <div class="w-10 h-10 rounded-2xl bg-white/10 text-white flex items-center justify-center shrink-0">
+                        <span class="material-symbols-outlined text-xl">contact_page</span>
+                    </div>
+                    <div>
+                        <div class="text-xs font-black">کارت ویزیت دیجیتال هوشمند و استند رومیزی QR</div>
+                        <div class="text-[11px] text-slate-300">امکان دانلود مستقیم فایل مخاطب (vCard) و ذخیره فوری در تلفن همراه مراجعه‌کنندگان</div>
+                    </div>
+                </div>
+                <button type="button" onclick="openVCardModal()" class="px-4 py-2.5 rounded-2xl bg-[#fd8100] hover:bg-[#ea580c] text-white text-xs font-black transition-all shadow-md active:scale-95 flex items-center gap-2 cursor-pointer shrink-0">
+                    <span class="material-symbols-outlined text-base">qr_code_2</span>
+                    <span>نمایش کارت ویزیت دیجیتال</span>
+                </button>
+            </div>
+        </div>
+    </section>
+
     <!-- Contact & Operating Hours & Navigation Hub -->
     <?php if (!empty($contactBlock['enabled'])): ?>
     <?php 
@@ -2567,10 +2676,10 @@ $ctaHref = match($tenantType) {
 
     <!-- Digital VCard & Direct Sharing Modal -->
     <div id="vcard-modal" class="fixed inset-0 z-50 bg-black/75 backdrop-blur-md hidden items-center justify-center p-4 transition-opacity" onclick="if(event.target === this) closeVCardModal();">
-        <div class="bg-white rounded-3xl max-w-sm w-full p-6 space-y-4 shadow-2xl border border-slate-100 text-center relative overflow-hidden max-h-[92vh] overflow-y-auto">
+        <div class="bg-white rounded-3xl max-w-md w-full p-5 sm:p-6 space-y-4 shadow-2xl border border-slate-100 text-center relative overflow-hidden max-h-[92vh] overflow-y-auto">
             <!-- Top Gradient Aura -->
-            <div class="absolute -top-10 -left-10 w-32 h-32 bg-indigo-500/15 rounded-full blur-2xl pointer-events-none"></div>
-            <div class="absolute -bottom-10 -right-10 w-32 h-32 bg-emerald-500/15 rounded-full blur-2xl pointer-events-none"></div>
+            <div class="absolute -top-10 -left-10 w-36 h-36 bg-indigo-500/15 rounded-full blur-2xl pointer-events-none"></div>
+            <div class="absolute -bottom-10 -right-10 w-36 h-36 bg-emerald-500/15 rounded-full blur-2xl pointer-events-none"></div>
 
             <div class="flex items-center justify-between pb-3 border-b border-slate-100 relative z-10">
                 <div class="flex items-center gap-2">
@@ -2589,16 +2698,98 @@ $ctaHref = match($tenantType) {
                 <div class="flex flex-col items-center">
                     <div class="w-16 h-16 rounded-2xl overflow-hidden border-2 border-slate-100 shadow-md mb-2 flex items-center justify-center bg-slate-50 relative">
                         <img src="<?= htmlspecialchars($siteLogo) ?>" alt="<?= htmlspecialchars($site['site_title']) ?>" class="w-full h-full object-cover">
-                        <div class="absolute bottom-0 right-0 w-3.5 h-3.5 bg-emerald-500 border-2 border-white rounded-full"></div>
+                        <div class="absolute bottom-0 right-0 w-3.5 h-3.5 <?= $isCurrentlyOpen ? 'bg-emerald-500' : 'bg-amber-500' ?> border-2 border-white rounded-full" title="<?= $isCurrentlyOpen ? 'پذیرش فعال' : 'خارج از شیفت' ?>"></div>
                     </div>
-                    <h3 class="text-base font-black text-slate-900" id="vcard-modal-title"><?= htmlspecialchars($site['site_title']) ?></h3>
-                    <p class="text-[11px] text-slate-500 font-medium" id="vcard-modal-tagline"><?= htmlspecialchars($site['site_tagline'] ?? 'مرکز خدمات تخصصی حیوانات خانگی') ?></p>
+                    <div class="flex items-center gap-1.5">
+                        <h3 class="text-base font-black text-slate-900" id="vcard-modal-title"><?= htmlspecialchars($site['site_title']) ?></h3>
+                        <span class="material-symbols-outlined text-emerald-600 text-sm" title="عضو تاییدشده آسنا">verified</span>
+                    </div>
+                    <p class="text-[11px] text-slate-500 font-medium mt-0.5" id="vcard-modal-tagline"><?= htmlspecialchars($site['site_tagline'] ?? 'مرکز خدمات تخصصی حیوانات خانگی') ?></p>
+                </div>
+
+                <!-- 1-Tap Quick Action Row (Call, WhatsApp, Maps) -->
+                <div class="grid grid-cols-3 gap-1.5 pt-1">
                     <?php if (!empty($vcardCleanPhone)): ?>
-                    <div class="mt-1.5 inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 text-[11px] font-bold" dir="ltr">
-                        <span class="material-symbols-outlined text-[13px] text-indigo-600">call</span>
-                        <span><?= htmlspecialchars($vcardPhone) ?></span>
-                    </div>
+                    <a href="tel:<?= htmlspecialchars($vcardCleanPhone) ?>" class="p-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-[11px] font-bold flex flex-col items-center justify-center gap-1 transition-all shadow-2xs">
+                        <span class="material-symbols-outlined text-base text-emerald-600">call</span>
+                        <span>تماس فوری</span>
+                    </a>
+                    <?php $waPhone = $cleanPhoneDigits ?? $vcardCleanPhone; ?>
+                    <a href="https://wa.me/<?= htmlspecialchars($waPhone) ?>" target="_blank" class="p-2 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-[11px] font-bold flex flex-col items-center justify-center gap-1 transition-all shadow-2xs">
+                        <span class="material-symbols-outlined text-base">chat</span>
+                        <span>پیام واتساپ</span>
+                    </a>
+                    <?php else: ?>
+                    <button type="button" onclick="closeVCardModal(); openBookingModal();" class="p-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-[11px] font-bold flex flex-col items-center justify-center gap-1 transition-all shadow-2xs cursor-pointer">
+                        <span class="material-symbols-outlined text-base text-emerald-600">calendar_month</span>
+                        <span>رزرو نوبت</span>
+                    </button>
+                    <a href="#about" onclick="closeVCardModal()" class="p-2 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-800 text-[11px] font-bold flex flex-col items-center justify-center gap-1 transition-all shadow-2xs">
+                        <span class="material-symbols-outlined text-base text-indigo-600">info</span>
+                        <span>درباره مرکز</span>
+                    </a>
                     <?php endif; ?>
+                    <button type="button" onclick="closeVCardModal(); openNavHubModal();" class="p-2 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-800 text-[11px] font-bold flex flex-col items-center justify-center gap-1 transition-all shadow-2xs cursor-pointer">
+                        <span class="material-symbols-outlined text-base text-blue-600">near_me</span>
+                        <span>مسیریابی</span>
+                    </button>
+                </div>
+
+                <!-- Social Media & Official Channels Hub -->
+                <div class="p-3 bg-slate-50 border border-slate-200/80 rounded-2xl text-right space-y-2">
+                    <div class="flex items-center justify-between text-xs font-bold text-slate-700">
+                        <span class="flex items-center gap-1.5 text-slate-800">
+                            <span class="material-symbols-outlined text-sm text-indigo-600">share</span>
+                            <span>پل‌های ارتباطی و شبکه‌های اجتماعی:</span>
+                        </span>
+                        <span class="text-[10px] text-slate-400 font-medium">رسانه‌های رسمی</span>
+                    </div>
+
+                    <div id="vcard-social-links-list" class="space-y-1.5 max-h-48 overflow-y-auto">
+                        <?php 
+                        $hasActiveSocial = false;
+                        foreach ($socialLinks as $slink): 
+                            if (empty($slink['enabled']) || (empty($slink['url']) && empty($slink['handle']))) continue;
+                            $hasActiveSocial = true;
+                            $pIcon = $slink['icon'] ?? 'link';
+                            $pTitle = $slink['title'] ?? 'شبکه اجتماعی';
+                            $pHandle = $slink['handle'] ?? $slink['url'] ?? '';
+                            $pUrl = $slink['url'] ?? '#';
+                            $pColor = $slink['color'] ?? '#4f46e5';
+                        ?>
+                        <div class="flex items-center justify-between p-2 rounded-xl bg-white border border-slate-200/80 shadow-2xs hover:border-indigo-200 transition-all text-right group">
+                            <div class="flex items-center gap-2 min-w-0 flex-1 pl-2">
+                                <div class="w-8 h-8 rounded-lg flex items-center justify-center text-white shrink-0 shadow-2xs" style="background-color: <?= htmlspecialchars($pColor) ?>;">
+                                    <span class="material-symbols-outlined text-base"><?= htmlspecialchars($pIcon) ?></span>
+                                </div>
+                                <div class="min-w-0 flex-1">
+                                    <div class="text-[11px] font-black text-slate-800 truncate"><?= htmlspecialchars($pTitle) ?></div>
+                                    <div class="text-[10px] text-slate-500 font-mono truncate" dir="ltr"><?= htmlspecialchars($pHandle) ?></div>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-1 shrink-0">
+                                <?php if (!empty($pHandle)): ?>
+                                <button type="button" onclick="copySocialHandle('<?= htmlspecialchars(addslashes($pHandle)) ?>')" title="کپی آیدی یا شماره" class="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-[10px] font-bold flex items-center gap-0.5 transition-colors cursor-pointer">
+                                    <span class="material-symbols-outlined text-xs">content_copy</span>
+                                    <span class="hidden sm:inline">کپی</span>
+                                </button>
+                                <?php endif; ?>
+                                <?php if (!empty($pUrl) && $pUrl !== '#'): ?>
+                                <a href="<?= htmlspecialchars($pUrl) ?>" target="_blank" title="مشاهده و ورود مستقیم" class="px-2 py-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-[10px] font-bold flex items-center gap-0.5 transition-colors">
+                                    <span class="material-symbols-outlined text-xs">open_in_new</span>
+                                    <span>ورود</span>
+                                </a>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                        <?php endforeach; ?>
+
+                        <?php if (!$hasActiveSocial): ?>
+                        <div class="text-[11px] text-slate-400 p-2.5 bg-white rounded-xl text-center border border-dashed border-slate-200">
+                            پل ارتباطی فعالی ثبت نشده است. از استودیو می‌توانید شبکه‌های اجتماعی خود را اضافه فرمایید.
+                        </div>
+                        <?php endif; ?>
+                    </div>
                 </div>
 
                 <!-- Dual-Mode QR Code Tabs -->
@@ -2782,6 +2973,16 @@ $ctaHref = match($tenantType) {
             <p><strong>نشانی:</strong> <?= htmlspecialchars($vcardAddress) ?></p>
             <?php endif; ?>
         </div>
+
+        <!-- Social Media Handles on Reception Stand -->
+        <div id="stand-social-links-list" class="mt-3 pt-3 border-t border-slate-200 flex flex-wrap items-center justify-center gap-2 text-[10px] text-slate-700 font-bold" dir="ltr">
+            <?php foreach (array_slice($socialLinks, 0, 3) as $slink): 
+                if (empty($slink['enabled']) || empty($slink['handle'])) continue;
+            ?>
+            <span class="bg-slate-100 px-2 py-0.5 rounded-lg border border-slate-200"><?= htmlspecialchars($slink['title']) ?>: <?= htmlspecialchars($slink['handle']) ?></span>
+            <?php endforeach; ?>
+        </div>
+
         <div class="mt-6 pt-3 border-t border-slate-100 flex items-center justify-center gap-2 text-[10px] text-slate-400">
             <span>درگاه امن شاپرک</span>
             <span>•</span>
@@ -3344,6 +3545,26 @@ $ctaHref = match($tenantType) {
             }
         }
 
+        function copySocialHandle(handle) {
+            if (!handle) return;
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(handle).then(() => {
+                    showSiteToast(`✓ شناسه «${handle}» در حافظه کپی شد.`);
+                }).catch(() => fallbackCopy(handle));
+            } else {
+                fallbackCopy(handle);
+            }
+            function fallbackCopy(text) {
+                const el = document.createElement('textarea');
+                el.value = text;
+                document.body.appendChild(el);
+                el.select();
+                document.execCommand('copy');
+                document.body.removeChild(el);
+                showSiteToast(`✓ شناسه «${text}» در حافظه کپی شد.`);
+            }
+        }
+
         function downloadVCard() {
             const slug = <?= json_encode($slug) ?>;
             const serverUrl = window.location.href.split('?')[0] + '?slug=' + encodeURIComponent(slug) + '&download_vcard=1';
@@ -3355,8 +3576,19 @@ $ctaHref = match($tenantType) {
                 const address = <?= json_encode($vcardAddress, JSON_UNESCAPED_UNICODE) ?>;
                 const tagline = <?= json_encode($vcardTagline, JSON_UNESCAPED_UNICODE) ?>;
                 const url = window.location.href.split('?')[0] + '?slug=' + encodeURIComponent(slug);
+                const socials = <?= json_encode($socialLinks, JSON_UNESCAPED_UNICODE) ?>;
                 
-                const vcf = `\uFEFFBEGIN:VCARD\r\nVERSION:3.0\r\nFN;CHARSET=UTF-8:${name}\r\nORG;CHARSET=UTF-8:${name}\r\nTITLE;CHARSET=UTF-8:${tagline}\r\nTEL;TYPE=WORK,VOICE:${phone}\r\nADR;TYPE=WORK;CHARSET=UTF-8:;;${address};;;;\r\nURL:${url}\r\nNOTE;CHARSET=UTF-8:عضو رسمی شبکه فناوری و سلامت آسنا\r\nEND:VCARD`;
+                let vcf = `\uFEFFBEGIN:VCARD\r\nVERSION:3.0\r\nFN;CHARSET=UTF-8:${name}\r\nORG;CHARSET=UTF-8:${name}\r\nTITLE;CHARSET=UTF-8:${tagline}\r\nTEL;TYPE=WORK,VOICE:${phone}\r\nADR;TYPE=WORK;CHARSET=UTF-8:;;${address};;;;\r\nURL:${url}\r\nNOTE;CHARSET=UTF-8:عضو رسمی شبکه فناوری و سلامت آسنا\r\n`;
+                if (Array.isArray(socials)) {
+                    socials.forEach(s => {
+                        if (s.enabled !== false && s.url) {
+                            const p = (s.platform || 'social').toLowerCase();
+                            vcf += `X-SOCIALPROFILE;type=${p}:${s.url}\r\n`;
+                        }
+                    });
+                }
+                vcf += `END:VCARD`;
+
                 const blob = new Blob([vcf], { type: 'text/vcard;charset=utf-8' });
                 const link = document.createElement('a');
                 link.href = URL.createObjectURL(blob);
@@ -3364,7 +3596,7 @@ $ctaHref = match($tenantType) {
                 document.body.appendChild(link);
                 link.click();
                 document.body.removeChild(link);
-                showSiteToast('✓ فایل مخاطب (.vcf) کلینیک با موفقیت دانلود شد.');
+                showSiteToast('✓ فایل مخاطب (.vcf) کلینیک همراه با شبکه‌های اجتماعی دانلود شد.');
             } catch (e) {
                 // Fallback to server endpoint
                 window.location.href = serverUrl;
@@ -3901,6 +4133,16 @@ $ctaHref = match($tenantType) {
                 case 'faq_heading': {
                     const el = document.getElementById('live-faq-heading');
                     if (el) el.innerText = value || 'پرسش‌های متداول';
+                    break;
+                }
+                case 'social_heading': {
+                    const el = document.getElementById('live-social-heading');
+                    if (el) el.innerText = value || 'شبکه‌های اجتماعی و ارتباط آنلاین';
+                    break;
+                }
+                case 'social_subtitle': {
+                    const el = document.getElementById('live-social-subtitle');
+                    if (el) el.innerText = value || '';
                     break;
                 }
                 case 'contact_heading': {
@@ -4464,6 +4706,105 @@ $ctaHref = match($tenantType) {
                     <span class="text-[10px] font-black">افزودن شاخص</span>
                 </button>`;
                 container.innerHTML = html;
+            } else if (section === 'social_links') {
+                const modalContainer = document.getElementById('vcard-social-links-list');
+                const standContainer = document.getElementById('stand-social-links-list');
+
+                if (modalContainer) {
+                    let html = '';
+                    const enabledItems = items.filter(it => it.enabled !== false && (it.url || it.handle));
+                    if (enabledItems.length === 0) {
+                        html = '<div class="text-[11px] text-slate-400 p-2.5 bg-white rounded-xl text-center border border-dashed border-slate-200">پل ارتباطی فعالی ثبت نشده است. از استودیو می‌توانید شبکه‌های اجتماعی خود را اضافه فرمایید.</div>';
+                    } else {
+                        enabledItems.forEach((slink, idx) => {
+                            const pIcon = slink.icon || 'link';
+                            const pTitle = slink.title || 'شبکه اجتماعی';
+                            const pHandle = slink.handle || slink.url || '';
+                            const pUrl = slink.url || '#';
+                            const pColor = slink.color || '#4f46e5';
+
+                            html += `
+                            <div class="flex items-center justify-between p-2 rounded-xl bg-white border border-slate-200/80 shadow-2xs hover:border-indigo-200 transition-all text-right group">
+                                <div class="flex items-center gap-2 min-w-0 flex-1 pl-2">
+                                    <div class="w-8 h-8 rounded-lg flex items-center justify-center text-white shrink-0 shadow-2xs" style="background-color: ${escapePreviewHtml(pColor)};">
+                                        <span class="material-symbols-outlined text-base">${escapePreviewHtml(pIcon)}</span>
+                                    </div>
+                                    <div class="min-w-0 flex-1">
+                                        <div class="text-[11px] font-black text-slate-800 truncate">${escapePreviewHtml(pTitle)}</div>
+                                        <div class="text-[10px] text-slate-500 font-mono truncate" dir="ltr">${escapePreviewHtml(pHandle)}</div>
+                                    </div>
+                                </div>
+                                <div class="flex items-center gap-1 shrink-0">
+                                    ${pHandle ? `
+                                    <button type="button" onclick="copySocialHandle('${escapePreviewHtml(pHandle)}')" title="کپی آیدی یا شماره" class="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-[10px] font-bold flex items-center gap-0.5 transition-colors cursor-pointer">
+                                        <span class="material-symbols-outlined text-xs">content_copy</span>
+                                        <span class="hidden sm:inline">کپی</span>
+                                    </button>` : ''}
+                                    ${pUrl && pUrl !== '#' ? `
+                                    <a href="${escapePreviewHtml(pUrl)}" target="_blank" title="مشاهده و ورود مستقیم" class="px-2 py-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-[10px] font-bold flex items-center gap-0.5 transition-colors">
+                                        <span class="material-symbols-outlined text-xs">open_in_new</span>
+                                        <span>ورود</span>
+                                    </a>` : ''}
+                                </div>
+                            </div>`;
+                        });
+                    }
+                    modalContainer.innerHTML = html;
+                }
+
+                if (standContainer) {
+                    let sHtml = '';
+                    const topHandles = items.filter(it => it.enabled !== false && it.handle).slice(0, 3);
+                    if (topHandles.length > 0) {
+                        topHandles.forEach(h => {
+                            sHtml += `<span class="bg-slate-100 px-2 py-0.5 rounded-lg border border-slate-200">${escapePreviewHtml(h.title)}: ${escapePreviewHtml(h.handle)}</span>`;
+                        });
+                    }
+                    standContainer.innerHTML = sHtml;
+                }
+
+                const gridContainer = document.getElementById('live-social-grid');
+                if (gridContainer) {
+                    let gHtml = '';
+                    const enabledItems = items.filter(it => it.enabled !== false && (it.url || it.handle));
+                    if (enabledItems.length === 0) {
+                        gHtml = '<div class="col-span-full text-center text-xs text-slate-400 p-6 bg-slate-50 rounded-2xl border border-dashed border-slate-200">پل ارتباطی فعالی ثبت نشده است.</div>';
+                    } else {
+                        enabledItems.forEach(slink => {
+                            const pIcon = slink.icon || 'share';
+                            const pTitle = slink.title || 'شبکه اجتماعی';
+                            const pHandle = slink.handle || '';
+                            const pBadge = slink.badge || '';
+                            const pUrl = slink.url || '#';
+                            const pColor = slink.color || '#7c3aed';
+
+                            gHtml += `
+                            <div class="bg-white p-4 rounded-3xl border border-slate-200/80 shadow-sm hover:shadow-md hover:border-purple-200 transition-all flex items-center justify-between group">
+                                <div class="flex items-center gap-3 min-w-0 flex-1 pl-2">
+                                    <div class="w-11 h-11 rounded-2xl flex items-center justify-center text-white shrink-0 shadow-sm transition-transform group-hover:scale-105" style="background: ${escapePreviewHtml(pColor)};">
+                                        <span class="material-symbols-outlined text-xl">${escapePreviewHtml(pIcon)}</span>
+                                    </div>
+                                    <div class="min-w-0 flex-1">
+                                        <div class="text-xs font-black text-slate-800 truncate">${escapePreviewHtml(pTitle)}</div>
+                                        ${pBadge ? `<div class="text-[10px] text-purple-700 font-bold truncate">${escapePreviewHtml(pBadge)}</div>` : (pHandle ? `<div class="text-[10px] text-slate-400 font-mono truncate" dir="ltr">${escapePreviewHtml(pHandle)}</div>` : '')}
+                                    </div>
+                                </div>
+                                <div class="flex items-center gap-1.5 shrink-0">
+                                    ${pHandle ? `
+                                    <button type="button" onclick="copySocialHandle('${escapePreviewHtml(pHandle)}')" title="کپی آیدی" class="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-all cursor-pointer">
+                                        <span class="material-symbols-outlined text-sm">content_copy</span>
+                                    </button>` : ''}
+                                    ${pUrl && pUrl !== '#' ? `
+                                    <a href="${escapePreviewHtml(pUrl)}" target="_blank" rel="noopener noreferrer" class="px-3 py-2 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-800 text-xs font-black transition-all flex items-center gap-1">
+                                        <span>ورود</span>
+                                        <span class="material-symbols-outlined text-sm">arrow_left</span>
+                                    </a>` : ''}
+                                </div>
+                            </div>`;
+                        });
+                    }
+                    gridContainer.innerHTML = gHtml;
+                }
             }
         }
 

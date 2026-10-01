@@ -123,6 +123,17 @@ if ($action === 'apply_preset') {
     exit;
 }
 
+if ($action === 'get_section_defaults') {
+    $section = sanitize_input($_POST['section'] ?? '');
+    $items = $tenantService->getDefaultSectionItems($tenantType, $section);
+    echo json_encode([
+        'success' => true,
+        'section' => $section,
+        'items' => $items
+    ], JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
 if ($action === 'upload_asset') {
     if (!isset($_FILES['file']) && !isset($_FILES['image'])) {
         echo json_encode(['success' => false, 'message' => 'فایلی برای بارگذاری ارسال نشده است.'], JSON_UNESCAPED_UNICODE);

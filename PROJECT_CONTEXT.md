@@ -83,6 +83,28 @@
 
 ## ۳. تاریخچه تغییرات اخیر (Change Log)
 
+### نسخه ۱.۰.۳۰ (اکتبر ۲۰۲۶ - مدیریت یکپارچه شبکه‌های اجتماعی و پیام‌رسان‌ها، ارتقای کارت ویزیت دیجیتال فوق‌لوکس با اشتراک کانال‌ها و موتور سراسری Undo/Redo و بازیابی تغییرات تصادفی در استودیو)
+1. **مدیریت کامل لینک‌ها و شبکه‌های اجتماعی و پیام‌رسان‌های ایرانی و بین‌المللی (Social Media & Messengers Suite):**
+   - پشتیبانی از ۱۰ پلتفرم ارتباطی در استودیو و وب‌سایت: اینستاگرام (`instagram`)، تلگرام (`telegram`)، واتساپ (`whatsapp`)، بله (`bale`)، ایتا (`eitaa`)، روبیکا (`rubika`)، آپارات (`aparat`)، یوتیوب (`youtube`)، لینکدین (`linkedin`) و لینک سفارشی (`custom`).
+   - تنظیمات خودکار پریست (Preset) رنگ، آیکون، عنوان و پیشوند URL با انتخاب هر پلتفرم در فرم سازنده.
+   - تعبیه کارت ۱.۵ در تب «⚡ ویرایش سریع» و آکاردئون اختصاصی «شبکه‌های اجتماعی و پیام‌رسان‌ها» در تب بلوک‌ها ([`includes/site_builder_studio.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/includes/site_builder_studio.php)).
+   - تعبیه بلوک بنتو اختصاصی در سطح وب‌سایت با کارت‌های شیشه‌ای تعاملی، نشانگر پلتفرم و دکمه‌های کپی مستقیم آیدی ([`site.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/site.php)).
+2. **کارت ویزیت دیجیتال فوق‌پریمیوم با پل‌های ارتباطی تعاملی و سازگاری استاندارد RFC 2426 (`#vcard-modal`):**
+   - ادغام کامل شبکه‌های اجتماعی در مدال کارت ویزیت دیجیتال همراه با دکمه اختصاصی کپی سریع آیدی (`copySocialHandle`) با بازخورد توست شیشه‌ای.
+   - اضافه شدن دکمه‌های دسترسی مستقیم تماس تلفنی، چت واتساپ و لوکیشن در بالای مدال.
+   - درج خودکار تگ‌های استاندارد `X-SOCIALPROFILE;type=<platform>:<url>` در خروجی فایل مخاطب `.vcf` (هم در دانلود سمت سرور `download_vcard=1` و هم تولید جاوااسکریپت کلاینت) برای ایجاد دکمه‌های مستقیم شبکه‌های اجتماعی در دفترچه تلفن iOS و Google Contacts.
+   - انعکاس خودکار کانال‌های ارتباطی منتخب روی پلاک و استند چاپی رومیزی پذیرش کلینیک (`#vcard-printable-stand`).
+3. **موتور سراسری بازگردانی و پیش‌روی تغییرات (Comprehensive Undo / Redo & Revert Engine):**
+   - پیاده‌سازی سیستم مدیریت تاریخچه ۴۰ مرحله‌ای (`studioHistory`) با دکمه‌های بازگردانی (Undo) و انجام مجدد (Redo) در نوار ابزار فوقانی استودیو.
+   - پشتیبانی کامل از کلیدهای میانبر استاندارد صفحه‌کلید (`Ctrl+Z` / `Ctrl+Y` / `Ctrl+Shift+Z`) با محافظت هوشمند هنگام تایپ در فیلدهای متنی.
+   - نمایش خودکار توست تعاملی غیرمسدودکننده شیشه‌ای (`showInteractiveToast`) با کلید برجسته «بازگردانی (Undo)» در هنگام حذف اشتباهی هر آیتم یا غیرفعال‌سازی تصادفی هر بلوک در استودیو.
+   - پیاده‌سازی قابلیت بازیابی ۱-کلیکه‌ای آخرین آیتم حذف‌شده (`revertLastRemovedItem`).
+4. **دکمه بازیابی تنظیمات پیش‌فرض بخش‌ها (Restore Section Defaults):**
+   - افزودن دکمه «بازیابی پیش‌فرض این بخش» به هدر تمامی بخش‌های تکرارشونده در استودیو (`stats_strip`, `bento_facilities`, `services`, `faq`, `social_links`, `navigation_hub`).
+   - ایجاد اندپوینت بک‌اند `get_section_defaults` در [`actions/site_builder_action.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/actions/site_builder_action.php) و متد `getDefaultSectionItems` در [`includes/TenantSiteService.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/includes/TenantSiteService.php) برای بازیابی مطمئن و تمیز ساختار اولیه بر اساس لایسنس و نوع مستأجر، همراه با قابلیت Undo فوری از طریق استک تاریخچه.
+5. **ارتقای سوئیت آزمون‌های خودکار و تضمین کیفیت:**
+   - نگارش آزمون جدید [`tests/test_social_links_and_revert_system.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/tests/test_social_links_and_revert_system.php) پوشش‌دهنده پیکربندی پیش‌فرض، ساختار vCard و X-SOCIALPROFILE، اندپوینت get_section_defaults، و مکانیزم تاریخچه استودیو با موفقیت ۱۰۰٪. تمامی ۲۱۹ آزمون کلیه سوئیت‌های رگرسیون بدون هیچ خطایی پاس شدند.
+
 ### نسخه ۱.۰.۲۹ (اکتبر ۲۰۲۶ - عملکرد کامل و پویا برای کارت ویزیت دیجیتال، تولید بارکد اختصاصی اسکن‌شونده، دانلود VCF با استانداردهای RFC و چاپ استند پذیرش)
 1. **تولید بارکدهای وکتور دوگانه و اسکن‌شونده واقعی ([`site.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/site.php) و [`includes/QrCode.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/includes/QrCode.php)):**
    - جایگزینی کدهای آزمایشی SVG با بارکدهای واقعی، استاندارد و مقیاس‌پذیر تولیدشده توسط موتور آفلاین QR آسنا بدون نیاز به اتصال اینترنت یا سرویس‌های شخص ثالث.

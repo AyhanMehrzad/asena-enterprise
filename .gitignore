@@ -23,6 +23,8 @@ Thumbs.db
 
 # Temporary uploads / cache
 uploads/tmp/
+uploads/sites/*
+!uploads/sites/.gitkeep
 uploads/.autoship_last_run
 includes/.schema_aligned*
 .tempmediaStorage/

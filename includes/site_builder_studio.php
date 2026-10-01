@@ -40,6 +40,19 @@ if (isset($savedBlocks['navigation_hub']['apps']) && is_array($savedBlocks['navi
 if (isset($savedBlocks['stats_strip']['stats']) && is_array($savedBlocks['stats_strip']['stats'])) {
     $layout['stats_strip']['stats'] = $savedBlocks['stats_strip']['stats'];
 }
+if (isset($savedBlocks['social_links']['items']) && is_array($savedBlocks['social_links']['items'])) {
+    $layout['social_links']['items'] = $savedBlocks['social_links']['items'];
+} elseif (isset($savedBlocks['social_links']) && is_array($savedBlocks['social_links']) && array_is_list($savedBlocks['social_links'])) {
+    $layout['social_links']['items'] = $savedBlocks['social_links'];
+}
+$socialLinks = !empty($layout['social_links']['items']) 
+    ? $layout['social_links']['items'] 
+    : (!empty($layout['social_links']) && is_array($layout['social_links']) && array_is_list($layout['social_links']) 
+        ? $layout['social_links'] 
+        : (!empty($layout['contact']['social_links']) 
+            ? $layout['contact']['social_links'] 
+            : $tenantService->getDefaultSectionItems($builderTenantType, 'social_links', ['title' => $site['site_title'] ?? ''])));
+$layout['social_links']['items'] = $socialLinks;
 $tenantFaqs = !empty($layout['faq']['items']) ? $layout['faq']['items'] : $tenantService->getTenantFaqs($builderTenantType);
 $slug = htmlspecialchars($site['slug']);
 $previewUrl = "../site.php?slug=" . urlencode($site['slug']) . "&preview=1";
@@ -191,6 +204,22 @@ if (empty($layout['theme']['primary_color']) && $activePaletteKey !== 'navy' && 
             <button type="button" onclick="setViewport('mobile')" id="btn-vp-mobile" class="px-3 py-1.5 rounded-lg text-xs font-bold text-slate-500 hover:text-slate-800 flex items-center gap-1 transition-all">
                 <span class="material-symbols-outlined text-base">smartphone</span>
                 <span>موبایل</span>
+            </button>
+        </div>
+
+        <!-- Undo / Redo Revert History Controls -->
+        <div class="flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200/80">
+            <button type="button" onclick="studioHistory.undo()" id="btn-studio-undo" disabled
+                    class="px-2.5 py-1.5 rounded-lg text-xs font-bold text-slate-400 hover:text-slate-800 disabled:opacity-40 disabled:hover:text-slate-400 disabled:cursor-not-allowed flex items-center gap-1 transition-all cursor-pointer"
+                    title="بازگردانی تغییر قبلی (Ctrl+Z)">
+                <span class="material-symbols-outlined text-base">undo</span>
+                <span class="hidden xl:inline">بازگردانی</span>
+            </button>
+            <button type="button" onclick="studioHistory.redo()" id="btn-studio-redo" disabled
+                    class="px-2.5 py-1.5 rounded-lg text-xs font-bold text-slate-400 hover:text-slate-800 disabled:opacity-40 disabled:hover:text-slate-400 disabled:cursor-not-allowed flex items-center gap-1 transition-all cursor-pointer"
+                    title="انجام مجدد تغییر (Ctrl+Y)">
+                <span class="material-symbols-outlined text-base">redo</span>
+                <span class="hidden xl:inline">انجام مجدد</span>
             </button>
         </div>
 
@@ -411,6 +440,38 @@ if (empty($layout['theme']['primary_color']) && $activePaletteKey !== 'navy' && 
                                         <!-- populated dynamically by JS -->
                                     </div>
                                 </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- CARD 1.5: Social Media & Digital Business Card -->
+                    <div class="p-3.5 rounded-2xl border border-purple-200/90 bg-gradient-to-br from-purple-50/40 via-white to-pink-50/30 shadow-2xs space-y-3 quick-card" data-search-keys="شبکه اجتماعی اینستاگرام تلگرام واتساپ بله ایتا کارت ویزیت کیوآر استند رومیزی">
+                        <div class="flex items-center justify-between pb-2 border-b border-purple-100">
+                            <div class="flex items-center gap-2">
+                                <span class="material-symbols-outlined text-purple-600 text-base">contact_page</span>
+                                <span class="text-xs font-bold text-slate-800">شبکه‌های اجتماعی و کارت ویزیت هوشمند</span>
+                            </div>
+                            <span class="text-[9px] px-2 py-0.5 rounded-full bg-purple-100 text-purple-800 font-bold">QR & vCard</span>
+                        </div>
+                        <p class="text-[11px] text-slate-600 leading-relaxed">
+                            لینک‌ها و آیدی‌های رسمی مرکز در پنجره کارت ویزیت دیجیتال، استند رومیزی نوبت‌دهی و فایل مخاطب گوشی (vCard) همگام‌سازی می‌شوند.
+                        </p>
+                        <div class="space-y-2">
+                            <div class="flex items-center justify-between">
+                                <span class="text-[10px] font-bold text-slate-700">کانال‌ها و پیام‌رسان‌های فعال:</span>
+                                <div class="flex items-center gap-1.5">
+                                    <button type="button" onclick="restoreSectionDefaults('social_links')" class="px-2 py-0.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 border border-slate-200 text-[10px] font-bold flex items-center gap-1 cursor-pointer" title="بازیابی پیش‌فرض">
+                                        <span class="material-symbols-outlined text-xs">restore</span>
+                                        <span>بازیابی پیش‌فرض</span>
+                                    </button>
+                                    <button type="button" onclick="openStudioRepeaterModal('social_links', -1)" class="px-2 py-0.5 rounded-lg bg-purple-600 hover:bg-purple-700 text-white text-[10px] font-bold flex items-center gap-1 cursor-pointer shadow-xs">
+                                        <span class="material-symbols-outlined text-xs">add</span>
+                                        <span>افزودن لینک</span>
+                                    </button>
+                                </div>
+                            </div>
+                            <div id="studio-repeater-list-social_links-quick" class="space-y-1">
+                                <!-- populated dynamically by JS -->
                             </div>
                         </div>
                     </div>
@@ -866,10 +927,16 @@ if (empty($layout['theme']['primary_color']) && $activePaletteKey !== 'navy' && 
                             <div class="pt-3 border-t border-slate-100">
                                 <div class="flex items-center justify-between mb-2">
                                     <span class="text-xs font-bold text-slate-800">مدیریت شاخص‌ها (افزودن، ویرایش و حذف):</span>
-                                    <button type="button" onclick="openStudioRepeaterModal('stats_strip', -1)" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[11px] font-bold flex items-center gap-1 transition-colors cursor-pointer shadow-xs">
-                                        <span class="material-symbols-outlined text-xs">add</span>
-                                        <span>افزودن شاخص</span>
-                                    </button>
+                                    <div class="flex items-center gap-1.5">
+                                        <button type="button" onclick="restoreSectionDefaults('stats_strip')" class="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg text-[10px] font-bold flex items-center gap-1 transition-colors cursor-pointer" title="بازیابی شاخص‌های پیش‌فرض">
+                                            <span class="material-symbols-outlined text-xs">restore</span>
+                                            <span>بازیابی پیش‌فرض</span>
+                                        </button>
+                                        <button type="button" onclick="openStudioRepeaterModal('stats_strip', -1)" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[11px] font-bold flex items-center gap-1 transition-colors cursor-pointer shadow-xs">
+                                            <span class="material-symbols-outlined text-xs">add</span>
+                                            <span>افزودن شاخص</span>
+                                        </button>
+                                    </div>
                                 </div>
                                 <div id="studio-repeater-list-stats_strip" class="space-y-2"></div>
                             </div>
@@ -1003,10 +1070,16 @@ if (empty($layout['theme']['primary_color']) && $activePaletteKey !== 'navy' && 
                             <div class="pt-3 border-t border-slate-100">
                                 <div class="flex items-center justify-between mb-2">
                                     <span class="text-xs font-bold text-slate-800">کارت‌های تجهیزات و بخش‌ها:</span>
-                                    <button type="button" onclick="openStudioRepeaterModal('bento_facilities', -1)" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[11px] font-bold flex items-center gap-1 transition-colors cursor-pointer shadow-xs">
-                                        <span class="material-symbols-outlined text-xs">add</span>
-                                        <span>افزودن بخش/تجهیزات</span>
-                                    </button>
+                                    <div class="flex items-center gap-1.5">
+                                        <button type="button" onclick="restoreSectionDefaults('bento_facilities')" class="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg text-[10px] font-bold flex items-center gap-1 transition-colors cursor-pointer" title="بازیابی تجهیزات پیش‌فرض">
+                                            <span class="material-symbols-outlined text-xs">restore</span>
+                                            <span>بازیابی پیش‌فرض</span>
+                                        </button>
+                                        <button type="button" onclick="openStudioRepeaterModal('bento_facilities', -1)" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[11px] font-bold flex items-center gap-1 transition-colors cursor-pointer shadow-xs">
+                                            <span class="material-symbols-outlined text-xs">add</span>
+                                            <span>افزودن بخش/تجهیزات</span>
+                                        </button>
+                                    </div>
                                 </div>
                                 <div id="studio-repeater-list-bento_facilities" class="space-y-2"></div>
                             </div>
@@ -1046,10 +1119,16 @@ if (empty($layout['theme']['primary_color']) && $activePaletteKey !== 'navy' && 
                             <div class="pt-3 border-t border-slate-100">
                                 <div class="flex items-center justify-between mb-2">
                                     <span class="text-xs font-bold text-slate-800">کارت‌های خدمات (افزودن، ویرایش و حذف):</span>
-                                    <button type="button" onclick="openStudioRepeaterModal('services', -1)" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[11px] font-bold flex items-center gap-1 transition-colors cursor-pointer shadow-xs">
-                                        <span class="material-symbols-outlined text-xs">add</span>
-                                        <span>افزودن خدمت</span>
-                                    </button>
+                                    <div class="flex items-center gap-1.5">
+                                        <button type="button" onclick="restoreSectionDefaults('services')" class="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg text-[10px] font-bold flex items-center gap-1 transition-colors cursor-pointer" title="بازیابی خدمات پیش‌فرض">
+                                            <span class="material-symbols-outlined text-xs">restore</span>
+                                            <span>بازیابی پیش‌فرض</span>
+                                        </button>
+                                        <button type="button" onclick="openStudioRepeaterModal('services', -1)" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[11px] font-bold flex items-center gap-1 transition-colors cursor-pointer shadow-xs">
+                                            <span class="material-symbols-outlined text-xs">add</span>
+                                            <span>افزودن خدمت</span>
+                                        </button>
+                                    </div>
                                 </div>
                                 <div id="studio-repeater-list-services" class="space-y-2"></div>
                             </div>
@@ -1395,12 +1474,71 @@ if (empty($layout['theme']['primary_color']) && $activePaletteKey !== 'navy' && 
                             <div class="pt-3 border-t border-slate-100">
                                 <div class="flex items-center justify-between mb-2">
                                     <span class="text-xs font-bold text-slate-800">پرسش‌ها و پاسخ‌ها (FAQ):</span>
-                                    <button type="button" onclick="openStudioRepeaterModal('faq', -1)" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[11px] font-bold flex items-center gap-1 transition-colors cursor-pointer shadow-xs">
-                                        <span class="material-symbols-outlined text-xs">add</span>
-                                        <span>افزودن پرسش</span>
-                                    </button>
+                                    <div class="flex items-center gap-1.5">
+                                        <button type="button" onclick="restoreSectionDefaults('faq')" class="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg text-[10px] font-bold flex items-center gap-1 transition-colors cursor-pointer" title="بازیابی پرسش‌های پیش‌فرض">
+                                            <span class="material-symbols-outlined text-xs">restore</span>
+                                            <span>بازیابی پیش‌فرض</span>
+                                        </button>
+                                        <button type="button" onclick="openStudioRepeaterModal('faq', -1)" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[11px] font-bold flex items-center gap-1 transition-colors cursor-pointer shadow-xs">
+                                            <span class="material-symbols-outlined text-xs">add</span>
+                                            <span>افزودن پرسش</span>
+                                        </button>
+                                    </div>
                                 </div>
                                 <div id="studio-repeater-list-faq" class="space-y-2"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 7.5. Social Media & Messengers Block -->
+                    <div class="border border-slate-200 rounded-2xl overflow-hidden bg-white shadow-sm" id="section-social_links">
+                        <div onclick="toggleAccordion('social_links')" class="w-full p-4 flex items-center justify-between bg-slate-50 hover:bg-slate-100 transition-colors text-right cursor-pointer select-none">
+                            <div class="flex items-center gap-2.5">
+                                <span class="material-symbols-outlined text-purple-600 text-lg">share</span>
+                                <span class="text-xs font-bold text-slate-800">شبکه‌های اجتماعی و کارت ویزیت هوشمند</span>
+                            </div>
+                            <div class="flex items-center gap-1" onclick="event.stopPropagation()">
+                                <button type="button" onclick="moveStudioBlock('section-social_links', 'up')" title="انتقال به بالا" class="w-6 h-6 rounded-lg bg-slate-200/70 hover:bg-slate-300 text-slate-600 flex items-center justify-center transition-colors">
+                                    <span class="material-symbols-outlined text-xs">keyboard_arrow_up</span>
+                                </button>
+                                <button type="button" onclick="moveStudioBlock('section-social_links', 'down')" title="انتقال به پایین" class="w-6 h-6 rounded-lg bg-slate-200/70 hover:bg-slate-300 text-slate-600 flex items-center justify-center transition-colors">
+                                    <span class="material-symbols-outlined text-xs">keyboard_arrow_down</span>
+                                </button>
+                                <span class="material-symbols-outlined text-slate-400 text-base transition-transform" id="arrow-social_links">expand_more</span>
+                            </div>
+                        </div>
+                        <div class="p-4 space-y-3 border-t border-slate-100 hidden" id="content-social_links">
+                            <label class="flex items-center gap-2 text-xs font-bold text-slate-700">
+                                <input type="checkbox" id="input-social-enabled" <?= !empty($layout['social_links']['enabled'] ?? true) ? 'checked' : '' ?> class="rounded text-purple-600">
+                                <span>فعال‌سازی نمایش بخش شبکه‌های اجتماعی در وب‌سایت</span>
+                            </label>
+                            <div>
+                                <label class="block text-[11px] font-bold text-slate-700 mb-1">عنوان بخش شبکه‌های اجتماعی</label>
+                                <input type="text" id="input-social-heading" value="<?= htmlspecialchars($layout['social_links']['heading'] ?? 'راه‌های ارتباطی و شبکه‌های اجتماعی') ?>" class="w-full text-xs p-2.5 rounded-xl border border-slate-200 focus:border-purple-600 focus:outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-bold text-slate-700 mb-1">زیرعنوان و توضیحات بخش</label>
+                                <input type="text" id="input-social-subtitle" value="<?= htmlspecialchars($layout['social_links']['subtitle'] ?? 'ارتباط مستقیم و پیگیری آخرین اخبار و آموزش‌های سلامت در شبکه‌های اجتماعی') ?>" placeholder="توضیح کوتاه درباره کانال‌های ارتباطی" class="w-full text-xs p-2.5 rounded-xl border border-slate-200 focus:border-purple-600 focus:outline-none">
+                            </div>
+                            <div class="p-2.5 rounded-xl bg-purple-50/70 border border-purple-100 flex items-center gap-2 text-[11px] text-purple-900">
+                                <span class="material-symbols-outlined text-purple-600 text-base shrink-0">contact_page</span>
+                                <span>لینک‌ها و آیدی‌های ثبت‌شده در این بخش، مستقیماً در پنجره کارت ویزیت دیجیتال، استند پرینتی رومیزی و فایل مخاطب گوشی (vCard) ادغام می‌شوند.</span>
+                            </div>
+                            <div class="pt-3 border-t border-slate-100">
+                                <div class="flex items-center justify-between mb-2">
+                                    <span class="text-xs font-bold text-slate-800">کانال‌ها و لینک‌های فعال:</span>
+                                    <div class="flex items-center gap-1.5">
+                                        <button type="button" onclick="restoreSectionDefaults('social_links')" class="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg text-[10px] font-bold flex items-center gap-1 transition-colors cursor-pointer" title="بازیابی کانال‌های استاندارد اولیه">
+                                            <span class="material-symbols-outlined text-xs">restore</span>
+                                            <span>بازیابی پیش‌فرض</span>
+                                        </button>
+                                        <button type="button" onclick="openStudioRepeaterModal('social_links', -1)" class="px-2.5 py-1 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-[11px] font-bold flex items-center gap-1 transition-colors cursor-pointer shadow-xs">
+                                            <span class="material-symbols-outlined text-xs">add</span>
+                                            <span>افزودن لینک</span>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div id="studio-repeater-list-social_links" class="space-y-2"></div>
                             </div>
                         </div>
                     </div>
@@ -1496,10 +1634,16 @@ if (empty($layout['theme']['primary_color']) && $activePaletteKey !== 'navy' && 
                                 <div>
                                     <div class="flex items-center justify-between mb-2">
                                         <span class="text-xs font-bold text-slate-800">دکمه‌های اپلیکیشن نقشه (افزودن و ویرایش):</span>
-                                        <button type="button" onclick="openStudioRepeaterModal('navigation_hub', -1)" class="px-2.5 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-[11px] font-bold flex items-center gap-1 transition-colors cursor-pointer shadow-xs">
-                                            <span class="material-symbols-outlined text-xs">add</span>
-                                            <span>افزودن دکمه</span>
-                                        </button>
+                                        <div class="flex items-center gap-1.5">
+                                            <button type="button" onclick="restoreSectionDefaults('navigation_hub')" class="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg text-[10px] font-bold flex items-center gap-1 transition-colors cursor-pointer" title="بازیابی دکمه‌های پیش‌فرض مسیریاب">
+                                                <span class="material-symbols-outlined text-xs">restore</span>
+                                                <span>بازیابی پیش‌فرض</span>
+                                            </button>
+                                            <button type="button" onclick="openStudioRepeaterModal('navigation_hub', -1)" class="px-2.5 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-[11px] font-bold flex items-center gap-1 transition-colors cursor-pointer shadow-xs">
+                                                <span class="material-symbols-outlined text-xs">add</span>
+                                                <span>افزودن دکمه</span>
+                                            </button>
+                                        </div>
                                     </div>
                                     <div id="studio-repeater-list-navigation_hub" class="space-y-2"></div>
                                 </div>
@@ -2052,6 +2196,68 @@ if (empty($layout['theme']['primary_color']) && $activePaletteKey !== 'navy' && 
                     <input type="text" id="input-rep-stat-lbl" class="w-full text-xs p-2.5 rounded-xl border border-slate-200 focus:border-emerald-600 focus:outline-none" placeholder="ویزیت و سفارش موفق، رضایت مراجعین...">
                 </div>
             </div>
+
+            <!-- 6. Social Media & Messengers Fields -->
+            <div id="form-repeater-social_links" class="space-y-3 hidden">
+                <div class="p-3 bg-purple-50/60 rounded-2xl border border-purple-100 flex items-center justify-between">
+                    <div>
+                        <label class="block text-xs font-bold text-purple-950 mb-0.5">پلتفرم یا پیام‌رسان</label>
+                        <p class="text-[10px] text-purple-700">با انتخاب پلتفرم، تنظیمات پیش‌فرض به صورت خودکار پر می‌شوند.</p>
+                    </div>
+                    <select id="input-rep-social-platform" onchange="applySocialPreset(this.value)" class="text-xs p-2 rounded-xl border border-purple-200 bg-white font-bold text-purple-900 focus:outline-none focus:ring-2 focus:ring-purple-500">
+                        <option value="instagram">📸 اینستاگرام (Instagram)</option>
+                        <option value="telegram">✈️ تلگرام (Telegram)</option>
+                        <option value="whatsapp">💬 واتساپ (WhatsApp)</option>
+                        <option value="bale">🟢 پیام‌رسان بله (Bale)</option>
+                        <option value="eitaa">🟠 پیام‌رسان ایتا (Eitaa)</option>
+                        <option value="rubika">🟣 روبیکا (Rubika)</option>
+                        <option value="aparat">🎥 آپارات (Aparat)</option>
+                        <option value="youtube">▶️ یوتیوب (YouTube)</option>
+                        <option value="linkedin">💼 لینکدین (LinkedIn)</option>
+                        <option value="custom">🌐 سفارشی / لینک دلخواه</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-800 mb-1">عنوان نمایشی لینک</label>
+                    <input type="text" id="input-rep-social-title" class="w-full text-xs p-2.5 rounded-xl border border-slate-200 focus:border-purple-600 focus:outline-none font-bold" placeholder="مثال: پیج رسمی اینستاگرام">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-800 mb-1">لینک مستقیم (URL)</label>
+                    <input type="text" id="input-rep-social-url" class="w-full text-xs p-2.5 rounded-xl border border-slate-200 focus:border-purple-600 focus:outline-none font-mono text-left" dir="ltr" placeholder="https://instagram.com/your_handle">
+                    <span class="text-[10px] text-slate-400 mt-0.5 block">لینک کاملی که با کلیک کاربر، اپلیکیشن یا صفحه مقصد را باز کند.</span>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-800 mb-1">آیدی / نام‌کاربری (جهت کپی ۱-کلیکه)</label>
+                        <input type="text" id="input-rep-social-handle" class="w-full text-xs p-2 rounded-lg border border-slate-200 font-mono text-left" dir="ltr" placeholder="@handle یا 0912...">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-800 mb-1">متن نشانک (Badge)</label>
+                        <input type="text" id="input-rep-social-badge" class="w-full text-xs p-2 rounded-lg border border-slate-200" placeholder="مشاهده نمونه کارها...">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-800 mb-1">نام آیکون (Material Symbol)</label>
+                        <input type="text" id="input-rep-social-icon" class="w-full text-xs p-2 rounded-lg border border-slate-200 font-mono" placeholder="photo_camera, send, chat, forum...">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-800 mb-1">رنگ تم آیکون</label>
+                        <select id="input-rep-social-color" class="w-full text-xs p-2 rounded-lg border border-slate-200 font-bold">
+                            <option value="#e1306c">اینستاگرام (#e1306c)</option>
+                            <option value="#0284c7">تلگرام (#0284c7)</option>
+                            <option value="#10b981">واتساپ (#10b981)</option>
+                            <option value="#059669">بله (#059669)</option>
+                            <option value="#ea580c">ایتا (#ea580c)</option>
+                            <option value="#7c3aed">روبیکا (#7c3aed)</option>
+                            <option value="#e11d48">آپارات (#e11d48)</option>
+                            <option value="#dc2626">یوتیوب (#dc2626)</option>
+                            <option value="#1d4ed8">لینکدین (#1d4ed8)</option>
+                            <option value="#334155">سفارشی / تیره (#334155)</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- Modal Footer -->
@@ -2081,11 +2287,260 @@ const repeaterState = {
     services: <?= json_encode(array_values($layout['services']['items'] ?? []), JSON_UNESCAPED_UNICODE) ?>,
     bento_facilities: <?= json_encode(array_values($layout['bento_facilities']['items'] ?? []), JSON_UNESCAPED_UNICODE) ?>,
     faq: <?= json_encode(array_values($layout['faq']['items'] ?? []), JSON_UNESCAPED_UNICODE) ?>,
-    stats_strip: <?= json_encode(array_values($layout['stats_strip']['stats'] ?? []), JSON_UNESCAPED_UNICODE) ?>
+    stats_strip: <?= json_encode(array_values($layout['stats_strip']['stats'] ?? []), JSON_UNESCAPED_UNICODE) ?>,
+    social_links: <?= json_encode(array_values($socialLinks ?? []), JSON_UNESCAPED_UNICODE) ?>
+};
+
+const socialPresets = {
+    instagram: {
+        title: 'اینستاگرام رسمی',
+        icon: 'photo_camera',
+        color: '#e1306c',
+        badge: 'صفحه رسمی و استوری‌ها',
+        url_placeholder: 'https://instagram.com/your_handle',
+        handle_placeholder: '@your_clinic'
+    },
+    telegram: {
+        title: 'کانال تلگرام',
+        icon: 'send',
+        color: '#0284c7',
+        badge: 'کانال اطلاع‌رسانی و آموزش',
+        url_placeholder: 'https://t.me/your_channel',
+        handle_placeholder: '@your_channel'
+    },
+    whatsapp: {
+        title: 'پشتیبانی واتساپ',
+        icon: 'chat',
+        color: '#10b981',
+        badge: 'پاسخگویی سریع',
+        url_placeholder: 'https://wa.me/989123456789',
+        handle_placeholder: '۰۹۱۲۳۴۵۶۷۸۹'
+    },
+    bale: {
+        title: 'پیام‌رسان بله',
+        icon: 'forum',
+        color: '#059669',
+        badge: 'کانال و پرداخت بله',
+        url_placeholder: 'https://ble.ir/your_channel',
+        handle_placeholder: '@your_channel'
+    },
+    eitaa: {
+        title: 'کانال ایتا',
+        icon: 'campaign',
+        color: '#ea580c',
+        badge: 'اطلاع‌رسانی ایتا',
+        url_placeholder: 'https://eitaa.com/your_channel',
+        handle_placeholder: '@your_channel'
+    },
+    rubika: {
+        title: 'کانال روبیکا',
+        icon: 'play_circle',
+        color: '#7c3aed',
+        badge: 'کانال روبیکا',
+        url_placeholder: 'https://rubika.ir/your_channel',
+        handle_placeholder: '@your_channel'
+    },
+    aparat: {
+        title: 'کانال ویدئویی آپارات',
+        icon: 'video_library',
+        color: '#e11d48',
+        badge: 'ویدیوهای آموزشی',
+        url_placeholder: 'https://aparat.com/your_channel',
+        handle_placeholder: 'aparat_id'
+    },
+    youtube: {
+        title: 'یوتیوب (YouTube)',
+        icon: 'smart_display',
+        color: '#dc2626',
+        badge: 'ویدیوهای تخصصی',
+        url_placeholder: 'https://youtube.com/@your_channel',
+        handle_placeholder: '@your_channel'
+    },
+    linkedin: {
+        title: 'صفحه لینکدین',
+        icon: 'work',
+        color: '#1d4ed8',
+        badge: 'شبکه حرفه‌ای بالینی',
+        url_placeholder: 'https://linkedin.com/in/your_profile',
+        handle_placeholder: 'in/your_profile'
+    },
+    custom: {
+        title: 'لینک دلخواه',
+        icon: 'language',
+        color: '#334155',
+        badge: 'ارتباط مستقیم',
+        url_placeholder: 'https://...',
+        handle_placeholder: 'link'
+    }
+};
+
+function applySocialPreset(platform) {
+    const preset = socialPresets[platform] || socialPresets.custom;
+    const titleEl = document.getElementById('input-rep-social-title');
+    const urlEl = document.getElementById('input-rep-social-url');
+    const handleEl = document.getElementById('input-rep-social-handle');
+    const badgeEl = document.getElementById('input-rep-social-badge');
+    const iconEl = document.getElementById('input-rep-social-icon');
+    const colorEl = document.getElementById('input-rep-social-color');
+
+    if (titleEl && (!titleEl.value || activeRepeaterIndex < 0)) titleEl.value = preset.title;
+    if (urlEl) urlEl.placeholder = preset.url_placeholder;
+    if (handleEl) handleEl.placeholder = preset.handle_placeholder;
+    if (badgeEl && (!badgeEl.value || activeRepeaterIndex < 0)) badgeEl.value = preset.badge;
+    if (iconEl) iconEl.value = preset.icon;
+    if (colorEl) colorEl.value = preset.color;
+}
+
+// Robust Undo / Redo History Engine for Reverting Accidental Deletions & Changes
+const studioHistory = {
+    stack: [],
+    index: -1,
+    maxDepth: 40,
+    isApplying: false,
+
+    captureSnapshot() {
+        return {
+            repeaters: JSON.parse(JSON.stringify(repeaterState)),
+            blocksOrder: Array.from(document.querySelectorAll('#tab-panel-blocks > div[id^="section-"]')).map(el => el.id),
+            checkboxes: Array.from(document.querySelectorAll('#tab-panel-blocks input[type="checkbox"], #tab-panel-quick input[type="checkbox"]')).map(cb => ({ id: cb.id, checked: cb.checked }))
+        };
+    },
+
+    pushState(label = '') {
+        if (this.isApplying) return;
+        const snapshot = this.captureSnapshot();
+        if (this.index < this.stack.length - 1) {
+            this.stack = this.stack.slice(0, this.index + 1);
+        }
+        this.stack.push({ snapshot, label, time: Date.now() });
+        if (this.stack.length > this.maxDepth) {
+            this.stack.shift();
+        } else {
+            this.index++;
+        }
+        this.updateButtons();
+    },
+
+    undo() {
+        if (this.index <= 0) return;
+        this.index--;
+        const entry = this.stack[this.index];
+        this.applyState(entry);
+        this.updateButtons();
+        showToast('✓ تغییر قبلی با موفقیت بازگردانده شد (Undo)', 'success');
+    },
+
+    redo() {
+        if (this.index >= this.stack.length - 1) return;
+        this.index++;
+        const entry = this.stack[this.index];
+        this.applyState(entry);
+        this.updateButtons();
+        showToast('✓ تغییر مجدداً اعمال شد (Redo)', 'success');
+    },
+
+    applyState(entry) {
+        if (!entry || !entry.snapshot) return;
+        this.isApplying = true;
+        try {
+            const { repeaters, blocksOrder, checkboxes } = entry.snapshot;
+            if (repeaters) {
+                Object.keys(repeaters).forEach(sec => {
+                    repeaterState[sec] = JSON.parse(JSON.stringify(repeaters[sec]));
+                    renderStudioRepeaterUI(sec);
+                    sendLiveUpdate('update_repeater', { section: sec, items: repeaterState[sec] });
+                });
+            }
+            if (checkboxes) {
+                checkboxes.forEach(cb => {
+                    const el = document.getElementById(cb.id);
+                    if (el && el.type === 'checkbox' && el.checked !== cb.checked) {
+                        el.checked = cb.checked;
+                        el.dispatchEvent(new Event('change', { bubbles: true }));
+                    }
+                });
+            }
+            if (blocksOrder && blocksOrder.length) {
+                const container = document.getElementById('tab-panel-blocks');
+                if (container) {
+                    blocksOrder.forEach(secId => {
+                        const secEl = document.getElementById(secId);
+                        if (secEl && secEl.parentNode === container) {
+                            container.appendChild(secEl);
+                        }
+                    });
+                    const cleaned = blocksOrder.map(s => s.replace('section-', '')).filter(Boolean);
+                    sendLiveUpdate('reorder_blocks', cleaned);
+                }
+            }
+        } finally {
+            this.isApplying = false;
+        }
+    },
+
+    updateButtons() {
+        const uBtn = document.getElementById('btn-studio-undo');
+        const rBtn = document.getElementById('btn-studio-redo');
+        if (uBtn) {
+            uBtn.disabled = this.index <= 0;
+            uBtn.classList.toggle('opacity-40', this.index <= 0);
+            uBtn.classList.toggle('text-emerald-700', this.index > 0);
+        }
+        if (rBtn) {
+            rBtn.disabled = this.index >= this.stack.length - 1;
+            rBtn.classList.toggle('opacity-40', this.index >= this.stack.length - 1);
+            rBtn.classList.toggle('text-emerald-700', this.index < this.stack.length - 1);
+        }
+    }
 };
 
 let activeRepeaterSection = null;
 let activeRepeaterIndex = -1;
+let lastRemovedItem = null;
+let activeInteractiveToastTimeout = null;
+
+function showInteractiveToast(msg, actionLabel, actionCallback, duration = 8000) {
+    const existing = document.getElementById('studio-interactive-toast');
+    if (existing) existing.remove();
+    if (activeInteractiveToastTimeout) clearTimeout(activeInteractiveToastTimeout);
+
+    const toast = document.createElement('div');
+    toast.id = 'studio-interactive-toast';
+    toast.className = 'fixed bottom-6 left-6 z-50 px-4 py-3 rounded-2xl text-xs font-bold text-white shadow-2xl bg-slate-900/95 border border-slate-700/80 backdrop-blur-md transition-all flex items-center gap-3 animate-in fade-in slide-in-from-bottom-4 duration-200';
+
+    const msgSpan = document.createElement('span');
+    msgSpan.className = 'flex items-center gap-2 text-slate-100';
+    msgSpan.innerHTML = `<span class="material-symbols-outlined text-amber-400 text-base">restore</span><span>${escapeStudioHtml(msg)}</span>`;
+    toast.appendChild(msgSpan);
+
+    if (actionLabel && typeof actionCallback === 'function') {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs flex items-center gap-1 shadow-sm active:scale-95 transition-all cursor-pointer';
+        btn.innerHTML = `<span class="material-symbols-outlined text-sm">undo</span><span>${escapeStudioHtml(actionLabel)}</span>`;
+        btn.onclick = () => {
+            toast.remove();
+            if (activeInteractiveToastTimeout) clearTimeout(activeInteractiveToastTimeout);
+            actionCallback();
+        };
+        toast.appendChild(btn);
+    }
+
+    const closeBtn = document.createElement('button');
+    closeBtn.type = 'button';
+    closeBtn.className = 'text-slate-400 hover:text-white p-1 rounded-lg transition-colors cursor-pointer';
+    closeBtn.innerHTML = '<span class="material-symbols-outlined text-sm">close</span>';
+    closeBtn.onclick = () => toast.remove();
+    toast.appendChild(closeBtn);
+
+    document.body.appendChild(toast);
+
+    activeInteractiveToastTimeout = setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateY(10px)';
+        setTimeout(() => toast.remove(), 400);
+    }, duration);
+}
 
 function initStudioRepeaters() {
     renderStudioRepeaterUI('navigation_hub');
@@ -2093,16 +2548,22 @@ function initStudioRepeaters() {
     renderStudioRepeaterUI('bento_facilities');
     renderStudioRepeaterUI('faq');
     renderStudioRepeaterUI('stats_strip');
+    renderStudioRepeaterUI('social_links');
 }
 
 function renderStudioRepeaterUI(section) {
     const listEl = document.getElementById(`studio-repeater-list-${section}`);
-    if (!listEl) return;
+    const quickListEl = document.getElementById(`studio-repeater-list-${section}-quick`);
+    if (!listEl && !quickListEl) return;
+
     const items = repeaterState[section] || [];
     if (items.length === 0) {
-        listEl.innerHTML = '<div class="text-[11px] text-slate-400 p-2.5 bg-slate-50 rounded-xl text-center border border-dashed border-slate-200">موردی برای نمایش وجود ندارد. با دکمه بالا مورد دلخواه اضافه کنید.</div>';
+        const emptyHtml = '<div class="text-[11px] text-slate-400 p-2.5 bg-slate-50 rounded-xl text-center border border-dashed border-slate-200">موردی برای نمایش وجود ندارد. با دکمه بالا مورد دلخواه اضافه کنید.</div>';
+        if (listEl) listEl.innerHTML = emptyHtml;
+        if (quickListEl) quickListEl.innerHTML = emptyHtml;
         return;
     }
+
     let html = '';
     items.forEach((item, idx) => {
         let title = '';
@@ -2128,6 +2589,10 @@ function renderStudioRepeaterUI(section) {
             title = `${item.value || ''} - ${item.label || ''}`;
             subtitle = 'شاخص آماری';
             icon = item.icon || 'verified';
+        } else if (section === 'social_links') {
+            title = item.title || item.platform || 'لینک ارتباطی';
+            subtitle = item.handle ? `${item.handle} • ${item.url || ''}` : (item.url || '');
+            icon = item.icon || 'share';
         }
 
         html += `
@@ -2149,7 +2614,9 @@ function renderStudioRepeaterUI(section) {
             </div>
         </div>`;
     });
-    listEl.innerHTML = html;
+
+    if (listEl) listEl.innerHTML = html;
+    if (quickListEl) quickListEl.innerHTML = html;
 }
 
 function escapeStudioHtml(str) {
@@ -2167,7 +2634,7 @@ function openStudioRepeaterModal(section, index) {
     const modal = document.getElementById('studio-repeater-modal');
     if (!modal) return;
 
-    ['navigation_hub', 'services', 'bento_facilities', 'faq', 'stats_strip'].forEach(sec => {
+    ['navigation_hub', 'services', 'bento_facilities', 'faq', 'stats_strip', 'social_links'].forEach(sec => {
         const formEl = document.getElementById(`form-repeater-${sec}`);
         if (formEl) formEl.classList.add('hidden');
     });
@@ -2222,6 +2689,19 @@ function openStudioRepeaterModal(section, index) {
         document.getElementById('input-rep-stat-val').value = item ? (item.value || '') : '';
         document.getElementById('input-rep-stat-lbl').value = item ? (item.label || '') : '';
         document.getElementById('input-rep-stat-icon').value = item ? (item.icon || 'verified') : 'verified';
+    } else if (section === 'social_links') {
+        if (titleEl) titleEl.innerText = 'لینک شبکه اجتماعی / پیام‌رسان';
+        if (descEl) descEl.innerText = 'نمایش در کارت ویزیت دیجیتال، استند رومیزی و وب‌سایت';
+        if (iconEl) iconEl.innerText = 'share';
+        const platform = item ? (item.platform || 'instagram') : 'instagram';
+        const platEl = document.getElementById('input-rep-social-platform');
+        if (platEl) platEl.value = platform;
+        document.getElementById('input-rep-social-title').value = item ? (item.title || '') : 'اینستاگرام رسمی';
+        document.getElementById('input-rep-social-url').value = item ? (item.url || '') : '';
+        document.getElementById('input-rep-social-handle').value = item ? (item.handle || '') : '';
+        document.getElementById('input-rep-social-badge').value = item ? (item.badge || '') : '';
+        document.getElementById('input-rep-social-icon').value = item ? (item.icon || 'photo_camera') : 'photo_camera';
+        document.getElementById('input-rep-social-color').value = item ? (item.color || '#e1306c') : '#e1306c';
     }
 
     modal.classList.remove('hidden');
@@ -2271,6 +2751,18 @@ function saveStudioRepeaterItem() {
         const label = document.getElementById('input-rep-stat-lbl')?.value.trim() || 'شاخص جدید';
         const icon = document.getElementById('input-rep-stat-icon')?.value.trim() || 'verified';
         newItem = { value, label, icon };
+    } else if (sec === 'social_links') {
+        const platform = document.getElementById('input-rep-social-platform')?.value || 'custom';
+        const title = document.getElementById('input-rep-social-title')?.value.trim() || 'لینک ارتباطی';
+        const url = document.getElementById('input-rep-social-url')?.value.trim() || '';
+        const handle = document.getElementById('input-rep-social-handle')?.value.trim() || '';
+        const badge = document.getElementById('input-rep-social-badge')?.value.trim() || '';
+        const icon = document.getElementById('input-rep-social-icon')?.value.trim() || 'share';
+        const color = document.getElementById('input-rep-social-color')?.value.trim() || '#334155';
+        let id = (idx >= 0 && repeaterState.social_links[idx] && repeaterState.social_links[idx].id) 
+            ? repeaterState.social_links[idx].id 
+            : ('social_' + platform + '_' + Date.now());
+        newItem = { id, platform, title, url, handle, badge, icon, color, enabled: true };
     }
 
     if (idx >= 0 && idx < repeaterState[sec].length) {
@@ -2281,17 +2773,88 @@ function saveStudioRepeaterItem() {
 
     renderStudioRepeaterUI(sec);
     sendLiveUpdate('update_repeater', { section: sec, items: repeaterState[sec] });
+    studioHistory.pushState(idx >= 0 ? `ویرایش آیتم در ${sec}` : `افزودن آیتم جدید به ${sec}`);
     closeStudioRepeaterModal();
 }
 
 function removeStudioRepeaterItem(section, index) {
     if (!repeaterState[section] || index < 0 || index >= repeaterState[section].length) return;
-    if (!confirm('آیا از حذف این مورد از وب‌سایت مطمئن هستید؟')) return;
+
+    const removed = repeaterState[section][index];
+    const itemTitle = removed.title || removed.name || removed.q || removed.value || 'آیتم انتخاب شده';
+    lastRemovedItem = { section, index, item: JSON.parse(JSON.stringify(removed)) };
 
     repeaterState[section].splice(index, 1);
     renderStudioRepeaterUI(section);
     sendLiveUpdate('update_repeater', { section: section, items: repeaterState[section] });
+    studioHistory.pushState(`حذف آیتم از ${section}`);
+
+    showInteractiveToast(
+        `«${itemTitle}» از بخش حذف شد.`,
+        'بازگردانی (Undo)',
+        () => revertLastRemovedItem()
+    );
 }
+
+function revertLastRemovedItem() {
+    if (!lastRemovedItem) return;
+    const { section, index, item } = lastRemovedItem;
+    if (!repeaterState[section]) repeaterState[section] = [];
+
+    if (index >= 0 && index <= repeaterState[section].length) {
+        repeaterState[section].splice(index, 0, item);
+    } else {
+        repeaterState[section].push(item);
+    }
+
+    studioHistory.pushState(`بازگردانی آیتم حذف شده ${section}`);
+    renderStudioRepeaterUI(section);
+    sendLiveUpdate('update_repeater', { section: section, items: repeaterState[section] });
+
+    showToast(`✓ «${item.title || item.name || item.q || 'آیتم'}» با موفقیت بازگردانده شد.`, 'success');
+    lastRemovedItem = null;
+}
+
+async function restoreSectionDefaults(section) {
+    try {
+        const res = await fetch(`actions/site_builder_action.php?action=get_section_defaults&section=${encodeURIComponent(section)}&tenant_type=${encodeURIComponent(tenantType)}`);
+        const data = await res.json();
+        if (data && data.success && Array.isArray(data.items)) {
+            studioHistory.pushState(`قبل از بازیابی پیش‌فرض ${section}`);
+            repeaterState[section] = data.items;
+            renderStudioRepeaterUI(section);
+            sendLiveUpdate('update_repeater', { section: section, items: repeaterState[section] });
+            showInteractiveToast(
+                `آیتم‌های پیش‌فرض بخش «${section}» بازنشانی شدند.`,
+                'بازگردانی',
+                () => studioHistory.undo()
+            );
+        } else {
+            showToast(data.message || 'خطا در بازیابی پیش‌فرض', 'error');
+        }
+    } catch (err) {
+        showToast('خطا در برقراری ارتباط با سرور', 'error');
+    }
+}
+
+// Global keyboard shortcuts (Ctrl+Z / Ctrl+Y)
+document.addEventListener('keydown', function(e) {
+    const activeEl = document.activeElement;
+    const isTyping = activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA' || activeEl.isContentEditable);
+    if (isTyping) return;
+
+    if ((e.ctrlKey || e.metaKey) && (e.key === 'z' || e.key === 'Z')) {
+        e.preventDefault();
+        if (!e.shiftKey) {
+            studioHistory.undo();
+        } else {
+            studioHistory.redo();
+        }
+    } else if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || e.key === 'Y')) {
+        e.preventDefault();
+        studioHistory.redo();
+    }
+});
 
 // Listen for repeater action requests from preview iframe
 window.addEventListener('message', function(e) {
@@ -2309,6 +2872,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     initLiveStudioBindings();
     initStudioRepeaters();
+    studioHistory.pushState('وضعیت اولیه');
 });
 
 // Real-time zero-refresh live synchronization engine with preview iframe
@@ -3458,6 +4022,12 @@ async function saveSiteConfig() {
             lng: document.getElementById('input-navhub-lng')?.value || document.getElementById('input-quick-navhub-lng')?.value || '51.3347',
             apps: repeaterState.navigation_hub || []
         },
+        social_links: {
+            enabled: document.getElementById('input-social-enabled')?.checked ?? true,
+            heading: document.getElementById('input-social-heading')?.value || 'راه‌های ارتباطی و شبکه‌های اجتماعی',
+            subtitle: document.getElementById('input-social-subtitle')?.value || '',
+            items: repeaterState.social_links || []
+        },
         contact: {
             enabled: true,
             address: document.getElementById('input-contact-address')?.value || '',
@@ -3626,6 +4196,7 @@ function moveStudioBlock(sectionId, direction) {
     // Live update block ordering in preview iframe immediately without refresh
     const order = getStudioBlocksOrder();
     sendLiveUpdate('reorder_blocks', order);
+    studioHistory.pushState('جابجایی ترتیب بلوک‌ها');
     showToast('✓ ترتیب بلوک در پیش‌نمایش زنده اعمال شد.', 'success');
 }
 
@@ -3781,6 +4352,11 @@ function initLiveStudioBindings() {
         { id: 'input-vcard-desc', field: 'vcard_desc', event: 'input' },
         { id: 'input-vcard-btn', field: 'vcard_btn', event: 'input' },
 
+        // Social Media & Digital Business Card
+        { id: 'input-social-enabled', field: 'block_toggle', extra: 'social_links', event: 'change', isCheckbox: true },
+        { id: 'input-social-heading', field: 'social_heading', event: 'input' },
+        { id: 'input-social-subtitle', field: 'social_subtitle', event: 'input' },
+
         // Footer & Mobile Bar
         { id: 'input-footer-about', field: 'footer_about', event: 'input' },
         { id: 'input-footer-copyright', field: 'footer_copyright', event: 'input' },
@@ -3798,6 +4374,21 @@ function initLiveStudioBindings() {
             }
             const val = b.isCheckbox ? el.checked : el.value;
             sendLiveUpdate(b.field, val, b.extra || null);
+
+            // Record in undo/redo history for checkbox switches & show interactive toast
+            if (b.isCheckbox) {
+                studioHistory.pushState(`تغییر وضعیت ${b.extra || b.id}`);
+                if (b.field === 'block_toggle' && !val) {
+                    showInteractiveToast(
+                        `بخش «${b.extra}» از صفحه پنهان شد.`,
+                        'بازگردانی',
+                        () => {
+                            el.checked = true;
+                            el.dispatchEvent(new Event('change', { bubbles: true }));
+                        }
+                    );
+                }
+            }
         };
 
         el.addEventListener(b.event, handler);

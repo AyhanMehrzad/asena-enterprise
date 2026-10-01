@@ -588,7 +588,91 @@ class TenantSiteService {
             ]
         ];
 
+        // Curated Social Media Channels & Links for Digital Business Card
+        $cleanPhoneDigits = preg_replace('/[^\d]/', '', $phone);
+        $tenantHandle = $info['slug'] ?? ($tenantType . '_' . $name);
+        $cleanHandle = preg_replace('/[^\w]/u', '_', $tenantHandle);
+        if (empty($cleanHandle)) $cleanHandle = 'asena_clinic';
+
+        $defaultSocialLinks = [
+            [
+                'id' => 'instagram',
+                'platform' => 'instagram',
+                'title' => 'اینستاگرام رسمی',
+                'handle' => '@' . $cleanHandle,
+                'url' => 'https://instagram.com/' . $cleanHandle,
+                'icon' => 'photo_camera',
+                'color' => '#E1306C',
+                'enabled' => true
+            ],
+            [
+                'id' => 'telegram',
+                'platform' => 'telegram',
+                'title' => 'کانال تلگرام',
+                'handle' => '@' . $cleanHandle,
+                'url' => 'https://t.me/' . $cleanHandle,
+                'icon' => 'send',
+                'color' => '#229ED9',
+                'enabled' => true
+            ],
+            [
+                'id' => 'whatsapp',
+                'platform' => 'whatsapp',
+                'title' => 'پشتیبانی واتساپ',
+                'handle' => $phone,
+                'url' => !empty($cleanPhoneDigits) ? 'https://wa.me/' . $cleanPhoneDigits : '',
+                'icon' => 'chat',
+                'color' => '#25D366',
+                'enabled' => !empty($cleanPhoneDigits)
+            ],
+            [
+                'id' => 'bale',
+                'platform' => 'bale',
+                'title' => 'پیام‌رسان بله',
+                'handle' => '@' . $cleanHandle,
+                'url' => 'https://ble.ir/' . $cleanHandle,
+                'icon' => 'mark_chat_read',
+                'color' => '#00897B',
+                'enabled' => true
+            ],
+            [
+                'id' => 'eitaa',
+                'platform' => 'eitaa',
+                'title' => 'کانال ایتا',
+                'handle' => '@' . $cleanHandle,
+                'url' => 'https://eitaa.com/' . $cleanHandle,
+                'icon' => 'forum',
+                'color' => '#E65100',
+                'enabled' => true
+            ]
+        ];
+
+        $layout['social_links'] = $defaultSocialLinks;
+        $layout['blocks']['social_links'] = [
+            'enabled' => true,
+            'title' => 'پل‌های ارتباطی و شبکه‌های اجتماعی',
+            'subtitle' => 'ارتباط مستقیم با کادر درمانی، مشاوره آنلاین و دریافت آخرین اطلاعیه‌ها',
+            'items' => $defaultSocialLinks
+        ];
+        $layout['blocks']['contact']['social_links'] = $defaultSocialLinks;
+
         return $layout;
+    }
+
+    /**
+     * Retrieve standard/default curated items for any section for 1-click restore
+     */
+    public function getDefaultSectionItems(string $tenantType, string $section, array $info = []): array {
+        $layout = $this->buildDefaultLayout($tenantType, $info);
+        return match($section) {
+            'social_links' => $layout['social_links'] ?? [],
+            'navigation_hub' => $layout['blocks']['navigation_hub']['apps'] ?? [],
+            'services' => $layout['blocks']['services']['items'] ?? [],
+            'bento_facilities' => $layout['blocks']['bento_facilities']['items'] ?? [],
+            'faq' => $layout['blocks']['faq']['items'] ?? [],
+            'stats_strip' => $layout['blocks']['stats_strip']['stats'] ?? [],
+            default => []
+        };
     }
 
     /**
