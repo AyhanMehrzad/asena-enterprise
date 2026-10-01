@@ -113,6 +113,37 @@ assertCondition(str_contains($siteContent, "footerLogo.src = value"), "Site.php 
 assertCondition(str_contains($siteContent, "footerTitle.innerText = t"), "Site.php updates footer title in site_title live update");
 assertCondition(str_contains($siteContent, "footerTagline.innerText = value"), "Site.php updates footer tagline in site_tagline live update");
 
+// 7. Navigation Hub Direct Map Links & Universal Website Add/Edit/Remove Repeaters
+assertCondition(str_contains($studioContent, 'id="input-navhub-neshan"'), "Studio has Neshan direct link input");
+assertCondition(str_contains($studioContent, 'id="input-navhub-balad"'), "Studio has Balad direct link input");
+assertCondition(str_contains($studioContent, 'id="input-navhub-waze"'), "Studio has Waze direct link input");
+assertCondition(str_contains($studioContent, 'id="input-navhub-google"'), "Studio has Google Maps direct link input");
+assertCondition(str_contains($studioContent, 'id="input-quick-navhub-neshan"'), "Studio has Quick Neshan direct link input");
+assertCondition(str_contains($studioContent, 'id="studio-repeater-modal"'), "Studio has universal repeater modal");
+assertCondition(str_contains($studioContent, 'openStudioRepeaterModal('), "Studio has openStudioRepeaterModal function");
+assertCondition(str_contains($studioContent, 'closeStudioRepeaterModal('), "Studio has closeStudioRepeaterModal function");
+assertCondition(str_contains($studioContent, 'saveStudioRepeaterItem('), "Studio has saveStudioRepeaterItem function");
+assertCondition(str_contains($studioContent, 'removeStudioRepeaterItem('), "Studio has removeStudioRepeaterItem function");
+assertCondition(str_contains($studioContent, 'id="studio-repeater-list-navigation_hub"'), "Studio has navigation_hub repeater manager");
+assertCondition(str_contains($studioContent, 'id="studio-repeater-list-services"'), "Studio has services repeater manager");
+assertCondition(str_contains($studioContent, 'id="studio-repeater-list-bento_facilities"'), "Studio has bento_facilities repeater manager");
+assertCondition(str_contains($studioContent, 'id="studio-repeater-list-faq"'), "Studio has faq repeater manager");
+assertCondition(str_contains($studioContent, 'id="studio-repeater-list-stats_strip"'), "Studio has stats_strip repeater manager");
+assertCondition(str_contains($studioContent, 'mapSyncPairs'), "Studio synchronizes quick and main map link inputs");
+
+assertCondition(str_contains($siteContent, 'notifyStudioRepeaterModal('), "Site.php has notifyStudioRepeaterModal function");
+assertCondition(str_contains($siteContent, 'notifyStudioRemoveRepeater('), "Site.php has notifyStudioRemoveRepeater function");
+assertCondition(str_contains($siteContent, 'renderLiveRepeaterSection('), "Site.php has renderLiveRepeaterSection function");
+assertCondition(str_contains($siteContent, "case 'update_repeater':"), "Site.php handles update_repeater live update");
+assertCondition(str_contains($siteContent, "case 'services_heading':"), "Site.php handles services_heading live update");
+assertCondition(str_contains($siteContent, "case 'navhub_heading':"), "Site.php handles navhub_heading live update");
+assertCondition(str_contains($siteContent, "case 'navhub_subtitle':"), "Site.php handles navhub_subtitle live update");
+assertCondition(str_contains($siteContent, 'id="live-navhub-buttons"'), "Site.php renders live-navhub-buttons container");
+assertCondition(str_contains($siteContent, 'id="live-services-grid"'), "Site.php renders live-services-grid container");
+assertCondition(str_contains($siteContent, 'id="live-bento-grid"'), "Site.php renders live-bento-grid container");
+assertCondition(str_contains($siteContent, 'id="live-faq-list"'), "Site.php renders live-faq-list container");
+assertCondition(str_contains($siteContent, 'id="live-stats-grid"'), "Site.php renders live-stats-grid container");
+
 if (empty($errors)) {
     echo "=== All {$passes} Tests Passed Successfully! ===\n";
     exit(0);

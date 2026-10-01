@@ -308,9 +308,20 @@ class TenantSiteService {
                 ],
                 'navigation_hub' => [
                     'enabled' => true,
-                    'heading' => 'مسیریابی هوشمند و نشانی روی نقشه',
+                    'heading' => 'مسیریابی ۱ کلیکه با اپلیکیشن‌های نقشه',
+                    'subtitle' => 'مستقیماً موقعیت دقیق مجموعه را در مسیریاب‌های محبوب ایرانی و بین‌المللی باز نمایید.',
                     'lat' => $info['latitude'] ?? '35.7219',
-                    'lng' => $info['longitude'] ?? '51.3347'
+                    'lng' => $info['longitude'] ?? '51.3347',
+                    'neshan_url' => '',
+                    'balad_url' => '',
+                    'waze_url' => '',
+                    'google_maps_url' => '',
+                    'apps' => [
+                        ['id' => 'neshan', 'name' => 'مسیریابی با نشان', 'icon' => 'navigation', 'bg' => 'bg-blue-600', 'url' => ''],
+                        ['id' => 'balad', 'name' => 'مسیریابی با بلد', 'icon' => 'map', 'bg' => 'bg-emerald-600', 'url' => ''],
+                        ['id' => 'waze', 'name' => 'ویز (Waze)', 'icon' => 'turn_right', 'bg' => 'bg-cyan-600', 'url' => ''],
+                        ['id' => 'google_maps', 'name' => 'گوگل مپ', 'icon' => 'place', 'bg' => 'bg-slate-800', 'url' => ''],
+                    ]
                 ],
                 'header' => [
                     'show_phone' => true,

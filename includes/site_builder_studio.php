@@ -12,11 +12,36 @@
 
 $tenantService = App::tenantSite();
 $site = $tenantService->getOrCreateDefault($builderTenantType, $builderTenantId, $builderTenantInfo ?? []);
-$layout = !empty($site['layout']['blocks']) && is_array($site['layout']['blocks']) 
+$siteTier = $site['site_tier'] ?? 'enterprise';
+$defaultLayout = $tenantService->buildDefaultLayout($builderTenantType, [
+    'name' => $site['site_title'] ?? '',
+    'phone' => $site['layout']['header']['phone'] ?? $site['layout']['contact']['phone'] ?? '',
+    'operating_hours' => $site['layout']['contact']['hours'] ?? '',
+    'banner_url' => $site['banner_url'] ?? ''
+], $siteTier)['blocks'];
+
+$savedBlocks = !empty($site['layout']['blocks']) && is_array($site['layout']['blocks']) 
     ? $site['layout']['blocks'] 
     : (!empty($site['layout']) && is_array($site['layout']) ? $site['layout'] : []);
+
+$layout = array_replace_recursive($defaultLayout, $savedBlocks);
+if (isset($savedBlocks['services']['items']) && is_array($savedBlocks['services']['items'])) {
+    $layout['services']['items'] = $savedBlocks['services']['items'];
+}
+if (isset($savedBlocks['bento_facilities']['items']) && is_array($savedBlocks['bento_facilities']['items'])) {
+    $layout['bento_facilities']['items'] = $savedBlocks['bento_facilities']['items'];
+}
+if (isset($savedBlocks['faq']['items']) && is_array($savedBlocks['faq']['items'])) {
+    $layout['faq']['items'] = $savedBlocks['faq']['items'];
+}
+if (isset($savedBlocks['navigation_hub']['apps']) && is_array($savedBlocks['navigation_hub']['apps'])) {
+    $layout['navigation_hub']['apps'] = $savedBlocks['navigation_hub']['apps'];
+}
+if (isset($savedBlocks['stats_strip']['stats']) && is_array($savedBlocks['stats_strip']['stats'])) {
+    $layout['stats_strip']['stats'] = $savedBlocks['stats_strip']['stats'];
+}
+$tenantFaqs = !empty($layout['faq']['items']) ? $layout['faq']['items'] : $tenantService->getTenantFaqs($builderTenantType);
 $slug = htmlspecialchars($site['slug']);
-$siteTier = $site['site_tier'] ?? 'enterprise';
 $previewUrl = "../site.php?slug=" . urlencode($site['slug']) . "&preview=1";
 $publicUrl = "../site.php?slug=" . urlencode($site['slug']);
 
@@ -334,6 +359,58 @@ if (empty($layout['theme']['primary_color']) && $activePaletteKey !== 'navy' && 
                             <div>
                                 <label class="text-[11px] font-bold text-slate-700 block mb-1">نشانی پستی کلینیک</label>
                                 <input type="text" id="input-quick-contact-address" value="<?= htmlspecialchars($layout['contact']['address'] ?? 'تهران، خیابان ولیعصر، نرسیده به میدان ونک، پلاک ۱۲') ?>" class="w-full px-3 py-2 text-xs bg-slate-50 focus:bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-700 transition-all">
+                            </div>
+
+                            <!-- 1-Tap Navigation Strip & Map Links -->
+                            <div class="p-3 rounded-2xl bg-indigo-50/30 border border-indigo-100 space-y-2.5">
+                                <div class="flex items-center justify-between">
+                                    <label class="text-[11px] font-black text-indigo-950 flex items-center gap-1.5">
+                                        <span class="material-symbols-outlined text-sm text-indigo-600">near_me</span>
+                                        <span>لینک‌های مستقیم مسیریاب‌ها و نقشه</span>
+                                    </label>
+                                    <span class="text-[9px] px-1.5 py-0.5 rounded-md bg-indigo-100 text-indigo-700 font-bold">پیشنهادی: لینک مستقیم</span>
+                                </div>
+                                <p class="text-[10px] text-slate-500 leading-tight">لینک اختصاصی کلینیک در مسیریاب‌ها را وارد کنید تا مراجعین با ۱ کلیک موقعیت دقیق شما را باز کنند. در صورت خالی بودن، لینک بر اساس مختصات ساخته می‌شود.</p>
+
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                    <div>
+                                        <label class="text-[10px] font-bold text-slate-600 block mb-1">لینک مستقیم نشان (Neshan)</label>
+                                        <input type="text" id="input-quick-navhub-neshan" value="<?= htmlspecialchars($layout['navigation_hub']['neshan_url'] ?? '') ?>" placeholder="https://neshan.org/maps/@..." class="w-full px-2.5 py-1.5 text-xs bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-left text-slate-800" dir="ltr">
+                                    </div>
+                                    <div>
+                                        <label class="text-[10px] font-bold text-slate-600 block mb-1">لینک مستقیم بلد (Balad)</label>
+                                        <input type="text" id="input-quick-navhub-balad" value="<?= htmlspecialchars($layout['navigation_hub']['balad_url'] ?? '') ?>" placeholder="https://balad.ir/location?..." class="w-full px-2.5 py-1.5 text-xs bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 font-mono text-left text-slate-800" dir="ltr">
+                                    </div>
+                                    <div>
+                                        <label class="text-[10px] font-bold text-slate-600 block mb-1">لینک مستقیم ویز (Waze)</label>
+                                        <input type="text" id="input-quick-navhub-waze" value="<?= htmlspecialchars($layout['navigation_hub']['waze_url'] ?? '') ?>" placeholder="https://waze.com/ul?..." class="w-full px-2.5 py-1.5 text-xs bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 font-mono text-left text-slate-800" dir="ltr">
+                                    </div>
+                                    <div>
+                                        <label class="text-[10px] font-bold text-slate-600 block mb-1">لینک مستقیم گوگل مپ (Google)</label>
+                                        <input type="text" id="input-quick-navhub-google" value="<?= htmlspecialchars($layout['navigation_hub']['google_maps_url'] ?? '') ?>" placeholder="https://maps.google.com/?..." class="w-full px-2.5 py-1.5 text-xs bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-500 font-mono text-left text-slate-800" dir="ltr">
+                                    </div>
+                                </div>
+
+                                <!-- Coordinates Lat/Lng -->
+                                <div class="pt-2 border-t border-indigo-100 flex items-center gap-2">
+                                    <span class="text-[10px] font-bold text-slate-500 shrink-0">مختصات پشتیبان:</span>
+                                    <input type="text" id="input-quick-navhub-lat" value="<?= htmlspecialchars($layout['navigation_hub']['lat'] ?? '35.7219') ?>" placeholder="Latitude" class="w-1/2 px-2 py-1 text-xs bg-white border border-slate-200 rounded-lg font-mono text-left text-slate-800" dir="ltr" title="عرض جغرافیایی (Latitude)">
+                                    <input type="text" id="input-quick-navhub-lng" value="<?= htmlspecialchars($layout['navigation_hub']['lng'] ?? '51.3347') ?>" placeholder="Longitude" class="w-1/2 px-2 py-1 text-xs bg-white border border-slate-200 rounded-lg font-mono text-left text-slate-800" dir="ltr" title="طول جغرافیایی (Longitude)">
+                                </div>
+
+                                <!-- Navigation Buttons Repeater Manager -->
+                                <div class="pt-2 border-t border-indigo-100 space-y-1.5">
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-[10px] font-bold text-slate-700">دکمه‌های نوار مسیریابی:</span>
+                                        <button type="button" onclick="openStudioRepeaterModal('navigation_hub', -1)" class="px-2 py-0.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 text-[10px] font-bold flex items-center gap-1 cursor-pointer">
+                                            <span class="material-symbols-outlined text-xs">add</span>
+                                            <span>افزودن دکمه</span>
+                                        </button>
+                                    </div>
+                                    <div id="studio-repeater-list-navigation_hub-quick" class="space-y-1">
+                                        <!-- populated dynamically by JS -->
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -785,6 +862,17 @@ if (empty($layout['theme']['primary_color']) && $activePaletteKey !== 'navy' && 
                                     <input type="text" id="input-stat-4-lbl" value="<?= htmlspecialchars($layout['stats_strip']['stat_4_lbl'] ?? ($layout['stats_strip']['stats'][3]['label'] ?? 'پذیرش و اورژانس فعال')) ?>" placeholder="پذیرش و اورژانس فعال" class="w-full text-xs p-2 rounded-lg border border-slate-200 font-medium">
                                 </div>
                             </div>
+                            <!-- Repeater List for Dynamic Stats -->
+                            <div class="pt-3 border-t border-slate-100">
+                                <div class="flex items-center justify-between mb-2">
+                                    <span class="text-xs font-bold text-slate-800">مدیریت شاخص‌ها (افزودن، ویرایش و حذف):</span>
+                                    <button type="button" onclick="openStudioRepeaterModal('stats_strip', -1)" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[11px] font-bold flex items-center gap-1 transition-colors cursor-pointer shadow-xs">
+                                        <span class="material-symbols-outlined text-xs">add</span>
+                                        <span>افزودن شاخص</span>
+                                    </button>
+                                </div>
+                                <div id="studio-repeater-list-stats_strip" class="space-y-2"></div>
+                            </div>
                         </div>
                     </div>
 
@@ -907,6 +995,63 @@ if (empty($layout['theme']['primary_color']) && $activePaletteKey !== 'navy' && 
                             <div>
                                 <label class="block text-[11px] font-bold text-slate-700 mb-1">عنوان بخش تجهیزات</label>
                                 <input type="text" id="input-bento-heading" value="<?= htmlspecialchars($layout['bento_facilities']['heading'] ?? 'تجهیزات مدرن و ظرفیت‌های بالینی مرکز') ?>" class="w-full text-xs p-2.5 rounded-xl border border-slate-200 focus:border-emerald-600 focus:outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-bold text-slate-700 mb-1">توضیحات و زیرعنوان بخش تجهیزات</label>
+                                <input type="text" id="input-bento-subtitle" value="<?= htmlspecialchars($layout['bento_facilities']['subtitle'] ?? '') ?>" placeholder="توضیح کوتاه درباره تجهیزات و بخش‌ها" class="w-full text-xs p-2.5 rounded-xl border border-slate-200 focus:border-emerald-600 focus:outline-none">
+                            </div>
+                            <div class="pt-3 border-t border-slate-100">
+                                <div class="flex items-center justify-between mb-2">
+                                    <span class="text-xs font-bold text-slate-800">کارت‌های تجهیزات و بخش‌ها:</span>
+                                    <button type="button" onclick="openStudioRepeaterModal('bento_facilities', -1)" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[11px] font-bold flex items-center gap-1 transition-colors cursor-pointer shadow-xs">
+                                        <span class="material-symbols-outlined text-xs">add</span>
+                                        <span>افزودن بخش/تجهیزات</span>
+                                    </button>
+                                </div>
+                                <div id="studio-repeater-list-bento_facilities" class="space-y-2"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Services Block -->
+                    <div class="border border-slate-200 rounded-2xl overflow-hidden bg-white shadow-sm" id="section-services">
+                        <div onclick="toggleAccordion('services')" class="w-full p-4 flex items-center justify-between bg-slate-50 hover:bg-slate-100 transition-colors text-right cursor-pointer select-none">
+                            <div class="flex items-center gap-2.5">
+                                <span class="material-symbols-outlined text-emerald-600 text-lg">medical_services</span>
+                                <span class="text-xs font-bold text-slate-800">خدمات تخصصی بالینی و مراقبتی</span>
+                            </div>
+                            <div class="flex items-center gap-1" onclick="event.stopPropagation()">
+                                <button type="button" onclick="moveStudioBlock('section-services', 'up')" title="انتقال به بالا" class="w-6 h-6 rounded-lg bg-slate-200/70 hover:bg-slate-300 text-slate-600 flex items-center justify-center transition-colors">
+                                    <span class="material-symbols-outlined text-xs">keyboard_arrow_up</span>
+                                </button>
+                                <button type="button" onclick="moveStudioBlock('section-services', 'down')" title="انتقال به پایین" class="w-6 h-6 rounded-lg bg-slate-200/70 hover:bg-slate-300 text-slate-600 flex items-center justify-center transition-colors">
+                                    <span class="material-symbols-outlined text-xs">keyboard_arrow_down</span>
+                                </button>
+                                <span class="material-symbols-outlined text-slate-400 text-base transition-transform" id="arrow-services">expand_more</span>
+                            </div>
+                        </div>
+                        <div class="p-4 space-y-3 border-t border-slate-100 hidden" id="content-services">
+                            <label class="flex items-center gap-2 text-xs font-bold text-slate-700">
+                                <input type="checkbox" id="input-services-enabled" <?= !empty($layout['services']['enabled'] ?? true) ? 'checked' : '' ?> class="rounded text-emerald-600">
+                                <span>فعال‌سازی نمایش خدمات تخصصی</span>
+                            </label>
+                            <div>
+                                <label class="block text-[11px] font-bold text-slate-700 mb-1">عنوان بخش خدمات</label>
+                                <input type="text" id="input-services-heading" value="<?= htmlspecialchars($layout['services']['heading'] ?? 'خدمات تخصصی بالینی و مراقبتی') ?>" class="w-full text-xs p-2.5 rounded-xl border border-slate-200 focus:border-emerald-600 focus:outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-bold text-slate-700 mb-1">توضیحات و زیرعنوان بخش خدمات</label>
+                                <input type="text" id="input-services-subtitle" value="<?= htmlspecialchars($layout['services']['subtitle'] ?? '') ?>" placeholder="توضیح کوتاه درباره خدمات مرکز" class="w-full text-xs p-2.5 rounded-xl border border-slate-200 focus:border-emerald-600 focus:outline-none">
+                            </div>
+                            <div class="pt-3 border-t border-slate-100">
+                                <div class="flex items-center justify-between mb-2">
+                                    <span class="text-xs font-bold text-slate-800">کارت‌های خدمات (افزودن، ویرایش و حذف):</span>
+                                    <button type="button" onclick="openStudioRepeaterModal('services', -1)" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[11px] font-bold flex items-center gap-1 transition-colors cursor-pointer shadow-xs">
+                                        <span class="material-symbols-outlined text-xs">add</span>
+                                        <span>افزودن خدمت</span>
+                                    </button>
+                                </div>
+                                <div id="studio-repeater-list-services" class="space-y-2"></div>
                             </div>
                         </div>
                     </div>
@@ -1243,6 +1388,20 @@ if (empty($layout['theme']['primary_color']) && $activePaletteKey !== 'navy' && 
                                 <label class="block text-[11px] font-bold text-slate-700 mb-1">عنوان بخش پرسش‌ها</label>
                                 <input type="text" id="input-faq-heading" value="<?= htmlspecialchars($layout['faq']['heading'] ?? 'پرسش‌های متداول و راهنمای مراجعین') ?>" class="w-full text-xs p-2.5 rounded-xl border border-slate-200 focus:border-emerald-600 focus:outline-none">
                             </div>
+                            <div>
+                                <label class="block text-[11px] font-bold text-slate-700 mb-1">زیرعنوان و راهنمای پرسش‌ها</label>
+                                <input type="text" id="input-faq-subtitle" value="<?= htmlspecialchars($layout['faq']['subtitle'] ?? '') ?>" placeholder="پاسخ به سوالات پرتکرار مراجعه‌کنندگان" class="w-full text-xs p-2.5 rounded-xl border border-slate-200 focus:border-emerald-600 focus:outline-none">
+                            </div>
+                            <div class="pt-3 border-t border-slate-100">
+                                <div class="flex items-center justify-between mb-2">
+                                    <span class="text-xs font-bold text-slate-800">پرسش‌ها و پاسخ‌ها (FAQ):</span>
+                                    <button type="button" onclick="openStudioRepeaterModal('faq', -1)" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[11px] font-bold flex items-center gap-1 transition-colors cursor-pointer shadow-xs">
+                                        <span class="material-symbols-outlined text-xs">add</span>
+                                        <span>افزودن پرسش</span>
+                                    </button>
+                                </div>
+                                <div id="studio-repeater-list-faq" class="space-y-2"></div>
+                            </div>
                         </div>
                     </div>
 
@@ -1279,6 +1438,71 @@ if (empty($layout['theme']['primary_color']) && $activePaletteKey !== 'navy' && 
                             <div>
                                 <label class="block text-[11px] font-bold text-slate-700 mb-1">تلفن اورژانس ۲۴ ساعته</label>
                                 <input type="text" id="input-contact-emergency" value="<?= htmlspecialchars($layout['contact']['emergency_phone'] ?? '') ?>" class="w-full text-xs p-2.5 rounded-xl border border-slate-200 focus:border-emerald-600 focus:outline-none font-mono" dir="ltr">
+                            </div>
+
+                            <!-- 1-Tap Navigation Hub Controls in Contact Section -->
+                            <div class="pt-3 border-t border-slate-200 space-y-3">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center gap-1.5">
+                                        <span class="material-symbols-outlined text-blue-600 text-base">near_me</span>
+                                        <span class="text-xs font-bold text-slate-800">نوار مسیریابی ۱ کلیکه نقشه (Navigation Hub)</span>
+                                    </div>
+                                    <label class="flex items-center gap-1 text-[11px] font-bold text-slate-600 cursor-pointer">
+                                        <input type="checkbox" id="input-navhub-enabled" <?= !empty($layout['navigation_hub']['enabled'] ?? true) ? 'checked' : '' ?> class="rounded text-blue-600" onchange="sendLiveUpdate('block_toggle', this.checked, 'navigation_hub')">
+                                        <span>فعال</span>
+                                    </label>
+                                </div>
+                                <div>
+                                    <label class="block text-[11px] font-bold text-slate-700 mb-1">تیتر نوار مسیریابی</label>
+                                    <input type="text" id="input-navhub-heading" value="<?= htmlspecialchars($layout['navigation_hub']['heading'] ?? 'مسیریابی ۱ کلیکه با اپلیکیشن‌های نقشه') ?>" class="w-full text-xs p-2.5 rounded-xl border border-slate-200 focus:border-blue-600 focus:outline-none" oninput="sendLiveUpdate('navhub_heading', this.value)">
+                                </div>
+                                <div>
+                                    <label class="block text-[11px] font-bold text-slate-700 mb-1">توضیحات کوتاه نوار مسیریابی</label>
+                                    <input type="text" id="input-navhub-subtitle" value="<?= htmlspecialchars($layout['navigation_hub']['subtitle'] ?? 'مستقیماً موقعیت دقیق مجموعه را در مسیریاب‌های محبوب ایرانی و بین‌المللی باز نمایید.') ?>" class="w-full text-xs p-2.5 rounded-xl border border-slate-200 focus:border-blue-600 focus:outline-none" oninput="sendLiveUpdate('navhub_subtitle', this.value)">
+                                </div>
+
+                                <!-- Direct Map Links & Coordinates -->
+                                <div class="space-y-2 bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+                                    <span class="text-[11px] font-bold text-slate-700 block">لینک‌های مستقیم مسیریاب‌ها (لینک مستقیم):</span>
+                                    <div>
+                                        <label class="text-[10px] text-slate-500 block mb-0.5">لینک مستقیم نشان (Neshan URL)</label>
+                                        <input type="text" id="input-navhub-neshan" value="<?= htmlspecialchars($layout['navigation_hub']['neshan_url'] ?? '') ?>" placeholder="https://neshan.org/maps/@..." class="w-full text-xs p-2 rounded-lg border border-slate-200 font-mono" dir="ltr">
+                                    </div>
+                                    <div>
+                                        <label class="text-[10px] text-slate-500 block mb-0.5">لینک مستقیم بلد (Balad URL)</label>
+                                        <input type="text" id="input-navhub-balad" value="<?= htmlspecialchars($layout['navigation_hub']['balad_url'] ?? '') ?>" placeholder="https://balad.ir/location?..." class="w-full text-xs p-2 rounded-lg border border-slate-200 font-mono" dir="ltr">
+                                    </div>
+                                    <div>
+                                        <label class="text-[10px] text-slate-500 block mb-0.5">لینک مستقیم ویز (Waze URL)</label>
+                                        <input type="text" id="input-navhub-waze" value="<?= htmlspecialchars($layout['navigation_hub']['waze_url'] ?? '') ?>" placeholder="https://waze.com/ul?..." class="w-full text-xs p-2 rounded-lg border border-slate-200 font-mono" dir="ltr">
+                                    </div>
+                                    <div>
+                                        <label class="text-[10px] text-slate-500 block mb-0.5">لینک مستقیم گوگل مپ (Google Maps URL)</label>
+                                        <input type="text" id="input-navhub-google" value="<?= htmlspecialchars($layout['navigation_hub']['google_maps_url'] ?? '') ?>" placeholder="https://maps.google.com/?..." class="w-full text-xs p-2 rounded-lg border border-slate-200 font-mono" dir="ltr">
+                                    </div>
+                                    <div class="grid grid-cols-2 gap-2 pt-1">
+                                        <div>
+                                            <label class="text-[10px] text-slate-500 block mb-0.5">عرض جغرافیایی (Lat)</label>
+                                            <input type="text" id="input-navhub-lat" value="<?= htmlspecialchars($layout['navigation_hub']['lat'] ?? '35.7219') ?>" class="w-full text-xs p-1.5 rounded-lg border border-slate-200 font-mono" dir="ltr">
+                                        </div>
+                                        <div>
+                                            <label class="text-[10px] text-slate-500 block mb-0.5">طول جغرافیایی (Lng)</label>
+                                            <input type="text" id="input-navhub-lng" value="<?= htmlspecialchars($layout['navigation_hub']['lng'] ?? '51.3347') ?>" class="w-full text-xs p-1.5 rounded-lg border border-slate-200 font-mono" dir="ltr">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Nav Buttons Repeater List -->
+                                <div>
+                                    <div class="flex items-center justify-between mb-2">
+                                        <span class="text-xs font-bold text-slate-800">دکمه‌های اپلیکیشن نقشه (افزودن و ویرایش):</span>
+                                        <button type="button" onclick="openStudioRepeaterModal('navigation_hub', -1)" class="px-2.5 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-[11px] font-bold flex items-center gap-1 transition-colors cursor-pointer shadow-xs">
+                                            <span class="material-symbols-outlined text-xs">add</span>
+                                            <span>افزودن دکمه</span>
+                                        </button>
+                                    </div>
+                                    <div id="studio-repeater-list-navigation_hub" class="space-y-2"></div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -1705,6 +1929,144 @@ if (empty($layout['theme']['primary_color']) && $activePaletteKey !== 'navy' && 
     </div>
 </div>
 
+<!-- Universal Studio Repeater Modal (Add / Edit / Remove elements across website) -->
+<div id="studio-repeater-modal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 hidden transition-opacity">
+    <div class="bg-white rounded-3xl shadow-2xl max-w-lg w-full overflow-hidden border border-slate-200 flex flex-col max-h-[85vh] animate-in fade-in zoom-in-95 duration-200">
+        <!-- Modal Header -->
+        <div class="p-4 sm:px-6 bg-slate-50 border-b border-slate-200 flex items-center justify-between shrink-0">
+            <div class="flex items-center gap-2.5">
+                <div class="w-9 h-9 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold">
+                    <span class="material-symbols-outlined text-lg" id="studio-repeater-modal-icon">edit_square</span>
+                </div>
+                <div>
+                    <div class="text-sm font-black text-slate-900 flex items-center gap-1.5">
+                        <span id="studio-repeater-modal-action">افزودن مورد جدید:</span>
+                        <span id="studio-repeater-modal-title" class="text-emerald-700">بخش سایت</span>
+                    </div>
+                    <div class="text-[11px] text-slate-500" id="studio-repeater-modal-desc">مشخصات آیتم را وارد فرمایید</div>
+                </div>
+            </div>
+            <button type="button" onclick="closeStudioRepeaterModal()" class="w-8 h-8 rounded-xl bg-slate-200/80 hover:bg-slate-300 text-slate-700 flex items-center justify-center transition-colors cursor-pointer" title="بستن پنجره">
+                <span class="material-symbols-outlined text-base">close</span>
+            </button>
+        </div>
+
+        <!-- Modal Dynamic Body Form -->
+        <div class="p-5 overflow-y-auto space-y-4" id="studio-repeater-modal-body">
+            <!-- 1. Navigation Hub Fields -->
+            <div id="form-repeater-navigation_hub" class="space-y-3 hidden">
+                <div>
+                    <label class="block text-xs font-bold text-slate-800 mb-1">نام یا عنوان دکمه نقشه</label>
+                    <input type="text" id="input-rep-nav-name" class="w-full text-xs p-2.5 rounded-xl border border-slate-200 focus:border-blue-600 focus:outline-none" placeholder="مثال: مسیریابی با نشان">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-800 mb-1">لینک مستقیم باز شدن اپلیکیشن یا وب (URL)</label>
+                    <input type="text" id="input-rep-nav-url" class="w-full text-xs p-2.5 rounded-xl border border-slate-200 focus:border-blue-600 focus:outline-none font-mono text-left" dir="ltr" placeholder="https://neshan.org/maps/@... یا https://maps.google.com/...">
+                    <span class="text-[10px] text-slate-400 mt-0.5 block">در صورت خالی گذاشتن، از فرمول مختصات استفاده خواهد شد.</span>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-800 mb-1">آیکون (Material Symbol)</label>
+                        <input type="text" id="input-rep-nav-icon" class="w-full text-xs p-2 rounded-lg border border-slate-200 font-mono" placeholder="navigation, map, near_me...">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-800 mb-1">رنگ دکمه</label>
+                        <select id="input-rep-nav-bg" class="w-full text-xs p-2 rounded-lg border border-slate-200">
+                            <option value="bg-blue-600">آبی نشان (Blue)</option>
+                            <option value="bg-emerald-600">سبز بلد (Emerald)</option>
+                            <option value="bg-cyan-600">فیروزه‌ای ویز (Cyan)</option>
+                            <option value="bg-slate-800">تیره گوگل مپ (Dark)</option>
+                            <option value="bg-amber-600">نارنجی (Amber)</option>
+                            <option value="bg-purple-600">بنفش (Purple)</option>
+                            <option value="bg-rose-600">زرشکی (Rose)</option>
+                        </select>
+                    </div>
+                </div>
+                <input type="hidden" id="input-rep-nav-id" value="">
+            </div>
+
+            <!-- 2. Services Fields -->
+            <div id="form-repeater-services" class="space-y-3 hidden">
+                <div>
+                    <label class="block text-xs font-bold text-slate-800 mb-1">عنوان خدمت تخصصی</label>
+                    <input type="text" id="input-rep-service-title" class="w-full text-xs p-2.5 rounded-xl border border-slate-200 focus:border-emerald-600 focus:outline-none" placeholder="مثال: جراحی‌های تخصصی بافت نرم">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-800 mb-1">توضیح کوتاه خدمت</label>
+                    <textarea id="input-rep-service-desc" rows="3" class="w-full text-xs p-2.5 rounded-xl border border-slate-200 focus:border-emerald-600 focus:outline-none" placeholder="توضیحات تکمیلی پیرامون تجهیزات، پزشک مسئول و شرایط ارائه..."></textarea>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-800 mb-1">نام آیکون خدمت (Material Symbol)</label>
+                    <input type="text" id="input-rep-service-icon" class="w-full text-xs p-2 rounded-lg border border-slate-200 font-mono" placeholder="medical_services, vaccines, radiology, pets, healing...">
+                </div>
+            </div>
+
+            <!-- 3. Bento Facilities Fields -->
+            <div id="form-repeater-bento_facilities" class="space-y-3 hidden">
+                <div>
+                    <label class="block text-xs font-bold text-slate-800 mb-1">عنوان بخش یا تجهیزات</label>
+                    <input type="text" id="input-rep-bento-title" class="w-full text-xs p-2.5 rounded-xl border border-slate-200 focus:border-emerald-600 focus:outline-none" placeholder="مثال: بخش بستری و مانیتورینگ علائم حیاتی">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-800 mb-1">توضیحات و مشخصات فنی</label>
+                    <textarea id="input-rep-bento-desc" rows="3" class="w-full text-xs p-2.5 rounded-xl border border-slate-200 focus:border-emerald-600 focus:outline-none" placeholder="توضیحات ویژگی‌ها و استانداردهای این بخش..."></textarea>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-800 mb-1">آیکون (Material Symbol)</label>
+                        <input type="text" id="input-rep-bento-icon" class="w-full text-xs p-2 rounded-lg border border-slate-200 font-mono" placeholder="radiology, monitor_heart, local_hospital...">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-800 mb-1">برچسب کارت (Badge)</label>
+                        <input type="text" id="input-rep-bento-badge" class="w-full text-xs p-2 rounded-lg border border-slate-200" placeholder="مجهز به AI, شبانه‌روزی...">
+                    </div>
+                </div>
+            </div>
+
+            <!-- 4. FAQ Fields -->
+            <div id="form-repeater-faq" class="space-y-3 hidden">
+                <div>
+                    <label class="block text-xs font-bold text-slate-800 mb-1">متن پرسش (سوال)</label>
+                    <input type="text" id="input-rep-faq-q" class="w-full text-xs p-2.5 rounded-xl border border-slate-200 focus:border-emerald-600 focus:outline-none" placeholder="مثال: آیا نوبت‌دهی ویزیت آنلاین به صورت شبانه‌روزی است؟">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-800 mb-1">متن پاسخ کامل</label>
+                    <textarea id="input-rep-faq-a" rows="4" class="w-full text-xs p-2.5 rounded-xl border border-slate-200 focus:border-emerald-600 focus:outline-none" placeholder="پاسخ کامل و شفاف به سوال مراجعین..."></textarea>
+                </div>
+            </div>
+
+            <!-- 5. Stats Strip Fields -->
+            <div id="form-repeater-stats_strip" class="space-y-3 hidden">
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-800 mb-1">مقدار آماری (Value)</label>
+                        <input type="text" id="input-rep-stat-val" class="w-full text-xs p-2.5 rounded-xl border border-slate-200 focus:border-emerald-600 focus:outline-none font-mono font-bold" placeholder="+۱۵,۰۰۰ یا ۴.۹ ★">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-800 mb-1">آیکون (Material Symbol)</label>
+                        <input type="text" id="input-rep-stat-icon" class="w-full text-xs p-2.5 rounded-xl border border-slate-200 font-mono" placeholder="verified, star, schedule...">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-800 mb-1">عنوان شاخص (Label)</label>
+                    <input type="text" id="input-rep-stat-lbl" class="w-full text-xs p-2.5 rounded-xl border border-slate-200 focus:border-emerald-600 focus:outline-none" placeholder="ویزیت و سفارش موفق، رضایت مراجعین...">
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal Footer -->
+        <div class="p-4 sm:px-6 bg-slate-50 border-t border-slate-200 flex items-center justify-between shrink-0">
+            <button type="button" onclick="closeStudioRepeaterModal()" class="px-4 py-2 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold text-xs transition-colors cursor-pointer">
+                انصراف
+            </button>
+            <button type="button" onclick="saveStudioRepeaterItem()" class="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md shadow-emerald-600/20 transition-all flex items-center gap-1.5 cursor-pointer">
+                <span class="material-symbols-outlined text-sm">check</span>
+                <span id="studio-repeater-modal-save-text">ذخیره تغییرات</span>
+            </button>
+        </div>
+    </div>
+</div>
+
 <script>
 // State Management
 const currentSiteId = <?= (int)$site['id'] ?>;
@@ -1713,12 +2075,240 @@ const tenantId = <?= (int)$builderTenantId ?>;
 // Studio sidebar is open by default on desktop, and closed on mobile
 let isSidebarOpen = window.innerWidth >= 1024;
 
+// Universal Studio Repeaters State
+const repeaterState = {
+    navigation_hub: <?= json_encode(array_values($layout['navigation_hub']['apps'] ?? []), JSON_UNESCAPED_UNICODE) ?>,
+    services: <?= json_encode(array_values($layout['services']['items'] ?? []), JSON_UNESCAPED_UNICODE) ?>,
+    bento_facilities: <?= json_encode(array_values($layout['bento_facilities']['items'] ?? []), JSON_UNESCAPED_UNICODE) ?>,
+    faq: <?= json_encode(array_values($layout['faq']['items'] ?? []), JSON_UNESCAPED_UNICODE) ?>,
+    stats_strip: <?= json_encode(array_values($layout['stats_strip']['stats'] ?? []), JSON_UNESCAPED_UNICODE) ?>
+};
+
+let activeRepeaterSection = null;
+let activeRepeaterIndex = -1;
+
+function initStudioRepeaters() {
+    renderStudioRepeaterUI('navigation_hub');
+    renderStudioRepeaterUI('services');
+    renderStudioRepeaterUI('bento_facilities');
+    renderStudioRepeaterUI('faq');
+    renderStudioRepeaterUI('stats_strip');
+}
+
+function renderStudioRepeaterUI(section) {
+    const listEl = document.getElementById(`studio-repeater-list-${section}`);
+    if (!listEl) return;
+    const items = repeaterState[section] || [];
+    if (items.length === 0) {
+        listEl.innerHTML = '<div class="text-[11px] text-slate-400 p-2.5 bg-slate-50 rounded-xl text-center border border-dashed border-slate-200">موردی برای نمایش وجود ندارد. با دکمه بالا مورد دلخواه اضافه کنید.</div>';
+        return;
+    }
+    let html = '';
+    items.forEach((item, idx) => {
+        let title = '';
+        let subtitle = '';
+        let icon = 'widgets';
+        if (section === 'navigation_hub') {
+            title = item.name || 'مسیریاب';
+            subtitle = item.url ? (item.url.length > 35 ? item.url.substring(0, 32) + '...' : item.url) : 'لینک مستقیم هنوز درج نشده (مختصات)';
+            icon = item.icon || 'navigation';
+        } else if (section === 'services') {
+            title = item.title || 'خدمت تخصصی';
+            subtitle = item.desc || '';
+            icon = item.icon || 'medical_services';
+        } else if (section === 'bento_facilities') {
+            title = item.title || 'تجهیزات و بخش';
+            subtitle = item.badge ? `[${item.badge}] ${item.desc || ''}` : (item.desc || '');
+            icon = item.icon || 'grid_view';
+        } else if (section === 'faq') {
+            title = item.q || 'پرسش بدون عنوان';
+            subtitle = item.a || '';
+            icon = 'quiz';
+        } else if (section === 'stats_strip') {
+            title = `${item.value || ''} - ${item.label || ''}`;
+            subtitle = 'شاخص آماری';
+            icon = item.icon || 'verified';
+        }
+
+        html += `
+        <div class="flex items-center justify-between p-2 rounded-xl bg-slate-50 border border-slate-200/80 hover:bg-white hover:border-slate-300 transition-all text-right group">
+            <div class="flex items-center gap-2 min-w-0 flex-1 pl-2">
+                <span class="material-symbols-outlined text-slate-400 text-base shrink-0">${escapeStudioHtml(icon)}</span>
+                <div class="min-w-0 flex-1">
+                    <div class="text-[11px] font-bold text-slate-800 truncate">${escapeStudioHtml(title)}</div>
+                    ${subtitle ? `<div class="text-[10px] text-slate-400 truncate">${escapeStudioHtml(subtitle)}</div>` : ''}
+                </div>
+            </div>
+            <div class="flex items-center gap-1 shrink-0">
+                <button type="button" onclick="openStudioRepeaterModal('${section}', ${idx})" title="ویرایش" class="w-6 h-6 rounded-lg bg-white border border-slate-200 hover:border-emerald-500 hover:text-emerald-600 text-slate-500 flex items-center justify-center transition-colors cursor-pointer">
+                    <span class="material-symbols-outlined text-xs">edit</span>
+                </button>
+                <button type="button" onclick="removeStudioRepeaterItem('${section}', ${idx})" title="حذف" class="w-6 h-6 rounded-lg bg-white border border-slate-200 hover:border-red-500 hover:text-red-600 text-slate-500 flex items-center justify-center transition-colors cursor-pointer">
+                    <span class="material-symbols-outlined text-xs">delete</span>
+                </button>
+            </div>
+        </div>`;
+    });
+    listEl.innerHTML = html;
+}
+
+function escapeStudioHtml(str) {
+    return String(str || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+}
+
+function openStudioRepeaterModal(section, index) {
+    activeRepeaterSection = section;
+    activeRepeaterIndex = index;
+
+    const modal = document.getElementById('studio-repeater-modal');
+    if (!modal) return;
+
+    ['navigation_hub', 'services', 'bento_facilities', 'faq', 'stats_strip'].forEach(sec => {
+        const formEl = document.getElementById(`form-repeater-${sec}`);
+        if (formEl) formEl.classList.add('hidden');
+    });
+
+    const activeForm = document.getElementById(`form-repeater-${section}`);
+    if (activeForm) activeForm.classList.remove('hidden');
+
+    const actionText = index >= 0 ? 'ویرایش مورد:' : 'افزودن مورد جدید:';
+    const actionEl = document.getElementById('studio-repeater-modal-action');
+    if (actionEl) actionEl.innerText = actionText;
+
+    const titleEl = document.getElementById('studio-repeater-modal-title');
+    const descEl = document.getElementById('studio-repeater-modal-desc');
+    const iconEl = document.getElementById('studio-repeater-modal-icon');
+
+    const item = (index >= 0 && repeaterState[section] && repeaterState[section][index]) ? repeaterState[section][index] : null;
+
+    if (section === 'navigation_hub') {
+        if (titleEl) titleEl.innerText = 'دکمه مسیریابی نقشه';
+        if (descEl) descEl.innerText = 'لینک مستقیم یا مشخصات اپلیکیشن نقشه';
+        if (iconEl) iconEl.innerText = 'near_me';
+        document.getElementById('input-rep-nav-name').value = item ? (item.name || '') : '';
+        document.getElementById('input-rep-nav-url').value = item ? (item.url || '') : '';
+        document.getElementById('input-rep-nav-icon').value = item ? (item.icon || 'navigation') : 'navigation';
+        document.getElementById('input-rep-nav-bg').value = item ? (item.bg || 'bg-blue-600') : 'bg-blue-600';
+        document.getElementById('input-rep-nav-id').value = item ? (item.id || '') : '';
+    } else if (section === 'services') {
+        if (titleEl) titleEl.innerText = 'کارت خدمت درمانی';
+        if (descEl) descEl.innerText = 'عنوان و توضیحات خدمت تخصصی کلینیک';
+        if (iconEl) iconEl.innerText = 'medical_services';
+        document.getElementById('input-rep-service-title').value = item ? (item.title || '') : '';
+        document.getElementById('input-rep-service-desc').value = item ? (item.desc || '') : '';
+        document.getElementById('input-rep-service-icon').value = item ? (item.icon || 'medical_services') : 'medical_services';
+    } else if (section === 'bento_facilities') {
+        if (titleEl) titleEl.innerText = 'بخش یا امکانات بالینی (بنتو)';
+        if (descEl) descEl.innerText = 'مشخصات تجهیزات و ظرفیت‌های بالینی';
+        if (iconEl) iconEl.innerText = 'grid_view';
+        document.getElementById('input-rep-bento-title').value = item ? (item.title || '') : '';
+        document.getElementById('input-rep-bento-desc').value = item ? (item.desc || '') : '';
+        document.getElementById('input-rep-bento-icon').value = item ? (item.icon || 'radiology') : 'radiology';
+        document.getElementById('input-rep-bento-badge').value = item ? (item.badge || '') : '';
+    } else if (section === 'faq') {
+        if (titleEl) titleEl.innerText = 'پرسش و پاسخ متداول (FAQ)';
+        if (descEl) descEl.innerText = 'متن سوال و پاسخ تفصیلی مراجعین';
+        if (iconEl) iconEl.innerText = 'quiz';
+        document.getElementById('input-rep-faq-q').value = item ? (item.q || '') : '';
+        document.getElementById('input-rep-faq-a').value = item ? (item.a || '') : '';
+    } else if (section === 'stats_strip') {
+        if (titleEl) titleEl.innerText = 'شاخص آماری';
+        if (descEl) descEl.innerText = 'عدد یا درصد همراه با عنوان شاخص';
+        if (iconEl) iconEl.innerText = 'analytics';
+        document.getElementById('input-rep-stat-val').value = item ? (item.value || '') : '';
+        document.getElementById('input-rep-stat-lbl').value = item ? (item.label || '') : '';
+        document.getElementById('input-rep-stat-icon').value = item ? (item.icon || 'verified') : 'verified';
+    }
+
+    modal.classList.remove('hidden');
+}
+
+function closeStudioRepeaterModal() {
+    const modal = document.getElementById('studio-repeater-modal');
+    if (modal) modal.classList.add('hidden');
+    activeRepeaterSection = null;
+    activeRepeaterIndex = -1;
+}
+
+function saveStudioRepeaterItem() {
+    if (!activeRepeaterSection) return;
+    const sec = activeRepeaterSection;
+    const idx = activeRepeaterIndex;
+    if (!repeaterState[sec]) repeaterState[sec] = [];
+
+    let newItem = {};
+    if (sec === 'navigation_hub') {
+        const name = document.getElementById('input-rep-nav-name')?.value.trim() || 'مسیریاب';
+        const url = document.getElementById('input-rep-nav-url')?.value.trim() || '';
+        const icon = document.getElementById('input-rep-nav-icon')?.value.trim() || 'navigation';
+        const bg = document.getElementById('input-rep-nav-bg')?.value || 'bg-blue-600';
+        let id = document.getElementById('input-rep-nav-id')?.value.trim();
+        if (!id) {
+            id = 'nav_' + Date.now();
+        }
+        newItem = { id, name, url, icon, bg };
+    } else if (sec === 'services') {
+        const title = document.getElementById('input-rep-service-title')?.value.trim() || 'خدمت تخصصی';
+        const desc = document.getElementById('input-rep-service-desc')?.value.trim() || '';
+        const icon = document.getElementById('input-rep-service-icon')?.value.trim() || 'medical_services';
+        newItem = { title, desc, icon };
+    } else if (sec === 'bento_facilities') {
+        const title = document.getElementById('input-rep-bento-title')?.value.trim() || 'تجهیزات بالینی';
+        const desc = document.getElementById('input-rep-bento-desc')?.value.trim() || '';
+        const icon = document.getElementById('input-rep-bento-icon')?.value.trim() || 'radiology';
+        const badge = document.getElementById('input-rep-bento-badge')?.value.trim() || '';
+        newItem = { title, desc, icon, badge };
+    } else if (sec === 'faq') {
+        const q = document.getElementById('input-rep-faq-q')?.value.trim() || 'پرسش جدید';
+        const a = document.getElementById('input-rep-faq-a')?.value.trim() || '';
+        newItem = { q, a };
+    } else if (sec === 'stats_strip') {
+        const value = document.getElementById('input-rep-stat-val')?.value.trim() || '+۱,۰۰۰';
+        const label = document.getElementById('input-rep-stat-lbl')?.value.trim() || 'شاخص جدید';
+        const icon = document.getElementById('input-rep-stat-icon')?.value.trim() || 'verified';
+        newItem = { value, label, icon };
+    }
+
+    if (idx >= 0 && idx < repeaterState[sec].length) {
+        repeaterState[sec][idx] = newItem;
+    } else {
+        repeaterState[sec].push(newItem);
+    }
+
+    renderStudioRepeaterUI(sec);
+    sendLiveUpdate('update_repeater', { section: sec, items: repeaterState[sec] });
+    closeStudioRepeaterModal();
+}
+
+function removeStudioRepeaterItem(section, index) {
+    if (!repeaterState[section] || index < 0 || index >= repeaterState[section].length) return;
+    if (!confirm('آیا از حذف این مورد از وب‌سایت مطمئن هستید؟')) return;
+
+    repeaterState[section].splice(index, 1);
+    renderStudioRepeaterUI(section);
+    sendLiveUpdate('update_repeater', { section: section, items: repeaterState[section] });
+}
+
+// Listen for repeater action requests from preview iframe
+window.addEventListener('message', function(e) {
+    if (e.data && e.data.type === 'OPEN_REPEATER_MODAL') {
+        openStudioRepeaterModal(e.data.section, e.data.index);
+    } else if (e.data && e.data.type === 'REMOVE_REPEATER_ITEM') {
+        removeStudioRepeaterItem(e.data.section, e.data.index);
+    }
+});
+
 // Auto-adjust initial mobile vs desktop sidebar state on load
 document.addEventListener('DOMContentLoaded', () => {
     if (window.innerWidth < 1024) {
         closeSidebar();
     }
     initLiveStudioBindings();
+    initStudioRepeaters();
 });
 
 // Real-time zero-refresh live synchronization engine with preview iframe
@@ -2774,11 +3364,20 @@ async function saveSiteConfig() {
             stat_3_val: document.getElementById('input-stat-3-val')?.value || '۱۰۰٪',
             stat_3_lbl: document.getElementById('input-stat-3-lbl')?.value || 'تضمین بازگشت وجه و کیفیت',
             stat_4_val: document.getElementById('input-stat-4-val')?.value || '۲۴ / ۷',
-            stat_4_lbl: document.getElementById('input-stat-4-lbl')?.value || 'پذیرش و اورژانس فعال'
+            stat_4_lbl: document.getElementById('input-stat-4-lbl')?.value || 'پذیرش و اورژانس فعال',
+            stats: repeaterState.stats_strip || []
         },
         bento_facilities: {
             enabled: document.getElementById('input-bento-enabled')?.checked || false,
-            heading: document.getElementById('input-bento-heading')?.value || 'تجهیزات مدرن و ظرفیت‌های بالینی مرکز'
+            heading: document.getElementById('input-bento-heading')?.value || 'تجهیزات مدرن و ظرفیت‌های بالینی مرکز',
+            subtitle: document.getElementById('input-bento-subtitle')?.value || '',
+            items: repeaterState.bento_facilities || []
+        },
+        services: {
+            enabled: document.getElementById('input-services-enabled')?.checked ?? true,
+            heading: document.getElementById('input-services-heading')?.value || 'خدمات تخصصی بالینی و مراقبتی',
+            subtitle: document.getElementById('input-services-subtitle')?.value || '',
+            items: repeaterState.services || []
         },
         asena_services: {
             enabled: document.getElementById('input-asena-enabled')?.checked ?? true,
@@ -2843,7 +3442,21 @@ async function saveSiteConfig() {
         },
         faq: {
             enabled: document.getElementById('input-faq-enabled')?.checked || false,
-            heading: document.getElementById('input-faq-heading')?.value || 'پرسش‌های متداول و راهنمای مراجعین'
+            heading: document.getElementById('input-faq-heading')?.value || 'پرسش‌های متداول و راهنمای مراجعین',
+            subtitle: document.getElementById('input-faq-subtitle')?.value || '',
+            items: repeaterState.faq || []
+        },
+        navigation_hub: {
+            enabled: document.getElementById('input-navhub-enabled')?.checked ?? true,
+            heading: document.getElementById('input-navhub-heading')?.value || 'مسیریابی ۱ کلیکه با اپلیکیشن‌های نقشه',
+            subtitle: document.getElementById('input-navhub-subtitle')?.value || 'مستقیماً موقعیت دقیق مجموعه را در مسیریاب‌های محبوب ایرانی و بین‌المللی باز نمایید.',
+            neshan_url: document.getElementById('input-navhub-neshan')?.value || document.getElementById('input-quick-navhub-neshan')?.value || '',
+            balad_url: document.getElementById('input-navhub-balad')?.value || document.getElementById('input-quick-navhub-balad')?.value || '',
+            waze_url: document.getElementById('input-navhub-waze')?.value || document.getElementById('input-quick-navhub-waze')?.value || '',
+            google_maps_url: document.getElementById('input-navhub-google')?.value || document.getElementById('input-quick-navhub-google')?.value || '',
+            lat: document.getElementById('input-navhub-lat')?.value || document.getElementById('input-quick-navhub-lat')?.value || '35.7219',
+            lng: document.getElementById('input-navhub-lng')?.value || document.getElementById('input-quick-navhub-lng')?.value || '51.3347',
+            apps: repeaterState.navigation_hub || []
         },
         contact: {
             enabled: true,
@@ -3072,8 +3685,12 @@ function initLiveStudioBindings() {
         // Bento Facilities
         { id: 'input-bento-enabled', field: 'block_toggle', extra: 'bento_facilities', event: 'change', isCheckbox: true },
         { id: 'input-bento-heading', field: 'bento_heading', event: 'input' },
+        { id: 'input-bento-subtitle', field: 'bento_subtitle', event: 'input' },
 
-
+        // Services Block
+        { id: 'input-services-enabled', field: 'block_toggle', extra: 'services', event: 'change', isCheckbox: true },
+        { id: 'input-services-heading', field: 'services_heading', event: 'input' },
+        { id: 'input-services-subtitle', field: 'services_subtitle', event: 'input' },
 
         // About Block
         { id: 'input-about-heading', field: 'about_heading', event: 'input' },
@@ -3101,8 +3718,6 @@ function initLiveStudioBindings() {
         { id: 'input-doctors-heading', field: 'doctors_heading', event: 'input' },
         { id: 'input-doctors-subtitle', field: 'doctors_subtitle', event: 'input' },
 
-
-
         // Reviews
         { id: 'input-reviews-enabled', field: 'block_toggle', extra: 'reviews', event: 'change', isCheckbox: true },
         { id: 'input-reviews-heading', field: 'reviews_heading', event: 'input' },
@@ -3110,12 +3725,16 @@ function initLiveStudioBindings() {
         // FAQ
         { id: 'input-faq-enabled', field: 'block_toggle', extra: 'faq', event: 'change', isCheckbox: true },
         { id: 'input-faq-heading', field: 'faq_heading', event: 'input' },
+        { id: 'input-faq-subtitle', field: 'faq_subtitle', event: 'input' },
 
-        // Contact Block
+        // Contact Block & Navigation Hub
         { id: 'input-contact-address', field: 'contact_address', event: 'input' },
         { id: 'input-contact-hours', field: 'contact_hours', event: 'input' },
         { id: 'input-contact-phone', field: 'contact_phone', event: 'input' },
         { id: 'input-contact-emergency', field: 'contact_emergency', event: 'input' },
+        { id: 'input-navhub-enabled', field: 'block_toggle', extra: 'navigation_hub', event: 'change', isCheckbox: true },
+        { id: 'input-navhub-heading', field: 'navhub_heading', event: 'input' },
+        { id: 'input-navhub-subtitle', field: 'navhub_subtitle', event: 'input' },
 
         // Hero Badges, Trust Strip & Header CTA
         { id: 'input-header-cta', field: 'header_cta_text', event: 'input' },
@@ -3263,6 +3882,44 @@ function initLiveStudioBindings() {
                 }
             };
             mEl.addEventListener(p.isCheckbox ? 'change' : 'input', onMainChange);
+        }
+    });
+
+    // Two-way synchronization for Navigation Map Links between Quick Tab and Contact Block
+    const mapSyncPairs = [
+        { q: 'input-quick-navhub-neshan', b: 'input-navhub-neshan', id: 'neshan' },
+        { q: 'input-quick-navhub-balad', b: 'input-navhub-balad', id: 'balad' },
+        { q: 'input-quick-navhub-waze', b: 'input-navhub-waze', id: 'waze' },
+        { q: 'input-quick-navhub-google', b: 'input-navhub-google', id: 'google_maps' },
+        { q: 'input-quick-navhub-lat', b: 'input-navhub-lat', id: null },
+        { q: 'input-quick-navhub-lng', b: 'input-navhub-lng', id: null }
+    ];
+
+    mapSyncPairs.forEach(pair => {
+        const qEl = document.getElementById(pair.q);
+        const bEl = document.getElementById(pair.b);
+        const syncApp = (val) => {
+            if (pair.id && repeaterState.navigation_hub) {
+                const app = repeaterState.navigation_hub.find(a => a.id === pair.id);
+                if (app) {
+                    app.url = val;
+                    sendLiveUpdate('update_repeater', { section: 'navigation_hub', items: repeaterState.navigation_hub });
+                    renderStudioRepeaterUI('navigation_hub');
+                }
+            }
+        };
+
+        if (qEl) {
+            qEl.addEventListener('input', () => {
+                if (bEl && bEl.value !== qEl.value) bEl.value = qEl.value;
+                syncApp(qEl.value);
+            });
+        }
+        if (bEl) {
+            bEl.addEventListener('input', () => {
+                if (qEl && qEl.value !== bEl.value) qEl.value = bEl.value;
+                syncApp(bEl.value);
+            });
         }
     });
 

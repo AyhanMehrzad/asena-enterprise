@@ -86,6 +86,27 @@ $defaultLayout = $tenantService->buildDefaultLayout($tenantType, [
 ], $siteTier)['blocks'];
 
 $layout = array_replace_recursive($defaultLayout, $savedBlocks);
+if (isset($savedBlocks['services']['items']) && is_array($savedBlocks['services']['items'])) {
+    $layout['services']['items'] = $savedBlocks['services']['items'];
+}
+if (isset($savedBlocks['bento_facilities']['items']) && is_array($savedBlocks['bento_facilities']['items'])) {
+    $layout['bento_facilities']['items'] = $savedBlocks['bento_facilities']['items'];
+}
+if (isset($savedBlocks['faq']['items']) && is_array($savedBlocks['faq']['items'])) {
+    $layout['faq']['items'] = $savedBlocks['faq']['items'];
+}
+if (isset($savedBlocks['navigation_hub']['apps']) && is_array($savedBlocks['navigation_hub']['apps'])) {
+    $layout['navigation_hub']['apps'] = $savedBlocks['navigation_hub']['apps'];
+}
+if (isset($savedBlocks['stats_strip']['stats']) && is_array($savedBlocks['stats_strip']['stats'])) {
+    $layout['stats_strip']['stats'] = $savedBlocks['stats_strip']['stats'];
+}
+if (isset($savedBlocks['doctors_roster']['items']) && is_array($savedBlocks['doctors_roster']['items'])) {
+    $layout['doctors_roster']['items'] = $savedBlocks['doctors_roster']['items'];
+}
+if (isset($savedBlocks['reviews']['items']) && is_array($savedBlocks['reviews']['items'])) {
+    $layout['reviews']['items'] = $savedBlocks['reviews']['items'];
+}
 $headerBlock = $layout['header'] ?? [];
 $emergencyBlock = $layout['emergency_bar'] ?? [];
 $heroBlock = $layout['hero'] ?? [];
@@ -794,39 +815,44 @@ $ctaHref = match($tenantType) {
     </section>
     <?php endif; ?>
 
-    <!-- Social Proof Operational Scale Strip (100% Granularly Editable) -->
+    <!-- Social Proof Operational Scale Strip (100% Granularly Editable & Dynamic Repeaters) -->
     <?php if (!empty($statsBlock['enabled']) || $isPreview): ?>
+    <?php
+    $statsList = !empty($statsBlock['stats']) && is_array($statsBlock['stats']) ? $statsBlock['stats'] : [
+        ['value' => $statsBlock['stat_1_val'] ?? '+۱۵,۰۰۰', 'label' => $statsBlock['stat_1_lbl'] ?? 'ویزیت و سفارش موفق', 'icon' => 'verified'],
+        ['value' => $statsBlock['stat_2_val'] ?? '۴.۹ ★', 'label' => $statsBlock['stat_2_lbl'] ?? 'رضایت مراجعین', 'icon' => 'star'],
+        ['value' => $statsBlock['stat_3_val'] ?? '۱۰۰٪', 'label' => $statsBlock['stat_3_lbl'] ?? 'تضمین بازگشت وجه و کیفیت', 'icon' => 'security'],
+        ['value' => $statsBlock['stat_4_val'] ?? '۲۴ / ۷', 'label' => $statsBlock['stat_4_lbl'] ?? 'پذیرش و اورژانس فعال', 'icon' => 'e911_emergency']
+    ];
+    ?>
     <section class="py-6 bg-white border-b border-slate-200/80 <?= (empty($statsBlock['enabled']) && $isPreview) ? 'hidden' : '' ?>" style="<?= (empty($statsBlock['enabled']) && $isPreview) ? 'display: none !important;' : '' ?>" data-block-id="stats_strip">
         <div class="max-w-6xl mx-auto px-4">
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div class="p-4 rounded-2xl bg-slate-50 border border-slate-100 text-center flex flex-col items-center justify-center hover:bg-emerald-50/20 transition-colors">
-                    <div class="w-8 h-8 rounded-xl bg-tenant-light text-tenant-primary flex items-center justify-center mb-1.5 shadow-2xs">
-                        <span class="material-symbols-outlined text-lg">verified</span>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4" id="live-stats-grid">
+                <?php foreach ($statsList as $stIdx => $stItem): ?>
+                <div class="relative group/repeater-item p-4 rounded-2xl bg-slate-50 border border-slate-100 text-center flex flex-col items-center justify-center hover:bg-emerald-50/20 transition-colors" data-repeater-index="<?= $stIdx ?>">
+                    <?php if ($isPreview): ?>
+                    <div class="absolute top-1.5 left-1.5 hidden group-hover/repeater-item:flex items-center gap-1 bg-slate-900/90 text-white px-1.5 py-0.5 rounded-lg text-[10px] z-10 shadow-md">
+                        <button type="button" onclick="notifyStudioRepeaterModal('stats_strip', <?= $stIdx ?>)" title="ویرایش شاخص" class="hover:text-emerald-400 p-0.5 cursor-pointer">
+                            <span class="material-symbols-outlined text-[13px]">edit</span>
+                        </button>
+                        <button type="button" onclick="notifyStudioRemoveRepeater('stats_strip', <?= $stIdx ?>)" title="حذف شاخص" class="hover:text-red-400 p-0.5 cursor-pointer">
+                            <span class="material-symbols-outlined text-[13px]">delete</span>
+                        </button>
                     </div>
-                    <div class="text-lg sm:text-xl font-black text-slate-900 tracking-tight font-mono" id="live-stat-1-val" data-studio-editable="stat_1_val"><?= htmlspecialchars($statsBlock['stat_1_val'] ?? ($statsBlock['stats'][0]['value'] ?? '+۱۵,۰۰۰')) ?></div>
-                    <div class="text-[11px] text-slate-500 font-bold" id="live-stat-1-lbl" data-studio-editable="stat_1_lbl"><?= htmlspecialchars($statsBlock['stat_1_lbl'] ?? ($statsBlock['stats'][0]['label'] ?? 'ویزیت و سفارش موفق')) ?></div>
-                </div>
-                <div class="p-4 rounded-2xl bg-slate-50 border border-slate-100 text-center flex flex-col items-center justify-center hover:bg-emerald-50/20 transition-colors">
+                    <?php endif; ?>
                     <div class="w-8 h-8 rounded-xl bg-tenant-light text-tenant-primary flex items-center justify-center mb-1.5 shadow-2xs">
-                        <span class="material-symbols-outlined text-lg">star</span>
+                        <span class="material-symbols-outlined text-lg"><?= htmlspecialchars($stItem['icon'] ?? 'verified') ?></span>
                     </div>
-                    <div class="text-lg sm:text-xl font-black text-slate-900 tracking-tight font-mono" id="live-stat-2-val" data-studio-editable="stat_2_val"><?= htmlspecialchars($statsBlock['stat_2_val'] ?? ($statsBlock['stats'][1]['value'] ?? '۴.۹ ★')) ?></div>
-                    <div class="text-[11px] text-slate-500 font-bold" id="live-stat-2-lbl" data-studio-editable="stat_2_lbl"><?= htmlspecialchars($statsBlock['stat_2_lbl'] ?? ($statsBlock['stats'][1]['label'] ?? 'رضایت مراجعین')) ?></div>
+                    <div class="text-lg sm:text-xl font-black text-slate-900 tracking-tight font-mono" id="live-stat-<?= ($stIdx + 1) ?>-val" data-studio-editable="stat_<?= ($stIdx + 1) ?>_val"><?= htmlspecialchars($stItem['value'] ?? '') ?></div>
+                    <div class="text-[11px] text-slate-500 font-bold" id="live-stat-<?= ($stIdx + 1) ?>-lbl" data-studio-editable="stat_<?= ($stIdx + 1) ?>_lbl"><?= htmlspecialchars($stItem['label'] ?? '') ?></div>
                 </div>
-                <div class="p-4 rounded-2xl bg-slate-50 border border-slate-100 text-center flex flex-col items-center justify-center hover:bg-emerald-50/20 transition-colors">
-                    <div class="w-8 h-8 rounded-xl bg-tenant-light text-tenant-primary flex items-center justify-center mb-1.5 shadow-2xs">
-                        <span class="material-symbols-outlined text-lg">security</span>
-                    </div>
-                    <div class="text-lg sm:text-xl font-black text-slate-900 tracking-tight font-mono" id="live-stat-3-val" data-studio-editable="stat_3_val"><?= htmlspecialchars($statsBlock['stat_3_val'] ?? ($statsBlock['stats'][2]['value'] ?? '۱۰۰٪')) ?></div>
-                    <div class="text-[11px] text-slate-500 font-bold" id="live-stat-3-lbl" data-studio-editable="stat_3_lbl"><?= htmlspecialchars($statsBlock['stat_3_lbl'] ?? ($statsBlock['stats'][2]['label'] ?? 'تضمین بازگشت وجه و کیفیت')) ?></div>
-                </div>
-                <div class="p-4 rounded-2xl bg-slate-50 border border-slate-100 text-center flex flex-col items-center justify-center hover:bg-emerald-50/20 transition-colors">
-                    <div class="w-8 h-8 rounded-xl bg-tenant-light text-tenant-primary flex items-center justify-center mb-1.5 shadow-2xs">
-                        <span class="material-symbols-outlined text-lg">e911_emergency</span>
-                    </div>
-                    <div class="text-lg sm:text-xl font-black text-slate-900 tracking-tight font-mono" id="live-stat-4-val" data-studio-editable="stat_4_val"><?= htmlspecialchars($statsBlock['stat_4_val'] ?? ($statsBlock['stats'][3]['value'] ?? '۲۴ / ۷')) ?></div>
-                    <div class="text-[11px] text-slate-500 font-bold" id="live-stat-4-lbl" data-studio-editable="stat_4_lbl"><?= htmlspecialchars($statsBlock['stat_4_lbl'] ?? ($statsBlock['stats'][3]['label'] ?? 'پذیرش و اورژانس فعال')) ?></div>
-                </div>
+                <?php endforeach; ?>
+                <?php if ($isPreview): ?>
+                <button type="button" onclick="notifyStudioRepeaterModal('stats_strip', -1)" class="p-4 rounded-2xl border-2 border-dashed border-slate-200 hover:border-emerald-500 bg-white/40 hover:bg-emerald-50/30 text-slate-400 hover:text-emerald-700 flex flex-col items-center justify-center gap-1 transition-all cursor-pointer" title="افزودن شاخص جدید">
+                    <span class="material-symbols-outlined text-lg">add_circle</span>
+                    <span class="text-[10px] font-black">افزودن شاخص</span>
+                </button>
+                <?php endif; ?>
             </div>
         </div>
     </section>
@@ -943,19 +969,42 @@ $ctaHref = match($tenantType) {
                 <p class="text-xs sm:text-sm text-slate-500 mt-2"><?= htmlspecialchars($bentoBlock['subtitle'] ?? '') ?></p>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <?php foreach (($bentoBlock['items'] ?? []) as $item): ?>
-                <div class="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-sm hover:shadow-xl transition-all duration-300 flex items-start gap-4 group">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6" id="live-bento-grid">
+                <?php foreach (($bentoBlock['items'] ?? []) as $bIdx => $item): ?>
+                <div class="relative group/repeater-item bg-white rounded-3xl p-6 border border-slate-200/80 shadow-sm hover:shadow-xl transition-all duration-300 flex items-start gap-4 group" data-repeater-index="<?= $bIdx ?>">
+                    <?php if ($isPreview): ?>
+                    <div class="absolute top-3 left-3 hidden group-hover/repeater-item:flex items-center gap-1.5 bg-slate-900/90 text-white px-2 py-1 rounded-xl shadow-lg border border-slate-700 z-10 text-xs">
+                        <button type="button" onclick="notifyStudioRepeaterModal('bento_facilities', <?= $bIdx ?>)" title="ویرایش تجهیزات" class="hover:text-emerald-400 flex items-center gap-0.5 cursor-pointer">
+                            <span class="material-symbols-outlined text-sm">edit</span>
+                            <span class="text-[10px]">ویرایش</span>
+                        </button>
+                        <span class="text-slate-600">|</span>
+                        <button type="button" onclick="notifyStudioRemoveRepeater('bento_facilities', <?= $bIdx ?>)" title="حذف تجهیزات" class="hover:text-red-400 flex items-center gap-0.5 cursor-pointer">
+                            <span class="material-symbols-outlined text-sm">delete</span>
+                            <span class="text-[10px]">حذف</span>
+                        </button>
+                    </div>
+                    <?php endif; ?>
                     <div class="w-14 h-14 rounded-2xl bg-tenant-light text-tenant-primary flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
                         <span class="material-symbols-outlined text-3xl"><?= htmlspecialchars($item['icon'] ?? 'local_hospital') ?></span>
                     </div>
-                    <div class="space-y-1.5">
+                    <div class="space-y-1.5 flex-1 min-w-0">
                         <span class="inline-block px-2.5 py-0.5 rounded-md text-[10px] font-black bg-amber-50 text-amber-700 border border-amber-200/60"><?= htmlspecialchars($item['tag'] ?? 'تخصصی') ?></span>
-                        <h4 class="text-base font-black text-slate-900"><?= htmlspecialchars($item['title']) ?></h4>
-                        <p class="text-xs text-slate-600 leading-relaxed"><?= htmlspecialchars($item['desc']) ?></p>
+                        <h4 class="text-base font-black text-slate-900"><?= htmlspecialchars($item['title'] ?? '') ?></h4>
+                        <p class="text-xs text-slate-600 leading-relaxed"><?= htmlspecialchars($item['desc'] ?? '') ?></p>
                     </div>
                 </div>
                 <?php endforeach; ?>
+
+                <?php if ($isPreview): ?>
+                <button type="button" onclick="notifyStudioRepeaterModal('bento_facilities', -1)" class="min-h-[140px] p-6 rounded-3xl border-2 border-dashed border-slate-300 hover:border-emerald-500 bg-white/50 hover:bg-emerald-50/30 text-slate-500 hover:text-emerald-700 flex flex-col items-center justify-center gap-2 transition-all cursor-pointer group/add" title="افزودن بخش یا امکانات درمانی">
+                    <div class="w-12 h-12 rounded-2xl bg-slate-100 group-hover/add:bg-emerald-100 group-hover/add:text-emerald-600 flex items-center justify-center transition-colors">
+                        <span class="material-symbols-outlined text-2xl">add</span>
+                    </div>
+                    <span class="text-xs font-black">افزودن بخش یا تجهیزات جدید</span>
+                    <span class="text-[10px] text-slate-400">درج امکانات بالینی و تشخیصی</span>
+                </button>
+                <?php endif; ?>
             </div>
         </div>
     </section>
@@ -1019,17 +1068,30 @@ $ctaHref = match($tenantType) {
     <?php endif; ?>
 
     <!-- Services Block -->
-    <?php if (!empty($servicesBlock['enabled']) && !empty($servicesBlock['items'])): ?>
-    <section id="services" class="py-16 bg-slate-50 border-b border-slate-200/60" data-block-id="services">
+    <?php if ((!empty($servicesBlock['enabled']) && !empty($servicesBlock['items'])) || $isPreview): ?>
+    <section id="services" class="py-16 bg-slate-50 border-b border-slate-200/60 <?= (empty($servicesBlock['enabled']) && $isPreview) ? 'hidden' : '' ?>" style="<?= (empty($servicesBlock['enabled']) && $isPreview) ? 'display: none !important;' : '' ?>" data-block-id="services">
         <div class="max-w-6xl mx-auto px-4">
             <div class="text-center max-w-xl mx-auto mb-12">
                 <span class="text-xs font-black text-tenant-primary uppercase tracking-wider">تخصص‌ها و ظرفیت‌ها</span>
-                <h3 class="text-2xl sm:text-3xl font-black text-slate-900 mt-1"><?= htmlspecialchars($servicesBlock['heading'] ?? 'خدمات تخصصی') ?></h3>
+                <h3 class="text-2xl sm:text-3xl font-black text-slate-900 mt-1" id="live-services-heading" data-studio-editable="services_heading"><?= htmlspecialchars($servicesBlock['heading'] ?? 'خدمات تخصصی') ?></h3>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <?php foreach ($servicesBlock['items'] as $srv): ?>
-                <div class="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-sm hover:shadow-xl transition-all duration-300">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6" id="live-services-grid">
+                <?php foreach (($servicesBlock['items'] ?? []) as $sIdx => $srv): ?>
+                <div class="relative group/repeater-item bg-white p-6 rounded-3xl border border-slate-200/80 shadow-sm hover:shadow-xl transition-all duration-300" data-repeater-index="<?= $sIdx ?>">
+                    <?php if ($isPreview): ?>
+                    <div class="absolute top-3 left-3 hidden group-hover/repeater-item:flex items-center gap-1.5 bg-slate-900/90 text-white px-2 py-1 rounded-xl shadow-lg border border-slate-700 z-10 text-xs">
+                        <button type="button" onclick="notifyStudioRepeaterModal('services', <?= $sIdx ?>)" title="ویرایش خدمت" class="hover:text-emerald-400 flex items-center gap-0.5 cursor-pointer">
+                            <span class="material-symbols-outlined text-sm">edit</span>
+                            <span class="text-[10px]">ویرایش</span>
+                        </button>
+                        <span class="text-slate-600">|</span>
+                        <button type="button" onclick="notifyStudioRemoveRepeater('services', <?= $sIdx ?>)" title="حذف خدمت" class="hover:text-red-400 flex items-center gap-0.5 cursor-pointer">
+                            <span class="material-symbols-outlined text-sm">delete</span>
+                            <span class="text-[10px]">حذف</span>
+                        </button>
+                    </div>
+                    <?php endif; ?>
                     <div class="w-12 h-12 rounded-2xl bg-tenant-light text-tenant-primary flex items-center justify-center mb-4">
                         <span class="material-symbols-outlined text-2xl"><?= htmlspecialchars($srv['icon'] ?? 'star') ?></span>
                     </div>
@@ -1037,6 +1099,16 @@ $ctaHref = match($tenantType) {
                     <p class="text-xs text-slate-600 leading-relaxed"><?= htmlspecialchars($srv['desc'] ?? '') ?></p>
                 </div>
                 <?php endforeach; ?>
+
+                <?php if ($isPreview): ?>
+                <button type="button" onclick="notifyStudioRepeaterModal('services', -1)" class="min-h-[160px] p-6 rounded-3xl border-2 border-dashed border-slate-300 hover:border-emerald-500 bg-white/50 hover:bg-emerald-50/30 text-slate-500 hover:text-emerald-700 flex flex-col items-center justify-center gap-2 transition-all cursor-pointer group/add" title="افزودن خدمت جدید به کلینیک">
+                    <div class="w-12 h-12 rounded-2xl bg-slate-100 group-hover/add:bg-emerald-100 group-hover/add:text-emerald-600 flex items-center justify-center transition-colors">
+                        <span class="material-symbols-outlined text-2xl">add</span>
+                    </div>
+                    <span class="text-xs font-black">افزودن خدمت جدید</span>
+                    <span class="text-[10px] text-slate-400">کلیک جهت ایجاد کارت خدمات جدید</span>
+                </button>
+                <?php endif; ?>
             </div>
         </div>
     </section>
@@ -1535,9 +1607,9 @@ $ctaHref = match($tenantType) {
                 <p class="text-xs sm:text-sm text-slate-500 mt-2"><?= htmlspecialchars($faqBlock['subtitle'] ?? 'پاسخ به سوالات متداول پیرامون نوبت‌دهی آنلاین، نسخه‌های الکترونیک و شرایط اورژانس') ?></p>
             </div>
 
-            <div class="space-y-3.5">
+            <div class="space-y-3.5" id="live-faq-list">
                 <?php foreach ($tenantFaqs as $fIdx => $faq): ?>
-                <div class="border border-slate-200/90 rounded-2xl overflow-hidden bg-slate-50/70 hover:bg-white hover:border-slate-300 transition-all shadow-2xs">
+                <div class="relative group/repeater-item border border-slate-200/90 rounded-2xl overflow-hidden bg-slate-50/70 hover:bg-white hover:border-slate-300 transition-all shadow-2xs" data-repeater-index="<?= $fIdx ?>">
                     <button type="button" 
                             onclick="toggleSiteFaq(<?= $fIdx ?>)" 
                             class="w-full p-4 sm:p-5 text-right flex items-center justify-between gap-4 font-black text-xs sm:text-sm text-slate-800 transition-colors">
@@ -1545,13 +1617,32 @@ $ctaHref = match($tenantType) {
                             <span class="w-6 h-6 rounded-lg bg-tenant-light text-tenant-primary flex items-center justify-center text-xs shrink-0 font-mono">؟</span>
                             <span><?= htmlspecialchars($faq['q']) ?></span>
                         </span>
-                        <span class="material-symbols-outlined text-slate-400 text-lg transition-transform duration-300 shrink-0" id="faq-chevron-<?= $fIdx ?>">expand_more</span>
+                        <div class="flex items-center gap-2">
+                            <?php if ($isPreview): ?>
+                            <div class="hidden group-hover/repeater-item:flex items-center gap-1 bg-slate-900 text-white px-2 py-0.5 rounded-lg text-xs" onclick="event.stopPropagation()">
+                                <button type="button" onclick="notifyStudioRepeaterModal('faq', <?= $fIdx ?>)" title="ویرایش پرسش" class="hover:text-emerald-400 p-0.5 cursor-pointer">
+                                    <span class="material-symbols-outlined text-xs">edit</span>
+                                </button>
+                                <button type="button" onclick="notifyStudioRemoveRepeater('faq', <?= $fIdx ?>)" title="حذف پرسش" class="hover:text-red-400 p-0.5 cursor-pointer">
+                                    <span class="material-symbols-outlined text-xs">delete</span>
+                                </button>
+                            </div>
+                            <?php endif; ?>
+                            <span class="material-symbols-outlined text-slate-400 text-lg transition-transform duration-300 shrink-0" id="faq-chevron-<?= $fIdx ?>">expand_more</span>
+                        </div>
                     </button>
                     <div id="faq-answer-<?= $fIdx ?>" class="hidden px-5 pb-5 pt-1 text-xs text-slate-600 leading-relaxed border-t border-slate-100 bg-white">
                         <p><?= nl2br(htmlspecialchars($faq['a'])) ?></p>
                     </div>
                 </div>
                 <?php endforeach; ?>
+
+                <?php if ($isPreview): ?>
+                <button type="button" onclick="notifyStudioRepeaterModal('faq', -1)" class="w-full p-3.5 rounded-2xl border-2 border-dashed border-slate-300 hover:border-emerald-500 bg-white/50 hover:bg-emerald-50/30 text-slate-500 hover:text-emerald-700 flex items-center justify-center gap-2 transition-all cursor-pointer" title="افزودن پرسش جدید">
+                    <span class="material-symbols-outlined text-lg">add_circle</span>
+                    <span class="text-xs font-black">افزودن پرسش متداول جدید</span>
+                </button>
+                <?php endif; ?>
             </div>
         </div>
     </section>
@@ -1676,32 +1767,65 @@ $ctaHref = match($tenantType) {
                         <span class="material-symbols-outlined text-3xl">directions</span>
                     </div>
                     <div>
-                        <h4 class="text-base font-black">مسیریابی ۱ کلیکه با اپلیکیشن‌های نقشه</h4>
-                        <p class="text-xs text-slate-300 mt-0.5">مستقیماً موقعیت دقیق مجموعه را در مسیریاب‌های محبوب ایرانی و بین‌المللی باز نمایید.</p>
+                        <h4 class="text-base font-black" id="live-navhub-heading" data-studio-editable="navhub_heading"><?= htmlspecialchars($navHubBlock['heading'] ?? 'مسیریابی ۱ کلیکه با اپلیکیشن‌های نقشه') ?></h4>
+                        <p class="text-xs text-slate-300 mt-0.5" id="live-navhub-subtitle" data-studio-editable="navhub_subtitle"><?= htmlspecialchars($navHubBlock['subtitle'] ?? 'مستقیماً موقعیت دقیق مجموعه را در مسیریاب‌های محبوب ایرانی و بین‌المللی باز نمایید.') ?></p>
                     </div>
                 </div>
 
-                <div class="flex flex-wrap items-center justify-center gap-2.5">
-                    <!-- Neshan -->
-                    <a href="https://neshan.org/maps/@<?= $targetLat ?>,<?= $targetLng ?>,16z" target="_blank" class="px-3.5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-md transition-all flex items-center gap-1.5 active:scale-95">
-                        <span class="material-symbols-outlined text-sm">navigation</span>
-                        <span>مسیریابی با نشان</span>
-                    </a>
-                    <!-- Balad -->
-                    <a href="https://balad.ir/location?latitude=<?= $targetLat ?>&longitude=<?= $targetLng ?>" target="_blank" class="px-3.5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-md transition-all flex items-center gap-1.5 active:scale-95">
-                        <span class="material-symbols-outlined text-sm">map</span>
-                        <span>مسیریابی با بلد</span>
-                    </a>
-                    <!-- Waze -->
-                    <a href="https://waze.com/ul?ll=<?= $targetLat ?>,<?= $targetLng ?>&navigate=yes" target="_blank" class="px-3.5 py-2.5 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-bold shadow-md transition-all flex items-center gap-1.5 active:scale-95">
-                        <span class="material-symbols-outlined text-sm">turn_right</span>
-                        <span>ویز (Waze)</span>
-                    </a>
-                    <!-- Google Maps -->
-                    <a href="https://maps.google.com/?q=<?= $targetLat ?>,<?= $targetLng ?>" target="_blank" class="px-3.5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold shadow-md transition-all flex items-center gap-1.5 active:scale-95">
-                        <span class="material-symbols-outlined text-sm">place</span>
-                        <span>گوگل مپ</span>
-                    </a>
+                <div class="flex flex-wrap items-center justify-center gap-2.5" id="live-navhub-buttons">
+                    <?php
+                    $targetLat = $navHubBlock['lat'] ?? '35.7219';
+                    $targetLng = $navHubBlock['lng'] ?? '51.3347';
+                    $navApps = !empty($navHubBlock['apps']) && is_array($navHubBlock['apps']) ? $navHubBlock['apps'] : [
+                        ['id' => 'neshan', 'name' => 'مسیریابی با نشان', 'icon' => 'navigation', 'bg' => 'bg-blue-600', 'url' => $navHubBlock['neshan_url'] ?? ''],
+                        ['id' => 'balad', 'name' => 'مسیریابی با بلد', 'icon' => 'map', 'bg' => 'bg-emerald-600', 'url' => $navHubBlock['balad_url'] ?? ''],
+                        ['id' => 'waze', 'name' => 'ویز (Waze)', 'icon' => 'turn_right', 'bg' => 'bg-cyan-600', 'url' => $navHubBlock['waze_url'] ?? ''],
+                        ['id' => 'google_maps', 'name' => 'گوگل مپ', 'icon' => 'place', 'bg' => 'bg-slate-800', 'url' => $navHubBlock['google_maps_url'] ?? ''],
+                    ];
+                    $resolveNavUrl = function($app, $block, $lat, $lng) {
+                        if (!empty($app['url'])) return $app['url'];
+                        $id = $app['id'] ?? '';
+                        $name = mb_strtolower($app['name'] ?? '');
+                        if ($id === 'neshan' || str_contains($name, 'نشان')) {
+                            return !empty($block['neshan_url']) ? $block['neshan_url'] : "https://neshan.org/maps/@{$lat},{$lng},16z";
+                        }
+                        if ($id === 'balad' || str_contains($name, 'بلد')) {
+                            return !empty($block['balad_url']) ? $block['balad_url'] : "https://balad.ir/location?latitude={$lat}&longitude={$lng}";
+                        }
+                        if ($id === 'waze' || str_contains($name, 'waze') || str_contains($name, 'ویز')) {
+                            return !empty($block['waze_url']) ? $block['waze_url'] : "https://waze.com/ul?ll={$lat},{$lng}&navigate=yes";
+                        }
+                        if ($id === 'google_maps' || str_contains($name, 'گوگل') || str_contains($name, 'google')) {
+                            return !empty($block['google_maps_url']) ? $block['google_maps_url'] : "https://maps.google.com/?q={$lat},{$lng}";
+                        }
+                        return "https://maps.google.com/?q={$lat},{$lng}";
+                    };
+                    ?>
+                    <?php foreach ($navApps as $appIdx => $app): ?>
+                    <?php $appFinalUrl = $resolveNavUrl($app, $navHubBlock, $targetLat, $targetLng); ?>
+                    <div class="relative group/repeater-item inline-flex" data-repeater-index="<?= $appIdx ?>">
+                        <a href="<?= htmlspecialchars($appFinalUrl) ?>" target="_blank" class="px-3.5 py-2.5 rounded-xl <?= htmlspecialchars($app['bg'] ?? 'bg-blue-600') ?> hover:opacity-90 text-white text-xs font-bold shadow-md transition-all flex items-center gap-1.5 active:scale-95" id="nav-btn-<?= htmlspecialchars($app['id'] ?? $appIdx) ?>">
+                            <span class="material-symbols-outlined text-sm"><?= htmlspecialchars($app['icon'] ?? 'navigation') ?></span>
+                            <span><?= htmlspecialchars($app['name'] ?? 'مسیریاب') ?></span>
+                        </a>
+                        <?php if ($isPreview): ?>
+                        <div class="absolute -top-3.5 left-1/2 -translate-x-1/2 hidden group-hover/repeater-item:flex items-center gap-1 bg-slate-900/95 text-white px-1.5 py-0.5 rounded-lg shadow-xl border border-white/20 z-20 text-[10px]">
+                            <button type="button" onclick="notifyStudioRepeaterModal('navigation_hub', <?= $appIdx ?>)" title="ویرایش دکمه" class="hover:text-emerald-400 p-0.5 cursor-pointer">
+                                <span class="material-symbols-outlined text-[13px]">edit</span>
+                            </button>
+                            <button type="button" onclick="notifyStudioRemoveRepeater('navigation_hub', <?= $appIdx ?>)" title="حذف دکمه" class="hover:text-red-400 p-0.5 cursor-pointer">
+                                <span class="material-symbols-outlined text-[13px]">delete</span>
+                            </button>
+                        </div>
+                        <?php endif; ?>
+                    </div>
+                    <?php endforeach; ?>
+                    <?php if ($isPreview): ?>
+                    <button type="button" onclick="notifyStudioRepeaterModal('navigation_hub', -1)" class="px-3 py-2 rounded-xl border-2 border-dashed border-white/40 hover:border-amber-400 hover:text-amber-300 text-white/80 text-xs font-bold transition-all flex items-center gap-1 active:scale-95 cursor-pointer" title="افزودن مسیریاب دلخواه">
+                        <span class="material-symbols-outlined text-sm">add_circle</span>
+                        <span>افزودن مسیریاب</span>
+                    </button>
+                    <?php endif; ?>
                 </div>
             </div>
         </div>
@@ -3153,6 +3277,28 @@ $ctaHref = match($tenantType) {
                     }
                     break;
                 }
+                case 'services_heading': {
+                    const el = document.getElementById('live-services-heading');
+                    if (el) el.innerText = value || 'خدمات تخصصی';
+                    break;
+                }
+                case 'navhub_heading': {
+                    const el = document.getElementById('live-navhub-heading');
+                    if (el) el.innerText = value || 'مسیریابی ۱ کلیکه با اپلیکیشن‌های نقشه';
+                    break;
+                }
+                case 'navhub_subtitle': {
+                    const el = document.getElementById('live-navhub-subtitle');
+                    if (el) el.innerText = value || 'مستقیماً موقعیت دقیق مجموعه را در مسیریاب‌های محبوب ایرانی و بین‌المللی باز نمایید.';
+                    break;
+                }
+                case 'update_repeater': {
+                    const payload = extra || value || {};
+                    const sec = payload.section;
+                    const items = payload.items || [];
+                    renderLiveRepeaterSection(sec, items);
+                    break;
+                }
                 case 'reorder_blocks': {
                     if (Array.isArray(value)) {
                         const body = document.body;
@@ -3171,6 +3317,214 @@ $ctaHref = match($tenantType) {
                 }
             }
         };
+
+        function notifyStudioRepeaterModal(section, index) {
+            if (window.parent && window.parent !== window) {
+                window.parent.postMessage({
+                    type: 'OPEN_REPEATER_MODAL',
+                    section: section,
+                    index: index
+                }, '*');
+            }
+        }
+
+        function notifyStudioRemoveRepeater(section, index) {
+            if (confirm('آیا از حذف این مورد اطمینان دارید؟')) {
+                if (window.parent && window.parent !== window) {
+                    window.parent.postMessage({
+                        type: 'REMOVE_REPEATER_ITEM',
+                        section: section,
+                        index: index
+                    }, '*');
+                }
+            }
+        }
+
+        function escapePreviewHtml(str) {
+            return String(str || '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;');
+        }
+
+        function renderLiveRepeaterSection(section, items) {
+            if (!Array.isArray(items)) return;
+            if (section === 'navigation_hub') {
+                const container = document.getElementById('live-navhub-buttons');
+                if (!container) return;
+                let html = '';
+                const lat = '<?= $targetLat ?>';
+                const lng = '<?= $targetLng ?>';
+                items.forEach((app, idx) => {
+                    let url = app.url || '';
+                    const id = app.id || '';
+                    const name = (app.name || '').toLowerCase();
+                    if (!url) {
+                        if (id === 'neshan' || name.includes('نشان')) url = `https://neshan.org/maps/@${lat},${lng},16z`;
+                        else if (id === 'balad' || name.includes('بلد')) url = `https://balad.ir/location?latitude=${lat}&longitude=${lng}`;
+                        else if (id === 'waze' || name.includes('waze') || name.includes('ویز')) url = `https://waze.com/ul?ll=${lat},${lng}&navigate=yes`;
+                        else if (id === 'google_maps' || name.includes('گوگل') || name.includes('google')) url = `https://maps.google.com/?q=${lat},${lng}`;
+                        else url = `https://maps.google.com/?q=${lat},${lng}`;
+                    }
+                    html += `
+                    <div class="relative group/repeater-item inline-flex" data-repeater-index="${idx}">
+                        <a href="${escapePreviewHtml(url)}" target="_blank" class="px-3.5 py-2.5 rounded-xl ${escapePreviewHtml(app.bg || 'bg-blue-600')} hover:opacity-90 text-white text-xs font-bold shadow-md transition-all flex items-center gap-1.5 active:scale-95" id="nav-btn-${escapePreviewHtml(id || idx)}">
+                            <span class="material-symbols-outlined text-sm">${escapePreviewHtml(app.icon || 'navigation')}</span>
+                            <span>${escapePreviewHtml(app.name || 'مسیریاب')}</span>
+                        </a>
+                        <div class="absolute -top-3.5 left-1/2 -translate-x-1/2 hidden group-hover/repeater-item:flex items-center gap-1 bg-slate-900/95 text-white px-1.5 py-0.5 rounded-lg shadow-xl border border-white/20 z-20 text-[10px]">
+                            <button type="button" onclick="notifyStudioRepeaterModal('navigation_hub', ${idx})" title="ویرایش دکمه" class="hover:text-emerald-400 p-0.5 cursor-pointer">
+                                <span class="material-symbols-outlined text-[13px]">edit</span>
+                            </button>
+                            <button type="button" onclick="notifyStudioRemoveRepeater('navigation_hub', ${idx})" title="حذف دکمه" class="hover:text-red-400 p-0.5 cursor-pointer">
+                                <span class="material-symbols-outlined text-[13px]">delete</span>
+                            </button>
+                        </div>
+                    </div>`;
+                });
+                html += `
+                <button type="button" onclick="notifyStudioRepeaterModal('navigation_hub', -1)" class="px-3 py-2 rounded-xl border-2 border-dashed border-white/40 hover:border-amber-400 hover:text-amber-300 text-white/80 text-xs font-bold transition-all flex items-center gap-1 active:scale-95 cursor-pointer" title="افزودن مسیریاب دلخواه">
+                    <span class="material-symbols-outlined text-sm">add_circle</span>
+                    <span>افزودن مسیریاب</span>
+                </button>`;
+                container.innerHTML = html;
+            } else if (section === 'services') {
+                const container = document.getElementById('live-services-grid');
+                if (!container) return;
+                let html = '';
+                items.forEach((srv, idx) => {
+                    html += `
+                    <div class="relative group/repeater-item bg-white p-6 rounded-3xl border border-slate-200/80 shadow-sm hover:shadow-xl transition-all duration-300" data-repeater-index="${idx}">
+                        <div class="absolute top-3 left-3 hidden group-hover/repeater-item:flex items-center gap-1.5 bg-slate-900/90 text-white px-2 py-1 rounded-xl shadow-lg border border-slate-700 z-10 text-xs">
+                            <button type="button" onclick="notifyStudioRepeaterModal('services', ${idx})" title="ویرایش خدمت" class="hover:text-emerald-400 flex items-center gap-0.5 cursor-pointer">
+                                <span class="material-symbols-outlined text-sm">edit</span>
+                                <span class="text-[10px]">ویرایش</span>
+                            </button>
+                            <span class="text-slate-600">|</span>
+                            <button type="button" onclick="notifyStudioRemoveRepeater('services', ${idx})" title="حذف خدمت" class="hover:text-red-400 flex items-center gap-0.5 cursor-pointer">
+                                <span class="material-symbols-outlined text-sm">delete</span>
+                                <span class="text-[10px]">حذف</span>
+                            </button>
+                        </div>
+                        <div class="w-12 h-12 rounded-2xl bg-tenant-light text-tenant-primary flex items-center justify-center mb-4">
+                            <span class="material-symbols-outlined text-2xl">${escapePreviewHtml(srv.icon || 'star')}</span>
+                        </div>
+                        <h4 class="font-black text-slate-900 text-base mb-2">${escapePreviewHtml(srv.title || '')}</h4>
+                        <p class="text-xs text-slate-600 leading-relaxed">${escapePreviewHtml(srv.desc || '')}</p>
+                    </div>`;
+                });
+                html += `
+                <button type="button" onclick="notifyStudioRepeaterModal('services', -1)" class="min-h-[160px] p-6 rounded-3xl border-2 border-dashed border-slate-300 hover:border-emerald-500 bg-white/50 hover:bg-emerald-50/30 text-slate-500 hover:text-emerald-700 flex flex-col items-center justify-center gap-2 transition-all cursor-pointer group/add" title="افزودن خدمت جدید به کلینیک">
+                    <div class="w-12 h-12 rounded-2xl bg-slate-100 group-hover/add:bg-emerald-100 group-hover/add:text-emerald-600 flex items-center justify-center transition-colors">
+                        <span class="material-symbols-outlined text-2xl">add</span>
+                    </div>
+                    <span class="text-xs font-black">افزودن خدمت جدید</span>
+                    <span class="text-[10px] text-slate-400">کلیک جهت ایجاد کارت خدمات جدید</span>
+                </button>`;
+                container.innerHTML = html;
+            } else if (section === 'bento_facilities') {
+                const container = document.getElementById('live-bento-grid');
+                if (!container) return;
+                let html = '';
+                items.forEach((item, idx) => {
+                    html += `
+                    <div class="relative group/repeater-item bg-white rounded-3xl p-6 border border-slate-200/80 shadow-sm hover:shadow-xl transition-all duration-300 flex items-start gap-4 group" data-repeater-index="${idx}">
+                        <div class="absolute top-3 left-3 hidden group-hover/repeater-item:flex items-center gap-1.5 bg-slate-900/90 text-white px-2 py-1 rounded-xl shadow-lg border border-slate-700 z-10 text-xs">
+                            <button type="button" onclick="notifyStudioRepeaterModal('bento_facilities', ${idx})" title="ویرایش تجهیزات" class="hover:text-emerald-400 flex items-center gap-0.5 cursor-pointer">
+                                <span class="material-symbols-outlined text-sm">edit</span>
+                                <span class="text-[10px]">ویرایش</span>
+                            </button>
+                            <span class="text-slate-600">|</span>
+                            <button type="button" onclick="notifyStudioRemoveRepeater('bento_facilities', ${idx})" title="حذف تجهیزات" class="hover:text-red-400 flex items-center gap-0.5 cursor-pointer">
+                                <span class="material-symbols-outlined text-sm">delete</span>
+                                <span class="text-[10px]">حذف</span>
+                            </button>
+                        </div>
+                        <div class="w-14 h-14 rounded-2xl bg-tenant-light text-tenant-primary flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                            <span class="material-symbols-outlined text-3xl">${escapePreviewHtml(item.icon || 'local_hospital')}</span>
+                        </div>
+                        <div class="space-y-1.5 flex-1 min-w-0">
+                            <span class="inline-block px-2.5 py-0.5 rounded-md text-[10px] font-black bg-amber-50 text-amber-700 border border-amber-200/60">${escapePreviewHtml(item.tag || 'تخصصی')}</span>
+                            <h4 class="text-base font-black text-slate-900">${escapePreviewHtml(item.title || '')}</h4>
+                            <p class="text-xs text-slate-600 leading-relaxed">${escapePreviewHtml(item.desc || '')}</p>
+                        </div>
+                    </div>`;
+                });
+                html += `
+                <button type="button" onclick="notifyStudioRepeaterModal('bento_facilities', -1)" class="min-h-[140px] p-6 rounded-3xl border-2 border-dashed border-slate-300 hover:border-emerald-500 bg-white/50 hover:bg-emerald-50/30 text-slate-500 hover:text-emerald-700 flex flex-col items-center justify-center gap-2 transition-all cursor-pointer group/add" title="افزودن بخش یا امکانات درمانی">
+                    <div class="w-12 h-12 rounded-2xl bg-slate-100 group-hover/add:bg-emerald-100 group-hover/add:text-emerald-600 flex items-center justify-center transition-colors">
+                        <span class="material-symbols-outlined text-2xl">add</span>
+                    </div>
+                    <span class="text-xs font-black">افزودن بخش یا تجهیزات جدید</span>
+                    <span class="text-[10px] text-slate-400">درج امکانات بالینی و تشخیصی</span>
+                </button>`;
+                container.innerHTML = html;
+            } else if (section === 'faq') {
+                const container = document.getElementById('live-faq-list');
+                if (!container) return;
+                let html = '';
+                items.forEach((faq, idx) => {
+                    html += `
+                    <div class="relative group/repeater-item border border-slate-200/90 rounded-2xl overflow-hidden bg-slate-50/70 hover:bg-white hover:border-slate-300 transition-all shadow-2xs" data-repeater-index="${idx}">
+                        <button type="button" onclick="toggleSiteFaq(${idx})" class="w-full p-4 sm:p-5 text-right flex items-center justify-between gap-4 font-black text-xs sm:text-sm text-slate-800 transition-colors">
+                            <span class="flex items-center gap-3">
+                                <span class="w-6 h-6 rounded-lg bg-tenant-light text-tenant-primary flex items-center justify-center text-xs shrink-0 font-mono">؟</span>
+                                <span>${escapePreviewHtml(faq.q || '')}</span>
+                            </span>
+                            <div class="flex items-center gap-2">
+                                <div class="hidden group-hover/repeater-item:flex items-center gap-1 bg-slate-900 text-white px-2 py-0.5 rounded-lg text-xs" onclick="event.stopPropagation()">
+                                    <button type="button" onclick="notifyStudioRepeaterModal('faq', ${idx})" title="ویرایش پرسش" class="hover:text-emerald-400 p-0.5 cursor-pointer">
+                                        <span class="material-symbols-outlined text-xs">edit</span>
+                                    </button>
+                                    <button type="button" onclick="notifyStudioRemoveRepeater('faq', ${idx})" title="حذف پرسش" class="hover:text-red-400 p-0.5 cursor-pointer">
+                                        <span class="material-symbols-outlined text-xs">delete</span>
+                                    </button>
+                                </div>
+                                <span class="material-symbols-outlined text-slate-400 text-lg transition-transform duration-300 shrink-0" id="faq-chevron-${idx}">expand_more</span>
+                            </div>
+                        </button>
+                        <div id="faq-answer-${idx}" class="hidden px-5 pb-5 pt-1 text-xs text-slate-600 leading-relaxed border-t border-slate-100 bg-white">
+                            <p>${escapePreviewHtml(faq.a || '').replace(/\\n/g, '<br>')}</p>
+                        </div>
+                    </div>`;
+                });
+                html += `
+                <button type="button" onclick="notifyStudioRepeaterModal('faq', -1)" class="w-full p-3.5 rounded-2xl border-2 border-dashed border-slate-300 hover:border-emerald-500 bg-white/50 hover:bg-emerald-50/30 text-slate-500 hover:text-emerald-700 flex items-center justify-center gap-2 transition-all cursor-pointer" title="افزودن پرسش جدید">
+                    <span class="material-symbols-outlined text-lg">add_circle</span>
+                    <span class="text-xs font-black">افزودن پرسش متداول جدید</span>
+                </button>`;
+                container.innerHTML = html;
+            } else if (section === 'stats_strip') {
+                const container = document.getElementById('live-stats-grid');
+                if (!container) return;
+                let html = '';
+                items.forEach((st, idx) => {
+                    html += `
+                    <div class="relative group/repeater-item p-4 rounded-2xl bg-slate-50 border border-slate-100 text-center flex flex-col items-center justify-center hover:bg-emerald-50/20 transition-colors" data-repeater-index="${idx}">
+                        <div class="absolute top-1.5 left-1.5 hidden group-hover/repeater-item:flex items-center gap-1 bg-slate-900/90 text-white px-1.5 py-0.5 rounded-lg text-[10px] z-10 shadow-md">
+                            <button type="button" onclick="notifyStudioRepeaterModal('stats_strip', ${idx})" title="ویرایش شاخص" class="hover:text-emerald-400 p-0.5 cursor-pointer">
+                                <span class="material-symbols-outlined text-[13px]">edit</span>
+                            </button>
+                            <button type="button" onclick="notifyStudioRemoveRepeater('stats_strip', ${idx})" title="حذف شاخص" class="hover:text-red-400 p-0.5 cursor-pointer">
+                                <span class="material-symbols-outlined text-[13px]">delete</span>
+                            </button>
+                        </div>
+                        <div class="w-8 h-8 rounded-xl bg-tenant-light text-tenant-primary flex items-center justify-center mb-1.5 shadow-2xs">
+                            <span class="material-symbols-outlined text-lg">${escapePreviewHtml(st.icon || 'verified')}</span>
+                        </div>
+                        <div class="text-lg sm:text-xl font-black text-slate-900 tracking-tight font-mono" id="live-stat-${idx+1}-val" data-studio-editable="stat_${idx+1}_val">${escapePreviewHtml(st.value || '')}</div>
+                        <div class="text-[11px] text-slate-500 font-bold" id="live-stat-${idx+1}-lbl" data-studio-editable="stat_${idx+1}_lbl">${escapePreviewHtml(st.label || '')}</div>
+                    </div>`;
+                });
+                html += `
+                <button type="button" onclick="notifyStudioRepeaterModal('stats_strip', -1)" class="p-4 rounded-2xl border-2 border-dashed border-slate-200 hover:border-emerald-500 bg-white/40 hover:bg-emerald-50/30 text-slate-400 hover:text-emerald-700 flex flex-col items-center justify-center gap-1 transition-all cursor-pointer" title="افزودن شاخص جدید">
+                    <span class="material-symbols-outlined text-lg">add_circle</span>
+                    <span class="text-[10px] font-black">افزودن شاخص</span>
+                </button>`;
+                container.innerHTML = html;
+            }
+        }
 
         window.addEventListener('message', function(e) {
             if (e.data && e.data.type === 'STUDIO_LIVE_UPDATE') {
