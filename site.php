@@ -91,44 +91,41 @@ $emergencyBlock = $layout['emergency_bar'] ?? [];
 $heroBlock = $layout['hero'] ?? [];
 $statsBlock = $layout['stats_strip'] ?? [];
 $dutyBlock = $layout['duty_hours'] ?? [];
+$beforeAfterBlock = $layout['before_after'] ?? [];
 $calculatorBlock = $layout['cost_calculator'] ?? [];
 $bentoBlock = $layout['bento_facilities'] ?? [];
 $aboutBlock = $layout['about'] ?? [];
 $servicesBlock = $layout['services'] ?? [];
 $doctorsBlock = $layout['doctors_roster'] ?? [];
-$telehealthBlock = $layout['telehealth_launcher'] ?? [];
-$rxBlock = $layout['rx_prescription_box'] ?? [];
-$autoshipBlock = $layout['autoship_showcase'] ?? [];
 $bookingBlock = $layout['booking'] ?? [];
 $storefrontBlock = $layout['storefront'] ?? [];
-$articlesBlock = $layout['articles'] ?? [];
-$loyaltyBlock = $layout['loyalty_club'] ?? [];
 $reviewsBlock = $layout['reviews'] ?? [];
 $faqBlock = $layout['faq'] ?? [];
 $navHubBlock = $layout['navigation_hub'] ?? [];
 $contactBlock = $layout['contact'] ?? [];
 $mobileBarBlock = $layout['sticky_mobile_bar'] ?? [];
 $footerBlock = $layout['footer'] ?? [];
+$themeConfig = $layout['theme'] ?? ($site['layout']['theme'] ?? []);
+$ambientMode = $themeConfig['ambient_mode'] ?? 'atmospheric_glow';
+$cardRadius = $themeConfig['card_radius'] ?? 'rounded-3xl';
+$trustAnchorStyle = $themeConfig['trust_anchor'] ?? 'floating_pill';
 
-// Hydrate live items from ASENA database
+// Hydrate live items from database (hydrate all available in preview mode for instantaneous zero-refresh toggling)
 $tenantProducts = [];
-if (!empty($storefrontBlock['enabled'])) {
+if (!empty($storefrontBlock['enabled']) || $isPreview) {
     $itemLimit = (int)($storefrontBlock['item_limit'] ?? 6);
     $tenantProducts = $tenantService->getTenantProducts($tenantType, $tenantId, $itemLimit);
 }
 
 $tenantDoctors = [];
-if (!empty($doctorsBlock['enabled']) || $tenantType === 'organization') {
+if (!empty($doctorsBlock['enabled']) || $tenantType === 'organization' || $isPreview) {
     $tenantDoctors = $tenantService->getOrganizationDoctors($tenantId);
 }
 
-$tenantArticles = [];
-if (!empty($articlesBlock['enabled'])) {
-    $tenantArticles = $tenantService->getTenantArticles(3);
-}
+
 
 $tenantReviews = [];
-if (!empty($reviewsBlock['enabled'])) {
+if (!empty($reviewsBlock['enabled']) || $isPreview) {
     $tenantReviews = $tenantService->getTenantReviews($tenantType, $tenantId, 3);
 }
 
@@ -204,6 +201,16 @@ $paletteMap = [
         'accent' => '#ea580c',
         'gradient' => 'from-purple-700 via-indigo-800 to-slate-950',
         'subtle_glow' => 'rgba(124, 58, 237, 0.15)'
+    ],
+    'aurora' => [
+        'name' => 'فیروزه‌ای مینیمال و تشخیصی (Pure Aurora Cyan)',
+        'primary' => '#0891b2',
+        'primary_hover' => '#0e7490',
+        'primary_light' => '#ecfeff',
+        'primary_border' => '#a5f3fc',
+        'accent' => '#001a48',
+        'gradient' => 'from-cyan-600 via-teal-700 to-slate-900',
+        'subtle_glow' => 'rgba(8, 145, 178, 0.15)'
     ]
 ];
 $theme = $paletteMap[$site['theme_palette']] ?? $paletteMap['emerald'];
@@ -214,10 +221,9 @@ $metaDesc = htmlspecialchars($site['meta_description'] ?: ($site['site_title'] .
 $siteLogo = !empty($site['logo_url']) ? $site['logo_url'] : 'assets/images/logo.png';
 
 $ctaHref = match($tenantType) {
-    'doctor' => "booking.php?doctor_id={$tenantId}",
-    'organization' => "booking.php?org_id={$tenantId}",
-    'pharmacist' => "pharmacy.php",
-    default => "shop.php"
+    'doctor', 'organization' => '#booking',
+    'pharmacist', 'seller' => (!empty($storefrontBlock['enabled']) ? '#storefront' : '#contact'),
+    default => '#contact'
 };
 ?>
 <!DOCTYPE html>
@@ -244,10 +250,18 @@ $ctaHref = match($tenantType) {
             --tenant-primary-border: <?= $theme['primary_border'] ?>;
             --tenant-accent: <?= $theme['accent'] ?>;
             --tenant-glow: <?= $theme['subtle_glow'] ?>;
+            --tenant-ambient: <?= $theme['subtle_glow'] ?>;
         }
         body { 
             font-family: 'Vazirmatn', 'Geist', sans-serif;
             -webkit-tap-highlight-color: transparent;
+        }
+        .atmospheric-bg {
+            background-color: #f8fafc;
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(0, 26, 72, 0.04) 0px, transparent 50%),
+                radial-gradient(at 100% 0%, var(--tenant-glow) 0px, transparent 50%),
+                radial-gradient(at 50% 100%, rgba(253, 129, 0, 0.03) 0px, transparent 50%);
         }
         .bg-tenant-primary { background-color: var(--tenant-primary); }
         .bg-tenant-primary-hover:hover { background-color: var(--tenant-primary-hover); }
@@ -323,7 +337,7 @@ $ctaHref = match($tenantType) {
         <?php endif; ?>
     </style>
 </head>
-<body class="bg-slate-50 text-slate-800 antialiased selection:bg-orange-500 selection:text-white pb-20 md:pb-0">
+<body class="<?= ($ambientMode === 'atmospheric_glow') ? 'atmospheric-bg' : 'bg-slate-50' ?> text-slate-800 antialiased selection:bg-orange-500 selection:text-white pb-20 md:pb-0">
 
     <!-- Top Clinic Contact Strip -->
     <div class="bg-slate-900 text-white py-2 px-4 text-xs font-medium border-b border-slate-800">
@@ -333,27 +347,24 @@ $ctaHref = match($tenantType) {
                     <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                     <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
                 </span>
-                <span class="text-[11px] sm:text-xs font-bold"><?= htmlspecialchars($site['site_title']) ?> | پذیرش فعال و نوبت‌دهی آنلاین</span>
+                <span class="text-[11px] sm:text-xs font-bold" id="live-topbar-title"><?= htmlspecialchars($site['site_title']) ?> | پذیرش فعال و نوبت‌دهی آنلاین</span>
             </div>
             <div class="flex items-center gap-4 text-[11px]">
-                <?php if (!empty($contactBlock['emergency_phone'])): ?>
-                <a href="tel:<?= htmlspecialchars($contactBlock['emergency_phone']) ?>" class="text-rose-300 hover:text-white flex items-center gap-1 font-bold">
+                <a href="tel:<?= htmlspecialchars($contactBlock['emergency_phone'] ?? '') ?>" id="live-topbar-em-wrap" class="text-rose-300 hover:text-white flex items-center gap-1 font-bold <?= empty($contactBlock['emergency_phone']) ? 'hidden' : '' ?>">
                     <span class="material-symbols-outlined text-xs">e911_emergency</span>
-                    <span>اورژانس شبانه‌روزی: <span class="font-mono" dir="ltr"><?= htmlspecialchars($contactBlock['emergency_phone']) ?></span></span>
+                    <span>اورژانس شبانه‌روزی: <span class="font-mono" dir="ltr" id="live-topbar-em-phone"><?= htmlspecialchars($contactBlock['emergency_phone'] ?? '') ?></span></span>
                 </a>
-                <?php elseif (!empty($contactBlock['phone'])): ?>
-                <a href="tel:<?= htmlspecialchars($contactBlock['phone']) ?>" class="text-slate-300 hover:text-white flex items-center gap-1">
+                <a href="tel:<?= htmlspecialchars($contactBlock['phone'] ?? '') ?>" id="live-topbar-phone-wrap" class="text-slate-300 hover:text-white flex items-center gap-1 <?= (empty($contactBlock['phone']) || !empty($contactBlock['emergency_phone'])) ? 'hidden' : '' ?>">
                     <span class="material-symbols-outlined text-xs">call</span>
-                    <span>تماس: <span class="font-mono" dir="ltr"><?= htmlspecialchars($contactBlock['phone']) ?></span></span>
+                    <span>تماس: <span class="font-mono" dir="ltr" id="live-topbar-phone"><?= htmlspecialchars($contactBlock['phone'] ?? '') ?></span></span>
                 </a>
-                <?php endif; ?>
             </div>
         </div>
     </div>
 
     <!-- 24/7 Red Emergency Hotline Bar -->
-    <?php if (!empty($emergencyBlock['enabled'])): ?>
-    <div class="bg-gradient-to-r from-red-600 via-rose-600 to-red-700 bg-gradient-red text-white py-2.5 px-4 shadow-md relative overflow-hidden z-40 border-b border-red-500/50" style="background: linear-gradient(135deg, #dc2626 0%, #e11d48 50%, #b91c1c 100%) !important; color: #ffffff !important;" data-block-id="emergency_bar">
+    <?php if (!empty($emergencyBlock['enabled']) || $isPreview): ?>
+    <div class="bg-gradient-to-r from-red-600 via-rose-600 to-red-700 bg-gradient-red text-white py-2.5 px-4 shadow-md relative overflow-hidden z-40 border-b border-red-500/50 <?= (empty($emergencyBlock['enabled']) && $isPreview) ? 'hidden' : '' ?>" style="background: linear-gradient(135deg, #dc2626 0%, #e11d48 50%, #b91c1c 100%) !important; color: #ffffff !important; <?= (empty($emergencyBlock['enabled']) && $isPreview) ? 'display: none !important;' : '' ?>" data-block-id="emergency_bar">
         <div class="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-right">
             <div class="flex items-center gap-2.5">
                 <span class="w-8 h-8 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center shrink-0 animate-pulse text-white shadow-inner">
@@ -361,21 +372,19 @@ $ctaHref = match($tenantType) {
                 </span>
                 <div>
                     <div class="flex items-center justify-center sm:justify-start gap-2">
-                        <span class="px-2 py-0.5 rounded-full bg-white/25 text-[10px] font-black tracking-wide"><?= htmlspecialchars($emergencyBlock['badge'] ?? 'اورژانس شبانه‌روزی (۲۴/۷)') ?></span>
-                        <h3 class="text-xs sm:text-sm font-black tracking-tight"><?= htmlspecialchars($emergencyBlock['headline'] ?? 'اورژانس ۲۴ ساعته و مراقبت‌های فوری حیوانات خانگی') ?></h3>
+                        <span class="px-2 py-0.5 rounded-full bg-white/25 text-[10px] font-black tracking-wide" id="live-emergency-badge"><?= htmlspecialchars($emergencyBlock['badge'] ?? 'اورژانس شبانه‌روزی (۲۴/۷)') ?></span>
+                        <h3 class="text-xs sm:text-sm font-black tracking-tight" id="live-emergency-headline"><?= htmlspecialchars($emergencyBlock['headline'] ?? 'اورژانس ۲۴ ساعته و مراقبت‌های فوری حیوانات خانگی') ?></h3>
                     </div>
-                    <p class="text-[11px] text-rose-100 hidden md:block mt-0.5"><?= htmlspecialchars($emergencyBlock['subheadline'] ?? 'پذیرش فوری تروما، تصادفات و مسمومیت‌ها با امکانات احیای بالینی پیشرفته') ?></p>
+                    <p class="text-[11px] text-rose-100 hidden md:block mt-0.5" id="live-emergency-subheadline"><?= htmlspecialchars($emergencyBlock['subheadline'] ?? 'پذیرش فوری تروما، تصادفات و مسمومیت‌ها با امکانات احیای بالینی پیشرفته') ?></p>
                 </div>
             </div>
             <div class="flex items-center gap-2">
                 <?php $emPhone = !empty($emergencyBlock['phone']) ? $emergencyBlock['phone'] : ($contactBlock['emergency_phone'] ?? $contactBlock['phone'] ?? ''); ?>
-                <?php if (!empty($emPhone)): ?>
-                <a href="tel:<?= htmlspecialchars($emPhone) ?>" class="px-4 py-2 rounded-xl bg-white text-red-700 hover:bg-rose-50 text-xs font-black shadow-lg flex items-center gap-1.5 transition-transform active:scale-95 group">
+                <a href="tel:<?= htmlspecialchars($emPhone) ?>" id="live-emergency-phone-link" class="px-4 py-2 rounded-xl bg-white text-red-700 hover:bg-rose-50 text-xs font-black shadow-lg flex items-center gap-1.5 transition-transform active:scale-95 group <?= empty($emPhone) ? 'hidden' : '' ?>">
                     <span class="material-symbols-outlined text-sm group-hover:animate-bounce">call</span>
                     <span>تماس مستقیم با اورژانس:</span>
-                    <span dir="ltr" class="font-mono font-bold"><?= htmlspecialchars($emPhone) ?></span>
+                    <span dir="ltr" class="font-mono font-bold" id="live-emergency-phone"><?= htmlspecialchars($emPhone) ?></span>
                 </a>
-                <?php endif; ?>
             </div>
         </div>
     </div>
@@ -386,16 +395,14 @@ $ctaHref = match($tenantType) {
         <div class="max-w-6xl mx-auto px-4 h-20 flex items-center justify-between">
             <div class="flex items-center gap-3.5">
                 <div class="w-12 h-12 rounded-2xl overflow-hidden border border-slate-200 bg-white shadow-sm flex items-center justify-center shrink-0">
-                    <img src="<?= htmlspecialchars($siteLogo) ?>" alt="<?= htmlspecialchars($site['site_title']) ?>" class="w-full h-full object-cover">
+                    <img src="<?= htmlspecialchars($siteLogo) ?>" id="live-header-logo" alt="<?= htmlspecialchars($site['site_title']) ?>" class="w-full h-full object-cover">
                 </div>
                 <div>
                     <div class="flex items-center gap-1.5">
-                        <h1 class="text-base sm:text-lg font-black text-slate-900 tracking-tight leading-snug"><?= htmlspecialchars($site['site_title']) ?></h1>
+                        <h1 class="text-base sm:text-lg font-black text-slate-900 tracking-tight leading-snug" id="live-header-title"><?= htmlspecialchars($site['site_title']) ?></h1>
                         <span class="material-symbols-outlined text-emerald-600 text-sm" title="تایید صلاحیت رسمی">verified</span>
                     </div>
-                    <?php if (!empty($site['site_tagline'])): ?>
-                        <p class="text-[11px] sm:text-xs text-slate-500 font-medium truncate max-w-[200px] sm:max-w-xs"><?= htmlspecialchars($site['site_tagline']) ?></p>
-                    <?php endif; ?>
+                    <p class="text-[11px] sm:text-xs text-slate-500 font-medium truncate max-w-[200px] sm:max-w-xs <?= empty($site['site_tagline']) ? 'hidden' : '' ?>" id="live-header-tagline"><?= htmlspecialchars($site['site_tagline'] ?? '') ?></p>
                 </div>
             </div>
 
@@ -403,29 +410,29 @@ $ctaHref = match($tenantType) {
             <nav class="hidden lg:flex items-center gap-5 text-xs font-bold text-slate-600">
                 <a href="#about" class="hover:text-tenant-primary transition-colors">معرفی</a>
                 <a href="#services" class="hover:text-tenant-primary transition-colors">خدمات تخصصی</a>
-                <?php if (!empty($calculatorBlock['enabled'])): ?>
-                    <a href="#calculator" class="text-amber-600 hover:text-amber-700 transition-colors flex items-center gap-1 font-black">
+                <?php if (!empty($calculatorBlock['enabled']) || $isPreview): ?>
+                    <a href="#calculator" class="text-amber-600 hover:text-amber-700 transition-colors flex items-center gap-1 font-black <?= (empty($calculatorBlock['enabled']) && $isPreview) ? 'hidden' : '' ?>" data-nav-link="calculator">
                         <span class="material-symbols-outlined text-sm">calculate</span>
                         <span>محاسبه‌گر هزینه</span>
                     </a>
                 <?php endif; ?>
-                <?php if (!empty($doctorsBlock['enabled']) && !empty($tenantDoctors)): ?>
-                    <a href="#doctors" class="hover:text-tenant-primary transition-colors">پزشکان مرکز</a>
+                <?php if (!empty($doctorsBlock['enabled']) || $isPreview): ?>
+                    <a href="#doctors" class="hover:text-tenant-primary transition-colors <?= (empty($doctorsBlock['enabled']) && $isPreview) ? 'hidden' : '' ?>" data-nav-link="doctors">پزشکان مرکز</a>
                 <?php endif; ?>
-                <?php if (!empty($bentoBlock['enabled'])): ?>
-                    <a href="#facilities" class="hover:text-tenant-primary transition-colors">امکانات کلینیک</a>
+                <?php if (!empty($bentoBlock['enabled']) || $isPreview): ?>
+                    <a href="#facilities" class="hover:text-tenant-primary transition-colors <?= (empty($bentoBlock['enabled']) && $isPreview) ? 'hidden' : '' ?>" data-nav-link="facilities">امکانات کلینیک</a>
                 <?php endif; ?>
-                <?php if (!empty($bookingBlock['enabled'])): ?>
-                    <a href="#booking" class="hover:text-tenant-primary transition-colors">نوبت‌دهی</a>
+                <?php if (!empty($bookingBlock['enabled']) || $isPreview): ?>
+                    <a href="#booking" class="hover:text-tenant-primary transition-colors <?= (empty($bookingBlock['enabled']) && $isPreview) ? 'hidden' : '' ?>" data-nav-link="booking">نوبت‌دهی</a>
                 <?php endif; ?>
-                <?php if (!empty($storefrontBlock['enabled'])): ?>
-                    <a href="#storefront" class="hover:text-tenant-primary transition-colors">کالاها و داروها</a>
+                <?php if (!empty($storefrontBlock['enabled']) || $isPreview): ?>
+                    <a href="#storefront" class="hover:text-tenant-primary transition-colors <?= (empty($storefrontBlock['enabled']) && $isPreview) ? 'hidden' : '' ?>" data-nav-link="storefront">کالاها و داروها</a>
                 <?php endif; ?>
-                <?php if (!empty($faqBlock['enabled'])): ?>
-                    <a href="#faq" class="hover:text-tenant-primary transition-colors">پرسش‌های متداول</a>
+                <?php if (!empty($faqBlock['enabled']) || $isPreview): ?>
+                    <a href="#faq" class="hover:text-tenant-primary transition-colors <?= (empty($faqBlock['enabled']) && $isPreview) ? 'hidden' : '' ?>" data-nav-link="faq">پرسش‌های متداول</a>
                 <?php endif; ?>
-                <?php if (!empty($reviewsBlock['enabled'])): ?>
-                    <a href="#reviews" class="hover:text-tenant-primary transition-colors">نظرات مراجعین</a>
+                <?php if (!empty($reviewsBlock['enabled']) || $isPreview): ?>
+                    <a href="#reviews" class="hover:text-tenant-primary transition-colors <?= (empty($reviewsBlock['enabled']) && $isPreview) ? 'hidden' : '' ?>" data-nav-link="reviews">نظرات مراجعین</a>
                 <?php endif; ?>
                 <a href="#contact" class="hover:text-tenant-primary transition-colors">تماس و آدرس</a>
             </nav>
@@ -437,12 +444,11 @@ $ctaHref = match($tenantType) {
                     <span>مسیریابی هوشمند</span>
                 </button>
 
-                <?php if (!empty($headerBlock['phone'])): ?>
-                    <a href="tel:<?= htmlspecialchars($headerBlock['phone']) ?>" class="hidden sm:flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-colors">
-                        <span class="material-symbols-outlined text-sm text-tenant-primary">call</span>
-                        <span dir="ltr"><?= htmlspecialchars($headerBlock['phone']) ?></span>
-                    </a>
-                <?php endif; ?>
+                <?php $headerPhone = !empty($headerBlock['phone']) ? $headerBlock['phone'] : ($contactBlock['phone'] ?? ''); ?>
+                <a href="tel:<?= htmlspecialchars($headerPhone) ?>" id="live-header-phone-link" class="hidden sm:flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-colors <?= empty($headerPhone) ? 'hidden' : '' ?>">
+                    <span class="material-symbols-outlined text-sm text-tenant-primary">call</span>
+                    <span dir="ltr" id="live-header-phone"><?= htmlspecialchars($headerPhone) ?></span>
+                </a>
 
                 <a href="<?= $ctaHref ?>" class="hidden md:inline-flex px-5 py-2.5 rounded-xl bg-tenant-primary bg-tenant-primary-hover text-white text-xs font-bold shadow-lg shadow-emerald-900/10 transition-transform active:scale-95 items-center gap-1.5">
                     <span class="material-symbols-outlined text-sm">calendar_month</span>
@@ -537,12 +543,21 @@ $ctaHref = match($tenantType) {
             <div class="lg:col-span-7 space-y-6 text-center lg:text-right">
                 
                 <div class="flex flex-wrap items-center justify-center lg:justify-start gap-2.5">
-                    <?php if (!empty($heroBlock['badge'])): ?>
-                    <div class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-tenant-light border border-tenant-light text-tenant-primary text-xs font-black shadow-sm">
+                    <div class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-tenant-light border border-tenant-light text-tenant-primary text-xs font-black shadow-sm" id="live-hero-badge-wrap" style="<?= empty($heroBlock['badge']) ? 'display: none;' : '' ?>">
                         <span class="material-symbols-outlined text-sm">verified</span>
-                        <span><?= htmlspecialchars($heroBlock['badge']) ?></span>
+                        <span id="live-hero-badge"><?= htmlspecialchars($heroBlock['badge'] ?? '') ?></span>
                     </div>
-                    <?php endif; ?>
+
+                    <!-- Symbiotic ASENA Trust Anchor Pill -->
+                    <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/95 border border-slate-200/90 shadow-2xs text-[11px] font-bold text-slate-800" id="live-trust-anchor" style="<?= ($trustAnchorStyle === 'none') ? 'display: none !important;' : '' ?>">
+                        <span class="relative flex h-2 w-2">
+                            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                            <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                        </span>
+                        <span>عضو رسمی شبکه سلامت آسنا</span>
+                        <span class="text-slate-300">|</span>
+                        <span class="text-slate-500 text-[10px] font-normal">پرداخت امن شاپرک و امانت‌داری</span>
+                    </div>
 
                     <!-- Live On-Duty Pulsing Indicator -->
                     <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-[11px] font-bold">
@@ -554,18 +569,18 @@ $ctaHref = match($tenantType) {
                     </div>
                 </div>
 
-                <h2 class="text-3xl sm:text-4xl md:text-5xl font-black text-slate-900 leading-[1.2] tracking-tight">
+                <h2 class="text-3xl sm:text-4xl md:text-5xl font-black text-slate-900 leading-[1.2] tracking-tight" id="live-hero-title">
                     <?= htmlspecialchars($heroBlock['title'] ?? $site['site_title']) ?>
                 </h2>
 
-                <p class="text-sm sm:text-base md:text-lg text-slate-600 leading-relaxed font-normal max-w-2xl mx-auto lg:mx-0">
+                <p class="text-sm sm:text-base md:text-lg text-slate-600 leading-relaxed font-normal max-w-2xl mx-auto lg:mx-0" id="live-hero-subtitle">
                     <?= htmlspecialchars($heroBlock['subtitle'] ?? '') ?>
                 </p>
 
                 <!-- Dual High-Intent CTAs -->
                 <div class="pt-2 flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-3.5">
                     <a href="<?= $ctaHref ?>" class="w-full sm:w-auto px-8 py-4 rounded-2xl bg-tenant-primary bg-tenant-primary-hover text-white text-sm font-black shadow-xl shadow-emerald-900/15 hover:shadow-2xl transition-all flex items-center justify-center gap-2 group">
-                        <span><?= htmlspecialchars($heroBlock['cta_primary_text'] ?? 'رزرو آنلاین نوبت') ?></span>
+                        <span id="live-hero-cta"><?= htmlspecialchars($heroBlock['cta_primary_text'] ?? 'رزرو آنلاین نوبت') ?></span>
                         <span class="material-symbols-outlined text-base group-hover:-translate-x-1 transition-transform">arrow_left</span>
                     </a>
                     
@@ -597,15 +612,15 @@ $ctaHref = match($tenantType) {
             <div class="lg:col-span-5 relative flex justify-center">
                 <div class="w-full max-w-md aspect-[4/3] rounded-3xl overflow-hidden shadow-2xl border-4 border-white bg-slate-100 relative group" style="aspect-ratio: 4 / 3; min-height: 280px; width: 100%;">
                     <?php $heroImg = !empty($heroBlock['image']) ? $heroBlock['image'] : $site['banner_url']; ?>
-                    <img src="<?= htmlspecialchars($heroImg ?: 'assets/images/clinic-banner.jpg') ?>" alt="<?= htmlspecialchars($site['site_title']) ?>" style="width: 100%; height: 100%; object-fit: cover;" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" onerror="this.onerror=null; this.src='assets/images/presentation-dog.jpg';">
+                    <img src="<?= htmlspecialchars($heroImg ?: 'assets/images/clinic-banner.jpg') ?>" id="live-hero-image" alt="<?= htmlspecialchars($site['site_title']) ?>" style="width: 100%; height: 100%; object-fit: cover;" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" onerror="this.onerror=null; this.src='assets/images/presentation-dog.jpg';">
                     <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent"></div>
                     <div class="absolute bottom-4 right-4 left-4 text-white p-3.5 rounded-2xl bg-white/10 backdrop-blur-xl border border-white/20">
                         <div class="flex items-center justify-between text-xs font-bold">
                             <span class="flex items-center gap-1.5">
                                 <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
-                                <span><?= htmlspecialchars($site['site_title']) ?></span>
+                                <span id="live-hero-overlay-title"><?= htmlspecialchars($site['site_title']) ?></span>
                             </span>
-                            <span class="text-amber-300 font-bold"><?= htmlspecialchars($heroBlock['badge'] ?? 'پذیرش رسمی') ?></span>
+                            <span class="text-amber-300 font-bold" id="live-hero-overlay-badge"><?= htmlspecialchars($heroBlock['badge'] ?? 'پذیرش رسمی') ?></span>
                         </div>
                     </div>
                 </div>
@@ -668,8 +683,8 @@ $ctaHref = match($tenantType) {
     <?php endif; ?>
 
     <!-- Live Shift Duty & Hours Widget -->
-    <?php if (!empty($dutyBlock['enabled'])): ?>
-    <section class="py-4 bg-gradient-to-r from-slate-900 via-slate-800 to-[#001a48] bg-gradient-duty text-white border-b border-slate-700/60 shadow-inner" style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #001a48 100%) !important; color: #ffffff !important;" data-block-id="duty_hours">
+    <?php if (!empty($dutyBlock['enabled']) || $isPreview): ?>
+    <section class="py-4 bg-gradient-to-r from-slate-900 via-slate-800 to-[#001a48] bg-gradient-duty text-white border-b border-slate-700/60 shadow-inner <?= (empty($dutyBlock['enabled']) && $isPreview) ? 'hidden' : '' ?>" style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #001a48 100%) !important; color: #ffffff !important; <?= (empty($dutyBlock['enabled']) && $isPreview) ? 'display: none !important;' : '' ?>" data-block-id="duty_hours">
         <div class="max-w-6xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
             <div class="flex items-center gap-3">
                 <div class="w-10 h-10 rounded-2xl <?= $isCurrentlyOpen ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-amber-500/20 text-amber-400 border border-amber-500/30' ?> flex items-center justify-center shrink-0">
@@ -687,7 +702,7 @@ $ctaHref = match($tenantType) {
                         <span class="text-[11px] text-slate-300 font-mono hidden md:inline">| <?= htmlspecialchars($dutyCountdownText) ?></span>
                     </div>
                     <div class="text-[11px] text-slate-400 mt-0.5">
-                        <span>ساعات کاری اعلامی: <?= htmlspecialchars($dutyBlock['hours_text'] ?? $contactBlock['hours'] ?? '۸:۳۰ الی ۲۲:۳۰') ?></span>
+                        <span id="live-duty-hours-text">ساعات کاری اعلامی: <?= htmlspecialchars($dutyBlock['hours_text'] ?? $contactBlock['hours'] ?? '۸:۳۰ الی ۲۲:۳۰') ?></span>
                         <?php if (!$isCurrentlyOpen): ?>
                             <span class="text-amber-200 mr-2 font-bold">(ثبت نوبت اینترنتی و درخواست مشاوره ۲۴ ساعته فعال است)</span>
                         <?php endif; ?>
@@ -708,18 +723,80 @@ $ctaHref = match($tenantType) {
     </section>
     <?php endif; ?>
 
+    <!-- Interactive Before/After Comparison Slider Module -->
+    <?php if (!empty($beforeAfterBlock['enabled']) || $isPreview): ?>
+    <section id="before-after" class="py-16 bg-white border-b border-slate-200/60 relative overflow-hidden <?= (empty($beforeAfterBlock['enabled']) && $isPreview) ? 'hidden' : '' ?>" style="<?= (empty($beforeAfterBlock['enabled']) && $isPreview) ? 'display: none !important;' : '' ?>" data-block-id="before_after">
+        <div class="max-w-5xl mx-auto px-4 relative z-10">
+            <div class="text-center max-w-2xl mx-auto mb-10">
+                <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-black mb-3">
+                    <span class="material-symbols-outlined text-sm">compare</span>
+                    <span id="live-ba-service-badge"><?= htmlspecialchars($beforeAfterBlock['service_label'] ?? 'نتایج ملموس خدمات و جراحی‌ها') ?></span>
+                </div>
+                <h3 class="text-2xl sm:text-3xl font-black text-slate-900" id="live-ba-heading"><?= htmlspecialchars($beforeAfterBlock['heading'] ?? 'مقایسه نتایج قبل و بعد از مراقبت تخصصی') ?></h3>
+                <p class="text-xs sm:text-sm text-slate-500 mt-2 leading-relaxed" id="live-ba-subtitle">
+                    <?= htmlspecialchars($beforeAfterBlock['subtitle'] ?? 'با کشیدن نشانگر لمسی زیر، کیفیت و تفاوت ملموس درمان را به صورت زنده مقایسه نمایید.') ?>
+                </p>
+            </div>
+
+            <!-- Draggable Split Comparison Container -->
+            <div class="max-w-3xl mx-auto">
+                <div class="relative w-full aspect-[16/10] sm:aspect-[16/9] rounded-3xl overflow-hidden shadow-2xl border-4 border-white bg-slate-900 select-none group" id="ba-comparison-wrapper" style="touch-action: pan-y;">
+                    <!-- AFTER Image (Base Layer) -->
+                    <img src="<?= htmlspecialchars(!empty($beforeAfterBlock['image_after']) ? (str_starts_with($beforeAfterBlock['image_after'], 'http') ? $beforeAfterBlock['image_after'] : $beforeAfterBlock['image_after']) : 'assets/images/clinic-banner.jpg') ?>" 
+                         id="live-ba-img-after" 
+                         alt="پس از درمان" 
+                         class="absolute inset-0 w-full h-full object-cover" 
+                         onerror="this.src='assets/images/clinic-banner.jpg'">
+                    <div class="absolute top-4 left-4 z-10 px-3 py-1.5 rounded-xl bg-slate-900/80 backdrop-blur-md text-white text-xs font-black border border-white/20 shadow-md">
+                        <span id="live-ba-label-after"><?= htmlspecialchars($beforeAfterBlock['label_after'] ?? 'پس از درمان') ?></span>
+                    </div>
+
+                    <!-- BEFORE Image (Clipped Overlay Layer) -->
+                    <div class="absolute inset-y-0 right-0 overflow-hidden" id="ba-before-layer" style="width: 50%;">
+                        <img src="<?= htmlspecialchars(!empty($beforeAfterBlock['image_before']) ? (str_starts_with($beforeAfterBlock['image_before'], 'http') ? $beforeAfterBlock['image_before'] : $beforeAfterBlock['image_before']) : 'assets/images/presentation-dog.jpg') ?>" 
+                             id="live-ba-img-before" 
+                             alt="قبل از درمان" 
+                             class="absolute top-0 right-0 h-full max-w-none object-cover" 
+                             style="width: 100%; height: 100%; object-fit: cover;"
+                             onerror="this.src='assets/images/presentation-dog.jpg'">
+                        <div class="absolute top-4 right-4 z-10 px-3 py-1.5 rounded-xl bg-black/70 backdrop-blur-md text-amber-300 text-xs font-black border border-amber-400/30 shadow-md">
+                            <span id="live-ba-label-before"><?= htmlspecialchars($beforeAfterBlock['label_before'] ?? 'قبل از درمان') ?></span>
+                        </div>
+                    </div>
+
+                    <!-- Split Handle Divider -->
+                    <div class="absolute inset-y-0 z-20 flex items-center justify-center pointer-events-none" id="ba-divider-line" style="right: 50%;">
+                        <div class="w-1 h-full bg-white shadow-[0_0_10px_rgba(0,0,0,0.5)]"></div>
+                        <div class="absolute w-10 h-10 rounded-full bg-white shadow-2xl border-2 border-slate-300 flex items-center justify-center text-slate-800 text-xs font-bold gap-0.5 pointer-events-auto cursor-ew-resize active:scale-110 transition-transform">
+                            <span class="material-symbols-outlined text-base">code</span>
+                        </div>
+                    </div>
+
+                    <!-- Hidden Full-overlay Range Slider for ultra-smooth accessibility & touch -->
+                    <input type="range" min="0" max="100" value="50" class="absolute inset-0 w-full h-full opacity-0 cursor-ew-resize z-30 m-0 p-0" id="ba-range-slider" oninput="updateBeforeAfterSlider(this.value)">
+                </div>
+
+                <div class="flex items-center justify-between text-xs text-slate-400 font-bold mt-3 px-2">
+                    <span class="flex items-center gap-1"><span class="material-symbols-outlined text-sm">arrow_forward</span> نشانگر را به چپ و راست بکشید</span>
+                    <span class="text-slate-500">تفاوت کیفیت با تکنولوژی روز</span>
+                </div>
+            </div>
+        </div>
+    </section>
+    <?php endif; ?>
+
     <!-- Bento Grid Facilities Architecture -->
-    <?php if (!empty($bentoBlock['enabled']) && !empty($bentoBlock['items'])): ?>
-    <section id="facilities" class="py-16 bg-slate-50 border-b border-slate-200/60" data-block-id="bento_facilities">
+    <?php if ((!empty($bentoBlock['enabled']) && !empty($bentoBlock['items'])) || $isPreview): ?>
+    <section id="facilities" class="py-16 bg-slate-50 border-b border-slate-200/60 <?= (empty($bentoBlock['enabled']) && $isPreview) ? 'hidden' : '' ?>" style="<?= (empty($bentoBlock['enabled']) && $isPreview) ? 'display: none !important;' : '' ?>" data-block-id="bento_facilities">
         <div class="max-w-6xl mx-auto px-4">
             <div class="text-center max-w-xl mx-auto mb-12">
                 <span class="text-xs font-black text-tenant-primary uppercase tracking-wider">استانداردهای بالینی و درمانی</span>
-                <h3 class="text-2xl sm:text-3xl font-black text-slate-900 mt-1"><?= htmlspecialchars($bentoBlock['heading']) ?></h3>
+                <h3 class="text-2xl sm:text-3xl font-black text-slate-900 mt-1" id="live-bento-heading"><?= htmlspecialchars($bentoBlock['heading']) ?></h3>
                 <p class="text-xs sm:text-sm text-slate-500 mt-2"><?= htmlspecialchars($bentoBlock['subtitle'] ?? '') ?></p>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <?php foreach ($bentoBlock['items'] as $item): ?>
+                <?php foreach (($bentoBlock['items'] ?? []) as $item): ?>
                 <div class="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-sm hover:shadow-xl transition-all duration-300 flex items-start gap-4 group">
                     <div class="w-14 h-14 rounded-2xl bg-tenant-light text-tenant-primary flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
                         <span class="material-symbols-outlined text-3xl"><?= htmlspecialchars($item['icon'] ?? 'local_hospital') ?></span>
@@ -736,66 +813,11 @@ $ctaHref = match($tenantType) {
     </section>
     <?php endif; ?>
 
-    <!-- Telehealth Live Consultation Launcher (Premium & Enterprise) -->
-    <?php if (!empty($telehealthBlock['enabled'])): ?>
-    <section class="py-12 bg-gradient-to-r from-indigo-900 via-indigo-950 to-slate-900 bg-gradient-indigo text-white border-b border-slate-800" style="background: linear-gradient(135deg, #1e1b4b 0%, #17153b 50%, #0f172a 100%) !important; color: #ffffff !important;" data-block-id="telehealth_launcher">
-        <div class="max-w-6xl mx-auto px-4 flex flex-col md:flex-row items-center justify-between gap-8">
-            <div class="space-y-2 text-center md:text-right">
-                <span class="px-3 py-1 rounded-full bg-indigo-500/20 text-indigo-300 text-[11px] font-bold border border-indigo-500/30">تله‌هلث و مشاوره تصویری هوشمند</span>
-                <h3 class="text-2xl sm:text-3xl font-black"><?= htmlspecialchars($telehealthBlock['heading']) ?></h3>
-                <p class="text-slate-300 text-xs sm:text-sm max-w-xl font-normal leading-relaxed"><?= htmlspecialchars($telehealthBlock['subtitle']) ?></p>
-            </div>
-            <div>
-                <a href="chat.php" class="px-7 py-3.5 rounded-2xl bg-indigo-500 hover:bg-indigo-600 text-white font-black text-xs shadow-xl transition-all flex items-center gap-2">
-                    <span class="material-symbols-outlined text-base">videocam</span>
-                    <span><?= htmlspecialchars($telehealthBlock['cta_text'] ?? 'شروع مشاوره آنلاین') ?></span>
-                </a>
-            </div>
-        </div>
-    </section>
-    <?php endif; ?>
 
-    <!-- Rx Prescription Photo Upload (Pharmacy & Enterprise) -->
-    <?php if (!empty($rxBlock['enabled'])): ?>
-    <section class="py-12 bg-gradient-to-r from-purple-900 via-purple-950 to-slate-900 bg-gradient-purple text-white border-b border-slate-800" style="background: linear-gradient(135deg, #3b0764 0%, #2e0854 50%, #0f172a 100%) !important; color: #ffffff !important;" data-block-id="rx_prescription_box">
-        <div class="max-w-6xl mx-auto px-4 flex flex-col md:flex-row items-center justify-between gap-8">
-            <div class="space-y-2 text-center md:text-right">
-                <span class="px-3 py-1 rounded-full bg-purple-500/20 text-purple-300 text-[11px] font-bold border border-purple-500/30">داروخانه تخصصی با شرایط زنجیره سرد (۲-۸°C)</span>
-                <h3 class="text-2xl sm:text-3xl font-black"><?= htmlspecialchars($rxBlock['heading']) ?></h3>
-                <p class="text-slate-300 text-xs sm:text-sm max-w-xl font-normal leading-relaxed"><?= htmlspecialchars($rxBlock['subtitle']) ?></p>
-            </div>
-            <div>
-                <a href="pharmacy.php" class="px-7 py-3.5 rounded-2xl bg-purple-500 hover:bg-purple-600 text-white font-black text-xs shadow-xl transition-all flex items-center gap-2">
-                    <span class="material-symbols-outlined text-base">upload_file</span>
-                    <span>ارسال و ثبت نسخه دارویی</span>
-                </a>
-            </div>
-        </div>
-    </section>
-    <?php endif; ?>
-
-    <!-- Autoship Periodic Delivery Showcase (Standard, Premium, Enterprise) -->
-    <?php if (!empty($autoshipBlock['enabled'])): ?>
-    <section class="py-12 bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 bg-gradient-amber text-white border-b border-orange-600 shadow-inner" style="background: linear-gradient(135deg, #d97706 0%, #ea580c 50%, #b45309 100%) !important; color: #ffffff !important;" data-block-id="autoship_showcase">
-        <div class="max-w-6xl mx-auto px-4 flex flex-col md:flex-row items-center justify-between gap-8">
-            <div class="space-y-2 text-center md:text-right">
-                <span class="px-3 py-1 rounded-full bg-black/20 text-white text-[11px] font-black">مدل اختصاصی Chewy Autoship</span>
-                <h3 class="text-2xl sm:text-3xl font-black"><?= htmlspecialchars($autoshipBlock['heading']) ?></h3>
-                <p class="text-amber-100 text-xs sm:text-sm max-w-xl font-normal leading-relaxed"><?= htmlspecialchars($autoshipBlock['subtitle']) ?></p>
-            </div>
-            <div>
-                <a href="subscriptions.php" class="px-7 py-3.5 rounded-2xl bg-white hover:bg-slate-100 text-orange-950 font-black text-xs shadow-2xl transition-all flex items-center gap-2" style="background-color: #ffffff !important; color: #7c2d12 !important;">
-                    <span class="material-symbols-outlined text-base text-orange-600" style="color: #ea580c !important;">autorenew</span>
-                    <span style="color: #7c2d12 !important;">مشاهده پلن‌های تحویل دوره‌ای</span>
-                </a>
-            </div>
-        </div>
-    </section>
-    <?php endif; ?>
 
     <!-- About Section -->
-    <?php if (!empty($aboutBlock['enabled'])): ?>
-    <section id="about" class="py-16 bg-white border-b border-slate-200/60" data-block-id="about">
+    <?php if (!empty($aboutBlock['enabled']) || $isPreview): ?>
+    <section id="about" class="py-16 bg-white border-b border-slate-200/60 <?= (empty($aboutBlock['enabled']) && $isPreview) ? 'hidden' : '' ?>" style="<?= (empty($aboutBlock['enabled']) && $isPreview) ? 'display: none !important;' : '' ?>" data-block-id="about">
         <div class="max-w-6xl mx-auto px-4">
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
                 <div class="lg:col-span-8 space-y-4">
@@ -803,20 +825,18 @@ $ctaHref = match($tenantType) {
                         <span class="w-2.5 h-2.5 rounded-full bg-tenant-primary"></span>
                         <span>معرفی و سوابق رسمی</span>
                     </div>
-                    <h3 class="text-2xl sm:text-3xl font-black text-slate-900"><?= htmlspecialchars($aboutBlock['heading'] ?? 'درباره ما') ?></h3>
-                    <p class="text-slate-600 leading-relaxed text-sm sm:text-base font-normal">
+                    <h3 class="text-2xl sm:text-3xl font-black text-slate-900" id="live-about-heading"><?= htmlspecialchars($aboutBlock['heading'] ?? 'درباره ما') ?></h3>
+                    <p class="text-slate-600 leading-relaxed text-sm sm:text-base font-normal" id="live-about-text">
                         <?= nl2br(htmlspecialchars($aboutBlock['text'] ?? '')) ?>
                     </p>
 
-                    <?php if (!empty($aboutBlock['vet_council'])): ?>
-                    <div class="p-4 rounded-2xl bg-amber-50/70 border border-amber-200/80 flex items-center gap-3">
+                    <div class="p-4 rounded-2xl bg-amber-50/70 border border-amber-200/80 flex items-center gap-3 <?= empty($aboutBlock['vet_council']) ? 'hidden' : '' ?>" id="live-about-vet-council-wrap">
                         <span class="material-symbols-outlined text-amber-600 text-2xl">badge</span>
                         <div>
                             <div class="text-xs font-bold text-slate-800">شماره مجوز و پروانه نظام دامپزشکی</div>
-                            <div class="text-sm font-black text-amber-900 font-mono tracking-wider"><?= htmlspecialchars($aboutBlock['vet_council']) ?></div>
+                            <div class="text-sm font-black text-amber-900 font-mono tracking-wider" id="live-about-vet-council"><?= htmlspecialchars($aboutBlock['vet_council'] ?? '') ?></div>
                         </div>
                     </div>
-                    <?php endif; ?>
 
                     <?php if (!empty($aboutBlock['features']) && is_array($aboutBlock['features'])): ?>
                     <div class="pt-2 grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -875,15 +895,15 @@ $ctaHref = match($tenantType) {
     <?php endif; ?>
 
     <!-- Interactive Cost Estimator / Service Calculator Widget -->
-    <?php if (!empty($calculatorBlock['enabled']) && !empty($calcConfig)): ?>
-    <section id="calculator" class="py-16 bg-gradient-to-b from-slate-50 via-white to-slate-50 border-b border-slate-200/60" data-block-id="cost_calculator">
+    <?php if ((!empty($calculatorBlock['enabled']) && !empty($calcConfig)) || $isPreview): ?>
+    <section id="calculator" class="py-16 bg-gradient-to-b from-slate-50 via-white to-slate-50 border-b border-slate-200/60 <?= (empty($calculatorBlock['enabled']) && $isPreview) ? 'hidden' : '' ?>" style="<?= (empty($calculatorBlock['enabled']) && $isPreview) ? 'display: none !important;' : '' ?>" data-block-id="cost_calculator">
         <div class="max-w-6xl mx-auto px-4">
             <div class="text-center max-w-2xl mx-auto mb-12">
                 <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-50 border border-amber-200 text-amber-800 text-xs font-black mb-3">
                     <span class="material-symbols-outlined text-sm">calculate</span>
                     <span><?= htmlspecialchars($calculatorBlock['badge'] ?? 'محاسبه‌گر شفاف هزینه‌ها') ?></span>
                 </div>
-                <h3 class="text-2xl sm:text-3xl font-black text-slate-900"><?= htmlspecialchars($calculatorBlock['heading'] ?? 'تخمین هوشمند تعرفه خدمات بالینی و جراحی') ?></h3>
+                <h3 class="text-2xl sm:text-3xl font-black text-slate-900" id="live-calc-heading"><?= htmlspecialchars($calculatorBlock['heading'] ?? 'تخمین هوشمند تعرفه خدمات بالینی و جراحی') ?></h3>
                 <p class="text-xs sm:text-sm text-slate-500 mt-2 leading-relaxed">
                     <?= htmlspecialchars($calculatorBlock['subtitle'] ?? 'نوع حیوان و خدمت مورد نیاز را انتخاب کنید تا محدوده هزینه مصوب همراه با ۱۰٪ تخفیف ویژه رزرو آنلاین محاسبه گردد.') ?>
                 </p>
@@ -955,7 +975,7 @@ $ctaHref = match($tenantType) {
                             </div>
                             <span class="px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 text-[11px] font-black border border-emerald-500/30 flex items-center gap-1">
                                 <span class="material-symbols-outlined text-xs">savings</span>
-                                <span><?= (int)($calculatorBlock['discount_percent'] ?? 10) ?>٪ تخفیف آنلاین</span>
+                                <span id="live-calc-discount-badge"><?= (int)($calculatorBlock['discount_percent'] ?? 10) ?>٪ تخفیف آنلاین</span>
                             </span>
                         </div>
 
@@ -974,7 +994,7 @@ $ctaHref = match($tenantType) {
                                 <span class="line-through font-mono" id="calc-display-base-price">۲۵۰,۰۰۰ تومان</span>
                             </div>
                             <div class="flex items-center justify-between text-emerald-300 text-[11px]">
-                                <span>تخفیف ویژه رزرو آنلاین (<?= (int)($calculatorBlock['discount_percent'] ?? 10) ?>٪):</span>
+                                <span>تخفیف ویژه رزرو آنلاین (<span id="live-calc-discount-pct"><?= (int)($calculatorBlock['discount_percent'] ?? 10) ?></span>٪):</span>
                                 <span class="font-mono font-bold" id="calc-display-discount">-۲۵,۰۰۰ تومان</span>
                             </div>
                         </div>
@@ -1011,13 +1031,13 @@ $ctaHref = match($tenantType) {
     <?php endif; ?>
 
     <!-- Doctors & Specialists Roster Block -->
-    <?php if (!empty($doctorsBlock['enabled']) && !empty($tenantDoctors)): ?>
-    <section id="doctors" class="py-16 bg-white border-b border-slate-200/60" data-block-id="doctors_roster">
+    <?php if ((!empty($doctorsBlock['enabled']) && !empty($tenantDoctors)) || $isPreview): ?>
+    <section id="doctors" class="py-16 bg-white border-b border-slate-200/60 <?= (empty($doctorsBlock['enabled']) && $isPreview) ? 'hidden' : '' ?>" style="<?= (empty($doctorsBlock['enabled']) && $isPreview) ? 'display: none !important;' : '' ?>" data-block-id="doctors_roster">
         <div class="max-w-6xl mx-auto px-4">
             <div class="text-center max-w-xl mx-auto mb-12">
                 <span class="text-xs font-black text-tenant-primary uppercase tracking-wider">کادر تخصصی و پزشکان مقیم</span>
-                <h3 class="text-2xl sm:text-3xl font-black text-slate-900 mt-1"><?= htmlspecialchars($doctorsBlock['heading'] ?? 'پزشکان و جراحان مرکز') ?></h3>
-                <p class="text-xs sm:text-sm text-slate-500 mt-2"><?= htmlspecialchars($doctorsBlock['subtitle'] ?? 'دامپزشکان مجرب با پرونده سلامت ابری و امکان نوبت‌دهی آنلاین') ?></p>
+                <h3 class="text-2xl sm:text-3xl font-black text-slate-900 mt-1" id="live-doctors-heading"><?= htmlspecialchars($doctorsBlock['heading'] ?? 'پزشکان و جراحان مرکز') ?></h3>
+                <p class="text-xs sm:text-sm text-slate-500 mt-2" id="live-doctors-subtitle"><?= htmlspecialchars($doctorsBlock['subtitle'] ?? 'دامپزشکان مجرب با پرونده سلامت ابری و امکان نوبت‌دهی آنلاین') ?></p>
             </div>
 
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -1055,9 +1075,9 @@ $ctaHref = match($tenantType) {
                     </div>
 
                     <div class="pt-3 border-t border-slate-200/80">
-                        <a href="booking.php?doctor_id=<?= $docId ?>" class="w-full py-2.5 px-3 rounded-xl bg-tenant-light hover:bg-tenant-primary text-tenant-primary hover:text-white text-xs font-bold transition-colors flex items-center justify-center gap-1.5 shadow-sm">
+                        <a href="#booking" class="w-full py-2.5 px-3 rounded-xl bg-tenant-light hover:bg-tenant-primary text-tenant-primary hover:text-white text-xs font-bold transition-colors flex items-center justify-center gap-1.5 shadow-sm">
                             <span class="material-symbols-outlined text-sm">calendar_month</span>
-                            <span>رزرو مستقیم نوبت</span>
+                            <span>هماهنگی و رزرو نوبت</span>
                         </a>
                     </div>
                 </div>
@@ -1068,34 +1088,41 @@ $ctaHref = match($tenantType) {
     <?php endif; ?>
 
     <!-- Booking Widget Block (Doctors & Clinics) -->
-    <?php if (!empty($bookingBlock['enabled'])): ?>
-    <section id="booking" class="py-16 bg-gradient-to-r from-[#001a48] to-[#042866] bg-gradient-dark-navy text-white border-b border-slate-800" style="background: linear-gradient(135deg, #001a48 0%, #08296c 50%, #001438 100%) !important; color: #ffffff !important;" data-block-id="booking">
+    <?php if (!empty($bookingBlock['enabled']) || $isPreview): ?>
+    <?php 
+        $bookPhone = !empty(trim($contactBlock['phone'] ?? '')) ? $contactBlock['phone'] : (!empty(trim($headerBlock['phone'] ?? '')) ? $headerBlock['phone'] : '۰۲۱-۸۸۸۸۹۹۹۹');
+    ?>
+    <section id="booking" class="py-16 bg-gradient-to-r from-[#001a48] to-[#042866] bg-gradient-dark-navy text-white border-b border-slate-800 <?= (empty($bookingBlock['enabled']) && $isPreview) ? 'hidden' : '' ?>" style="background: linear-gradient(135deg, #001a48 0%, #08296c 50%, #001438 100%) !important; color: #ffffff !important; <?= (empty($bookingBlock['enabled']) && $isPreview) ? 'display: none !important;' : '' ?>" data-block-id="booking">
         <div class="max-w-6xl mx-auto px-4 flex flex-col md:flex-row items-center justify-between gap-8">
             <div class="space-y-3 text-center md:text-right">
-                <span class="px-3 py-1 rounded-full bg-white/10 text-amber-300 text-xs font-bold">سامانه نوبت‌دهی آنلاین ۲۴ ساعته</span>
-                <h3 class="text-2xl sm:text-3xl font-black"><?= htmlspecialchars($bookingBlock['heading'] ?? 'رزرو اینترنتی نوبت') ?></h3>
+                <span class="px-3 py-1 rounded-full bg-white/10 text-amber-300 text-xs font-bold">پذیرش و نوبت‌دهی مستقیم</span>
+                <h3 class="text-2xl sm:text-3xl font-black" id="live-booking-heading"><?= htmlspecialchars($bookingBlock['heading'] ?? 'رزرو اینترنتی و تلفنی نوبت') ?></h3>
                 <p class="text-slate-300 text-xs sm:text-sm max-w-xl font-normal leading-relaxed">
-                    <?= htmlspecialchars($bookingBlock['subtitle'] ?? 'تقویم نوبت‌های آزاد را مشاهده کنید و زمان مناسب خود را بدون فوت وقت رزرو نمایید.') ?>
+                    <?= htmlspecialchars($bookingBlock['subtitle'] ?? 'جهت رزرو نوبت ویزیت، مشاوره یا خدمات تشخیصی، مستقیماً با پذیرش مجموعه در ارتباط باشید.') ?>
                 </p>
             </div>
-            <div>
-                <a href="<?= $ctaHref ?>" class="px-8 py-4 rounded-2xl bg-[#fd8100] hover:bg-[#ea580c] text-white font-black text-sm shadow-2xl transition-all flex items-center gap-2" style="background-color: #fd8100 !important; color: #ffffff !important;">
-                    <span class="material-symbols-outlined text-lg" style="color: #ffffff !important;">calendar_today</span>
-                    <span style="color: #ffffff !important;">ورود به تقویم نوبت‌دهی</span>
+            <div class="flex flex-wrap items-center justify-center gap-3">
+                <a href="tel:<?= htmlspecialchars($bookPhone) ?>" class="px-7 py-3.5 rounded-2xl bg-[#fd8100] hover:bg-[#ea580c] text-white font-black text-xs shadow-2xl transition-all flex items-center gap-2" style="background-color: #fd8100 !important; color: #ffffff !important;">
+                    <span class="material-symbols-outlined text-base" style="color: #ffffff !important;">phone_in_talk</span>
+                    <span style="color: #ffffff !important;">تماس و رزرو فوری نوبت</span>
                 </a>
+                <button type="button" onclick="openNavHubModal()" class="px-5 py-3.5 rounded-2xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs backdrop-blur-md transition-all flex items-center gap-1.5 border border-white/20">
+                    <span class="material-symbols-outlined text-base">near_me</span>
+                    <span>مسیریابی و پیام‌رسان‌ها</span>
+                </button>
             </div>
         </div>
     </section>
     <?php endif; ?>
 
-    <!-- Storefront & Pharmacy Products Grid (Synced from ASENA Inventory) -->
-    <?php if (!empty($storefrontBlock['enabled']) && !empty($tenantProducts)): ?>
-    <section id="storefront" class="py-16 bg-white border-b border-slate-200/60" data-block-id="storefront">
+    <!-- Storefront & Pharmacy Products Grid (Tenant Inventory) -->
+    <?php if ((!empty($storefrontBlock['enabled']) && !empty($tenantProducts)) || $isPreview): ?>
+    <section id="storefront" class="py-16 bg-white border-b border-slate-200/60 <?= (empty($storefrontBlock['enabled']) && $isPreview) ? 'hidden' : '' ?>" style="<?= (empty($storefrontBlock['enabled']) && $isPreview) ? 'display: none !important;' : '' ?>" data-block-id="storefront">
         <div class="max-w-6xl mx-auto px-4">
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-10">
                 <div>
                     <span class="text-xs font-black text-tenant-primary uppercase tracking-wider">موجود در انبار اختصاصی</span>
-                    <h3 class="text-2xl sm:text-3xl font-black text-slate-900 mt-1"><?= htmlspecialchars($storefrontBlock['heading'] ?? 'ویترین محصولات و داروها') ?></h3>
+                    <h3 class="text-2xl sm:text-3xl font-black text-slate-900 mt-1" id="live-storefront-heading"><?= htmlspecialchars($storefrontBlock['heading'] ?? 'ویترین محصولات و داروها') ?></h3>
                 </div>
                 <div class="text-xs text-slate-500 flex items-center gap-1">
                     <span class="material-symbols-outlined text-emerald-600 text-sm">inventory_2</span>
@@ -1129,7 +1156,7 @@ $ctaHref = match($tenantType) {
                             <span class="text-xs sm:text-sm font-black text-slate-900"><?= number_format($pPrice) ?></span>
                             <span class="text-[10px] text-slate-400">تومان</span>
                         </div>
-                        <a href="product_details.php?id=<?= (int)$p['id'] ?>" class="w-8 h-8 rounded-xl bg-tenant-light hover:bg-tenant-primary text-tenant-primary hover:text-white flex items-center justify-center transition-colors" title="مشاهده و خرید">
+                        <a href="#contact" class="w-8 h-8 rounded-xl bg-tenant-light hover:bg-tenant-primary text-tenant-primary hover:text-white flex items-center justify-center transition-colors" title="سفارش و استعلام کالا">
                             <span class="material-symbols-outlined text-sm">shopping_cart</span>
                         </a>
                     </div>
@@ -1140,88 +1167,13 @@ $ctaHref = match($tenantType) {
     </section>
     <?php endif; ?>
 
-    <!-- Scientific Knowledge Base & Articles Block -->
-    <?php if (!empty($articlesBlock['enabled']) && !empty($tenantArticles)): ?>
-    <section id="articles" class="py-16 bg-slate-50 border-b border-slate-200/60" data-block-id="articles">
-        <div class="max-w-6xl mx-auto px-4">
-            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-10">
-                <div>
-                    <span class="text-xs font-black text-tenant-primary uppercase tracking-wider">دانشنامه علمی سلامت</span>
-                    <h3 class="text-2xl sm:text-3xl font-black text-slate-900 mt-1"><?= htmlspecialchars($articlesBlock['heading'] ?? 'مقالات و راهنماهای بالینی دامپزشکی') ?></h3>
-                    <p class="text-xs sm:text-sm text-slate-500 mt-1"><?= htmlspecialchars($articlesBlock['subtitle'] ?? 'آموزش‌های کاربردی مراقبت، تغذیه و پیشگیری با تایید علمی') ?></p>
-                </div>
-                <div>
-                    <a href="knowledge_base.php" target="_blank" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white hover:bg-slate-100 border border-slate-200 text-xs font-bold text-slate-700 shadow-sm transition-colors">
-                        <span>مشاهده کلیه مقالات</span>
-                        <span class="material-symbols-outlined text-xs">arrow_left</span>
-                    </a>
-                </div>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <?php foreach ($tenantArticles as $art): ?>
-                <div class="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between group">
-                    <div class="space-y-3">
-                        <div class="flex items-center justify-between text-[11px] text-slate-400">
-                            <span class="px-2.5 py-0.5 rounded-md bg-tenant-light text-tenant-primary font-bold"><?= htmlspecialchars($art['category_name'] ?? 'پزشکی و سلامت') ?></span>
-                            <span class="flex items-center gap-1 font-mono">
-                                <span class="material-symbols-outlined text-xs">schedule</span>
-                                <span><?= htmlspecialchars($art['read_time'] ?? '۵ دقیقه') ?></span>
-                            </span>
-                        </div>
-                        <h4 class="font-black text-slate-900 text-sm leading-snug group-hover:text-tenant-primary transition-colors">
-                            <?= htmlspecialchars($art['title']) ?>
-                        </h4>
-                        <p class="text-xs text-slate-500 leading-relaxed line-clamp-3">
-                            <?= htmlspecialchars($art['short_desc'] ?? '') ?>
-                        </p>
-                    </div>
-
-                    <div class="pt-4 mt-4 border-t border-slate-100 flex items-center justify-between text-xs">
-                        <span class="text-slate-400 text-[11px] font-mono"><?= htmlspecialchars($art['created_at']) ?></span>
-                        <a href="knowledge_base.php?article=<?= urlencode($art['slug']) ?>" target="_blank" class="text-tenant-primary font-bold hover:underline flex items-center gap-1">
-                            <span>مطالعه کامل</span>
-                            <span class="material-symbols-outlined text-xs">arrow_left</span>
-                        </a>
-                    </div>
-                </div>
-                <?php endforeach; ?>
-            </div>
-        </div>
-    </section>
-    <?php endif; ?>
-
-    <!-- ASENA Loyalty Club Reward Strip -->
-    <?php if (!empty($loyaltyBlock['enabled'])): ?>
-    <section class="py-10 bg-gradient-to-r from-amber-500 via-amber-600 to-orange-600 bg-gradient-amber text-white shadow-inner border-b border-amber-600" style="background: linear-gradient(135deg, #d97706 0%, #ea580c 100%) !important; color: #ffffff !important;" data-block-id="loyalty_club">
-        <div class="max-w-6xl mx-auto px-4 flex flex-col md:flex-row items-center justify-between gap-6">
-            <div class="flex items-center gap-4 text-center md:text-right">
-                <div class="w-16 h-16 rounded-2xl bg-white/20 backdrop-blur-md border border-white/30 flex items-center justify-center shrink-0 shadow-lg">
-                    <span class="material-symbols-outlined text-3xl text-amber-200">loyalty</span>
-                </div>
-                <div>
-                    <div class="inline-block px-3 py-0.5 rounded-full bg-black/20 text-amber-100 text-[10px] font-black mb-1">باشگاه مراجعین وفادار (VIP Club)</div>
-                    <h3 class="text-lg sm:text-xl font-black"><?= htmlspecialchars($loyaltyBlock['heading'] ?? '۵۰ امتیاز پاداش با هر ثبت نوبت یا خرید آنلاین') ?></h3>
-                    <p class="text-xs text-amber-100 mt-1 max-w-xl"><?= htmlspecialchars($loyaltyBlock['subtitle'] ?? 'امتیازهای دریافتی بلافاصله در کیف‌پول ذخیره شده و در ویزیت‌ها و سفارش‌های بعدی به عنوان تخفیف نقدی قابل کسر است.') ?></p>
-                </div>
-            </div>
-            <div>
-                <a href="<?= $ctaHref ?>" class="px-6 py-3.5 rounded-xl bg-white text-orange-950 font-black text-xs hover:bg-amber-50 shadow-xl transition-all flex items-center gap-1.5 shrink-0" style="background-color: #ffffff !important; color: #7c2d12 !important;">
-                    <span class="material-symbols-outlined text-base" style="color: #d97706 !important;">stars</span>
-                    <span style="color: #7c2d12 !important;">شروع دریافت امتیازات</span>
-                </a>
-            </div>
-        </div>
-    </section>
-    <?php endif; ?>
-
     <!-- Verified Patient & Client Reviews -->
-    <?php if (!empty($reviewsBlock['enabled']) && !empty($tenantReviews)): ?>
-    <section id="reviews" class="py-16 bg-white border-b border-slate-200/60" data-block-id="reviews">
+    <?php if ((!empty($reviewsBlock['enabled']) && !empty($tenantReviews)) || $isPreview): ?>
+    <section id="reviews" class="py-16 bg-white border-b border-slate-200/60 <?= (empty($reviewsBlock['enabled']) && $isPreview) ? 'hidden' : '' ?>" style="<?= (empty($reviewsBlock['enabled']) && $isPreview) ? 'display: none !important;' : '' ?>" data-block-id="reviews">
         <div class="max-w-6xl mx-auto px-4">
             <div class="text-center max-w-xl mx-auto mb-12">
                 <span class="text-xs font-black text-tenant-primary uppercase tracking-wider">اعتبار سنجی مراجعین</span>
-                <h3 class="text-2xl sm:text-3xl font-black text-slate-900 mt-1"><?= htmlspecialchars($reviewsBlock['heading'] ?? 'نظرات و بازخورد سرپرستان پت') ?></h3>
+                <h3 class="text-2xl sm:text-3xl font-black text-slate-900 mt-1" id="live-reviews-heading"><?= htmlspecialchars($reviewsBlock['heading'] ?? 'نظرات و بازخورد سرپرستان پت') ?></h3>
                 <p class="text-xs sm:text-sm text-slate-500 mt-2"><?= htmlspecialchars($reviewsBlock['subtitle'] ?? 'تجربه مراجعین واقعی با استناد به ویزیت‌ها و مراجعات حضوری ثبت‌شده') ?></p>
             </div>
 
@@ -1268,12 +1220,12 @@ $ctaHref = match($tenantType) {
     <?php endif; ?>
 
     <!-- Clinical & Store FAQ Accordion Block -->
-    <?php if (!empty($faqBlock['enabled']) && !empty($tenantFaqs)): ?>
-    <section id="faq" class="py-16 bg-white border-b border-slate-200/60" data-block-id="faq">
+    <?php if ((!empty($faqBlock['enabled']) && !empty($tenantFaqs)) || $isPreview): ?>
+    <section id="faq" class="py-16 bg-white border-b border-slate-200/60 <?= (empty($faqBlock['enabled']) && $isPreview) ? 'hidden' : '' ?>" style="<?= (empty($faqBlock['enabled']) && $isPreview) ? 'display: none !important;' : '' ?>" data-block-id="faq">
         <div class="max-w-4xl mx-auto px-4">
             <div class="text-center max-w-xl mx-auto mb-12">
                 <span class="text-xs font-black text-tenant-primary uppercase tracking-wider">راهنمای مراجعین و بیماران</span>
-                <h3 class="text-2xl sm:text-3xl font-black text-slate-900 mt-1"><?= htmlspecialchars($faqBlock['heading'] ?? 'پرسش‌های متداول') ?></h3>
+                <h3 class="text-2xl sm:text-3xl font-black text-slate-900 mt-1" id="live-faq-heading"><?= htmlspecialchars($faqBlock['heading'] ?? 'پرسش‌های متداول') ?></h3>
                 <p class="text-xs sm:text-sm text-slate-500 mt-2"><?= htmlspecialchars($faqBlock['subtitle'] ?? 'پاسخ به سوالات متداول پیرامون نوبت‌دهی آنلاین، نسخه‌های الکترونیک و شرایط اورژانس') ?></p>
             </div>
 
@@ -1337,7 +1289,7 @@ $ctaHref = match($tenantType) {
         <div class="max-w-6xl mx-auto px-4">
             <div class="text-center max-w-xl mx-auto mb-10">
                 <span class="text-xs font-black text-tenant-primary uppercase tracking-wider">راه‌های ارتباطی و مسیریابی</span>
-                <h3 class="text-2xl sm:text-3xl font-black text-slate-900 mt-1"><?= htmlspecialchars($contactBlock['heading'] ?? 'اطلاعات تماس و نشانی') ?></h3>
+                <h3 class="text-2xl sm:text-3xl font-black text-slate-900 mt-1" id="live-contact-heading"><?= htmlspecialchars($contactBlock['heading'] ?? 'اطلاعات تماس و نشانی') ?></h3>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
@@ -1349,7 +1301,7 @@ $ctaHref = match($tenantType) {
                         </div>
                         <div>
                             <h4 class="font-bold text-slate-900 text-sm mb-1">نشانی مراجعه حضوری</h4>
-                            <p class="text-xs text-slate-500 leading-relaxed"><?= htmlspecialchars($rawAddress) ?></p>
+                            <p class="text-xs text-slate-500 leading-relaxed" id="live-contact-address"><?= htmlspecialchars($rawAddress) ?></p>
                         </div>
                     </div>
                     <div class="pt-4 mt-4 border-t border-slate-100 flex items-center justify-between">
@@ -1372,7 +1324,7 @@ $ctaHref = match($tenantType) {
                         </div>
                         <div>
                             <h4 class="font-bold text-slate-900 text-sm mb-1">ساعات کاری و پذیرش</h4>
-                            <p class="text-xs text-slate-500 leading-relaxed"><?= htmlspecialchars($hoursDisplay) ?></p>
+                            <p class="text-xs text-slate-500 leading-relaxed" id="live-contact-hours"><?= htmlspecialchars($hoursDisplay) ?></p>
                         </div>
                     </div>
                     <div class="pt-4 mt-4 border-t border-slate-100 flex items-center justify-between text-[11px]">
@@ -1393,10 +1345,8 @@ $ctaHref = match($tenantType) {
                         <div>
                             <h4 class="font-bold text-slate-900 text-sm mb-1">تلفن‌های تماس</h4>
                             <div class="space-y-1">
-                                <div><a href="tel:<?= htmlspecialchars($phoneDisplay) ?>" class="text-xs font-bold text-slate-700 hover:text-tenant-primary font-mono" dir="ltr"><?= htmlspecialchars($phoneDisplay) ?></a></div>
-                                <?php if (!empty($emergencyDisplay)): ?>
-                                    <div class="text-[11px] text-red-600 font-bold">اورژانس: <span dir="ltr" class="font-mono"><?= htmlspecialchars($emergencyDisplay) ?></span></div>
-                                <?php endif; ?>
+                                <div><a href="tel:<?= htmlspecialchars($phoneDisplay) ?>" class="text-xs font-bold text-slate-700 hover:text-tenant-primary font-mono" dir="ltr" id="live-contact-phone"><?= htmlspecialchars($phoneDisplay) ?></a></div>
+                                <div class="text-[11px] text-red-600 font-bold <?= empty($emergencyDisplay) ? 'hidden' : '' ?>" id="live-contact-emergency-wrap">اورژانس: <span dir="ltr" class="font-mono" id="live-contact-emergency"><?= htmlspecialchars($emergencyDisplay) ?></span></div>
                             </div>
                         </div>
                     </div>
@@ -1456,7 +1406,7 @@ $ctaHref = match($tenantType) {
     <footer class="bg-white py-10 border-t border-slate-200" data-block-id="footer">
         <div class="max-w-6xl mx-auto px-4 flex flex-col md:flex-row items-center justify-between gap-6 text-center md:text-right">
             <div>
-                <p class="text-xs text-slate-500 font-medium">
+                <p class="text-xs text-slate-500 font-medium" id="live-footer-copyright">
                     <?= htmlspecialchars($footerBlock['copyright_text'] ?? "کلیه حقوق برای {$site['site_title']} محفوظ است.") ?>
                 </p>
                 <p class="text-[11px] text-slate-400 mt-1">
@@ -1716,6 +1666,343 @@ $ctaHref = match($tenantType) {
             if (blockEl) {
                 const blockId = blockEl.getAttribute('data-block-id');
                 window.parent.postMessage({ type: 'BLOCK_CLICKED', blockId: blockId }, '*');
+            }
+        });
+
+        // Interactive Before/After slider updater
+        function updateBeforeAfterSlider(val) {
+            const beforeLayer = document.getElementById('ba-before-layer');
+            const dividerLine = document.getElementById('ba-divider-line');
+            if (beforeLayer && dividerLine) {
+                beforeLayer.style.width = val + '%';
+                dividerLine.style.right = val + '%';
+            }
+        }
+
+        // Real-time In-place Live Preview Synchronization (Zero Page Refresh)
+        window.applyLiveFieldUpdate = function(field, value, extra) {
+            switch (field) {
+                case 'site_title': {
+                    const t = (value && value.trim()) ? value : 'وب‌سایت اختصاصی';
+                    const topTitle = document.getElementById('live-topbar-title');
+                    if (topTitle) topTitle.innerText = `${t} | پذیرش فعال و نوبت‌دهی آنلاین`;
+                    const headerTitle = document.getElementById('live-header-title');
+                    if (headerTitle) headerTitle.innerText = t;
+                    const heroTitle = document.getElementById('live-hero-title');
+                    if (heroTitle && (!heroTitle.getAttribute('data-custom') || heroTitle.innerText === '')) heroTitle.innerText = t;
+                    const heroImgTitle = document.getElementById('live-hero-overlay-title');
+                    if (heroImgTitle) heroImgTitle.innerText = t;
+                    const footerCopy = document.getElementById('live-footer-copyright');
+                    if (footerCopy) footerCopy.innerText = `کلیه حقوق برای ${t} محفوظ است.`;
+                    break;
+                }
+                case 'site_tagline': {
+                    const taglineEl = document.getElementById('live-header-tagline');
+                    if (taglineEl) {
+                        taglineEl.innerText = value || '';
+                        if (value && value.trim()) {
+                            taglineEl.classList.remove('hidden');
+                        } else {
+                            taglineEl.classList.add('hidden');
+                        }
+                    }
+                    break;
+                }
+                case 'site_logo': {
+                    const headerLogo = document.getElementById('live-header-logo');
+                    if (headerLogo && value) headerLogo.src = value;
+                    break;
+                }
+                case 'theme_palette': {
+                    const palettes = {
+                        emerald: { primary: '#059669', primary_hover: '#047857', primary_light: '#ecfdf5', primary_border: '#a7f3d0', accent: '#fd8100', subtle_glow: 'rgba(5, 150, 105, 0.15)' },
+                        navy: { primary: '#001a48', primary_hover: '#002666', primary_light: '#eff6ff', primary_border: '#bfdbfe', accent: '#fd8100', subtle_glow: 'rgba(0, 26, 72, 0.15)' },
+                        orange: { primary: '#ea580c', primary_hover: '#c2410c', primary_light: '#fff7ed', primary_border: '#fed7aa', accent: '#001a48', subtle_glow: 'rgba(234, 88, 12, 0.15)' },
+                        purple: { primary: '#7c3aed', primary_hover: '#6d28d9', primary_light: '#f5f3ff', primary_border: '#ddd6fe', accent: '#ea580c', subtle_glow: 'rgba(124, 58, 237, 0.15)' },
+                        aurora: { primary: '#0891b2', primary_hover: '#0e7490', primary_light: '#ecfeff', primary_border: '#a5f3fc', accent: '#001a48', subtle_glow: 'rgba(8, 145, 178, 0.15)' }
+                    };
+                    const p = palettes[value] || palettes.emerald;
+                    const r = document.documentElement;
+                    r.style.setProperty('--tenant-primary', p.primary);
+                    r.style.setProperty('--tenant-primary-hover', p.primary_hover);
+                    r.style.setProperty('--tenant-primary-light', p.primary_light);
+                    r.style.setProperty('--tenant-primary-border', p.primary_border);
+                    r.style.setProperty('--tenant-accent', p.accent);
+                    r.style.setProperty('--tenant-glow', p.subtle_glow);
+                    break;
+                }
+                case 'block_toggle': {
+                    const block = document.querySelector(`[data-block-id="${extra}"]`);
+                    if (block) {
+                        if (value) {
+                            block.style.removeProperty('display');
+                            block.classList.remove('hidden');
+                        } else {
+                            block.style.setProperty('display', 'none', 'important');
+                            block.classList.add('hidden');
+                        }
+                    }
+                    const navLink = document.querySelector(`[data-nav-link="${extra}"]`);
+                    if (navLink) {
+                        navLink.classList.toggle('hidden', !value);
+                    }
+                    break;
+                }
+                case 'emergency_headline': {
+                    const el = document.getElementById('live-emergency-headline');
+                    if (el) el.innerText = value || 'اورژانس ۲۴ ساعته و مراقبت‌های فوری حیوانات خانگی';
+                    break;
+                }
+                case 'emergency_subheadline': {
+                    const el = document.getElementById('live-emergency-subheadline');
+                    if (el) el.innerText = value || '';
+                    break;
+                }
+                case 'emergency_phone': {
+                    const el = document.getElementById('live-emergency-phone');
+                    if (el) el.innerText = value || '';
+                    const link = document.getElementById('live-emergency-phone-link');
+                    if (link) {
+                        link.href = `tel:${value}`;
+                        link.classList.toggle('hidden', !value);
+                    }
+                    const topEm = document.getElementById('live-topbar-em-phone');
+                    if (topEm) topEm.innerText = value || '';
+                    const topEmWrap = document.getElementById('live-topbar-em-wrap');
+                    if (topEmWrap) topEmWrap.classList.toggle('hidden', !value);
+                    break;
+                }
+                case 'hero_badge': {
+                    const el = document.getElementById('live-hero-badge');
+                    if (el) el.innerText = value || '';
+                    const wrap = document.getElementById('live-hero-badge-wrap');
+                    if (wrap) wrap.style.display = (value && value.trim()) ? 'inline-flex' : 'none';
+                    const ov = document.getElementById('live-hero-overlay-badge');
+                    if (ov) ov.innerText = value || 'پذیرش رسمی';
+                    break;
+                }
+                case 'hero_title': {
+                    const el = document.getElementById('live-hero-title');
+                    if (el) {
+                        el.innerText = value || (document.getElementById('live-header-title')?.innerText || '');
+                        el.setAttribute('data-custom', '1');
+                    }
+                    break;
+                }
+                case 'hero_subtitle': {
+                    const el = document.getElementById('live-hero-subtitle');
+                    if (el) el.innerText = value || '';
+                    break;
+                }
+                case 'hero_cta': {
+                    const el = document.getElementById('live-hero-cta');
+                    if (el) el.innerText = value || 'رزرو آنلاین نوبت';
+                    break;
+                }
+                case 'hero_image':
+                case 'banner_image': {
+                    const el = document.getElementById('live-hero-image');
+                    if (el && value) el.src = value;
+                    break;
+                }
+                case 'duty_hours': {
+                    const el = document.getElementById('live-duty-hours-text');
+                    if (el) el.innerText = `ساعات کاری اعلامی: ${value || '۸:۳۰ الی ۲۲:۳۰'}`;
+                    const contactH = document.getElementById('live-contact-hours');
+                    if (contactH && value) contactH.innerText = value;
+                    break;
+                }
+                case 'before_after_heading': {
+                    const el = document.getElementById('live-ba-heading');
+                    if (el) el.innerText = value || 'مقایسه نتایج قبل و بعد از مراقبت تخصصی';
+                    break;
+                }
+                case 'before_after_subtitle': {
+                    const el = document.getElementById('live-ba-subtitle');
+                    if (el) el.innerText = value || '';
+                    break;
+                }
+                case 'before_after_service_label': {
+                    const el = document.getElementById('live-ba-service-badge');
+                    if (el) el.innerText = value || 'نتایج ملموس خدمات و جراحی‌ها';
+                    break;
+                }
+                case 'before_after_label_before': {
+                    const el = document.getElementById('live-ba-label-before');
+                    if (el) el.innerText = value || 'قبل از درمان';
+                    break;
+                }
+                case 'before_after_label_after': {
+                    const el = document.getElementById('live-ba-label-after');
+                    if (el) el.innerText = value || 'پس از درمان';
+                    break;
+                }
+                case 'before_after_image_before': {
+                    const el = document.getElementById('live-ba-img-before');
+                    if (el && value) el.src = value;
+                    break;
+                }
+                case 'before_after_image_after': {
+                    const el = document.getElementById('live-ba-img-after');
+                    if (el && value) el.src = value;
+                    break;
+                }
+                case 'trust_anchor_toggle': {
+                    const el = document.getElementById('live-trust-anchor');
+                    if (el) el.style.display = value ? 'inline-flex' : 'none';
+                    break;
+                }
+                case 'ambient_mode': {
+                    document.body.classList.toggle('atmospheric-bg', value === 'atmospheric_glow');
+                    break;
+                }
+                case 'bento_heading': {
+                    const el = document.getElementById('live-bento-heading');
+                    if (el) el.innerText = value || 'تجهیزات مدرن و ظرفیت‌های بالینی مرکز';
+                    break;
+                }
+                case 'about_heading': {
+                    const el = document.getElementById('live-about-heading');
+                    if (el) el.innerText = value || 'درباره ما';
+                    break;
+                }
+                case 'about_text': {
+                    const el = document.getElementById('live-about-text');
+                    if (el) el.innerHTML = (value || '').replace(/\n/g, '<br>');
+                    break;
+                }
+                case 'about_vet_council': {
+                    const el = document.getElementById('live-about-vet-council');
+                    if (el) el.innerText = value || '';
+                    const wrap = document.getElementById('live-about-vet-council-wrap');
+                    if (wrap) wrap.classList.toggle('hidden', !value || !value.trim());
+                    break;
+                }
+                case 'calc_heading': {
+                    const el = document.getElementById('live-calc-heading');
+                    if (el) el.innerText = value || 'تخمین هوشمند تعرفه خدمات بالینی و جراحی';
+                    break;
+                }
+                case 'calc_discount': {
+                    const pct = parseInt(value) || 0;
+                    const badge = document.getElementById('live-calc-discount-badge');
+                    if (badge) badge.innerText = `٪${pct} تخفیف آنلاین`;
+                    const pctSpan = document.getElementById('live-calc-discount-pct');
+                    if (pctSpan) pctSpan.innerText = pct;
+                    discountPercent = pct;
+                    if (typeof recalculateCost === 'function') recalculateCost();
+                    break;
+                }
+                case 'doctors_heading': {
+                    const el = document.getElementById('live-doctors-heading');
+                    if (el) el.innerText = value || 'پزشکان و جراحان مرکز';
+                    break;
+                }
+                case 'doctors_subtitle': {
+                    const el = document.getElementById('live-doctors-subtitle');
+                    if (el) el.innerText = value || '';
+                    break;
+                }
+                case 'booking_heading': {
+                    const el = document.getElementById('live-booking-heading');
+                    if (el) el.innerText = value || 'رزرو اینترنتی نوبت';
+                    break;
+                }
+                case 'storefront_heading': {
+                    const el = document.getElementById('live-storefront-heading');
+                    if (el) el.innerText = value || 'ویترین محصولات و داروها';
+                    break;
+                }
+
+                case 'reviews_heading': {
+                    const el = document.getElementById('live-reviews-heading');
+                    if (el) el.innerText = value || 'نظرات و بازخورد سرپرستان پت';
+                    break;
+                }
+                case 'faq_heading': {
+                    const el = document.getElementById('live-faq-heading');
+                    if (el) el.innerText = value || 'پرسش‌های متداول';
+                    break;
+                }
+                case 'contact_heading': {
+                    const el = document.getElementById('live-contact-heading');
+                    if (el) el.innerText = value || 'اطلاعات تماس و نشانی';
+                    break;
+                }
+                case 'contact_address': {
+                    const el = document.getElementById('live-contact-address');
+                    if (el) el.innerText = value || 'تهران، خیابان ولیعصر، نرسیده به میدان ونک';
+                    break;
+                }
+                case 'contact_hours': {
+                    const el = document.getElementById('live-contact-hours');
+                    if (el) el.innerText = value || 'شنبه تا پنجشنبه ۸ الی ۲۲';
+                    break;
+                }
+                case 'contact_phone': {
+                    const el = document.getElementById('live-contact-phone');
+                    if (el) {
+                        el.innerText = value || '۰۲۱-۸۸۸۸۹۹۹۹';
+                        el.href = `tel:${value}`;
+                    }
+                    const topPhone = document.getElementById('live-topbar-phone');
+                    if (topPhone) topPhone.innerText = value || '';
+                    const topPhoneWrap = document.getElementById('live-topbar-phone-wrap');
+                    if (topPhoneWrap) topPhoneWrap.classList.toggle('hidden', !value);
+                    const hdrPhone = document.getElementById('live-header-phone');
+                    if (hdrPhone) hdrPhone.innerText = value || '';
+                    const hdrPhoneLink = document.getElementById('live-header-phone-link');
+                    if (hdrPhoneLink) hdrPhoneLink.classList.toggle('hidden', !value);
+                    break;
+                }
+                case 'contact_emergency': {
+                    const el = document.getElementById('live-contact-emergency');
+                    if (el) el.innerText = value || '';
+                    const wrap = document.getElementById('live-contact-emergency-wrap');
+                    if (wrap) wrap.classList.toggle('hidden', !value || !value.trim());
+                    const topEm = document.getElementById('live-topbar-em-phone');
+                    if (topEm) topEm.innerText = value || '';
+                    const topEmWrap = document.getElementById('live-topbar-em-wrap');
+                    if (topEmWrap) topEmWrap.classList.toggle('hidden', !value);
+                    break;
+                }
+                case 'storefront_limit': {
+                    const limit = parseInt(value) || 6;
+                    const cards = document.querySelectorAll('#storefront .grid > div');
+                    cards.forEach((card, idx) => {
+                        card.classList.toggle('hidden', idx >= limit);
+                    });
+                    break;
+                }
+                case 'scroll_to_block': {
+                    const block = document.querySelector(`[data-block-id="${value}"]`) || document.getElementById(value);
+                    if (block) {
+                        block.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                    break;
+                }
+                case 'reorder_blocks': {
+                    if (Array.isArray(value)) {
+                        const body = document.body;
+                        value.forEach(blockId => {
+                            const block = document.querySelector(`[data-block-id="${blockId}"]`);
+                            if (block && block.parentElement === body) {
+                                body.appendChild(block);
+                            }
+                        });
+                        const footer = document.querySelector('[data-block-id="footer"]');
+                        if (footer && footer.parentElement === body) {
+                            body.appendChild(footer);
+                        }
+                    }
+                    break;
+                }
+            }
+        };
+
+        window.addEventListener('message', function(e) {
+            if (e.data && e.data.type === 'STUDIO_LIVE_UPDATE') {
+                window.applyLiveFieldUpdate(e.data.field, e.data.value, e.data.extra);
             }
         });
         <?php endif; ?>

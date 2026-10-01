@@ -47,13 +47,25 @@ Every tenant website must reflect one of the 5 official ASENA capability tiers d
 
 ## 5. Bespoke Luxury Feel & Anti-Generic Mandates
 
+- **Symbiotic Brand Aura (Preserve ASENA Trust + Bespoke Tenant Identity)**:
+  - **Never totally disconnect from ASENA DNA:** The tenant website must maintain ASENA's foundational credibility:
+    - Official Verified Member Badge (`عضو رسمی شبکه یکپارچه سلامت آسنا`).
+    - Shaparak & Escrow Payment Security (`پرداخت امن بانکی و امانت‌داری مالی سامانه آسنا`).
+    - Harmonious typography (`Geist` & `Vazirmatn`) and core luxury palette foundation (`#001a48` corporate navy, `#fd8100` warm accent).
+  - **Distinct Tenant Aura:** The clinic/practitioner must feel independent and prestigious:
+    - Dedicated hero storytelling, practitioner signature, custom photography, and tailored service menus.
+    - Bespoke Curated Auras: Offer distinct visual atmospheres (Emerald Clinical, Hospital Corporate Navy, Vibrant Pet Companion, Midnight Velvet Luxury, Pure Aurora) that customize accent lighting without breaking brand prestige.
+    - High-conversion interactive widgets (Cost Estimator, Duty Countdown, Emergency Hotline, Before/After Interactive Sliders).
+
 - **Layered Visual Depth & Ambient Lighting**: Never render tenant websites as flat gray-and-white card stacks. Every section must have clear visual depth, subtle mesh radial lighting, and glassmorphic micro-borders.
 - **Layered Floating Badges over Imagery**: Every clinical hero section must feature layered floating trust badges (e.g. `⭐️ ۴.۹ از ۱۸۰ نظر`, `🩺 بورد تخصصی جراحی و داخلی`, `⚡ پاسخگویی فوری در ۵ دقیقه`).
 - **Interactive High-Intent Conversion Tools**:
   1. **Service Cost Estimator / Price Calculator Widget**: Pet parents can select pet type (Dog, Cat, Bird, Exotic) and service (General checkup, comprehensive vaccination, dental cleaning, surgery, ultrasound) to receive an instant transparent fee estimate and 1-click discount booking.
-  2. **Dynamic Open/Closed Duty Widget**: Automatically computes whether the clinic is currently open, remaining minutes until shift closure, and the next available booking slot.
-  3. **24/7 Red Emergency Care Banner**: Prominent crimson alert banner with 1-tap dialer for poisonings, vehicular accidents, and urgent clinical triage.
-  4. **Structured FAQ Accordion**: Addresses top pet owner questions (fasting rules, pet passport requirements, home visits, medication cold-chain shipping).
-  5. **1-Tap Navigation Hub**: Direct modal routing to Neshan, Balad, Waze, and Google Maps, paired with instant chat buttons for WhatsApp, Telegram, Etaa, and Bale.
+  2. **Interactive Before/After Comparison Slider**: High-conversion visual comparison tool with touch/mouse draggable divider for dental scaling, surgical recovery, and grooming transformations.
+  3. **Dynamic Open/Closed Duty Widget**: Automatically computes whether the clinic is currently open, remaining minutes until shift closure, and the next available booking slot.
+  4. **24/7 Red Emergency Care Banner**: Prominent crimson alert banner with 1-tap dialer for poisonings, vehicular accidents, and urgent clinical triage.
+  5. **Structured FAQ Accordion**: Addresses top pet owner questions (fasting rules, pet passport requirements, home visits, medication cold-chain shipping).
+  6. **1-Tap Navigation Hub**: Direct modal routing to Neshan, Balad, Waze, and Google Maps, paired with instant chat buttons for WhatsApp, Telegram, Etaa, and Bale.
 - **Studio Drag/Arrow Block Reordering & Visibility Toggles**: The site builder studio must empower users to reorder any section via Up/Down buttons and toggle section visibility with single-click switches.
+
 

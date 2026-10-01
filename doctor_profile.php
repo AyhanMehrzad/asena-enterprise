@@ -166,7 +166,7 @@ require_once __DIR__ . '/includes/header.php';
                             </div>
                             <div>
                                 <div class="text-xs font-bold text-slate-800">وب‌سایت رسمی و اختصاصی دکتر <?= htmlspecialchars($doctor['name']) ?></div>
-                                <div class="text-[11px] text-emerald-700 font-mono" dir="ltr"><?= htmlspecialchars($doctorSite['slug']) ?>.asena.company</div>
+                                <div class="text-[11px] text-emerald-700 font-mono" dir="ltr"><?= htmlspecialchars($doctorSite['slug']) ?>.ir</div>
                             </div>
                         </div>
                         <a href="site.php?slug=<?= urlencode($doctorSite['slug']) ?>" target="_blank" class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 shrink-0">

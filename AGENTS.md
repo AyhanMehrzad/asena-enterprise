@@ -58,8 +58,10 @@ This document establishes the foundational architectural rules, coding standards
 
 12. **Tenant Showcase & Site Builder Standards**:
     - Strictly follow [`.agents/rules/tenant_showcase_and_site_builder_standards.md`](file:///.agents/rules/tenant_showcase_and_site_builder_standards.md).
+    - Enforce the "Symbiotic Brand Aura" pattern: maintain ASENA's foundational trust anchor (verified network badge, escrow security, typography) while empowering tenants with a bespoke, money-worthy aura.
     - Enforce 5-tier archetype alignment (Basic, Standard, Premium, Pharmacy, Enterprise) mapping directly to `config/tiers.php`.
     - Prioritize mobile thumb-zone sticky CTAs, 48dp touch targets, and responsive dual-mode customizer studio.
     - Implement agency-grade visual depth with bento grids, trust counter strips, and live pulsating duty indicators.
+
 
 

@@ -131,7 +131,7 @@ $publicUrl = "../site.php?slug=" . urlencode($site['slug']);
                 <div class="text-[10px] sm:text-[11px] text-slate-500 flex items-center gap-1">
                     <span class="hidden sm:inline">آدرس ساب‌دامین:</span>
                     <a href="<?= $publicUrl ?>" target="_blank" class="font-mono text-blue-600 hover:underline flex items-center gap-0.5 truncate max-w-[150px] sm:max-w-xs" id="header-site-url">
-                        <span><?= $slug ?>.asena.company</span>
+                        <span><?= $slug ?>.ir</span>
                         <span class="material-symbols-outlined text-xs">open_in_new</span>
                     </a>
                 </div>
@@ -392,6 +392,61 @@ $publicUrl = "../site.php?slug=" . urlencode($site['slug']);
                         </div>
                     </div>
 
+                    <!-- Interactive Before/After Comparison Block -->
+                    <div class="border border-slate-200 rounded-2xl overflow-hidden bg-white shadow-sm" id="section-before_after">
+                        <div onclick="toggleAccordion('before_after')" class="w-full p-4 flex items-center justify-between bg-slate-50 hover:bg-slate-100 transition-colors text-right cursor-pointer select-none">
+                            <div class="flex items-center gap-2.5">
+                                <span class="material-symbols-outlined text-emerald-600 text-lg">compare</span>
+                                <span class="text-xs font-bold text-slate-800">اسلایدر مقایسه نتایج قبل و بعد</span>
+                            </div>
+                            <div class="flex items-center gap-1" onclick="event.stopPropagation()">
+                                <button type="button" onclick="moveStudioBlock('section-before_after', 'up')" title="انتقال به بالا" class="w-6 h-6 rounded-lg bg-slate-200/70 hover:bg-slate-300 text-slate-600 flex items-center justify-center transition-colors">
+                                    <span class="material-symbols-outlined text-xs">keyboard_arrow_up</span>
+                                </button>
+                                <button type="button" onclick="moveStudioBlock('section-before_after', 'down')" title="انتقال به پایین" class="w-6 h-6 rounded-lg bg-slate-200/70 hover:bg-slate-300 text-slate-600 flex items-center justify-center transition-colors">
+                                    <span class="material-symbols-outlined text-xs">keyboard_arrow_down</span>
+                                </button>
+                                <span class="material-symbols-outlined text-slate-400 text-base transition-transform" id="arrow-before_after">expand_more</span>
+                            </div>
+                        </div>
+                        <div class="p-4 space-y-3 border-t border-slate-100 hidden" id="content-before_after">
+                            <label class="flex items-center gap-2 text-xs font-bold text-slate-700">
+                                <input type="checkbox" id="input-ba-enabled" <?= !empty($layout['before_after']['enabled']) ? 'checked' : '' ?> class="rounded text-emerald-600">
+                                <span>فعال‌سازی اسلایدر مقایسه نتایج قبل و بعد</span>
+                            </label>
+                            <div>
+                                <label class="block text-[11px] font-bold text-slate-700 mb-1">تیتر بخش</label>
+                                <input type="text" id="input-ba-heading" value="<?= htmlspecialchars($layout['before_after']['heading'] ?? 'مقایسه نتایج قبل و بعد از مراقبت تخصصی') ?>" class="w-full text-xs p-2.5 rounded-xl border border-slate-200 focus:border-emerald-600 focus:outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-bold text-slate-700 mb-1">توضیح کوتاه</label>
+                                <input type="text" id="input-ba-subtitle" value="<?= htmlspecialchars($layout['before_after']['subtitle'] ?? 'مشاهده تفاوت کیفیت خدمات قبل و بعد از رسیدگی تخصصی و بالینی') ?>" class="w-full text-xs p-2.5 rounded-xl border border-slate-200 focus:border-emerald-600 focus:outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-bold text-slate-700 mb-1">برچسب خدمت / جراحی</label>
+                                <input type="text" id="input-ba-service-label" value="<?= htmlspecialchars($layout['before_after']['service_label'] ?? 'جرم‌گیری اولتراسونیک و درمان لثه') ?>" class="w-full text-xs p-2.5 rounded-xl border border-slate-200 focus:border-emerald-600 focus:outline-none">
+                            </div>
+                            <div class="grid grid-cols-2 gap-2">
+                                <div>
+                                    <label class="block text-[10px] font-bold text-slate-600 mb-1">برچسب قبل</label>
+                                    <input type="text" id="input-ba-label-before" value="<?= htmlspecialchars($layout['before_after']['label_before'] ?? 'قبل از درمان') ?>" class="w-full text-xs p-2 rounded-lg border border-slate-200 text-center">
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-bold text-slate-600 mb-1">برچسب بعد</label>
+                                    <input type="text" id="input-ba-label-after" value="<?= htmlspecialchars($layout['before_after']['label_after'] ?? 'پس از درمان') ?>" class="w-full text-xs p-2 rounded-lg border border-slate-200 text-center">
+                                </div>
+                            </div>
+                            <div class="pt-2 border-t border-slate-100">
+                                <label class="block text-[11px] font-bold text-slate-700 mb-1">آدرس تصویر قبل از درمان (Before Image)</label>
+                                <input type="text" id="input-ba-image-before" value="<?= htmlspecialchars($layout['before_after']['image_before'] ?? 'assets/images/presentation-dog.jpg') ?>" class="w-full text-xs p-2 rounded-lg border border-slate-200 font-mono text-left" dir="ltr" placeholder="assets/images/presentation-dog.jpg">
+                            </div>
+                            <div class="pt-2 border-t border-slate-100">
+                                <label class="block text-[11px] font-bold text-slate-700 mb-1">آدرس تصویر پس از درمان (After Image)</label>
+                                <input type="text" id="input-ba-image-after" value="<?= htmlspecialchars($layout['before_after']['image_after'] ?? 'assets/images/clinic-banner.jpg') ?>" class="w-full text-xs p-2 rounded-lg border border-slate-200 font-mono text-left" dir="ltr" placeholder="assets/images/clinic-banner.jpg">
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- 2. Bento Facilities Block -->
                     <div class="border border-slate-200 rounded-2xl overflow-hidden bg-white shadow-sm" id="section-bento_facilities">
                         <div onclick="toggleAccordion('bento_facilities')" class="w-full p-4 flex items-center justify-between bg-slate-50 hover:bg-slate-100 transition-colors text-right cursor-pointer select-none">
@@ -421,55 +476,7 @@ $publicUrl = "../site.php?slug=" . urlencode($site['slug']);
                         </div>
                     </div>
 
-                    <!-- 3. Telehealth & Consultation Block -->
-                    <div class="border border-slate-200 rounded-2xl overflow-hidden bg-white shadow-sm" id="section-telehealth">
-                        <div onclick="toggleAccordion('telehealth')" class="w-full p-4 flex items-center justify-between bg-slate-50 hover:bg-slate-100 transition-colors text-right cursor-pointer select-none">
-                            <div class="flex items-center gap-2.5">
-                                <span class="material-symbols-outlined text-slate-600 text-lg">videocam</span>
-                                <span class="text-xs font-bold text-slate-800">مشاوره آنلاین و تله‌هلث</span>
-                            </div>
-                            <div class="flex items-center gap-1" onclick="event.stopPropagation()">
-                                <button type="button" onclick="moveStudioBlock('section-telehealth', 'up')" title="انتقال به بالا" class="w-6 h-6 rounded-lg bg-slate-200/70 hover:bg-slate-300 text-slate-600 flex items-center justify-center transition-colors">
-                                    <span class="material-symbols-outlined text-xs">keyboard_arrow_up</span>
-                                </button>
-                                <button type="button" onclick="moveStudioBlock('section-telehealth', 'down')" title="انتقال به پایین" class="w-6 h-6 rounded-lg bg-slate-200/70 hover:bg-slate-300 text-slate-600 flex items-center justify-center transition-colors">
-                                    <span class="material-symbols-outlined text-xs">keyboard_arrow_down</span>
-                                </button>
-                                <span class="material-symbols-outlined text-slate-400 text-base transition-transform" id="arrow-telehealth">expand_more</span>
-                            </div>
-                        </div>
-                        <div class="p-4 space-y-3 border-t border-slate-100 hidden" id="content-telehealth">
-                            <label class="flex items-center gap-2 text-xs font-bold text-slate-700">
-                                <input type="checkbox" id="input-telehealth-enabled" <?= !empty($layout['telehealth_launcher']['enabled']) ? 'checked' : '' ?> class="rounded text-emerald-600">
-                                <span>نمایش بنر مشاوره ویدیویی/صوتی آنلاین</span>
-                            </label>
-                        </div>
-                    </div>
 
-                    <!-- 4. Autoship Recurring Subscription -->
-                    <div class="border border-slate-200 rounded-2xl overflow-hidden bg-white shadow-sm" id="section-autoship">
-                        <div onclick="toggleAccordion('autoship')" class="w-full p-4 flex items-center justify-between bg-slate-50 hover:bg-slate-100 transition-colors text-right cursor-pointer select-none">
-                            <div class="flex items-center gap-2.5">
-                                <span class="material-symbols-outlined text-slate-600 text-lg">autorenew</span>
-                                <span class="text-xs font-bold text-slate-800">اشتراک دوره‌ای اتوشیپ (Autoship)</span>
-                            </div>
-                            <div class="flex items-center gap-1" onclick="event.stopPropagation()">
-                                <button type="button" onclick="moveStudioBlock('section-autoship', 'up')" title="انتقال به بالا" class="w-6 h-6 rounded-lg bg-slate-200/70 hover:bg-slate-300 text-slate-600 flex items-center justify-center transition-colors">
-                                    <span class="material-symbols-outlined text-xs">keyboard_arrow_up</span>
-                                </button>
-                                <button type="button" onclick="moveStudioBlock('section-autoship', 'down')" title="انتقال به پایین" class="w-6 h-6 rounded-lg bg-slate-200/70 hover:bg-slate-300 text-slate-600 flex items-center justify-center transition-colors">
-                                    <span class="material-symbols-outlined text-xs">keyboard_arrow_down</span>
-                                </button>
-                                <span class="material-symbols-outlined text-slate-400 text-base transition-transform" id="arrow-autoship">expand_more</span>
-                            </div>
-                        </div>
-                        <div class="p-4 space-y-3 border-t border-slate-100 hidden" id="content-autoship">
-                            <label class="flex items-center gap-2 text-xs font-bold text-slate-700">
-                                <input type="checkbox" id="input-autoship-enabled" <?= !empty($layout['autoship_showcase']['enabled']) ? 'checked' : '' ?> class="rounded text-emerald-600">
-                                <span>نمایش بخش سفارش خودکار ادواری (۱۰٪ تخفیف)</span>
-                            </label>
-                        </div>
-                    </div>
 
                     <!-- 5. About Block -->
                     <div class="border border-slate-200 rounded-2xl overflow-hidden bg-white shadow-sm" id="section-about">
@@ -632,63 +639,7 @@ $publicUrl = "../site.php?slug=" . urlencode($site['slug']);
                         </div>
                     </div>
 
-                    <!-- Scientific Articles & Knowledge Base -->
-                    <div class="border border-slate-200 rounded-2xl overflow-hidden bg-white shadow-sm" id="section-articles">
-                        <div onclick="toggleAccordion('articles')" class="w-full p-4 flex items-center justify-between bg-slate-50 hover:bg-slate-100 transition-colors text-right cursor-pointer select-none">
-                            <div class="flex items-center gap-2.5">
-                                <span class="material-symbols-outlined text-slate-600 text-lg">menu_book</span>
-                                <span class="text-xs font-bold text-slate-800">دانشنامه سلامت و مقالات علمی</span>
-                            </div>
-                            <div class="flex items-center gap-1" onclick="event.stopPropagation()">
-                                <button type="button" onclick="moveStudioBlock('section-articles', 'up')" title="انتقال به بالا" class="w-6 h-6 rounded-lg bg-slate-200/70 hover:bg-slate-300 text-slate-600 flex items-center justify-center transition-colors">
-                                    <span class="material-symbols-outlined text-xs">keyboard_arrow_up</span>
-                                </button>
-                                <button type="button" onclick="moveStudioBlock('section-articles', 'down')" title="انتقال به پایین" class="w-6 h-6 rounded-lg bg-slate-200/70 hover:bg-slate-300 text-slate-600 flex items-center justify-center transition-colors">
-                                    <span class="material-symbols-outlined text-xs">keyboard_arrow_down</span>
-                                </button>
-                                <span class="material-symbols-outlined text-slate-400 text-base transition-transform" id="arrow-articles">expand_more</span>
-                            </div>
-                        </div>
-                        <div class="p-4 space-y-3 border-t border-slate-100 hidden" id="content-articles">
-                            <label class="flex items-center gap-2 text-xs font-bold text-slate-700">
-                                <input type="checkbox" id="input-articles-enabled" <?= !empty($layout['articles']['enabled']) ? 'checked' : '' ?> class="rounded text-emerald-600">
-                                <span>نمایش مقالات علمی جهت ارتقای سئو و آموزش مراجعین</span>
-                            </label>
-                            <div>
-                                <label class="block text-[11px] font-bold text-slate-700 mb-1">عنوان بخش دانشنامه</label>
-                                <input type="text" id="input-articles-heading" value="<?= htmlspecialchars($layout['articles']['heading'] ?? 'دانشنامه سلامت و مقالات علمی دامپزشکی') ?>" class="w-full text-xs p-2.5 rounded-xl border border-slate-200 focus:border-emerald-600 focus:outline-none">
-                            </div>
-                        </div>
-                    </div>
 
-                    <!-- Loyalty Club Banner -->
-                    <div class="border border-slate-200 rounded-2xl overflow-hidden bg-white shadow-sm" id="section-loyalty_club">
-                        <div onclick="toggleAccordion('loyalty_club')" class="w-full p-4 flex items-center justify-between bg-slate-50 hover:bg-slate-100 transition-colors text-right cursor-pointer select-none">
-                            <div class="flex items-center gap-2.5">
-                                <span class="material-symbols-outlined text-slate-600 text-lg">loyalty</span>
-                                <span class="text-xs font-bold text-slate-800">باشگاه مشتریان و پاداش وفاداری</span>
-                            </div>
-                            <div class="flex items-center gap-1" onclick="event.stopPropagation()">
-                                <button type="button" onclick="moveStudioBlock('section-loyalty_club', 'up')" title="انتقال به بالا" class="w-6 h-6 rounded-lg bg-slate-200/70 hover:bg-slate-300 text-slate-600 flex items-center justify-center transition-colors">
-                                    <span class="material-symbols-outlined text-xs">keyboard_arrow_up</span>
-                                </button>
-                                <button type="button" onclick="moveStudioBlock('section-loyalty_club', 'down')" title="انتقال به پایین" class="w-6 h-6 rounded-lg bg-slate-200/70 hover:bg-slate-300 text-slate-600 flex items-center justify-center transition-colors">
-                                    <span class="material-symbols-outlined text-xs">keyboard_arrow_down</span>
-                                </button>
-                                <span class="material-symbols-outlined text-slate-400 text-base transition-transform" id="arrow-loyalty_club">expand_more</span>
-                            </div>
-                        </div>
-                        <div class="p-4 space-y-3 border-t border-slate-100 hidden" id="content-loyalty_club">
-                            <label class="flex items-center gap-2 text-xs font-bold text-slate-700">
-                                <input type="checkbox" id="input-loyalty-enabled" <?= !empty($layout['loyalty_club']['enabled']) ? 'checked' : '' ?> class="rounded text-emerald-600">
-                                <span>نمایش بنر اعطای ۵۰ امتیاز پاداش باشگاه مشتریان</span>
-                            </label>
-                            <div>
-                                <label class="block text-[11px] font-bold text-slate-700 mb-1">عنوان بنر باشگاه مشتریان</label>
-                                <input type="text" id="input-loyalty-heading" value="<?= htmlspecialchars($layout['loyalty_club']['heading'] ?? '۵۰ امتیاز پاداش با هر ثبت نوبت یا خرید آنلاین') ?>" class="w-full text-xs p-2.5 rounded-xl border border-slate-200 focus:border-emerald-600 focus:outline-none">
-                            </div>
-                        </div>
-                    </div>
 
                     <!-- Reviews & Social Proof -->
                     <div class="border border-slate-200 rounded-2xl overflow-hidden bg-white shadow-sm" id="section-reviews">
@@ -827,7 +778,52 @@ $publicUrl = "../site.php?slug=" . urlencode($site['slug']);
                                     <div class="text-[10px] text-slate-400">Midnight Velvet Luxury</div>
                                 </div>
                             </label>
+
+                            <label class="flex items-center gap-2 p-3 rounded-2xl border-2 cursor-pointer transition-all <?= $site['theme_palette'] === 'aurora' ? 'border-cyan-600 bg-cyan-50/50' : 'border-slate-200' ?>">
+                                <input type="radio" name="theme_palette" value="aurora" <?= $site['theme_palette'] === 'aurora' ? 'checked' : '' ?> class="hidden" onchange="updatePalettePreview('aurora')">
+                                <span class="w-5 h-5 rounded-full bg-cyan-600 shrink-0"></span>
+                                <div>
+                                    <div class="text-xs font-bold text-slate-800">فیروزه‌ای تشخیصی</div>
+                                    <div class="text-[10px] text-slate-400">Pure Aurora Cyan</div>
+                                </div>
+                            </label>
                         </div>
+                    </div>
+
+                    <!-- Ambient Lighting Mode -->
+                    <div>
+                        <label class="block text-xs font-bold text-slate-800 mb-2">اتمسفر و نورپردازی محیطی</label>
+                        <div class="grid grid-cols-3 gap-2">
+                            <label class="flex flex-col items-center p-2.5 rounded-2xl border-2 cursor-pointer transition-all text-center <?= ($themeConfig['ambient_mode'] ?? 'atmospheric_glow') === 'atmospheric_glow' ? 'border-emerald-600 bg-emerald-50/50' : 'border-slate-200' ?>">
+                                <input type="radio" name="ambient_mode" value="atmospheric_glow" <?= ($themeConfig['ambient_mode'] ?? 'atmospheric_glow') === 'atmospheric_glow' ? 'checked' : '' ?> class="hidden" onchange="sendLiveUpdate('ambient_mode', 'atmospheric_glow')">
+                                <span class="material-symbols-outlined text-emerald-600 text-lg mb-1">blur_on</span>
+                                <span class="text-[11px] font-bold text-slate-800">هاله نوری شعاعی</span>
+                            </label>
+                            <label class="flex flex-col items-center p-2.5 rounded-2xl border-2 cursor-pointer transition-all text-center <?= ($themeConfig['ambient_mode'] ?? '') === 'clean_minimal' ? 'border-emerald-600 bg-emerald-50/50' : 'border-slate-200' ?>">
+                                <input type="radio" name="ambient_mode" value="clean_minimal" <?= ($themeConfig['ambient_mode'] ?? '') === 'clean_minimal' ? 'checked' : '' ?> class="hidden" onchange="sendLiveUpdate('ambient_mode', 'clean_minimal')">
+                                <span class="material-symbols-outlined text-slate-500 text-lg mb-1">light_mode</span>
+                                <span class="text-[11px] font-bold text-slate-800">مینیمال خالص</span>
+                            </label>
+                            <label class="flex flex-col items-center p-2.5 rounded-2xl border-2 cursor-pointer transition-all text-center <?= ($themeConfig['ambient_mode'] ?? '') === 'dark_obsidian' ? 'border-emerald-600 bg-emerald-50/50' : 'border-slate-200' ?>">
+                                <input type="radio" name="ambient_mode" value="dark_obsidian" <?= ($themeConfig['ambient_mode'] ?? '') === 'dark_obsidian' ? 'checked' : '' ?> class="hidden" onchange="sendLiveUpdate('ambient_mode', 'dark_obsidian')">
+                                <span class="material-symbols-outlined text-slate-800 text-lg mb-1">dark_mode</span>
+                                <span class="text-[11px] font-bold text-slate-800">آبسیدین تیره</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Symbiotic ASENA Trust Anchor -->
+                    <div>
+                        <label class="flex items-center justify-between p-3 rounded-2xl border border-slate-200 bg-slate-50/50 cursor-pointer">
+                            <div class="flex items-center gap-2">
+                                <span class="material-symbols-outlined text-emerald-600">verified</span>
+                                <div>
+                                    <div class="text-xs font-bold text-slate-800">بج رسمی عضویت شبکه سلامت آسنا</div>
+                                    <div class="text-[10px] text-slate-400">تضمین اعتبار مراجعین و درگاه شاپرک</div>
+                                </div>
+                            </div>
+                            <input type="checkbox" id="input-trust-anchor-toggle" <?= ($themeConfig['trust_anchor'] ?? 'floating_pill') !== 'none' ? 'checked' : '' ?> class="rounded text-emerald-600" onchange="sendLiveUpdate('trust_anchor_toggle', this.checked)">
+                        </label>
                     </div>
 
                     <!-- Dual-Mode Logo Upload / Link -->
@@ -949,7 +945,7 @@ $publicUrl = "../site.php?slug=" . urlencode($site['slug']);
                     <div>
                         <label class="block text-xs font-bold text-slate-800 mb-1">شناسه و آدرس اختصاصی ساب‌دامین</label>
                         <div class="flex items-center rounded-xl border border-slate-200 overflow-hidden bg-white focus-within:border-emerald-600">
-                            <span class="px-3 text-xs text-slate-400 font-mono bg-slate-50 border-l border-slate-200">.asena.company</span>
+                            <span class="px-3 text-xs text-slate-400 font-mono bg-slate-50 border-l border-slate-200">.ir</span>
                             <input type="text" id="input-site-slug" value="<?= $slug ?>" oninput="checkSlugLive(this.value)" class="flex-1 text-xs p-2.5 outline-none font-mono text-left font-bold" dir="ltr">
                         </div>
                         <div id="slug-feedback" class="text-[11px] mt-1 font-medium text-emerald-600">✓ این آدرس آزاد و در دسترس است.</div>
@@ -994,7 +990,7 @@ $publicUrl = "../site.php?slug=" . urlencode($site['slug']);
                         <span class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
                     </div>
                     <div class="px-6 py-1 rounded-lg bg-white border border-slate-200/80 text-[11px] font-mono text-slate-500 text-center max-w-md w-full truncate">
-                        https://<?= $slug ?>.asena.company
+                        https://<?= $slug ?>.ir
                     </div>
                     <div class="flex items-center gap-1">
                         <button type="button" onclick="document.getElementById('site-preview-iframe').contentWindow.location.reload()" class="p-1 text-slate-400 hover:text-slate-600 rounded transition-colors" title="بارگذاری مجدد پیش‌نمایش">
@@ -1023,7 +1019,55 @@ document.addEventListener('DOMContentLoaded', () => {
     if (window.innerWidth < 1024) {
         closeSidebar();
     }
+    initLiveStudioBindings();
 });
+
+// Real-time zero-refresh live synchronization engine with preview iframe
+function sendLiveUpdate(field, value, extra = null) {
+    const iframe = document.getElementById('site-preview-iframe');
+    if (!iframe) return;
+
+    // 1. Synchronous direct call if contentWindow is accessible (zero latency, exact frame update)
+    try {
+        if (iframe.contentWindow && typeof iframe.contentWindow.applyLiveFieldUpdate === 'function') {
+            iframe.contentWindow.applyLiveFieldUpdate(field, value, extra);
+        }
+    } catch (e) {
+        // Cross-domain fallback
+    }
+
+    // 2. Broadcast via standard HTML5 postMessage
+    try {
+        if (iframe.contentWindow) {
+            iframe.contentWindow.postMessage({
+                type: 'STUDIO_LIVE_UPDATE',
+                field: field,
+                value: value,
+                extra: extra
+            }, '*');
+        }
+    } catch (e) {}
+}
+
+function updatePalettePreview(palette) {
+    const radios = document.querySelectorAll('input[name="theme_palette"]');
+    radios.forEach(r => {
+        const parent = r.closest('label');
+        if (!parent) return;
+        if (r.value === palette) {
+            r.checked = true;
+            if (palette === 'emerald') parent.className = 'flex items-center gap-2 p-3 rounded-2xl border-2 cursor-pointer transition-all border-emerald-600 bg-emerald-50/50';
+            else if (palette === 'navy') parent.className = 'flex items-center gap-2 p-3 rounded-2xl border-2 cursor-pointer transition-all border-slate-900 bg-slate-100';
+            else if (palette === 'orange') parent.className = 'flex items-center gap-2 p-3 rounded-2xl border-2 cursor-pointer transition-all border-orange-500 bg-orange-50/50';
+            else if (palette === 'purple') parent.className = 'flex items-center gap-2 p-3 rounded-2xl border-2 cursor-pointer transition-all border-purple-600 bg-purple-50/50';
+            else if (palette === 'aurora') parent.className = 'flex items-center gap-2 p-3 rounded-2xl border-2 cursor-pointer transition-all border-cyan-600 bg-cyan-50/50';
+        } else {
+            parent.className = 'flex items-center gap-2 p-3 rounded-2xl border-2 cursor-pointer transition-all border-slate-200';
+        }
+    });
+
+    sendLiveUpdate('theme_palette', palette);
+}
 
 function togglePortalSidebar() {
     const sidebar = document.getElementById('doctor-sidebar') || 
@@ -1084,9 +1128,17 @@ async function handleImageUpload(fileInput, targetInputId, previewImgId) {
                     statusEl.innerHTML = 'تصویر با موفقیت در فضای ابری ذخیره شد.';
                 }, 3000);
             }
-            showToast('✓ تصویر با موفقیت بارگذاری شد. در حال ذخیره...', 'success');
-            // Auto save and update preview iframe
-            await saveSiteConfig();
+            showToast('✓ تصویر با موفقیت بارگذاری شد.', 'success');
+            
+            // Real-time live preview update without reloading iframe
+            if (targetInputId === 'input-site-logo') {
+                sendLiveUpdate('site_logo', data.url);
+            } else if (targetInputId === 'input-hero-image' || targetInputId === 'input-site-banner') {
+                sendLiveUpdate('hero_image', data.url);
+                sendLiveUpdate('banner_image', data.url);
+            }
+            // Auto save silently in background without reloading iframe
+            saveSiteConfig(true);
         } else {
             if (statusEl) {
                 statusEl.innerHTML = `<span class="material-symbols-outlined text-xs text-rose-500">error</span> <span class="text-[11px] text-rose-500 font-bold">${data.message}</span>`;
@@ -1230,6 +1282,7 @@ function toggleAccordion(id) {
     if (content.classList.contains('hidden')) {
         content.classList.remove('hidden');
         if (arrow) arrow.style.transform = 'rotate(180deg)';
+        sendLiveUpdate('scroll_to_block', id);
     } else {
         content.classList.add('hidden');
         if (arrow) arrow.style.transform = 'rotate(0deg)';
@@ -1346,6 +1399,16 @@ async function saveSiteConfig() {
             close_time: document.getElementById('input-duty-close-time')?.value || '22:30',
             emergency_open_24h: document.getElementById('input-duty-24h')?.checked || false
         },
+        before_after: {
+            enabled: document.getElementById('input-ba-enabled')?.checked || false,
+            heading: document.getElementById('input-ba-heading')?.value || 'مقایسه نتایج قبل و بعد از مراقبت تخصصی',
+            subtitle: document.getElementById('input-ba-subtitle')?.value || '',
+            service_label: document.getElementById('input-ba-service-label')?.value || '',
+            label_before: document.getElementById('input-ba-label-before')?.value || 'قبل از درمان',
+            label_after: document.getElementById('input-ba-label-after')?.value || 'پس از درمان',
+            image_before: document.getElementById('input-ba-image-before')?.value || '',
+            image_after: document.getElementById('input-ba-image-after')?.value || ''
+        },
         stats_strip: {
             enabled: true
         },
@@ -1358,12 +1421,7 @@ async function saveSiteConfig() {
             heading: document.getElementById('input-calc-heading')?.value || 'تخمین هوشمند تعرفه خدمات بالینی و جراحی',
             discount_percent: parseInt(document.getElementById('input-calc-discount')?.value || '10')
         },
-        telehealth_launcher: {
-            enabled: document.getElementById('input-telehealth-enabled')?.checked || false
-        },
-        autoship_showcase: {
-            enabled: document.getElementById('input-autoship-enabled')?.checked || false
-        },
+
         about: {
             enabled: true,
             heading: document.getElementById('input-about-heading')?.value || 'درباره ما',
@@ -1383,14 +1441,7 @@ async function saveSiteConfig() {
             enabled: document.getElementById('input-storefront-enabled')?.checked || false,
             item_limit: parseInt(document.getElementById('input-storefront-limit')?.value || '6')
         },
-        articles: {
-            enabled: document.getElementById('input-articles-enabled')?.checked || false,
-            heading: document.getElementById('input-articles-heading')?.value || 'دانشنامه سلامت و مقالات علمی دامپزشکی'
-        },
-        loyalty_club: {
-            enabled: document.getElementById('input-loyalty-enabled')?.checked || false,
-            heading: document.getElementById('input-loyalty-heading')?.value || '۵۰ امتیاز پاداش با هر ثبت نوبت یا خرید آنلاین'
-        },
+
         reviews: {
             enabled: document.getElementById('input-reviews-enabled')?.checked || false,
             heading: document.getElementById('input-reviews-heading')?.value || 'نظرات و بازخورد مراجعین تاییدشده'
@@ -1436,19 +1487,34 @@ async function saveSiteConfig() {
         const res = await fetch('../actions/site_builder_action.php', { method: 'POST', body: fd });
         const data = await res.json();
         if (data.success) {
+            // Keep preview intact; only reload if the slug itself was changed
             const iframe = document.getElementById('site-preview-iframe');
-            iframe.src = `../site.php?slug=${encodeURIComponent(data.slug)}&preview=1&v=${Date.now()}`;
-            showToast('✓ وب‌سایت اختصاصی شما با موفقیت به‌روزرسانی و منتشر شد.', 'success');
+            if (iframe) {
+                const currentSrc = iframe.getAttribute('src') || '';
+                const newSlugParam = `slug=${encodeURIComponent(data.slug)}`;
+                if (!currentSrc.includes(newSlugParam)) {
+                    iframe.src = `../site.php?slug=${encodeURIComponent(data.slug)}&preview=1`;
+                }
+            }
+            if (!silent) {
+                showToast('✓ وب‌سایت اختصاصی شما با موفقیت ذخیره و منتشر شد.', 'success');
+            }
         } else {
-            showToast('✕ خطا: ' + (data.message || 'مشکلی رخ داد'), 'error');
+            if (!silent) {
+                showToast('✕ خطا: ' + (data.message || 'مشکلی رخ داد'), 'error');
+            }
         }
     } catch (e) {
-        showToast('✕ ارتباط با سرور برقرار نشد.', 'error');
+        if (!silent) {
+            showToast('✕ ارتباط با سرور برقرار نشد.', 'error');
+        }
     } finally {
-        btn.disabled = false;
-        saveIcon.innerText = 'cloud_upload';
-        saveIcon.classList.remove('animate-spin');
-        saveText.innerText = 'ذخیره و انتشار';
+        if (!silent && btn && saveIcon && saveText) {
+            btn.disabled = false;
+            saveIcon.innerText = 'cloud_upload';
+            saveIcon.classList.remove('animate-spin');
+            saveText.innerText = 'ذخیره و انتشار';
+        }
     }
 }
 
@@ -1470,52 +1536,48 @@ async function applySelectedTierPreset() {
 
         if (data.success && data.layout && data.layout.blocks) {
             const b = data.layout.blocks;
-            if (document.getElementById('input-emergency-enabled') && b.emergency_bar !== undefined) {
-                document.getElementById('input-emergency-enabled').checked = !!b.emergency_bar.enabled;
-            }
-            if (document.getElementById('input-duty-enabled') && b.duty_hours !== undefined) {
-                document.getElementById('input-duty-enabled').checked = !!b.duty_hours.enabled;
-            }
-            if (document.getElementById('input-bento-enabled') && b.bento_facilities !== undefined) {
-                document.getElementById('input-bento-enabled').checked = !!b.bento_facilities.enabled;
-            }
-            if (document.getElementById('input-calc-enabled') && b.cost_calculator !== undefined) {
-                document.getElementById('input-calc-enabled').checked = !!b.cost_calculator.enabled;
-            }
-            if (document.getElementById('input-telehealth-enabled') && b.telehealth_launcher !== undefined) {
-                document.getElementById('input-telehealth-enabled').checked = !!b.telehealth_launcher.enabled;
-            }
-            if (document.getElementById('input-autoship-enabled') && b.autoship_showcase !== undefined) {
-                document.getElementById('input-autoship-enabled').checked = !!b.autoship_showcase.enabled;
-            }
-            if (document.getElementById('input-doctors-enabled') && b.doctors_roster !== undefined) {
-                document.getElementById('input-doctors-enabled').checked = !!b.doctors_roster.enabled;
-            }
-            if (document.getElementById('input-articles-enabled') && b.articles !== undefined) {
-                document.getElementById('input-articles-enabled').checked = !!b.articles.enabled;
-            }
-            if (document.getElementById('input-loyalty-enabled') && b.loyalty_club !== undefined) {
-                document.getElementById('input-loyalty-enabled').checked = !!b.loyalty_club.enabled;
-            }
-            if (document.getElementById('input-reviews-enabled') && b.reviews !== undefined) {
-                document.getElementById('input-reviews-enabled').checked = !!b.reviews.enabled;
-            }
-            if (document.getElementById('input-faq-enabled') && b.faq !== undefined) {
-                document.getElementById('input-faq-enabled').checked = !!b.faq.enabled;
-            }
+            const updateCheckboxAndLive = (inputId, blockKey) => {
+                const el = document.getElementById(inputId);
+                if (el && b[blockKey] !== undefined) {
+                    el.checked = !!b[blockKey].enabled;
+                    sendLiveUpdate('block_toggle', el.checked, blockKey);
+                }
+            };
+
+            updateCheckboxAndLive('input-emergency-enabled', 'emergency_bar');
+            updateCheckboxAndLive('input-duty-enabled', 'duty_hours');
+            updateCheckboxAndLive('input-bento-enabled', 'bento_facilities');
+            updateCheckboxAndLive('input-calc-enabled', 'cost_calculator');
+            updateCheckboxAndLive('input-doctors-enabled', 'doctors_roster');
+            updateCheckboxAndLive('input-booking-enabled', 'booking');
+            updateCheckboxAndLive('input-storefront-enabled', 'storefront');
+            updateCheckboxAndLive('input-reviews-enabled', 'reviews');
+            updateCheckboxAndLive('input-faq-enabled', 'faq');
+
             if (document.getElementById('input-storefront-limit') && b.storefront !== undefined) {
-                document.getElementById('input-storefront-limit').value = b.storefront.item_limit || 6;
+                const lim = b.storefront.item_limit || 6;
+                document.getElementById('input-storefront-limit').value = lim;
+                sendLiveUpdate('storefront_limit', lim);
             }
 
-            showToast(`✓ بلوک‌های اختصاصی نسخه «${tier}» اعمال شد. در حال به‌روزرسانی پیش‌نمایش...`, 'success');
-            await saveSiteConfig();
+            showToast(`✓ قالب نسخه «${tier}» اعمال شد.`, 'success');
+            // Silently persist in background without reloading iframe
+            saveSiteConfig(true);
+        } else {
+            showToast('✕ خطا در دریافت قالب نسخه', 'error');
         }
     } catch (e) {
-        showToast('✕ خطا در دریافت قالب نسخه', 'error');
+        showToast('✕ خطا در ارتباط با سرور', 'error');
     } finally {
         btn.disabled = false;
         btn.innerHTML = originalText;
     }
+}
+
+function getStudioBlocksOrder() {
+    return Array.from(document.querySelectorAll('#tab-panel-blocks > div[id^="section-"]'))
+        .map(el => el.id.replace('section-', ''))
+        .filter(Boolean);
 }
 
 function moveStudioBlock(sectionId, direction) {
@@ -1529,8 +1591,144 @@ function moveStudioBlock(sectionId, direction) {
     el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     el.classList.add('ring-2', 'ring-emerald-500');
     setTimeout(() => el.classList.remove('ring-2', 'ring-emerald-500'), 1000);
-    showToast('✓ ترتیب بلوک جابجا شد. برای اعمال روی پیش‌نمایش، «ذخیره و انتشار» را بزنید.', 'success');
+
+    // Live update block ordering in preview iframe immediately without refresh
+    const order = getStudioBlocksOrder();
+    sendLiveUpdate('reorder_blocks', order);
+    showToast('✓ ترتیب بلوک در پیش‌نمایش زنده اعمال شد.', 'success');
 }
+
+function initLiveStudioBindings() {
+    const bindings = [
+        // Basic Info
+        { id: 'input-site-title', field: 'site_title', event: 'input' },
+        { id: 'input-site-tagline', field: 'site_tagline', event: 'input' },
+        { id: 'input-site-logo', field: 'site_logo', event: 'input' },
+        { id: 'input-site-banner', field: 'hero_image', event: 'input' },
+        { id: 'input-site-meta', field: 'meta_description', event: 'input' },
+
+        // Emergency Bar
+        { id: 'input-emergency-enabled', field: 'block_toggle', extra: 'emergency_bar', event: 'change', isCheckbox: true },
+        { id: 'input-emergency-headline', field: 'emergency_headline', event: 'input' },
+        { id: 'input-emergency-subheadline', field: 'emergency_subheadline', event: 'input' },
+        { id: 'input-emergency-phone', field: 'emergency_phone', event: 'input' },
+
+        // Hero
+        { id: 'input-hero-badge', field: 'hero_badge', event: 'input' },
+        { id: 'input-hero-title', field: 'hero_title', event: 'input' },
+        { id: 'input-hero-subtitle', field: 'hero_subtitle', event: 'input' },
+        { id: 'input-hero-cta', field: 'hero_cta', event: 'input' },
+        { id: 'input-hero-image', field: 'hero_image', event: 'input' },
+
+        // Duty Hours
+        { id: 'input-duty-enabled', field: 'block_toggle', extra: 'duty_hours', event: 'change', isCheckbox: true },
+        { 
+            id: 'input-duty-open-time', 
+            event: 'input', 
+            custom: () => {
+                const o = document.getElementById('input-duty-open-time')?.value || '08:30';
+                const c = document.getElementById('input-duty-close-time')?.value || '22:30';
+                sendLiveUpdate('duty_hours', `${o} الی ${c}`);
+            }
+        },
+        { 
+            id: 'input-duty-close-time', 
+            event: 'input', 
+            custom: () => {
+                const o = document.getElementById('input-duty-open-time')?.value || '08:30';
+                const c = document.getElementById('input-duty-close-time')?.value || '22:30';
+                sendLiveUpdate('duty_hours', `${o} الی ${c}`);
+            }
+        },
+
+        // Before/After Block
+        { id: 'input-ba-enabled', field: 'block_toggle', extra: 'before_after', event: 'change', isCheckbox: true },
+        { id: 'input-ba-heading', field: 'before_after_heading', event: 'input' },
+        { id: 'input-ba-subtitle', field: 'before_after_subtitle', event: 'input' },
+        { id: 'input-ba-service-label', field: 'before_after_service_label', event: 'input' },
+        { id: 'input-ba-label-before', field: 'before_after_label_before', event: 'input' },
+        { id: 'input-ba-label-after', field: 'before_after_label_after', event: 'input' },
+        { id: 'input-ba-image-before', field: 'before_after_image_before', event: 'input' },
+        { id: 'input-ba-image-after', field: 'before_after_image_after', event: 'input' },
+
+        // Bento Facilities
+        { id: 'input-bento-enabled', field: 'block_toggle', extra: 'bento_facilities', event: 'change', isCheckbox: true },
+        { id: 'input-bento-heading', field: 'bento_heading', event: 'input' },
+
+
+
+        // About Block
+        { id: 'input-about-heading', field: 'about_heading', event: 'input' },
+        { id: 'input-about-text', field: 'about_text', event: 'input' },
+        { id: 'input-about-vet-council', field: 'about_vet_council', event: 'input' },
+
+        // Cost Calculator
+        { id: 'input-calc-enabled', field: 'block_toggle', extra: 'cost_calculator', event: 'change', isCheckbox: true },
+        { id: 'input-calc-heading', field: 'calc_heading', event: 'input' },
+        { id: 'input-calc-discount', field: 'calc_discount', event: 'input' },
+
+        // Booking
+        { id: 'input-booking-enabled', field: 'block_toggle', extra: 'booking', event: 'change', isCheckbox: true },
+        { id: 'input-booking-heading', field: 'booking_heading', event: 'input' },
+
+        // Storefront
+        { id: 'input-storefront-enabled', field: 'block_toggle', extra: 'storefront', event: 'change', isCheckbox: true },
+        { id: 'input-storefront-heading', field: 'storefront_heading', event: 'input' },
+        { id: 'input-storefront-limit', field: 'storefront_limit', event: 'change' },
+
+        // Doctors
+        { id: 'input-doctors-enabled', field: 'block_toggle', extra: 'doctors_roster', event: 'change', isCheckbox: true },
+        { id: 'input-doctors-heading', field: 'doctors_heading', event: 'input' },
+        { id: 'input-doctors-subtitle', field: 'doctors_subtitle', event: 'input' },
+
+
+
+        // Reviews
+        { id: 'input-reviews-enabled', field: 'block_toggle', extra: 'reviews', event: 'change', isCheckbox: true },
+        { id: 'input-reviews-heading', field: 'reviews_heading', event: 'input' },
+
+        // FAQ
+        { id: 'input-faq-enabled', field: 'block_toggle', extra: 'faq', event: 'change', isCheckbox: true },
+        { id: 'input-faq-heading', field: 'faq_heading', event: 'input' },
+
+        // Contact Block
+        { id: 'input-contact-address', field: 'contact_address', event: 'input' },
+        { id: 'input-contact-hours', field: 'contact_hours', event: 'input' },
+        { id: 'input-contact-phone', field: 'contact_phone', event: 'input' },
+        { id: 'input-contact-emergency', field: 'contact_emergency', event: 'input' }
+    ];
+
+    bindings.forEach(b => {
+        const el = document.getElementById(b.id);
+        if (!el) return;
+
+        const handler = () => {
+            if (typeof b.custom === 'function') {
+                b.custom();
+                return;
+            }
+            const val = b.isCheckbox ? el.checked : el.value;
+            sendLiveUpdate(b.field, val, b.extra || null);
+        };
+
+        el.addEventListener(b.event, handler);
+        if (b.event === 'input') {
+            el.addEventListener('change', handler);
+        }
+    });
+
+    // Theme Palette radio buttons
+    document.querySelectorAll('input[name="theme_palette"]').forEach(radio => {
+        radio.addEventListener('change', function() {
+            if (this.checked) {
+                updatePalettePreview(this.value);
+            }
+        });
+    });
+}
+
+// Immediate invocation in case DOM is already ready
+initLiveStudioBindings();
 
 function showToast(msg, type = 'success') {
     const toast = document.createElement('div');

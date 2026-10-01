@@ -34,70 +34,68 @@ foreach ($tiers as $tier) {
     if ($tier === 'basic') {
         assertTrue(empty($b['stats_strip']['enabled']), "Basic tier disables stats strip");
         assertTrue(empty($b['bento_facilities']['enabled']), "Basic tier disables bento facilities");
-        assertTrue(empty($b['articles']['enabled']), "Basic tier disables articles");
-        assertTrue(empty($b['loyalty_club']['enabled']), "Basic tier disables loyalty club");
         assertTrue(empty($b['reviews']['enabled']), "Basic tier disables reviews");
         assertTrue(empty($b['emergency_bar']['enabled']), "Basic tier disables emergency bar");
         assertTrue(empty($b['duty_hours']['enabled']), "Basic tier disables duty hours");
         assertTrue(empty($b['cost_calculator']['enabled']), "Basic tier disables cost calculator");
         assertTrue(empty($b['faq']['enabled']), "Basic tier disables faq");
+        assertTrue(empty($b['before_after']['enabled']), "Basic tier disables before/after block");
         assertTrue(!empty($b['navigation_hub']['enabled']), "Basic tier keeps navigation hub");
         assertTrue(!empty($b['hero']['enabled']), "Basic tier keeps hero");
         assertTrue(!empty($b['booking']['enabled']), "Basic tier keeps booking");
         assertTrue(!empty($b['sticky_mobile_bar']['enabled']), "Basic tier keeps sticky mobile bar");
     } elseif ($tier === 'standard') {
         assertTrue(!empty($b['stats_strip']['enabled']), "Standard tier enables stats strip");
-        assertTrue(!empty($b['articles']['enabled']), "Standard tier enables articles");
-        assertTrue(!empty($b['loyalty_club']['enabled']), "Standard tier enables loyalty club");
         assertTrue(!empty($b['reviews']['enabled']), "Standard tier enables reviews");
         assertTrue(!empty($b['duty_hours']['enabled']), "Standard tier enables duty hours");
         assertTrue(!empty($b['cost_calculator']['enabled']), "Standard tier enables cost calculator for org/doctor");
         assertTrue(!empty($b['faq']['enabled']), "Standard tier enables faq");
         assertTrue(empty($b['bento_facilities']['enabled']), "Standard tier leaves bento disabled");
+        assertTrue(!empty($b['before_after']['enabled']), "Standard tier enables before/after for org/doctor");
     } elseif ($tier === 'premium') {
         assertTrue(!empty($b['bento_facilities']['enabled']), "Premium tier enables bento facilities");
-        assertTrue(!empty($b['telehealth_launcher']['enabled']), "Premium tier enables telehealth launcher");
-        assertTrue(!empty($b['autoship_showcase']['enabled']), "Premium tier enables autoship showcase");
         assertTrue(!empty($b['emergency_bar']['enabled']), "Premium tier enables emergency bar for org/doctor");
         assertTrue(!empty($b['duty_hours']['enabled']), "Premium tier enables duty hours");
         assertTrue(!empty($b['cost_calculator']['enabled']), "Premium tier enables cost calculator");
         assertTrue(!empty($b['faq']['enabled']), "Premium tier enables faq");
+        assertTrue(!empty($b['reviews']['enabled']), "Premium tier enables reviews");
+        assertTrue(!empty($b['before_after']['enabled']), "Premium tier enables before/after block");
     } elseif ($tier === 'pharmacy') {
-        assertTrue(!empty($b['rx_prescription_box']['enabled']), "Pharmacy tier enables rx prescription box");
-        assertTrue(!empty($b['autoship_showcase']['enabled']), "Pharmacy tier enables autoship showcase");
         assertTrue(!empty($b['duty_hours']['enabled']), "Pharmacy tier enables duty hours");
         assertTrue(!empty($b['faq']['enabled']), "Pharmacy tier enables faq");
+        assertTrue(!empty($b['reviews']['enabled']), "Pharmacy tier enables reviews");
         assertTrue(empty($b['cost_calculator']['enabled']), "Pharmacy tier disables clinical calculator");
+        assertTrue(empty($b['before_after']['enabled']), "Pharmacy tier disables before/after block");
     } elseif ($tier === 'enterprise') {
         assertTrue(!empty($b['bento_facilities']['enabled']), "Enterprise tier enables bento facilities");
         assertTrue(!empty($b['doctors_roster']['enabled']), "Enterprise tier enables doctors roster");
-        assertTrue(!empty($b['telehealth_launcher']['enabled']), "Enterprise tier enables telehealth");
-        assertTrue(!empty($b['rx_prescription_box']['enabled']), "Enterprise tier enables rx box");
-        assertTrue(!empty($b['autoship_showcase']['enabled']), "Enterprise tier enables autoship");
-        assertTrue(!empty($b['articles']['enabled']), "Enterprise tier enables articles");
-        assertTrue(!empty($b['loyalty_club']['enabled']), "Enterprise tier enables loyalty club");
         assertTrue(!empty($b['reviews']['enabled']), "Enterprise tier enables reviews");
         assertTrue(!empty($b['emergency_bar']['enabled']), "Enterprise tier enables emergency bar for org/doctor");
         assertTrue(!empty($b['duty_hours']['enabled']), "Enterprise tier enables duty hours");
         assertTrue(!empty($b['cost_calculator']['enabled']), "Enterprise tier enables cost calculator");
         assertTrue(!empty($b['faq']['enabled']), "Enterprise tier enables faq");
         assertTrue(!empty($b['navigation_hub']['enabled']), "Enterprise tier enables navigation hub");
+        assertTrue(!empty($b['before_after']['enabled']), "Enterprise tier enables before/after block");
     }
+
+    // Verify Symbiotic Brand Aura theme properties
+    assertTrue(isset($layout['theme']['ambient_mode']), "Layout theme defines ambient_mode ($tier)");
+    assertTrue(isset($layout['theme']['trust_anchor']), "Layout theme defines trust_anchor ($tier)");
 }
 
 // 2. Test applyTierPreset
 $baseLayout = $service->buildDefaultLayout('organization', ['name' => 'کلینیک نمونه'], 'enterprise');
 $presetBasic = $service->applyTierPreset('organization', 'basic', $baseLayout);
 assertTrue(empty($presetBasic['blocks']['bento_facilities']['enabled']), "applyTierPreset basic disables bento");
-assertTrue(empty($presetBasic['blocks']['articles']['enabled']), "applyTierPreset basic disables articles");
 assertTrue(empty($presetBasic['blocks']['cost_calculator']['enabled']), "applyTierPreset basic disables cost_calculator");
 assertTrue(empty($presetBasic['blocks']['emergency_bar']['enabled']), "applyTierPreset basic disables emergency_bar");
+assertTrue(empty($presetBasic['blocks']['before_after']['enabled']), "applyTierPreset basic disables before_after");
 
 $presetEnterprise = $service->applyTierPreset('organization', 'enterprise', $presetBasic);
 assertTrue(!empty($presetEnterprise['blocks']['bento_facilities']['enabled']), "applyTierPreset enterprise re-enables bento");
-assertTrue(!empty($presetEnterprise['blocks']['articles']['enabled']), "applyTierPreset enterprise re-enables articles");
 assertTrue(!empty($presetEnterprise['blocks']['cost_calculator']['enabled']), "applyTierPreset enterprise re-enables cost_calculator");
 assertTrue(!empty($presetEnterprise['blocks']['emergency_bar']['enabled']), "applyTierPreset enterprise re-enables emergency_bar");
+assertTrue(!empty($presetEnterprise['blocks']['before_after']['enabled']), "applyTierPreset enterprise re-enables before_after");
 
 // 3. Test getTenantArticles and getTenantReviews
 $articles = $service->getTenantArticles(3);

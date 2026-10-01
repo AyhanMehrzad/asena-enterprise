@@ -260,7 +260,13 @@ class TenantSiteService {
         $isEnterprise = ($siteTier === 'enterprise');
 
         $layout = [
-            'blocks_order' => ['emergency_bar', 'hero', 'stats_strip', 'duty_hours', 'cost_calculator', 'bento_facilities', 'about', 'services', 'doctors_roster', 'telehealth_launcher', 'rx_prescription_box', 'autoship_showcase', 'booking', 'storefront', 'articles', 'loyalty_club', 'reviews', 'faq', 'contact'],
+            'theme' => [
+                'palette' => $info['theme_palette'] ?? 'emerald',
+                'ambient_mode' => 'atmospheric_glow',
+                'card_radius' => 'rounded-3xl',
+                'trust_anchor' => 'floating_pill'
+            ],
+            'blocks_order' => ['emergency_bar', 'hero', 'stats_strip', 'duty_hours', 'before_after', 'cost_calculator', 'bento_facilities', 'about', 'services', 'doctors_roster', 'booking', 'storefront', 'reviews', 'faq', 'contact'],
             'blocks' => [
                 'emergency_bar' => [
                     'enabled' => in_array($tenantType, ['organization', 'doctor']) && !$isBasic,
@@ -276,6 +282,16 @@ class TenantSiteService {
                     'open_time' => '08:30',
                     'close_time' => '22:30',
                     'emergency_open_24h' => ($tenantType === 'organization')
+                ],
+                'before_after' => [
+                    'enabled' => in_array($tenantType, ['doctor', 'organization']) && !$isBasic && !$isPharmacyTier,
+                    'heading' => 'نتایج ملموس خدمات و مراقبت‌های بالینی',
+                    'subtitle' => 'مشاهده تفاوت کیفیت خدمات قبل و بعد از رسیدگی تخصصی و بالینی',
+                    'service_label' => 'جرم‌گیری اولتراسونیک و درمان لثه',
+                    'image_before' => 'assets/images/presentation-dog.jpg',
+                    'image_after' => 'assets/images/clinic-banner.jpg',
+                    'label_before' => 'قبل از درمان',
+                    'label_after' => 'پس از درمان'
                 ],
                 'cost_calculator' => [
                     'enabled' => in_array($tenantType, ['doctor', 'organization']) && !$isBasic && !$isPharmacyTier,
@@ -400,24 +416,7 @@ class TenantSiteService {
                     'heading' => 'کادر پزشکان و متخصصان مرکز',
                     'subtitle' => 'تیم مجرب جراحان و دامپزشکان مقیم با امکان رزرو مستقیم نوبت'
                 ],
-                'telehealth_launcher' => [
-                    'enabled' => in_array($tenantType, ['doctor', 'organization']) && ($isPremium || $isEnterprise),
-                    'heading' => 'مشاوره آنلاین و تله‌هلث دامپزشکی',
-                    'subtitle' => 'در هر ساعت از شبانه‌روز، بدون نیاز به مراجعه حضوری و استرس جابجایی حیوان، با پزشک متخصص مشاوره صوتی یا تصویری برقرار نمایید.',
-                    'cta_text' => 'شروع ویزیت آنلاین'
-                ],
-                'rx_prescription_box' => [
-                    'enabled' => in_array($tenantType, ['pharmacist', 'organization']) && ($isPharmacyTier || $isEnterprise),
-                    'heading' => 'پذیرش و تحویل سریع با نسخه پزشک',
-                    'subtitle' => 'تصویر نسخه صادره توسط دامپزشک خود را ارسال کنید تا اصالت دارو و شرایط زنجیره سرد بررسی شده و بسته دارویی در کوتاه‌ترین زمان ارسال گردد.',
-                    'badge' => 'نسخه الکترونیک (Rx)'
-                ],
-                'autoship_showcase' => [
-                    'enabled' => in_array($tenantType, ['seller', 'pharmacist', 'organization']) && ($isPremium || $isEnterprise || $isStandard),
-                    'heading' => 'سفارش دوره‌ای خودکار (Autoship) با ۱۰٪ تخفیف همیشگی',
-                    'subtitle' => 'دیگر نگران اتمام ناگهانی غذای پت یا داروی بیماری‌های مزمن نباشید. با فعال‌سازی اتوشیپ، مرسوله طبق زمان‌بندی دلخواه به نشانی شما ارسال می‌شود.',
-                    'badge' => 'سفارش خودکار ادواری'
-                ],
+
                 'booking' => [
                     'enabled' => in_array($tenantType, ['doctor', 'organization']),
                     'heading' => 'نوبت‌دهی آنلاین ۲۴ ساعته',
@@ -432,17 +431,7 @@ class TenantSiteService {
                     },
                     'item_limit' => $isBasic ? 4 : 6
                 ],
-                'articles' => [
-                    'enabled' => $isStandard || $isPremium || $isEnterprise,
-                    'heading' => 'دانشنامه سلامت و مقالات علمی دامپزشکی',
-                    'subtitle' => 'راهنماهای کاربردی مراقبت، تغذیه و پیشگیری از بیماری‌های حیوانات خانگی'
-                ],
-                'loyalty_club' => [
-                    'enabled' => $isStandard || $isPremium || $isEnterprise,
-                    'heading' => 'باشگاه مشتریان و مراجعین وفادار',
-                    'subtitle' => 'با هر بار نوبت‌دهی یا خرید آنلاین، ۵۰ امتیاز باشگاه وفاداری دریافت کرده و در مراجعات بعدی از تخفیف بهره‌مند شوید.',
-                    'points_reward' => 50
-                ],
+
                 'reviews' => [
                     'enabled' => !$isBasic,
                     'heading' => 'نظرات و بازخورد مراجعین تاییدشده',
@@ -841,16 +830,12 @@ class TenantSiteService {
             case 'basic':
                 if (isset($blocks['emergency_bar'])) $blocks['emergency_bar']['enabled'] = false;
                 if (isset($blocks['duty_hours'])) $blocks['duty_hours']['enabled'] = false;
+                if (isset($blocks['before_after'])) $blocks['before_after']['enabled'] = false;
                 if (isset($blocks['cost_calculator'])) $blocks['cost_calculator']['enabled'] = false;
                 if (isset($blocks['faq'])) $blocks['faq']['enabled'] = false;
                 if (isset($blocks['stats_strip'])) $blocks['stats_strip']['enabled'] = false;
                 if (isset($blocks['bento_facilities'])) $blocks['bento_facilities']['enabled'] = false;
                 if (isset($blocks['doctors_roster'])) $blocks['doctors_roster']['enabled'] = false;
-                if (isset($blocks['telehealth_launcher'])) $blocks['telehealth_launcher']['enabled'] = false;
-                if (isset($blocks['rx_prescription_box'])) $blocks['rx_prescription_box']['enabled'] = false;
-                if (isset($blocks['autoship_showcase'])) $blocks['autoship_showcase']['enabled'] = false;
-                if (isset($blocks['articles'])) $blocks['articles']['enabled'] = false;
-                if (isset($blocks['loyalty_club'])) $blocks['loyalty_club']['enabled'] = false;
                 if (isset($blocks['reviews'])) $blocks['reviews']['enabled'] = false;
                 if (isset($blocks['storefront'])) $blocks['storefront']['item_limit'] = 4;
                 break;
@@ -858,48 +843,36 @@ class TenantSiteService {
             case 'standard':
                 if (isset($blocks['emergency_bar'])) $blocks['emergency_bar']['enabled'] = false;
                 if (isset($blocks['duty_hours'])) $blocks['duty_hours']['enabled'] = true;
+                if (isset($blocks['before_after'])) $blocks['before_after']['enabled'] = in_array($tenantType, ['doctor', 'organization']);
                 if (isset($blocks['cost_calculator'])) $blocks['cost_calculator']['enabled'] = in_array($tenantType, ['doctor', 'organization']);
                 if (isset($blocks['faq'])) $blocks['faq']['enabled'] = true;
                 if (isset($blocks['stats_strip'])) $blocks['stats_strip']['enabled'] = true;
                 if (isset($blocks['bento_facilities'])) $blocks['bento_facilities']['enabled'] = false;
                 if (isset($blocks['doctors_roster'])) $blocks['doctors_roster']['enabled'] = false;
-                if (isset($blocks['telehealth_launcher'])) $blocks['telehealth_launcher']['enabled'] = false;
-                if (isset($blocks['rx_prescription_box'])) $blocks['rx_prescription_box']['enabled'] = false;
-                if (isset($blocks['autoship_showcase'])) $blocks['autoship_showcase']['enabled'] = false;
-                if (isset($blocks['articles'])) $blocks['articles']['enabled'] = true;
-                if (isset($blocks['loyalty_club'])) $blocks['loyalty_club']['enabled'] = true;
                 if (isset($blocks['reviews'])) $blocks['reviews']['enabled'] = true;
                 break;
 
             case 'premium':
                 if (isset($blocks['emergency_bar'])) $blocks['emergency_bar']['enabled'] = in_array($tenantType, ['organization', 'doctor']);
                 if (isset($blocks['duty_hours'])) $blocks['duty_hours']['enabled'] = true;
+                if (isset($blocks['before_after'])) $blocks['before_after']['enabled'] = in_array($tenantType, ['doctor', 'organization']);
                 if (isset($blocks['cost_calculator'])) $blocks['cost_calculator']['enabled'] = in_array($tenantType, ['doctor', 'organization']);
                 if (isset($blocks['faq'])) $blocks['faq']['enabled'] = true;
                 if (isset($blocks['stats_strip'])) $blocks['stats_strip']['enabled'] = true;
                 if (isset($blocks['bento_facilities'])) $blocks['bento_facilities']['enabled'] = true;
                 if (isset($blocks['doctors_roster'])) $blocks['doctors_roster']['enabled'] = ($tenantType === 'organization');
-                if (isset($blocks['telehealth_launcher'])) $blocks['telehealth_launcher']['enabled'] = in_array($tenantType, ['doctor', 'organization']);
-                if (isset($blocks['rx_prescription_box'])) $blocks['rx_prescription_box']['enabled'] = false;
-                if (isset($blocks['autoship_showcase'])) $blocks['autoship_showcase']['enabled'] = true;
-                if (isset($blocks['articles'])) $blocks['articles']['enabled'] = true;
-                if (isset($blocks['loyalty_club'])) $blocks['loyalty_club']['enabled'] = true;
                 if (isset($blocks['reviews'])) $blocks['reviews']['enabled'] = true;
                 break;
 
             case 'pharmacy':
                 if (isset($blocks['emergency_bar'])) $blocks['emergency_bar']['enabled'] = false;
                 if (isset($blocks['duty_hours'])) $blocks['duty_hours']['enabled'] = true;
+                if (isset($blocks['before_after'])) $blocks['before_after']['enabled'] = false;
                 if (isset($blocks['cost_calculator'])) $blocks['cost_calculator']['enabled'] = false;
                 if (isset($blocks['faq'])) $blocks['faq']['enabled'] = true;
                 if (isset($blocks['stats_strip'])) $blocks['stats_strip']['enabled'] = true;
                 if (isset($blocks['bento_facilities'])) $blocks['bento_facilities']['enabled'] = false;
                 if (isset($blocks['doctors_roster'])) $blocks['doctors_roster']['enabled'] = false;
-                if (isset($blocks['telehealth_launcher'])) $blocks['telehealth_launcher']['enabled'] = false;
-                if (isset($blocks['rx_prescription_box'])) $blocks['rx_prescription_box']['enabled'] = true;
-                if (isset($blocks['autoship_showcase'])) $blocks['autoship_showcase']['enabled'] = true;
-                if (isset($blocks['articles'])) $blocks['articles']['enabled'] = true;
-                if (isset($blocks['loyalty_club'])) $blocks['loyalty_club']['enabled'] = true;
                 if (isset($blocks['reviews'])) $blocks['reviews']['enabled'] = true;
                 break;
 
@@ -907,16 +880,12 @@ class TenantSiteService {
             default:
                 if (isset($blocks['emergency_bar'])) $blocks['emergency_bar']['enabled'] = in_array($tenantType, ['organization', 'doctor']);
                 if (isset($blocks['duty_hours'])) $blocks['duty_hours']['enabled'] = true;
+                if (isset($blocks['before_after'])) $blocks['before_after']['enabled'] = in_array($tenantType, ['organization', 'doctor', 'seller']);
                 if (isset($blocks['cost_calculator'])) $blocks['cost_calculator']['enabled'] = in_array($tenantType, ['doctor', 'organization']);
                 if (isset($blocks['faq'])) $blocks['faq']['enabled'] = true;
                 if (isset($blocks['stats_strip'])) $blocks['stats_strip']['enabled'] = true;
                 if (isset($blocks['bento_facilities'])) $blocks['bento_facilities']['enabled'] = in_array($tenantType, ['organization', 'doctor']);
                 if (isset($blocks['doctors_roster'])) $blocks['doctors_roster']['enabled'] = ($tenantType === 'organization');
-                if (isset($blocks['telehealth_launcher'])) $blocks['telehealth_launcher']['enabled'] = in_array($tenantType, ['doctor', 'organization']);
-                if (isset($blocks['rx_prescription_box'])) $blocks['rx_prescription_box']['enabled'] = in_array($tenantType, ['pharmacist', 'organization']);
-                if (isset($blocks['autoship_showcase'])) $blocks['autoship_showcase']['enabled'] = true;
-                if (isset($blocks['articles'])) $blocks['articles']['enabled'] = true;
-                if (isset($blocks['loyalty_club'])) $blocks['loyalty_club']['enabled'] = true;
                 if (isset($blocks['reviews'])) $blocks['reviews']['enabled'] = true;
                 if (isset($blocks['storefront'])) $blocks['storefront']['item_limit'] = 8;
                 break;
