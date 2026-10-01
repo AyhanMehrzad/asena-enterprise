@@ -14,6 +14,7 @@
 require_once __DIR__ . '/includes/db.php';
 require_once __DIR__ . '/includes/App.php';
 require_once __DIR__ . '/includes/functions.php';
+require_once __DIR__ . '/includes/QrCode.php';
 
 // Resolve Slug from Subdomain or GET parameter
 $host = $_SERVER['HTTP_HOST'] ?? '';
@@ -187,6 +188,57 @@ if ($isEmergency24) {
     $dutyCountdownText = "تا پایان شیفت امروز: {$hrsRemaining} ساعت و {$remMins} دقیقه باقی‌مانده";
 } else {
     $dutyCountdownText = "خارج از شیفت حضوری • شروع پذیرش فردا ساعت {$openTimeStr}";
+}
+
+// Digital VCard & Dynamic Scannable QR Codes
+$siteProtocol = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') || (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https') ? 'https' : 'http';
+$siteCanonicalUrl = $siteProtocol . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost') . strtok($_SERVER['REQUEST_URI'] ?? '', '?') . '?slug=' . urlencode($slug);
+
+$vcardPhone = $savedBlocks['header']['phone'] ?? $savedBlocks['contact']['phone'] ?? ($site['phone'] ?? '');
+$vcardCleanPhone = preg_replace('/[^\d+]/', '', $vcardPhone);
+$vcardAddress = $savedBlocks['contact']['address'] ?? ($site['address'] ?? '');
+$vcardTagline = $site['site_tagline'] ?? 'مرکز خدمات تخصصی حیوانات خانگی';
+
+// Build RFC 2426 vCard 3.0 content with UTF-8 BOM
+$vcardFileContent = "\xEF\xBB\xBFBEGIN:VCARD\r\nVERSION:3.0\r\nFN;CHARSET=UTF-8:" . $site['site_title'] . "\r\nORG;CHARSET=UTF-8:" . $site['site_title'] . "\r\n";
+if (!empty($vcardTagline)) {
+    $vcardFileContent .= "TITLE;CHARSET=UTF-8:" . $vcardTagline . "\r\n";
+}
+if (!empty($vcardCleanPhone)) {
+    $vcardFileContent .= "TEL;TYPE=WORK,VOICE:" . $vcardCleanPhone . "\r\n";
+}
+if (!empty($vcardAddress)) {
+    $vcardFileContent .= "ADR;TYPE=WORK;CHARSET=UTF-8:;;" . $vcardAddress . ";;;;\r\n";
+}
+$vcardFileContent .= "URL:" . $siteCanonicalUrl . "\r\n";
+$vcardFileContent .= "NOTE;CHARSET=UTF-8:عضو رسمی شبکه سلامت آسنا\r\n";
+$vcardFileContent .= "END:VCARD\r\n";
+
+// Handle direct vCard download
+if (isset($_GET['download_vcard']) && (int)$_GET['download_vcard'] === 1) {
+    $vcardFileName = preg_replace('/[^\p{L}\p{N}_-]/u', '_', $site['site_title']) . '.vcf';
+    header('Content-Type: text/vcard; charset=utf-8');
+    header('Content-Disposition: attachment; filename="' . $vcardFileName . '"; filename*="UTF-8\'\'' . rawurlencode($site['site_title']) . '.vcf"');
+    header('Content-Length: ' . strlen($vcardFileContent));
+    header('Cache-Control: no-cache, must-revalidate');
+    echo $vcardFileContent;
+    exit;
+}
+
+// Compact string for vCard QR
+$vcardQrString = "BEGIN:VCARD\nVERSION:3.0\nFN;CHARSET=UTF-8:" . $site['site_title'] . "\nORG;CHARSET=UTF-8:" . $site['site_title'] . (!empty($vcardCleanPhone) ? "\nTEL;TYPE=WORK,VOICE:" . $vcardCleanPhone : "") . "\nURL:" . $siteCanonicalUrl . "\nNOTE;CHARSET=UTF-8:عضو رسمی شبکه سلامت آسنا\nEND:VCARD";
+
+$qrWebsiteSvg = QrCode::svg($siteCanonicalUrl, 200, '#001a48', '#ffffff', 2);
+$qrVcardSvg   = QrCode::svg($vcardQrString, 220, '#001a48', '#ffffff', 2);
+
+// Handle direct QR vector download
+if (isset($_GET['download_qr']) && in_array($_GET['download_qr'], ['website', 'vcard'])) {
+    $downloadQrType = $_GET['download_qr'];
+    $outQrSvg = ($downloadQrType === 'website') ? $qrWebsiteSvg : $qrVcardSvg;
+    header('Content-Type: image/svg+xml; charset=utf-8');
+    header('Content-Disposition: attachment; filename="qr-' . $downloadQrType . '-' . $slug . '.svg"');
+    echo $outQrSvg;
+    exit;
 }
 
 // Color Theme Palettes with agency-grade tokens
@@ -372,8 +424,32 @@ $ctaHref = match($tenantType) {
         }
         .text-orange-950 { color: #431407 !important; }
         .text-amber-950 { color: #451a03 !important; }
-        .text-slate-950 { color: #020617 !important; }
         .aspect-\[4\/3\] { aspect-ratio: 4 / 3 !important; min-height: 280px; }
+
+        /* Reception Desk Countertop Stand Print Styles */
+        @media print {
+            body {
+                background: #ffffff !important;
+                color: #000000 !important;
+                padding: 0 !important;
+                margin: 0 !important;
+            }
+            body > *:not(#vcard-printable-stand) {
+                display: none !important;
+            }
+            #vcard-printable-stand {
+                display: block !important;
+                position: relative !important;
+                width: 100% !important;
+                max-width: 460px !important;
+                margin: 30px auto !important;
+                padding: 28px !important;
+                box-shadow: none !important;
+                border: 3px solid #001a48 !important;
+                border-radius: 24px !important;
+                page-break-inside: avoid !important;
+            }
+        }
 
         <?php if ($isPreview): ?>
         [data-block-id] {
@@ -1261,22 +1337,30 @@ $ctaHref = match($tenantType) {
                 </div>
 
                 <!-- Card 6: Digital VCard & Direct Sharing / کارت ویزیت دیجیتال -->
-                <div class="bg-white/95 backdrop-blur-md p-6 rounded-3xl border border-slate-200/90 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between group hover:-translate-y-1">
+                <div onclick="openVCardModal()" class="bg-white/95 backdrop-blur-md p-6 rounded-3xl border border-slate-200/90 shadow-sm hover:shadow-xl hover:border-indigo-400/60 transition-all duration-300 flex flex-col justify-between group hover:-translate-y-1 cursor-pointer relative overflow-hidden">
+                    <!-- Subtle Corner Aura -->
+                    <div class="absolute -top-12 -left-12 w-28 h-28 bg-indigo-500/10 rounded-full blur-xl group-hover:scale-125 transition-transform"></div>
                     <div>
-                        <div class="flex items-center justify-between mb-4">
-                            <div class="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center shadow-inner group-hover:scale-110 transition-transform">
+                        <div class="flex items-center justify-between mb-4 relative z-10">
+                            <div class="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center shadow-inner group-hover:scale-110 group-hover:bg-indigo-600 group-hover:text-white transition-all duration-300">
                                 <span class="material-symbols-outlined text-2xl">contact_page</span>
                             </div>
-                            <span class="px-2.5 py-1 rounded-full bg-indigo-50 text-indigo-700 text-[10px] font-black border border-indigo-100">QR اختصاصی</span>
+                            <div class="flex items-center gap-1.5">
+                                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                                <span class="px-2.5 py-1 rounded-full bg-indigo-50 text-indigo-700 text-[10px] font-black border border-indigo-100 flex items-center gap-1">
+                                    <span class="material-symbols-outlined text-[12px]">qr_code_2</span>
+                                    <span>QR اختصاصی</span>
+                                </span>
+                            </div>
                         </div>
-                        <h4 class="font-black text-slate-900 text-base mb-2 flex items-center gap-1.5" id="live-vcard-title" data-studio-editable="vcard_title">
+                        <h4 class="font-black text-slate-900 text-base mb-2 flex items-center gap-1.5 relative z-10" id="live-vcard-title" data-studio-editable="vcard_title">
                             <?= htmlspecialchars($asenaServicesBlock['vcard_title'] ?? 'کارت ویزیت دیجیتال و QR اختصاصی') ?>
                         </h4>
-                        <p class="text-xs text-slate-600 leading-relaxed font-medium mb-6" id="live-vcard-desc" data-studio-editable="vcard_desc">
+                        <p class="text-xs text-slate-600 leading-relaxed font-medium mb-6 relative z-10" id="live-vcard-desc" data-studio-editable="vcard_desc">
                             <?= htmlspecialchars($asenaServicesBlock['vcard_desc'] ?? 'دانلود فوری شماره تماس، نشانی و اطلاعات کلینیک در قالب مخاطب (.vcf) و اشتراک‌گذاری در پیام‌رسان‌ها') ?>
                         </p>
                     </div>
-                    <button type="button" onclick="openVCardModal()" class="w-full py-3 px-4 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-black shadow-md shadow-indigo-600/20 flex items-center justify-center gap-1.5 transition-all group-hover:shadow-lg cursor-pointer">
+                    <button type="button" onclick="event.stopPropagation(); openVCardModal();" class="w-full py-3 px-4 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-black shadow-md shadow-indigo-600/20 flex items-center justify-center gap-1.5 transition-all group-hover:shadow-lg cursor-pointer relative z-10">
                         <span id="live-vcard-btn" data-studio-editable="vcard_btn"><?= htmlspecialchars($asenaServicesBlock['vcard_btn'] ?? 'نمایش کارت ویزیت دیجیتال') ?></span>
                         <span class="material-symbols-outlined text-sm group-hover:-translate-x-1 transition-transform">qr_code_2</span>
                     </button>
@@ -2454,18 +2538,18 @@ $ctaHref = match($tenantType) {
     </div>
 
     <!-- Digital VCard & Direct Sharing Modal -->
-    <div id="vcard-modal" class="fixed inset-0 z-50 bg-black/75 backdrop-blur-md hidden items-center justify-center p-4 transition-opacity">
-        <div class="bg-white rounded-3xl max-w-sm w-full p-6 space-y-5 shadow-2xl border border-slate-100 text-center relative overflow-hidden">
+    <div id="vcard-modal" class="fixed inset-0 z-50 bg-black/75 backdrop-blur-md hidden items-center justify-center p-4 transition-opacity" onclick="if(event.target === this) closeVCardModal();">
+        <div class="bg-white rounded-3xl max-w-sm w-full p-6 space-y-4 shadow-2xl border border-slate-100 text-center relative overflow-hidden max-h-[92vh] overflow-y-auto">
             <!-- Top Gradient Aura -->
-            <div class="absolute -top-10 -left-10 w-32 h-32 bg-indigo-500/15 rounded-full blur-2xl"></div>
-            <div class="absolute -bottom-10 -right-10 w-32 h-32 bg-emerald-500/15 rounded-full blur-2xl"></div>
+            <div class="absolute -top-10 -left-10 w-32 h-32 bg-indigo-500/15 rounded-full blur-2xl pointer-events-none"></div>
+            <div class="absolute -bottom-10 -right-10 w-32 h-32 bg-emerald-500/15 rounded-full blur-2xl pointer-events-none"></div>
 
             <div class="flex items-center justify-between pb-3 border-b border-slate-100 relative z-10">
                 <div class="flex items-center gap-2">
                     <div class="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
                         <span class="material-symbols-outlined text-lg">badge</span>
                     </div>
-                    <span class="font-black text-sm text-slate-800">کارت ویزیت دیجیتال</span>
+                    <span class="font-black text-sm text-slate-800">کارت ویزیت دیجیتال و QR اختصاصی</span>
                 </div>
                 <button type="button" onclick="closeVCardModal()" class="p-1 rounded-xl text-slate-400 hover:text-slate-600 cursor-pointer">
                     <span class="material-symbols-outlined">close</span>
@@ -2473,67 +2557,95 @@ $ctaHref = match($tenantType) {
             </div>
 
             <!-- Identity Card View -->
-            <div class="relative z-10 space-y-4">
+            <div class="relative z-10 space-y-3">
                 <div class="flex flex-col items-center">
-                    <div class="w-16 h-16 rounded-2xl overflow-hidden border-2 border-slate-100 shadow-md mb-2 flex items-center justify-center bg-slate-50">
+                    <div class="w-16 h-16 rounded-2xl overflow-hidden border-2 border-slate-100 shadow-md mb-2 flex items-center justify-center bg-slate-50 relative">
                         <img src="<?= htmlspecialchars($siteLogo) ?>" alt="<?= htmlspecialchars($site['site_title']) ?>" class="w-full h-full object-cover">
+                        <div class="absolute bottom-0 right-0 w-3.5 h-3.5 bg-emerald-500 border-2 border-white rounded-full"></div>
                     </div>
-                    <h3 class="text-base font-black text-slate-900"><?= htmlspecialchars($site['site_title']) ?></h3>
-                    <p class="text-[11px] text-slate-500 font-medium"><?= htmlspecialchars($site['site_tagline'] ?? 'مرکز خدمات تخصصی حیوانات خانگی') ?></p>
+                    <h3 class="text-base font-black text-slate-900" id="vcard-modal-title"><?= htmlspecialchars($site['site_title']) ?></h3>
+                    <p class="text-[11px] text-slate-500 font-medium" id="vcard-modal-tagline"><?= htmlspecialchars($site['site_tagline'] ?? 'مرکز خدمات تخصصی حیوانات خانگی') ?></p>
+                    <?php if (!empty($vcardCleanPhone)): ?>
+                    <div class="mt-1.5 inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 text-[11px] font-bold" dir="ltr">
+                        <span class="material-symbols-outlined text-[13px] text-indigo-600">call</span>
+                        <span><?= htmlspecialchars($vcardPhone) ?></span>
+                    </div>
+                    <?php endif; ?>
                 </div>
 
-                <!-- QR Code Block -->
-                <div class="p-4 bg-slate-50 border border-slate-200/80 rounded-2xl flex flex-col items-center justify-center space-y-2">
-                    <div class="w-36 h-36 bg-white p-2 rounded-xl shadow-inner border border-slate-200 flex items-center justify-center">
-                        <svg viewBox="0 0 100 100" class="w-full h-full text-slate-900">
-                            <!-- Crisp Scalable QR Representation -->
-                            <rect width="100" height="100" fill="#ffffff" />
-                            <path d="M10,10 h24 v24 h-24 z M14,14 v16 h16 v-16 z M18,18 h8 v8 h-8 z" fill="#0f172a" />
-                            <path d="M66,10 h24 v24 h-24 z M70,14 v16 h16 v-16 z M74,18 h8 v8 h-8 z" fill="#0f172a" />
-                            <path d="M10,66 h24 v24 h-24 z M14,70 v16 h16 v-16 z M18,74 h8 v8 h-8 z" fill="#0f172a" />
-                            <!-- QR Data matrix dots -->
-                            <rect x="42" y="14" width="6" height="6" fill="#0f172a" />
-                            <rect x="52" y="14" width="6" height="6" fill="#0f172a" />
-                            <rect x="42" y="24" width="6" height="6" fill="#0f172a" />
-                            <rect x="46" y="34" width="8" height="8" fill="#059669" />
-                            <rect x="14" y="42" width="6" height="6" fill="#0f172a" />
-                            <rect x="26" y="42" width="6" height="6" fill="#0f172a" />
-                            <rect x="42" y="52" width="6" height="6" fill="#0f172a" />
-                            <rect x="54" y="52" width="6" height="6" fill="#0f172a" />
-                            <rect x="66" y="42" width="6" height="6" fill="#0f172a" />
-                            <rect x="78" y="42" width="6" height="6" fill="#0f172a" />
-                            <rect x="66" y="54" width="6" height="6" fill="#0f172a" />
-                            <rect x="78" y="66" width="6" height="6" fill="#0f172a" />
-                            <rect x="42" y="70" width="6" height="6" fill="#0f172a" />
-                            <rect x="52" y="78" width="6" height="6" fill="#0f172a" />
-                            <rect x="66" y="78" width="6" height="6" fill="#0f172a" />
-                            <rect x="78" y="78" width="6" height="6" fill="#0f172a" />
-                        </svg>
+                <!-- Dual-Mode QR Code Tabs -->
+                <div class="p-1 bg-slate-100 rounded-xl grid grid-cols-2 gap-1 text-xs font-bold">
+                    <button type="button" id="tab-qr-vcard" onclick="switchQrTab('vcard')" class="py-1.5 px-2 rounded-lg bg-white text-indigo-700 shadow-xs transition-all flex items-center justify-center gap-1 cursor-pointer">
+                        <span class="material-symbols-outlined text-sm">person_add</span>
+                        <span>مخاطب (vCard)</span>
+                    </button>
+                    <button type="button" id="tab-qr-website" onclick="switchQrTab('website')" class="py-1.5 px-2 rounded-lg text-slate-500 hover:text-slate-800 transition-all flex items-center justify-center gap-1 cursor-pointer">
+                        <span class="material-symbols-outlined text-sm">language</span>
+                        <span>وب‌سایت</span>
+                    </button>
+                </div>
+
+                <!-- QR Display Container -->
+                <div class="p-3 bg-slate-50 border border-slate-200/80 rounded-2xl flex flex-col items-center justify-center space-y-2">
+                    <!-- Real Scannable SVG for vCard QR -->
+                    <div id="qr-vcard-container" class="w-44 h-44 bg-white p-2 rounded-xl shadow-inner border border-slate-200 flex items-center justify-center relative">
+                        <div class="w-full h-full flex items-center justify-center">
+                            <?= $qrVcardSvg ?>
+                        </div>
                     </div>
-                    <span class="text-[10px] text-slate-400 font-bold">اسکن کیوآرکد با دوربین گوشی جهت ورود فوری</span>
+
+                    <!-- Real Scannable SVG for Website URL QR -->
+                    <div id="qr-website-container" class="w-44 h-44 bg-white p-2 rounded-xl shadow-inner border border-slate-200 hidden items-center justify-center relative">
+                        <div class="w-full h-full flex items-center justify-center">
+                            <?= $qrWebsiteSvg ?>
+                        </div>
+                    </div>
+
+                    <span id="qr-tab-description" class="text-[10px] text-slate-500 font-bold leading-tight">
+                        اسکن بارکد با دوربین گوشی جهت ثبت خودکار در دفترچه تلفن (iOS و Android)
+                    </span>
                 </div>
 
                 <!-- 1-Tap Save VCF Action -->
                 <button type="button" onclick="downloadVCard()" class="w-full py-3 px-4 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-black shadow-lg shadow-indigo-600/25 flex items-center justify-center gap-2 transition-transform active:scale-95 cursor-pointer">
                     <span class="material-symbols-outlined text-base">person_add</span>
-                    <span>افزودن به مخاطبین گوشی (دانلود VCF)</span>
+                    <span>افزودن به مخاطبین گوشی (دانلود مستقیم VCF)</span>
                 </button>
 
-                <!-- Social Share Grid -->
+                <!-- Auxiliary Tools: Download QR Image & Print Stand -->
+                <div class="grid grid-cols-2 gap-2">
+                    <button type="button" onclick="downloadQrImage()" class="py-2 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-[11px] font-bold flex items-center justify-center gap-1 transition-colors cursor-pointer" title="دانلود تصویر وکتور بارکد">
+                        <span class="material-symbols-outlined text-xs">download</span>
+                        <span>دانلود بارکد (SVG)</span>
+                    </button>
+                    <button type="button" onclick="printVCardStand()" class="py-2 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-[11px] font-bold flex items-center justify-center gap-1 transition-colors cursor-pointer" title="چاپ استند رومیزی برای پذیرش">
+                        <span class="material-symbols-outlined text-xs">print</span>
+                        <span>چاپ استند پذیرش</span>
+                    </button>
+                </div>
+
+                <!-- Social & Native Share Grid -->
                 <div class="pt-2 border-t border-slate-100">
+                    <button type="button" onclick="nativeShare()" class="w-full mb-2 py-2.5 px-3 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 text-white text-xs font-black flex items-center justify-center gap-1.5 shadow-sm hover:opacity-95 transition-opacity cursor-pointer">
+                        <span class="material-symbols-outlined text-sm">share</span>
+                        <span>اشتراک‌گذاری هوشمند در موبایل</span>
+                    </button>
                     <div class="text-[11px] text-slate-400 font-bold mb-2">اشتراک‌گذاری در پیام‌رسان‌ها:</div>
-                    <div class="grid grid-cols-4 gap-2">
-                        <button type="button" onclick="shareSiteUrl('whatsapp')" class="p-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-bold transition-colors cursor-pointer" title="واتساپ">
+                    <div class="grid grid-cols-5 gap-1.5">
+                        <button type="button" onclick="shareSiteUrl('whatsapp')" class="p-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-[11px] font-bold transition-colors cursor-pointer" title="واتساپ">
                             <span>واتساپ</span>
                         </button>
-                        <button type="button" onclick="shareSiteUrl('telegram')" class="p-2 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-bold transition-colors cursor-pointer" title="تلگرام">
+                        <button type="button" onclick="shareSiteUrl('telegram')" class="p-2 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 text-[11px] font-bold transition-colors cursor-pointer" title="تلگرام">
                             <span>تلگرام</span>
                         </button>
-                        <button type="button" onclick="shareSiteUrl('eitaa')" class="p-2 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-700 text-xs font-bold transition-colors cursor-pointer" title="ایتا">
+                        <button type="button" onclick="shareSiteUrl('eitaa')" class="p-2 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-700 text-[11px] font-bold transition-colors cursor-pointer" title="ایتا">
                             <span>ایتا</span>
                         </button>
-                        <button type="button" onclick="shareSiteUrl('bale')" class="p-2 rounded-xl bg-cyan-50 hover:bg-cyan-100 text-cyan-700 text-xs font-bold transition-colors cursor-pointer" title="بله">
+                        <button type="button" onclick="shareSiteUrl('bale')" class="p-2 rounded-xl bg-cyan-50 hover:bg-cyan-100 text-cyan-700 text-[11px] font-bold transition-colors cursor-pointer" title="بله">
                             <span>بله</span>
+                        </button>
+                        <button type="button" onclick="shareSiteUrl('sms')" class="p-2 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-700 text-[11px] font-bold transition-colors cursor-pointer" title="پیامک">
+                            <span>پیامک</span>
                         </button>
                     </div>
                     <button type="button" onclick="shareSiteUrl('copy')" class="mt-2.5 w-full py-2 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer">
@@ -2606,6 +2718,46 @@ $ctaHref = match($tenantType) {
                     </a>
                 </div>
             </div>
+    </div>
+
+    <!-- Printable Reception Countertop Stand / Digital Business Card Plaque (Visible only on @media print) -->
+    <div id="vcard-printable-stand" class="hidden bg-white text-slate-900 rounded-3xl p-8 border-4 border-[#001a48] text-center max-w-md mx-auto shadow-2xl">
+        <div class="flex items-center justify-between pb-4 border-b-2 border-slate-200 mb-6" dir="rtl">
+            <div class="flex items-center gap-2">
+                <span class="font-black text-[11px] text-slate-500 uppercase tracking-widest">ASENA CLOUD NETWORK</span>
+            </div>
+            <div class="flex items-center gap-1 text-emerald-700 font-black text-xs">
+                <span>عضو رسمی فناوری سلامت آسنا</span>
+            </div>
+        </div>
+        
+        <div class="w-20 h-20 mx-auto rounded-2xl overflow-hidden border-2 border-slate-200 shadow mb-3">
+            <img src="<?= htmlspecialchars($siteLogo) ?>" alt="<?= htmlspecialchars($site['site_title']) ?>" class="w-full h-full object-cover">
+        </div>
+        <h2 class="text-2xl font-black text-[#001a48] mb-1"><?= htmlspecialchars($site['site_title']) ?></h2>
+        <p class="text-xs text-slate-600 font-bold mb-6"><?= htmlspecialchars($site['site_tagline'] ?? '') ?></p>
+
+        <div class="w-56 h-56 mx-auto p-3 bg-white rounded-2xl border-2 border-slate-300 shadow-inner flex items-center justify-center mb-4">
+            <?= $qrWebsiteSvg ?>
+        </div>
+
+        <p class="text-sm font-black text-slate-800 mb-4" dir="rtl">
+            جهت رزرو نوبت آنلاین، استعلام و مشاهده خدمات<br>
+            <span class="text-xs font-normal text-slate-500">دوربین گوشی هوشمند خود را روبه‌روی بارکد بالا بگیرید</span>
+        </p>
+
+        <div class="pt-4 border-t-2 border-slate-200 space-y-1.5 text-xs text-slate-700 font-medium" dir="rtl">
+            <?php if (!empty($vcardPhone)): ?>
+            <p><strong>تلفن پذیرش:</strong> <?= htmlspecialchars($vcardPhone) ?></p>
+            <?php endif; ?>
+            <?php if (!empty($vcardAddress)): ?>
+            <p><strong>نشانی:</strong> <?= htmlspecialchars($vcardAddress) ?></p>
+            <?php endif; ?>
+        </div>
+        <div class="mt-6 pt-3 border-t border-slate-100 flex items-center justify-center gap-2 text-[10px] text-slate-400">
+            <span>درگاه امن شاپرک</span>
+            <span>•</span>
+            <span>پرونده ابری سلامت آسنا</span>
         </div>
     </div>
 
@@ -3111,6 +3263,8 @@ $ctaHref = match($tenantType) {
         }
 
         // Digital VCard & Direct Sharing Modal Functions
+        let currentQrTab = 'vcard';
+
         function openVCardModal() {
             const modal = document.getElementById('vcard-modal');
             if (modal) {
@@ -3127,24 +3281,107 @@ $ctaHref = match($tenantType) {
             }
         }
 
+        function switchQrTab(type) {
+            currentQrTab = type;
+            const vcardContainer = document.getElementById('qr-vcard-container');
+            const websiteContainer = document.getElementById('qr-website-container');
+            const tabVcard = document.getElementById('tab-qr-vcard');
+            const tabWebsite = document.getElementById('tab-qr-website');
+            const desc = document.getElementById('qr-tab-description');
+
+            if (type === 'vcard') {
+                if (vcardContainer) { vcardContainer.classList.remove('hidden'); vcardContainer.classList.add('flex'); }
+                if (websiteContainer) { websiteContainer.classList.add('hidden'); websiteContainer.classList.remove('flex'); }
+                if (tabVcard) {
+                    tabVcard.classList.add('bg-white', 'text-indigo-700', 'shadow-xs');
+                    tabVcard.classList.remove('text-slate-500');
+                }
+                if (tabWebsite) {
+                    tabWebsite.classList.remove('bg-white', 'text-indigo-700', 'shadow-xs');
+                    tabWebsite.classList.add('text-slate-500');
+                }
+                if (desc) desc.textContent = 'اسکن بارکد با دوربین گوشی جهت ذخیره خودکار در دفترچه تلفن (iOS و Android)';
+            } else {
+                if (vcardContainer) { vcardContainer.classList.add('hidden'); vcardContainer.classList.remove('flex'); }
+                if (websiteContainer) { websiteContainer.classList.remove('hidden'); websiteContainer.classList.add('flex'); }
+                if (tabWebsite) {
+                    tabWebsite.classList.add('bg-white', 'text-indigo-700', 'shadow-xs');
+                    tabWebsite.classList.remove('text-slate-500');
+                }
+                if (tabVcard) {
+                    tabVcard.classList.remove('bg-white', 'text-indigo-700', 'shadow-xs');
+                    tabVcard.classList.add('text-slate-500');
+                }
+                if (desc) desc.textContent = 'اسکن بارکد با دوربین گوشی جهت ورود به وب‌سایت و رزرو آنلاین';
+            }
+        }
+
         function downloadVCard() {
-            const name = <?= json_encode($site['site_title'], JSON_UNESCAPED_UNICODE) ?>;
-            const phone = <?= json_encode($contactBlock['phone'] ?? '', JSON_UNESCAPED_UNICODE) ?>;
-            const address = <?= json_encode($contactBlock['address'] ?? '', JSON_UNESCAPED_UNICODE) ?>;
-            const url = window.location.href.split('?')[0];
-            const vcf = `BEGIN:VCARD\nVERSION:3.0\nFN:${name}\nORG:${name}\nTEL;TYPE=WORK,VOICE:${phone}\nADR;TYPE=WORK:;;${address};;;;\nURL:${url}\nNOTE:عضو رسمی شبکه سلامت آسنا\nEND:VCARD`;
-            const blob = new Blob([vcf], { type: 'text/vcard;charset=utf-8' });
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(blob);
-            link.download = `${name}.vcf`;
-            link.click();
-            showSiteToast('✓ فایل مخاطب (.vcf) کلینیک با موفقیت دانلود شد.');
+            const slug = <?= json_encode($slug) ?>;
+            const serverUrl = window.location.href.split('?')[0] + '?slug=' + encodeURIComponent(slug) + '&download_vcard=1';
+            
+            // Generate standard RFC 2426 vCard with UTF-8 BOM
+            try {
+                const name = <?= json_encode($site['site_title'], JSON_UNESCAPED_UNICODE) ?>;
+                const phone = <?= json_encode($vcardCleanPhone, JSON_UNESCAPED_UNICODE) ?>;
+                const address = <?= json_encode($vcardAddress, JSON_UNESCAPED_UNICODE) ?>;
+                const tagline = <?= json_encode($vcardTagline, JSON_UNESCAPED_UNICODE) ?>;
+                const url = window.location.href.split('?')[0] + '?slug=' + encodeURIComponent(slug);
+                
+                const vcf = `\uFEFFBEGIN:VCARD\r\nVERSION:3.0\r\nFN;CHARSET=UTF-8:${name}\r\nORG;CHARSET=UTF-8:${name}\r\nTITLE;CHARSET=UTF-8:${tagline}\r\nTEL;TYPE=WORK,VOICE:${phone}\r\nADR;TYPE=WORK;CHARSET=UTF-8:;;${address};;;;\r\nURL:${url}\r\nNOTE;CHARSET=UTF-8:عضو رسمی شبکه فناوری و سلامت آسنا\r\nEND:VCARD`;
+                const blob = new Blob([vcf], { type: 'text/vcard;charset=utf-8' });
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = `${name}.vcf`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                showSiteToast('✓ فایل مخاطب (.vcf) کلینیک با موفقیت دانلود شد.');
+            } catch (e) {
+                // Fallback to server endpoint
+                window.location.href = serverUrl;
+            }
+        }
+
+        function downloadQrImage() {
+            const slug = <?= json_encode($slug) ?>;
+            const type = (currentQrTab === 'vcard') ? 'vcard' : 'website';
+            const serverUrl = window.location.href.split('?')[0] + '?slug=' + encodeURIComponent(slug) + '&download_qr=' + type;
+            window.location.href = serverUrl;
+            showSiteToast('✓ فایل وکتور بارکد (SVG) دانلود شد.');
+        }
+
+        function printVCardStand() {
+            window.print();
+        }
+
+        async function nativeShare() {
+            const slug = <?= json_encode($slug) ?>;
+            const title = <?= json_encode($site['site_title'], JSON_UNESCAPED_UNICODE) ?>;
+            const url = window.location.href.split('?')[0] + '?slug=' + encodeURIComponent(slug);
+            const text = `کارت ویزیت دیجیتال و نوبت‌دهی آنلاین ${title}`;
+
+            if (navigator.share) {
+                try {
+                    await navigator.share({ title: title, text: text, url: url });
+                    showSiteToast('✓ با موفقیت اشتراک‌گذاری شد.');
+                    return;
+                } catch(err) {
+                    if (err.name !== 'AbortError') {
+                        copyAddressToClipboard(url);
+                    }
+                }
+            } else {
+                copyAddressToClipboard(url);
+            }
         }
 
         function shareSiteUrl(platform) {
-            const url = window.location.href.split('?')[0];
+            const slug = <?= json_encode($slug) ?>;
+            const url = window.location.href.split('?')[0] + '?slug=' + encodeURIComponent(slug);
             const title = <?= json_encode($site['site_title'], JSON_UNESCAPED_UNICODE) ?>;
-            const text = `وب‌سایت و رزرو آنلاین ${title}:\n${url}`;
+            const text = `وب‌سایت و نوبت‌دهی آنلاین ${title}:\n${url}`;
+            
             if (platform === 'whatsapp') {
                 window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, '_blank');
             } else if (platform === 'telegram') {
@@ -3153,6 +3390,8 @@ $ctaHref = match($tenantType) {
                 window.open(`https://eitaa.com/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(title)}`, '_blank');
             } else if (platform === 'bale') {
                 window.open(`https://ble.ir/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(title)}`, '_blank');
+            } else if (platform === 'sms') {
+                window.open(`sms:?body=${encodeURIComponent(text)}`, '_self');
             } else {
                 copyAddressToClipboard(url);
             }
