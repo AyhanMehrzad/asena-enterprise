@@ -36,13 +36,23 @@ assertCondition(str_contains($studioContent, "value=\"aurora\""), "Studio suppor
 assertCondition(str_contains($studioContent, 'name="ambient_mode"'), "Studio has ambient lighting mode selector");
 assertCondition(str_contains($studioContent, 'input-trust-anchor-toggle'), "Studio has symbiotic trust anchor toggle");
 assertCondition(str_contains($studioContent, "section-before_after"), "Studio has Before/After comparison accordion");
+assertCondition(str_contains($studioContent, "applyColorSwatch("), "Studio provides quick brand harmonized color swatches");
+assertCondition(str_contains($studioContent, "resetBrandColorsToDefault("), "Studio has reset brand colors to default function");
+assertCondition(str_contains($studioContent, "id=\"input-primary-color\""), "Studio has primary brand color picker");
+assertCondition(str_contains($studioContent, "id=\"input-secondary-color\""), "Studio has secondary accent color picker");
+assertCondition(str_contains($studioContent, "id: 'input-calc-badge'"), "Studio binds input-calc-badge to live update");
+assertCondition(str_contains($studioContent, "id: 'input-calc-subtitle'"), "Studio binds input-calc-subtitle to live update");
 
 // 2. Site side verification
 assertCondition(str_contains($siteContent, 'window.applyLiveFieldUpdate = function'), "Site.php exposes applyLiveFieldUpdate function in preview mode");
 assertCondition(str_contains($siteContent, "e.data.type === 'STUDIO_LIVE_UPDATE'"), "Site.php listens for STUDIO_LIVE_UPDATE postMessage");
 assertCondition(str_contains($siteContent, "case 'site_title':"), "Site.php handles site_title live update");
 assertCondition(str_contains($siteContent, "case 'theme_palette':"), "Site.php handles theme_palette live update");
+assertCondition(str_contains($siteContent, "case 'custom_colors':"), "Site.php handles custom_colors live update with contrast protection");
 assertCondition(str_contains($siteContent, "case 'block_toggle':"), "Site.php handles block_toggle live update");
+assertCondition(str_contains($siteContent, "case 'calc_badge':"), "Site.php handles calc_badge live update");
+assertCondition(str_contains($siteContent, "case 'calc_heading':"), "Site.php handles calc_heading live update");
+assertCondition(str_contains($siteContent, "case 'calc_subtitle':"), "Site.php handles calc_subtitle live update");
 assertCondition(str_contains($siteContent, "case 'calc_discount':"), "Site.php handles calc_discount live update");
 assertCondition(str_contains($siteContent, "case 'scroll_to_block':"), "Site.php handles scroll_to_block live update");
 assertCondition(str_contains($siteContent, "case 'storefront_limit':"), "Site.php handles storefront_limit live update");
@@ -52,6 +62,8 @@ assertCondition(str_contains($siteContent, "case 'trust_anchor_toggle':"), "Site
 assertCondition(str_contains($siteContent, "case 'before_after_label_before':"), "Site.php handles before/after labels live update");
 assertCondition(str_contains($siteContent, "id=\"live-trust-anchor\""), "Site.php renders symbiotic trust anchor element");
 assertCondition(str_contains($siteContent, "id=\"before-after\""), "Site.php renders Before/After comparison module");
+assertCondition(str_contains($siteContent, "id=\"live-calc-badge\""), "Site.php renders live-calc-badge element");
+assertCondition(str_contains($siteContent, "id=\"live-calc-subtitle\""), "Site.php renders live-calc-subtitle element");
 
 // 3. Click to edit
 assertCondition(str_contains($siteContent, "type: 'BLOCK_CLICKED'"), "Site.php emits BLOCK_CLICKED on block click");

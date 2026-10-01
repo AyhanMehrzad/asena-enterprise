@@ -215,6 +215,42 @@ $paletteMap = [
 ];
 $theme = $paletteMap[$site['theme_palette']] ?? $paletteMap['emerald'];
 
+// Optional bespoke color customization while preserving harmony and contrast safety
+$customPrimary = $layout['theme']['primary_color'] ?? ($site['primary_color'] ?? null);
+$customSecondary = $layout['theme']['secondary_color'] ?? ($site['secondary_color'] ?? null);
+
+if (!empty($customPrimary) && preg_match('/^#[a-f0-9]{6}$/i', $customPrimary)) {
+    // Only apply if explicitly declared in layout or differs from legacy column default
+    $isExplicitCustom = !empty($layout['theme']['primary_color']) || 
+                        ($site['theme_palette'] === 'navy' && $customPrimary === '#001a48') ||
+                        ($customPrimary !== '#001a48');
+    if ($isExplicitCustom) {
+        $hex = ltrim($customPrimary, '#');
+        $r = hexdec(substr($hex, 0, 2));
+        $g = hexdec(substr($hex, 2, 2));
+        $b = hexdec(substr($hex, 4, 2));
+        
+        // Luminance check: keep button text contrast WCAG AA compliant (> 4.5:1 against white text)
+        $lum = (0.299 * $r + 0.587 * $g + 0.114 * $b) / 255;
+        if ($lum > 0.75) {
+            $r = (int)($r * 0.65);
+            $g = (int)($g * 0.65);
+            $b = (int)($b * 0.65);
+            $customPrimary = sprintf("#%02x%02x%02x", $r, $g, $b);
+        }
+        
+        $theme['primary'] = $customPrimary;
+        $theme['primary_hover'] = sprintf("#%02x%02x%02x", max(0, (int)($r * 0.85)), max(0, (int)($g * 0.85)), max(0, (int)($b * 0.85)));
+        $theme['primary_light'] = sprintf("rgba(%d, %d, %d, 0.08)", $r, $g, $b);
+        $theme['primary_border'] = sprintf("rgba(%d, %d, %d, 0.22)", $r, $g, $b);
+        $theme['subtle_glow'] = sprintf("rgba(%d, %d, %d, 0.15)", $r, $g, $b);
+    }
+}
+
+if (!empty($customSecondary) && preg_match('/^#[a-f0-9]{6}$/i', $customSecondary)) {
+    $theme['accent'] = $customSecondary;
+}
+
 // SEO & Meta
 $metaTitle = htmlspecialchars($site['site_title'] . (!empty($site['site_tagline']) ? ' - ' . $site['site_tagline'] : ''));
 $metaDesc = htmlspecialchars($site['meta_description'] ?: ($site['site_title'] . ' - وب‌سایت رسمی، خدمات تخصصی و نوبت‌دهی آنلاین.'));
@@ -899,11 +935,11 @@ $ctaHref = match($tenantType) {
             <div class="text-center max-w-2xl mx-auto mb-12">
                 <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-50 border border-amber-200 text-amber-800 text-xs font-black mb-3">
                     <span class="material-symbols-outlined text-sm">calculate</span>
-                    <span><?= htmlspecialchars($calculatorBlock['badge'] ?? 'محاسبه‌گر شفاف هزینه‌ها') ?></span>
+                    <span id="live-calc-badge"><?= htmlspecialchars($calculatorBlock['badge'] ?? 'تعرفه شفاف خدمات درمانی و جراحی') ?></span>
                 </div>
-                <h3 class="text-2xl sm:text-3xl font-black text-slate-900" id="live-calc-heading"><?= htmlspecialchars($calculatorBlock['heading'] ?? 'تخمین هوشمند تعرفه خدمات بالینی و جراحی') ?></h3>
-                <p class="text-xs sm:text-sm text-slate-500 mt-2 leading-relaxed">
-                    <?= htmlspecialchars($calculatorBlock['subtitle'] ?? 'نوع حیوان و خدمت مورد نیاز را انتخاب کنید تا محدوده هزینه مصوب همراه با ۱۰٪ تخفیف ویژه رزرو آنلاین محاسبه گردد.') ?>
+                <h3 class="text-2xl sm:text-3xl font-black text-slate-900" id="live-calc-heading"><?= htmlspecialchars($calculatorBlock['heading'] ?? 'برآورد آنلاین و شفاف تعرفه خدمات و جراحی‌های تخصصی') ?></h3>
+                <p class="text-xs sm:text-sm text-slate-500 mt-2 leading-relaxed" id="live-calc-subtitle">
+                    <?= htmlspecialchars($calculatorBlock['subtitle'] ?? 'گونه حیوان خانگی و خدمات تشخیصی، بالینی یا جراحی مدنظر را انتخاب فرمایید تا تعرفه مصوب رسمی همراه با ۱۰٪ تخفیف رزرو آنلاین برآورد گردد.') ?>
                 </p>
             </div>
 
@@ -1878,9 +1914,19 @@ $ctaHref = match($tenantType) {
                     if (wrap) wrap.classList.toggle('hidden', !value || !value.trim());
                     break;
                 }
+                case 'calc_badge': {
+                    const el = document.getElementById('live-calc-badge');
+                    if (el) el.innerText = value || 'تعرفه شفاف خدمات درمانی و جراحی';
+                    break;
+                }
                 case 'calc_heading': {
                     const el = document.getElementById('live-calc-heading');
-                    if (el) el.innerText = value || 'تخمین هوشمند تعرفه خدمات بالینی و جراحی';
+                    if (el) el.innerText = value || 'برآورد آنلاین و شفاف تعرفه خدمات و جراحی‌های تخصصی';
+                    break;
+                }
+                case 'calc_subtitle': {
+                    const el = document.getElementById('live-calc-subtitle');
+                    if (el) el.innerText = value || 'گونه حیوان خانگی و خدمات تشخیصی، بالینی یا جراحی مدنظر را انتخاب فرمایید تا تعرفه مصوب رسمی همراه با ۱۰٪ تخفیف رزرو آنلاین برآورد گردد.';
                     break;
                 }
                 case 'calc_discount': {
@@ -1891,6 +1937,40 @@ $ctaHref = match($tenantType) {
                     if (pctSpan) pctSpan.innerText = pct;
                     discountPercent = pct;
                     if (typeof recalculateCost === 'function') recalculateCost();
+                    break;
+                }
+                case 'custom_colors': {
+                    const primary = (value && value.primary) ? value.primary : null;
+                    const secondary = (value && value.secondary) ? value.secondary : null;
+                    const r = document.documentElement;
+                    if (primary && /^#[a-f0-9]{6}$/i.test(primary)) {
+                        const hex = primary.replace('#', '');
+                        let red = parseInt(hex.substring(0, 2), 16);
+                        let green = parseInt(hex.substring(2, 4), 16);
+                        let blue = parseInt(hex.substring(4, 6), 16);
+
+                        // Safe luminance clamp (> 0.75 is dimmed to protect white text readability)
+                        const lum = (0.299 * red + 0.587 * green + 0.114 * blue) / 255;
+                        if (lum > 0.75) {
+                            red = Math.round(red * 0.65);
+                            green = Math.round(green * 0.65);
+                            blue = Math.round(blue * 0.65);
+                        }
+                        const safePrimary = '#' + [red, green, blue].map(x => x.toString(16).padStart(2, '0')).join('');
+                        const hoverRed = Math.max(0, Math.round(red * 0.85));
+                        const hoverGreen = Math.max(0, Math.round(green * 0.85));
+                        const hoverBlue = Math.max(0, Math.round(blue * 0.85));
+                        const hoverPrimary = '#' + [hoverRed, hoverGreen, hoverBlue].map(x => x.toString(16).padStart(2, '0')).join('');
+
+                        r.style.setProperty('--tenant-primary', safePrimary);
+                        r.style.setProperty('--tenant-primary-hover', hoverPrimary);
+                        r.style.setProperty('--tenant-primary-light', `rgba(${red}, ${green}, ${blue}, 0.08)`);
+                        r.style.setProperty('--tenant-primary-border', `rgba(${red}, ${green}, ${blue}, 0.22)`);
+                        r.style.setProperty('--tenant-glow', `rgba(${red}, ${green}, ${blue}, 0.15)`);
+                    }
+                    if (secondary && /^#[a-f0-9]{6}$/i.test(secondary)) {
+                        r.style.setProperty('--tenant-accent', secondary);
+                    }
                     break;
                 }
                 case 'doctors_heading': {

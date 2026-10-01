@@ -534,8 +534,16 @@ $publicUrl = "../site.php?slug=" . urlencode($site['slug']);
                                 <span>فعال‌سازی ویجت تخمین آنلاین تعرفه و جراحی</span>
                             </label>
                             <div>
-                                <label class="block text-[11px] font-bold text-slate-700 mb-1">عنوان بخش محاسبه‌گر</label>
-                                <input type="text" id="input-calc-heading" value="<?= htmlspecialchars($layout['cost_calculator']['heading'] ?? 'تخمین هوشمند تعرفه خدمات بالینی و جراحی') ?>" class="w-full text-xs p-2.5 rounded-xl border border-slate-200 focus:border-amber-600 focus:outline-none">
+                                <label class="block text-[11px] font-bold text-slate-700 mb-1">نشان یا برچسب بالای عنوان</label>
+                                <input type="text" id="input-calc-badge" value="<?= htmlspecialchars($layout['cost_calculator']['badge'] ?? 'تعرفه شفاف خدمات درمانی و جراحی') ?>" class="w-full text-xs p-2.5 rounded-xl border border-slate-200 focus:border-amber-600 focus:outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-bold text-slate-700 mb-1">عنوان اصلی بخش تعرفه‌ها</label>
+                                <input type="text" id="input-calc-heading" value="<?= htmlspecialchars($layout['cost_calculator']['heading'] ?? 'برآورد آنلاین و شفاف تعرفه خدمات و جراحی‌های تخصصی') ?>" class="w-full text-xs p-2.5 rounded-xl border border-slate-200 focus:border-amber-600 focus:outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-bold text-slate-700 mb-1">توضیحات و راهنمای مراجعین</label>
+                                <textarea id="input-calc-subtitle" rows="2" class="w-full text-xs p-2.5 rounded-xl border border-slate-200 focus:border-amber-600 focus:outline-none"><?= htmlspecialchars($layout['cost_calculator']['subtitle'] ?? 'گونه حیوان خانگی و خدمات تشخیصی، بالینی یا جراحی مدنظر را انتخاب فرمایید تا تعرفه مصوب رسمی همراه با ۱۰٪ تخفیف رزرو آنلاین برآورد گردد.') ?></textarea>
                             </div>
                             <div>
                                 <label class="block text-[11px] font-bold text-slate-700 mb-1">درصد تخفیف رزرو آنلاین</label>
@@ -787,6 +795,69 @@ $publicUrl = "../site.php?slug=" . urlencode($site['slug']);
                                     <div class="text-[10px] text-slate-400">Pure Aurora Cyan</div>
                                 </div>
                             </label>
+                        </div>
+                    </div>
+
+                    <?php
+                    $paletteColorDefaults = [
+                        'emerald' => ['primary' => '#059669', 'secondary' => '#fd8100'],
+                        'navy' => ['primary' => '#001a48', 'secondary' => '#fd8100'],
+                        'orange' => ['primary' => '#ea580c', 'secondary' => '#001a48'],
+                        'purple' => ['primary' => '#7c3aed', 'secondary' => '#ea580c'],
+                        'aurora' => ['primary' => '#0891b2', 'secondary' => '#001a48']
+                    ];
+                    $activePaletteKey = $site['theme_palette'] ?? 'emerald';
+                    $activeDef = $paletteColorDefaults[$activePaletteKey] ?? $paletteColorDefaults['emerald'];
+                    $activePrimaryColor = $layout['theme']['primary_color'] ?? ($site['primary_color'] ?: $activeDef['primary']);
+                    $activeSecondaryColor = $layout['theme']['secondary_color'] ?? ($site['secondary_color'] ?: $activeDef['secondary']);
+                    if (empty($layout['theme']['primary_color']) && $activePaletteKey !== 'navy' && $activePrimaryColor === '#001a48') {
+                        $activePrimaryColor = $activeDef['primary'];
+                    }
+                    ?>
+                    <!-- Brand Colors Customizer & Safe Harmonizer -->
+                    <div class="p-3.5 rounded-2xl border border-slate-200 bg-white shadow-2xs space-y-3">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <div class="text-xs font-bold text-slate-800">سفارشی‌سازی رنگ‌های برند و دکمه‌ها</div>
+                                <div class="text-[10px] text-slate-400">تنظیم هارمونیک رنگ سازمانی با حفظ کنتراست استاندارد</div>
+                            </div>
+                            <button type="button" onclick="resetBrandColorsToDefault()" class="px-2.5 py-1 rounded-lg border border-slate-200 hover:border-slate-300 bg-slate-50 hover:bg-slate-100 text-slate-600 hover:text-slate-800 text-[11px] font-bold transition-all flex items-center gap-1 shadow-2xs cursor-pointer" title="بازنشانی به پالت رسمی">
+                                <span class="material-symbols-outlined text-xs">restart_alt</span>
+                                <span>بازنشانی رنگ‌ها</span>
+                            </button>
+                        </div>
+
+                        <!-- Quick Brand Harmonized Swatches -->
+                        <div>
+                            <div class="text-[10px] font-bold text-slate-500 mb-1.5">پالت‌های آماده و سازگار با هویت برند:</div>
+                            <div class="flex flex-wrap gap-1.5" id="brand-swatches-container">
+                                <button type="button" onclick="applyColorSwatch('#001a48', '#fd8100')" class="w-7 h-7 rounded-xl border-2 border-white shadow-xs flex items-center justify-center transition-transform hover:scale-110 active:scale-95 cursor-pointer" style="background-color: #001a48;" title="سرمه‌ای رسمی آسنا"></button>
+                                <button type="button" onclick="applyColorSwatch('#059669', '#fd8100')" class="w-7 h-7 rounded-xl border-2 border-white shadow-xs flex items-center justify-center transition-transform hover:scale-110 active:scale-95 cursor-pointer" style="background-color: #059669;" title="سبز کلینیک لوکس"></button>
+                                <button type="button" onclick="applyColorSwatch('#0891b2', '#001a48')" class="w-7 h-7 rounded-xl border-2 border-white shadow-xs flex items-center justify-center transition-transform hover:scale-110 active:scale-95 cursor-pointer" style="background-color: #0891b2;" title="فیروزه‌ای شفق قطبی"></button>
+                                <button type="button" onclick="applyColorSwatch('#ea580c', '#001a48')" class="w-7 h-7 rounded-xl border-2 border-white shadow-xs flex items-center justify-center transition-transform hover:scale-110 active:scale-95 cursor-pointer" style="background-color: #ea580c;" title="نارنجی پویا"></button>
+                                <button type="button" onclick="applyColorSwatch('#7c3aed', '#ea580c')" class="w-7 h-7 rounded-xl border-2 border-white shadow-xs flex items-center justify-center transition-transform hover:scale-110 active:scale-95 cursor-pointer" style="background-color: #7c3aed;" title="بنفش مخمل اشرافی"></button>
+                                <button type="button" onclick="applyColorSwatch('#2563eb', '#fd8100')" class="w-7 h-7 rounded-xl border-2 border-white shadow-xs flex items-center justify-center transition-transform hover:scale-110 active:scale-95 cursor-pointer" style="background-color: #2563eb;" title="آبی رویال بیمارستانی"></button>
+                                <button type="button" onclick="applyColorSwatch('#e11d48', '#001a48')" class="w-7 h-7 rounded-xl border-2 border-white shadow-xs flex items-center justify-center transition-transform hover:scale-110 active:scale-95 cursor-pointer" style="background-color: #e11d48;" title="سرخ مرجانی بالینی"></button>
+                                <button type="button" onclick="applyColorSwatch('#0f172a', '#38bdf8')" class="w-7 h-7 rounded-xl border-2 border-white shadow-xs flex items-center justify-center transition-transform hover:scale-110 active:scale-95 cursor-pointer" style="background-color: #0f172a;" title="مشکی آبسیدین"></button>
+                            </div>
+                        </div>
+
+                        <!-- Granular Pickers -->
+                        <div class="grid grid-cols-2 gap-2.5 pt-1 border-t border-slate-100">
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-600 mb-1">رنگ سازمانی و دکمه‌ها</label>
+                                <div class="flex items-center gap-1.5 p-1 rounded-xl border border-slate-200 bg-slate-50">
+                                    <input type="color" id="input-primary-color" value="<?= htmlspecialchars($activePrimaryColor) ?>" class="w-7 h-7 rounded-lg border-0 cursor-pointer bg-transparent p-0" onchange="handleColorInputChange('primary', this.value)">
+                                    <input type="text" id="input-primary-color-hex" value="<?= htmlspecialchars($activePrimaryColor) ?>" maxlength="7" class="w-full text-[11px] font-mono font-bold text-slate-700 bg-transparent border-0 focus:outline-none" dir="ltr" oninput="handleHexInput('primary', this.value)">
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-600 mb-1">رنگ ثانویه و بج‌های ویژه</label>
+                                <div class="flex items-center gap-1.5 p-1 rounded-xl border border-slate-200 bg-slate-50">
+                                    <input type="color" id="input-secondary-color" value="<?= htmlspecialchars($activeSecondaryColor) ?>" class="w-7 h-7 rounded-lg border-0 cursor-pointer bg-transparent p-0" onchange="handleColorInputChange('secondary', this.value)">
+                                    <input type="text" id="input-secondary-color-hex" value="<?= htmlspecialchars($activeSecondaryColor) ?>" maxlength="7" class="w-full text-[11px] font-mono font-bold text-slate-700 bg-transparent border-0 focus:outline-none" dir="ltr" oninput="handleHexInput('secondary', this.value)">
+                                </div>
+                            </div>
                         </div>
                     </div>
 
@@ -1049,6 +1120,14 @@ function sendLiveUpdate(field, value, extra = null) {
     } catch (e) {}
 }
 
+const paletteDefaults = {
+    emerald: { primary: '#059669', secondary: '#fd8100' },
+    navy: { primary: '#001a48', secondary: '#fd8100' },
+    orange: { primary: '#ea580c', secondary: '#001a48' },
+    purple: { primary: '#7c3aed', secondary: '#ea580c' },
+    aurora: { primary: '#0891b2', secondary: '#001a48' }
+};
+
 function updatePalettePreview(palette) {
     const radios = document.querySelectorAll('input[name="theme_palette"]');
     radios.forEach(r => {
@@ -1066,7 +1145,75 @@ function updatePalettePreview(palette) {
         }
     });
 
+    const def = paletteDefaults[palette] || paletteDefaults.emerald;
+    const pInput = document.getElementById('input-primary-color');
+    const pHex = document.getElementById('input-primary-color-hex');
+    const sInput = document.getElementById('input-secondary-color');
+    const sHex = document.getElementById('input-secondary-color-hex');
+    if (pInput && pHex) { pInput.value = def.primary; pHex.value = def.primary; }
+    if (sInput && sHex) { sInput.value = def.secondary; sHex.value = def.secondary; }
+
     sendLiveUpdate('theme_palette', palette);
+    sendLiveUpdate('custom_colors', { primary: def.primary, secondary: def.secondary });
+}
+
+function applyColorSwatch(primary, secondary) {
+    const pInput = document.getElementById('input-primary-color');
+    const pHex = document.getElementById('input-primary-color-hex');
+    const sInput = document.getElementById('input-secondary-color');
+    const sHex = document.getElementById('input-secondary-color-hex');
+    if (pInput && pHex) { pInput.value = primary; pHex.value = primary; }
+    if (sInput && sHex) { sInput.value = secondary; sHex.value = secondary; }
+    sendLiveUpdate('custom_colors', { primary: primary, secondary: secondary });
+}
+
+function handleColorInputChange(type, val) {
+    if (type === 'primary') {
+        const hexEl = document.getElementById('input-primary-color-hex');
+        if (hexEl) hexEl.value = val;
+    } else {
+        const hexEl = document.getElementById('input-secondary-color-hex');
+        if (hexEl) hexEl.value = val;
+    }
+    const prim = document.getElementById('input-primary-color')?.value || '#059669';
+    const sec = document.getElementById('input-secondary-color')?.value || '#fd8100';
+    sendLiveUpdate('custom_colors', { primary: prim, secondary: sec });
+}
+
+function handleHexInput(type, val) {
+    val = val.trim();
+    if (!val.startsWith('#')) val = '#' + val;
+    if (/^#[a-f0-9]{6}$/i.test(val)) {
+        if (type === 'primary') {
+            const picker = document.getElementById('input-primary-color');
+            if (picker) picker.value = val;
+        } else {
+            const picker = document.getElementById('input-secondary-color');
+            if (picker) picker.value = val;
+        }
+        const prim = document.getElementById('input-primary-color')?.value || '#059669';
+        const sec = document.getElementById('input-secondary-color')?.value || '#fd8100';
+        sendLiveUpdate('custom_colors', { primary: prim, secondary: sec });
+    }
+}
+
+function resetBrandColorsToDefault() {
+    const paletteEl = document.querySelector('input[name="theme_palette"]:checked');
+    const palette = paletteEl ? paletteEl.value : 'emerald';
+    const def = paletteDefaults[palette] || paletteDefaults.emerald;
+    
+    const pInput = document.getElementById('input-primary-color');
+    const pHex = document.getElementById('input-primary-color-hex');
+    const sInput = document.getElementById('input-secondary-color');
+    const sHex = document.getElementById('input-secondary-color-hex');
+    if (pInput && pHex) { pInput.value = def.primary; pHex.value = def.primary; }
+    if (sInput && sHex) { sInput.value = def.secondary; sHex.value = def.secondary; }
+
+    sendLiveUpdate('theme_palette', palette);
+    sendLiveUpdate('custom_colors', { primary: def.primary, secondary: def.secondary });
+    if (typeof showToast === 'function') {
+        showToast('✓ رنگ‌های وب‌سایت به تنظیمات پیش‌فرض پالت برند بازنشانی شدند.', 'success');
+    }
 }
 
 function togglePortalSidebar() {
@@ -1418,7 +1565,9 @@ async function saveSiteConfig() {
         },
         cost_calculator: {
             enabled: document.getElementById('input-calc-enabled')?.checked || false,
-            heading: document.getElementById('input-calc-heading')?.value || 'تخمین هوشمند تعرفه خدمات بالینی و جراحی',
+            badge: document.getElementById('input-calc-badge')?.value || 'تعرفه شفاف خدمات درمانی و جراحی',
+            heading: document.getElementById('input-calc-heading')?.value || 'برآورد آنلاین و شفاف تعرفه خدمات و جراحی‌های تخصصی',
+            subtitle: document.getElementById('input-calc-subtitle')?.value || 'گونه حیوان خانگی و خدمات تشخیصی، بالینی یا جراحی مدنظر را انتخاب فرمایید تا تعرفه مصوب رسمی همراه با ۱۰٪ تخفیف رزرو آنلاین برآورد گردد.',
             discount_percent: parseInt(document.getElementById('input-calc-discount')?.value || '10')
         },
 
@@ -1467,6 +1616,16 @@ async function saveSiteConfig() {
 
     const paletteEl = document.querySelector('input[name="theme_palette"]:checked');
     const selectedPalette = paletteEl ? paletteEl.value : 'emerald';
+    const primaryColor = document.getElementById('input-primary-color')?.value || '#059669';
+    const secondaryColor = document.getElementById('input-secondary-color')?.value || '#fd8100';
+
+    layout.theme = Object.assign(layout.theme || {}, {
+        palette: selectedPalette,
+        primary_color: primaryColor,
+        secondary_color: secondaryColor,
+        ambient_mode: document.querySelector('input[name="ambient_mode"]:checked')?.value || 'atmospheric_glow',
+        trust_anchor: document.getElementById('input-trust-anchor-toggle')?.checked ? 'floating_pill' : 'none'
+    });
 
     const fd = new FormData();
     fd.append('action', 'save');
@@ -1477,6 +1636,8 @@ async function saveSiteConfig() {
     fd.append('site_tagline', document.getElementById('input-site-tagline')?.value || '');
     fd.append('slug', document.getElementById('input-site-slug')?.value || '');
     fd.append('theme_palette', selectedPalette);
+    fd.append('primary_color', primaryColor);
+    fd.append('secondary_color', secondaryColor);
     fd.append('logo_url', document.getElementById('input-site-logo')?.value || '');
     fd.append('banner_url', document.getElementById('input-site-banner')?.value || '');
     fd.append('meta_description', document.getElementById('input-site-meta')?.value || '');
@@ -1664,7 +1825,9 @@ function initLiveStudioBindings() {
 
         // Cost Calculator
         { id: 'input-calc-enabled', field: 'block_toggle', extra: 'cost_calculator', event: 'change', isCheckbox: true },
+        { id: 'input-calc-badge', field: 'calc_badge', event: 'input' },
         { id: 'input-calc-heading', field: 'calc_heading', event: 'input' },
+        { id: 'input-calc-subtitle', field: 'calc_subtitle', event: 'input' },
         { id: 'input-calc-discount', field: 'calc_discount', event: 'input' },
 
         // Booking
