@@ -279,16 +279,40 @@ if (empty($layout['theme']['primary_color']) && $activePaletteKey !== 'navy' && 
                         </div>
                     </div>
 
-                    <!-- CARD 1: Identity & Primary Contact -->
-                    <div class="p-3.5 rounded-2xl border border-slate-200 bg-white shadow-2xs space-y-3 quick-card" data-search-keys="هویت کلینیک عنوان نام تلفن آدرس نشانی شعار تماس">
+                    <!-- CARD 1: Identity & Primary Contact & Custom Logo -->
+                    <div class="p-3.5 rounded-2xl border border-slate-200 bg-white shadow-2xs space-y-3 quick-card" data-search-keys="هویت کلینیک عنوان نام لوگو آرم تلفن آدرس نشانی شعار تماس">
                         <div class="flex items-center justify-between pb-2 border-b border-slate-100">
                             <div class="flex items-center gap-2">
                                 <span class="material-symbols-outlined text-emerald-600 text-base">domain</span>
-                                <span class="text-xs font-bold text-slate-800">مشخصات و تماس اصلی کلینیک</span>
+                                <span class="text-xs font-bold text-slate-800">مشخصات و لوگوی اختصاصی کلینیک</span>
                             </div>
                             <span class="text-[10px] px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 font-medium">پایه</span>
                         </div>
-                        <div class="space-y-2">
+                        <div class="space-y-2.5">
+                            <!-- Quick Logo Upload Box -->
+                            <div class="p-3 rounded-2xl bg-indigo-50/40 border border-indigo-100 space-y-2">
+                                <div class="flex items-center justify-between">
+                                    <label class="text-[11px] font-black text-indigo-950 flex items-center gap-1.5">
+                                        <span class="material-symbols-outlined text-sm text-indigo-600">badge</span>
+                                        <span>لوگوی اختصاصی شما (هدر و فوتر)</span>
+                                    </label>
+                                    <span class="text-[9px] px-1.5 py-0.5 rounded-md bg-indigo-100 text-indigo-700 font-bold">سمت راست</span>
+                                </div>
+                                <p class="text-[10px] text-slate-500 leading-tight">لوگوی اختصاصی شما در یک سمت قرار گرفته و نشان رسمی آسنا در سمت دیگر هدر و فوتر به صورت خودکار نمایش داده می‌شود.</p>
+                                <div class="flex items-center gap-2.5">
+                                    <div class="w-11 h-11 rounded-xl bg-white p-1 border border-indigo-200 shrink-0 flex items-center justify-center shadow-2xs overflow-hidden">
+                                        <img id="preview-thumb-quick-logo" src="<?= !empty($site['logo_url']) ? (str_starts_with($site['logo_url'], 'http') ? htmlspecialchars($site['logo_url']) : '../' . ltrim(htmlspecialchars($site['logo_url']), '/')) : '../assets/images/clinic-default-logo.svg' ?>" class="w-full h-full object-contain" onerror="this.src='../assets/images/clinic-default-logo.svg'">
+                                    </div>
+                                    <div class="flex-1 space-y-1">
+                                        <label class="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-white border border-indigo-200 hover:border-indigo-400 text-indigo-700 hover:bg-indigo-50 text-[11px] font-bold cursor-pointer transition-all shadow-2xs">
+                                            <span class="material-symbols-outlined text-xs">upload</span>
+                                            <span>انتخاب تصویر لوگو</span>
+                                            <input type="file" accept="image/*" class="hidden" onchange="handleImageUpload(this, 'input-site-logo', 'preview-thumb-quick-logo')">
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+
                             <div>
                                 <label class="text-[11px] font-bold text-slate-700 block mb-1">نام مرکز یا پزشک</label>
                                 <input type="text" id="input-quick-site-title" value="<?= htmlspecialchars($site['site_title'] ?? '') ?>" placeholder="مثلاً: کلینیک تخصصی دامپزشکی دکتر علوی" class="w-full px-3 py-2 text-xs bg-slate-50 focus:bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 font-bold text-slate-800 transition-all">
@@ -1476,12 +1500,12 @@ if (empty($layout['theme']['primary_color']) && $activePaletteKey !== 'navy' && 
 
                         <!-- Live Thumbnail Preview -->
                         <div class="flex items-center gap-3 p-2.5 rounded-2xl bg-slate-50 border border-slate-200/80 mb-2">
-                            <div class="w-12 h-12 rounded-xl bg-white p-1 border border-slate-300 shrink-0 flex items-center justify-center shadow-xs">
-                                <img id="preview-thumb-logo" src="<?= !empty($site['logo_url']) ? (str_starts_with($site['logo_url'], 'http') ? htmlspecialchars($site['logo_url']) : '../' . ltrim(htmlspecialchars($site['logo_url']), '/')) : '../assets/images/logo.png' ?>" class="w-full h-full object-contain" onerror="this.src='../assets/images/logo.png'">
+                            <div class="w-12 h-12 rounded-xl bg-white p-1 border border-slate-300 shrink-0 flex items-center justify-center shadow-xs overflow-hidden">
+                                <img id="preview-thumb-logo" src="<?= !empty($site['logo_url']) ? (str_starts_with($site['logo_url'], 'http') ? htmlspecialchars($site['logo_url']) : '../' . ltrim(htmlspecialchars($site['logo_url']), '/')) : '../assets/images/clinic-default-logo.svg' ?>" class="w-full h-full object-contain" onerror="this.src='../assets/images/clinic-default-logo.svg'">
                             </div>
                             <div class="flex-1 min-w-0">
-                                <div class="text-[11px] font-bold text-slate-700 truncate">لوگوی فعال وب‌سایت</div>
-                                <div id="input-site-logo-status" class="flex items-center gap-1 mt-0.5 text-[10px] text-slate-400">نمایش در هدر و فوتر وب‌سایت اختصاصی</div>
+                                <div class="text-[11px] font-bold text-slate-700 truncate">لوگوی اختصاصی شما</div>
+                                <div id="input-site-logo-status" class="flex items-center gap-1 mt-0.5 text-[10px] text-emerald-600 font-medium">نمایش در یک سمت هدر و فوتر (سمت دیگر: نشان رسمی آسنا)</div>
                             </div>
                         </div>
 
@@ -1894,6 +1918,13 @@ async function handleImageUpload(fileInput, targetInputId, previewImgId) {
             targetInput.value = data.url;
             if (previewImg) {
                 previewImg.src = data.full_url || ('../' + data.url);
+            }
+            if (targetInputId === 'input-site-logo') {
+                const thumbQuick = document.getElementById('preview-thumb-quick-logo');
+                const thumbMain = document.getElementById('preview-thumb-logo');
+                const fullSrc = data.full_url || ('../' + data.url);
+                if (thumbQuick) thumbQuick.src = fullSrc;
+                if (thumbMain) thumbMain.src = fullSrc;
             }
             if (statusEl) {
                 statusEl.innerHTML = '<span class="material-symbols-outlined text-xs text-emerald-600">check_circle</span> <span class="text-[11px] text-emerald-600 font-bold">با موفقیت بارگذاری شد.</span>';

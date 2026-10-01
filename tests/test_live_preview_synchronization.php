@@ -103,6 +103,16 @@ assertCondition(str_contains($studioContent, 'id="section-stats_strip"'), "Studi
 assertCondition(str_contains($studioContent, 'id="section-asena_services"'), "Studio has section-asena_services accordion");
 assertCondition(str_contains($studioContent, 'id="section-footer"'), "Studio has section-footer accordion");
 
+// 6. Dual Brand Showcase (Tenant Logo on One Side, Official ASENA Logo on Other Side) & Rich Footer
+assertCondition(str_contains($siteContent, 'id="live-header-logo"'), "Site.php renders tenant own logo in header");
+assertCondition(str_contains($siteContent, 'alt="لوگوی رسمی آسنا"'), "Site.php renders official ASENA logo on the opposite side of header");
+assertCondition(str_contains($siteContent, 'id="live-footer-logo"'), "Site.php renders tenant own logo in footer");
+assertCondition(str_contains($siteContent, 'alt="لوگوی رسمی شبکه سلامت آسنا"'), "Site.php renders official ASENA ecosystem logo in footer");
+assertCondition(str_contains($studioContent, 'id="preview-thumb-quick-logo"'), "Studio has dedicated custom logo uploader in Card 1");
+assertCondition(str_contains($siteContent, "footerLogo.src = value"), "Site.php updates footer logo simultaneously in site_logo live update");
+assertCondition(str_contains($siteContent, "footerTitle.innerText = t"), "Site.php updates footer title in site_title live update");
+assertCondition(str_contains($siteContent, "footerTagline.innerText = value"), "Site.php updates footer tagline in site_tagline live update");
+
 if (empty($errors)) {
     echo "=== All {$passes} Tests Passed Successfully! ===\n";
     exit(0);

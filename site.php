@@ -255,7 +255,8 @@ if (!empty($customSecondary) && preg_match('/^#[a-f0-9]{6}$/i', $customSecondary
 // SEO & Meta
 $metaTitle = htmlspecialchars($site['site_title'] . (!empty($site['site_tagline']) ? ' - ' . $site['site_tagline'] : ''));
 $metaDesc = htmlspecialchars($site['meta_description'] ?: ($site['site_title'] . ' - وب‌سایت رسمی، خدمات تخصصی و نوبت‌دهی آنلاین.'));
-$siteLogo = !empty($site['logo_url']) ? $site['logo_url'] : 'assets/images/logo.png';
+$siteLogo = !empty($site['logo_url']) ? $site['logo_url'] : 'assets/images/clinic-default-logo.svg';
+$asenaLogo = 'assets/images/logo.png';
 
 $ctaHref = match($tenantType) {
     'doctor', 'organization' => '#booking',
@@ -541,8 +542,22 @@ $ctaHref = match($tenantType) {
                 <a href="#contact" class="hover:text-tenant-primary transition-colors">تماس و آدرس</a>
             </nav>
 
-            <!-- Actions -->
-            <div class="flex items-center gap-2.5">
+            <!-- Actions & Official ASENA Logo (Opposite Side) -->
+            <div class="flex items-center gap-2 sm:gap-2.5">
+                <!-- Official ASENA Ecosystem Logo Lockup -->
+                <a href="https://asena.company" target="_blank" onclick="openTrustVerifyModal(); return false;" class="flex items-center gap-2 px-2 sm:px-2.5 py-1.5 rounded-xl bg-slate-50 hover:bg-indigo-50/70 border border-slate-200/90 hover:border-indigo-300 transition-all group shadow-2xs" title="عضو تاییدشده شبکه سلامت آسنا - استعلام اصالت">
+                    <div class="w-8 h-8 rounded-lg overflow-hidden bg-white p-0.5 border border-slate-200 shadow-2xs shrink-0 flex items-center justify-center">
+                        <img src="<?= htmlspecialchars($asenaLogo) ?>" alt="لوگوی رسمی آسنا" class="w-full h-full object-contain">
+                    </div>
+                    <div class="hidden md:flex flex-col text-right leading-none">
+                        <div class="flex items-center gap-1">
+                            <span class="text-[11px] font-black text-slate-800 group-hover:text-indigo-600 transition-colors">اکوسیستم آسنا</span>
+                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block animate-pulse"></span>
+                        </div>
+                        <span class="text-[9px] text-slate-400 font-medium mt-0.5">شبکه رسمی سلامت</span>
+                    </div>
+                </a>
+
                 <button type="button" onclick="openNavHubModal()" class="hidden xl:flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-all shadow-xs" title="مسیریابی با اپلیکیشن‌های بلد، نشان، ویز و گوگل مپ">
                     <span class="material-symbols-outlined text-sm text-tenant-primary">near_me</span>
                     <span>مسیریابی</span>
@@ -565,7 +580,7 @@ $ctaHref = match($tenantType) {
                 </a>
 
                 <!-- Mobile Menu Button -->
-                <button type="button" onclick="toggleMobileDrawer()" class="lg:hidden p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700">
+                <button type="button" onclick="toggleMobileDrawer()" class="xl:hidden p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700">
                     <span class="material-symbols-outlined text-xl">menu</span>
                 </button>
             </div>
@@ -1693,126 +1708,209 @@ $ctaHref = match($tenantType) {
     </section>
     <?php endif; ?>
 
-    <!-- Rich 4-Column Agency Footer -->
-    <footer class="bg-slate-900 text-slate-300 pt-16 pb-28 md:pb-12 border-t border-slate-800" data-block-id="footer">
-        <div class="max-w-6xl mx-auto px-4">
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-10 pb-12 border-b border-slate-800/80">
+    <!-- Rich Agency-Grade Footer with Dual Brand Showcase (Tenant Logo on Right, ASENA Logo on Left) -->
+    <footer class="bg-slate-950 text-slate-300 pt-16 pb-28 md:pb-14 border-t border-slate-800/80 relative overflow-hidden" data-block-id="footer">
+        <!-- Subtle Atmospheric Background Accents -->
+        <div class="absolute top-0 right-1/4 w-96 h-96 bg-emerald-500/5 rounded-full blur-3xl pointer-events-none"></div>
+        <div class="absolute bottom-0 left-1/4 w-96 h-96 bg-indigo-500/5 rounded-full blur-3xl pointer-events-none"></div>
+
+        <div class="max-w-6xl mx-auto px-4 relative z-10 space-y-12">
+            
+            <!-- Tier 1: Dual Brand Showcase & Trust Strip (Tenant on Right, ASENA on Left) -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 pb-10 border-b border-slate-800/80 items-stretch">
                 
-                <!-- Col 1: Identity & About (lg:col-span-4) -->
-                <div class="lg:col-span-4 space-y-4">
-                    <div class="flex items-center gap-3">
-                        <div class="w-12 h-12 rounded-2xl bg-white/10 backdrop-blur-md p-1 border border-white/20 overflow-hidden shrink-0 flex items-center justify-center">
-                            <img src="<?= htmlspecialchars($siteLogo) ?>" alt="<?= htmlspecialchars($site['site_title']) ?>" class="w-full h-full object-cover rounded-xl">
-                        </div>
-                        <div>
-                            <h3 class="text-base font-black text-white"><?= htmlspecialchars($site['site_title']) ?></h3>
-                            <div class="flex items-center gap-1.5 text-xs text-emerald-400 font-bold">
-                                <span class="material-symbols-outlined text-xs">verified</span>
-                                <span>عضو رسمی شبکه سلامت آسنا</span>
+                <!-- RIGHT SIDE (RTL): Tenant's Own Logo & Brand Presentation (lg:col-span-6) -->
+                <div class="lg:col-span-6 p-6 rounded-3xl bg-slate-900/70 border border-slate-800/90 backdrop-blur-md flex flex-col justify-between space-y-5">
+                    <div class="space-y-4">
+                        <div class="flex items-center gap-4">
+                            <!-- Tenant's Custom Logo -->
+                            <div class="w-14 h-14 rounded-2xl bg-white p-1 border border-slate-700/80 shadow-lg shrink-0 flex items-center justify-center overflow-hidden">
+                                <img src="<?= htmlspecialchars($siteLogo) ?>" id="live-footer-logo" alt="<?= htmlspecialchars($site['site_title']) ?>" class="w-full h-full object-cover rounded-xl">
+                            </div>
+                            <div class="min-w-0">
+                                <div class="flex items-center gap-2">
+                                    <h3 class="text-lg font-black text-white tracking-tight truncate" id="live-footer-title"><?= htmlspecialchars($site['site_title']) ?></h3>
+                                    <span class="material-symbols-outlined text-emerald-400 text-sm" title="عضو تاییدشده رسمی">verified</span>
+                                </div>
+                                <p class="text-xs text-slate-400 font-medium truncate mt-0.5" id="live-footer-tagline"><?= htmlspecialchars($site['site_tagline'] ?? 'مرکز تخصصی و فوق‌تخصصی سلامت و درمان حیوانات خانگی') ?></p>
                             </div>
                         </div>
+
+                        <!-- Editable About Text -->
+                        <p class="text-xs text-slate-400 leading-relaxed font-normal" id="live-footer-about" data-studio-editable="footer_about">
+                            <?= htmlspecialchars($footerBlock['about_text'] ?? "ارائه خدمات تخصصی سلامت و درمان حیوانات خانگی با پیشرفته‌ترین تجهیزات تشخیصی و کادر مجرب بالینی.") ?>
+                        </p>
                     </div>
-                    <p class="text-xs text-slate-400 leading-relaxed font-normal" id="live-footer-about" data-studio-editable="footer_about">
-                        <?= htmlspecialchars($footerBlock['about_text'] ?? "ارائه خدمات تخصصی سلامت و درمان حیوانات خانگی با پیشرفته‌ترین تجهیزات تشخیصی و کادر مجرب بالینی.") ?>
-                    </p>
-                    <div class="pt-2">
-                        <button type="button" onclick="openTrustVerifyModal()" class="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold border border-slate-700 transition-colors">
-                            <span class="material-symbols-outlined text-sm text-emerald-400">verified_user</span>
-                            <span>استعلام رسمی مجوز و صلاحیت</span>
-                        </button>
+
+                    <!-- Tenant Trust Badges & Contact Quick Pill -->
+                    <div class="pt-2 flex flex-wrap items-center gap-2.5 text-[11px]">
+                        <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800/90 text-emerald-400 border border-slate-700 font-bold">
+                            <span class="material-symbols-outlined text-xs">license</span>
+                            <span>پروانه نظام دامپزشکی تاییدشده</span>
+                        </span>
+                        <?php if (!empty($contactBlock['phone'])): ?>
+                        <a href="tel:<?= htmlspecialchars($contactBlock['phone']) ?>" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white border border-slate-700 font-mono font-bold transition-colors" dir="ltr">
+                            <span class="material-symbols-outlined text-xs text-emerald-400">call</span>
+                            <span><?= htmlspecialchars($contactBlock['phone']) ?></span>
+                        </a>
+                        <?php endif; ?>
                     </div>
                 </div>
 
-                <!-- Col 2: Navigation Links (lg:col-span-2) -->
-                <div class="lg:col-span-2 space-y-3">
-                    <h4 class="text-xs font-black text-white uppercase tracking-wider">بخش‌های سایت</h4>
+                <!-- LEFT SIDE (RTL): Official ASENA Ecosystem Logo & Guarantee Hub (lg:col-span-6) -->
+                <div class="lg:col-span-6 p-6 rounded-3xl bg-linear-to-br from-indigo-950/40 via-slate-900/80 to-slate-900/90 border border-indigo-500/20 backdrop-blur-md flex flex-col justify-between space-y-5">
+                    <div class="space-y-3">
+                        <div class="flex items-center gap-3.5">
+                            <!-- Official ASENA Logo -->
+                            <div class="w-14 h-14 rounded-2xl bg-white p-1.5 border border-indigo-300/40 shadow-lg shadow-indigo-950/30 shrink-0 flex items-center justify-center overflow-hidden">
+                                <img src="<?= htmlspecialchars($asenaLogo) ?>" alt="لوگوی رسمی شبکه سلامت آسنا" class="w-full h-full object-contain">
+                            </div>
+                            <div class="min-w-0">
+                                <div class="flex items-center gap-2">
+                                    <h3 class="text-base font-black text-white tracking-tight">اکوسیستم فناوری سلامت آسنا</h3>
+                                    <span class="px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 text-[10px] font-black border border-indigo-400/30">شبکه رسمی</span>
+                                </div>
+                                <p class="text-xs text-indigo-200/70 font-medium mt-0.5">پلتفرم ابری پرونده الکترونیک، زنجیره سرد و نوبت‌دهی هوشمند</p>
+                            </div>
+                        </div>
+
+                        <p class="text-xs text-slate-400 leading-relaxed font-normal">
+                            این پایگاه به عنوان عضو تاییدشده شبکه جامع فناوری‌های سلامت و دامپزشکی آسنا فعالیت نموده و کلیه فرآیندهای مالی، رزرو و تحویل دارویی تحت گارانتی و نظارت متمرکز پلتفرم ارائه می‌گردد.
+                        </p>
+                    </div>
+
+                    <!-- ASENA Verification & Portal Actions -->
+                    <div class="pt-2 flex flex-wrap items-center gap-2.5">
+                        <button type="button" onclick="openTrustVerifyModal()" class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-indigo-600/30 hover:bg-indigo-600/50 text-indigo-200 text-xs font-bold border border-indigo-500/40 transition-all shadow-xs cursor-pointer">
+                            <span class="material-symbols-outlined text-sm text-indigo-400">verified_user</span>
+                            <span>استعلام آنلاین اصالت عضویت</span>
+                        </button>
+                        <a href="https://asena.company" target="_blank" class="inline-flex items-center gap-1 px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-bold border border-slate-700 transition-colors">
+                            <span>پرتال مرکزی آسنا</span>
+                            <span class="material-symbols-outlined text-xs">open_in_new</span>
+                        </a>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Tier 2: 4-Column Navigation & Contact & Socials -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-8 pb-8 border-b border-slate-800/80">
+                
+                <!-- Col 1: Site Navigation (lg:col-span-3) -->
+                <div class="lg:col-span-3 space-y-3">
+                    <h4 class="text-xs font-black text-white uppercase tracking-wider flex items-center gap-1.5">
+                        <span class="material-symbols-outlined text-xs text-emerald-400">menu_book</span>
+                        <span>بخش‌های وب‌سایت</span>
+                    </h4>
                     <ul class="space-y-2 text-xs font-medium text-slate-400">
-                        <li><a href="#about" class="hover:text-emerald-400 transition-colors">معرفی و سوابق</a></li>
-                        <li><a href="#services" class="hover:text-emerald-400 transition-colors">خدمات تخصصی</a></li>
+                        <li><a href="#about" class="hover:text-emerald-400 transition-colors flex items-center gap-1.5"><span>›</span> معرفی و سوابق بالینی</a></li>
+                        <li><a href="#services" class="hover:text-emerald-400 transition-colors flex items-center gap-1.5"><span>›</span> خدمات تخصصی و جراحی</a></li>
                         <?php if (!empty($calculatorBlock['enabled']) || $isPreview): ?>
-                        <li><a href="#calculator" class="hover:text-amber-400 transition-colors">محاسبه‌گر هزینه</a></li>
+                        <li><a href="#calculator" class="hover:text-amber-400 transition-colors flex items-center gap-1.5"><span>›</span> محاسبه‌گر آنلاین تعرفه‌ها</a></li>
                         <?php endif; ?>
                         <?php if (!empty($doctorsBlock['enabled']) || $isPreview): ?>
-                        <li><a href="#doctors" class="hover:text-emerald-400 transition-colors">پزشکان مرکز</a></li>
+                        <li><a href="#doctors" class="hover:text-emerald-400 transition-colors flex items-center gap-1.5"><span>›</span> کادر پزشکان و متخصصان</a></li>
                         <?php endif; ?>
                         <?php if (!empty($bookingBlock['enabled']) || $isPreview): ?>
-                        <li><a href="#booking" class="hover:text-emerald-400 transition-colors">نوبت‌دهی آنلاین</a></li>
+                        <li><a href="#booking" class="hover:text-emerald-400 transition-colors flex items-center gap-1.5"><span>›</span> رزرو ۲۴ ساعته نوبت</a></li>
                         <?php endif; ?>
-                        <li><a href="#contact" class="hover:text-emerald-400 transition-colors">تماس و نشانی</a></li>
+                        <li><a href="#contact" class="hover:text-emerald-400 transition-colors flex items-center gap-1.5"><span>›</span> تماس، نشانی و موقعیت</a></li>
                     </ul>
                 </div>
 
-                <!-- Col 3: ASENA Ecosystem Services (lg:col-span-3) -->
+                <!-- Col 2: ASENA Ecosystem Services (lg:col-span-3) -->
                 <div class="lg:col-span-3 space-y-3">
                     <h4 class="text-xs font-black text-white uppercase tracking-wider flex items-center gap-1.5">
                         <span class="material-symbols-outlined text-xs text-indigo-400">hub</span>
-                        <span>خدمات یکپارچه آسنا</span>
+                        <span>خدمات اکوسیستم آسنا</span>
                     </h4>
                     <ul class="space-y-2 text-xs font-medium text-slate-400">
                         <li><a href="../chat.php" class="hover:text-emerald-400 transition-colors flex items-center gap-1.5"><span>🩺</span> ویزیت و تله‌هلث آنلاین</a></li>
-                        <li><a href="../pharmacy.php" class="hover:text-purple-400 transition-colors flex items-center gap-1.5"><span>💊</span> داروخانه زنجیره سرد</a></li>
-                        <li><a href="../subscriptions.php" class="hover:text-blue-400 transition-colors flex items-center gap-1.5"><span>🔄</span> تحویل دوره‌ای غذای رژیمی</a></li>
+                        <li><a href="../pharmacy.php" class="hover:text-purple-400 transition-colors flex items-center gap-1.5"><span>💊</span> داروخانه زنجیره سرد (۲-۸°C)</a></li>
+                        <li><a href="../subscriptions.php" class="hover:text-blue-400 transition-colors flex items-center gap-1.5"><span>🔄</span> تحویل دوره‌ای غذای درمانی</a></li>
                         <li><a href="../rewards.php" class="hover:text-amber-400 transition-colors flex items-center gap-1.5"><span>🏆</span> باشگاه وفاداری و پاداش</a></li>
                         <li><a href="../charity.php" class="hover:text-rose-400 transition-colors flex items-center gap-1.5"><span>🐾</span> صندوق امداد حیوانات حمایتی</a></li>
+                        <li><button type="button" onclick="openVCardModal()" class="hover:text-indigo-400 transition-colors flex items-center gap-1.5 text-right"><span>📱</span> کارت ویزیت و QR اختصاصی</button></li>
                     </ul>
                 </div>
 
-                <!-- Col 4: Contact & Socials (lg:col-span-3) -->
+                <!-- Col 3: Address & Navigation Hub (lg:col-span-3) -->
                 <div class="lg:col-span-3 space-y-3">
-                    <h4 class="text-xs font-black text-white uppercase tracking-wider">ارتباط و شبکه‌های اجتماعی</h4>
-                    <p class="text-xs text-slate-400 leading-relaxed">
-                        <?= htmlspecialchars($contactBlock['address'] ?? 'تهران') ?>
+                    <h4 class="text-xs font-black text-white uppercase tracking-wider flex items-center gap-1.5">
+                        <span class="material-symbols-outlined text-xs text-amber-400">location_on</span>
+                        <span>نشانی و ساعات کاری</span>
+                    </h4>
+                    <p class="text-xs text-slate-400 leading-relaxed font-normal">
+                        <?= htmlspecialchars($contactBlock['address'] ?? 'تهران، خیابان ولیعصر، نرسیده به میدان ونک') ?>
                     </p>
-                    <?php if (!empty($contactBlock['phone'])): ?>
                     <div class="pt-1">
-                        <a href="tel:<?= htmlspecialchars($contactBlock['phone']) ?>" class="text-xs font-bold text-white hover:text-emerald-400 flex items-center gap-1.5 font-mono" dir="ltr">
-                            <span class="material-symbols-outlined text-sm text-emerald-400">call</span>
-                            <span><?= htmlspecialchars($contactBlock['phone']) ?></span>
-                        </a>
+                        <button type="button" onclick="openNavHubModal()" class="w-full py-2 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold border border-slate-700 flex items-center justify-center gap-1.5 transition-colors cursor-pointer">
+                            <span class="material-symbols-outlined text-sm text-emerald-400">near_me</span>
+                            <span>مسیریابی در نشان، بلد و ویز</span>
+                        </button>
                     </div>
-                    <?php endif; ?>
-                    <!-- Social channels icons -->
-                    <div class="pt-2 flex items-center gap-2">
-                        <button type="button" onclick="openVCardModal()" class="w-9 h-9 rounded-xl bg-slate-800 hover:bg-slate-700 text-indigo-400 flex items-center justify-center border border-slate-700 transition-transform active:scale-95" title="کارت ویزیت دیجیتال">
+                </div>
+
+                <!-- Col 4: Social Channels & Contact (lg:col-span-3) -->
+                <div class="lg:col-span-3 space-y-3">
+                    <h4 class="text-xs font-black text-white uppercase tracking-wider flex items-center gap-1.5">
+                        <span class="material-symbols-outlined text-xs text-sky-400">share</span>
+                        <span>شبکه‌های ارتباطی مرکز</span>
+                    </h4>
+                    <p class="text-xs text-slate-400">پاسخگویی سریع در پیام‌رسان‌ها و شبکه‌های اجتماعی:</p>
+                    
+                    <!-- Social icons row with rich tooltips -->
+                    <div class="flex flex-wrap items-center gap-2 pt-1">
+                        <button type="button" onclick="openVCardModal()" class="w-10 h-10 rounded-xl bg-slate-800 hover:bg-indigo-900/60 text-indigo-400 hover:text-indigo-300 flex items-center justify-center border border-slate-700 hover:border-indigo-500/50 transition-all shadow-xs active:scale-95 cursor-pointer" title="کارت ویزیت دیجیتال">
                             <span class="material-symbols-outlined text-base">qr_code_2</span>
                         </button>
                         <?php if (!empty($contactBlock['instagram'])): ?>
-                        <a href="https://instagram.com/<?= ltrim(htmlspecialchars($contactBlock['instagram']), '@') ?>" target="_blank" class="w-9 h-9 rounded-xl bg-slate-800 hover:bg-slate-700 text-rose-400 flex items-center justify-center border border-slate-700 transition-transform active:scale-95" title="اینستاگرام">
+                        <a href="https://instagram.com/<?= ltrim(htmlspecialchars($contactBlock['instagram']), '@') ?>" target="_blank" class="w-10 h-10 rounded-xl bg-slate-800 hover:bg-rose-900/60 text-rose-400 hover:text-rose-300 flex items-center justify-center border border-slate-700 hover:border-rose-500/50 transition-all shadow-xs active:scale-95" title="صفحه اینستاگرام">
                             <span class="text-xs font-black">IG</span>
                         </a>
                         <?php endif; ?>
                         <?php if (!empty($contactBlock['telegram'])): ?>
-                        <a href="https://t.me/<?= ltrim(htmlspecialchars($contactBlock['telegram']), '@') ?>" target="_blank" class="w-9 h-9 rounded-xl bg-slate-800 hover:bg-slate-700 text-blue-400 flex items-center justify-center border border-slate-700 transition-transform active:scale-95" title="تلگرام">
+                        <a href="https://t.me/<?= ltrim(htmlspecialchars($contactBlock['telegram']), '@') ?>" target="_blank" class="w-10 h-10 rounded-xl bg-slate-800 hover:bg-blue-900/60 text-blue-400 hover:text-blue-300 flex items-center justify-center border border-slate-700 hover:border-blue-500/50 transition-all shadow-xs active:scale-95" title="کانال یا پشتیبانی تلگرام">
                             <span class="text-xs font-black">TG</span>
                         </a>
                         <?php endif; ?>
                         <?php if (!empty($contactBlock['phone'])): ?>
-                        <a href="https://wa.me/<?= preg_replace('/\D/', '', $contactBlock['phone']) ?>" target="_blank" class="w-9 h-9 rounded-xl bg-slate-800 hover:bg-slate-700 text-emerald-400 flex items-center justify-center border border-slate-700 transition-transform active:scale-95" title="واتساپ">
+                        <a href="https://wa.me/<?= preg_replace('/\D/', '', $contactBlock['phone']) ?>" target="_blank" class="w-10 h-10 rounded-xl bg-slate-800 hover:bg-emerald-900/60 text-emerald-400 hover:text-emerald-300 flex items-center justify-center border border-slate-700 hover:border-emerald-500/50 transition-all shadow-xs active:scale-95" title="ارتباط واتساپ">
                             <span class="text-xs font-black">WA</span>
                         </a>
                         <?php endif; ?>
+                        <button type="button" onclick="shareSiteUrl()" class="w-10 h-10 rounded-xl bg-slate-800 hover:bg-amber-900/60 text-amber-400 hover:text-amber-300 flex items-center justify-center border border-slate-700 hover:border-amber-500/50 transition-all shadow-xs active:scale-95 cursor-pointer" title="اشتراک‌گذاری آدرس سایت">
+                            <span class="material-symbols-outlined text-base">link</span>
+                        </button>
                     </div>
                 </div>
 
             </div>
 
-            <!-- Bottom Copyright & Badges -->
-            <div class="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-right text-xs text-slate-500">
-                <p id="live-footer-copyright" data-studio-editable="footer_copyright">
-                    <?= htmlspecialchars($footerBlock['copyright_text'] ?? "کلیه حقوق برای {$site['site_title']} محفوظ است.") ?>
-                </p>
+            <!-- Tier 3: Regulatory Trust, Security & Copyright Bar -->
+            <div class="flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
+                <div class="flex flex-wrap items-center gap-3 text-center sm:text-right">
+                    <p id="live-footer-copyright" data-studio-editable="footer_copyright">
+                        <?= htmlspecialchars($footerBlock['copyright_text'] ?? "کلیه حقوق برای {$site['site_title']} محفوظ است.") ?>
+                    </p>
+                    <span class="hidden sm:inline">|</span>
+                    <span class="text-[11px] text-slate-400">قدرت‌گرفته از اکوسیستم ابری سلامت آسنا</span>
+                </div>
+                
                 <div class="flex items-center gap-4 text-[11px] text-slate-400">
-                    <button type="button" onclick="openTrustVerifyModal()" class="hover:text-emerald-400 transition-colors flex items-center gap-1">
+                    <button type="button" onclick="openTrustVerifyModal()" class="hover:text-emerald-400 transition-colors flex items-center gap-1 cursor-pointer">
                         <span class="material-symbols-outlined text-xs text-emerald-400">lock</span>
                         <span>پرداخت امن شاپرک و امانت‌داری</span>
                     </button>
                     <span>|</span>
-                    <button type="button" onclick="openVCardModal()" class="hover:text-indigo-400 transition-colors flex items-center gap-1">
-                        <span class="material-symbols-outlined text-xs text-indigo-400">badge</span>
-                        <span>کارت ویزیت دیجیتال</span>
+                    <button type="button" onclick="window.scrollTo({top: 0, behavior: 'smooth'})" class="hover:text-white transition-colors flex items-center gap-1 cursor-pointer">
+                        <span>بازگشت به بالا</span>
+                        <span class="material-symbols-outlined text-xs">keyboard_arrow_up</span>
                     </button>
                 </div>
             </div>
+
         </div>
     </footer>
 
@@ -2447,6 +2545,8 @@ $ctaHref = match($tenantType) {
                     if (topTitle) topTitle.innerText = `${t} | پذیرش فعال و نوبت‌دهی آنلاین`;
                     const headerTitle = document.getElementById('live-header-title');
                     if (headerTitle) headerTitle.innerText = t;
+                    const footerTitle = document.getElementById('live-footer-title');
+                    if (footerTitle) footerTitle.innerText = t;
                     const heroTitle = document.getElementById('live-hero-title');
                     if (heroTitle && (!heroTitle.getAttribute('data-custom') || heroTitle.innerText === '')) heroTitle.innerText = t;
                     const heroImgTitle = document.getElementById('live-hero-overlay-title');
@@ -2465,11 +2565,22 @@ $ctaHref = match($tenantType) {
                             taglineEl.classList.add('hidden');
                         }
                     }
+                    const footerTagline = document.getElementById('live-footer-tagline');
+                    if (footerTagline) {
+                        footerTagline.innerText = value || '';
+                        if (value && value.trim()) {
+                            footerTagline.classList.remove('hidden');
+                        } else {
+                            footerTagline.classList.add('hidden');
+                        }
+                    }
                     break;
                 }
                 case 'site_logo': {
                     const headerLogo = document.getElementById('live-header-logo');
                     if (headerLogo && value) headerLogo.src = value;
+                    const footerLogo = document.getElementById('live-footer-logo');
+                    if (footerLogo && value) footerLogo.src = value;
                     break;
                 }
                 case 'theme_palette': {
