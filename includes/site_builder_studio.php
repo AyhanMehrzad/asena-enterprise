@@ -19,6 +19,21 @@ $slug = htmlspecialchars($site['slug']);
 $siteTier = $site['site_tier'] ?? 'enterprise';
 $previewUrl = "../site.php?slug=" . urlencode($site['slug']) . "&preview=1";
 $publicUrl = "../site.php?slug=" . urlencode($site['slug']);
+
+$paletteColorDefaults = [
+    'emerald' => ['primary' => '#059669', 'secondary' => '#fd8100'],
+    'navy' => ['primary' => '#001a48', 'secondary' => '#fd8100'],
+    'orange' => ['primary' => '#ea580c', 'secondary' => '#001a48'],
+    'purple' => ['primary' => '#7c3aed', 'secondary' => '#ea580c'],
+    'aurora' => ['primary' => '#0891b2', 'secondary' => '#001a48']
+];
+$activePaletteKey = $site['theme_palette'] ?? 'emerald';
+$activeDef = $paletteColorDefaults[$activePaletteKey] ?? $paletteColorDefaults['emerald'];
+$activePrimaryColor = $layout['theme']['primary_color'] ?? ($site['primary_color'] ?: $activeDef['primary']);
+$activeSecondaryColor = $layout['theme']['secondary_color'] ?? ($site['secondary_color'] ?: $activeDef['secondary']);
+if (empty($layout['theme']['primary_color']) && $activePaletteKey !== 'navy' && $activePrimaryColor === '#001a48') {
+    $activePrimaryColor = $activeDef['primary'];
+}
 ?>
 
 <style>
@@ -214,9 +229,24 @@ $publicUrl = "../site.php?slug=" . urlencode($site['slug']);
                 </button>
             </div>
 
+            <!-- Smart Instant Search Bar -->
+            <div class="px-4 py-2.5 bg-slate-50 border-b border-slate-200 shrink-0">
+                <div class="relative">
+                    <span class="material-symbols-outlined absolute right-3 top-2.5 text-slate-400 text-base">search</span>
+                    <input type="text" id="studio-quick-search" oninput="handleStudioQuickSearch(this.value)" placeholder="جستجوی سریع فیلد یا بخش (مثلاً: شماره، هیرو، محاسبه‌گر)..." class="w-full pr-9 pl-8 py-2 text-xs bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium placeholder:text-slate-400 shadow-2xs">
+                    <button type="button" onclick="clearStudioQuickSearch()" id="btn-clear-search" class="hidden absolute left-2.5 top-2.5 text-slate-400 hover:text-slate-600">
+                        <span class="material-symbols-outlined text-sm">close</span>
+                    </button>
+                </div>
+            </div>
+
             <!-- Sidebar Tabs -->
             <div class="flex border-b border-slate-200 bg-slate-50 text-xs font-bold shrink-0">
-                <button type="button" onclick="switchSidebarTab('blocks')" id="tab-btn-blocks" class="flex-1 py-3 text-center border-b-2 border-emerald-600 text-emerald-800 bg-white transition-all flex items-center justify-center gap-1">
+                <button type="button" onclick="switchSidebarTab('quick')" id="tab-btn-quick" class="flex-1 py-3 text-center border-b-2 border-emerald-600 text-emerald-800 bg-white transition-all flex items-center justify-center gap-1">
+                    <span class="material-symbols-outlined text-base text-amber-500">bolt</span>
+                    <span>ویرایش سریع</span>
+                </button>
+                <button type="button" onclick="switchSidebarTab('blocks')" id="tab-btn-blocks" class="flex-1 py-3 text-center border-b-2 border-transparent text-slate-500 hover:text-slate-800 transition-all flex items-center justify-center gap-1">
                     <span class="material-symbols-outlined text-base">widgets</span>
                     <span>بلوک‌ها</span>
                 </button>
@@ -233,8 +263,231 @@ $publicUrl = "../site.php?slug=" . urlencode($site['slug']);
             <!-- Tab Content Scrollable Container -->
             <div class="flex-1 overflow-y-auto p-4 space-y-4" id="sidebar-tab-content">
                 
+                <!-- TAB 0: QUICK EDIT (SIMPLIFIED COCKPIT) -->
+                <div id="tab-panel-quick" class="space-y-4">
+                    
+                    <!-- Direct Click-To-Edit Tip Banner -->
+                    <div class="p-3 rounded-2xl bg-gradient-to-r from-emerald-50 via-teal-50 to-indigo-50 border border-emerald-200/80 shadow-2xs">
+                        <div class="flex items-start gap-2.5">
+                            <span class="material-symbols-outlined text-emerald-600 text-lg shrink-0 mt-0.5 animate-pulse">touch_app</span>
+                            <div>
+                                <div class="text-xs font-black text-slate-800">ویرایش زنده با یک کلیک در پیش‌نمایش</div>
+                                <div class="text-[11px] text-slate-600 leading-relaxed mt-0.5">
+                                    می‌توانید مستقیماً روی هر متن، تیتر، شماره تماس یا دکمه در تصویر پیش‌نمایش سمت چپ کلیک کنید و درجا بنویسید!
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- CARD 1: Identity & Primary Contact -->
+                    <div class="p-3.5 rounded-2xl border border-slate-200 bg-white shadow-2xs space-y-3 quick-card" data-search-keys="هویت کلینیک عنوان نام تلفن آدرس نشانی شعار تماس">
+                        <div class="flex items-center justify-between pb-2 border-b border-slate-100">
+                            <div class="flex items-center gap-2">
+                                <span class="material-symbols-outlined text-emerald-600 text-base">domain</span>
+                                <span class="text-xs font-bold text-slate-800">مشخصات و تماس اصلی کلینیک</span>
+                            </div>
+                            <span class="text-[10px] px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 font-medium">پایه</span>
+                        </div>
+                        <div class="space-y-2">
+                            <div>
+                                <label class="text-[11px] font-bold text-slate-700 block mb-1">نام مرکز یا پزشک</label>
+                                <input type="text" id="input-quick-site-title" value="<?= htmlspecialchars($site['site_title'] ?? '') ?>" placeholder="مثلاً: کلینیک تخصصی دامپزشکی دکتر علوی" class="w-full px-3 py-2 text-xs bg-slate-50 focus:bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 font-bold text-slate-800 transition-all">
+                            </div>
+                            <div>
+                                <label class="text-[11px] font-bold text-slate-700 block mb-1">شعار و زیرعنوان مرکز</label>
+                                <input type="text" id="input-quick-site-tagline" value="<?= htmlspecialchars($site['site_tagline'] ?? '') ?>" placeholder="مرکز مجهز جراحی و سلامت حیوانات خانگی" class="w-full px-3 py-2 text-xs bg-slate-50 focus:bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-700 transition-all">
+                            </div>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                <div>
+                                    <label class="text-[11px] font-bold text-slate-700 block mb-1">شماره تماس ثابت/نوبت‌دهی</label>
+                                    <input type="text" id="input-quick-contact-phone" value="<?= htmlspecialchars($layout['contact']['phone'] ?? '۰۲۱-۸۸۸۸۹۹۹۹') ?>" dir="ltr" class="w-full px-3 py-2 text-xs bg-slate-50 focus:bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 text-left font-mono font-bold text-slate-800 transition-all">
+                                </div>
+                                <div>
+                                    <label class="text-[11px] font-bold text-slate-700 block mb-1">تلفن اورژانس ۲۴ ساعته</label>
+                                    <input type="text" id="input-quick-emergency-phone" value="<?= htmlspecialchars($layout['emergency_bar']['phone'] ?? ($layout['contact']['emergency_phone'] ?? '۰۹۱۲-۹۹۹-۸۸۷۷')) ?>" dir="ltr" class="w-full px-3 py-2 text-xs bg-slate-50 focus:bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 text-left font-mono font-bold text-red-700 transition-all">
+                                </div>
+                            </div>
+                            <div>
+                                <label class="text-[11px] font-bold text-slate-700 block mb-1">نشانی پستی کلینیک</label>
+                                <input type="text" id="input-quick-contact-address" value="<?= htmlspecialchars($layout['contact']['address'] ?? 'تهران، خیابان ولیعصر، نرسیده به میدان ونک، پلاک ۱۲') ?>" class="w-full px-3 py-2 text-xs bg-slate-50 focus:bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-700 transition-all">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- CARD 2: Hero & Headline (With 1-click clinical preset copy button) -->
+                    <div class="p-3.5 rounded-2xl border border-slate-200 bg-white shadow-2xs space-y-3 quick-card" data-search-keys="هیرو معرفی تیتر اصلی عکس دکمه بنر اقدام">
+                        <div class="flex items-center justify-between pb-2 border-b border-slate-100">
+                            <div class="flex items-center gap-2">
+                                <span class="material-symbols-outlined text-indigo-600 text-base">featured_play_list</span>
+                                <span class="text-xs font-bold text-slate-800">بخش معرفی اصلی و سربرگ (هیرو)</span>
+                            </div>
+                            <button type="button" onclick="applyClinicalCopyTemplate('hero')" class="px-2 py-1 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 text-[10px] font-bold transition-all flex items-center gap-1 shadow-2xs cursor-pointer" title="پرکردن خودکار با متن استاندارد بالینی">
+                                <span class="material-symbols-outlined text-xs">magic_button</span>
+                                <span>متن آماده بالینی</span>
+                            </button>
+                        </div>
+                        <div class="space-y-2">
+                            <div>
+                                <label class="text-[11px] font-bold text-slate-700 block mb-1">نشان بالای تیتر (بج)</label>
+                                <input type="text" id="input-quick-hero-badge" value="<?= htmlspecialchars($layout['hero']['badge'] ?? '🛡️ مرکز تاییدشده شبکه سلامت آتنا • استاندارد طلایی') ?>" class="w-full px-3 py-2 text-xs bg-slate-50 focus:bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-700 transition-all">
+                            </div>
+                            <div>
+                                <label class="text-[11px] font-bold text-slate-700 block mb-1">تیتر اصلی چشمگیر</label>
+                                <input type="text" id="input-quick-hero-title" value="<?= htmlspecialchars($layout['hero']['title'] ?? 'مراقبت هوشمند و درمان پیشرفته پت شما با پرونده سلامت ابری') ?>" class="w-full px-3 py-2 text-xs bg-slate-50 focus:bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 font-bold text-slate-900 transition-all">
+                            </div>
+                            <div>
+                                <label class="text-[11px] font-bold text-slate-700 block mb-1">توضیحات معرفی</label>
+                                <textarea id="input-quick-hero-subtitle" rows="2" class="w-full px-3 py-2 text-xs bg-slate-50 focus:bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-700 transition-all"><?= htmlspecialchars($layout['hero']['subtitle'] ?? 'با کادر متخصص دامپزشکی، تجهیزات جراحی مدرن و پرونده ابری سلامت.') ?></textarea>
+                            </div>
+                            <div>
+                                <label class="text-[11px] font-bold text-slate-700 block mb-1">متن دکمه نوبت‌دهی / اقدام</label>
+                                <input type="text" id="input-quick-hero-cta" value="<?= htmlspecialchars($layout['hero']['cta_primary_text'] ?? 'رزرو آنلاین نوبت و معاینه') ?>" class="w-full px-3 py-2 text-xs bg-slate-50 focus:bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 font-bold text-slate-800 transition-all">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- CARD 3: Safe Brand Colors & Fast Swatches -->
+                    <div class="p-3.5 rounded-2xl border border-slate-200 bg-white shadow-2xs space-y-3 quick-card" data-search-keys="رنگ تم پالت استایل ظاهر برند بازنشانی">
+                        <div class="flex items-center justify-between pb-2 border-b border-slate-100">
+                            <div class="flex items-center gap-2">
+                                <span class="material-symbols-outlined text-emerald-600 text-base">palette</span>
+                                <span class="text-xs font-bold text-slate-800">رنگ‌های برند و استایل اختصاصی</span>
+                            </div>
+                            <button type="button" onclick="resetBrandColorsToDefault()" class="px-2 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 text-[10px] font-bold transition-all flex items-center gap-1 shadow-2xs cursor-pointer" title="بازگشت به رنگ‌های پیش‌فرض آتنا">
+                                <span class="material-symbols-outlined text-xs">restart_alt</span>
+                                <span>بازنشانی</span>
+                            </button>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div class="p-2 rounded-xl bg-slate-50 border border-slate-200 flex items-center gap-2">
+                                <input type="color" id="input-quick-primary-color" value="<?= htmlspecialchars($activePrimaryColor) ?>" onchange="handleColorInputChange('primary', this.value)" class="w-8 h-8 rounded-lg border-0 cursor-pointer p-0 bg-transparent shrink-0">
+                                <div class="min-w-0">
+                                    <div class="text-[11px] font-bold text-slate-700 truncate">رنگ اصلی برند</div>
+                                    <div class="text-[10px] text-slate-400 font-mono" id="label-quick-primary-hex"><?= htmlspecialchars($activePrimaryColor) ?></div>
+                                </div>
+                            </div>
+                            <div class="p-2 rounded-xl bg-slate-50 border border-slate-200 flex items-center gap-2">
+                                <input type="color" id="input-quick-secondary-color" value="<?= htmlspecialchars($activeSecondaryColor) ?>" onchange="handleColorInputChange('secondary', this.value)" class="w-8 h-8 rounded-lg border-0 cursor-pointer p-0 bg-transparent shrink-0">
+                                <div class="min-w-0">
+                                    <div class="text-[11px] font-bold text-slate-700 truncate">رنگ مکمل / دکمه</div>
+                                    <div class="text-[10px] text-slate-400 font-mono" id="label-quick-secondary-hex"><?= htmlspecialchars($activeSecondaryColor) ?></div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Swatches shortcuts -->
+                        <div class="flex items-center gap-1.5 pt-1">
+                            <span class="text-[10px] text-slate-400">پالت‌های آماده:</span>
+                            <button type="button" onclick="applyColorSwatch('#059669', '#fd8100')" class="px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-800 text-[10px] font-bold border border-emerald-200 hover:scale-105 transition-transform cursor-pointer">زمردی</button>
+                            <button type="button" onclick="applyColorSwatch('#001a48', '#fd8100')" class="px-2 py-0.5 rounded-md bg-blue-50 text-blue-900 text-[10px] font-bold border border-blue-200 hover:scale-105 transition-transform cursor-pointer">درباری</button>
+                            <button type="button" onclick="applyColorSwatch('#7c3aed', '#ea580c')" class="px-2 py-0.5 rounded-md bg-purple-50 text-purple-800 text-[10px] font-bold border border-purple-200 hover:scale-105 transition-transform cursor-pointer">ارغوانی</button>
+                            <button type="button" onclick="applyColorSwatch('#0891b2', '#001a48')" class="px-2 py-0.5 rounded-md bg-cyan-50 text-cyan-800 text-[10px] font-bold border border-cyan-200 hover:scale-105 transition-transform cursor-pointer">آرورا</button>
+                        </div>
+                    </div>
+
+                    <!-- CARD 4: Cost Calculator Section -->
+                    <div class="p-3.5 rounded-2xl border border-slate-200 bg-white shadow-2xs space-y-3 quick-card" data-search-keys="محاسبه‌گر هزینه تعرفه قیمت جراحی تخفیف آنلاین">
+                        <div class="flex items-center justify-between pb-2 border-b border-slate-100">
+                            <div class="flex items-center gap-2">
+                                <span class="material-symbols-outlined text-amber-600 text-base">calculate</span>
+                                <span class="text-xs font-bold text-slate-800">محاسبه‌گر آنلاین هزینه درمان</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <button type="button" onclick="applyClinicalCopyTemplate('cost_calculator')" class="px-2 py-1 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 text-[10px] font-bold transition-all flex items-center gap-1 shadow-2xs cursor-pointer" title="درج متن استاندارد شفافیت مالی">
+                                    <span class="material-symbols-outlined text-xs">magic_button</span>
+                                    <span>متن آماده</span>
+                                </button>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" id="input-quick-calc-enabled" <?= !empty($layout['cost_calculator']['enabled']) ? 'checked' : '' ?> class="sr-only peer">
+                                    <div class="w-8 h-4 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-amber-600"></div>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="space-y-2">
+                            <div>
+                                <label class="text-[11px] font-bold text-slate-700 block mb-1">نشان سربرگ</label>
+                                <input type="text" id="input-quick-calc-badge" value="<?= htmlspecialchars($layout['cost_calculator']['badge'] ?? 'تعرفه شفاف خدمات درمانی و جراحی') ?>" class="w-full px-3 py-2 text-xs bg-slate-50 focus:bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 text-slate-700 transition-all">
+                            </div>
+                            <div>
+                                <label class="text-[11px] font-bold text-slate-700 block mb-1">تیتر بخش محاسبه‌گر</label>
+                                <input type="text" id="input-quick-calc-heading" value="<?= htmlspecialchars($layout['cost_calculator']['heading'] ?? 'برآورد آنلاین و شفاف تعرفه خدمات و جراحی‌های تخصصی') ?>" class="w-full px-3 py-2 text-xs bg-slate-50 focus:bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 font-bold text-slate-900 transition-all">
+                            </div>
+                            <div>
+                                <label class="text-[11px] font-bold text-slate-700 block mb-1">زیرعنوان و توضیحات شفافیت تعرفه</label>
+                                <textarea id="input-quick-calc-subtitle" rows="2" class="w-full px-3 py-2 text-xs bg-slate-50 focus:bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 text-slate-700 transition-all"><?= htmlspecialchars($layout['cost_calculator']['subtitle'] ?? 'گونه حیوان خانگی و خدمات تشخیصی، بالینی یا جراحی مدنظر را انتخاب فرمایید تا تعرفه مصوب رسمی همراه با ۱۰٪ تخفیف رزرو آنلاین برآورد گردد.') ?></textarea>
+                            </div>
+                            <div>
+                                <label class="text-[11px] font-bold text-slate-700 block mb-1">درصد تخفیف رزرو اینترنتی (%)</label>
+                                <input type="number" id="input-quick-calc-discount" min="0" max="50" value="<?= htmlspecialchars($layout['cost_calculator']['discount_percent'] ?? 10) ?>" class="w-28 px-3 py-1.5 text-xs bg-slate-50 focus:bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 font-bold text-slate-800 transition-all">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- CARD 5: Duty Hours & Active Shift -->
+                    <div class="p-3.5 rounded-2xl border border-slate-200 bg-white shadow-2xs space-y-3 quick-card" data-search-keys="ساعت کاری شیفت زمان باز بسته فعالیت">
+                        <div class="flex items-center justify-between pb-2 border-b border-slate-100">
+                            <div class="flex items-center gap-2">
+                                <span class="material-symbols-outlined text-teal-600 text-base">schedule</span>
+                                <span class="text-xs font-bold text-slate-800">ساعات کاری و شیفت فعال</span>
+                            </div>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" id="input-quick-duty-enabled" <?= !empty($layout['duty_hours']['enabled']) ? 'checked' : '' ?> class="sr-only peer">
+                                <div class="w-8 h-4 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-teal-600"></div>
+                            </label>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="text-[11px] font-bold text-slate-700 block mb-1">ساعت شروع کار</label>
+                                <input type="time" id="input-quick-duty-open-time" value="<?= htmlspecialchars($layout['duty_hours']['open_time'] ?? '08:30') ?>" class="w-full px-3 py-1.5 text-xs bg-slate-50 focus:bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500 font-mono font-bold text-slate-800">
+                            </div>
+                            <div>
+                                <label class="text-[11px] font-bold text-slate-700 block mb-1">ساعت پایان کار</label>
+                                <input type="time" id="input-quick-duty-close-time" value="<?= htmlspecialchars($layout['duty_hours']['close_time'] ?? '22:30') ?>" class="w-full px-3 py-1.5 text-xs bg-slate-50 focus:bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500 font-mono font-bold text-slate-800">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- CARD 6: Emergency Hotline Bar -->
+                    <div class="p-3.5 rounded-2xl border border-red-200 bg-red-50/30 shadow-2xs space-y-3 quick-card" data-search-keys="اورژانس شبانه روزی فوری تلفن قرمز تروما">
+                        <div class="flex items-center justify-between pb-2 border-b border-red-100">
+                            <div class="flex items-center gap-2">
+                                <span class="material-symbols-outlined text-red-600 text-base">e911_emergency</span>
+                                <span class="text-xs font-bold text-red-950">نوار اورژانس شبانه‌روزی</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <button type="button" onclick="applyClinicalCopyTemplate('emergency_bar')" class="px-2 py-1 rounded-lg bg-red-100 hover:bg-red-200 text-red-800 border border-red-200 text-[10px] font-bold transition-all flex items-center gap-1 shadow-2xs cursor-pointer" title="درج متن آماده اورژانس">
+                                    <span class="material-symbols-outlined text-xs">magic_button</span>
+                                    <span>متن آماده</span>
+                                </button>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" id="input-quick-emergency-enabled" <?= !empty($layout['emergency_bar']['enabled']) ? 'checked' : '' ?> class="sr-only peer">
+                                    <div class="w-8 h-4 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-red-600"></div>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="space-y-2">
+                            <div>
+                                <label class="text-[11px] font-bold text-slate-700 block mb-1">تیتر پیام فوری</label>
+                                <input type="text" id="input-quick-emergency-headline" value="<?= htmlspecialchars($layout['emergency_bar']['headline'] ?? 'اورژانس شبانه‌روزی و تروما دامپزشکی ۲۴/۷') ?>" class="w-full px-3 py-2 text-xs bg-white border border-red-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 font-bold text-red-950 transition-all">
+                            </div>
+                            <div>
+                                <label class="text-[11px] font-bold text-slate-700 block mb-1">زیرعنوان شرایط پذیرش</label>
+                                <input type="text" id="input-quick-emergency-subheadline" value="<?= htmlspecialchars($layout['emergency_bar']['subheadline'] ?? 'پذیرش فوری سوانح، تشنج و مسمومیت‌ها با تجهیزات احیا و ICU') ?>" class="w-full px-3 py-2 text-xs bg-white border border-red-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 text-slate-700 transition-all">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Bottom Link to Advanced Blocks -->
+                    <div class="p-3 text-center rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-600">
+                        <span>نیاز به تنظیمات کامل یا افزودن بخش دارید؟</span>
+                        <button type="button" onclick="switchSidebarTab('blocks')" class="text-emerald-700 font-bold hover:underline mr-1 cursor-pointer">
+                            رفتن به چینش بلوک‌ها ←
+                        </button>
+                    </div>
+
+                </div>
+                
                 <!-- TAB 1: BLOCKS ACCORDION -->
-                <div id="tab-panel-blocks" class="space-y-3">
+                <div id="tab-panel-blocks" class="space-y-3 hidden">
                     <div class="p-2.5 rounded-xl bg-indigo-50/70 border border-indigo-100 flex items-center gap-2 text-[11px] text-indigo-900 mb-1">
                         <span class="material-symbols-outlined text-indigo-600 text-base">swap_vert</span>
                         <span>با دکمه‌های فلش کنار هر بلوک، اولویت و ترتیب چیدمان بخش‌ها را به آسانی بالا و پایین جابجا کنید.</span>
@@ -1075,6 +1328,47 @@ $publicUrl = "../site.php?slug=" . urlencode($site['slug']);
             </div>
         </main>
     </div>
+
+    <!-- Spotlight Quick-Editor Modal (Appears when clicking Quick Edit on any block preview) -->
+    <div id="spotlight-quick-modal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 hidden transition-opacity">
+        <div class="bg-white rounded-3xl shadow-2xl max-w-lg w-full overflow-hidden border border-slate-200 flex flex-col max-h-[85vh]">
+            <!-- Modal Header -->
+            <div class="p-4 sm:px-6 bg-slate-50 border-b border-slate-200 flex items-center justify-between shrink-0">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-9 h-9 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold">
+                        <span class="material-symbols-outlined text-lg" id="spotlight-modal-icon">edit_note</span>
+                    </div>
+                    <div>
+                        <div class="text-sm font-black text-slate-900 flex items-center gap-1.5">
+                            <span>ویرایش سریع:</span>
+                            <span id="spotlight-modal-title" class="text-emerald-700">معرفی اصلی</span>
+                        </div>
+                        <div class="text-[11px] text-slate-500">تغییرات شما فوراً در پیش‌نمایش اعمال می‌شود</div>
+                    </div>
+                </div>
+                <button type="button" onclick="closeSpotlightModal()" class="w-8 h-8 rounded-xl bg-slate-200/80 hover:bg-slate-300 text-slate-700 flex items-center justify-center transition-colors cursor-pointer" title="بستن پنجره">
+                    <span class="material-symbols-outlined text-base">close</span>
+                </button>
+            </div>
+
+            <!-- Modal Dynamic Body -->
+            <div class="p-5 overflow-y-auto space-y-4" id="spotlight-modal-body">
+                <!-- Dynamically generated fields per block -->
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="p-4 sm:px-6 bg-slate-50 border-t border-slate-200 flex items-center justify-between shrink-0">
+                <button type="button" id="spotlight-btn-advanced" onclick="goToAdvancedBlockFromSpotlight()" class="text-xs font-bold text-slate-600 hover:text-emerald-700 flex items-center gap-1 transition-colors cursor-pointer">
+                    <span class="material-symbols-outlined text-sm">tune</span>
+                    <span>تنظیمات پیشرفته در سایدبار</span>
+                </button>
+                <button type="button" onclick="closeSpotlightModal()" class="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md shadow-emerald-600/20 transition-all flex items-center gap-1 cursor-pointer">
+                    <span class="material-symbols-outlined text-sm">check</span>
+                    <span>تایید و بستن</span>
+                </button>
+            </div>
+        </div>
+    </div>
 </div>
 
 <script>
@@ -1146,24 +1440,35 @@ function updatePalettePreview(palette) {
     });
 
     const def = paletteDefaults[palette] || paletteDefaults.emerald;
-    const pInput = document.getElementById('input-primary-color');
-    const pHex = document.getElementById('input-primary-color-hex');
-    const sInput = document.getElementById('input-secondary-color');
-    const sHex = document.getElementById('input-secondary-color-hex');
-    if (pInput && pHex) { pInput.value = def.primary; pHex.value = def.primary; }
-    if (sInput && sHex) { sInput.value = def.secondary; sHex.value = def.secondary; }
+    syncColorInputs(def.primary, def.secondary);
 
     sendLiveUpdate('theme_palette', palette);
     sendLiveUpdate('custom_colors', { primary: def.primary, secondary: def.secondary });
 }
 
-function applyColorSwatch(primary, secondary) {
+function syncColorInputs(primary, secondary) {
     const pInput = document.getElementById('input-primary-color');
     const pHex = document.getElementById('input-primary-color-hex');
     const sInput = document.getElementById('input-secondary-color');
     const sHex = document.getElementById('input-secondary-color-hex');
-    if (pInput && pHex) { pInput.value = primary; pHex.value = primary; }
-    if (sInput && sHex) { sInput.value = secondary; sHex.value = secondary; }
+    const qPInput = document.getElementById('input-quick-primary-color');
+    const qSInput = document.getElementById('input-quick-secondary-color');
+    const qPHex = document.getElementById('label-quick-primary-hex');
+    const qSHex = document.getElementById('label-quick-secondary-hex');
+
+    if (pInput) pInput.value = primary;
+    if (pHex) pHex.value = primary;
+    if (qPInput) qPInput.value = primary;
+    if (qPHex) qPHex.innerText = primary;
+
+    if (sInput) sInput.value = secondary;
+    if (sHex) sHex.value = secondary;
+    if (qSInput) qSInput.value = secondary;
+    if (qSHex) qSHex.innerText = secondary;
+}
+
+function applyColorSwatch(primary, secondary) {
+    syncColorInputs(primary, secondary);
     sendLiveUpdate('custom_colors', { primary: primary, secondary: secondary });
 }
 
@@ -1171,9 +1476,17 @@ function handleColorInputChange(type, val) {
     if (type === 'primary') {
         const hexEl = document.getElementById('input-primary-color-hex');
         if (hexEl) hexEl.value = val;
+        const qP = document.getElementById('input-quick-primary-color');
+        if (qP) qP.value = val;
+        const qHex = document.getElementById('label-quick-primary-hex');
+        if (qHex) qHex.innerText = val;
     } else {
         const hexEl = document.getElementById('input-secondary-color-hex');
         if (hexEl) hexEl.value = val;
+        const qS = document.getElementById('input-quick-secondary-color');
+        if (qS) qS.value = val;
+        const qHex = document.getElementById('label-quick-secondary-hex');
+        if (qHex) qHex.innerText = val;
     }
     const prim = document.getElementById('input-primary-color')?.value || '#059669';
     const sec = document.getElementById('input-secondary-color')?.value || '#fd8100';
@@ -1187,9 +1500,17 @@ function handleHexInput(type, val) {
         if (type === 'primary') {
             const picker = document.getElementById('input-primary-color');
             if (picker) picker.value = val;
+            const qP = document.getElementById('input-quick-primary-color');
+            if (qP) qP.value = val;
+            const qHex = document.getElementById('label-quick-primary-hex');
+            if (qHex) qHex.innerText = val;
         } else {
             const picker = document.getElementById('input-secondary-color');
             if (picker) picker.value = val;
+            const qS = document.getElementById('input-quick-secondary-color');
+            if (qS) qS.value = val;
+            const qHex = document.getElementById('label-quick-secondary-hex');
+            if (qHex) qHex.innerText = val;
         }
         const prim = document.getElementById('input-primary-color')?.value || '#059669';
         const sec = document.getElementById('input-secondary-color')?.value || '#fd8100';
@@ -1202,12 +1523,7 @@ function resetBrandColorsToDefault() {
     const palette = paletteEl ? paletteEl.value : 'emerald';
     const def = paletteDefaults[palette] || paletteDefaults.emerald;
     
-    const pInput = document.getElementById('input-primary-color');
-    const pHex = document.getElementById('input-primary-color-hex');
-    const sInput = document.getElementById('input-secondary-color');
-    const sHex = document.getElementById('input-secondary-color-hex');
-    if (pInput && pHex) { pInput.value = def.primary; pHex.value = def.primary; }
-    if (sInput && sHex) { sInput.value = def.secondary; sHex.value = def.secondary; }
+    syncColorInputs(def.primary, def.secondary);
 
     sendLiveUpdate('theme_palette', palette);
     sendLiveUpdate('custom_colors', { primary: def.primary, secondary: def.secondary });
@@ -1410,7 +1726,7 @@ function switchMobileStudioView(mode) {
 }
 
 function switchSidebarTab(tab) {
-    ['blocks', 'design', 'settings'].forEach(t => {
+    ['quick', 'blocks', 'design', 'settings'].forEach(t => {
         const p = document.getElementById(`tab-panel-${t}`);
         const b = document.getElementById(`tab-btn-${t}`);
         if (p) p.classList.add('hidden');
@@ -1420,6 +1736,319 @@ function switchSidebarTab(tab) {
     const activeBtn = document.getElementById(`tab-btn-${tab}`);
     if (activePanel) activePanel.classList.remove('hidden');
     if (activeBtn) activeBtn.className = 'flex-1 py-3 text-center border-b-2 border-emerald-600 text-emerald-800 bg-white transition-all flex items-center justify-center gap-1';
+}
+
+function handleStudioQuickSearch(q) {
+    const query = (q || '').trim().toLowerCase();
+    const clearBtn = document.getElementById('btn-clear-search');
+    if (clearBtn) {
+        clearBtn.classList.toggle('hidden', !query);
+    }
+
+    if (!query) {
+        document.querySelectorAll('.quick-card').forEach(c => c.classList.remove('hidden'));
+        document.querySelectorAll('#tab-panel-blocks > div[id^="section-"]').forEach(s => s.classList.remove('hidden'));
+        return;
+    }
+
+    let matchedQuickCount = 0;
+    document.querySelectorAll('.quick-card').forEach(card => {
+        const text = ((card.getAttribute('data-search-keys') || '') + ' ' + card.innerText).toLowerCase();
+        const matches = text.includes(query);
+        card.classList.toggle('hidden', !matches);
+        if (matches) matchedQuickCount++;
+    });
+
+    let matchedBlockCount = 0;
+    document.querySelectorAll('#tab-panel-blocks > div[id^="section-"]').forEach(sec => {
+        const text = sec.innerText.toLowerCase();
+        const matches = text.includes(query);
+        sec.classList.toggle('hidden', !matches);
+        if (matches) {
+            matchedBlockCount++;
+            const blockId = sec.id.replace('section-', '');
+            const content = document.getElementById(`content-${blockId}`);
+            if (content && content.classList.contains('hidden')) {
+                toggleAccordion(blockId);
+            }
+        }
+    });
+
+    if (matchedQuickCount === 0 && matchedBlockCount > 0) {
+        switchSidebarTab('blocks');
+    }
+}
+
+function clearStudioQuickSearch() {
+    const input = document.getElementById('studio-quick-search');
+    if (input) {
+        input.value = '';
+        handleStudioQuickSearch('');
+        input.focus();
+    }
+}
+
+const clinicalTemplates = {
+    hero: {
+        'input-hero-badge': '🛡️ مرکز تاییدشده شبکه سلامت آتنا • استاندارد طلایی بالینی',
+        'input-hero-title': 'مرکز تخصصی درمان، جراحی و مراقبت‌های پیشرفته دامپزشکی',
+        'input-hero-subtitle': 'ارائه خدمات فوق‌تخصصی تشخیصی، تصویربرداری دیجیتال، جراحی بافت نرم و ارتوپدی با کادر هیئت علمی و پرونده سلامت ابری آتنا.',
+        'input-hero-cta': 'رزرو آنلاین نوبت و معاینه تخصصی'
+    },
+    cost_calculator: {
+        'input-calc-badge': 'تعرفه شفاف و مصوب خدمات بالینی و جراحی',
+        'input-calc-heading': 'برآورد آنلاین و شفاف هزینه خدمات بالینی و جراحی',
+        'input-calc-subtitle': 'گونه حیوان خانگی و خدمات مدنظر را مشخص فرمایید تا تعرفه دقیق مصوب همراه با ۱۰٪ تخفیف ویژه رزرو اینترنتی محاسبه گردد.',
+        'input-calc-discount': '10'
+    },
+    emergency_bar: {
+        'input-emergency-headline': 'پذیرش اورژانس و تروما به صورت ۲۴ ساعته شبانه‌روز',
+        'input-emergency-subheadline': 'تیم جراحی و مراقبت ویژه (ICU) آماده پذیرش فوری موارد بحرانی و تصادفات'
+    },
+    before_after: {
+        'input-ba-heading': 'نتایج بالینی و مقایسه درمان‌های تخصصی مرکز',
+        'input-ba-subtitle': 'مستندات واقعی از فرآیند بهبود مراجعین با بهره‌گیری از پروتکل‌های درمانی مدرن',
+        'input-ba-service-label': 'درمان تخصصی و ترمیم زخم بافت نرم',
+        'input-ba-label-before': 'قبل از آغاز دوره درمانی',
+        'input-ba-label-after': 'بهبودی کامل پس از ۱۴ روز'
+    }
+};
+
+function applyClinicalCopyTemplate(blockId) {
+    const tpl = clinicalTemplates[blockId];
+    if (!tpl) return;
+
+    for (const [targetId, val] of Object.entries(tpl)) {
+        const input = document.getElementById(targetId);
+        if (input) {
+            input.value = val;
+            input.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+        const quickId = targetId.replace('input-', 'input-quick-');
+        const quickInput = document.getElementById(quickId);
+        if (quickInput) {
+            quickInput.value = val;
+        }
+        const spotId = targetId.replace('input-', 'spotlight-');
+        const spotInput = document.getElementById(spotId);
+        if (spotInput) {
+            spotInput.value = val;
+        }
+    }
+    showToast('✓ متن آماده بالینی استاندارد با موفقیت درج شد.', 'success');
+}
+
+let currentSpotlightBlock = null;
+
+const spotlightConfigs = {
+    hero: {
+        title: 'معرفی اصلی و هیرو',
+        icon: 'featured_play_list',
+        fields: [
+            { id: 'hero-badge', targetId: 'input-hero-badge', field: 'hero_badge', label: 'نشان بالای تیتر (بج)', type: 'text' },
+            { id: 'hero-title', targetId: 'input-hero-title', field: 'hero_title', label: 'تیتر اصلی چشمگیر', type: 'text' },
+            { id: 'hero-subtitle', targetId: 'input-hero-subtitle', field: 'hero_subtitle', label: 'توضیحات معرفی زیر تیتر', type: 'textarea' },
+            { id: 'hero-cta', targetId: 'input-hero-cta', field: 'hero_cta', label: 'متن دکمه نوبت‌دهی / اقدام', type: 'text' }
+        ],
+        hasTemplate: true
+    },
+    emergency_bar: {
+        title: 'نوار اورژانس شبانه‌روزی',
+        icon: 'e911_emergency',
+        fields: [
+            { id: 'emergency-headline', targetId: 'input-emergency-headline', field: 'emergency_headline', label: 'تیتر پیام فوری', type: 'text' },
+            { id: 'emergency-subheadline', targetId: 'input-emergency-subheadline', field: 'emergency_subheadline', label: 'زیرعنوان و شرایط پذیرش', type: 'text' },
+            { id: 'emergency-phone', targetId: 'input-emergency-phone', field: 'emergency_phone', label: 'تلفن خط ویژه اورژانس', type: 'text' }
+        ],
+        hasTemplate: true
+    },
+    cost_calculator: {
+        title: 'محاسبه‌گر هزینه خدمات بالینی',
+        icon: 'calculate',
+        fields: [
+            { id: 'calc-badge', targetId: 'input-calc-badge', field: 'calc_badge', label: 'نشان سربرگ', type: 'text' },
+            { id: 'calc-heading', targetId: 'input-calc-heading', field: 'calc_heading', label: 'تیتر بخش محاسبه‌گر', type: 'text' },
+            { id: 'calc-subtitle', targetId: 'input-calc-subtitle', field: 'calc_subtitle', label: 'زیرعنوان و توضیحات تخفیف', type: 'textarea' },
+            { id: 'calc-discount', targetId: 'input-calc-discount', field: 'calc_discount', label: 'درصد تخفیف آنلاین (%)', type: 'number' }
+        ],
+        hasTemplate: true
+    },
+    before_after: {
+        title: 'مقایسه قبل و بعد از درمان',
+        icon: 'compare',
+        fields: [
+            { id: 'ba-heading', targetId: 'input-ba-heading', field: 'before_after_heading', label: 'تیتر بخش مقایسه', type: 'text' },
+            { id: 'ba-subtitle', targetId: 'input-ba-subtitle', field: 'before_after_subtitle', label: 'توضیحات و زیرعنوان', type: 'textarea' },
+            { id: 'ba-service-label', targetId: 'input-ba-service-label', field: 'before_after_service_label', label: 'عنوان خدمت بالینی', type: 'text' },
+            { id: 'ba-label-before', targetId: 'input-ba-label-before', field: 'before_after_label_before', label: 'برچسب قبل', type: 'text' },
+            { id: 'ba-label-after', targetId: 'input-ba-label-after', field: 'before_after_label_after', label: 'برچسب بعد', type: 'text' }
+        ],
+        hasTemplate: true
+    },
+    about: {
+        title: 'درباره کلینیک و کادر درمان',
+        icon: 'info',
+        fields: [
+            { id: 'about-heading', targetId: 'input-about-heading', field: 'about_heading', label: 'تیتر درباره ما', type: 'text' },
+            { id: 'about-text', targetId: 'input-about-text', field: 'about_text', label: 'متن معرفی کلینیک و سوابق', type: 'textarea' },
+            { id: 'about-vet-council', targetId: 'input-about-vet-council', field: 'about_vet_council', label: 'شماره نظام دامپزشکی / مجوز', type: 'text' }
+        ]
+    },
+    duty_hours: {
+        title: 'ساعات کاری و شیفت فعال',
+        icon: 'schedule',
+        fields: [
+            { id: 'duty-open-time', targetId: 'input-duty-open-time', field: 'duty_hours', label: 'ساعت شروع کار', type: 'time' },
+            { id: 'duty-close-time', targetId: 'input-duty-close-time', field: 'duty_hours', label: 'ساعت پایان کار', type: 'time' }
+        ]
+    },
+    contact: {
+        title: 'اطلاعات تماس و نشانی',
+        icon: 'call',
+        fields: [
+            { id: 'contact-phone', targetId: 'input-contact-phone', field: 'contact_phone', label: 'شماره تلفن نوبت‌دهی', type: 'text' },
+            { id: 'contact-emergency', targetId: 'input-contact-emergency', field: 'contact_emergency', label: 'تلفن اورژانس', type: 'text' },
+            { id: 'contact-address', targetId: 'input-contact-address', field: 'contact_address', label: 'نشانی دقیق پستی', type: 'text' },
+            { id: 'contact-hours', targetId: 'input-contact-hours', field: 'contact_hours', label: 'ساعات پذیرش حضوری', type: 'text' }
+        ]
+    },
+    doctors_roster: {
+        title: 'کادر پزشکان و متخصصان',
+        icon: 'group',
+        fields: [
+            { id: 'doctors-heading', targetId: 'input-doctors-heading', field: 'doctors_heading', label: 'تیتر کادر درمان', type: 'text' },
+            { id: 'doctors-subtitle', targetId: 'input-doctors-subtitle', field: 'doctors_subtitle', label: 'زیرعنوان کادر درمان', type: 'textarea' }
+        ]
+    },
+    bento_facilities: {
+        title: 'امکانات و ظرفیت‌های بالینی',
+        icon: 'grid_view',
+        fields: [
+            { id: 'bento-heading', targetId: 'input-bento-heading', field: 'bento_heading', label: 'تیتر بخش امکانات', type: 'text' }
+        ]
+    },
+    booking: {
+        title: 'سیستم نوبت‌دهی آنلاین',
+        icon: 'calendar_month',
+        fields: [
+            { id: 'booking-heading', targetId: 'input-booking-heading', field: 'booking_heading', label: 'تیتر سیستم نوبت‌دهی', type: 'text' }
+        ]
+    },
+    storefront: {
+        title: 'داروخانه و پت‌شاپ آنلاین',
+        icon: 'storefront',
+        fields: [
+            { id: 'storefront-heading', targetId: 'input-storefront-heading', field: 'storefront_heading', label: 'تیتر بخش فروشگاه', type: 'text' }
+        ]
+    },
+    reviews: {
+        title: 'نظرات مراجعین',
+        icon: 'rate_review',
+        fields: [
+            { id: 'reviews-heading', targetId: 'input-reviews-heading', field: 'reviews_heading', label: 'تیتر نظرات مراجعین', type: 'text' }
+        ]
+    },
+    faq: {
+        title: 'پرسش‌های متداول',
+        icon: 'help',
+        fields: [
+            { id: 'faq-heading', targetId: 'input-faq-heading', field: 'faq_heading', label: 'تیتر پرسش‌های متداول', type: 'text' }
+        ]
+    }
+};
+
+function openSpotlightModal(blockId) {
+    currentSpotlightBlock = blockId;
+    const cfg = spotlightConfigs[blockId];
+    const modal = document.getElementById('spotlight-quick-modal');
+    if (!modal) return;
+
+    if (!cfg) {
+        openSidebar('blocks');
+        const sec = document.getElementById(`section-${blockId}`);
+        if (sec) {
+            sec.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            toggleAccordion(blockId);
+        }
+        return;
+    }
+
+    document.getElementById('spotlight-modal-title').innerText = cfg.title;
+    document.getElementById('spotlight-modal-icon').innerText = cfg.icon || 'edit_note';
+
+    let html = '';
+    if (cfg.hasTemplate) {
+        html += `
+            <div class="p-2.5 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-between mb-3">
+                <span class="text-[11px] font-bold text-indigo-900">می‌خواهید متن استاندارد بالینی جایگزین شود؟</span>
+                <button type="button" onclick="applyClinicalCopyTemplate('${blockId}')" class="px-2.5 py-1 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold transition-colors flex items-center gap-1 cursor-pointer">
+                    <span class="material-symbols-outlined text-xs">magic_button</span>
+                    <span>درج متن نمونه</span>
+                </button>
+            </div>
+        `;
+    }
+
+    cfg.fields.forEach(f => {
+        const originalInput = document.getElementById(f.targetId);
+        const val = originalInput ? originalInput.value : '';
+
+        html += `<div class="space-y-1.5">
+            <label class="text-xs font-bold text-slate-700 block">${f.label}</label>`;
+
+        if (f.type === 'textarea') {
+            html += `<textarea id="spotlight-${f.id}" rows="3" oninput="syncSpotlightField('${f.targetId}', '${f.field}', this.value)" class="w-full px-3 py-2 text-xs bg-slate-50 focus:bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-800 transition-all font-medium">${val}</textarea>`;
+        } else {
+            html += `<input type="${f.type || 'text'}" id="spotlight-${f.id}" value="${val.replace(/"/g, '&quot;')}" oninput="syncSpotlightField('${f.targetId}', '${f.field}', this.value)" class="w-full px-3 py-2 text-xs bg-slate-50 focus:bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-800 transition-all font-bold">`;
+        }
+
+        html += `</div>`;
+    });
+
+    document.getElementById('spotlight-modal-body').innerHTML = html;
+    modal.classList.remove('hidden');
+}
+
+function closeSpotlightModal() {
+    const modal = document.getElementById('spotlight-quick-modal');
+    if (modal) modal.classList.add('hidden');
+    currentSpotlightBlock = null;
+}
+
+function goToAdvancedBlockFromSpotlight() {
+    const bId = currentSpotlightBlock;
+    closeSpotlightModal();
+    if (bId) {
+        openSidebar('blocks');
+        const sec = document.getElementById(`section-${bId}`);
+        if (sec) {
+            const content = document.getElementById(`content-${bId}`);
+            if (content && content.classList.contains('hidden')) {
+                toggleAccordion(bId);
+            }
+            sec.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    }
+}
+
+function syncSpotlightField(targetId, fieldKey, val) {
+    const originalInput = document.getElementById(targetId);
+    if (originalInput) {
+        originalInput.value = val;
+    }
+    const quickId = targetId.replace('input-', 'input-quick-');
+    const quickInput = document.getElementById(quickId);
+    if (quickInput) {
+        quickInput.value = val;
+    }
+
+    if (fieldKey === 'duty_hours') {
+        const o = document.getElementById('input-duty-open-time')?.value || '08:30';
+        const c = document.getElementById('input-duty-close-time')?.value || '22:30';
+        sendLiveUpdate('duty_hours', `${o} الی ${c}`);
+    } else {
+        sendLiveUpdate(fieldKey, val);
+    }
 }
 
 function toggleAccordion(id) {
@@ -1454,9 +2083,12 @@ function setViewport(size) {
     }
 }
 
-// Click-to-edit listener from iframe: automatically opens sidebar on click and highlights block!
+// Click-to-edit and WYSIWYG live bus listener from iframe:
 window.addEventListener('message', function(event) {
-    if (event.data && event.data.type === 'BLOCK_CLICKED') {
+    if (!event.data) return;
+
+    // Existing BLOCK_CLICKED event: automatically opens sidebar on click and highlights block!
+    if (event.data.type === 'BLOCK_CLICKED') {
         const blockId = event.data.blockId;
         openSidebar('blocks');
         const section = document.getElementById(`section-${blockId}`);
@@ -1471,6 +2103,99 @@ window.addEventListener('message', function(event) {
                 setTimeout(() => section.classList.remove('ring-2', 'ring-emerald-500'), 1500);
             }, 100);
         }
+    }
+
+    // Direct WYSIWYG preview inline typing: FIELD_UPDATED_FROM_PREVIEW
+    if (event.data.type === 'FIELD_UPDATED_FROM_PREVIEW') {
+        const field = event.data.field;
+        const val = event.data.value;
+        
+        const fieldToInputMap = {
+            'site_title': 'input-site-title',
+            'site_tagline': 'input-site-tagline',
+            'contact_phone': 'input-contact-phone',
+            'contact_address': 'input-contact-address',
+            'contact_hours': 'input-contact-hours',
+            'contact_emergency': 'input-contact-emergency',
+            'emergency_headline': 'input-emergency-headline',
+            'emergency_subheadline': 'input-emergency-subheadline',
+            'emergency_phone': 'input-emergency-phone',
+            'hero_badge': 'input-hero-badge',
+            'hero_title': 'input-hero-title',
+            'hero_subtitle': 'input-hero-subtitle',
+            'hero_cta': 'input-hero-cta',
+            'calc_badge': 'input-calc-badge',
+            'calc_heading': 'input-calc-heading',
+            'calc_subtitle': 'input-calc-subtitle',
+            'before_after_heading': 'input-ba-heading',
+            'before_after_subtitle': 'input-ba-subtitle',
+            'before_after_service_label': 'input-ba-service-label',
+            'before_after_label_before': 'input-ba-label-before',
+            'before_after_label_after': 'input-ba-label-after',
+            'about_heading': 'input-about-heading',
+            'about_text': 'input-about-text',
+            'about_vet_council': 'input-about-vet-council',
+            'doctors_heading': 'input-doctors-heading',
+            'doctors_subtitle': 'input-doctors-subtitle',
+            'bento_heading': 'input-bento-heading',
+            'booking_heading': 'input-booking-heading',
+            'storefront_heading': 'input-storefront-heading',
+            'reviews_heading': 'input-reviews-heading',
+            'faq_heading': 'input-faq-heading'
+        };
+
+        const targetId = fieldToInputMap[field];
+        if (targetId) {
+            const input = document.getElementById(targetId);
+            if (input) input.value = val;
+            const quickInput = document.getElementById(targetId.replace('input-', 'input-quick-'));
+            if (quickInput) quickInput.value = val;
+        }
+
+        const saveBtn = document.getElementById('btn-save-site');
+        if (saveBtn) {
+            saveBtn.classList.add('ring-2', 'ring-amber-400');
+        }
+    }
+
+    // Open quick-action modal from preview toolbar: OPEN_QUICK_EDIT_MODAL
+    if (event.data.type === 'OPEN_QUICK_EDIT_MODAL') {
+        openSpotlightModal(event.data.blockId);
+    }
+
+    // Toggle block visibility from preview toolbar: TOGGLE_BLOCK_FROM_PREVIEW
+    if (event.data.type === 'TOGGLE_BLOCK_FROM_PREVIEW') {
+        const blockId = event.data.blockId;
+        const toggleMap = {
+            'emergency_bar': 'input-emergency-enabled',
+            'duty_hours': 'input-duty-enabled',
+            'before_after': 'input-ba-enabled',
+            'bento_facilities': 'input-bento-enabled',
+            'cost_calculator': 'input-calc-enabled',
+            'doctors_roster': 'input-doctors-enabled',
+            'booking': 'input-booking-enabled',
+            'storefront': 'input-storefront-enabled',
+            'reviews': 'input-reviews-enabled',
+            'faq': 'input-faq-enabled'
+        };
+        const toggleId = toggleMap[blockId];
+        if (toggleId) {
+            const checkbox = document.getElementById(toggleId);
+            if (checkbox) {
+                checkbox.checked = !checkbox.checked;
+                checkbox.dispatchEvent(new Event('change', { bubbles: true }));
+                const quickCheckbox = document.getElementById(toggleId.replace('input-', 'input-quick-'));
+                if (quickCheckbox) quickCheckbox.checked = checkbox.checked;
+                showToast(`✓ وضعیت نمایش بخش «${blockId}» به‌روزرسانی شد.`, 'success');
+            }
+        }
+    }
+
+    // Reorder block from preview toolbar: MOVE_BLOCK_FROM_PREVIEW
+    if (event.data.type === 'MOVE_BLOCK_FROM_PREVIEW') {
+        const blockId = event.data.blockId;
+        const direction = event.data.direction;
+        moveStudioBlock(`section-${blockId}`, direction);
     }
 });
 
@@ -1877,6 +2602,72 @@ function initLiveStudioBindings() {
         el.addEventListener(b.event, handler);
         if (b.event === 'input') {
             el.addEventListener('change', handler);
+        }
+    });
+
+    // Bidirectional Quick Edit Syncing
+    const quickSyncPairs = [
+        { quick: 'input-quick-site-title', main: 'input-site-title', field: 'site_title' },
+        { quick: 'input-quick-site-tagline', main: 'input-site-tagline', field: 'site_tagline' },
+        { quick: 'input-quick-contact-phone', main: 'input-contact-phone', field: 'contact_phone' },
+        { quick: 'input-quick-emergency-phone', main: 'input-emergency-phone', field: 'emergency_phone' },
+        { quick: 'input-quick-contact-address', main: 'input-contact-address', field: 'contact_address' },
+        { quick: 'input-quick-hero-badge', main: 'input-hero-badge', field: 'hero_badge' },
+        { quick: 'input-quick-hero-title', main: 'input-hero-title', field: 'hero_title' },
+        { quick: 'input-quick-hero-subtitle', main: 'input-hero-subtitle', field: 'hero_subtitle' },
+        { quick: 'input-quick-hero-cta', main: 'input-hero-cta', field: 'hero_cta' },
+        { quick: 'input-quick-calc-badge', main: 'input-calc-badge', field: 'calc_badge' },
+        { quick: 'input-quick-calc-heading', main: 'input-calc-heading', field: 'calc_heading' },
+        { quick: 'input-quick-calc-subtitle', main: 'input-calc-subtitle', field: 'calc_subtitle' },
+        { quick: 'input-quick-calc-discount', main: 'input-calc-discount', field: 'calc_discount' },
+        { quick: 'input-quick-emergency-headline', main: 'input-emergency-headline', field: 'emergency_headline' },
+        { quick: 'input-quick-emergency-subheadline', main: 'input-emergency-subheadline', field: 'emergency_subheadline' },
+        { quick: 'input-quick-duty-open-time', main: 'input-duty-open-time', custom: () => {
+            const o = document.getElementById('input-quick-duty-open-time')?.value || '08:30';
+            const c = document.getElementById('input-quick-duty-close-time')?.value || '22:30';
+            const mO = document.getElementById('input-duty-open-time');
+            if (mO) mO.value = o;
+            sendLiveUpdate('duty_hours', `${o} الی ${c}`);
+        }},
+        { quick: 'input-quick-duty-close-time', main: 'input-duty-close-time', custom: () => {
+            const o = document.getElementById('input-quick-duty-open-time')?.value || '08:30';
+            const c = document.getElementById('input-quick-duty-close-time')?.value || '22:30';
+            const mC = document.getElementById('input-duty-close-time');
+            if (mC) mC.value = c;
+            sendLiveUpdate('duty_hours', `${o} الی ${c}`);
+        }},
+        { quick: 'input-quick-calc-enabled', main: 'input-calc-enabled', isCheckbox: true, field: 'block_toggle', extra: 'cost_calculator' },
+        { quick: 'input-quick-duty-enabled', main: 'input-duty-enabled', isCheckbox: true, field: 'block_toggle', extra: 'duty_hours' },
+        { quick: 'input-quick-emergency-enabled', main: 'input-emergency-enabled', isCheckbox: true, field: 'block_toggle', extra: 'emergency_bar' }
+    ];
+
+    quickSyncPairs.forEach(p => {
+        const qEl = document.getElementById(p.quick);
+        const mEl = document.getElementById(p.main);
+
+        if (qEl && mEl) {
+            const onQuickChange = () => {
+                if (p.isCheckbox) {
+                    mEl.checked = qEl.checked;
+                } else {
+                    mEl.value = qEl.value;
+                }
+                if (typeof p.custom === 'function') {
+                    p.custom();
+                } else {
+                    sendLiveUpdate(p.field, p.isCheckbox ? qEl.checked : qEl.value, p.extra || null);
+                }
+            };
+            qEl.addEventListener(p.isCheckbox ? 'change' : 'input', onQuickChange);
+
+            const onMainChange = () => {
+                if (p.isCheckbox) {
+                    qEl.checked = mEl.checked;
+                } else {
+                    qEl.value = mEl.value;
+                }
+            };
+            mEl.addEventListener(p.isCheckbox ? 'change' : 'input', onMainChange);
         }
     });
 

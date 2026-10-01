@@ -65,9 +65,27 @@ assertCondition(str_contains($siteContent, "id=\"before-after\""), "Site.php ren
 assertCondition(str_contains($siteContent, "id=\"live-calc-badge\""), "Site.php renders live-calc-badge element");
 assertCondition(str_contains($siteContent, "id=\"live-calc-subtitle\""), "Site.php renders live-calc-subtitle element");
 
-// 3. Click to edit
+// 3. Click to edit & WYSIWYG Direct Preview Editing
 assertCondition(str_contains($siteContent, "type: 'BLOCK_CLICKED'"), "Site.php emits BLOCK_CLICKED on block click");
 assertCondition(str_contains($studioContent, "event.data.type === 'BLOCK_CLICKED'"), "Studio handles BLOCK_CLICKED event to open accordion");
+assertCondition(str_contains($siteContent, 'data-studio-editable'), "Site.php marks live elements with data-studio-editable");
+assertCondition(str_contains($siteContent, 'initPreviewDirectEditing'), "Site.php initializes direct WYSIWYG click-to-edit");
+assertCondition(str_contains($siteContent, "type: 'FIELD_UPDATED_FROM_PREVIEW'"), "Site.php dispatches FIELD_UPDATED_FROM_PREVIEW on inline input");
+assertCondition(str_contains($siteContent, 'studio-block-floating-bar'), "Site.php injects floating quick-action toolbar on hoverable blocks");
+
+// 4. Studio Simplified Cockpit & Quick-Editor UX
+assertCondition(str_contains($studioContent, 'id="tab-btn-quick"'), "Studio has dedicated Quick Edit tab button");
+assertCondition(str_contains($studioContent, 'id="tab-panel-quick"'), "Studio renders simplified quick cockpit panel");
+assertCondition(str_contains($studioContent, 'id="studio-quick-search"'), "Studio has smart instant search bar");
+assertCondition(str_contains($studioContent, 'handleStudioQuickSearch('), "Studio has handleStudioQuickSearch function");
+assertCondition(str_contains($studioContent, 'id="spotlight-quick-modal"'), "Studio has Spotlight Quick-Editor Modal");
+assertCondition(str_contains($studioContent, 'openSpotlightModal('), "Studio has openSpotlightModal function");
+assertCondition(str_contains($studioContent, 'applyClinicalCopyTemplate('), "Studio provides 1-click clinical copy generation");
+assertCondition(str_contains($studioContent, "event.data.type === 'FIELD_UPDATED_FROM_PREVIEW'"), "Studio synchronizes inline preview edits back to sidebar");
+assertCondition(str_contains($studioContent, "event.data.type === 'OPEN_QUICK_EDIT_MODAL'"), "Studio handles OPEN_QUICK_EDIT_MODAL message from preview toolbar");
+assertCondition(str_contains($studioContent, "event.data.type === 'TOGGLE_BLOCK_FROM_PREVIEW'"), "Studio handles TOGGLE_BLOCK_FROM_PREVIEW message from preview toolbar");
+assertCondition(str_contains($studioContent, "event.data.type === 'MOVE_BLOCK_FROM_PREVIEW'"), "Studio handles MOVE_BLOCK_FROM_PREVIEW message from preview toolbar");
+assertCondition(str_contains($studioContent, 'quickSyncPairs'), "Studio provides two-way synchronization between quick inputs and main inputs");
 
 if (empty($errors)) {
     echo "=== All {$passes} Tests Passed Successfully! ===\n";

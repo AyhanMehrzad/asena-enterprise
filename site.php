@@ -349,26 +349,87 @@ $ctaHref = match($tenantType) {
         [data-block-id] {
             position: relative;
             transition: outline 0.2s ease, box-shadow 0.2s ease;
-            cursor: pointer;
         }
         [data-block-id]:hover {
-            outline: 2px dashed var(--tenant-accent);
+            outline: 2px dashed rgba(5, 150, 105, 0.4);
             outline-offset: 4px;
         }
-        [data-block-id]:hover::after {
-            content: 'ویرایش این بخش ✎';
+        /* WYSIWYG Direct In-Place Text Editing Styles */
+        [data-studio-editable] {
+            position: relative;
+            cursor: text !important;
+            transition: outline 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
+            border-radius: 6px;
+        }
+        [data-studio-editable]:hover {
+            outline: 2px dashed #059669 !important;
+            outline-offset: 3px;
+            background-color: rgba(5, 150, 105, 0.08) !important;
+        }
+        [data-studio-editable]:focus,
+        [data-studio-editable][contenteditable="true"] {
+            outline: 2px solid #059669 !important;
+            outline-offset: 3px;
+            background-color: #ffffff !important;
+            color: #0f172a !important;
+            box-shadow: 0 4px 20px rgba(5, 150, 105, 0.25) !important;
+        }
+        /* Floating Block Quick Controls Toolbar */
+        .studio-block-floating-bar {
             position: absolute;
-            top: 12px;
-            right: 12px;
-            background: var(--tenant-accent);
-            color: #fff;
+            top: 10px;
+            left: 12px;
+            z-index: 50;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            background: rgba(15, 23, 42, 0.92);
+            backdrop-filter: blur(10px);
+            padding: 4px 6px;
+            border-radius: 14px;
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s ease, transform 0.2s ease;
+            transform: translateY(-4px);
+        }
+        [data-block-id]:hover .studio-block-floating-bar {
+            opacity: 1;
+            pointer-events: auto;
+            transform: translateY(0);
+        }
+        .studio-block-floating-bar button {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #ffffff;
+            border-radius: 8px;
+            transition: all 0.15s ease;
+            border: none;
+            cursor: pointer;
+        }
+        .studio-block-floating-bar .btn-block-quick-edit {
+            background: #059669;
+            padding: 4px 9px;
             font-size: 11px;
             font-weight: 800;
-            padding: 4px 12px;
-            border-radius: 9999px;
-            box-shadow: 0 4px 14px rgba(0,0,0,0.25);
-            z-index: 50;
-            pointer-events: none;
+            gap: 3px;
+        }
+        .studio-block-floating-bar .btn-block-quick-edit:hover {
+            background: #10b981;
+        }
+        .studio-block-floating-bar .btn-block-move-up,
+        .studio-block-floating-bar .btn-block-move-down,
+        .studio-block-floating-bar .btn-block-toggle-vis {
+            width: 26px;
+            height: 26px;
+            background: rgba(255, 255, 255, 0.12);
+        }
+        .studio-block-floating-bar .btn-block-move-up:hover,
+        .studio-block-floating-bar .btn-block-move-down:hover,
+        .studio-block-floating-bar .btn-block-toggle-vis:hover {
+            background: rgba(255, 255, 255, 0.25);
         }
         <?php endif; ?>
     </style>
@@ -383,7 +444,7 @@ $ctaHref = match($tenantType) {
                     <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                     <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
                 </span>
-                <span class="text-[11px] sm:text-xs font-bold" id="live-topbar-title"><?= htmlspecialchars($site['site_title']) ?> | پذیرش فعال و نوبت‌دهی آنلاین</span>
+                <span class="text-[11px] sm:text-xs font-bold" id="live-topbar-title" data-studio-editable="site_title"><?= htmlspecialchars($site['site_title']) ?> | پذیرش فعال و نوبت‌دهی آنلاین</span>
             </div>
             <div class="flex items-center gap-4 text-[11px]">
                 <a href="tel:<?= htmlspecialchars($contactBlock['emergency_phone'] ?? '') ?>" id="live-topbar-em-wrap" class="text-rose-300 hover:text-white flex items-center gap-1 font-bold <?= empty($contactBlock['emergency_phone']) ? 'hidden' : '' ?>">
@@ -408,10 +469,10 @@ $ctaHref = match($tenantType) {
                 </span>
                 <div>
                     <div class="flex items-center justify-center sm:justify-start gap-2">
-                        <span class="px-2 py-0.5 rounded-full bg-white/25 text-[10px] font-black tracking-wide" id="live-emergency-badge"><?= htmlspecialchars($emergencyBlock['badge'] ?? 'اورژانس شبانه‌روزی (۲۴/۷)') ?></span>
-                        <h3 class="text-xs sm:text-sm font-black tracking-tight" id="live-emergency-headline"><?= htmlspecialchars($emergencyBlock['headline'] ?? 'اورژانس ۲۴ ساعته و مراقبت‌های فوری حیوانات خانگی') ?></h3>
+                        <span class="px-2 py-0.5 rounded-full bg-white/25 text-[10px] font-black tracking-wide" id="live-emergency-badge" data-studio-editable="emergency_badge"><?= htmlspecialchars($emergencyBlock['badge'] ?? 'اورژانس شبانه‌روزی (۲۴/۷)') ?></span>
+                        <h3 class="text-xs sm:text-sm font-black tracking-tight" id="live-emergency-headline" data-studio-editable="emergency_headline"><?= htmlspecialchars($emergencyBlock['headline'] ?? 'اورژانس ۲۴ ساعته و مراقبت‌های فوری حیوانات خانگی') ?></h3>
                     </div>
-                    <p class="text-[11px] text-rose-100 hidden md:block mt-0.5" id="live-emergency-subheadline"><?= htmlspecialchars($emergencyBlock['subheadline'] ?? 'پذیرش فوری تروما، تصادفات و مسمومیت‌ها با امکانات احیای بالینی پیشرفته') ?></p>
+                    <p class="text-[11px] text-rose-100 hidden md:block mt-0.5" id="live-emergency-subheadline" data-studio-editable="emergency_subheadline"><?= htmlspecialchars($emergencyBlock['subheadline'] ?? 'پذیرش فوری تروما، تصادفات و مسمومیت‌ها با امکانات احیای بالینی پیشرفته') ?></p>
                 </div>
             </div>
             <div class="flex items-center gap-2">
@@ -419,7 +480,7 @@ $ctaHref = match($tenantType) {
                 <a href="tel:<?= htmlspecialchars($emPhone) ?>" id="live-emergency-phone-link" class="px-4 py-2 rounded-xl bg-white text-red-700 hover:bg-rose-50 text-xs font-black shadow-lg flex items-center gap-1.5 transition-transform active:scale-95 group <?= empty($emPhone) ? 'hidden' : '' ?>">
                     <span class="material-symbols-outlined text-sm group-hover:animate-bounce">call</span>
                     <span>تماس مستقیم با اورژانس:</span>
-                    <span dir="ltr" class="font-mono font-bold" id="live-emergency-phone"><?= htmlspecialchars($emPhone) ?></span>
+                    <span dir="ltr" class="font-mono font-bold" id="live-emergency-phone" data-studio-editable="emergency_phone"><?= htmlspecialchars($emPhone) ?></span>
                 </a>
             </div>
         </div>
@@ -435,10 +496,10 @@ $ctaHref = match($tenantType) {
                 </div>
                 <div>
                     <div class="flex items-center gap-1.5">
-                        <h1 class="text-base sm:text-lg font-black text-slate-900 tracking-tight leading-snug" id="live-header-title"><?= htmlspecialchars($site['site_title']) ?></h1>
+                        <h1 class="text-base sm:text-lg font-black text-slate-900 tracking-tight leading-snug" id="live-header-title" data-studio-editable="site_title"><?= htmlspecialchars($site['site_title']) ?></h1>
                         <span class="material-symbols-outlined text-emerald-600 text-sm" title="تایید صلاحیت رسمی">verified</span>
                     </div>
-                    <p class="text-[11px] sm:text-xs text-slate-500 font-medium truncate max-w-[200px] sm:max-w-xs <?= empty($site['site_tagline']) ? 'hidden' : '' ?>" id="live-header-tagline"><?= htmlspecialchars($site['site_tagline'] ?? '') ?></p>
+                    <p class="text-[11px] sm:text-xs text-slate-500 font-medium truncate max-w-[200px] sm:max-w-xs <?= empty($site['site_tagline']) ? 'hidden' : '' ?>" id="live-header-tagline" data-studio-editable="site_tagline"><?= htmlspecialchars($site['site_tagline'] ?? '') ?></p>
                 </div>
             </div>
 
@@ -483,7 +544,7 @@ $ctaHref = match($tenantType) {
                 <?php $headerPhone = !empty($headerBlock['phone']) ? $headerBlock['phone'] : ($contactBlock['phone'] ?? ''); ?>
                 <a href="tel:<?= htmlspecialchars($headerPhone) ?>" id="live-header-phone-link" class="hidden sm:flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-colors <?= empty($headerPhone) ? 'hidden' : '' ?>">
                     <span class="material-symbols-outlined text-sm text-tenant-primary">call</span>
-                    <span dir="ltr" id="live-header-phone"><?= htmlspecialchars($headerPhone) ?></span>
+                    <span dir="ltr" id="live-header-phone" data-studio-editable="contact_phone"><?= htmlspecialchars($headerPhone) ?></span>
                 </a>
 
                 <a href="<?= $ctaHref ?>" class="hidden md:inline-flex px-5 py-2.5 rounded-xl bg-tenant-primary bg-tenant-primary-hover text-white text-xs font-bold shadow-lg shadow-emerald-900/10 transition-transform active:scale-95 items-center gap-1.5">
@@ -581,7 +642,7 @@ $ctaHref = match($tenantType) {
                 <div class="flex flex-wrap items-center justify-center lg:justify-start gap-2.5">
                     <div class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-tenant-light border border-tenant-light text-tenant-primary text-xs font-black shadow-sm" id="live-hero-badge-wrap" style="<?= empty($heroBlock['badge']) ? 'display: none;' : '' ?>">
                         <span class="material-symbols-outlined text-sm">verified</span>
-                        <span id="live-hero-badge"><?= htmlspecialchars($heroBlock['badge'] ?? '') ?></span>
+                        <span id="live-hero-badge" data-studio-editable="hero_badge"><?= htmlspecialchars($heroBlock['badge'] ?? '') ?></span>
                     </div>
 
                     <!-- Symbiotic ASENA Trust Anchor Pill -->
@@ -605,18 +666,18 @@ $ctaHref = match($tenantType) {
                     </div>
                 </div>
 
-                <h2 class="text-3xl sm:text-4xl md:text-5xl font-black text-slate-900 leading-[1.2] tracking-tight" id="live-hero-title">
+                <h2 class="text-3xl sm:text-4xl md:text-5xl font-black text-slate-900 leading-[1.2] tracking-tight" id="live-hero-title" data-studio-editable="hero_title">
                     <?= htmlspecialchars($heroBlock['title'] ?? $site['site_title']) ?>
                 </h2>
 
-                <p class="text-sm sm:text-base md:text-lg text-slate-600 leading-relaxed font-normal max-w-2xl mx-auto lg:mx-0" id="live-hero-subtitle">
+                <p class="text-sm sm:text-base md:text-lg text-slate-600 leading-relaxed font-normal max-w-2xl mx-auto lg:mx-0" id="live-hero-subtitle" data-studio-editable="hero_subtitle">
                     <?= htmlspecialchars($heroBlock['subtitle'] ?? '') ?>
                 </p>
 
                 <!-- Dual High-Intent CTAs -->
                 <div class="pt-2 flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-3.5">
                     <a href="<?= $ctaHref ?>" class="w-full sm:w-auto px-8 py-4 rounded-2xl bg-tenant-primary bg-tenant-primary-hover text-white text-sm font-black shadow-xl shadow-emerald-900/15 hover:shadow-2xl transition-all flex items-center justify-center gap-2 group">
-                        <span id="live-hero-cta"><?= htmlspecialchars($heroBlock['cta_primary_text'] ?? 'رزرو آنلاین نوبت') ?></span>
+                        <span id="live-hero-cta" data-studio-editable="hero_cta"><?= htmlspecialchars($heroBlock['cta_primary_text'] ?? 'رزرو آنلاین نوبت') ?></span>
                         <span class="material-symbols-outlined text-base group-hover:-translate-x-1 transition-transform">arrow_left</span>
                     </a>
                     
@@ -738,7 +799,7 @@ $ctaHref = match($tenantType) {
                         <span class="text-[11px] text-slate-300 font-mono hidden md:inline">| <?= htmlspecialchars($dutyCountdownText) ?></span>
                     </div>
                     <div class="text-[11px] text-slate-400 mt-0.5">
-                        <span id="live-duty-hours-text">ساعات کاری اعلامی: <?= htmlspecialchars($dutyBlock['hours_text'] ?? $contactBlock['hours'] ?? '۸:۳۰ الی ۲۲:۳۰') ?></span>
+                        <span id="live-duty-hours-text" data-studio-editable="duty_hours">ساعات کاری اعلامی: <?= htmlspecialchars($dutyBlock['hours_text'] ?? $contactBlock['hours'] ?? '۸:۳۰ الی ۲۲:۳۰') ?></span>
                         <?php if (!$isCurrentlyOpen): ?>
                             <span class="text-amber-200 mr-2 font-bold">(ثبت نوبت اینترنتی و درخواست مشاوره ۲۴ ساعته فعال است)</span>
                         <?php endif; ?>
@@ -766,10 +827,10 @@ $ctaHref = match($tenantType) {
             <div class="text-center max-w-2xl mx-auto mb-10">
                 <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-black mb-3">
                     <span class="material-symbols-outlined text-sm">compare</span>
-                    <span id="live-ba-service-badge"><?= htmlspecialchars($beforeAfterBlock['service_label'] ?? 'نتایج ملموس خدمات و جراحی‌ها') ?></span>
+                    <span id="live-ba-service-badge" data-studio-editable="before_after_service_label"><?= htmlspecialchars($beforeAfterBlock['service_label'] ?? 'نتایج ملموس خدمات و جراحی‌ها') ?></span>
                 </div>
-                <h3 class="text-2xl sm:text-3xl font-black text-slate-900" id="live-ba-heading"><?= htmlspecialchars($beforeAfterBlock['heading'] ?? 'مقایسه نتایج قبل و بعد از مراقبت تخصصی') ?></h3>
-                <p class="text-xs sm:text-sm text-slate-500 mt-2 leading-relaxed" id="live-ba-subtitle">
+                <h3 class="text-2xl sm:text-3xl font-black text-slate-900" id="live-ba-heading" data-studio-editable="before_after_heading"><?= htmlspecialchars($beforeAfterBlock['heading'] ?? 'مقایسه نتایج قبل و بعد از مراقبت تخصصی') ?></h3>
+                <p class="text-xs sm:text-sm text-slate-500 mt-2 leading-relaxed" id="live-ba-subtitle" data-studio-editable="before_after_subtitle">
                     <?= htmlspecialchars($beforeAfterBlock['subtitle'] ?? 'با کشیدن نشانگر لمسی زیر، کیفیت و تفاوت ملموس درمان را به صورت زنده مقایسه نمایید.') ?>
                 </p>
             </div>
@@ -784,7 +845,7 @@ $ctaHref = match($tenantType) {
                          class="absolute inset-0 w-full h-full object-cover" 
                          onerror="this.src='assets/images/clinic-banner.jpg'">
                     <div class="absolute top-4 left-4 z-10 px-3 py-1.5 rounded-xl bg-slate-900/80 backdrop-blur-md text-white text-xs font-black border border-white/20 shadow-md">
-                        <span id="live-ba-label-after"><?= htmlspecialchars($beforeAfterBlock['label_after'] ?? 'پس از درمان') ?></span>
+                        <span id="live-ba-label-after" data-studio-editable="before_after_label_after"><?= htmlspecialchars($beforeAfterBlock['label_after'] ?? 'پس از درمان') ?></span>
                     </div>
 
                     <!-- BEFORE Image (Clipped Overlay Layer) -->
@@ -795,7 +856,7 @@ $ctaHref = match($tenantType) {
                          style="clip-path: inset(0 0 0 50%); -webkit-clip-path: inset(0 0 0 50%);"
                          onerror="this.src='assets/images/presentation-dog.jpg'">
                     <div class="absolute top-4 right-4 z-20 px-3 py-1.5 rounded-xl bg-black/75 backdrop-blur-md text-amber-300 text-xs font-black border border-amber-400/30 shadow-md">
-                        <span id="live-ba-label-before"><?= htmlspecialchars($beforeAfterBlock['label_before'] ?? 'قبل از درمان') ?></span>
+                        <span id="live-ba-label-before" data-studio-editable="before_after_label_before"><?= htmlspecialchars($beforeAfterBlock['label_before'] ?? 'قبل از درمان') ?></span>
                     </div>
 
                     <!-- Split Handle Divider -->
@@ -825,7 +886,7 @@ $ctaHref = match($tenantType) {
         <div class="max-w-6xl mx-auto px-4">
             <div class="text-center max-w-xl mx-auto mb-12">
                 <span class="text-xs font-black text-tenant-primary uppercase tracking-wider">استانداردهای بالینی و درمانی</span>
-                <h3 class="text-2xl sm:text-3xl font-black text-slate-900 mt-1" id="live-bento-heading"><?= htmlspecialchars($bentoBlock['heading']) ?></h3>
+                <h3 class="text-2xl sm:text-3xl font-black text-slate-900 mt-1" id="live-bento-heading" data-studio-editable="bento_heading"><?= htmlspecialchars($bentoBlock['heading']) ?></h3>
                 <p class="text-xs sm:text-sm text-slate-500 mt-2"><?= htmlspecialchars($bentoBlock['subtitle'] ?? '') ?></p>
             </div>
 
@@ -859,8 +920,8 @@ $ctaHref = match($tenantType) {
                         <span class="w-2.5 h-2.5 rounded-full bg-tenant-primary"></span>
                         <span>معرفی و سوابق رسمی</span>
                     </div>
-                    <h3 class="text-2xl sm:text-3xl font-black text-slate-900" id="live-about-heading"><?= htmlspecialchars($aboutBlock['heading'] ?? 'درباره ما') ?></h3>
-                    <p class="text-slate-600 leading-relaxed text-sm sm:text-base font-normal" id="live-about-text">
+                    <h3 class="text-2xl sm:text-3xl font-black text-slate-900" id="live-about-heading" data-studio-editable="about_heading"><?= htmlspecialchars($aboutBlock['heading'] ?? 'درباره ما') ?></h3>
+                    <p class="text-slate-600 leading-relaxed text-sm sm:text-base font-normal" id="live-about-text" data-studio-editable="about_text">
                         <?= nl2br(htmlspecialchars($aboutBlock['text'] ?? '')) ?>
                     </p>
 
@@ -868,7 +929,7 @@ $ctaHref = match($tenantType) {
                         <span class="material-symbols-outlined text-amber-600 text-2xl">badge</span>
                         <div>
                             <div class="text-xs font-bold text-slate-800">شماره مجوز و پروانه نظام دامپزشکی</div>
-                            <div class="text-sm font-black text-amber-900 font-mono tracking-wider" id="live-about-vet-council"><?= htmlspecialchars($aboutBlock['vet_council'] ?? '') ?></div>
+                            <div class="text-sm font-black text-amber-900 font-mono tracking-wider" id="live-about-vet-council" data-studio-editable="about_vet_council"><?= htmlspecialchars($aboutBlock['vet_council'] ?? '') ?></div>
                         </div>
                     </div>
 
@@ -935,10 +996,10 @@ $ctaHref = match($tenantType) {
             <div class="text-center max-w-2xl mx-auto mb-12">
                 <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-50 border border-amber-200 text-amber-800 text-xs font-black mb-3">
                     <span class="material-symbols-outlined text-sm">calculate</span>
-                    <span id="live-calc-badge"><?= htmlspecialchars($calculatorBlock['badge'] ?? 'تعرفه شفاف خدمات درمانی و جراحی') ?></span>
+                    <span id="live-calc-badge" data-studio-editable="calc_badge"><?= htmlspecialchars($calculatorBlock['badge'] ?? 'تعرفه شفاف خدمات درمانی و جراحی') ?></span>
                 </div>
-                <h3 class="text-2xl sm:text-3xl font-black text-slate-900" id="live-calc-heading"><?= htmlspecialchars($calculatorBlock['heading'] ?? 'برآورد آنلاین و شفاف تعرفه خدمات و جراحی‌های تخصصی') ?></h3>
-                <p class="text-xs sm:text-sm text-slate-500 mt-2 leading-relaxed" id="live-calc-subtitle">
+                <h3 class="text-2xl sm:text-3xl font-black text-slate-900" id="live-calc-heading" data-studio-editable="calc_heading"><?= htmlspecialchars($calculatorBlock['heading'] ?? 'برآورد آنلاین و شفاف تعرفه خدمات و جراحی‌های تخصصی') ?></h3>
+                <p class="text-xs sm:text-sm text-slate-500 mt-2 leading-relaxed" id="live-calc-subtitle" data-studio-editable="calc_subtitle">
                     <?= htmlspecialchars($calculatorBlock['subtitle'] ?? 'گونه حیوان خانگی و خدمات تشخیصی، بالینی یا جراحی مدنظر را انتخاب فرمایید تا تعرفه مصوب رسمی همراه با ۱۰٪ تخفیف رزرو آنلاین برآورد گردد.') ?>
                 </p>
             </div>
@@ -1070,8 +1131,8 @@ $ctaHref = match($tenantType) {
         <div class="max-w-6xl mx-auto px-4">
             <div class="text-center max-w-xl mx-auto mb-12">
                 <span class="text-xs font-black text-tenant-primary uppercase tracking-wider">کادر تخصصی و پزشکان مقیم</span>
-                <h3 class="text-2xl sm:text-3xl font-black text-slate-900 mt-1" id="live-doctors-heading"><?= htmlspecialchars($doctorsBlock['heading'] ?? 'پزشکان و جراحان مرکز') ?></h3>
-                <p class="text-xs sm:text-sm text-slate-500 mt-2" id="live-doctors-subtitle"><?= htmlspecialchars($doctorsBlock['subtitle'] ?? 'دامپزشکان مجرب با پرونده سلامت ابری و امکان نوبت‌دهی آنلاین') ?></p>
+                <h3 class="text-2xl sm:text-3xl font-black text-slate-900 mt-1" id="live-doctors-heading" data-studio-editable="doctors_heading"><?= htmlspecialchars($doctorsBlock['heading'] ?? 'پزشکان و جراحان مرکز') ?></h3>
+                <p class="text-xs sm:text-sm text-slate-500 mt-2" id="live-doctors-subtitle" data-studio-editable="doctors_subtitle"><?= htmlspecialchars($doctorsBlock['subtitle'] ?? 'دامپزشکان مجرب با پرونده سلامت ابری و امکان نوبت‌دهی آنلاین') ?></p>
             </div>
 
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -1130,7 +1191,7 @@ $ctaHref = match($tenantType) {
         <div class="max-w-6xl mx-auto px-4 flex flex-col md:flex-row items-center justify-between gap-8">
             <div class="space-y-3 text-center md:text-right">
                 <span class="px-3 py-1 rounded-full bg-white/10 text-amber-300 text-xs font-bold">پذیرش و نوبت‌دهی مستقیم</span>
-                <h3 class="text-2xl sm:text-3xl font-black" id="live-booking-heading"><?= htmlspecialchars($bookingBlock['heading'] ?? 'رزرو اینترنتی و تلفنی نوبت') ?></h3>
+                <h3 class="text-2xl sm:text-3xl font-black" id="live-booking-heading" data-studio-editable="booking_heading"><?= htmlspecialchars($bookingBlock['heading'] ?? 'رزرو اینترنتی و تلفنی نوبت') ?></h3>
                 <p class="text-slate-300 text-xs sm:text-sm max-w-xl font-normal leading-relaxed">
                     <?= htmlspecialchars($bookingBlock['subtitle'] ?? 'جهت رزرو نوبت ویزیت، مشاوره یا خدمات تشخیصی، مستقیماً با پذیرش مجموعه در ارتباط باشید.') ?>
                 </p>
@@ -1156,7 +1217,7 @@ $ctaHref = match($tenantType) {
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-10">
                 <div>
                     <span class="text-xs font-black text-tenant-primary uppercase tracking-wider">موجود در انبار اختصاصی</span>
-                    <h3 class="text-2xl sm:text-3xl font-black text-slate-900 mt-1" id="live-storefront-heading"><?= htmlspecialchars($storefrontBlock['heading'] ?? 'ویترین محصولات و داروها') ?></h3>
+                    <h3 class="text-2xl sm:text-3xl font-black text-slate-900 mt-1" id="live-storefront-heading" data-studio-editable="storefront_heading"><?= htmlspecialchars($storefrontBlock['heading'] ?? 'ویترین محصولات و داروها') ?></h3>
                 </div>
                 <div class="text-xs text-slate-500 flex items-center gap-1">
                     <span class="material-symbols-outlined text-emerald-600 text-sm">inventory_2</span>
@@ -1207,7 +1268,7 @@ $ctaHref = match($tenantType) {
         <div class="max-w-6xl mx-auto px-4">
             <div class="text-center max-w-xl mx-auto mb-12">
                 <span class="text-xs font-black text-tenant-primary uppercase tracking-wider">اعتبار سنجی مراجعین</span>
-                <h3 class="text-2xl sm:text-3xl font-black text-slate-900 mt-1" id="live-reviews-heading"><?= htmlspecialchars($reviewsBlock['heading'] ?? 'نظرات و بازخورد سرپرستان پت') ?></h3>
+                <h3 class="text-2xl sm:text-3xl font-black text-slate-900 mt-1" id="live-reviews-heading" data-studio-editable="reviews_heading"><?= htmlspecialchars($reviewsBlock['heading'] ?? 'نظرات و بازخورد سرپرستان پت') ?></h3>
                 <p class="text-xs sm:text-sm text-slate-500 mt-2"><?= htmlspecialchars($reviewsBlock['subtitle'] ?? 'تجربه مراجعین واقعی با استناد به ویزیت‌ها و مراجعات حضوری ثبت‌شده') ?></p>
             </div>
 
@@ -1259,7 +1320,7 @@ $ctaHref = match($tenantType) {
         <div class="max-w-4xl mx-auto px-4">
             <div class="text-center max-w-xl mx-auto mb-12">
                 <span class="text-xs font-black text-tenant-primary uppercase tracking-wider">راهنمای مراجعین و بیماران</span>
-                <h3 class="text-2xl sm:text-3xl font-black text-slate-900 mt-1" id="live-faq-heading"><?= htmlspecialchars($faqBlock['heading'] ?? 'پرسش‌های متداول') ?></h3>
+                <h3 class="text-2xl sm:text-3xl font-black text-slate-900 mt-1" id="live-faq-heading" data-studio-editable="faq_heading"><?= htmlspecialchars($faqBlock['heading'] ?? 'پرسش‌های متداول') ?></h3>
                 <p class="text-xs sm:text-sm text-slate-500 mt-2"><?= htmlspecialchars($faqBlock['subtitle'] ?? 'پاسخ به سوالات متداول پیرامون نوبت‌دهی آنلاین، نسخه‌های الکترونیک و شرایط اورژانس') ?></p>
             </div>
 
@@ -1323,7 +1384,7 @@ $ctaHref = match($tenantType) {
         <div class="max-w-6xl mx-auto px-4">
             <div class="text-center max-w-xl mx-auto mb-10">
                 <span class="text-xs font-black text-tenant-primary uppercase tracking-wider">راه‌های ارتباطی و مسیریابی</span>
-                <h3 class="text-2xl sm:text-3xl font-black text-slate-900 mt-1" id="live-contact-heading"><?= htmlspecialchars($contactBlock['heading'] ?? 'اطلاعات تماس و نشانی') ?></h3>
+                <h3 class="text-2xl sm:text-3xl font-black text-slate-900 mt-1" id="live-contact-heading" data-studio-editable="contact_heading"><?= htmlspecialchars($contactBlock['heading'] ?? 'اطلاعات تماس و نشانی') ?></h3>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
@@ -1335,7 +1396,7 @@ $ctaHref = match($tenantType) {
                         </div>
                         <div>
                             <h4 class="font-bold text-slate-900 text-sm mb-1">نشانی مراجعه حضوری</h4>
-                            <p class="text-xs text-slate-500 leading-relaxed" id="live-contact-address"><?= htmlspecialchars($rawAddress) ?></p>
+                            <p class="text-xs text-slate-500 leading-relaxed" id="live-contact-address" data-studio-editable="contact_address"><?= htmlspecialchars($rawAddress) ?></p>
                         </div>
                     </div>
                     <div class="pt-4 mt-4 border-t border-slate-100 flex items-center justify-between">
@@ -1358,7 +1419,7 @@ $ctaHref = match($tenantType) {
                         </div>
                         <div>
                             <h4 class="font-bold text-slate-900 text-sm mb-1">ساعات کاری و پذیرش</h4>
-                            <p class="text-xs text-slate-500 leading-relaxed" id="live-contact-hours"><?= htmlspecialchars($hoursDisplay) ?></p>
+                            <p class="text-xs text-slate-500 leading-relaxed" id="live-contact-hours" data-studio-editable="contact_hours"><?= htmlspecialchars($hoursDisplay) ?></p>
                         </div>
                     </div>
                     <div class="pt-4 mt-4 border-t border-slate-100 flex items-center justify-between text-[11px]">
@@ -1379,8 +1440,8 @@ $ctaHref = match($tenantType) {
                         <div>
                             <h4 class="font-bold text-slate-900 text-sm mb-1">تلفن‌های تماس</h4>
                             <div class="space-y-1">
-                                <div><a href="tel:<?= htmlspecialchars($phoneDisplay) ?>" class="text-xs font-bold text-slate-700 hover:text-tenant-primary font-mono" dir="ltr" id="live-contact-phone"><?= htmlspecialchars($phoneDisplay) ?></a></div>
-                                <div class="text-[11px] text-red-600 font-bold <?= empty($emergencyDisplay) ? 'hidden' : '' ?>" id="live-contact-emergency-wrap">اورژانس: <span dir="ltr" class="font-mono" id="live-contact-emergency"><?= htmlspecialchars($emergencyDisplay) ?></span></div>
+                                <div><a href="tel:<?= htmlspecialchars($phoneDisplay) ?>" class="text-xs font-bold text-slate-700 hover:text-tenant-primary font-mono" dir="ltr" id="live-contact-phone" data-studio-editable="contact_phone"><?= htmlspecialchars($phoneDisplay) ?></a></div>
+                                <div class="text-[11px] text-red-600 font-bold <?= empty($emergencyDisplay) ? 'hidden' : '' ?>" id="live-contact-emergency-wrap">اورژانس: <span dir="ltr" class="font-mono" id="live-contact-emergency" data-studio-editable="contact_emergency"><?= htmlspecialchars($emergencyDisplay) ?></span></div>
                             </div>
                         </div>
                     </div>
@@ -1696,12 +1757,149 @@ $ctaHref = match($tenantType) {
         <?php if ($isPreview): ?>
         // PostMessage communication with parent Customizer studio
         document.addEventListener('click', function(e) {
+            // Ignore if clicked on an editable text or floating block action button
+            if (e.target.closest('[data-studio-editable]') || e.target.closest('.studio-block-floating-bar')) {
+                return;
+            }
             const blockEl = e.target.closest('[data-block-id]');
             if (blockEl) {
                 const blockId = blockEl.getAttribute('data-block-id');
                 window.parent.postMessage({ type: 'BLOCK_CLICKED', blockId: blockId }, '*');
             }
         });
+
+        // WYSIWYG In-Place Text Editing System
+        function initPreviewDirectEditing() {
+            document.querySelectorAll('[data-studio-editable]').forEach(el => {
+                el.setAttribute('title', 'برای ویرایش مستقیم کلیک کنید');
+                el.addEventListener('click', function(e) {
+                    // Prevent link navigation while editing
+                    if (this.tagName === 'A' || this.closest('a')) {
+                        e.preventDefault();
+                    }
+                    e.stopPropagation();
+
+                    if (this.getAttribute('contenteditable') === 'true') return;
+
+                    this.setAttribute('contenteditable', 'true');
+                    this.focus();
+
+                    const fieldKey = this.getAttribute('data-studio-editable');
+                    showPreviewFeedback('✏️ در حال ویرایش مستقیم... (برای ثبت خارج کلیک کنید)');
+
+                    const onInput = () => {
+                        const text = this.innerText.trim();
+                        window.parent.postMessage({
+                            type: 'FIELD_UPDATED_FROM_PREVIEW',
+                            field: fieldKey,
+                            value: text
+                        }, '*');
+                    };
+
+                    const onBlur = () => {
+                        this.removeAttribute('contenteditable');
+                        this.removeEventListener('input', onInput);
+                        this.removeEventListener('blur', onBlur);
+                        showPreviewFeedback('✓ تغییر در پیش‌نویس ذخیره شد');
+                    };
+
+                    this.addEventListener('input', onInput);
+                    this.addEventListener('blur', onBlur);
+                });
+
+                el.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter' && this.tagName !== 'P' && this.id !== 'live-about-text' && this.id !== 'live-calc-subtitle' && this.id !== 'live-hero-subtitle') {
+                        e.preventDefault();
+                        this.blur();
+                    }
+                });
+            });
+
+            // Inject floating action toolbar on each block in preview mode
+            document.querySelectorAll('[data-block-id]').forEach(block => {
+                const blockId = block.getAttribute('data-block-id');
+                if (!blockId) return;
+
+                const bar = document.createElement('div');
+                bar.className = 'studio-block-floating-bar';
+                bar.innerHTML = `
+                    <button type="button" class="btn-block-quick-edit" title="ویرایش سریع تنظیمات این بخش">
+                        <span class="material-symbols-outlined text-xs">edit_note</span>
+                        <span>ویرایش سریع</span>
+                    </button>
+                    <button type="button" class="btn-block-move-up" title="انتقال بخش به بالا">
+                        <span class="material-symbols-outlined text-xs">arrow_upward</span>
+                    </button>
+                    <button type="button" class="btn-block-move-down" title="انتقال بخش به پایین">
+                        <span class="material-symbols-outlined text-xs">arrow_downward</span>
+                    </button>
+                    <button type="button" class="btn-block-toggle-vis" title="مخفی یا نمایش بخش">
+                        <span class="material-symbols-outlined text-xs">visibility</span>
+                    </button>
+                `;
+
+                bar.querySelector('.btn-block-quick-edit').addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    window.parent.postMessage({ type: 'OPEN_QUICK_EDIT_MODAL', blockId: blockId }, '*');
+                });
+                bar.querySelector('.btn-block-move-up').addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    window.parent.postMessage({ type: 'MOVE_BLOCK_FROM_PREVIEW', blockId: blockId, direction: 'up' }, '*');
+                });
+                bar.querySelector('.btn-block-move-down').addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    window.parent.postMessage({ type: 'MOVE_BLOCK_FROM_PREVIEW', blockId: blockId, direction: 'down' }, '*');
+                });
+                bar.querySelector('.btn-block-toggle-vis').addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    window.parent.postMessage({ type: 'TOGGLE_BLOCK_FROM_PREVIEW', blockId: blockId }, '*');
+                });
+
+                block.style.position = 'relative';
+                block.appendChild(bar);
+            });
+
+            // Inject floating bottom helper bar
+            if (!document.getElementById('studio-preview-helper-bar')) {
+                const helper = document.createElement('div');
+                helper.id = 'studio-preview-helper-bar';
+                helper.className = 'fixed bottom-4 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-2xl bg-slate-900/90 text-white backdrop-blur-md shadow-2xl border border-white/20 flex items-center gap-2.5 text-xs font-bold pointer-events-auto transition-all';
+                helper.innerHTML = `
+                    <span class="relative flex h-2 w-2">
+                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                        <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                    </span>
+                    <span>✨ ویرایش مستقیم: روی هر متنی کلیک کنید و مستقیماً ویرایش فرمایید</span>
+                    <button type="button" onclick="this.parentElement.remove()" class="text-slate-400 hover:text-white mr-1 text-sm font-bold" title="بستن پیام">✕</button>
+                `;
+                document.body.appendChild(helper);
+            }
+        }
+
+        // Preview micro-feedback toast
+        function showPreviewFeedback(text) {
+            let toast = document.getElementById('studio-preview-toast');
+            if (!toast) {
+                toast = document.createElement('div');
+                toast.id = 'studio-preview-toast';
+                toast.className = 'fixed top-4 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-xl bg-slate-900/90 text-white text-xs font-bold shadow-2xl backdrop-blur-md border border-white/20 transition-all pointer-events-none opacity-0';
+                document.body.appendChild(toast);
+            }
+            toast.innerText = text;
+            toast.style.opacity = '1';
+            toast.style.transform = 'translate(-50%, 0)';
+            clearTimeout(window.__previewToastTimer);
+            window.__previewToastTimer = setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translate(-50%, -10px)';
+            }, 2500);
+        }
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initPreviewDirectEditing);
+        } else {
+            initPreviewDirectEditing();
+        }
 
         // Interactive Before/After slider updater
         function updateBeforeAfterSlider(val) {
