@@ -87,6 +87,22 @@ assertCondition(str_contains($studioContent, "event.data.type === 'TOGGLE_BLOCK_
 assertCondition(str_contains($studioContent, "event.data.type === 'MOVE_BLOCK_FROM_PREVIEW'"), "Studio handles MOVE_BLOCK_FROM_PREVIEW message from preview toolbar");
 assertCondition(str_contains($studioContent, 'quickSyncPairs'), "Studio provides two-way synchronization between quick inputs and main inputs");
 
+// 5. Granular Editability, ASENA Ecosystem Services & Multi-Modal Functionality
+assertCondition(str_contains($siteContent, 'id="asena-services"'), "Site.php renders asena-services ecosystem block");
+assertCondition(str_contains($siteContent, 'id="vcard-modal"'), "Site.php renders vcard-modal for digital sharing");
+assertCondition(str_contains($siteContent, 'id="trust-verify-modal"'), "Site.php renders trust-verify-modal for accreditation verification");
+assertCondition(str_contains($siteContent, "case 'stat_1_val':"), "Site.php handles stat_1_val live update");
+assertCondition(str_contains($siteContent, "case 'trust_strip_1':"), "Site.php handles trust_strip_1 live update");
+assertCondition(str_contains($siteContent, "case 'hero_review_score':"), "Site.php handles hero_review_score live update");
+assertCondition(str_contains($siteContent, "case 'asena_heading':"), "Site.php handles asena_heading live update");
+assertCondition(str_contains($siteContent, "case 'telehealth_title':"), "Site.php handles telehealth_title live update");
+assertCondition(str_contains($siteContent, "case 'footer_about':"), "Site.php handles footer_about live update");
+assertCondition(str_contains($studioContent, 'id="input-quick-stat-1-val"'), "Studio has Quick Card for stats strip");
+assertCondition(str_contains($studioContent, 'id="input-quick-asena-heading"'), "Studio has Quick Card for ASENA ecosystem services");
+assertCondition(str_contains($studioContent, 'id="section-stats_strip"'), "Studio has section-stats_strip accordion");
+assertCondition(str_contains($studioContent, 'id="section-asena_services"'), "Studio has section-asena_services accordion");
+assertCondition(str_contains($studioContent, 'id="section-footer"'), "Studio has section-footer accordion");
+
 if (empty($errors)) {
     echo "=== All {$passes} Tests Passed Successfully! ===\n";
     exit(0);
@@ -94,3 +110,4 @@ if (empty($errors)) {
     echo "=== " . count($errors) . " Tests Failed! ===\n";
     exit(1);
 }
+

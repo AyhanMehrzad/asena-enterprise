@@ -266,7 +266,7 @@ class TenantSiteService {
                 'card_radius' => 'rounded-3xl',
                 'trust_anchor' => 'floating_pill'
             ],
-            'blocks_order' => ['emergency_bar', 'hero', 'stats_strip', 'duty_hours', 'before_after', 'cost_calculator', 'bento_facilities', 'about', 'services', 'doctors_roster', 'booking', 'storefront', 'reviews', 'faq', 'contact'],
+            'blocks_order' => ['emergency_bar', 'hero', 'stats_strip', 'duty_hours', 'before_after', 'cost_calculator', 'bento_facilities', 'about', 'services', 'asena_services', 'doctors_roster', 'booking', 'storefront', 'reviews', 'faq', 'contact'],
             'blocks' => [
                 'emergency_bar' => [
                     'enabled' => in_array($tenantType, ['organization', 'doctor']) && !$isBasic,
@@ -347,10 +347,29 @@ class TenantSiteService {
                         'pharmacist' => 'آپلود نسخه دارویی',
                         default => 'پیشنهادات شگفت‌انگیز'
                     },
+                    'review_score' => '۴.۹',
+                    'review_count' => 'بیش از ۱۸۰+ نظر تاییدشده',
+                    'cert_title' => match($tenantType) {
+                        'pharmacist' => 'زنجیره سرد استاندارد (۲-۸°C)',
+                        'seller' => 'تضمین ۱۰۰٪ اصالت کالا',
+                        default => 'بورد تخصصی و مجهز به ICU'
+                    },
+                    'cert_desc' => 'دارای پروانه و صلاحیت رسمی بالینی',
+                    'trust_strip_1' => 'درگاه امن پرداخت الکترونیک شاپرک',
+                    'trust_strip_2' => 'ارسال فوری پیامک تأیید نوبت',
+                    'trust_strip_3' => 'پشتیبانی شبانه‌روزی ۲۴ ساعته',
                     'image' => $info['banner_url'] ?? 'assets/images/clinic-banner.jpg'
                 ],
                 'stats_strip' => [
                     'enabled' => !$isBasic,
+                    'stat_1_val' => '+۱۵,۰۰۰',
+                    'stat_1_lbl' => 'ویزیت و سفارش موفق',
+                    'stat_2_val' => '۴.۹ ★',
+                    'stat_2_lbl' => 'رضایت مراجعین',
+                    'stat_3_val' => '۱۰۰٪',
+                    'stat_3_lbl' => 'تضمین بازگشت وجه و کیفیت',
+                    'stat_4_val' => '۲۴ / ۷',
+                    'stat_4_lbl' => 'پذیرش و اورژانس فعال',
                     'stats' => [
                         ['value' => '+۱۵,۰۰۰', 'label' => 'ویزیت و سفارش موفق', 'icon' => 'verified'],
                         ['value' => '۴.۹ ★', 'label' => 'رضایت مراجعین', 'icon' => 'star'],
@@ -411,6 +430,36 @@ class TenantSiteService {
                         ]
                     },
                 ],
+                'asena_services' => [
+                    'enabled' => !$isBasic,
+                    'badge' => 'خدمات یکپارچه شبکه سلامت آسنا',
+                    'heading' => 'خدمات آنلاین و دسترسی مستقیم به اکوسیستم سلامت آسنا',
+                    'subtitle' => 'دسترسی سریع و بی‌واسطه به خدمات تخصصی مشاوره پزشکی، داروخانه ابری، سفارش دوره‌ای ملزومات و باشگاه سلامت مراجعین',
+                    'telehealth_title' => 'ویزیت و تله‌هلث آنلاین',
+                    'telehealth_desc' => 'مشاوره تصویری و گفتگوی آنلاین مستقیم با دامپزشکان متخصص و ثبت نسخه الکترونیک',
+                    'telehealth_btn' => 'شروع ویزیت آنلاین',
+                    'telehealth_url' => '../chat.php',
+                    'pharmacy_title' => 'داروخانه تخصصی زنجیره سرد',
+                    'pharmacy_desc' => 'تأمین مطمئن انواع داروهای کمیاب، مکمل‌های تقویتی و واکسن‌ها با شرایط استاندارد دمایی ۲ الی ۸ درجه',
+                    'pharmacy_btn' => 'سفارش دارو و مکمل',
+                    'pharmacy_url' => '../pharmacy.php',
+                    'autoship_title' => 'تحویل دوره‌ای غذای درمانی (Autoship)',
+                    'autoship_desc' => 'ارسال خودکار و منظم غذای خشک رژیمی، ضد انگل و مکمل‌ها با تخفیف دائمی ۱۰٪ و امکان لغو در هر زمان',
+                    'autoship_btn' => 'فعالسازی تحویل دوره‌ای',
+                    'autoship_url' => '../subscriptions.php',
+                    'rewards_title' => 'باشگاه وفاداری و پاداش سلامت',
+                    'rewards_desc' => 'کسب امتیاز وفاداری با هر نوبت ویزیت یا خرید دارو، قابل تبدیل به اعتبار درمانی و تخفیف نقدی',
+                    'rewards_btn' => 'مشاهده امتیازها و پاداش',
+                    'rewards_url' => '../rewards.php',
+                    'charity_title' => 'صندوق امداد و درمان حیوانات حمایتی',
+                    'charity_desc' => 'مشارکت مستقیم و شفاف در هزینه‌های جراحی و بستری حیوانات بی‌سرپرست و آسیب‌دیده با حساب امانی آسنا',
+                    'charity_btn' => 'حمایت از درمان حیوانات',
+                    'charity_url' => '../charity.php',
+                    'vcard_title' => 'کارت ویزیت دیجیتال و QR اختصاصی',
+                    'vcard_desc' => 'دانلود فوری شماره تماس، نشانی و اطلاعات کلینیک در قالب مخاطب (.vcf) و اشتراک‌گذاری در پیام‌رسان‌ها',
+                    'vcard_btn' => 'نمایش کارت ویزیت دیجیتال',
+                    'vcard_url' => '#open-vcard'
+                ],
                 'doctors_roster' => [
                     'enabled' => ($tenantType === 'organization') && ($isEnterprise || $isPremium),
                     'heading' => 'کادر پزشکان و متخصصان مرکز',
@@ -455,11 +504,18 @@ class TenantSiteService {
                         'doctor', 'organization' => 'رزرو فوری نوبت',
                         'pharmacist' => 'سفارش دارو',
                         default => 'خرید آنلاین'
-                    }
+                    },
+                    'nav_text' => 'مسیریابی'
                 ],
                 'footer' => [
                     'show_powered_by' => false,
-                    'copyright_text' => "کلیه حقوق برای {$name} محفوظ است."
+                    'copyright_text' => "کلیه حقوق برای {$name} محفوظ است.",
+                    'about_text' => "ارائه خدمات تخصصی سلامت و درمان حیوانات خانگی با پیشرفته‌ترین تجهیزات تشخیصی و کادر مجرب بالینی.",
+                    'instagram' => $info['instagram'] ?? '',
+                    'telegram' => $info['telegram'] ?? '',
+                    'whatsapp' => $info['whatsapp'] ?? '',
+                    'bale' => $info['bale'] ?? '',
+                    'eitaa' => $info['eitaa'] ?? ''
                 ]
             ]
         ];
@@ -837,6 +893,7 @@ class TenantSiteService {
                 if (isset($blocks['bento_facilities'])) $blocks['bento_facilities']['enabled'] = false;
                 if (isset($blocks['doctors_roster'])) $blocks['doctors_roster']['enabled'] = false;
                 if (isset($blocks['reviews'])) $blocks['reviews']['enabled'] = false;
+                if (isset($blocks['asena_services'])) $blocks['asena_services']['enabled'] = false;
                 if (isset($blocks['storefront'])) $blocks['storefront']['item_limit'] = 4;
                 break;
 
@@ -850,6 +907,7 @@ class TenantSiteService {
                 if (isset($blocks['bento_facilities'])) $blocks['bento_facilities']['enabled'] = false;
                 if (isset($blocks['doctors_roster'])) $blocks['doctors_roster']['enabled'] = false;
                 if (isset($blocks['reviews'])) $blocks['reviews']['enabled'] = true;
+                if (isset($blocks['asena_services'])) $blocks['asena_services']['enabled'] = true;
                 break;
 
             case 'premium':
@@ -862,6 +920,7 @@ class TenantSiteService {
                 if (isset($blocks['bento_facilities'])) $blocks['bento_facilities']['enabled'] = true;
                 if (isset($blocks['doctors_roster'])) $blocks['doctors_roster']['enabled'] = ($tenantType === 'organization');
                 if (isset($blocks['reviews'])) $blocks['reviews']['enabled'] = true;
+                if (isset($blocks['asena_services'])) $blocks['asena_services']['enabled'] = true;
                 break;
 
             case 'pharmacy':
@@ -874,6 +933,7 @@ class TenantSiteService {
                 if (isset($blocks['bento_facilities'])) $blocks['bento_facilities']['enabled'] = false;
                 if (isset($blocks['doctors_roster'])) $blocks['doctors_roster']['enabled'] = false;
                 if (isset($blocks['reviews'])) $blocks['reviews']['enabled'] = true;
+                if (isset($blocks['asena_services'])) $blocks['asena_services']['enabled'] = true;
                 break;
 
             case 'enterprise':
@@ -887,6 +947,7 @@ class TenantSiteService {
                 if (isset($blocks['bento_facilities'])) $blocks['bento_facilities']['enabled'] = in_array($tenantType, ['organization', 'doctor']);
                 if (isset($blocks['doctors_roster'])) $blocks['doctors_roster']['enabled'] = ($tenantType === 'organization');
                 if (isset($blocks['reviews'])) $blocks['reviews']['enabled'] = true;
+                if (isset($blocks['asena_services'])) $blocks['asena_services']['enabled'] = true;
                 if (isset($blocks['storefront'])) $blocks['storefront']['item_limit'] = 8;
                 break;
         }

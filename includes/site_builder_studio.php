@@ -476,6 +476,78 @@ if (empty($layout['theme']['primary_color']) && $activePaletteKey !== 'navy' && 
                         </div>
                     </div>
 
+                    <!-- CARD 7: Clinic Trust Stats Strip -->
+                    <div class="p-3.5 rounded-2xl border border-slate-200 bg-white shadow-2xs space-y-3 quick-card" data-search-keys="آمار اعداد ارقام رضایت ویزیت شاخص رکورد">
+                        <div class="flex items-center justify-between pb-2 border-b border-slate-100">
+                            <div class="flex items-center gap-2">
+                                <span class="material-symbols-outlined text-emerald-600 text-base">analytics</span>
+                                <span class="text-xs font-bold text-slate-800">نوار آمار و شاخص‌های بالینی</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <button type="button" onclick="applyClinicalCopyTemplate('stats_strip')" class="px-2 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 text-[10px] font-bold transition-all flex items-center gap-1 shadow-2xs cursor-pointer" title="درج آمار استاندارد">
+                                    <span class="material-symbols-outlined text-xs">magic_button</span>
+                                    <span>آمار آماده</span>
+                                </button>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" id="input-quick-stats-enabled" <?= !empty($layout['stats_strip']['enabled'] ?? true) ? 'checked' : '' ?> class="sr-only peer">
+                                    <div class="w-8 h-4 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-emerald-600"></div>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div class="p-2 rounded-xl bg-slate-50 border border-slate-200/80 space-y-1">
+                                <input type="text" id="input-quick-stat-1-val" value="<?= htmlspecialchars($layout['stats_strip']['stat_1_val'] ?? ($layout['stats_strip']['stats'][0]['value'] ?? '+۱۵,۰۰۰')) ?>" placeholder="مقدار ۱" class="w-full px-2 py-1 text-xs font-black font-mono bg-white border border-slate-200 rounded-lg text-slate-800">
+                                <input type="text" id="input-quick-stat-1-lbl" value="<?= htmlspecialchars($layout['stats_strip']['stat_1_lbl'] ?? ($layout['stats_strip']['stats'][0]['label'] ?? 'ویزیت و سفارش موفق')) ?>" placeholder="عنوان ۱" class="w-full px-2 py-1 text-[11px] font-bold bg-white border border-slate-200 rounded-lg text-slate-600">
+                            </div>
+                            <div class="p-2 rounded-xl bg-slate-50 border border-slate-200/80 space-y-1">
+                                <input type="text" id="input-quick-stat-2-val" value="<?= htmlspecialchars($layout['stats_strip']['stat_2_val'] ?? ($layout['stats_strip']['stats'][1]['value'] ?? '۴.۹ ★')) ?>" placeholder="مقدار ۲" class="w-full px-2 py-1 text-xs font-black font-mono bg-white border border-slate-200 rounded-lg text-slate-800">
+                                <input type="text" id="input-quick-stat-2-lbl" value="<?= htmlspecialchars($layout['stats_strip']['stat_2_lbl'] ?? ($layout['stats_strip']['stats'][1]['label'] ?? 'رضایت مراجعین')) ?>" placeholder="عنوان ۲" class="w-full px-2 py-1 text-[11px] font-bold bg-white border border-slate-200 rounded-lg text-slate-600">
+                            </div>
+                            <div class="p-2 rounded-xl bg-slate-50 border border-slate-200/80 space-y-1">
+                                <input type="text" id="input-quick-stat-3-val" value="<?= htmlspecialchars($layout['stats_strip']['stat_3_val'] ?? ($layout['stats_strip']['stats'][2]['value'] ?? '۱۰۰٪')) ?>" placeholder="مقدار ۳" class="w-full px-2 py-1 text-xs font-black font-mono bg-white border border-slate-200 rounded-lg text-slate-800">
+                                <input type="text" id="input-quick-stat-3-lbl" value="<?= htmlspecialchars($layout['stats_strip']['stat_3_lbl'] ?? ($layout['stats_strip']['stats'][2]['label'] ?? 'تضمین بازگشت وجه')) ?>" placeholder="عنوان ۳" class="w-full px-2 py-1 text-[11px] font-bold bg-white border border-slate-200 rounded-lg text-slate-600">
+                            </div>
+                            <div class="p-2 rounded-xl bg-slate-50 border border-slate-200/80 space-y-1">
+                                <input type="text" id="input-quick-stat-4-val" value="<?= htmlspecialchars($layout['stats_strip']['stat_4_val'] ?? ($layout['stats_strip']['stats'][3]['value'] ?? '۲۴ / ۷')) ?>" placeholder="مقدار ۴" class="w-full px-2 py-1 text-xs font-black font-mono bg-white border border-slate-200 rounded-lg text-slate-800">
+                                <input type="text" id="input-quick-stat-4-lbl" value="<?= htmlspecialchars($layout['stats_strip']['stat_4_lbl'] ?? ($layout['stats_strip']['stats'][3]['label'] ?? 'پذیرش و اورژانس فعال')) ?>" placeholder="عنوان ۴" class="w-full px-2 py-1 text-[11px] font-bold bg-white border border-slate-200 rounded-lg text-slate-600">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- CARD 8: ASENA Ecosystem Services & Routes -->
+                    <div class="p-3.5 rounded-2xl border border-indigo-200 bg-indigo-50/20 shadow-2xs space-y-3 quick-card" data-search-keys="خدمات آسنا اکوسیستم ویزیت آنلاین تله هلث داروخانه اشتراک امداد کیوآر">
+                        <div class="flex items-center justify-between pb-2 border-b border-indigo-100">
+                            <div class="flex items-center gap-2">
+                                <span class="material-symbols-outlined text-indigo-600 text-base">hub</span>
+                                <span class="text-xs font-bold text-slate-900">خدمات یکپارچه اکوسیستم آسنا</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <button type="button" onclick="applyClinicalCopyTemplate('asena_services')" class="px-2 py-1 rounded-lg bg-indigo-100 hover:bg-indigo-200 text-indigo-800 border border-indigo-200 text-[10px] font-bold transition-all flex items-center gap-1 shadow-2xs cursor-pointer" title="درج متن استاندارد خدمات آسنا">
+                                    <span class="material-symbols-outlined text-xs">magic_button</span>
+                                    <span>متن آماده</span>
+                                </button>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" id="input-quick-asena-enabled" <?= !empty($layout['asena_services']['enabled'] ?? true) ? 'checked' : '' ?> class="sr-only peer">
+                                    <div class="w-8 h-4 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-indigo-600"></div>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="space-y-2">
+                            <div>
+                                <label class="text-[11px] font-bold text-slate-700 block mb-1">نشان سربرگ خدمات</label>
+                                <input type="text" id="input-quick-asena-badge" value="<?= htmlspecialchars($layout['asena_services']['badge'] ?? 'خدمات یکپارچه شبکه سلامت آسنا') ?>" class="w-full px-3 py-2 text-xs bg-white border border-indigo-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-700 transition-all">
+                            </div>
+                            <div>
+                                <label class="text-[11px] font-bold text-slate-700 block mb-1">تیتر بخش خدمات آسنا</label>
+                                <input type="text" id="input-quick-asena-heading" value="<?= htmlspecialchars($layout['asena_services']['heading'] ?? 'خدمات آنلاین و دسترسی مستقیم به اکوسیستم سلامت آسنا') ?>" class="w-full px-3 py-2 text-xs bg-white border border-indigo-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 font-bold text-slate-900 transition-all">
+                            </div>
+                            <div>
+                                <label class="text-[11px] font-bold text-slate-700 block mb-1">زیرعنوان خدمات</label>
+                                <textarea id="input-quick-asena-subtitle" rows="2" class="w-full px-3 py-2 text-xs bg-white border border-indigo-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-700 transition-all"><?= htmlspecialchars($layout['asena_services']['subtitle'] ?? 'دسترسی سریع و بی‌واسطه به خدمات تخصصی مشاوره پزشکی، داروخانه ابری، سفارش دوره‌ای ملزومات و باشگاه سلامت مراجعین') ?></textarea>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Bottom Link to Advanced Blocks -->
                     <div class="p-3 text-center rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-600">
                         <span>نیاز به تنظیمات کامل یا افزودن بخش دارید؟</span>
@@ -601,6 +673,92 @@ if (empty($layout['theme']['primary_color']) && $activePaletteKey !== 'navy' && 
                                 <!-- Link Box -->
                                 <div id="hero-img-link-box" class="hidden">
                                     <input type="text" id="input-hero-image" value="<?= htmlspecialchars($layout['hero']['image'] ?? $site['banner_url']) ?>" oninput="updateThumbSrc('preview-thumb-hero', this.value)" class="w-full text-xs p-2.5 rounded-xl border border-slate-200 focus:border-emerald-600 focus:outline-none font-mono" dir="ltr" placeholder="https://example.com/banner.jpg">
+                                </div>
+                            </div>
+
+                            <!-- Hero Floating Badges -->
+                            <div class="pt-2 border-t border-slate-100 space-y-2.5">
+                                <span class="text-xs font-bold text-slate-800 block">نشان‌های شناور و صلاحیت بالینی (Hero Badges):</span>
+                                <div class="grid grid-cols-2 gap-2">
+                                    <div>
+                                        <label class="text-[10px] font-bold text-slate-500 block mb-0.5">امتیاز رضایت</label>
+                                        <input type="text" id="input-hero-review-score" value="<?= htmlspecialchars($layout['hero']['review_score'] ?? '۴.۹') ?>" class="w-full text-xs p-2 rounded-lg border border-slate-200 font-bold">
+                                    </div>
+                                    <div>
+                                        <label class="text-[10px] font-bold text-slate-500 block mb-0.5">تعداد نظرات تاییدشده</label>
+                                        <input type="text" id="input-hero-review-count" value="<?= htmlspecialchars($layout['hero']['review_count'] ?? 'بیش از ۱۸۰+ نظر تاییدشده') ?>" class="w-full text-xs p-2 rounded-lg border border-slate-200">
+                                    </div>
+                                    <div>
+                                        <label class="text-[10px] font-bold text-slate-500 block mb-0.5">عنوان نشان گواهی</label>
+                                        <input type="text" id="input-hero-cert-title" value="<?= htmlspecialchars($layout['hero']['cert_title'] ?? 'عضو رسمی جامعه دامپزشکان ایران') ?>" class="w-full text-xs p-2 rounded-lg border border-slate-200">
+                                    </div>
+                                    <div>
+                                        <label class="text-[10px] font-bold text-slate-500 block mb-0.5">توضیح نشان گواهی</label>
+                                        <input type="text" id="input-hero-cert-desc" value="<?= htmlspecialchars($layout['hero']['cert_desc'] ?? 'دارای پروانه و صلاحیت رسمی بالینی') ?>" class="w-full text-xs p-2 rounded-lg border border-slate-200">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Hero Trust Validation Strip -->
+                            <div class="pt-2 border-t border-slate-100 space-y-2">
+                                <span class="text-xs font-bold text-slate-800 block">نوار ۳ تایی اعتماد زیر دکمه (Trust Strip):</span>
+                                <div class="grid grid-cols-1 gap-2">
+                                    <input type="text" id="input-hero-trust-1" value="<?= htmlspecialchars($layout['hero']['trust_strip_1'] ?? 'درگاه امن پرداخت الکترونیک شاپرک') ?>" placeholder="مورد اعتماد ۱" class="w-full text-xs p-2 rounded-lg border border-slate-200">
+                                    <input type="text" id="input-hero-trust-2" value="<?= htmlspecialchars($layout['hero']['trust_strip_2'] ?? 'ارسال فوری پیامک تأیید نوبت') ?>" placeholder="مورد اعتماد ۲" class="w-full text-xs p-2 rounded-lg border border-slate-200">
+                                    <input type="text" id="input-hero-trust-3" value="<?= htmlspecialchars($layout['hero']['trust_strip_3'] ?? 'پشتیبانی شبانه‌روزی ۲۴ ساعته') ?>" placeholder="مورد اعتماد ۳" class="w-full text-xs p-2 rounded-lg border border-slate-200">
+                                </div>
+                            </div>
+
+                            <!-- Header CTA text -->
+                            <div class="pt-2 border-t border-slate-100">
+                                <label class="block text-[11px] font-bold text-slate-700 mb-1">متن دکمه نوبت‌دهی سربرگ (Header CTA)</label>
+                                <input type="text" id="input-header-cta" value="<?= htmlspecialchars($layout['header']['cta_text'] ?? 'رزرو آنلاین نوبت') ?>" class="w-full text-xs p-2 rounded-lg border border-slate-200">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 1.2. Stats Strip Block -->
+                    <div class="border border-slate-200 rounded-2xl overflow-hidden bg-white shadow-sm" id="section-stats_strip">
+                        <div onclick="toggleAccordion('stats_strip')" class="w-full p-4 flex items-center justify-between bg-slate-50 hover:bg-slate-100 transition-colors text-right cursor-pointer select-none">
+                            <div class="flex items-center gap-2.5">
+                                <span class="material-symbols-outlined text-slate-600 text-lg">analytics</span>
+                                <span class="text-xs font-bold text-slate-800">نوار آمار و شاخص‌های بالینی (Stats)</span>
+                            </div>
+                            <div class="flex items-center gap-1" onclick="event.stopPropagation()">
+                                <button type="button" onclick="moveStudioBlock('section-stats_strip', 'up')" title="انتقال به بالا" class="w-6 h-6 rounded-lg bg-slate-200/70 hover:bg-slate-300 text-slate-600 flex items-center justify-center transition-colors">
+                                    <span class="material-symbols-outlined text-xs">keyboard_arrow_up</span>
+                                </button>
+                                <button type="button" onclick="moveStudioBlock('section-stats_strip', 'down')" title="انتقال به پایین" class="w-6 h-6 rounded-lg bg-slate-200/70 hover:bg-slate-300 text-slate-600 flex items-center justify-center transition-colors">
+                                    <span class="material-symbols-outlined text-xs">keyboard_arrow_down</span>
+                                </button>
+                                <span class="material-symbols-outlined text-slate-400 text-base transition-transform" id="arrow-stats_strip">expand_more</span>
+                            </div>
+                        </div>
+                        <div class="p-4 space-y-3 border-t border-slate-100 hidden" id="content-stats_strip">
+                            <label class="flex items-center gap-2 text-xs font-bold text-slate-700">
+                                <input type="checkbox" id="input-stats-enabled" <?= !empty($layout['stats_strip']['enabled'] ?? true) ? 'checked' : '' ?> class="rounded text-emerald-600">
+                                <span>فعال‌سازی نمایش نوار آمار</span>
+                            </label>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                                <div class="p-2.5 rounded-xl bg-slate-50 border border-slate-200 space-y-1.5">
+                                    <label class="text-[10px] font-bold text-slate-500">شاخص اول (ویزیت و سفارش)</label>
+                                    <input type="text" id="input-stat-1-val" value="<?= htmlspecialchars($layout['stats_strip']['stat_1_val'] ?? ($layout['stats_strip']['stats'][0]['value'] ?? '+۱۵,۰۰۰')) ?>" placeholder="+۱۵,۰۰۰" class="w-full text-xs p-2 rounded-lg border border-slate-200 font-mono font-bold">
+                                    <input type="text" id="input-stat-1-lbl" value="<?= htmlspecialchars($layout['stats_strip']['stat_1_lbl'] ?? ($layout['stats_strip']['stats'][0]['label'] ?? 'ویزیت و سفارش موفق')) ?>" placeholder="ویزیت و سفارش موفق" class="w-full text-xs p-2 rounded-lg border border-slate-200 font-medium">
+                                </div>
+                                <div class="p-2.5 rounded-xl bg-slate-50 border border-slate-200 space-y-1.5">
+                                    <label class="text-[10px] font-bold text-slate-500">شاخص دوم (رضایت مراجعین)</label>
+                                    <input type="text" id="input-stat-2-val" value="<?= htmlspecialchars($layout['stats_strip']['stat_2_val'] ?? ($layout['stats_strip']['stats'][1]['value'] ?? '۴.۹ ★')) ?>" placeholder="۴.۹ ★" class="w-full text-xs p-2 rounded-lg border border-slate-200 font-mono font-bold">
+                                    <input type="text" id="input-stat-2-lbl" value="<?= htmlspecialchars($layout['stats_strip']['stat_2_lbl'] ?? ($layout['stats_strip']['stats'][1]['label'] ?? 'رضایت مراجعین')) ?>" placeholder="رضایت مراجعین" class="w-full text-xs p-2 rounded-lg border border-slate-200 font-medium">
+                                </div>
+                                <div class="p-2.5 rounded-xl bg-slate-50 border border-slate-200 space-y-1.5">
+                                    <label class="text-[10px] font-bold text-slate-500">شاخص سوم (ضمانت بازگشت وجه)</label>
+                                    <input type="text" id="input-stat-3-val" value="<?= htmlspecialchars($layout['stats_strip']['stat_3_val'] ?? ($layout['stats_strip']['stats'][2]['value'] ?? '۱۰۰٪')) ?>" placeholder="۱۰۰٪" class="w-full text-xs p-2 rounded-lg border border-slate-200 font-mono font-bold">
+                                    <input type="text" id="input-stat-3-lbl" value="<?= htmlspecialchars($layout['stats_strip']['stat_3_lbl'] ?? ($layout['stats_strip']['stats'][2]['label'] ?? 'تضمین بازگشت وجه و کیفیت')) ?>" placeholder="تضمین بازگشت وجه و کیفیت" class="w-full text-xs p-2 rounded-lg border border-slate-200 font-medium">
+                                </div>
+                                <div class="p-2.5 rounded-xl bg-slate-50 border border-slate-200 space-y-1.5">
+                                    <label class="text-[10px] font-bold text-slate-500">شاخص چهارم (پذیرش شبانه‌روزی)</label>
+                                    <input type="text" id="input-stat-4-val" value="<?= htmlspecialchars($layout['stats_strip']['stat_4_val'] ?? ($layout['stats_strip']['stats'][3]['value'] ?? '۲۴ / ۷')) ?>" placeholder="۲۴ / ۷" class="w-full text-xs p-2 rounded-lg border border-slate-200 font-mono font-bold">
+                                    <input type="text" id="input-stat-4-lbl" value="<?= htmlspecialchars($layout['stats_strip']['stat_4_lbl'] ?? ($layout['stats_strip']['stats'][3]['label'] ?? 'پذیرش و اورژانس فعال')) ?>" placeholder="پذیرش و اورژانس فعال" class="w-full text-xs p-2 rounded-lg border border-slate-200 font-medium">
                                 </div>
                             </div>
                         </div>
@@ -760,6 +918,110 @@ if (empty($layout['theme']['primary_color']) && $activePaletteKey !== 'navy' && 
                             <div>
                                 <label class="block text-[11px] font-bold text-slate-700 mb-1">شماره نظام دامپزشکی یا پروانه تاسیس</label>
                                 <input type="text" id="input-about-vet-council" value="<?= htmlspecialchars($layout['about']['vet_council'] ?? '') ?>" class="w-full text-xs p-2.5 rounded-xl border border-slate-200 focus:border-emerald-600 focus:outline-none font-mono" dir="ltr">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 5.2. ASENA Ecosystem Services & Routes Block -->
+                    <div class="border border-indigo-200 rounded-2xl overflow-hidden bg-white shadow-sm" id="section-asena_services">
+                        <div onclick="toggleAccordion('asena_services')" class="w-full p-4 flex items-center justify-between bg-indigo-50/70 hover:bg-indigo-100/70 transition-colors text-right cursor-pointer select-none">
+                            <div class="flex items-center gap-2.5">
+                                <span class="material-symbols-outlined text-indigo-600 text-lg">hub</span>
+                                <span class="text-xs font-bold text-indigo-950">خدمات یکپارچه اکوسیستم آسنا (ASENA Services)</span>
+                            </div>
+                            <div class="flex items-center gap-1" onclick="event.stopPropagation()">
+                                <button type="button" onclick="moveStudioBlock('section-asena_services', 'up')" title="انتقال به بالا" class="w-6 h-6 rounded-lg bg-indigo-200/70 hover:bg-indigo-300 text-indigo-800 flex items-center justify-center transition-colors">
+                                    <span class="material-symbols-outlined text-xs">keyboard_arrow_up</span>
+                                </button>
+                                <button type="button" onclick="moveStudioBlock('section-asena_services', 'down')" title="انتقال به پایین" class="w-6 h-6 rounded-lg bg-indigo-200/70 hover:bg-indigo-300 text-indigo-800 flex items-center justify-center transition-colors">
+                                    <span class="material-symbols-outlined text-xs">keyboard_arrow_down</span>
+                                </button>
+                                <span class="material-symbols-outlined text-indigo-500 text-base transition-transform" id="arrow-asena_services">expand_more</span>
+                            </div>
+                        </div>
+                        <div class="p-4 space-y-3 border-t border-indigo-100 hidden" id="content-asena_services">
+                            <label class="flex items-center gap-2 text-xs font-bold text-slate-700">
+                                <input type="checkbox" id="input-asena-enabled" <?= !empty($layout['asena_services']['enabled'] ?? true) ? 'checked' : '' ?> class="rounded text-indigo-600">
+                                <span>فعال‌سازی نمایش خدمات یکپارچه آسنا</span>
+                            </label>
+                            <div>
+                                <label class="block text-[11px] font-bold text-slate-700 mb-1">نشان سربرگ</label>
+                                <input type="text" id="input-asena-badge" value="<?= htmlspecialchars($layout['asena_services']['badge'] ?? 'خدمات یکپارچه شبکه سلامت آسنا') ?>" class="w-full text-xs p-2.5 rounded-xl border border-slate-200 focus:border-indigo-600 focus:outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-bold text-slate-700 mb-1">عنوان اصلی بخش</label>
+                                <input type="text" id="input-asena-heading" value="<?= htmlspecialchars($layout['asena_services']['heading'] ?? 'خدمات آنلاین و دسترسی مستقیم به اکوسیستم سلامت آسنا') ?>" class="w-full text-xs p-2.5 rounded-xl border border-slate-200 focus:border-indigo-600 focus:outline-none font-bold">
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-bold text-slate-700 mb-1">زیرعنوان و توضیحات بخش</label>
+                                <textarea id="input-asena-subtitle" rows="2" class="w-full text-xs p-2.5 rounded-xl border border-slate-200 focus:border-indigo-600 focus:outline-none"><?= htmlspecialchars($layout['asena_services']['subtitle'] ?? 'دسترسی سریع و بی‌واسطه به خدمات تخصصی مشاوره پزشکی، داروخانه ابری، سفارش دوره‌ای ملزومات و باشگاه سلامت مراجعین') ?></textarea>
+                            </div>
+
+                            <div class="pt-2 border-t border-slate-100 space-y-3">
+                                <span class="text-xs font-bold text-slate-800 block">ویرایش جزئیات کارت‌های ۶ گانه:</span>
+                                
+                                <!-- Card 1: Telehealth -->
+                                <div class="p-2.5 rounded-xl bg-slate-50 border border-slate-200 space-y-1.5">
+                                    <span class="text-[11px] font-black text-emerald-800">کارت ۱: ویزیت و تله‌هلث آنلاین</span>
+                                    <input type="text" id="input-telehealth-title" value="<?= htmlspecialchars($layout['asena_services']['telehealth_title'] ?? 'ویزیت و تله‌هلث آنلاین') ?>" class="w-full text-xs p-1.5 rounded-lg border border-slate-200 font-bold">
+                                    <textarea id="input-telehealth-desc" rows="2" class="w-full text-xs p-1.5 rounded-lg border border-slate-200"><?= htmlspecialchars($layout['asena_services']['telehealth_desc'] ?? 'مشاوره تصویری و گفتگوی آنلاین مستقیم با دامپزشکان متخصص و ثبت نسخه الکترونیک') ?></textarea>
+                                    <div class="grid grid-cols-2 gap-2">
+                                        <input type="text" id="input-telehealth-btn" value="<?= htmlspecialchars($layout['asena_services']['telehealth_btn'] ?? 'شروع ویزیت آنلاین') ?>" class="w-full text-xs p-1.5 rounded-lg border border-slate-200">
+                                        <input type="text" id="input-telehealth-url" value="<?= htmlspecialchars($layout['asena_services']['telehealth_url'] ?? '../chat.php') ?>" class="w-full text-xs p-1.5 rounded-lg border border-slate-200 font-mono text-left" dir="ltr">
+                                    </div>
+                                </div>
+
+                                <!-- Card 2: Pharmacy -->
+                                <div class="p-2.5 rounded-xl bg-slate-50 border border-slate-200 space-y-1.5">
+                                    <span class="text-[11px] font-black text-purple-800">کارت ۲: داروخانه زنجیره سرد</span>
+                                    <input type="text" id="input-pharmacy-title" value="<?= htmlspecialchars($layout['asena_services']['pharmacy_title'] ?? 'داروخانه تخصصی زنجیره سرد') ?>" class="w-full text-xs p-1.5 rounded-lg border border-slate-200 font-bold">
+                                    <textarea id="input-pharmacy-desc" rows="2" class="w-full text-xs p-1.5 rounded-lg border border-slate-200"><?= htmlspecialchars($layout['asena_services']['pharmacy_desc'] ?? 'تأمین مطمئن انواع داروهای کمیاب، مکمل‌های تقویتی و واکسن‌ها با شرایط استاندارد دمایی ۲ الی ۸ درجه') ?></textarea>
+                                    <div class="grid grid-cols-2 gap-2">
+                                        <input type="text" id="input-pharmacy-btn" value="<?= htmlspecialchars($layout['asena_services']['pharmacy_btn'] ?? 'سفارش دارو و مکمل') ?>" class="w-full text-xs p-1.5 rounded-lg border border-slate-200">
+                                        <input type="text" id="input-pharmacy-url" value="<?= htmlspecialchars($layout['asena_services']['pharmacy_url'] ?? '../pharmacy.php') ?>" class="w-full text-xs p-1.5 rounded-lg border border-slate-200 font-mono text-left" dir="ltr">
+                                    </div>
+                                </div>
+
+                                <!-- Card 3: Autoship -->
+                                <div class="p-2.5 rounded-xl bg-slate-50 border border-slate-200 space-y-1.5">
+                                    <span class="text-[11px] font-black text-blue-800">کارت ۳: تحویل دوره‌ای غذای درمانی (Autoship)</span>
+                                    <input type="text" id="input-autoship-title" value="<?= htmlspecialchars($layout['asena_services']['autoship_title'] ?? 'تحویل دوره‌ای غذای درمانی (Autoship)') ?>" class="w-full text-xs p-1.5 rounded-lg border border-slate-200 font-bold">
+                                    <textarea id="input-autoship-desc" rows="2" class="w-full text-xs p-1.5 rounded-lg border border-slate-200"><?= htmlspecialchars($layout['asena_services']['autoship_desc'] ?? 'ارسال خودکار و منظم غذای خشک رژیمی، ضد انگل و مکمل‌ها با تخفیف دائمی ۱۰٪ و امکان لغو در هر زمان') ?></textarea>
+                                    <div class="grid grid-cols-2 gap-2">
+                                        <input type="text" id="input-autoship-btn" value="<?= htmlspecialchars($layout['asena_services']['autoship_btn'] ?? 'فعالسازی تحویل دوره‌ای') ?>" class="w-full text-xs p-1.5 rounded-lg border border-slate-200">
+                                        <input type="text" id="input-autoship-url" value="<?= htmlspecialchars($layout['asena_services']['autoship_url'] ?? '../subscriptions.php') ?>" class="w-full text-xs p-1.5 rounded-lg border border-slate-200 font-mono text-left" dir="ltr">
+                                    </div>
+                                </div>
+
+                                <!-- Card 4: Loyalty Club -->
+                                <div class="p-2.5 rounded-xl bg-slate-50 border border-slate-200 space-y-1.5">
+                                    <span class="text-[11px] font-black text-amber-800">کارت ۴: باشگاه وفاداری و پاداش سلامت</span>
+                                    <input type="text" id="input-rewards-title" value="<?= htmlspecialchars($layout['asena_services']['rewards_title'] ?? 'باشگاه وفاداری و پاداش سلامت') ?>" class="w-full text-xs p-1.5 rounded-lg border border-slate-200 font-bold">
+                                    <textarea id="input-rewards-desc" rows="2" class="w-full text-xs p-1.5 rounded-lg border border-slate-200"><?= htmlspecialchars($layout['asena_services']['rewards_desc'] ?? 'کسب امتیاز وفاداری با هر نوبت ویزیت یا خرید دارو، قابل تبدیل به اعتبار درمانی و تخفیف نقدی') ?></textarea>
+                                    <div class="grid grid-cols-2 gap-2">
+                                        <input type="text" id="input-rewards-btn" value="<?= htmlspecialchars($layout['asena_services']['rewards_btn'] ?? 'مشاهده امتیازها و پاداش') ?>" class="w-full text-xs p-1.5 rounded-lg border border-slate-200">
+                                        <input type="text" id="input-rewards-url" value="<?= htmlspecialchars($layout['asena_services']['rewards_url'] ?? '../rewards.php') ?>" class="w-full text-xs p-1.5 rounded-lg border border-slate-200 font-mono text-left" dir="ltr">
+                                    </div>
+                                </div>
+
+                                <!-- Card 5: Animal Rescue Charity -->
+                                <div class="p-2.5 rounded-xl bg-slate-50 border border-slate-200 space-y-1.5">
+                                    <span class="text-[11px] font-black text-rose-800">کارت ۵: صندوق امداد و نیکوکاری حیوانات</span>
+                                    <input type="text" id="input-charity-title" value="<?= htmlspecialchars($layout['asena_services']['charity_title'] ?? 'صندوق امداد و درمان حیوانات حمایتی') ?>" class="w-full text-xs p-1.5 rounded-lg border border-slate-200 font-bold">
+                                    <textarea id="input-charity-desc" rows="2" class="w-full text-xs p-1.5 rounded-lg border border-slate-200"><?= htmlspecialchars($layout['asena_services']['charity_desc'] ?? 'مشارکت مستقیم و شفاف در هزینه‌های جراحی و بستری حیوانات بی‌سرپرست و آسیب‌دیده با حساب امانی آسنا') ?></textarea>
+                                    <div class="grid grid-cols-2 gap-2">
+                                        <input type="text" id="input-charity-btn" value="<?= htmlspecialchars($layout['asena_services']['charity_btn'] ?? 'حمایت از درمان حیوانات') ?>" class="w-full text-xs p-1.5 rounded-lg border border-slate-200">
+                                        <input type="text" id="input-charity-url" value="<?= htmlspecialchars($layout['asena_services']['charity_url'] ?? '../charity.php') ?>" class="w-full text-xs p-1.5 rounded-lg border border-slate-200 font-mono text-left" dir="ltr">
+                                    </div>
+                                </div>
+
+                                <!-- Card 6: VCard & QR -->
+                                <div class="p-2.5 rounded-xl bg-slate-50 border border-slate-200 space-y-1.5">
+                                    <span class="text-[11px] font-black text-indigo-800">کارت ۶: کارت ویزیت دیجیتال و QR</span>
+                                    <input type="text" id="input-vcard-title" value="<?= htmlspecialchars($layout['asena_services']['vcard_title'] ?? 'کارت ویزیت دیجیتال و QR اختصاصی') ?>" class="w-full text-xs p-1.5 rounded-lg border border-slate-200 font-bold">
+                                    <textarea id="input-vcard-desc" rows="2" class="w-full text-xs p-1.5 rounded-lg border border-slate-200"><?= htmlspecialchars($layout['asena_services']['vcard_desc'] ?? 'دانلود فوری شماره تماس، نشانی و اطلاعات کلینیک در قالب مخاطب (.vcf) و اشتراک‌گذاری در پیام‌رسان‌ها') ?></textarea>
+                                    <input type="text" id="input-vcard-btn" value="<?= htmlspecialchars($layout['asena_services']['vcard_btn'] ?? 'نمایش کارت ویزیت دیجیتال') ?>" class="w-full text-xs p-1.5 rounded-lg border border-slate-200">
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -993,6 +1255,54 @@ if (empty($layout['theme']['primary_color']) && $activePaletteKey !== 'navy' && 
                             <div>
                                 <label class="block text-[11px] font-bold text-slate-700 mb-1">تلفن اورژانس ۲۴ ساعته</label>
                                 <input type="text" id="input-contact-emergency" value="<?= htmlspecialchars($layout['contact']['emergency_phone'] ?? '') ?>" class="w-full text-xs p-2.5 rounded-xl border border-slate-200 focus:border-emerald-600 focus:outline-none font-mono" dir="ltr">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 9. Footer & Social Channels Block -->
+                    <div class="border border-slate-200 rounded-2xl overflow-hidden bg-white shadow-sm" id="section-footer">
+                        <div onclick="toggleAccordion('footer')" class="w-full p-4 flex items-center justify-between bg-slate-50 hover:bg-slate-100 transition-colors text-right cursor-pointer select-none">
+                            <div class="flex items-center gap-2.5">
+                                <span class="material-symbols-outlined text-slate-600 text-lg">vertical_align_bottom</span>
+                                <span class="text-xs font-bold text-slate-800">فوتر و شبکه‌های اجتماعی (Footer)</span>
+                            </div>
+                            <div class="flex items-center gap-1" onclick="event.stopPropagation()">
+                                <span class="material-symbols-outlined text-slate-400 text-base transition-transform" id="arrow-footer">expand_more</span>
+                            </div>
+                        </div>
+                        <div class="p-4 space-y-3 border-t border-slate-100 hidden" id="content-footer">
+                            <div>
+                                <label class="block text-[11px] font-bold text-slate-700 mb-1">متن معرفی کوتاه فوتر (درباره مرکز)</label>
+                                <textarea id="input-footer-about" rows="3" class="w-full text-xs p-2.5 rounded-xl border border-slate-200 focus:border-emerald-600 focus:outline-none"><?= htmlspecialchars($layout['footer']['about_text'] ?? ($layout['about']['text'] ?? 'مرکز ارائه خدمات تخصصی بالینی، جراحی، تشخیصی و داروخانه دامپزشکی تحت نظارت سامانه سلامت آسنا.')) ?></textarea>
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-bold text-slate-700 mb-1">متن کپی‌رایت و حقوق قانونی</label>
+                                <input type="text" id="input-footer-copyright" value="<?= htmlspecialchars($layout['footer']['copyright'] ?? ('کلیه حقوق مادی و معنوی برای ' . $site['site_title'] . ' محفوظ است.')) ?>" class="w-full text-xs p-2.5 rounded-xl border border-slate-200 focus:border-emerald-600 focus:outline-none">
+                            </div>
+                            <div class="pt-2 border-t border-slate-100 space-y-2">
+                                <span class="text-[11px] font-bold text-slate-700 block">لینک‌های شبکه‌های اجتماعی و پیام‌رسان‌ها:</span>
+                                <div class="grid grid-cols-2 gap-2">
+                                    <div>
+                                        <label class="text-[10px] text-slate-500 block mb-0.5">اینستاگرام (آیدی یا لینک)</label>
+                                        <input type="text" id="input-footer-instagram" value="<?= htmlspecialchars($layout['footer']['instagram'] ?? '') ?>" placeholder="@clinic_id" class="w-full text-xs p-2 rounded-lg border border-slate-200 font-mono" dir="ltr">
+                                    </div>
+                                    <div>
+                                        <label class="text-[10px] text-slate-500 block mb-0.5">تلگرام (آیدی یا لینک)</label>
+                                        <input type="text" id="input-footer-telegram" value="<?= htmlspecialchars($layout['footer']['telegram'] ?? '') ?>" placeholder="@clinic_support" class="w-full text-xs p-2 rounded-lg border border-slate-200 font-mono" dir="ltr">
+                                    </div>
+                                    <div>
+                                        <label class="text-[10px] text-slate-500 block mb-0.5">واتساپ (شماره موبایل)</label>
+                                        <input type="text" id="input-footer-whatsapp" value="<?= htmlspecialchars($layout['footer']['whatsapp'] ?? ($layout['contact']['phone'] ?? '')) ?>" placeholder="0912..." class="w-full text-xs p-2 rounded-lg border border-slate-200 font-mono" dir="ltr">
+                                    </div>
+                                    <div>
+                                        <label class="text-[10px] text-slate-500 block mb-0.5">بله (آیدی)</label>
+                                        <input type="text" id="input-footer-bale" value="<?= htmlspecialchars($layout['footer']['bale'] ?? '') ?>" placeholder="@clinic" class="w-full text-xs p-2 rounded-lg border border-slate-200 font-mono" dir="ltr">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="pt-2 border-t border-slate-100">
+                                <label class="block text-[11px] font-bold text-slate-700 mb-1">متن دکمه نوار چسبان موبایل</label>
+                                <input type="text" id="input-mobile-cta" value="<?= htmlspecialchars($layout['sticky_mobile_bar']['cta_text'] ?? 'رزرو آنلاین نوبت') ?>" class="w-full text-xs p-2 rounded-lg border border-slate-200">
                             </div>
                         </div>
                     </div>
@@ -1811,6 +2121,39 @@ const clinicalTemplates = {
         'input-ba-service-label': 'درمان تخصصی و ترمیم زخم بافت نرم',
         'input-ba-label-before': 'قبل از آغاز دوره درمانی',
         'input-ba-label-after': 'بهبودی کامل پس از ۱۴ روز'
+    },
+    stats_strip: {
+        'input-stat-1-val': '+۱۵,۰۰۰',
+        'input-stat-1-lbl': 'ویزیت و سفارش موفق',
+        'input-stat-2-val': '۴.۹ ★',
+        'input-stat-2-lbl': 'رضایت مراجعین',
+        'input-stat-3-val': '۱۰۰٪',
+        'input-stat-3-lbl': 'تضمین بازگشت وجه و کیفیت',
+        'input-stat-4-val': '۲۴ / ۷',
+        'input-stat-4-lbl': 'پذیرش و اورژانس فعال'
+    },
+    asena_services: {
+        'input-asena-badge': 'خدمات یکپارچه شبکه سلامت آسنا',
+        'input-asena-heading': 'خدمات آنلاین و دسترسی مستقیم به اکوسیستم سلامت آسنا',
+        'input-asena-subtitle': 'دسترسی سریع و بی‌واسطه به خدمات تخصصی مشاوره پزشکی، داروخانه ابری، سفارش دوره‌ای ملزومات و باشگاه سلامت مراجعین',
+        'input-telehealth-title': 'ویزیت و تله‌هلث آنلاین',
+        'input-telehealth-desc': 'مشاوره تصویری و گفتگوی آنلاین مستقیم با دامپزشکان متخصص و ثبت نسخه الکترونیک',
+        'input-telehealth-btn': 'شروع ویزیت آنلاین',
+        'input-pharmacy-title': 'داروخانه تخصصی زنجیره سرد',
+        'input-pharmacy-desc': 'تأمین مطمئن انواع داروهای کمیاب، مکمل‌های تقویتی و واکسن‌ها با شرایط استاندارد دمایی ۲ الی ۸ درجه',
+        'input-pharmacy-btn': 'سفارش دارو و مکمل',
+        'input-autoship-title': 'تحویل دوره‌ای غذای درمانی (Autoship)',
+        'input-autoship-desc': 'ارسال خودکار و منظم غذای خشک رژیمی، ضد انگل و مکمل‌ها با تخفیف دائمی ۱۰٪ و امکان لغو در هر زمان',
+        'input-autoship-btn': 'فعالسازی تحویل دوره‌ای',
+        'input-rewards-title': 'باشگاه وفاداری و پاداش سلامت',
+        'input-rewards-desc': 'کسب امتیاز وفاداری با هر نوبت ویزیت یا خرید دارو، قابل تبدیل به اعتبار درمانی و تخفیف نقدی',
+        'input-rewards-btn': 'مشاهده امتیازها و پاداش',
+        'input-charity-title': 'صندوق امداد و درمان حیوانات حمایتی',
+        'input-charity-desc': 'مشارکت مستقیم و شفاف در هزینه‌های جراحی و بستری حیوانات بی‌سرپرست و آسیب‌دیده با حساب امانی آسنا',
+        'input-charity-btn': 'حمایت از درمان حیوانات',
+        'input-vcard-title': 'کارت ویزیت دیجیتال و QR اختصاصی',
+        'input-vcard-desc': 'دانلود فوری شماره تماس، نشانی و اطلاعات کلینیک در قالب مخاطب (.vcf) و اشتراک‌گذاری در پیام‌رسان‌ها',
+        'input-vcard-btn': 'نمایش کارت ویزیت دیجیتال'
     }
 };
 
@@ -1848,9 +2191,69 @@ const spotlightConfigs = {
             { id: 'hero-badge', targetId: 'input-hero-badge', field: 'hero_badge', label: 'نشان بالای تیتر (بج)', type: 'text' },
             { id: 'hero-title', targetId: 'input-hero-title', field: 'hero_title', label: 'تیتر اصلی چشمگیر', type: 'text' },
             { id: 'hero-subtitle', targetId: 'input-hero-subtitle', field: 'hero_subtitle', label: 'توضیحات معرفی زیر تیتر', type: 'textarea' },
-            { id: 'hero-cta', targetId: 'input-hero-cta', field: 'hero_cta', label: 'متن دکمه نوبت‌دهی / اقدام', type: 'text' }
+            { id: 'hero-cta', targetId: 'input-hero-cta', field: 'hero_cta', label: 'متن دکمه نوبت‌دهی / اقدام', type: 'text' },
+            { id: 'header-cta', targetId: 'input-header-cta', field: 'header_cta_text', label: 'متن دکمه سربرگ', type: 'text' },
+            { id: 'hero-review-score', targetId: 'input-hero-review-score', field: 'hero_review_score', label: 'امتیاز رضایت', type: 'text' },
+            { id: 'hero-review-count', targetId: 'input-hero-review-count', field: 'hero_review_count', label: 'تعداد نظرات تاییدشده', type: 'text' },
+            { id: 'hero-cert-title', targetId: 'input-hero-cert-title', field: 'hero_cert_title', label: 'عنوان گواهی بالینی', type: 'text' },
+            { id: 'hero-cert-desc', targetId: 'input-hero-cert-desc', field: 'hero_cert_desc', label: 'شرح گواهی بالینی', type: 'text' },
+            { id: 'hero-trust-1', targetId: 'input-hero-trust-1', field: 'trust_strip_1', label: 'اعتماد ۱ (زیر دکمه)', type: 'text' },
+            { id: 'hero-trust-2', targetId: 'input-hero-trust-2', field: 'trust_strip_2', label: 'اعتماد ۲ (زیر دکمه)', type: 'text' },
+            { id: 'hero-trust-3', targetId: 'input-hero-trust-3', field: 'trust_strip_3', label: 'اعتماد ۳ (زیر دکمه)', type: 'text' }
         ],
         hasTemplate: true
+    },
+    stats_strip: {
+        title: 'نوار آمار و شاخص‌های بالینی',
+        icon: 'analytics',
+        fields: [
+            { id: 'stat-1-val', targetId: 'input-stat-1-val', field: 'stat_1_val', label: 'مقدار شاخص ۱', type: 'text' },
+            { id: 'stat-1-lbl', targetId: 'input-stat-1-lbl', field: 'stat_1_lbl', label: 'عنوان شاخص ۱', type: 'text' },
+            { id: 'stat-2-val', targetId: 'input-stat-2-val', field: 'stat_2_val', label: 'مقدار شاخص ۲', type: 'text' },
+            { id: 'stat-2-lbl', targetId: 'input-stat-2-lbl', field: 'stat_2_lbl', label: 'عنوان شاخص ۲', type: 'text' },
+            { id: 'stat-3-val', targetId: 'input-stat-3-val', field: 'stat_3_val', label: 'مقدار شاخص ۳', type: 'text' },
+            { id: 'stat-3-lbl', targetId: 'input-stat-3-lbl', field: 'stat_3_lbl', label: 'عنوان شاخص ۳', type: 'text' },
+            { id: 'stat-4-val', targetId: 'input-stat-4-val', field: 'stat_4_val', label: 'مقدار شاخص ۴', type: 'text' },
+            { id: 'stat-4-lbl', targetId: 'input-stat-4-lbl', field: 'stat_4_lbl', label: 'عنوان شاخص ۴', type: 'text' }
+        ],
+        hasTemplate: true
+    },
+    asena_services: {
+        title: 'خدمات یکپارچه اکوسیستم آسنا',
+        icon: 'hub',
+        fields: [
+            { id: 'asena-badge', targetId: 'input-asena-badge', field: 'asena_badge', label: 'نشان سربرگ', type: 'text' },
+            { id: 'asena-heading', targetId: 'input-asena-heading', field: 'asena_heading', label: 'تیتر بخش خدمات', type: 'text' },
+            { id: 'asena-subtitle', targetId: 'input-asena-subtitle', field: 'asena_subtitle', label: 'توضیحات خدمات', type: 'textarea' },
+            { id: 'telehealth-title', targetId: 'input-telehealth-title', field: 'telehealth_title', label: 'تیتر ویزیت آنلاین', type: 'text' },
+            { id: 'telehealth-desc', targetId: 'input-telehealth-desc', field: 'telehealth_desc', label: 'توضیح ویزیت آنلاین', type: 'textarea' },
+            { id: 'telehealth-btn', targetId: 'input-telehealth-btn', field: 'telehealth_btn', label: 'دکمه ویزیت آنلاین', type: 'text' },
+            { id: 'pharmacy-title', targetId: 'input-pharmacy-title', field: 'pharmacy_title', label: 'تیتر داروخانه', type: 'text' },
+            { id: 'pharmacy-desc', targetId: 'input-pharmacy-desc', field: 'pharmacy_desc', label: 'توضیح داروخانه', type: 'textarea' },
+            { id: 'pharmacy-btn', targetId: 'input-pharmacy-btn', field: 'pharmacy_btn', label: 'دکمه داروخانه', type: 'text' },
+            { id: 'autoship-title', targetId: 'input-autoship-title', field: 'autoship_title', label: 'تیتر تحویل دوره‌ای', type: 'text' },
+            { id: 'autoship-desc', targetId: 'input-autoship-desc', field: 'autoship_desc', label: 'توضیح تحویل دوره‌ای', type: 'textarea' },
+            { id: 'autoship-btn', targetId: 'input-autoship-btn', field: 'autoship_btn', label: 'دکمه تحویل دوره‌ای', type: 'text' },
+            { id: 'rewards-title', targetId: 'input-rewards-title', field: 'rewards_title', label: 'تیتر باشگاه پاداش', type: 'text' },
+            { id: 'rewards-desc', targetId: 'input-rewards-desc', field: 'rewards_desc', label: 'توضیح باشگاه پاداش', type: 'textarea' },
+            { id: 'rewards-btn', targetId: 'input-rewards-btn', field: 'rewards_btn', label: 'دکمه باشگاه پاداش', type: 'text' },
+            { id: 'charity-title', targetId: 'input-charity-title', field: 'charity_title', label: 'تیتر صندوق نیکوکاری', type: 'text' },
+            { id: 'charity-desc', targetId: 'input-charity-desc', field: 'charity_desc', label: 'توضیح صندوق نیکوکاری', type: 'textarea' },
+            { id: 'charity-btn', targetId: 'input-charity-btn', field: 'charity_btn', label: 'دکمه صندوق نیکوکاری', type: 'text' },
+            { id: 'vcard-title', targetId: 'input-vcard-title', field: 'vcard_title', label: 'تیتر کارت ویزیت', type: 'text' },
+            { id: 'vcard-desc', targetId: 'input-vcard-desc', field: 'vcard_desc', label: 'توضیح کارت ویزیت', type: 'textarea' },
+            { id: 'vcard-btn', targetId: 'input-vcard-btn', field: 'vcard_btn', label: 'دکمه کارت ویزیت', type: 'text' }
+        ],
+        hasTemplate: true
+    },
+    footer: {
+        title: 'فوتر و شبکه‌های اجتماعی',
+        icon: 'vertical_align_bottom',
+        fields: [
+            { id: 'footer-about', targetId: 'input-footer-about', field: 'footer_about', label: 'متن معرفی کوتاه فوتر', type: 'textarea' },
+            { id: 'footer-copyright', targetId: 'input-footer-copyright', field: 'footer_copyright', label: 'متن کپی‌رایت', type: 'text' },
+            { id: 'mobile-cta', targetId: 'input-mobile-cta', field: 'mobile_cta_text', label: 'متن دکمه نوار موبایل', type: 'text' }
+        ]
     },
     emergency_bar: {
         title: 'نوار اورژانس شبانه‌روزی',
@@ -2141,7 +2544,47 @@ window.addEventListener('message', function(event) {
             'booking_heading': 'input-booking-heading',
             'storefront_heading': 'input-storefront-heading',
             'reviews_heading': 'input-reviews-heading',
-            'faq_heading': 'input-faq-heading'
+            'faq_heading': 'input-faq-heading',
+            'header_cta_text': 'input-header-cta',
+            'hero_review_score': 'input-hero-review-score',
+            'hero_review_count': 'input-hero-review-count',
+            'hero_cert_title': 'input-hero-cert-title',
+            'hero_cert_desc': 'input-hero-cert-desc',
+            'trust_strip_1': 'input-hero-trust-1',
+            'trust_strip_2': 'input-hero-trust-2',
+            'trust_strip_3': 'input-hero-trust-3',
+            'stat_1_val': 'input-stat-1-val',
+            'stat_1_lbl': 'input-stat-1-lbl',
+            'stat_2_val': 'input-stat-2-val',
+            'stat_2_lbl': 'input-stat-2-lbl',
+            'stat_3_val': 'input-stat-3-val',
+            'stat_3_lbl': 'input-stat-3-lbl',
+            'stat_4_val': 'input-stat-4-val',
+            'stat_4_lbl': 'input-stat-4-lbl',
+            'mobile_cta_text': 'input-mobile-cta',
+            'footer_about': 'input-footer-about',
+            'footer_copyright': 'input-footer-copyright',
+            'asena_badge': 'input-asena-badge',
+            'asena_heading': 'input-asena-heading',
+            'asena_subtitle': 'input-asena-subtitle',
+            'telehealth_title': 'input-telehealth-title',
+            'telehealth_desc': 'input-telehealth-desc',
+            'telehealth_btn': 'input-telehealth-btn',
+            'pharmacy_title': 'input-pharmacy-title',
+            'pharmacy_desc': 'input-pharmacy-desc',
+            'pharmacy_btn': 'input-pharmacy-btn',
+            'autoship_title': 'input-autoship-title',
+            'autoship_desc': 'input-autoship-desc',
+            'autoship_btn': 'input-autoship-btn',
+            'rewards_title': 'input-rewards-title',
+            'rewards_desc': 'input-rewards-desc',
+            'rewards_btn': 'input-rewards-btn',
+            'charity_title': 'input-charity-title',
+            'charity_desc': 'input-charity-desc',
+            'charity_btn': 'input-charity-btn',
+            'vcard_title': 'input-vcard-title',
+            'vcard_desc': 'input-vcard-desc',
+            'vcard_btn': 'input-vcard-btn'
         };
 
         const targetId = fieldToInputMap[field];
@@ -2170,7 +2613,9 @@ window.addEventListener('message', function(event) {
             'emergency_bar': 'input-emergency-enabled',
             'duty_hours': 'input-duty-enabled',
             'before_after': 'input-ba-enabled',
+            'stats_strip': 'input-stats-enabled',
             'bento_facilities': 'input-bento-enabled',
+            'asena_services': 'input-asena-enabled',
             'cost_calculator': 'input-calc-enabled',
             'doctors_roster': 'input-doctors-enabled',
             'booking': 'input-booking-enabled',
@@ -2255,7 +2700,8 @@ async function saveSiteConfig() {
         },
         header: {
             show_phone: true,
-            phone: document.getElementById('input-contact-phone')?.value || ''
+            phone: document.getElementById('input-contact-phone')?.value || '',
+            cta_text: document.getElementById('input-header-cta')?.value || 'رزرو آنلاین نوبت'
         },
         hero: {
             enabled: true,
@@ -2263,7 +2709,14 @@ async function saveSiteConfig() {
             title: document.getElementById('input-hero-title')?.value || '',
             subtitle: document.getElementById('input-hero-subtitle')?.value || '',
             cta_primary_text: document.getElementById('input-hero-cta')?.value || '',
-            image: document.getElementById('input-hero-image')?.value || ''
+            image: document.getElementById('input-hero-image')?.value || '',
+            review_score: document.getElementById('input-hero-review-score')?.value || '۴.۹',
+            review_count: document.getElementById('input-hero-review-count')?.value || 'بیش از ۱۸۰+ نظر تاییدشده',
+            cert_title: document.getElementById('input-hero-cert-title')?.value || 'عضو رسمی جامعه دامپزشکان ایران',
+            cert_desc: document.getElementById('input-hero-cert-desc')?.value || 'دارای پروانه و صلاحیت رسمی بالینی',
+            trust_strip_1: document.getElementById('input-hero-trust-1')?.value || 'درگاه امن پرداخت الکترونیک شاپرک',
+            trust_strip_2: document.getElementById('input-hero-trust-2')?.value || 'ارسال فوری پیامک تأیید نوبت',
+            trust_strip_3: document.getElementById('input-hero-trust-3')?.value || 'پشتیبانی شبانه‌روزی ۲۴ ساعته'
         },
         duty_hours: {
             enabled: document.getElementById('input-duty-enabled')?.checked || false,
@@ -2282,11 +2735,48 @@ async function saveSiteConfig() {
             image_after: document.getElementById('input-ba-image-after')?.value || ''
         },
         stats_strip: {
-            enabled: true
+            enabled: document.getElementById('input-stats-enabled')?.checked ?? true,
+            stat_1_val: document.getElementById('input-stat-1-val')?.value || '+۱۵,۰۰۰',
+            stat_1_lbl: document.getElementById('input-stat-1-lbl')?.value || 'ویزیت و سفارش موفق',
+            stat_2_val: document.getElementById('input-stat-2-val')?.value || '۴.۹ ★',
+            stat_2_lbl: document.getElementById('input-stat-2-lbl')?.value || 'رضایت مراجعین',
+            stat_3_val: document.getElementById('input-stat-3-val')?.value || '۱۰۰٪',
+            stat_3_lbl: document.getElementById('input-stat-3-lbl')?.value || 'تضمین بازگشت وجه و کیفیت',
+            stat_4_val: document.getElementById('input-stat-4-val')?.value || '۲۴ / ۷',
+            stat_4_lbl: document.getElementById('input-stat-4-lbl')?.value || 'پذیرش و اورژانس فعال'
         },
         bento_facilities: {
             enabled: document.getElementById('input-bento-enabled')?.checked || false,
             heading: document.getElementById('input-bento-heading')?.value || 'تجهیزات مدرن و ظرفیت‌های بالینی مرکز'
+        },
+        asena_services: {
+            enabled: document.getElementById('input-asena-enabled')?.checked ?? true,
+            badge: document.getElementById('input-asena-badge')?.value || 'خدمات یکپارچه شبکه سلامت آسنا',
+            heading: document.getElementById('input-asena-heading')?.value || 'خدمات آنلاین و دسترسی مستقیم به اکوسیستم سلامت آسنا',
+            subtitle: document.getElementById('input-asena-subtitle')?.value || '',
+            telehealth_title: document.getElementById('input-telehealth-title')?.value || 'ویزیت و تله‌هلث آنلاین',
+            telehealth_desc: document.getElementById('input-telehealth-desc')?.value || '',
+            telehealth_btn: document.getElementById('input-telehealth-btn')?.value || 'شروع ویزیت آنلاین',
+            telehealth_url: document.getElementById('input-telehealth-url')?.value || '../chat.php',
+            pharmacy_title: document.getElementById('input-pharmacy-title')?.value || 'داروخانه تخصصی زنجیره سرد',
+            pharmacy_desc: document.getElementById('input-pharmacy-desc')?.value || '',
+            pharmacy_btn: document.getElementById('input-pharmacy-btn')?.value || 'سفارش دارو و مکمل',
+            pharmacy_url: document.getElementById('input-pharmacy-url')?.value || '../pharmacy.php',
+            autoship_title: document.getElementById('input-autoship-title')?.value || 'تحویل دوره‌ای غذای درمانی (Autoship)',
+            autoship_desc: document.getElementById('input-autoship-desc')?.value || '',
+            autoship_btn: document.getElementById('input-autoship-btn')?.value || 'فعالسازی تحویل دوره‌ای',
+            autoship_url: document.getElementById('input-autoship-url')?.value || '../subscriptions.php',
+            rewards_title: document.getElementById('input-rewards-title')?.value || 'باشگاه وفاداری و پاداش سلامت',
+            rewards_desc: document.getElementById('input-rewards-desc')?.value || '',
+            rewards_btn: document.getElementById('input-rewards-btn')?.value || 'مشاهده امتیازها و پاداش',
+            rewards_url: document.getElementById('input-rewards-url')?.value || '../rewards.php',
+            charity_title: document.getElementById('input-charity-title')?.value || 'صندوق امداد و درمان حیوانات حمایتی',
+            charity_desc: document.getElementById('input-charity-desc')?.value || '',
+            charity_btn: document.getElementById('input-charity-btn')?.value || 'حمایت از درمان حیوانات',
+            charity_url: document.getElementById('input-charity-url')?.value || '../charity.php',
+            vcard_title: document.getElementById('input-vcard-title')?.value || 'کارت ویزیت دیجیتال و QR اختصاصی',
+            vcard_desc: document.getElementById('input-vcard-desc')?.value || '',
+            vcard_btn: document.getElementById('input-vcard-btn')?.value || 'نمایش کارت ویزیت دیجیتال'
         },
         cost_calculator: {
             enabled: document.getElementById('input-calc-enabled')?.checked || false,
@@ -2332,7 +2822,18 @@ async function saveSiteConfig() {
             emergency_phone: document.getElementById('input-contact-emergency')?.value || ''
         },
         sticky_mobile_bar: {
-            enabled: true
+            enabled: true,
+            cta_text: document.getElementById('input-mobile-cta')?.value || 'رزرو آنلاین نوبت'
+        },
+        footer: {
+            enabled: true,
+            about_text: document.getElementById('input-footer-about')?.value || '',
+            copyright: document.getElementById('input-footer-copyright')?.value || '',
+            instagram: document.getElementById('input-footer-instagram')?.value || '',
+            telegram: document.getElementById('input-footer-telegram')?.value || '',
+            whatsapp: document.getElementById('input-footer-whatsapp')?.value || '',
+            bale: document.getElementById('input-footer-bale')?.value || '',
+            eitaa: document.getElementById('input-footer-eitaa')?.value || ''
         }
     };
 
@@ -2583,7 +3084,57 @@ function initLiveStudioBindings() {
         { id: 'input-contact-address', field: 'contact_address', event: 'input' },
         { id: 'input-contact-hours', field: 'contact_hours', event: 'input' },
         { id: 'input-contact-phone', field: 'contact_phone', event: 'input' },
-        { id: 'input-contact-emergency', field: 'contact_emergency', event: 'input' }
+        { id: 'input-contact-emergency', field: 'contact_emergency', event: 'input' },
+
+        // Hero Badges, Trust Strip & Header CTA
+        { id: 'input-header-cta', field: 'header_cta_text', event: 'input' },
+        { id: 'input-hero-review-score', field: 'hero_review_score', event: 'input' },
+        { id: 'input-hero-review-count', field: 'hero_review_count', event: 'input' },
+        { id: 'input-hero-cert-title', field: 'hero_cert_title', event: 'input' },
+        { id: 'input-hero-cert-desc', field: 'hero_cert_desc', event: 'input' },
+        { id: 'input-hero-trust-1', field: 'trust_strip_1', event: 'input' },
+        { id: 'input-hero-trust-2', field: 'trust_strip_2', event: 'input' },
+        { id: 'input-hero-trust-3', field: 'trust_strip_3', event: 'input' },
+
+        // Stats Strip Block
+        { id: 'input-stats-enabled', field: 'block_toggle', extra: 'stats_strip', event: 'change', isCheckbox: true },
+        { id: 'input-stat-1-val', field: 'stat_1_val', event: 'input' },
+        { id: 'input-stat-1-lbl', field: 'stat_1_lbl', event: 'input' },
+        { id: 'input-stat-2-val', field: 'stat_2_val', event: 'input' },
+        { id: 'input-stat-2-lbl', field: 'stat_2_lbl', event: 'input' },
+        { id: 'input-stat-3-val', field: 'stat_3_val', event: 'input' },
+        { id: 'input-stat-3-lbl', field: 'stat_3_lbl', event: 'input' },
+        { id: 'input-stat-4-val', field: 'stat_4_val', event: 'input' },
+        { id: 'input-stat-4-lbl', field: 'stat_4_lbl', event: 'input' },
+
+        // ASENA Ecosystem Services & Routes Block
+        { id: 'input-asena-enabled', field: 'block_toggle', extra: 'asena_services', event: 'change', isCheckbox: true },
+        { id: 'input-asena-badge', field: 'asena_badge', event: 'input' },
+        { id: 'input-asena-heading', field: 'asena_heading', event: 'input' },
+        { id: 'input-asena-subtitle', field: 'asena_subtitle', event: 'input' },
+        { id: 'input-telehealth-title', field: 'telehealth_title', event: 'input' },
+        { id: 'input-telehealth-desc', field: 'telehealth_desc', event: 'input' },
+        { id: 'input-telehealth-btn', field: 'telehealth_btn', event: 'input' },
+        { id: 'input-pharmacy-title', field: 'pharmacy_title', event: 'input' },
+        { id: 'input-pharmacy-desc', field: 'pharmacy_desc', event: 'input' },
+        { id: 'input-pharmacy-btn', field: 'pharmacy_btn', event: 'input' },
+        { id: 'input-autoship-title', field: 'autoship_title', event: 'input' },
+        { id: 'input-autoship-desc', field: 'autoship_desc', event: 'input' },
+        { id: 'input-autoship-btn', field: 'autoship_btn', event: 'input' },
+        { id: 'input-rewards-title', field: 'rewards_title', event: 'input' },
+        { id: 'input-rewards-desc', field: 'rewards_desc', event: 'input' },
+        { id: 'input-rewards-btn', field: 'rewards_btn', event: 'input' },
+        { id: 'input-charity-title', field: 'charity_title', event: 'input' },
+        { id: 'input-charity-desc', field: 'charity_desc', event: 'input' },
+        { id: 'input-charity-btn', field: 'charity_btn', event: 'input' },
+        { id: 'input-vcard-title', field: 'vcard_title', event: 'input' },
+        { id: 'input-vcard-desc', field: 'vcard_desc', event: 'input' },
+        { id: 'input-vcard-btn', field: 'vcard_btn', event: 'input' },
+
+        // Footer & Mobile Bar
+        { id: 'input-footer-about', field: 'footer_about', event: 'input' },
+        { id: 'input-footer-copyright', field: 'footer_copyright', event: 'input' },
+        { id: 'input-mobile-cta', field: 'mobile_cta_text', event: 'input' }
     ];
 
     bindings.forEach(b => {
@@ -2622,6 +3173,19 @@ function initLiveStudioBindings() {
         { quick: 'input-quick-calc-discount', main: 'input-calc-discount', field: 'calc_discount' },
         { quick: 'input-quick-emergency-headline', main: 'input-emergency-headline', field: 'emergency_headline' },
         { quick: 'input-quick-emergency-subheadline', main: 'input-emergency-subheadline', field: 'emergency_subheadline' },
+        { quick: 'input-quick-stats-enabled', main: 'input-stats-enabled', isCheckbox: true, field: 'block_toggle', extra: 'stats_strip' },
+        { quick: 'input-quick-stat-1-val', main: 'input-stat-1-val', field: 'stat_1_val' },
+        { quick: 'input-quick-stat-1-lbl', main: 'input-stat-1-lbl', field: 'stat_1_lbl' },
+        { quick: 'input-quick-stat-2-val', main: 'input-stat-2-val', field: 'stat_2_val' },
+        { quick: 'input-quick-stat-2-lbl', main: 'input-stat-2-lbl', field: 'stat_2_lbl' },
+        { quick: 'input-quick-stat-3-val', main: 'input-stat-3-val', field: 'stat_3_val' },
+        { quick: 'input-quick-stat-3-lbl', main: 'input-stat-3-lbl', field: 'stat_3_lbl' },
+        { quick: 'input-quick-stat-4-val', main: 'input-stat-4-val', field: 'stat_4_val' },
+        { quick: 'input-quick-stat-4-lbl', main: 'input-stat-4-lbl', field: 'stat_4_lbl' },
+        { quick: 'input-quick-asena-enabled', main: 'input-asena-enabled', isCheckbox: true, field: 'block_toggle', extra: 'asena_services' },
+        { quick: 'input-quick-asena-badge', main: 'input-asena-badge', field: 'asena_badge' },
+        { quick: 'input-quick-asena-heading', main: 'input-asena-heading', field: 'asena_heading' },
+        { quick: 'input-quick-asena-subtitle', main: 'input-asena-subtitle', field: 'asena_subtitle' },
         { quick: 'input-quick-duty-open-time', main: 'input-duty-open-time', custom: () => {
             const o = document.getElementById('input-quick-duty-open-time')?.value || '08:30';
             const c = document.getElementById('input-quick-duty-close-time')?.value || '22:30';

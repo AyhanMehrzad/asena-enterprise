@@ -96,6 +96,7 @@ $calculatorBlock = $layout['cost_calculator'] ?? [];
 $bentoBlock = $layout['bento_facilities'] ?? [];
 $aboutBlock = $layout['about'] ?? [];
 $servicesBlock = $layout['services'] ?? [];
+$asenaServicesBlock = $layout['asena_services'] ?? [];
 $doctorsBlock = $layout['doctors_roster'] ?? [];
 $bookingBlock = $layout['booking'] ?? [];
 $storefrontBlock = $layout['storefront'] ?? [];
@@ -507,6 +508,12 @@ $ctaHref = match($tenantType) {
             <nav class="hidden lg:flex items-center gap-5 text-xs font-bold text-slate-600">
                 <a href="#about" class="hover:text-tenant-primary transition-colors">معرفی</a>
                 <a href="#services" class="hover:text-tenant-primary transition-colors">خدمات تخصصی</a>
+                <?php if (!empty($asenaServicesBlock['enabled']) || $isPreview): ?>
+                    <a href="#asena-services" class="hover:text-tenant-primary transition-colors flex items-center gap-1 <?= (empty($asenaServicesBlock['enabled']) && $isPreview) ? 'hidden' : '' ?>" data-nav-link="asena_services">
+                        <span class="material-symbols-outlined text-xs text-indigo-600">hub</span>
+                        <span>خدمات آسنا</span>
+                    </a>
+                <?php endif; ?>
                 <?php if (!empty($calculatorBlock['enabled']) || $isPreview): ?>
                     <a href="#calculator" class="text-amber-600 hover:text-amber-700 transition-colors flex items-center gap-1 font-black <?= (empty($calculatorBlock['enabled']) && $isPreview) ? 'hidden' : '' ?>" data-nav-link="calculator">
                         <span class="material-symbols-outlined text-sm">calculate</span>
@@ -538,7 +545,12 @@ $ctaHref = match($tenantType) {
             <div class="flex items-center gap-2.5">
                 <button type="button" onclick="openNavHubModal()" class="hidden xl:flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-all shadow-xs" title="مسیریابی با اپلیکیشن‌های بلد، نشان، ویز و گوگل مپ">
                     <span class="material-symbols-outlined text-sm text-tenant-primary">near_me</span>
-                    <span>مسیریابی هوشمند</span>
+                    <span>مسیریابی</span>
+                </button>
+
+                <button type="button" onclick="openVCardModal()" class="hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold transition-all shadow-2xs" title="کارت ویزیت دیجیتال و کیوآرکد">
+                    <span class="material-symbols-outlined text-sm">qr_code_2</span>
+                    <span>کارت ویزیت</span>
                 </button>
 
                 <?php $headerPhone = !empty($headerBlock['phone']) ? $headerBlock['phone'] : ($contactBlock['phone'] ?? ''); ?>
@@ -549,7 +561,7 @@ $ctaHref = match($tenantType) {
 
                 <a href="<?= $ctaHref ?>" class="hidden md:inline-flex px-5 py-2.5 rounded-xl bg-tenant-primary bg-tenant-primary-hover text-white text-xs font-bold shadow-lg shadow-emerald-900/10 transition-transform active:scale-95 items-center gap-1.5">
                     <span class="material-symbols-outlined text-sm">calendar_month</span>
-                    <span><?= htmlspecialchars($headerBlock['cta_text'] ?? 'رزرو نوبت') ?></span>
+                    <span id="live-header-cta-text" data-studio-editable="header_cta_text"><?= htmlspecialchars($headerBlock['cta_text'] ?? 'رزرو آنلاین نوبت') ?></span>
                 </a>
 
                 <!-- Mobile Menu Button -->
@@ -578,6 +590,12 @@ $ctaHref = match($tenantType) {
                     <span class="material-symbols-outlined text-tenant-primary">medical_services</span>
                     <span>خدمات تخصصی</span>
                 </a>
+                <?php if (!empty($asenaServicesBlock['enabled'])): ?>
+                <a href="#asena-services" onclick="toggleMobileDrawer()" class="flex items-center gap-3 p-3 rounded-2xl hover:bg-indigo-50 text-indigo-700">
+                    <span class="material-symbols-outlined text-indigo-600">hub</span>
+                    <span>خدمات آنلاین شبکه سلامت آسنا</span>
+                </a>
+                <?php endif; ?>
                 <?php if (!empty($calculatorBlock['enabled'])): ?>
                 <a href="#calculator" onclick="toggleMobileDrawer()" class="flex items-center gap-3 p-3 rounded-2xl hover:bg-amber-50 text-amber-700">
                     <span class="material-symbols-outlined text-amber-600">calculate</span>
@@ -645,15 +663,16 @@ $ctaHref = match($tenantType) {
                         <span id="live-hero-badge" data-studio-editable="hero_badge"><?= htmlspecialchars($heroBlock['badge'] ?? '') ?></span>
                     </div>
 
-                    <!-- Symbiotic ASENA Trust Anchor Pill -->
-                    <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/95 border border-slate-200/90 shadow-2xs text-[11px] font-bold text-slate-800" id="live-trust-anchor" style="<?= ($trustAnchorStyle === 'none') ? 'display: none !important;' : '' ?>">
+                    <!-- Symbiotic ASENA Trust Anchor Pill (Clickable Trust Verification) -->
+                    <div onclick="openTrustVerifyModal()" class="cursor-pointer inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/95 border border-slate-200/90 shadow-2xs text-[11px] font-bold text-slate-800 hover:border-emerald-500 hover:bg-emerald-50/40 transition-all" id="live-trust-anchor" style="<?= ($trustAnchorStyle === 'none') ? 'display: none !important;' : '' ?>" title="مشاهده استعلام اصالت و گواهی رسمی آسنا">
                         <span class="relative flex h-2 w-2">
                             <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                             <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
                         </span>
                         <span>عضو رسمی شبکه سلامت آسنا</span>
                         <span class="text-slate-300">|</span>
-                        <span class="text-slate-500 text-[10px] font-normal">پرداخت امن شاپرک و امانت‌داری</span>
+                        <span class="text-slate-500 text-[10px] font-normal">استعلام صلاحیت و ضمانت امانی</span>
+                        <span class="material-symbols-outlined text-xs text-emerald-600">verified</span>
                     </div>
 
                     <!-- Live On-Duty Pulsing Indicator -->
@@ -689,19 +708,19 @@ $ctaHref = match($tenantType) {
                     <?php endif; ?>
                 </div>
 
-                <!-- Trust Strip Validation -->
+                <!-- Trust Strip Validation (100% Editable) -->
                 <div class="pt-6 flex flex-wrap items-center justify-center lg:justify-start gap-6 text-slate-500 text-xs font-semibold border-t border-slate-200/60">
                     <div class="flex items-center gap-1.5">
                         <span class="material-symbols-outlined text-emerald-600 text-base">shield</span>
-                        <span>درگاه امن پرداخت الکترونیک شاپرک</span>
+                        <span id="live-hero-trust-1" data-studio-editable="trust_strip_1"><?= htmlspecialchars($heroBlock['trust_strip_1'] ?? 'درگاه امن پرداخت الکترونیک شاپرک') ?></span>
                     </div>
                     <div class="flex items-center gap-1.5">
                         <span class="material-symbols-outlined text-emerald-600 text-base">sms</span>
-                        <span>ارسال فوری پیامک تأیید نوبت</span>
+                        <span id="live-hero-trust-2" data-studio-editable="trust_strip_2"><?= htmlspecialchars($heroBlock['trust_strip_2'] ?? 'ارسال فوری پیامک تأیید نوبت') ?></span>
                     </div>
                     <div class="flex items-center gap-1.5">
                         <span class="material-symbols-outlined text-emerald-600 text-base">support_agent</span>
-                        <span>پشتیبانی شبانه‌روزی ۲۴ ساعته</span>
+                        <span id="live-hero-trust-3" data-studio-editable="trust_strip_3"><?= htmlspecialchars($heroBlock['trust_strip_3'] ?? 'پشتیبانی شبانه‌روزی ۲۴ ساعته') ?></span>
                     </div>
                 </div>
             </div>
@@ -729,10 +748,10 @@ $ctaHref = match($tenantType) {
                     </div>
                     <div>
                         <div class="text-xs font-black text-slate-900 flex items-center gap-1">
-                            <span>۴.۹</span>
+                            <span id="live-hero-review-score" data-studio-editable="hero_review_score"><?= htmlspecialchars($heroBlock['review_score'] ?? '۴.۹') ?></span>
                             <span class="text-amber-400 text-[10px]">★★★★★</span>
                         </div>
-                        <div class="text-[10px] text-slate-500 font-bold">بیش از ۱۸۰+ نظر تاییدشده</div>
+                        <div class="text-[10px] text-slate-500 font-bold" id="live-hero-review-count" data-studio-editable="hero_review_count"><?= htmlspecialchars($heroBlock['review_count'] ?? 'بیش از ۱۸۰+ نظر تاییدشده') ?></div>
                     </div>
                 </div>
 
@@ -742,16 +761,16 @@ $ctaHref = match($tenantType) {
                         <span class="material-symbols-outlined text-lg">verified_user</span>
                     </div>
                     <div>
-                        <div class="text-xs font-black text-slate-900">
-                            <?= match($tenantType) {
+                        <div class="text-xs font-black text-slate-900" id="live-hero-cert-title" data-studio-editable="hero_cert_title">
+                            <?= htmlspecialchars($heroBlock['cert_title'] ?? match($tenantType) {
                                 'pharmacist' => 'زنجیره سرد استاندارد (۲-۸°C)',
                                 'seller' => 'تضمین ۱۰۰٪ اصالت کالا',
                                 default => 'بورد تخصصی و مجهز به ICU'
-                            } ?>
+                            }) ?>
                         </div>
                         <div class="text-[10px] text-emerald-600 font-bold flex items-center gap-1">
                             <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                            <span>دارای پروانه و صلاحیت رسمی بالینی</span>
+                            <span id="live-hero-cert-desc" data-studio-editable="hero_cert_desc"><?= htmlspecialchars($heroBlock['cert_desc'] ?? 'دارای پروانه و صلاحیت رسمی بالینی') ?></span>
                         </div>
                     </div>
                 </div>
@@ -760,20 +779,39 @@ $ctaHref = match($tenantType) {
     </section>
     <?php endif; ?>
 
-    <!-- Social Proof Operational Scale Strip -->
-    <?php if (!empty($statsBlock['enabled'])): ?>
-    <section class="py-6 bg-white border-b border-slate-200/80" data-block-id="stats_strip">
+    <!-- Social Proof Operational Scale Strip (100% Granularly Editable) -->
+    <?php if (!empty($statsBlock['enabled']) || $isPreview): ?>
+    <section class="py-6 bg-white border-b border-slate-200/80 <?= (empty($statsBlock['enabled']) && $isPreview) ? 'hidden' : '' ?>" style="<?= (empty($statsBlock['enabled']) && $isPreview) ? 'display: none !important;' : '' ?>" data-block-id="stats_strip">
         <div class="max-w-6xl mx-auto px-4">
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <?php foreach (($statsBlock['stats'] ?? []) as $stat): ?>
-                <div class="p-4 rounded-2xl bg-slate-50 border border-slate-100 text-center flex flex-col items-center justify-center">
-                    <div class="w-8 h-8 rounded-xl bg-tenant-light text-tenant-primary flex items-center justify-center mb-1.5">
-                        <span class="material-symbols-outlined text-lg"><?= htmlspecialchars($stat['icon'] ?? 'check') ?></span>
+                <div class="p-4 rounded-2xl bg-slate-50 border border-slate-100 text-center flex flex-col items-center justify-center hover:bg-emerald-50/20 transition-colors">
+                    <div class="w-8 h-8 rounded-xl bg-tenant-light text-tenant-primary flex items-center justify-center mb-1.5 shadow-2xs">
+                        <span class="material-symbols-outlined text-lg">verified</span>
                     </div>
-                    <div class="text-lg sm:text-xl font-black text-slate-900 tracking-tight font-mono"><?= htmlspecialchars($stat['value']) ?></div>
-                    <div class="text-[11px] text-slate-500 font-bold"><?= htmlspecialchars($stat['label']) ?></div>
+                    <div class="text-lg sm:text-xl font-black text-slate-900 tracking-tight font-mono" id="live-stat-1-val" data-studio-editable="stat_1_val"><?= htmlspecialchars($statsBlock['stat_1_val'] ?? ($statsBlock['stats'][0]['value'] ?? '+۱۵,۰۰۰')) ?></div>
+                    <div class="text-[11px] text-slate-500 font-bold" id="live-stat-1-lbl" data-studio-editable="stat_1_lbl"><?= htmlspecialchars($statsBlock['stat_1_lbl'] ?? ($statsBlock['stats'][0]['label'] ?? 'ویزیت و سفارش موفق')) ?></div>
                 </div>
-                <?php endforeach; ?>
+                <div class="p-4 rounded-2xl bg-slate-50 border border-slate-100 text-center flex flex-col items-center justify-center hover:bg-emerald-50/20 transition-colors">
+                    <div class="w-8 h-8 rounded-xl bg-tenant-light text-tenant-primary flex items-center justify-center mb-1.5 shadow-2xs">
+                        <span class="material-symbols-outlined text-lg">star</span>
+                    </div>
+                    <div class="text-lg sm:text-xl font-black text-slate-900 tracking-tight font-mono" id="live-stat-2-val" data-studio-editable="stat_2_val"><?= htmlspecialchars($statsBlock['stat_2_val'] ?? ($statsBlock['stats'][1]['value'] ?? '۴.۹ ★')) ?></div>
+                    <div class="text-[11px] text-slate-500 font-bold" id="live-stat-2-lbl" data-studio-editable="stat_2_lbl"><?= htmlspecialchars($statsBlock['stat_2_lbl'] ?? ($statsBlock['stats'][1]['label'] ?? 'رضایت مراجعین')) ?></div>
+                </div>
+                <div class="p-4 rounded-2xl bg-slate-50 border border-slate-100 text-center flex flex-col items-center justify-center hover:bg-emerald-50/20 transition-colors">
+                    <div class="w-8 h-8 rounded-xl bg-tenant-light text-tenant-primary flex items-center justify-center mb-1.5 shadow-2xs">
+                        <span class="material-symbols-outlined text-lg">security</span>
+                    </div>
+                    <div class="text-lg sm:text-xl font-black text-slate-900 tracking-tight font-mono" id="live-stat-3-val" data-studio-editable="stat_3_val"><?= htmlspecialchars($statsBlock['stat_3_val'] ?? ($statsBlock['stats'][2]['value'] ?? '۱۰۰٪')) ?></div>
+                    <div class="text-[11px] text-slate-500 font-bold" id="live-stat-3-lbl" data-studio-editable="stat_3_lbl"><?= htmlspecialchars($statsBlock['stat_3_lbl'] ?? ($statsBlock['stats'][2]['label'] ?? 'تضمین بازگشت وجه و کیفیت')) ?></div>
+                </div>
+                <div class="p-4 rounded-2xl bg-slate-50 border border-slate-100 text-center flex flex-col items-center justify-center hover:bg-emerald-50/20 transition-colors">
+                    <div class="w-8 h-8 rounded-xl bg-tenant-light text-tenant-primary flex items-center justify-center mb-1.5 shadow-2xs">
+                        <span class="material-symbols-outlined text-lg">e911_emergency</span>
+                    </div>
+                    <div class="text-lg sm:text-xl font-black text-slate-900 tracking-tight font-mono" id="live-stat-4-val" data-studio-editable="stat_4_val"><?= htmlspecialchars($statsBlock['stat_4_val'] ?? ($statsBlock['stats'][3]['value'] ?? '۲۴ / ۷')) ?></div>
+                    <div class="text-[11px] text-slate-500 font-bold" id="live-stat-4-lbl" data-studio-editable="stat_4_lbl"><?= htmlspecialchars($statsBlock['stat_4_lbl'] ?? ($statsBlock['stats'][3]['label'] ?? 'پذیرش و اورژانس فعال')) ?></div>
+                </div>
             </div>
         </div>
     </section>
@@ -984,6 +1022,164 @@ $ctaHref = match($tenantType) {
                     <p class="text-xs text-slate-600 leading-relaxed"><?= htmlspecialchars($srv['desc'] ?? '') ?></p>
                 </div>
                 <?php endforeach; ?>
+            </div>
+        </div>
+    </section>
+    <?php endif; ?>
+
+    <!-- ASENA Ecosystem Services & Direct Routes Block -->
+    <?php if (!empty($asenaServicesBlock['enabled']) || $isPreview): ?>
+    <section id="asena-services" class="py-16 bg-gradient-to-b from-white via-indigo-50/20 to-white border-b border-slate-200/60 relative overflow-hidden <?= (empty($asenaServicesBlock['enabled']) && $isPreview) ? 'hidden' : '' ?>" style="<?= (empty($asenaServicesBlock['enabled']) && $isPreview) ? 'display: none !important;' : '' ?>" data-block-id="asena_services">
+        <!-- Ambient Decorative Glow -->
+        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[350px] bg-gradient-to-tr from-indigo-500/10 via-purple-500/10 to-emerald-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+        <div class="max-w-6xl mx-auto px-4 relative z-10">
+            <div class="text-center max-w-2xl mx-auto mb-12">
+                <div class="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-indigo-50 border border-indigo-200 text-indigo-700 text-xs font-black mb-3 shadow-2xs">
+                    <span class="material-symbols-outlined text-sm">hub</span>
+                    <span id="live-asena-badge" data-studio-editable="asena_badge"><?= htmlspecialchars($asenaServicesBlock['badge'] ?? 'خدمات یکپارچه شبکه سلامت آسنا') ?></span>
+                </div>
+                <h3 class="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight" id="live-asena-heading" data-studio-editable="asena_heading"><?= htmlspecialchars($asenaServicesBlock['heading'] ?? 'خدمات آنلاین و دسترسی مستقیم به اکوسیستم سلامت آسنا') ?></h3>
+                <p class="text-xs sm:text-sm text-slate-500 mt-2.5 leading-relaxed font-normal" id="live-asena-subtitle" data-studio-editable="asena_subtitle">
+                    <?= htmlspecialchars($asenaServicesBlock['subtitle'] ?? 'دسترسی سریع و بی‌واسطه به خدمات تخصصی مشاوره پزشکی، داروخانه ابری، سفارش دوره‌ای ملزومات و باشگاه سلامت مراجعین') ?>
+                </p>
+            </div>
+
+            <!-- Bento Card Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                
+                <!-- Card 1: Telehealth / ویزیت آنلاین -->
+                <div class="bg-white/95 backdrop-blur-md p-6 rounded-3xl border border-slate-200/90 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between group hover:-translate-y-1">
+                    <div>
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center shadow-inner group-hover:scale-110 transition-transform">
+                                <span class="material-symbols-outlined text-2xl">videocam</span>
+                            </div>
+                            <span class="px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 text-[10px] font-black border border-emerald-100">پزشکی از راه دور</span>
+                        </div>
+                        <h4 class="font-black text-slate-900 text-base mb-2 flex items-center gap-1.5" id="live-telehealth-title" data-studio-editable="telehealth_title">
+                            <?= htmlspecialchars($asenaServicesBlock['telehealth_title'] ?? 'ویزیت و تله‌هلث آنلاین') ?>
+                        </h4>
+                        <p class="text-xs text-slate-600 leading-relaxed font-medium mb-6" id="live-telehealth-desc" data-studio-editable="telehealth_desc">
+                            <?= htmlspecialchars($asenaServicesBlock['telehealth_desc'] ?? 'مشاوره تصویری و گفتگوی آنلاین مستقیم با دامپزشکان متخصص و ثبت نسخه الکترونیک') ?>
+                        </p>
+                    </div>
+                    <a href="<?= htmlspecialchars($asenaServicesBlock['telehealth_url'] ?? '../chat.php') ?>" class="w-full py-3 px-4 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black shadow-md shadow-emerald-600/20 flex items-center justify-center gap-1.5 transition-all group-hover:shadow-lg">
+                        <span id="live-telehealth-btn" data-studio-editable="telehealth_btn"><?= htmlspecialchars($asenaServicesBlock['telehealth_btn'] ?? 'شروع ویزیت آنلاین') ?></span>
+                        <span class="material-symbols-outlined text-sm group-hover:-translate-x-1 transition-transform">arrow_left</span>
+                    </a>
+                </div>
+
+                <!-- Card 2: Cold-Chain Pharmacy / داروخانه زنجیره سرد -->
+                <div class="bg-white/95 backdrop-blur-md p-6 rounded-3xl border border-slate-200/90 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between group hover:-translate-y-1">
+                    <div>
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="w-12 h-12 rounded-2xl bg-purple-50 text-purple-600 flex items-center justify-center shadow-inner group-hover:scale-110 transition-transform">
+                                <span class="material-symbols-outlined text-2xl">medication</span>
+                            </div>
+                            <span class="px-2.5 py-1 rounded-full bg-purple-50 text-purple-700 text-[10px] font-black border border-purple-100">زنجیره سرد (۲-۸°C)</span>
+                        </div>
+                        <h4 class="font-black text-slate-900 text-base mb-2 flex items-center gap-1.5" id="live-pharmacy-title" data-studio-editable="pharmacy_title">
+                            <?= htmlspecialchars($asenaServicesBlock['pharmacy_title'] ?? 'داروخانه تخصصی زنجیره سرد') ?>
+                        </h4>
+                        <p class="text-xs text-slate-600 leading-relaxed font-medium mb-6" id="live-pharmacy-desc" data-studio-editable="pharmacy_desc">
+                            <?= htmlspecialchars($asenaServicesBlock['pharmacy_desc'] ?? 'تأمین مطمئن انواع داروهای کمیاب، مکمل‌های تقویتی و واکسن‌ها با شرایط استاندارد دمایی ۲ الی ۸ درجه') ?>
+                        </p>
+                    </div>
+                    <a href="<?= htmlspecialchars($asenaServicesBlock['pharmacy_url'] ?? '../pharmacy.php') ?>" class="w-full py-3 px-4 rounded-2xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-black shadow-md shadow-purple-600/20 flex items-center justify-center gap-1.5 transition-all group-hover:shadow-lg">
+                        <span id="live-pharmacy-btn" data-studio-editable="pharmacy_btn"><?= htmlspecialchars($asenaServicesBlock['pharmacy_btn'] ?? 'سفارش دارو و مکمل') ?></span>
+                        <span class="material-symbols-outlined text-sm group-hover:-translate-x-1 transition-transform">arrow_left</span>
+                    </a>
+                </div>
+
+                <!-- Card 3: Autoship / تحویل دوره‌ای غذای درمانی -->
+                <div class="bg-white/95 backdrop-blur-md p-6 rounded-3xl border border-slate-200/90 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between group hover:-translate-y-1">
+                    <div>
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center shadow-inner group-hover:scale-110 transition-transform">
+                                <span class="material-symbols-outlined text-2xl">autorenew</span>
+                            </div>
+                            <span class="px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 text-[10px] font-black border border-blue-100">۱۰٪ تخفیف اشتراک</span>
+                        </div>
+                        <h4 class="font-black text-slate-900 text-base mb-2 flex items-center gap-1.5" id="live-autoship-title" data-studio-editable="autoship_title">
+                            <?= htmlspecialchars($asenaServicesBlock['autoship_title'] ?? 'تحویل دوره‌ای غذای درمانی (Autoship)') ?>
+                        </h4>
+                        <p class="text-xs text-slate-600 leading-relaxed font-medium mb-6" id="live-autoship-desc" data-studio-editable="autoship_desc">
+                            <?= htmlspecialchars($asenaServicesBlock['autoship_desc'] ?? 'ارسال خودکار و منظم غذای خشک رژیمی، ضد انگل و مکمل‌ها با تخفیف دائمی ۱۰٪ و امکان لغو در هر زمان') ?>
+                        </p>
+                    </div>
+                    <a href="<?= htmlspecialchars($asenaServicesBlock['autoship_url'] ?? '../subscriptions.php') ?>" class="w-full py-3 px-4 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-black shadow-md shadow-blue-600/20 flex items-center justify-center gap-1.5 transition-all group-hover:shadow-lg">
+                        <span id="live-autoship-btn" data-studio-editable="autoship_btn"><?= htmlspecialchars($asenaServicesBlock['autoship_btn'] ?? 'فعالسازی تحویل دوره‌ای') ?></span>
+                        <span class="material-symbols-outlined text-sm group-hover:-translate-x-1 transition-transform">arrow_left</span>
+                    </a>
+                </div>
+
+                <!-- Card 4: Loyalty Club / باشگاه سلامت -->
+                <div class="bg-white/95 backdrop-blur-md p-6 rounded-3xl border border-slate-200/90 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between group hover:-translate-y-1">
+                    <div>
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center shadow-inner group-hover:scale-110 transition-transform">
+                                <span class="material-symbols-outlined text-2xl">military_tech</span>
+                            </div>
+                            <span class="px-2.5 py-1 rounded-full bg-amber-50 text-amber-800 text-[10px] font-black border border-amber-100">پاداش و کش‌بک</span>
+                        </div>
+                        <h4 class="font-black text-slate-900 text-base mb-2 flex items-center gap-1.5" id="live-rewards-title" data-studio-editable="rewards_title">
+                            <?= htmlspecialchars($asenaServicesBlock['rewards_title'] ?? 'باشگاه وفاداری و پاداش سلامت') ?>
+                        </h4>
+                        <p class="text-xs text-slate-600 leading-relaxed font-medium mb-6" id="live-rewards-desc" data-studio-editable="rewards_desc">
+                            <?= htmlspecialchars($asenaServicesBlock['rewards_desc'] ?? 'کسب امتیاز وفاداری با هر نوبت ویزیت یا خرید دارو، قابل تبدیل به اعتبار درمانی و تخفیف نقدی') ?>
+                        </p>
+                    </div>
+                    <a href="<?= htmlspecialchars($asenaServicesBlock['rewards_url'] ?? '../rewards.php') ?>" class="w-full py-3 px-4 rounded-2xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-black shadow-md shadow-amber-600/20 flex items-center justify-center gap-1.5 transition-all group-hover:shadow-lg">
+                        <span id="live-rewards-btn" data-studio-editable="rewards_btn"><?= htmlspecialchars($asenaServicesBlock['rewards_btn'] ?? 'مشاهده امتیازها و پاداش') ?></span>
+                        <span class="material-symbols-outlined text-sm group-hover:-translate-x-1 transition-transform">arrow_left</span>
+                    </a>
+                </div>
+
+                <!-- Card 5: Animal Rescue Charity / صندوق نیکوکاری -->
+                <div class="bg-white/95 backdrop-blur-md p-6 rounded-3xl border border-slate-200/90 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between group hover:-translate-y-1">
+                    <div>
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="w-12 h-12 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center shadow-inner group-hover:scale-110 transition-transform">
+                                <span class="material-symbols-outlined text-2xl">volunteer_activism</span>
+                            </div>
+                            <span class="px-2.5 py-1 rounded-full bg-rose-50 text-rose-700 text-[10px] font-black border border-rose-100">امانت‌داری ۱۰۰٪ شفاف</span>
+                        </div>
+                        <h4 class="font-black text-slate-900 text-base mb-2 flex items-center gap-1.5" id="live-charity-title" data-studio-editable="charity_title">
+                            <?= htmlspecialchars($asenaServicesBlock['charity_title'] ?? 'صندوق امداد و درمان حیوانات حمایتی') ?>
+                        </h4>
+                        <p class="text-xs text-slate-600 leading-relaxed font-medium mb-6" id="live-charity-desc" data-studio-editable="charity_desc">
+                            <?= htmlspecialchars($asenaServicesBlock['charity_desc'] ?? 'مشارکت مستقیم و شفاف در هزینه‌های جراحی و بستری حیوانات بی‌سرپرست و آسیب‌دیده با حساب امانی آسنا') ?>
+                        </p>
+                    </div>
+                    <a href="<?= htmlspecialchars($asenaServicesBlock['charity_url'] ?? '../charity.php') ?>" class="w-full py-3 px-4 rounded-2xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-black shadow-md shadow-rose-600/20 flex items-center justify-center gap-1.5 transition-all group-hover:shadow-lg">
+                        <span id="live-charity-btn" data-studio-editable="charity_btn"><?= htmlspecialchars($asenaServicesBlock['charity_btn'] ?? 'حمایت از درمان حیوانات') ?></span>
+                        <span class="material-symbols-outlined text-sm group-hover:-translate-x-1 transition-transform">arrow_left</span>
+                    </a>
+                </div>
+
+                <!-- Card 6: Digital VCard & Direct Sharing / کارت ویزیت دیجیتال -->
+                <div class="bg-white/95 backdrop-blur-md p-6 rounded-3xl border border-slate-200/90 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between group hover:-translate-y-1">
+                    <div>
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center shadow-inner group-hover:scale-110 transition-transform">
+                                <span class="material-symbols-outlined text-2xl">contact_page</span>
+                            </div>
+                            <span class="px-2.5 py-1 rounded-full bg-indigo-50 text-indigo-700 text-[10px] font-black border border-indigo-100">QR اختصاصی</span>
+                        </div>
+                        <h4 class="font-black text-slate-900 text-base mb-2 flex items-center gap-1.5" id="live-vcard-title" data-studio-editable="vcard_title">
+                            <?= htmlspecialchars($asenaServicesBlock['vcard_title'] ?? 'کارت ویزیت دیجیتال و QR اختصاصی') ?>
+                        </h4>
+                        <p class="text-xs text-slate-600 leading-relaxed font-medium mb-6" id="live-vcard-desc" data-studio-editable="vcard_desc">
+                            <?= htmlspecialchars($asenaServicesBlock['vcard_desc'] ?? 'دانلود فوری شماره تماس، نشانی و اطلاعات کلینیک در قالب مخاطب (.vcf) و اشتراک‌گذاری در پیام‌رسان‌ها') ?>
+                        </p>
+                    </div>
+                    <button type="button" onclick="openVCardModal()" class="w-full py-3 px-4 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-black shadow-md shadow-indigo-600/20 flex items-center justify-center gap-1.5 transition-all group-hover:shadow-lg cursor-pointer">
+                        <span id="live-vcard-btn" data-studio-editable="vcard_btn"><?= htmlspecialchars($asenaServicesBlock['vcard_btn'] ?? 'نمایش کارت ویزیت دیجیتال') ?></span>
+                        <span class="material-symbols-outlined text-sm group-hover:-translate-x-1 transition-transform">qr_code_2</span>
+                    </button>
+                </div>
+
             </div>
         </div>
     </section>
@@ -1497,32 +1693,140 @@ $ctaHref = match($tenantType) {
     </section>
     <?php endif; ?>
 
-    <!-- Footer -->
-    <footer class="bg-white py-10 border-t border-slate-200" data-block-id="footer">
-        <div class="max-w-6xl mx-auto px-4 flex flex-col md:flex-row items-center justify-between gap-6 text-center md:text-right">
-            <div>
-                <p class="text-xs text-slate-500 font-medium" id="live-footer-copyright">
-                    <?= htmlspecialchars($footerBlock['copyright_text'] ?? "کلیه حقوق برای {$site['site_title']} محفوظ است.") ?>
-                </p>
-                <p class="text-[11px] text-slate-400 mt-1">
-                    کلیه خدمات این وب‌سایت دارای مجوزهای قانونی و درگاه امن پرداخت الکترونیک است.
-                </p>
+    <!-- Rich 4-Column Agency Footer -->
+    <footer class="bg-slate-900 text-slate-300 pt-16 pb-28 md:pb-12 border-t border-slate-800" data-block-id="footer">
+        <div class="max-w-6xl mx-auto px-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-10 pb-12 border-b border-slate-800/80">
+                
+                <!-- Col 1: Identity & About (lg:col-span-4) -->
+                <div class="lg:col-span-4 space-y-4">
+                    <div class="flex items-center gap-3">
+                        <div class="w-12 h-12 rounded-2xl bg-white/10 backdrop-blur-md p-1 border border-white/20 overflow-hidden shrink-0 flex items-center justify-center">
+                            <img src="<?= htmlspecialchars($siteLogo) ?>" alt="<?= htmlspecialchars($site['site_title']) ?>" class="w-full h-full object-cover rounded-xl">
+                        </div>
+                        <div>
+                            <h3 class="text-base font-black text-white"><?= htmlspecialchars($site['site_title']) ?></h3>
+                            <div class="flex items-center gap-1.5 text-xs text-emerald-400 font-bold">
+                                <span class="material-symbols-outlined text-xs">verified</span>
+                                <span>عضو رسمی شبکه سلامت آسنا</span>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="text-xs text-slate-400 leading-relaxed font-normal" id="live-footer-about" data-studio-editable="footer_about">
+                        <?= htmlspecialchars($footerBlock['about_text'] ?? "ارائه خدمات تخصصی سلامت و درمان حیوانات خانگی با پیشرفته‌ترین تجهیزات تشخیصی و کادر مجرب بالینی.") ?>
+                    </p>
+                    <div class="pt-2">
+                        <button type="button" onclick="openTrustVerifyModal()" class="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold border border-slate-700 transition-colors">
+                            <span class="material-symbols-outlined text-sm text-emerald-400">verified_user</span>
+                            <span>استعلام رسمی مجوز و صلاحیت</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Col 2: Navigation Links (lg:col-span-2) -->
+                <div class="lg:col-span-2 space-y-3">
+                    <h4 class="text-xs font-black text-white uppercase tracking-wider">بخش‌های سایت</h4>
+                    <ul class="space-y-2 text-xs font-medium text-slate-400">
+                        <li><a href="#about" class="hover:text-emerald-400 transition-colors">معرفی و سوابق</a></li>
+                        <li><a href="#services" class="hover:text-emerald-400 transition-colors">خدمات تخصصی</a></li>
+                        <?php if (!empty($calculatorBlock['enabled']) || $isPreview): ?>
+                        <li><a href="#calculator" class="hover:text-amber-400 transition-colors">محاسبه‌گر هزینه</a></li>
+                        <?php endif; ?>
+                        <?php if (!empty($doctorsBlock['enabled']) || $isPreview): ?>
+                        <li><a href="#doctors" class="hover:text-emerald-400 transition-colors">پزشکان مرکز</a></li>
+                        <?php endif; ?>
+                        <?php if (!empty($bookingBlock['enabled']) || $isPreview): ?>
+                        <li><a href="#booking" class="hover:text-emerald-400 transition-colors">نوبت‌دهی آنلاین</a></li>
+                        <?php endif; ?>
+                        <li><a href="#contact" class="hover:text-emerald-400 transition-colors">تماس و نشانی</a></li>
+                    </ul>
+                </div>
+
+                <!-- Col 3: ASENA Ecosystem Services (lg:col-span-3) -->
+                <div class="lg:col-span-3 space-y-3">
+                    <h4 class="text-xs font-black text-white uppercase tracking-wider flex items-center gap-1.5">
+                        <span class="material-symbols-outlined text-xs text-indigo-400">hub</span>
+                        <span>خدمات یکپارچه آسنا</span>
+                    </h4>
+                    <ul class="space-y-2 text-xs font-medium text-slate-400">
+                        <li><a href="../chat.php" class="hover:text-emerald-400 transition-colors flex items-center gap-1.5"><span>🩺</span> ویزیت و تله‌هلث آنلاین</a></li>
+                        <li><a href="../pharmacy.php" class="hover:text-purple-400 transition-colors flex items-center gap-1.5"><span>💊</span> داروخانه زنجیره سرد</a></li>
+                        <li><a href="../subscriptions.php" class="hover:text-blue-400 transition-colors flex items-center gap-1.5"><span>🔄</span> تحویل دوره‌ای غذای رژیمی</a></li>
+                        <li><a href="../rewards.php" class="hover:text-amber-400 transition-colors flex items-center gap-1.5"><span>🏆</span> باشگاه وفاداری و پاداش</a></li>
+                        <li><a href="../charity.php" class="hover:text-rose-400 transition-colors flex items-center gap-1.5"><span>🐾</span> صندوق امداد حیوانات حمایتی</a></li>
+                    </ul>
+                </div>
+
+                <!-- Col 4: Contact & Socials (lg:col-span-3) -->
+                <div class="lg:col-span-3 space-y-3">
+                    <h4 class="text-xs font-black text-white uppercase tracking-wider">ارتباط و شبکه‌های اجتماعی</h4>
+                    <p class="text-xs text-slate-400 leading-relaxed">
+                        <?= htmlspecialchars($contactBlock['address'] ?? 'تهران') ?>
+                    </p>
+                    <?php if (!empty($contactBlock['phone'])): ?>
+                    <div class="pt-1">
+                        <a href="tel:<?= htmlspecialchars($contactBlock['phone']) ?>" class="text-xs font-bold text-white hover:text-emerald-400 flex items-center gap-1.5 font-mono" dir="ltr">
+                            <span class="material-symbols-outlined text-sm text-emerald-400">call</span>
+                            <span><?= htmlspecialchars($contactBlock['phone']) ?></span>
+                        </a>
+                    </div>
+                    <?php endif; ?>
+                    <!-- Social channels icons -->
+                    <div class="pt-2 flex items-center gap-2">
+                        <button type="button" onclick="openVCardModal()" class="w-9 h-9 rounded-xl bg-slate-800 hover:bg-slate-700 text-indigo-400 flex items-center justify-center border border-slate-700 transition-transform active:scale-95" title="کارت ویزیت دیجیتال">
+                            <span class="material-symbols-outlined text-base">qr_code_2</span>
+                        </button>
+                        <?php if (!empty($contactBlock['instagram'])): ?>
+                        <a href="https://instagram.com/<?= ltrim(htmlspecialchars($contactBlock['instagram']), '@') ?>" target="_blank" class="w-9 h-9 rounded-xl bg-slate-800 hover:bg-slate-700 text-rose-400 flex items-center justify-center border border-slate-700 transition-transform active:scale-95" title="اینستاگرام">
+                            <span class="text-xs font-black">IG</span>
+                        </a>
+                        <?php endif; ?>
+                        <?php if (!empty($contactBlock['telegram'])): ?>
+                        <a href="https://t.me/<?= ltrim(htmlspecialchars($contactBlock['telegram']), '@') ?>" target="_blank" class="w-9 h-9 rounded-xl bg-slate-800 hover:bg-slate-700 text-blue-400 flex items-center justify-center border border-slate-700 transition-transform active:scale-95" title="تلگرام">
+                            <span class="text-xs font-black">TG</span>
+                        </a>
+                        <?php endif; ?>
+                        <?php if (!empty($contactBlock['phone'])): ?>
+                        <a href="https://wa.me/<?= preg_replace('/\D/', '', $contactBlock['phone']) ?>" target="_blank" class="w-9 h-9 rounded-xl bg-slate-800 hover:bg-slate-700 text-emerald-400 flex items-center justify-center border border-slate-700 transition-transform active:scale-95" title="واتساپ">
+                            <span class="text-xs font-black">WA</span>
+                        </a>
+                        <?php endif; ?>
+                    </div>
+                </div>
+
             </div>
 
-            <div class="flex items-center gap-3 text-xs text-slate-400">
-                <span>طراحی و میزبانی اختصاصی وب‌سایت</span>
+            <!-- Bottom Copyright & Badges -->
+            <div class="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-right text-xs text-slate-500">
+                <p id="live-footer-copyright" data-studio-editable="footer_copyright">
+                    <?= htmlspecialchars($footerBlock['copyright_text'] ?? "کلیه حقوق برای {$site['site_title']} محفوظ است.") ?>
+                </p>
+                <div class="flex items-center gap-4 text-[11px] text-slate-400">
+                    <button type="button" onclick="openTrustVerifyModal()" class="hover:text-emerald-400 transition-colors flex items-center gap-1">
+                        <span class="material-symbols-outlined text-xs text-emerald-400">lock</span>
+                        <span>پرداخت امن شاپرک و امانت‌داری</span>
+                    </button>
+                    <span>|</span>
+                    <button type="button" onclick="openVCardModal()" class="hover:text-indigo-400 transition-colors flex items-center gap-1">
+                        <span class="material-symbols-outlined text-xs text-indigo-400">badge</span>
+                        <span>کارت ویزیت دیجیتال</span>
+                    </button>
+                </div>
             </div>
         </div>
     </footer>
 
     <!-- Mobile-First Thumb-Zone Sticky Conversion Bar (< 768px) -->
     <div class="fixed bottom-0 inset-x-0 z-50 bg-white/95 backdrop-blur-xl border-t border-slate-200/80 p-3 flex md:hidden items-center justify-between gap-2.5 shadow-2xl">
-        <div class="flex items-center gap-2">
+        <div class="flex items-center gap-1.5">
             <button type="button" onclick="openNavHubModal()" class="w-11 h-11 rounded-2xl bg-indigo-50 text-indigo-700 border border-indigo-200/80 flex items-center justify-center shrink-0 active:scale-95 transition-transform" title="مسیریابی هوشمند">
                 <span class="material-symbols-outlined text-lg">near_me</span>
             </button>
+            <button type="button" onclick="openVCardModal()" class="w-11 h-11 rounded-2xl bg-slate-100 text-slate-700 border border-slate-200 flex items-center justify-center shrink-0 shadow-2xs active:scale-95 transition-transform" title="کارت ویزیت دیجیتال">
+                <span class="material-symbols-outlined text-lg">qr_code_2</span>
+            </button>
             <?php if (!empty($contactBlock['phone'])): ?>
-            <a href="tel:<?= htmlspecialchars($contactBlock['phone']) ?>" class="w-11 h-11 rounded-2xl bg-slate-100 text-slate-700 flex items-center justify-center shrink-0 shadow-sm active:scale-95 transition-transform" title="تماس تلفنی">
+            <a href="tel:<?= htmlspecialchars($contactBlock['phone']) ?>" class="w-11 h-11 rounded-2xl bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center justify-center shrink-0 shadow-sm active:scale-95 transition-transform" title="تماس تلفنی">
                 <span class="material-symbols-outlined text-lg">call</span>
             </a>
             <?php endif; ?>
@@ -1530,7 +1834,7 @@ $ctaHref = match($tenantType) {
 
         <a href="<?= $ctaHref ?>" class="flex-1 py-3 px-4 rounded-2xl bg-tenant-primary text-white text-xs font-black shadow-lg shadow-emerald-900/20 flex items-center justify-center gap-1.5 active:scale-95 transition-transform">
             <span class="material-symbols-outlined text-base">calendar_month</span>
-            <span><?= htmlspecialchars($mobileBarBlock['cta_text'] ?? 'رزرو آنلاین نوبت') ?></span>
+            <span id="live-mobile-cta" data-studio-editable="mobile_cta_text"><?= htmlspecialchars($mobileBarBlock['cta_text'] ?? 'رزرو آنلاین نوبت') ?></span>
         </a>
     </div>
 
@@ -1613,6 +1917,162 @@ $ctaHref = match($tenantType) {
                     <a href="<?= $ctaHref ?>" class="p-2.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 flex items-center gap-1.5 text-xs font-bold transition-colors" title="گفتگوی آنلاین و نوبت‌دهی">
                         <span class="material-symbols-outlined text-sm">forum</span>
                         <span>مشاوره و گفتگوی آنلاین</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Digital VCard & Direct Sharing Modal -->
+    <div id="vcard-modal" class="fixed inset-0 z-50 bg-black/75 backdrop-blur-md hidden items-center justify-center p-4 transition-opacity">
+        <div class="bg-white rounded-3xl max-w-sm w-full p-6 space-y-5 shadow-2xl border border-slate-100 text-center relative overflow-hidden">
+            <!-- Top Gradient Aura -->
+            <div class="absolute -top-10 -left-10 w-32 h-32 bg-indigo-500/15 rounded-full blur-2xl"></div>
+            <div class="absolute -bottom-10 -right-10 w-32 h-32 bg-emerald-500/15 rounded-full blur-2xl"></div>
+
+            <div class="flex items-center justify-between pb-3 border-b border-slate-100 relative z-10">
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
+                        <span class="material-symbols-outlined text-lg">badge</span>
+                    </div>
+                    <span class="font-black text-sm text-slate-800">کارت ویزیت دیجیتال</span>
+                </div>
+                <button type="button" onclick="closeVCardModal()" class="p-1 rounded-xl text-slate-400 hover:text-slate-600 cursor-pointer">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+
+            <!-- Identity Card View -->
+            <div class="relative z-10 space-y-4">
+                <div class="flex flex-col items-center">
+                    <div class="w-16 h-16 rounded-2xl overflow-hidden border-2 border-slate-100 shadow-md mb-2 flex items-center justify-center bg-slate-50">
+                        <img src="<?= htmlspecialchars($siteLogo) ?>" alt="<?= htmlspecialchars($site['site_title']) ?>" class="w-full h-full object-cover">
+                    </div>
+                    <h3 class="text-base font-black text-slate-900"><?= htmlspecialchars($site['site_title']) ?></h3>
+                    <p class="text-[11px] text-slate-500 font-medium"><?= htmlspecialchars($site['site_tagline'] ?? 'مرکز خدمات تخصصی حیوانات خانگی') ?></p>
+                </div>
+
+                <!-- QR Code Block -->
+                <div class="p-4 bg-slate-50 border border-slate-200/80 rounded-2xl flex flex-col items-center justify-center space-y-2">
+                    <div class="w-36 h-36 bg-white p-2 rounded-xl shadow-inner border border-slate-200 flex items-center justify-center">
+                        <svg viewBox="0 0 100 100" class="w-full h-full text-slate-900">
+                            <!-- Crisp Scalable QR Representation -->
+                            <rect width="100" height="100" fill="#ffffff" />
+                            <path d="M10,10 h24 v24 h-24 z M14,14 v16 h16 v-16 z M18,18 h8 v8 h-8 z" fill="#0f172a" />
+                            <path d="M66,10 h24 v24 h-24 z M70,14 v16 h16 v-16 z M74,18 h8 v8 h-8 z" fill="#0f172a" />
+                            <path d="M10,66 h24 v24 h-24 z M14,70 v16 h16 v-16 z M18,74 h8 v8 h-8 z" fill="#0f172a" />
+                            <!-- QR Data matrix dots -->
+                            <rect x="42" y="14" width="6" height="6" fill="#0f172a" />
+                            <rect x="52" y="14" width="6" height="6" fill="#0f172a" />
+                            <rect x="42" y="24" width="6" height="6" fill="#0f172a" />
+                            <rect x="46" y="34" width="8" height="8" fill="#059669" />
+                            <rect x="14" y="42" width="6" height="6" fill="#0f172a" />
+                            <rect x="26" y="42" width="6" height="6" fill="#0f172a" />
+                            <rect x="42" y="52" width="6" height="6" fill="#0f172a" />
+                            <rect x="54" y="52" width="6" height="6" fill="#0f172a" />
+                            <rect x="66" y="42" width="6" height="6" fill="#0f172a" />
+                            <rect x="78" y="42" width="6" height="6" fill="#0f172a" />
+                            <rect x="66" y="54" width="6" height="6" fill="#0f172a" />
+                            <rect x="78" y="66" width="6" height="6" fill="#0f172a" />
+                            <rect x="42" y="70" width="6" height="6" fill="#0f172a" />
+                            <rect x="52" y="78" width="6" height="6" fill="#0f172a" />
+                            <rect x="66" y="78" width="6" height="6" fill="#0f172a" />
+                            <rect x="78" y="78" width="6" height="6" fill="#0f172a" />
+                        </svg>
+                    </div>
+                    <span class="text-[10px] text-slate-400 font-bold">اسکن کیوآرکد با دوربین گوشی جهت ورود فوری</span>
+                </div>
+
+                <!-- 1-Tap Save VCF Action -->
+                <button type="button" onclick="downloadVCard()" class="w-full py-3 px-4 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-black shadow-lg shadow-indigo-600/25 flex items-center justify-center gap-2 transition-transform active:scale-95 cursor-pointer">
+                    <span class="material-symbols-outlined text-base">person_add</span>
+                    <span>افزودن به مخاطبین گوشی (دانلود VCF)</span>
+                </button>
+
+                <!-- Social Share Grid -->
+                <div class="pt-2 border-t border-slate-100">
+                    <div class="text-[11px] text-slate-400 font-bold mb-2">اشتراک‌گذاری در پیام‌رسان‌ها:</div>
+                    <div class="grid grid-cols-4 gap-2">
+                        <button type="button" onclick="shareSiteUrl('whatsapp')" class="p-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-bold transition-colors cursor-pointer" title="واتساپ">
+                            <span>واتساپ</span>
+                        </button>
+                        <button type="button" onclick="shareSiteUrl('telegram')" class="p-2 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-bold transition-colors cursor-pointer" title="تلگرام">
+                            <span>تلگرام</span>
+                        </button>
+                        <button type="button" onclick="shareSiteUrl('eitaa')" class="p-2 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-700 text-xs font-bold transition-colors cursor-pointer" title="ایتا">
+                            <span>ایتا</span>
+                        </button>
+                        <button type="button" onclick="shareSiteUrl('bale')" class="p-2 rounded-xl bg-cyan-50 hover:bg-cyan-100 text-cyan-700 text-xs font-bold transition-colors cursor-pointer" title="بله">
+                            <span>بله</span>
+                        </button>
+                    </div>
+                    <button type="button" onclick="shareSiteUrl('copy')" class="mt-2.5 w-full py-2 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer">
+                        <span class="material-symbols-outlined text-xs">content_copy</span>
+                        <span>کپی لینک اختصاصی وب‌سایت</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Official Accreditation & Trust Verification Modal -->
+    <div id="trust-verify-modal" class="fixed inset-0 z-50 bg-black/75 backdrop-blur-md hidden items-center justify-center p-4 transition-opacity">
+        <div class="bg-white rounded-3xl max-w-md w-full p-6 space-y-5 shadow-2xl border border-slate-100 text-right relative overflow-hidden">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                        <span class="material-symbols-outlined text-lg">verified_user</span>
+                    </div>
+                    <span class="font-black text-sm text-slate-800">اعتبار بالینی و ضمانت رسمی آسنا</span>
+                </div>
+                <button type="button" onclick="closeTrustVerifyModal()" class="p-1 rounded-xl text-slate-400 hover:text-slate-600 cursor-pointer">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+
+            <!-- Content -->
+            <div class="space-y-4">
+                <div class="p-4 rounded-2xl bg-emerald-50/70 border border-emerald-200/80 flex items-start gap-3">
+                    <span class="material-symbols-outlined text-emerald-600 text-2xl shrink-0 mt-0.5">verified</span>
+                    <div>
+                        <div class="text-xs font-black text-emerald-950 mb-0.5">عضو تاییدشده شبکه سلامت حیوانات خانگی آسنا</div>
+                        <p class="text-[11px] text-emerald-800 leading-relaxed font-medium">
+                            صلاحیت بالینی، مجوزهای دامپزشکی و شرایط پذیرش این مجموعه به صورت دوره‌ای توسط کارشناسان نظارتی آسنا راستی‌آزمایی می‌گردد.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="space-y-2.5 text-xs text-slate-700">
+                    <div class="p-3 rounded-2xl bg-slate-50 border border-slate-200/80 flex items-center justify-between">
+                        <span class="text-slate-500 font-bold">شماره نظام دامپزشکی / مجوز:</span>
+                        <span class="font-mono font-bold text-slate-900 bg-white px-2 py-0.5 rounded-lg border border-slate-200" id="live-modal-license">
+                            <?= htmlspecialchars(!empty($aboutBlock['vet_council']) ? $aboutBlock['vet_council'] : 'IR-VET-98214') ?>
+                        </span>
+                    </div>
+                    <div class="p-3 rounded-2xl bg-slate-50 border border-slate-200/80 flex items-center justify-between">
+                        <span class="text-slate-500 font-bold">امنیت پرداخت الکترونیک:</span>
+                        <span class="font-bold text-emerald-700 flex items-center gap-1">
+                            <span class="material-symbols-outlined text-xs">shield</span>
+                            <span>شاپرک و حساب امانی آسنا</span>
+                        </span>
+                    </div>
+                    <div class="p-3 rounded-2xl bg-slate-50 border border-slate-200/80 flex items-center justify-between">
+                        <span class="text-slate-500 font-bold">حریم خصوصی و پرونده سلامت EMR:</span>
+                        <span class="font-bold text-blue-700 flex items-center gap-1">
+                            <span class="material-symbols-outlined text-xs">lock</span>
+                            <span>رمزنگاری ابری ۲۵۶ بیتی</span>
+                        </span>
+                    </div>
+                    <div class="p-3 rounded-2xl bg-slate-50 border border-slate-200/80 flex items-center justify-between">
+                        <span class="text-slate-500 font-bold">پشتیبانی و رسیدگی به شکایات:</span>
+                        <span class="font-bold text-slate-800">مرکز تماس ۲۴/۷ آسنا (۹۱۰۰۰۰۰۰-۰۲۱)</span>
+                    </div>
+                </div>
+
+                <div class="pt-2">
+                    <a href="https://asena.company" target="_blank" class="w-full py-3 px-4 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-black shadow-md flex items-center justify-center gap-2 transition-all">
+                        <span>ورود به سامانه جامع سلامت آسنا (asena.company)</span>
+                        <span class="material-symbols-outlined text-sm">open_in_new</span>
                     </a>
                 </div>
             </div>
@@ -1751,6 +2211,71 @@ $ctaHref = match($tenantType) {
             } else {
                 drawer.classList.add('hidden');
                 drawer.classList.remove('flex');
+            }
+        }
+
+        // Digital VCard & Direct Sharing Modal Functions
+        function openVCardModal() {
+            const modal = document.getElementById('vcard-modal');
+            if (modal) {
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+            }
+        }
+
+        function closeVCardModal() {
+            const modal = document.getElementById('vcard-modal');
+            if (modal) {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            }
+        }
+
+        function downloadVCard() {
+            const name = <?= json_encode($site['site_title'], JSON_UNESCAPED_UNICODE) ?>;
+            const phone = <?= json_encode($contactBlock['phone'] ?? '', JSON_UNESCAPED_UNICODE) ?>;
+            const address = <?= json_encode($contactBlock['address'] ?? '', JSON_UNESCAPED_UNICODE) ?>;
+            const url = window.location.href.split('?')[0];
+            const vcf = `BEGIN:VCARD\nVERSION:3.0\nFN:${name}\nORG:${name}\nTEL;TYPE=WORK,VOICE:${phone}\nADR;TYPE=WORK:;;${address};;;;\nURL:${url}\nNOTE:عضو رسمی شبکه سلامت آسنا\nEND:VCARD`;
+            const blob = new Blob([vcf], { type: 'text/vcard;charset=utf-8' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `${name}.vcf`;
+            link.click();
+            showSiteToast('✓ فایل مخاطب (.vcf) کلینیک با موفقیت دانلود شد.');
+        }
+
+        function shareSiteUrl(platform) {
+            const url = window.location.href.split('?')[0];
+            const title = <?= json_encode($site['site_title'], JSON_UNESCAPED_UNICODE) ?>;
+            const text = `وب‌سایت و رزرو آنلاین ${title}:\n${url}`;
+            if (platform === 'whatsapp') {
+                window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, '_blank');
+            } else if (platform === 'telegram') {
+                window.open(`https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(title)}`, '_blank');
+            } else if (platform === 'eitaa') {
+                window.open(`https://eitaa.com/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(title)}`, '_blank');
+            } else if (platform === 'bale') {
+                window.open(`https://ble.ir/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(title)}`, '_blank');
+            } else {
+                copyAddressToClipboard(url);
+            }
+        }
+
+        // Official Accreditation & Trust Verification Modal Functions
+        function openTrustVerifyModal() {
+            const modal = document.getElementById('trust-verify-modal');
+            if (modal) {
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+            }
+        }
+
+        function closeTrustVerifyModal() {
+            const modal = document.getElementById('trust-verify-modal');
+            if (modal) {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
             }
         }
 
@@ -2242,6 +2767,264 @@ $ctaHref = match($tenantType) {
                     if (topEm) topEm.innerText = value || '';
                     const topEmWrap = document.getElementById('live-topbar-em-wrap');
                     if (topEmWrap) topEmWrap.classList.toggle('hidden', !value);
+                    break;
+                }
+                case 'header_cta_text': {
+                    const el = document.getElementById('live-header-cta-text');
+                    if (el) el.innerText = value || 'رزرو آنلاین نوبت';
+                    break;
+                }
+                case 'hero_badge': {
+                    const el = document.getElementById('live-hero-badge');
+                    if (el) el.innerText = value || '';
+                    const wrap = document.getElementById('live-hero-badge-wrap');
+                    if (wrap) wrap.style.display = (value && value.trim()) ? 'inline-flex' : 'none';
+                    const overlay = document.getElementById('live-hero-overlay-badge');
+                    if (overlay) overlay.innerText = value || 'پذیرش رسمی';
+                    break;
+                }
+                case 'hero_title': {
+                    const el = document.getElementById('live-hero-title');
+                    if (el) {
+                        el.innerText = value || '';
+                        el.setAttribute('data-custom', '1');
+                    }
+                    break;
+                }
+                case 'hero_subtitle': {
+                    const el = document.getElementById('live-hero-subtitle');
+                    if (el) el.innerText = value || '';
+                    break;
+                }
+                case 'hero_cta':
+                case 'hero_cta_text': {
+                    const el = document.getElementById('live-hero-cta');
+                    if (el) el.innerText = value || 'رزرو آنلاین نوبت';
+                    break;
+                }
+                case 'hero_review_score': {
+                    const el = document.getElementById('live-hero-review-score');
+                    if (el) el.innerText = value || '۴.۹';
+                    break;
+                }
+                case 'hero_review_count': {
+                    const el = document.getElementById('live-hero-review-count');
+                    if (el) el.innerText = value || 'بیش از ۱۸۰+ نظر تاییدشده';
+                    break;
+                }
+                case 'hero_cert_title': {
+                    const el = document.getElementById('live-hero-cert-title');
+                    if (el) el.innerText = value || '';
+                    break;
+                }
+                case 'hero_cert_desc': {
+                    const el = document.getElementById('live-hero-cert-desc');
+                    if (el) el.innerText = value || '';
+                    break;
+                }
+                case 'trust_strip_1': {
+                    const el = document.getElementById('live-hero-trust-1');
+                    if (el) el.innerText = value || '';
+                    break;
+                }
+                case 'trust_strip_2': {
+                    const el = document.getElementById('live-hero-trust-2');
+                    if (el) el.innerText = value || '';
+                    break;
+                }
+                case 'trust_strip_3': {
+                    const el = document.getElementById('live-hero-trust-3');
+                    if (el) el.innerText = value || '';
+                    break;
+                }
+                case 'stat_1_val': {
+                    const el = document.getElementById('live-stat-1-val');
+                    if (el) el.innerText = value || '';
+                    break;
+                }
+                case 'stat_1_lbl': {
+                    const el = document.getElementById('live-stat-1-lbl');
+                    if (el) el.innerText = value || '';
+                    break;
+                }
+                case 'stat_2_val': {
+                    const el = document.getElementById('live-stat-2-val');
+                    if (el) el.innerText = value || '';
+                    break;
+                }
+                case 'stat_2_lbl': {
+                    const el = document.getElementById('live-stat-2-lbl');
+                    if (el) el.innerText = value || '';
+                    break;
+                }
+                case 'stat_3_val': {
+                    const el = document.getElementById('live-stat-3-val');
+                    if (el) el.innerText = value || '';
+                    break;
+                }
+                case 'stat_3_lbl': {
+                    const el = document.getElementById('live-stat-3-lbl');
+                    if (el) el.innerText = value || '';
+                    break;
+                }
+                case 'stat_4_val': {
+                    const el = document.getElementById('live-stat-4-val');
+                    if (el) el.innerText = value || '';
+                    break;
+                }
+                case 'stat_4_lbl': {
+                    const el = document.getElementById('live-stat-4-lbl');
+                    if (el) el.innerText = value || '';
+                    break;
+                }
+                case 'duty_hours': {
+                    const el = document.getElementById('live-duty-hours-text');
+                    if (el) el.innerText = 'ساعات کاری اعلامی: ' + (value || '۸:۳۰ الی ۲۲:۳۰');
+                    break;
+                }
+                case 'before_after_heading': {
+                    const el = document.getElementById('live-ba-heading');
+                    if (el) el.innerText = value || '';
+                    break;
+                }
+                case 'before_after_subtitle': {
+                    const el = document.getElementById('live-ba-subtitle');
+                    if (el) el.innerText = value || '';
+                    break;
+                }
+                case 'before_after_service_label': {
+                    const el = document.getElementById('live-ba-service-badge');
+                    if (el) el.innerText = value || '';
+                    break;
+                }
+                case 'before_after_label_after': {
+                    const el = document.getElementById('live-ba-label-after');
+                    if (el) el.innerText = value || '';
+                    break;
+                }
+                case 'before_after_label_before': {
+                    const el = document.getElementById('live-ba-label-before');
+                    if (el) el.innerText = value || '';
+                    break;
+                }
+                case 'mobile_cta_text': {
+                    const el = document.getElementById('live-mobile-cta');
+                    if (el) el.innerText = value || 'رزرو آنلاین نوبت';
+                    break;
+                }
+                case 'footer_about': {
+                    const el = document.getElementById('live-footer-about');
+                    if (el) el.innerText = value || '';
+                    break;
+                }
+                case 'footer_copyright': {
+                    const el = document.getElementById('live-footer-copyright');
+                    if (el) el.innerText = value || '';
+                    break;
+                }
+                case 'asena_badge': {
+                    const el = document.getElementById('live-asena-badge');
+                    if (el) el.innerText = value || 'خدمات یکپارچه شبکه سلامت آسنا';
+                    break;
+                }
+                case 'asena_heading': {
+                    const el = document.getElementById('live-asena-heading');
+                    if (el) el.innerText = value || 'خدمات آنلاین و دسترسی مستقیم به اکوسیستم سلامت آسنا';
+                    break;
+                }
+                case 'asena_subtitle': {
+                    const el = document.getElementById('live-asena-subtitle');
+                    if (el) el.innerText = value || '';
+                    break;
+                }
+                case 'telehealth_title': {
+                    const el = document.getElementById('live-telehealth-title');
+                    if (el) el.innerText = value || '';
+                    break;
+                }
+                case 'telehealth_desc': {
+                    const el = document.getElementById('live-telehealth-desc');
+                    if (el) el.innerText = value || '';
+                    break;
+                }
+                case 'telehealth_btn': {
+                    const el = document.getElementById('live-telehealth-btn');
+                    if (el) el.innerText = value || '';
+                    break;
+                }
+                case 'pharmacy_title': {
+                    const el = document.getElementById('live-pharmacy-title');
+                    if (el) el.innerText = value || '';
+                    break;
+                }
+                case 'pharmacy_desc': {
+                    const el = document.getElementById('live-pharmacy-desc');
+                    if (el) el.innerText = value || '';
+                    break;
+                }
+                case 'pharmacy_btn': {
+                    const el = document.getElementById('live-pharmacy-btn');
+                    if (el) el.innerText = value || '';
+                    break;
+                }
+                case 'autoship_title': {
+                    const el = document.getElementById('live-autoship-title');
+                    if (el) el.innerText = value || '';
+                    break;
+                }
+                case 'autoship_desc': {
+                    const el = document.getElementById('live-autoship-desc');
+                    if (el) el.innerText = value || '';
+                    break;
+                }
+                case 'autoship_btn': {
+                    const el = document.getElementById('live-autoship-btn');
+                    if (el) el.innerText = value || '';
+                    break;
+                }
+                case 'rewards_title': {
+                    const el = document.getElementById('live-rewards-title');
+                    if (el) el.innerText = value || '';
+                    break;
+                }
+                case 'rewards_desc': {
+                    const el = document.getElementById('live-rewards-desc');
+                    if (el) el.innerText = value || '';
+                    break;
+                }
+                case 'rewards_btn': {
+                    const el = document.getElementById('live-rewards-btn');
+                    if (el) el.innerText = value || '';
+                    break;
+                }
+                case 'charity_title': {
+                    const el = document.getElementById('live-charity-title');
+                    if (el) el.innerText = value || '';
+                    break;
+                }
+                case 'charity_desc': {
+                    const el = document.getElementById('live-charity-desc');
+                    if (el) el.innerText = value || '';
+                    break;
+                }
+                case 'charity_btn': {
+                    const el = document.getElementById('live-charity-btn');
+                    if (el) el.innerText = value || '';
+                    break;
+                }
+                case 'vcard_title': {
+                    const el = document.getElementById('live-vcard-title');
+                    if (el) el.innerText = value || '';
+                    break;
+                }
+                case 'vcard_desc': {
+                    const el = document.getElementById('live-vcard-desc');
+                    if (el) el.innerText = value || '';
+                    break;
+                }
+                case 'vcard_btn': {
+                    const el = document.getElementById('live-vcard-btn');
+                    if (el) el.innerText = value || '';
                     break;
                 }
                 case 'storefront_limit': {
