@@ -594,105 +594,133 @@ $ctaHref = match($tenantType) {
     <?php endif; ?>
 
     <!-- Header Navigation -->
-    <header class="sticky top-0 z-40 bg-white/90 backdrop-blur-xl border-b border-slate-200/80 shadow-sm transition-all" data-block-id="header">
-        <div class="max-w-6xl mx-auto px-4 h-20 flex items-center justify-between">
-            <div class="flex items-center gap-3.5">
-                <div class="w-12 h-12 rounded-2xl overflow-hidden border border-slate-200 bg-white shadow-sm flex items-center justify-center shrink-0">
+    <header class="sticky top-0 z-40 bg-white/95 backdrop-blur-xl border-b border-slate-200/80 shadow-xs transition-all" data-block-id="header">
+        <div class="w-full max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-4">
+            
+            <!-- Brand / Clinic Identity (Right side in RTL) -->
+            <div class="flex items-center gap-3 shrink-0">
+                <div class="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl overflow-hidden border border-slate-200 bg-white shadow-xs flex items-center justify-center shrink-0">
                     <img src="<?= htmlspecialchars($siteLogo) ?>" id="live-header-logo" alt="<?= htmlspecialchars($site['site_title']) ?>" class="w-full h-full object-cover">
                 </div>
-                <div>
+                <div class="min-w-0">
                     <div class="flex items-center gap-1.5">
-                        <h1 class="text-base sm:text-lg font-black text-slate-900 tracking-tight leading-snug" id="live-header-title" data-studio-editable="site_title"><?= htmlspecialchars($site['site_title']) ?></h1>
-                        <span class="material-symbols-outlined text-emerald-600 text-sm" title="تایید صلاحیت رسمی">verified</span>
+                        <h1 class="text-sm sm:text-base font-black text-slate-900 tracking-tight leading-normal whitespace-nowrap" id="live-header-title" data-studio-editable="site_title"><?= htmlspecialchars($site['site_title']) ?></h1>
+                        <span class="material-symbols-outlined text-emerald-600 text-sm shrink-0" title="تایید صلاحیت رسمی">verified</span>
                     </div>
-                    <p class="text-[11px] sm:text-xs text-slate-500 font-medium truncate max-w-[200px] sm:max-w-xs <?= empty($site['site_tagline']) ? 'hidden' : '' ?>" id="live-header-tagline" data-studio-editable="site_tagline"><?= htmlspecialchars($site['site_tagline'] ?? '') ?></p>
+                    <p class="text-[11px] sm:text-xs text-slate-500 font-medium truncate max-w-[160px] sm:max-w-xs whitespace-nowrap <?= empty($site['site_tagline']) ? 'hidden' : '' ?>" id="live-header-tagline" data-studio-editable="site_tagline"><?= htmlspecialchars($site['site_tagline'] ?? '') ?></p>
                 </div>
             </div>
 
-            <!-- Desktop Nav Links -->
-            <nav class="hidden lg:flex items-center gap-5 text-xs font-bold text-slate-600">
-                <a href="#about" class="hover:text-tenant-primary transition-colors">معرفی</a>
-                <a href="#services" class="hover:text-tenant-primary transition-colors">خدمات تخصصی</a>
-                <?php if (!empty($asenaServicesBlock['enabled']) || $isPreview): ?>
-                    <a href="#asena-services" class="hover:text-tenant-primary transition-colors flex items-center gap-1 <?= (empty($asenaServicesBlock['enabled']) && $isPreview) ? 'hidden' : '' ?>" data-nav-link="asena_services">
-                        <span class="material-symbols-outlined text-xs text-indigo-600">hub</span>
-                        <span>خدمات آسنا</span>
-                    </a>
-                <?php endif; ?>
+            <!-- Desktop Nav Links (Center) -->
+            <nav class="hidden xl:flex items-center gap-4 2xl:gap-6 text-xs font-bold text-slate-600 whitespace-nowrap">
+                <a href="#about" class="hover:text-tenant-primary transition-colors whitespace-nowrap">معرفی</a>
+                <a href="#services" class="hover:text-tenant-primary transition-colors whitespace-nowrap">خدمات تخصصی</a>
+                
                 <?php if (!empty($calculatorBlock['enabled']) || $isPreview): ?>
-                    <a href="#calculator" class="text-amber-600 hover:text-amber-700 transition-colors flex items-center gap-1 font-black <?= (empty($calculatorBlock['enabled']) && $isPreview) ? 'hidden' : '' ?>" data-nav-link="calculator">
+                    <a href="#calculator" class="text-amber-600 hover:text-amber-700 transition-colors flex items-center gap-1 font-black whitespace-nowrap <?= (empty($calculatorBlock['enabled']) && $isPreview) ? 'hidden' : '' ?>" data-nav-link="calculator">
                         <span class="material-symbols-outlined text-sm">calculate</span>
                         <span>محاسبه‌گر هزینه</span>
                     </a>
                 <?php endif; ?>
-                <?php if (!empty($doctorsBlock['enabled']) || $isPreview): ?>
-                    <a href="#doctors" class="hover:text-tenant-primary transition-colors <?= (empty($doctorsBlock['enabled']) && $isPreview) ? 'hidden' : '' ?>" data-nav-link="doctors">پزشکان مرکز</a>
-                <?php endif; ?>
-                <?php if (!empty($bentoBlock['enabled']) || $isPreview): ?>
-                    <a href="#facilities" class="hover:text-tenant-primary transition-colors <?= (empty($bentoBlock['enabled']) && $isPreview) ? 'hidden' : '' ?>" data-nav-link="facilities">امکانات کلینیک</a>
-                <?php endif; ?>
+
                 <?php if (!empty($bookingBlock['enabled']) || $isPreview): ?>
-                    <a href="#booking" class="hover:text-tenant-primary transition-colors <?= (empty($bookingBlock['enabled']) && $isPreview) ? 'hidden' : '' ?>" data-nav-link="booking">نوبت‌دهی</a>
+                    <a href="#booking" class="hover:text-tenant-primary transition-colors whitespace-nowrap <?= (empty($bookingBlock['enabled']) && $isPreview) ? 'hidden' : '' ?>" data-nav-link="booking">نوبت‌دهی</a>
                 <?php endif; ?>
+
                 <?php if (!empty($storefrontBlock['enabled']) || $isPreview): ?>
-                    <a href="#storefront" class="hover:text-tenant-primary transition-colors <?= (empty($storefrontBlock['enabled']) && $isPreview) ? 'hidden' : '' ?>" data-nav-link="storefront">کالاها و داروها</a>
+                    <a href="#storefront" class="hover:text-tenant-primary transition-colors whitespace-nowrap <?= (empty($storefrontBlock['enabled']) && $isPreview) ? 'hidden' : '' ?>" data-nav-link="storefront">محصولات و داروها</a>
                 <?php endif; ?>
-                <?php if (!empty($faqBlock['enabled']) || $isPreview): ?>
-                    <a href="#faq" class="hover:text-tenant-primary transition-colors <?= (empty($faqBlock['enabled']) && $isPreview) ? 'hidden' : '' ?>" data-nav-link="faq">پرسش‌های متداول</a>
-                <?php endif; ?>
-                <?php if (!empty($reviewsBlock['enabled']) || $isPreview): ?>
-                    <a href="#reviews" class="hover:text-tenant-primary transition-colors <?= (empty($reviewsBlock['enabled']) && $isPreview) ? 'hidden' : '' ?>" data-nav-link="reviews">نظرات مراجعین</a>
-                <?php endif; ?>
-                <a href="#contact" class="hover:text-tenant-primary transition-colors">تماس و آدرس</a>
+
+                <a href="#contact" class="hover:text-tenant-primary transition-colors whitespace-nowrap">تماس و آدرس</a>
+
+                <!-- Dropdown for Additional Sections on Desktop -->
+                <div class="relative group/more shrink-0">
+                    <button type="button" class="hover:text-tenant-primary text-slate-500 hover:text-slate-800 transition-colors flex items-center gap-1 py-1.5 px-2 rounded-lg hover:bg-slate-100 cursor-pointer whitespace-nowrap text-xs font-bold">
+                        <span>سایر بخش‌ها</span>
+                        <span class="material-symbols-outlined text-sm group-hover/more:rotate-180 transition-transform">expand_more</span>
+                    </button>
+                    <div class="absolute top-full right-0 mt-1 w-52 bg-white/95 backdrop-blur-xl rounded-2xl shadow-xl border border-slate-200/90 py-2 hidden group-hover/more:block z-50 transition-all">
+                        <?php if (!empty($asenaServicesBlock['enabled']) || $isPreview): ?>
+                            <a href="#asena-services" class="flex items-center gap-2 px-3.5 py-2 text-xs text-slate-700 hover:bg-slate-50 hover:text-indigo-600 font-bold transition-colors <?= (empty($asenaServicesBlock['enabled']) && $isPreview) ? 'hidden' : '' ?>" data-nav-link="asena_services">
+                                <span class="material-symbols-outlined text-sm text-indigo-600">hub</span>
+                                <span>خدمات یکپارچه آسنا</span>
+                            </a>
+                        <?php endif; ?>
+                        <?php if (!empty($doctorsBlock['enabled']) || $isPreview): ?>
+                            <a href="#doctors" class="flex items-center gap-2 px-3.5 py-2 text-xs text-slate-700 hover:bg-slate-50 hover:text-tenant-primary font-bold transition-colors <?= (empty($doctorsBlock['enabled']) && $isPreview) ? 'hidden' : '' ?>" data-nav-link="doctors">
+                                <span class="material-symbols-outlined text-sm text-emerald-600">stethoscope</span>
+                                <span>پزشکان مرکز</span>
+                            </a>
+                        <?php endif; ?>
+                        <?php if (!empty($bentoBlock['enabled']) || $isPreview): ?>
+                            <a href="#facilities" class="flex items-center gap-2 px-3.5 py-2 text-xs text-slate-700 hover:bg-slate-50 hover:text-tenant-primary font-bold transition-colors <?= (empty($bentoBlock['enabled']) && $isPreview) ? 'hidden' : '' ?>" data-nav-link="facilities">
+                                <span class="material-symbols-outlined text-sm text-blue-600">medical_services</span>
+                                <span>امکانات کلینیک</span>
+                            </a>
+                        <?php endif; ?>
+                        <?php if (!empty($faqBlock['enabled']) || $isPreview): ?>
+                            <a href="#faq" class="flex items-center gap-2 px-3.5 py-2 text-xs text-slate-700 hover:bg-slate-50 hover:text-tenant-primary font-bold transition-colors <?= (empty($faqBlock['enabled']) && $isPreview) ? 'hidden' : '' ?>" data-nav-link="faq">
+                                <span class="material-symbols-outlined text-sm text-purple-600">help</span>
+                                <span>پرسش‌های متداول</span>
+                            </a>
+                        <?php endif; ?>
+                        <?php if (!empty($reviewsBlock['enabled']) || $isPreview): ?>
+                            <a href="#reviews" class="flex items-center gap-2 px-3.5 py-2 text-xs text-slate-700 hover:bg-slate-50 hover:text-tenant-primary font-bold transition-colors <?= (empty($reviewsBlock['enabled']) && $isPreview) ? 'hidden' : '' ?>" data-nav-link="reviews">
+                                <span class="material-symbols-outlined text-sm text-amber-500">rate_review</span>
+                                <span>نظرات مراجعین</span>
+                            </a>
+                        <?php endif; ?>
+                    </div>
+                </div>
             </nav>
 
-            <!-- Actions & Official ASENA Logo (Opposite Side) -->
-            <div class="flex items-center gap-2 sm:gap-2.5">
+            <!-- Actions & Official ASENA Logo (Left side in RTL) -->
+            <div class="flex items-center gap-2 sm:gap-2.5 shrink-0 whitespace-nowrap">
                 <!-- Official ASENA Ecosystem Logo Lockup -->
-                <a href="https://asena.company" target="_blank" onclick="openTrustVerifyModal(); return false;" class="flex items-center gap-2 px-2 sm:px-2.5 py-1.5 rounded-xl bg-slate-50 hover:bg-indigo-50/70 border border-slate-200/90 hover:border-indigo-300 transition-all group shadow-2xs" title="عضو تاییدشده شبکه سلامت آسنا - استعلام اصالت">
+                <a href="https://asena.company" target="_blank" onclick="openTrustVerifyModal(); return false;" class="flex items-center gap-2 px-2.5 py-1.5 rounded-xl bg-slate-50 hover:bg-indigo-50/70 border border-slate-200/90 hover:border-indigo-300 transition-all group shadow-2xs whitespace-nowrap shrink-0" title="عضو تاییدشده شبکه سلامت آسنا - استعلام اصالت">
                     <div class="w-8 h-8 rounded-lg overflow-hidden bg-white p-0.5 border border-slate-200 shadow-2xs shrink-0 flex items-center justify-center">
                         <img src="<?= htmlspecialchars($asenaLogo) ?>" alt="لوگوی رسمی آسنا" class="w-full h-full object-contain">
                     </div>
-                    <div class="hidden md:flex flex-col text-right leading-none">
+                    <div class="hidden sm:flex flex-col text-right leading-none whitespace-nowrap">
                         <div class="flex items-center gap-1">
-                            <span class="text-[11px] font-black text-slate-800 group-hover:text-indigo-600 transition-colors">اکوسیستم آسنا</span>
+                            <span class="text-[11px] font-black text-slate-800 group-hover:text-indigo-600 transition-colors whitespace-nowrap">اکوسیستم آسنا</span>
                             <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block animate-pulse"></span>
                         </div>
-                        <span class="text-[9px] text-slate-400 font-medium mt-0.5">شبکه رسمی سلامت</span>
+                        <span class="text-[9px] text-slate-400 font-medium mt-0.5 whitespace-nowrap">شبکه رسمی سلامت</span>
                     </div>
                 </a>
 
-                <button type="button" onclick="openNavHubModal()" class="hidden xl:flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-all shadow-xs" title="مسیریابی با اپلیکیشن‌های بلد، نشان، ویز و گوگل مپ">
+                <button type="button" onclick="openNavHubModal()" class="hidden 2xl:flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-all shadow-xs whitespace-nowrap shrink-0" title="مسیریابی با اپلیکیشن‌های بلد، نشان، ویز و گوگل مپ">
                     <span class="material-symbols-outlined text-sm text-tenant-primary">near_me</span>
-                    <span>مسیریابی</span>
+                    <span class="whitespace-nowrap">مسیریابی</span>
                 </button>
 
-                <button type="button" onclick="openVCardModal()" class="hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold transition-all shadow-2xs" title="کارت ویزیت دیجیتال و کیوآرکد">
+                <button type="button" onclick="openVCardModal()" class="hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold transition-all shadow-2xs whitespace-nowrap shrink-0" title="کارت ویزیت دیجیتال و کیوآرکد">
                     <span class="material-symbols-outlined text-sm">qr_code_2</span>
-                    <span>کارت ویزیت</span>
+                    <span class="whitespace-nowrap">کارت ویزیت</span>
                 </button>
 
                 <?php if (!empty($storefrontBlock['enabled']) || $isPreview): ?>
-                <button type="button" onclick="tenantCart.openDrawer()" class="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 text-xs font-bold transition-all shadow-2xs relative" title="مشاهده سبد خرید اختصاصی">
+                <button type="button" onclick="tenantCart.openDrawer()" class="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 text-xs font-bold transition-all shadow-2xs relative whitespace-nowrap shrink-0 cursor-pointer" title="مشاهده سبد خرید اختصاصی">
                     <span class="material-symbols-outlined text-sm text-amber-600">shopping_cart</span>
-                    <span class="hidden sm:inline">سبد خرید</span>
+                    <span class="hidden sm:inline whitespace-nowrap">سبد خرید</span>
                     <span id="tenant-nav-cart-badge" class="hidden px-1.5 py-0.2 rounded-full text-[10px] font-black bg-[#fd8100] text-white">0</span>
                 </button>
                 <?php endif; ?>
 
                 <?php $headerPhone = !empty($headerBlock['phone']) ? $headerBlock['phone'] : ($contactBlock['phone'] ?? ''); ?>
-                <a href="tel:<?= htmlspecialchars($headerPhone) ?>" id="live-header-phone-link" class="hidden sm:flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-colors <?= empty($headerPhone) ? 'hidden' : '' ?>">
+                <a href="tel:<?= htmlspecialchars($headerPhone) ?>" id="live-header-phone-link" class="hidden 2xl:flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-colors whitespace-nowrap shrink-0 <?= empty($headerPhone) ? 'hidden' : '' ?>">
                     <span class="material-symbols-outlined text-sm text-tenant-primary">call</span>
-                    <span dir="ltr" id="live-header-phone" data-studio-editable="contact_phone"><?= htmlspecialchars($headerPhone) ?></span>
+                    <span dir="ltr" id="live-header-phone" data-studio-editable="contact_phone" class="whitespace-nowrap"><?= htmlspecialchars($headerPhone) ?></span>
                 </a>
 
-                <a href="<?= $ctaHref ?>" class="hidden md:inline-flex px-5 py-2.5 rounded-xl bg-tenant-primary bg-tenant-primary-hover text-white text-xs font-bold shadow-lg shadow-emerald-900/10 transition-transform active:scale-95 items-center gap-1.5">
+                <a href="<?= $ctaHref ?>" class="hidden md:inline-flex px-4 py-2 rounded-xl bg-tenant-primary bg-tenant-primary-hover text-white text-xs font-bold shadow-md shadow-emerald-900/10 transition-transform active:scale-95 items-center gap-1.5 whitespace-nowrap shrink-0">
                     <span class="material-symbols-outlined text-sm">calendar_month</span>
-                    <span id="live-header-cta-text" data-studio-editable="header_cta_text"><?= htmlspecialchars($headerBlock['cta_text'] ?? 'رزرو آنلاین نوبت') ?></span>
+                    <span id="live-header-cta-text" data-studio-editable="header_cta_text" class="whitespace-nowrap"><?= htmlspecialchars($headerBlock['cta_text'] ?? 'رزرو آنلاین نوبت') ?></span>
                 </a>
 
                 <!-- Mobile Menu Button -->
-                <button type="button" onclick="toggleMobileDrawer()" class="xl:hidden p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700">
+                <button type="button" onclick="toggleMobileDrawer()" class="xl:hidden p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 shrink-0 cursor-pointer" title="منوی بخش‌های وب‌سایت">
                     <span class="material-symbols-outlined text-xl">menu</span>
                 </button>
             </div>
@@ -700,7 +728,7 @@ $ctaHref = match($tenantType) {
     </header>
 
     <!-- Mobile Drawer Navigation -->
-    <div id="mobile-drawer" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm hidden flex-col justify-end lg:hidden transition-opacity">
+    <div id="mobile-drawer" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm hidden flex-col justify-end xl:hidden transition-opacity">
         <div class="bg-white rounded-t-3xl p-6 space-y-4 max-h-[80vh] overflow-y-auto shadow-2xl">
             <div class="flex items-center justify-between pb-3 border-b border-slate-100">
                 <span class="font-bold text-sm text-slate-800">ناوبری و بخش‌های وب‌سایت</span>
