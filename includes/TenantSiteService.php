@@ -83,6 +83,63 @@ class TenantSiteService {
             try {
                 $this->pdo->exec("ALTER TABLE tenant_sites ADD COLUMN site_tier VARCHAR(32) NOT NULL DEFAULT 'enterprise'");
             } catch (Throwable $eIgnore) {}
+
+            // Self-healing migration for orders and order_items tenant scoping
+            try {
+                $driver = $this->pdo->getAttribute(PDO::ATTR_DRIVER_NAME);
+                if ($driver === 'sqlite') {
+                    $this->pdo->exec("
+                        CREATE TABLE IF NOT EXISTS orders (
+                            id INTEGER PRIMARY KEY AUTOINCREMENT,
+                            user_id INTEGER NOT NULL,
+                            total_amount INTEGER NOT NULL,
+                            discount_amount INTEGER DEFAULT 0,
+                            status TEXT DEFAULT 'pending_payment',
+                            gateway_ref_id TEXT NULL,
+                            shipping_address TEXT NULL,
+                            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                            carrier_name TEXT NULL,
+                            tracking_code TEXT NULL,
+                            shipping_cost INTEGER DEFAULT 0,
+                            tax_amount INTEGER DEFAULT 0,
+                            post_tracking_code TEXT NULL,
+                            delivered_at DATETIME NULL,
+                            post_delivery_verified INTEGER DEFAULT 0,
+                            escrow_status TEXT DEFAULT 'pending_delivery',
+                            escrow_cleared_at DATETIME NULL,
+                            source_tenant_type TEXT NULL,
+                            source_tenant_id INTEGER NULL
+                        );
+                        CREATE TABLE IF NOT EXISTS order_items (
+                            id INTEGER PRIMARY KEY AUTOINCREMENT,
+                            order_id INTEGER NOT NULL,
+                            product_id INTEGER NOT NULL,
+                            quantity INTEGER NOT NULL,
+                            price_at_purchase INTEGER NOT NULL,
+                            product_name_snapshot TEXT NOT NULL DEFAULT '',
+                            seller_id INTEGER NULL,
+                            organization_id INTEGER NULL,
+                            item_source TEXT DEFAULT 'product',
+                            commission_rate REAL DEFAULT 10.00,
+                            commission_amount INTEGER DEFAULT 0,
+                            seller_net_amount INTEGER DEFAULT 0
+                        );
+                    ");
+                } else {
+                    try {
+                        $this->pdo->exec("ALTER TABLE `orders` ADD COLUMN `source_tenant_type` VARCHAR(32) NULL");
+                    } catch (Throwable $e1) {}
+                    try {
+                        $this->pdo->exec("ALTER TABLE `orders` ADD COLUMN `source_tenant_id` INT NULL");
+                    } catch (Throwable $e2) {}
+                    try {
+                        $this->pdo->exec("ALTER TABLE `order_items` ADD COLUMN `item_source` VARCHAR(32) DEFAULT 'product'");
+                    } catch (Throwable $e3) {}
+                    try {
+                        $this->pdo->exec("ALTER TABLE `order_items` ADD COLUMN `organization_id` INT NULL");
+                    } catch (Throwable $e4) {}
+                }
+            } catch (Throwable $eIgnore) {}
         } catch (Throwable $e) {
             error_log("[TenantSiteService::ensureTable] " . $e->getMessage());
         }
@@ -700,60 +757,202 @@ class TenantSiteService {
 
     /**
      * Retrieve items from ASENA inventory strictly belonging to this tenant
+     * Strictly scoped to this tenant's inventory without cross-tenant fallback leakage.
      */
     public function getTenantProducts(string $tenantType, int $tenantId, int $limit = 8): array {
         $items = [];
         try {
             if ($tenantType === 'pharmacist') {
-                // Fetch medicines belonging to this pharmacy/seller
+                // Strictly fetch medicines belonging to this pharmacy/seller
                 $stmt = $this->pdo->prepare("
-                    SELECT id, name, brand, price, image_url, description, requires_prescription, stock
+                    SELECT id, name, brand, price, image_url, description, requires_prescription, stock, 'pharmacy' as item_source
                     FROM pharmacy_medicines
                     WHERE (organization_id = ? OR seller_id = ?) AND stock > 0
                     ORDER BY id DESC LIMIT ?
                 ");
                 $stmt->execute([$tenantId, $tenantId, $limit]);
                 $items = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            } elseif ($tenantType === 'organization') {
+                // 1. Fetch items stocked in organization_inventory
+                $orgInvStmt = $this->pdo->prepare("
+                    SELECT 
+                        oi.id as inv_id,
+                        oi.item_id as id,
+                        oi.item_type as item_source,
+                        COALESCE(oi.custom_price, m.price, p.price, 0) as price,
+                        oi.stock as stock,
+                        COALESCE(m.name, p.name, 'کالای تخصصی') as name,
+                        COALESCE(m.brand, '') as brand,
+                        COALESCE(m.image_url, p.image_url, p.image, 'assets/images/placeholders/placeholder-product.svg') as image_url,
+                        COALESCE(m.description, p.description, '') as description,
+                        COALESCE(m.requires_prescription, 0) as requires_prescription
+                    FROM organization_inventory oi
+                    LEFT JOIN pharmacy_medicines m ON (oi.item_type = 'medicine' AND oi.item_id = m.id)
+                    LEFT JOIN products p ON (oi.item_type = 'product' AND oi.item_id = p.id)
+                    WHERE oi.organization_id = ? AND oi.is_in_stock = 1 AND oi.stock > 0
+                    ORDER BY oi.id DESC LIMIT ?
+                ");
+                $orgInvStmt->execute([$tenantId, $limit]);
+                $items = $orgInvStmt->fetchAll(PDO::FETCH_ASSOC);
 
-                // Fallback to top medicines if tenant just joined and has not filled inventory yet
-                if (empty($items)) {
-                    $stmtFallback = $this->pdo->prepare("
-                        SELECT id, name, brand, price, image_url, description, requires_prescription, stock
-                        FROM pharmacy_medicines
-                        WHERE stock > 0
+                // 2. Also fetch any products directly assigned to this organization
+                if (count($items) < $limit) {
+                    $rem = $limit - count($items);
+                    $prodStmt = $this->pdo->prepare("
+                        SELECT id, name, price, COALESCE(image_url, image, 'assets/images/placeholders/placeholder-product.svg') as image_url, 
+                               description, category, stock, 0 as requires_prescription, 'product' as item_source
+                        FROM products
+                        WHERE organization_id = ? AND stock > 0
                         ORDER BY id DESC LIMIT ?
                     ");
-                    $stmtFallback->execute([$limit]);
-                    $items = $stmtFallback->fetchAll(PDO::FETCH_ASSOC);
+                    $prodStmt->execute([$tenantId, $rem]);
+                    $directProds = $prodStmt->fetchAll(PDO::FETCH_ASSOC);
+
+                    $existingKeys = [];
+                    foreach ($items as $it) {
+                        $existingKeys[] = ($it['item_source'] ?? 'product') . '_' . $it['id'];
+                    }
+                    foreach ($directProds as $dp) {
+                        $key = 'product_' . $dp['id'];
+                        if (!in_array($key, $existingKeys)) {
+                            $items[] = $dp;
+                            $existingKeys[] = $key;
+                        }
+                    }
                 }
             } else {
-                // Fetch products from petshop/seller/clinic inventory
+                // Strictly fetch products from petshop/seller inventory
                 $stmt = $this->pdo->prepare("
-                    SELECT id, name, price, image, description, category, stock
+                    SELECT id, name, price, COALESCE(image_url, image, 'assets/images/placeholders/placeholder-product.svg') as image_url, 
+                           description, category, stock, 0 as requires_prescription, 'product' as item_source
                     FROM products
                     WHERE (seller_id = ? OR organization_id = ?) AND stock > 0
                     ORDER BY id DESC LIMIT ?
                 ");
                 $stmt->execute([$tenantId, $tenantId, $limit]);
                 $items = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-                // Fallback if tenant products empty
-                if (empty($items)) {
-                    $stmtFallback = $this->pdo->prepare("
-                        SELECT id, name, price, image, description, category, stock
-                        FROM products
-                        WHERE stock > 0
-                        ORDER BY id DESC LIMIT ?
-                    ");
-                    $stmtFallback->execute([$limit]);
-                    $items = $stmtFallback->fetchAll(PDO::FETCH_ASSOC);
-                }
             }
         } catch (Throwable $e) {
             error_log("[TenantSiteService::getTenantProducts] " . $e->getMessage());
         }
 
         return $items;
+    }
+
+    /**
+     * Resolve the owner user ID for this tenant (used for order fulfillment and seller escrow)
+     */
+    public function resolveTenantUserId(string $tenantType, int $tenantId): int {
+        try {
+            if ($tenantType === 'seller' || $tenantType === 'pharmacist' || $tenantType === 'doctor') {
+                return $tenantId;
+            }
+            if ($tenantType === 'organization') {
+                $stmt = $this->pdo->prepare("SELECT user_id FROM organizations WHERE id = ? LIMIT 1");
+                $stmt->execute([$tenantId]);
+                $uId = (int)$stmt->fetchColumn();
+                if ($uId > 0) {
+                    return $uId;
+                }
+            }
+        } catch (Throwable $e) {
+            error_log("[TenantSiteService::resolveTenantUserId] " . $e->getMessage());
+        }
+        return $tenantId;
+    }
+
+    /**
+     * Return direct cockpit URL where this tenant manages their inventory and shipping
+     */
+    public function getTenantManagementUrl(string $tenantType, int $tenantId): string {
+        switch ($tenantType) {
+            case 'organization':
+                return 'organization/inventory.php';
+            case 'seller':
+                return 'seller/index.php';
+            case 'pharmacist':
+                return 'pharmacist/index.php';
+            case 'doctor':
+                return 'doctor/index.php';
+            default:
+                return 'organization/inventory.php';
+        }
+    }
+
+    /**
+     * Look up a single inventory item belonging strictly to this tenant
+     */
+    public function getTenantStockItem(int $id, string $source, string $tenantType, int $tenantId): ?array {
+        try {
+            if ($tenantType === 'organization') {
+                // Check organization_inventory first
+                $invStmt = $this->pdo->prepare("
+                    SELECT 
+                        oi.id as inv_id,
+                        oi.item_id as id,
+                        oi.item_type as item_source,
+                        COALESCE(oi.custom_price, m.price, p.price, 0) as price,
+                        oi.stock as stock,
+                        COALESCE(m.name, p.name) as name
+                    FROM organization_inventory oi
+                    LEFT JOIN pharmacy_medicines m ON (oi.item_type = 'medicine' AND oi.item_id = m.id)
+                    LEFT JOIN products p ON (oi.item_type = 'product' AND oi.item_id = p.id)
+                    WHERE oi.organization_id = ? AND oi.item_id = ? AND oi.item_type = ? AND oi.is_in_stock = 1
+                    LIMIT 1
+                ");
+                $invStmt->execute([$tenantId, $id, ($source === 'pharmacy' ? 'medicine' : 'product')]);
+                $item = $invStmt->fetch(PDO::FETCH_ASSOC);
+                if ($item) return $item;
+
+                // Check products table directly
+                $pStmt = $this->pdo->prepare("SELECT id, name, price, stock, 'product' as item_source FROM products WHERE id = ? AND organization_id = ? LIMIT 1");
+                $pStmt->execute([$id, $tenantId]);
+                $item = $pStmt->fetch(PDO::FETCH_ASSOC);
+                if ($item) return $item;
+            } elseif ($tenantType === 'pharmacist') {
+                $mStmt = $this->pdo->prepare("SELECT id, name, price, stock, 'pharmacy' as item_source FROM pharmacy_medicines WHERE id = ? AND (seller_id = ? OR organization_id = ?) LIMIT 1");
+                $mStmt->execute([$id, $tenantId, $tenantId]);
+                $item = $mStmt->fetch(PDO::FETCH_ASSOC);
+                if ($item) return $item;
+            } else {
+                $pStmt = $this->pdo->prepare("SELECT id, name, price, stock, 'product' as item_source FROM products WHERE id = ? AND (seller_id = ? OR organization_id = ?) LIMIT 1");
+                $pStmt->execute([$id, $tenantId, $tenantId]);
+                $item = $pStmt->fetch(PDO::FETCH_ASSOC);
+                if ($item) return $item;
+            }
+        } catch (Throwable $e) {
+            error_log("[TenantSiteService::getTenantStockItem] " . $e->getMessage());
+        }
+        return null;
+    }
+
+    /**
+     * Decrement tenant item stock upon confirmed checkout
+     */
+    public function decrementTenantStock(int $id, string $source, int $qty, string $tenantType, int $tenantId): bool {
+        try {
+            if ($tenantType === 'organization') {
+                // Try decrementing organization_inventory
+                $st = $this->pdo->prepare("UPDATE organization_inventory SET stock = MAX(0, stock - ?) WHERE organization_id = ? AND item_id = ? AND item_type = ?");
+                $st->execute([$qty, $tenantId, $id, ($source === 'pharmacy' ? 'medicine' : 'product')]);
+                if ($st->rowCount() > 0) return true;
+
+                $st2 = $this->pdo->prepare("UPDATE products SET stock = MAX(0, stock - ?) WHERE id = ? AND organization_id = ?");
+                $st2->execute([$qty, $id, $tenantId]);
+                return $st2->rowCount() > 0;
+            } elseif ($tenantType === 'pharmacist') {
+                $st = $this->pdo->prepare("UPDATE pharmacy_medicines SET stock = MAX(0, stock - ?) WHERE id = ? AND (seller_id = ? OR organization_id = ?)");
+                $st->execute([$qty, $id, $tenantId, $tenantId]);
+                return $st->rowCount() > 0;
+            } else {
+                $st = $this->pdo->prepare("UPDATE products SET stock = MAX(0, stock - ?) WHERE id = ? AND (seller_id = ? OR organization_id = ?)");
+                $st->execute([$qty, $id, $tenantId, $tenantId]);
+                return $st->rowCount() > 0;
+            }
+        } catch (Throwable $e) {
+            error_log("[TenantSiteService::decrementTenantStock] " . $e->getMessage());
+            return false;
+        }
     }
 
     /**

@@ -83,6 +83,27 @@
 
 ## ۳. تاریخچه تغییرات اخیر (Change Log)
 
+### نسخه ۱.۰.۲۸ (اکتبر ۲۰۲۶ - تفکیک مطلق انبار اختصاصی مستأجران، سبد خرید و چک‌اوت درون‌صفحه‌ای با اتصال به شاپرک و پردازش سفارشات در پنل آسنا)
+1. **تفکیک مطلق و ایزولاسیون انبار اختصاصی مستأجران ([`includes/TenantSiteService.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/includes/TenantSiteService.php)):**
+   - بازنویسی کامل متد `getTenantProducts`: فیلتر قطعی و انحصاری محصولات کلینیک/داروخانه/فروشنده بر اساس موجودی واقعی ثبت‌شده در پرتال آسنا (`organization_inventory`، `products WHERE organization_id = ?` یا `seller_id = ?`، و `pharmacy_medicines`).
+   - حذف ۱۰۰٪ فال‌بک عمومی که قبلاً محصولات دلخواه کل سامانه را در صورت خالی بودن انبار مستأجر نمایش می‌داد؛ جلوگیری کامل از نشت داده (Data Leakage) بین فروشندگان و مستأجران مختلف.
+   - افزودن متدهای کمکی `resolveTenantUserId`، `getTenantManagementUrl`، `getTenantStockItem` و کسر اتمیک موجودی انبار `decrementTenantStock`.
+   - به‌روزرسانی متد خودترمیم `ensureTable` برای افزودن ستون‌های `source_tenant_type` و `source_tenant_id` به جداول `orders` و `order_items`.
+2. **سبد خرید و چک‌اوت تعاملی درون‌صفحه‌ای مستأجر ([`site.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/site.php)):**
+   - کارت‌های تعاملی محصولات با دکمه‌های «افزودن به سبد» و «خرید فوری»، نمایش نشانگر وضعیت موجودی و شمارنده بلادرنگ اقلام.
+   - دکمه‌های شناور و چسبان سبد خرید در هدر، فوتر و نوار چسبان شست‌رس موبایل همراه با بچ شمارنده بلادرنگ (`#tenant-cart-trigger`, `#header-cart-btn`, `#mobile-cart-btn`).
+   - کشوی مدرن شیشه‌ای سبد خرید و تسویه‌حساب سریع (`#tenant-cart-drawer`) با استپر ۲ مرحله‌ای (بازبینی سبد و محاسبه قیمت‌ها -> فرم نشانی و مشخصات خریدار).
+   - موتور واکنشی فرانت‌اند `tenantCart` با ماندگاری در `localStorage`، به‌روزرسانی آنی مجموع اقلام، هزینه حمل، محاسبه دقیق مالیات بر ارزش افزوده ۱۰٪ طبق قوانین مالیاتی ایران و فرمول تخفیف.
+   - مدال رسید خرید موفق (`#tenant-order-success-modal`) با قابلیت چاپ فاکتور و کد پیگیری سفارش.
+3. **اندپوینت‌های سفارش‌گذاری و بازگشت شاپرک ([`actions/tenant_order_action.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/actions/tenant_order_action.php) و [`actions/tenant_payment_callback.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/actions/tenant_payment_callback.php)):**
+   - `actions/tenant_order_action.php`: ثبت سفارش با اعتبارسنجی مالکیت کالاها و سقف موجودی انبار، الصاق خودکار متادیتای `source_tenant_type` و `source_tenant_id`، تفکیک سهم فروشنده، ایجاد سفارش در وضعیت `pending_payment` و ارجاع امن خریدار به درگاه مرکزی شاپرک آسنا (`ZarinPalGateway`).
+   - `actions/tenant_payment_callback.php`: صحت‌سنجی تراکنش بانکی، انتقال سفارش به وضعیت `processing`، کسر اتمیک موجودی کالا در انبار مربوطه، واریز وجه امانت‌داری به حساب اسکرو (`App::escrow()->depositOrderToEscrow`)، ارسال پیامک‌های فاکتور و پیگیری به خریدار و مستأجر، و هدایت به سایت اختصاصی با نمایش رسید سبز موفقیت.
+4. **مدیریت سفارشات، بسته‌بندی و ارسال در پنل مرکزی آسنا ([`organization/orders.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/organization/orders.php) و [`seller/index.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/seller/index.php)):**
+   - به‌روزرسانی کوئری‌های استعلام سفارش در پنل سازمان و کلینیک جهت نمایش و مدیریت بلادرنگ سفارشات ثبت‌شده از سایت اختصاصی (`source_tenant_type = 'organization' AND source_tenant_id = :org_id`).
+   - به‌روزرسانی پنل فروشندگان مارکت‌پلیس جهت مدیریت سفارشات سایت اختصاصی، تولید برچسب پستی، صدور فاکتور رسمی و ثبت کدهای رهگیری پستکس / شرکت پست.
+5. **سوئیت آزمون‌های خودکار و تضمین کیفیت ([`tests/test_tenant_inventory_and_orders.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/tests/test_tenant_inventory_and_orders.php)):**
+   - پیاده‌سازی ۹ آزمون جامع پوشش‌دهنده ایزولاسیون انبار، صحت استعلام کالا، کسر موجودی، درج تگ‌های مستأجر، ایجاد سفارش و رویت‌پذیری در پنل‌های سازمان و فروشنده با قبولی ۱۰۰٪. مجموع آزمون‌های پاس‌شده سامانه به ۱۹۰ آزمون موفق رسید.
+
 ### نسخه ۱.۰.۲۷ (اکتبر ۲۰۲۶ - ورودی‌های لینک مستقیم اپلیکیشن‌های نقشه و مختصات، سیستم سراسری افزودن، ویرایش و حذف عناصر در سراسر وب‌سایت)
 1. **ورودی‌های لینک مستقیم اپلیکیشن‌های نقشه و مختصات (Direct Map Links & Coordinates Hub):**
    - افزودن فیلدهای ورودی اختصاصی برای درج لینک مستقیم اپلیکیشن‌های مسیریابی محبوب ایرانی و بین‌المللی (نشان `neshan_url`، بلد `balad_url`، ویز `waze_url`، گوگل مپ `google_maps_url`) به همراه مختصات طول و عرض جغرافیایی (`lat`, `lng`).

@@ -135,9 +135,16 @@ $trustAnchorStyle = $themeConfig['trust_anchor'] ?? 'floating_pill';
 // Hydrate live items from database (hydrate all available in preview mode for instantaneous zero-refresh toggling)
 $tenantProducts = [];
 if (!empty($storefrontBlock['enabled']) || $isPreview) {
-    $itemLimit = (int)($storefrontBlock['item_limit'] ?? 6);
+    $itemLimit = (int)($storefrontBlock['item_limit'] ?? 8);
     $tenantProducts = $tenantService->getTenantProducts($tenantType, $tenantId, $itemLimit);
 }
+$tenantMgmtUrl = $tenantService->getTenantManagementUrl($tenantType, $tenantId);
+
+$orderSuccess   = isset($_GET['order_success']) && (int)$_GET['order_success'] === 1;
+$orderSuccessId = (int)($_GET['order_id'] ?? 0);
+$orderRefId     = htmlspecialchars($_GET['ref_id'] ?? '');
+$orderFailed    = isset($_GET['order_failed']) && (int)$_GET['order_failed'] === 1;
+$orderFailMsg   = htmlspecialchars($_GET['msg'] ?? 'پرداخت سفارش لغو شد یا با خطا مواجه گردید.');
 
 $tenantDoctors = [];
 if (!empty($doctorsBlock['enabled']) || $tenantType === 'organization' || $isPreview) {
@@ -588,6 +595,14 @@ $ctaHref = match($tenantType) {
                     <span class="material-symbols-outlined text-sm">qr_code_2</span>
                     <span>کارت ویزیت</span>
                 </button>
+
+                <?php if (!empty($storefrontBlock['enabled']) || $isPreview): ?>
+                <button type="button" onclick="tenantCart.openDrawer()" class="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 text-xs font-bold transition-all shadow-2xs relative" title="مشاهده سبد خرید اختصاصی">
+                    <span class="material-symbols-outlined text-sm text-amber-600">shopping_cart</span>
+                    <span class="hidden sm:inline">سبد خرید</span>
+                    <span id="tenant-nav-cart-badge" class="hidden px-1.5 py-0.2 rounded-full text-[10px] font-black bg-[#fd8100] text-white">0</span>
+                </button>
+                <?php endif; ?>
 
                 <?php $headerPhone = !empty($headerBlock['phone']) ? $headerBlock['phone'] : ($contactBlock['phone'] ?? ''); ?>
                 <a href="tel:<?= htmlspecialchars($headerPhone) ?>" id="live-header-phone-link" class="hidden sm:flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-colors <?= empty($headerPhone) ? 'hidden' : '' ?>">
@@ -1494,53 +1509,115 @@ $ctaHref = match($tenantType) {
     <?php endif; ?>
 
     <!-- Storefront & Pharmacy Products Grid (Tenant Inventory) -->
-    <?php if ((!empty($storefrontBlock['enabled']) && !empty($tenantProducts)) || $isPreview): ?>
+    <?php if (!empty($storefrontBlock['enabled']) || $isPreview): ?>
     <section id="storefront" class="py-16 bg-white border-b border-slate-200/60 <?= (empty($storefrontBlock['enabled']) && $isPreview) ? 'hidden' : '' ?>" style="<?= (empty($storefrontBlock['enabled']) && $isPreview) ? 'display: none !important;' : '' ?>" data-block-id="storefront">
         <div class="max-w-6xl mx-auto px-4">
-            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-10">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
                 <div>
-                    <span class="text-xs font-black text-tenant-primary uppercase tracking-wider">موجود در انبار اختصاصی</span>
-                    <h3 class="text-2xl sm:text-3xl font-black text-slate-900 mt-1" id="live-storefront-heading" data-studio-editable="storefront_heading"><?= htmlspecialchars($storefrontBlock['heading'] ?? 'ویترین محصولات و داروها') ?></h3>
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs font-black text-tenant-primary uppercase tracking-wider">انبار اختصاصی و تحویل مستقیم</span>
+                        <span class="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                            <span>مدیریت آنلاین انبار آسنا</span>
+                        </span>
+                    </div>
+                    <h3 class="text-2xl sm:text-3xl font-black text-slate-900 mt-1" id="live-storefront-heading" data-studio-editable="storefront_heading"><?= htmlspecialchars($storefrontBlock['heading'] ?? 'ویترین محصولات و داروهای موجود') ?></h3>
                 </div>
-                <div class="text-xs text-slate-500 flex items-center gap-1">
-                    <span class="material-symbols-outlined text-emerald-600 text-sm">inventory_2</span>
-                    <span>موجودی فعال و تحویل سریع</span>
+                <div class="flex items-center gap-2">
+                    <button type="button" onclick="tenantCart.openDrawer()" class="px-3.5 py-2 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 text-xs font-bold flex items-center gap-2 transition-all shadow-2xs">
+                        <span class="material-symbols-outlined text-base text-amber-600">shopping_bag</span>
+                        <span>مشاهده سبد خرید</span>
+                        <span id="tenant-storefront-cart-count" class="hidden px-1.5 py-0.2 rounded-full text-[10px] font-black bg-[#fd8100] text-white">0</span>
+                    </button>
                 </div>
             </div>
 
+            <?php if (!empty($tenantProducts)): ?>
             <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
                 <?php foreach ($tenantProducts as $p): ?>
                 <?php 
                     $pPrice = (float)($p['price'] ?? 0);
                     $pImg = !empty($p['image_url']) ? $p['image_url'] : (!empty($p['image']) ? $p['image'] : 'assets/images/placeholders/placeholder-product.svg');
                     $isRx = !empty($p['requires_prescription']);
+                    $pStock = (int)($p['stock'] ?? 0);
+                    $pSource = htmlspecialchars($p['item_source'] ?? 'product');
                 ?>
-                <div class="bg-white rounded-3xl p-4 border border-slate-200 hover:border-slate-300 hover:shadow-xl transition-all flex flex-col justify-between group">
+                <div class="bg-white rounded-3xl p-4 border border-slate-200 hover:border-slate-300 hover:shadow-xl transition-all flex flex-col justify-between group relative"
+                     data-product-id="<?= (int)$p['id'] ?>"
+                     data-product-source="<?= $pSource ?>"
+                     data-product-name="<?= htmlspecialchars($p['name']) ?>"
+                     data-product-price="<?= (int)$pPrice ?>"
+                     data-product-image="<?= htmlspecialchars($pImg) ?>"
+                     data-product-stock="<?= $pStock ?>">
                     <div>
                         <div class="aspect-square rounded-2xl bg-slate-50 overflow-hidden mb-3 relative">
-                            <img src="<?= htmlspecialchars($pImg) ?>" alt="<?= htmlspecialchars($p['name']) ?>" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+                            <img src="<?= htmlspecialchars($pImg) ?>" alt="<?= htmlspecialchars($p['name']) ?>" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" loading="lazy">
                             <?php if ($isRx): ?>
                                 <span class="absolute top-2 right-2 bg-purple-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-md shadow">نسخه‌ای (Rx)</span>
                             <?php endif; ?>
+                            <div class="absolute bottom-2 right-2">
+                                <?php if ($pStock > 0): ?>
+                                    <span class="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-800 bg-white/95 backdrop-blur-xs px-2 py-0.5 rounded-lg shadow-2xs border border-emerald-200/60">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                                        <span><?= number_format($pStock) ?> در انبار</span>
+                                    </span>
+                                <?php else: ?>
+                                    <span class="inline-flex items-center text-[10px] font-bold text-rose-700 bg-white/95 backdrop-blur-xs px-2 py-0.5 rounded-lg shadow-2xs border border-rose-200">
+                                        اتمام موجودی
+                                    </span>
+                                <?php endif; ?>
+                            </div>
                         </div>
-                        <h4 class="font-bold text-slate-900 text-xs sm:text-sm line-clamp-2 mb-1.5"><?= htmlspecialchars($p['name']) ?></h4>
+                        <h4 class="font-bold text-slate-900 text-xs sm:text-sm line-clamp-2 mb-1"><?= htmlspecialchars($p['name']) ?></h4>
                         <?php if (!empty($p['brand'])): ?>
                             <div class="text-[11px] text-slate-400 font-medium mb-2"><?= htmlspecialchars($p['brand']) ?></div>
                         <?php endif; ?>
                     </div>
 
-                    <div class="pt-3 border-t border-slate-100 flex items-center justify-between">
+                    <div class="pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
                         <div>
                             <span class="text-xs sm:text-sm font-black text-slate-900"><?= number_format($pPrice) ?></span>
                             <span class="text-[10px] text-slate-400">تومان</span>
                         </div>
-                        <a href="#contact" class="w-8 h-8 rounded-xl bg-tenant-light hover:bg-tenant-primary text-tenant-primary hover:text-white flex items-center justify-center transition-colors" title="سفارش و استعلام کالا">
-                            <span class="material-symbols-outlined text-sm">shopping_cart</span>
-                        </a>
+                        <div class="flex items-center gap-1.5">
+                            <?php if ($pStock > 0): ?>
+                            <button type="button" onclick="tenantCart.addItem(this, false)" class="w-8 h-8 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 hover:text-slate-900 flex items-center justify-center transition-colors shadow-2xs active:scale-95" title="افزودن به سبد خرید">
+                                <span class="material-symbols-outlined text-base">add_shopping_cart</span>
+                            </button>
+                            <button type="button" onclick="tenantCart.addItem(this, true)" class="px-2.5 py-1.5 rounded-xl bg-tenant-primary hover:opacity-90 text-white text-[11px] font-bold transition-all shadow-xs active:scale-95 flex items-center gap-1" title="خرید فوری این کالا">
+                                <span>خرید</span>
+                                <span class="material-symbols-outlined text-xs">flash_on</span>
+                            </button>
+                            <?php else: ?>
+                            <span class="px-2.5 py-1 rounded-xl bg-slate-100 text-slate-400 text-[11px] font-bold">ناموجود</span>
+                            <?php endif; ?>
+                        </div>
                     </div>
                 </div>
                 <?php endforeach; ?>
             </div>
+            <?php else: ?>
+            <!-- Clean Empty Inventory Showcase -->
+            <div class="bg-gradient-to-br from-amber-50/60 via-white to-amber-50/30 border border-amber-200/80 rounded-3xl p-8 sm:p-10 text-center max-w-2xl mx-auto shadow-sm">
+                <div class="w-16 h-16 bg-amber-100 text-amber-700 rounded-3xl flex items-center justify-center mx-auto mb-4 shadow-inner">
+                    <span class="material-symbols-outlined text-3xl">inventory_2</span>
+                </div>
+                <h4 class="font-black text-slate-900 text-base sm:text-lg mb-2">انبار اختصاصی این مرکز در پلتفرم آسنا</h4>
+                <p class="text-xs sm:text-sm text-slate-600 leading-relaxed mb-6">
+                    کالاها و داروهای این وب‌سایت مستقیماً بر اساس موجودی انبار شما در پنل آسنا نمایش داده می‌شوند. در حال حاضر کالایی در انبار فعال این مرکز ثبت نشده است.
+                </p>
+                <div class="flex flex-col sm:flex-row items-center justify-center gap-3">
+                    <a href="<?= htmlspecialchars($tenantMgmtUrl) ?>" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-gradient-to-r from-[#001a48] to-slate-800 text-white text-xs font-black shadow-md hover:shadow-lg transition-all active:scale-95">
+                        <span class="material-symbols-outlined text-base text-amber-300">settings</span>
+                        <span>مدیریت انبار در پنل اختصاصی آسنا</span>
+                    </a>
+                    <a href="#contact" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-all">
+                        <span class="material-symbols-outlined text-base">call</span>
+                        <span>تماس جهت استعلام موجودی</span>
+                    </a>
+                </div>
+            </div>
+            <?php endif; ?>
         </div>
     </section>
     <?php endif; ?>
@@ -2041,6 +2118,12 @@ $ctaHref = match($tenantType) {
     <!-- Mobile-First Thumb-Zone Sticky Conversion Bar (< 768px) -->
     <div class="fixed bottom-0 inset-x-0 z-50 bg-white/95 backdrop-blur-xl border-t border-slate-200/80 p-3 flex md:hidden items-center justify-between gap-2.5 shadow-2xl">
         <div class="flex items-center gap-1.5">
+            <?php if (!empty($storefrontBlock['enabled']) || $isPreview): ?>
+            <button type="button" onclick="tenantCart.openDrawer()" class="relative w-11 h-11 rounded-2xl bg-amber-50 text-amber-700 border border-amber-200 flex items-center justify-center shrink-0 shadow-2xs active:scale-95 transition-transform" title="سبد خرید اینترنتی">
+                <span class="material-symbols-outlined text-lg">shopping_cart</span>
+                <span id="tenant-mobile-cart-badge" class="hidden absolute -top-1 -right-1 bg-[#fd8100] text-white text-[9px] font-black w-4 h-4 rounded-full flex items-center justify-center border border-white">0</span>
+            </button>
+            <?php endif; ?>
             <button type="button" onclick="openNavHubModal()" class="w-11 h-11 rounded-2xl bg-indigo-50 text-indigo-700 border border-indigo-200/80 flex items-center justify-center shrink-0 active:scale-95 transition-transform" title="مسیریابی هوشمند">
                 <span class="material-symbols-outlined text-lg">near_me</span>
             </button>
@@ -2058,6 +2141,231 @@ $ctaHref = match($tenantType) {
             <span class="material-symbols-outlined text-base">calendar_month</span>
             <span id="live-mobile-cta" data-studio-editable="mobile_cta_text"><?= htmlspecialchars($mobileBarBlock['cta_text'] ?? 'رزرو آنلاین نوبت') ?></span>
         </a>
+    </div>
+
+    <!-- Floating Desktop Cart Trigger Button -->
+    <div id="tenant-cart-trigger" class="fixed bottom-6 left-6 z-40 transition-transform duration-300 scale-0 origin-bottom-left hidden md:block">
+        <button onclick="tenantCart.openDrawer()" class="bg-[#001a48] hover:bg-slate-900 text-white px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-3 border border-white/20 transition-all hover:scale-105 active:scale-95 group">
+            <span class="relative">
+                <span class="material-symbols-outlined text-2xl group-hover:rotate-12 transition-transform">shopping_bag</span>
+                <span id="tenant-cart-badge" class="absolute -top-2 -right-2 bg-[#fd8100] text-white text-[11px] font-black w-5 h-5 rounded-full flex items-center justify-center border-2 border-[#001a48] shadow-sm">0</span>
+            </span>
+            <div class="text-right">
+                <div class="text-[10px] text-slate-300 font-bold leading-tight">سبد خرید اختصاصی</div>
+                <div class="text-xs font-black text-amber-300"><span id="tenant-cart-btn-price">۰</span> تومان</div>
+            </div>
+        </button>
+    </div>
+
+    <!-- Order Success Receipt Modal -->
+    <?php if ($orderSuccess): ?>
+    <div id="order-success-modal" class="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-md w-full p-6 text-center space-y-4 shadow-2xl border border-emerald-200">
+            <div class="w-16 h-16 rounded-3xl bg-emerald-50 text-emerald-600 border border-emerald-200 flex items-center justify-center mx-auto shadow-inner">
+                <span class="material-symbols-outlined text-3xl">check_circle</span>
+            </div>
+            <h3 class="text-xl font-black text-slate-900">سفارش شما با موفقیت ثبت شد!</h3>
+            <p class="text-xs text-slate-600 leading-relaxed">
+                سفارش شما به شماره <span class="font-bold text-slate-900 font-mono">#PC-<?= $orderSuccessId ?></span> در انبار اختصاصی «<?= htmlspecialchars($site['site_title']) ?>» ثبت گردید و به سامانه انبارداری و ارسال مرسولات آسنا منتقل شد.
+            </p>
+            <?php if (!empty($orderRefId)): ?>
+            <div class="p-3 bg-slate-50 rounded-2xl border border-slate-200 text-xs font-mono flex items-center justify-between">
+                <span class="text-slate-500 font-sans">کد رهگیری شاپرک:</span>
+                <span class="font-black text-slate-900"><?= $orderRefId ?></span>
+            </div>
+            <?php endif; ?>
+            <div class="p-3.5 bg-emerald-50 rounded-2xl border border-emerald-200 text-right text-[11px] text-emerald-950 space-y-1">
+                <div class="flex items-center gap-1.5 font-bold text-emerald-800">
+                    <span class="material-symbols-outlined text-sm text-emerald-600">verified</span>
+                    <span>اتصال مستقیم به انبار و سامانه پستکس آسنا</span>
+                </div>
+                <div>کد رهگیری پستی مرسوله به محض بسته‌بندی از طریق پیامک برای شما ارسال خواهد شد.</div>
+            </div>
+            <div class="pt-2 flex items-center gap-2">
+                <a href="site.php?slug=<?= urlencode($site['slug']) ?>" class="flex-1 py-3 rounded-xl bg-slate-900 text-white text-xs font-bold hover:bg-slate-800 transition-colors">
+                    تأیید و بازگشت به سایت
+                </a>
+                <button type="button" onclick="window.print()" class="px-4 py-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-colors flex items-center gap-1">
+                    <span class="material-symbols-outlined text-xs">print</span>
+                    <span>چاپ رسید</span>
+                </button>
+            </div>
+        </div>
+    </div>
+    <?php endif; ?>
+
+    <!-- Order Failed Alert Modal -->
+    <?php if ($orderFailed): ?>
+    <div id="order-failed-modal" class="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-md w-full p-6 text-center space-y-4 shadow-2xl border border-rose-200">
+            <div class="w-16 h-16 rounded-3xl bg-rose-50 text-rose-600 border border-rose-200 flex items-center justify-center mx-auto shadow-inner">
+                <span class="material-symbols-outlined text-3xl">error</span>
+            </div>
+            <h3 class="text-lg font-black text-slate-900">پرداخت ناموفق یا لغو شد</h3>
+            <p class="text-xs text-slate-600 leading-relaxed"><?= $orderFailMsg ?></p>
+            <div class="pt-2 flex items-center justify-center gap-3">
+                <a href="site.php?slug=<?= urlencode($site['slug']) ?>" class="px-5 py-2.5 rounded-xl bg-slate-900 text-white text-xs font-bold hover:bg-slate-800 transition-colors">
+                    بازگشت به سایت
+                </a>
+                <button type="button" onclick="document.getElementById('order-failed-modal').remove(); tenantCart.openDrawer(true);" class="px-5 py-2.5 rounded-xl bg-rose-600 text-white text-xs font-bold hover:bg-rose-700 transition-colors">
+                    تلاش مجدد برای پرداخت
+                </button>
+            </div>
+        </div>
+    </div>
+    <?php endif; ?>
+
+    <!-- Native Tenant Cart & Quick Checkout Drawer (Connected to ASENA) -->
+    <div id="tenant-cart-drawer" class="fixed inset-0 z-50 pointer-events-none transition-opacity duration-300 opacity-0">
+        <!-- Backdrop -->
+        <div id="tenant-cart-backdrop" onclick="tenantCart.closeDrawer()" class="absolute inset-0 bg-slate-950/60 backdrop-blur-xs transition-opacity duration-300"></div>
+
+        <!-- Drawer Panel -->
+        <div id="tenant-cart-panel" class="absolute inset-y-0 left-0 max-w-md w-full bg-white shadow-2xl flex flex-col justify-between transform -translate-x-full transition-transform duration-300 ease-out pointer-events-auto border-r border-slate-200">
+            <!-- Header -->
+            <div class="p-4 sm:p-5 border-b border-slate-100 flex items-center justify-between bg-gradient-to-r from-slate-50 to-white">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-10 h-10 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center border border-amber-200 shadow-2xs">
+                        <span class="material-symbols-outlined text-xl">shopping_cart</span>
+                    </div>
+                    <div>
+                        <h3 class="font-black text-slate-900 text-sm">سبد خرید و ثبت سفارش</h3>
+                        <div class="text-[11px] text-slate-500 font-bold"><?= htmlspecialchars($site['site_title']) ?></div>
+                    </div>
+                </div>
+                <button type="button" onclick="tenantCart.closeDrawer()" class="w-9 h-9 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center transition-colors">
+                    <span class="material-symbols-outlined text-lg">close</span>
+                </button>
+            </div>
+
+            <!-- Drawer Body -->
+            <div class="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4" id="tenant-cart-body">
+                <!-- Step 1: Items in Cart -->
+                <div id="tenant-cart-step-items" class="space-y-4">
+                    <div id="tenant-cart-items-container" class="space-y-3">
+                        <!-- Rendered by JS -->
+                    </div>
+
+                    <!-- Empty Notice -->
+                    <div id="tenant-cart-empty" class="hidden text-center py-12 px-4 space-y-3">
+                        <div class="w-16 h-16 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center mx-auto">
+                            <span class="material-symbols-outlined text-3xl">remove_shopping_cart</span>
+                        </div>
+                        <h4 class="font-bold text-slate-800 text-sm">سبد خرید شما خالی است</h4>
+                        <p class="text-xs text-slate-500 max-w-xs mx-auto">کالاهای مورد نظر خود را از بخش ویترین انبار به سبد خرید اضافه فرمایید.</p>
+                        <button type="button" onclick="tenantCart.closeDrawer()" class="px-4 py-2 rounded-xl bg-slate-900 text-white text-xs font-bold hover:bg-slate-800 transition-colors">
+                            مشاهده کالاها و داروها
+                        </button>
+                    </div>
+
+                    <!-- Cost Summary Breakdown -->
+                    <div id="tenant-cart-cost-summary" class="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-2.5 text-xs">
+                        <div class="flex items-center justify-between text-slate-600">
+                            <span>مجموع مبالغ کالاها:</span>
+                            <span class="font-bold font-mono text-slate-900" id="cart-summary-subtotal">۰ تومان</span>
+                        </div>
+                        <div class="flex items-center justify-between text-slate-600">
+                            <span>هزینه بسته‌بندی و ارسال:</span>
+                            <span class="font-bold font-mono text-slate-900" id="cart-summary-shipping">رایگان</span>
+                        </div>
+                        <div class="flex items-center justify-between text-slate-600">
+                            <span class="flex items-center gap-1">
+                                <span>مالیات بر ارزش افزوده (۱۰٪):</span>
+                                <span class="material-symbols-outlined text-xs text-slate-400" title="مطابق قانون مالیات بر ارزش افزوده بر روی کالاها">info</span>
+                            </span>
+                            <span class="font-bold font-mono text-slate-900" id="cart-summary-vat">۰ تومان</span>
+                        </div>
+                        <div class="pt-2 border-t border-slate-200 flex items-center justify-between font-black text-sm text-slate-900">
+                            <span>مبلغ نهایی قابل پرداخت:</span>
+                            <span class="text-emerald-700 font-mono text-base" id="cart-summary-total">۰ تومان</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 2: Shipping & Address Form -->
+                <div id="tenant-cart-step-checkout" class="hidden space-y-4">
+                    <div class="p-3 rounded-2xl bg-blue-50 border border-blue-200 text-blue-900 text-xs font-bold flex items-center gap-2">
+                        <span class="material-symbols-outlined text-blue-600 text-base">local_shipping</span>
+                        <span>مشخصات تحویل‌گیرنده و صدور بارنامه پستی</span>
+                    </div>
+
+                    <form id="tenant-checkout-form" onsubmit="tenantCart.submitOrder(event)" class="space-y-3.5">
+                        <input type="hidden" name="slug" value="<?= htmlspecialchars($site['slug']) ?>">
+                        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
+
+                        <div>
+                            <label class="block text-[11px] font-bold text-slate-700 mb-1">نام و نام خانوادگی تحویل‌گیرنده *</label>
+                            <input type="text" name="customer_name" required placeholder="مثال: علی رضایی" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs text-slate-800 focus:border-[#001a48] focus:ring-1 focus:ring-[#001a48] outline-none">
+                        </div>
+
+                        <div>
+                            <label class="block text-[11px] font-bold text-slate-700 mb-1">شماره تلفن همراه (جهت پیامک پیگیری مرسوله) *</label>
+                            <input type="tel" name="customer_phone" required dir="ltr" placeholder="09121234567" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-mono text-left text-slate-800 focus:border-[#001a48] focus:ring-1 focus:ring-[#001a48] outline-none">
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-2.5">
+                            <div>
+                                <label class="block text-[11px] font-bold text-slate-700 mb-1">استان *</label>
+                                <input type="text" name="province" required value="تهران" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs text-slate-800 focus:border-[#001a48] focus:ring-1 focus:ring-[#001a48] outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-bold text-slate-700 mb-1">شهر *</label>
+                                <input type="text" name="city" required value="تهران" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs text-slate-800 focus:border-[#001a48] focus:ring-1 focus:ring-[#001a48] outline-none">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-[11px] font-bold text-slate-700 mb-1">نشانی دقیق پستی (خیابان، کوچه، پلاک، واحد) *</label>
+                            <textarea name="address" required rows="2" placeholder="نشانی پستی دقیق..." class="w-full px-3.5 py-2 rounded-xl border border-slate-200 text-xs text-slate-800 focus:border-[#001a48] focus:ring-1 focus:ring-[#001a48] outline-none resize-none"></textarea>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-2.5">
+                            <div>
+                                <label class="block text-[11px] font-bold text-slate-700 mb-1">کد پستی ده‌رقمی</label>
+                                <input type="text" name="postal_code" maxlength="10" dir="ltr" placeholder="کد پستی ۱۰ رقمی" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-mono text-left text-slate-800 focus:border-[#001a48] focus:ring-1 focus:ring-[#001a48] outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-bold text-slate-700 mb-1">روش ارسال</label>
+                                <select name="shipping_method" onchange="tenantCart.updateShippingMethod(this.value)" class="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs text-slate-800 focus:border-[#001a48] outline-none">
+                                    <option value="pishtaz">شرکت ملی پست (پیشتاز)</option>
+                                    <option value="express">پیک اکسپرس شهری</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-[11px] font-bold text-slate-700 mb-1">توضیحات و هماهنگی تحویل (اختیاری)</label>
+                            <input type="text" name="order_notes" placeholder="یادداشت هماهنگی با مامور ارسال یا ساعات تحویل..." class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs text-slate-800 focus:border-[#001a48] outline-none">
+                        </div>
+
+                        <!-- Trust Seal -->
+                        <div class="p-3 rounded-2xl bg-slate-50 border border-slate-200/90 text-[11px] text-slate-600 flex items-center gap-2">
+                            <span class="material-symbols-outlined text-emerald-600 text-lg">verified_user</span>
+                            <span>پرداخت امن از طریق درگاه مرکزی شاپرک آسنا با ضمانت اصالت کالا</span>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Drawer Footer Actions -->
+            <div class="p-4 sm:p-5 border-t border-slate-100 bg-white space-y-2">
+                <div id="tenant-cart-actions-step1">
+                    <button type="button" onclick="tenantCart.goToCheckoutStep()" id="btn-goto-checkout" class="w-full py-3.5 px-4 rounded-2xl bg-[#001a48] hover:bg-slate-900 text-white text-xs font-black shadow-lg flex items-center justify-center gap-2 transition-all active:scale-98">
+                        <span>ثبت سفارش و ادامه خرید</span>
+                        <span class="material-symbols-outlined text-sm">arrow_forward</span>
+                    </button>
+                </div>
+                <div id="tenant-cart-actions-step2" class="hidden flex items-center gap-2">
+                    <button type="button" onclick="tenantCart.goToItemsStep()" class="w-1/3 py-3 px-3 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-all text-center">
+                        بازگشت
+                    </button>
+                    <button type="submit" form="tenant-checkout-form" id="btn-submit-order" class="w-2/3 py-3.5 px-4 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-700 text-white text-xs font-black shadow-lg shadow-emerald-700/20 flex items-center justify-center gap-2 transition-all active:scale-98">
+                        <span class="material-symbols-outlined text-sm">lock</span>
+                        <span id="btn-submit-order-label">پرداخت امن شاپرک</span>
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Navigation Hub Modal -->
@@ -2303,6 +2611,372 @@ $ctaHref = match($tenantType) {
 
     <!-- Client-Side Reactive Scripts -->
     <script>
+        // Native Tenant Cart & Quick Checkout Engine (ASENA Connected)
+        const tenantCart = {
+            slug: '<?= addslashes($site['slug']) ?>',
+            siteTitle: '<?= addslashes($site['site_title']) ?>',
+            shippingMethod: 'pishtaz',
+            
+            getItems() {
+                try {
+                    return JSON.parse(localStorage.getItem('asena_cart_' + this.slug)) || [];
+                } catch(e) {
+                    return [];
+                }
+            },
+            
+            saveItems(items) {
+                try {
+                    localStorage.setItem('asena_cart_' + this.slug, JSON.stringify(items));
+                } catch(e) {}
+                this.render();
+            },
+            
+            addItem(btnOrData, buyNow = false) {
+                let item = null;
+                if (btnOrData instanceof HTMLElement) {
+                    const card = btnOrData.closest('[data-product-id]');
+                    if (card) {
+                        item = {
+                            id: parseInt(card.dataset.productId),
+                            source: card.dataset.productSource || 'product',
+                            name: card.dataset.productName,
+                            price: parseInt(card.dataset.productPrice),
+                            image: card.dataset.productImage,
+                            stock: parseInt(card.dataset.productStock) || 10,
+                            qty: 1
+                        };
+                    }
+                } else if (btnOrData && btnOrData.id) {
+                    item = btnOrData;
+                }
+                
+                if (!item || !item.id) return;
+                
+                let items = this.getItems();
+                const existingIdx = items.findIndex(i => i.id === item.id && i.source === item.source);
+                
+                if (existingIdx > -1) {
+                    if (items[existingIdx].qty < item.stock) {
+                        items[existingIdx].qty += 1;
+                    } else {
+                        this.toast('حداکثر موجودی این کالا در سبد شما قرار دارد.', 'warning');
+                        if (buyNow) this.openDrawer(true);
+                        return;
+                    }
+                } else {
+                    items.push({
+                        id: item.id,
+                        source: item.source,
+                        name: item.name,
+                        price: item.price,
+                        image: item.image,
+                        stock: item.stock,
+                        qty: 1
+                    });
+                }
+                
+                this.saveItems(items);
+                this.toast(`کالای «${item.name}» به سبد خرید اضافه شد.`, 'success');
+                
+                if (buyNow) {
+                    this.openDrawer(true);
+                }
+            },
+            
+            updateQty(id, source, delta) {
+                let items = this.getItems();
+                const idx = items.findIndex(i => i.id === id && i.source === source);
+                if (idx > -1) {
+                    const newQty = items[idx].qty + delta;
+                    if (newQty <= 0) {
+                        items.splice(idx, 1);
+                        this.toast('کالا از سبد خرید حذف شد.', 'info');
+                    } else if (newQty > items[idx].stock) {
+                        this.toast('تعداد درخواستی بیشتر از موجودی انبار است.', 'warning');
+                        return;
+                    } else {
+                        items[idx].qty = newQty;
+                    }
+                    this.saveItems(items);
+                }
+            },
+            
+            removeItem(id, source) {
+                let items = this.getItems().filter(i => !(i.id === id && i.source === source));
+                this.saveItems(items);
+                this.toast('کالا از سبد خرید حذف شد.', 'info');
+            },
+            
+            clear() {
+                try {
+                    localStorage.removeItem('asena_cart_' + this.slug);
+                } catch(e) {}
+                this.render();
+            },
+            
+            updateShippingMethod(method) {
+                this.shippingMethod = method;
+                this.render();
+            },
+            
+            getTotals() {
+                const items = this.getItems();
+                const subtotal = items.reduce((sum, item) => sum + (item.price * item.qty), 0);
+                let shipping = 0;
+                if (subtotal > 0) {
+                    shipping = (subtotal >= 500000) ? 0 : (this.shippingMethod === 'express' ? 65000 : 45000);
+                }
+                const vat = Math.round(subtotal * 0.10);
+                const total = subtotal + shipping + vat;
+                return { subtotal, shipping, vat, total, count: items.reduce((c, i) => c + i.qty, 0) };
+            },
+            
+            openDrawer(goToCheckout = false) {
+                const drawer = document.getElementById('tenant-cart-drawer');
+                const panel = document.getElementById('tenant-cart-panel');
+                if (!drawer || !panel) return;
+                
+                this.render();
+                if (goToCheckout && this.getItems().length > 0) {
+                    this.goToCheckoutStep();
+                } else {
+                    this.goToItemsStep();
+                }
+                
+                drawer.classList.remove('pointer-events-none', 'opacity-0');
+                drawer.classList.add('opacity-100');
+                panel.classList.remove('-translate-x-full');
+            },
+            
+            closeDrawer() {
+                const drawer = document.getElementById('tenant-cart-drawer');
+                const panel = document.getElementById('tenant-cart-panel');
+                if (!drawer || !panel) return;
+                
+                panel.classList.add('-translate-x-full');
+                drawer.classList.remove('opacity-100');
+                drawer.classList.add('opacity-0');
+                setTimeout(() => {
+                    drawer.classList.add('pointer-events-none');
+                }, 300);
+            },
+            
+            goToCheckoutStep() {
+                if (this.getItems().length === 0) {
+                    this.toast('سبد خرید شما خالی است.', 'warning');
+                    return;
+                }
+                document.getElementById('tenant-cart-step-items')?.classList.add('hidden');
+                document.getElementById('tenant-cart-actions-step1')?.classList.add('hidden');
+                document.getElementById('tenant-cart-step-checkout')?.classList.remove('hidden');
+                document.getElementById('tenant-cart-actions-step2')?.classList.remove('hidden');
+            },
+            
+            goToItemsStep() {
+                document.getElementById('tenant-cart-step-checkout')?.classList.add('hidden');
+                document.getElementById('tenant-cart-actions-step2')?.classList.add('hidden');
+                document.getElementById('tenant-cart-step-items')?.classList.remove('hidden');
+                document.getElementById('tenant-cart-actions-step1')?.classList.remove('hidden');
+            },
+            
+            formatPrice(num) {
+                return new Intl.NumberFormat('fa-IR').format(num);
+            },
+            
+            render() {
+                const items = this.getItems();
+                const totals = this.getTotals();
+                
+                // Update Badges & Counters
+                const trigger = document.getElementById('tenant-cart-trigger');
+                const badge = document.getElementById('tenant-cart-badge');
+                const btnPrice = document.getElementById('tenant-cart-btn-price');
+                const navBadge = document.getElementById('tenant-nav-cart-badge');
+                const mobileBadge = document.getElementById('tenant-mobile-cart-badge');
+                const sfBadge = document.getElementById('tenant-storefront-cart-count');
+                
+                if (trigger) {
+                    if (totals.count > 0) {
+                        trigger.classList.remove('scale-0');
+                        trigger.classList.add('scale-100');
+                    } else {
+                        trigger.classList.remove('scale-100');
+                        trigger.classList.add('scale-0');
+                    }
+                }
+                if (badge) badge.innerText = totals.count;
+                if (btnPrice) btnPrice.innerText = this.formatPrice(totals.total);
+                if (navBadge) {
+                    navBadge.innerText = totals.count;
+                    navBadge.classList.toggle('hidden', totals.count === 0);
+                }
+                if (mobileBadge) {
+                    mobileBadge.innerText = totals.count;
+                    mobileBadge.classList.toggle('hidden', totals.count === 0);
+                }
+                if (sfBadge) {
+                    sfBadge.innerText = totals.count;
+                    sfBadge.classList.toggle('hidden', totals.count === 0);
+                }
+                
+                // Render in Drawer
+                const container = document.getElementById('tenant-cart-items-container');
+                const emptyNotice = document.getElementById('tenant-cart-empty');
+                const costSummary = document.getElementById('tenant-cart-cost-summary');
+                const btnGotoCheckout = document.getElementById('btn-goto-checkout');
+                
+                if (!container) return;
+                
+                if (items.length === 0) {
+                    container.innerHTML = '';
+                    emptyNotice?.classList.remove('hidden');
+                    costSummary?.classList.add('hidden');
+                    if (btnGotoCheckout) btnGotoCheckout.disabled = true;
+                    return;
+                }
+                
+                emptyNotice?.classList.add('hidden');
+                costSummary?.classList.remove('hidden');
+                if (btnGotoCheckout) btnGotoCheckout.disabled = false;
+                
+                let html = '';
+                items.forEach(it => {
+                    html += `
+                    <div class="flex items-center gap-3 p-3 rounded-2xl bg-white border border-slate-200/90 shadow-2xs hover:border-slate-300 transition-all">
+                        <img src="${it.image}" alt="${it.name}" class="w-12 h-12 rounded-xl object-cover bg-slate-50 border border-slate-100 shrink-0">
+                        <div class="flex-1 min-w-0">
+                            <h5 class="text-xs font-bold text-slate-900 truncate mb-1">${it.name}</h5>
+                            <div class="text-[11px] font-mono text-emerald-700 font-bold">${this.formatPrice(it.price)} تومان</div>
+                        </div>
+                        <div class="flex items-center gap-1.5 shrink-0 bg-slate-50 border border-slate-200 rounded-xl p-1">
+                            <button type="button" onclick="tenantCart.updateQty(${it.id}, '${it.source}', -1)" class="w-6 h-6 rounded-lg bg-white hover:bg-slate-200 text-slate-700 flex items-center justify-center font-bold text-xs shadow-2xs active:scale-95 transition-transform">-</button>
+                            <span class="w-5 text-center text-xs font-mono font-black text-slate-900">${it.qty}</span>
+                            <button type="button" onclick="tenantCart.updateQty(${it.id}, '${it.source}', 1)" class="w-6 h-6 rounded-lg bg-white hover:bg-slate-200 text-slate-700 flex items-center justify-center font-bold text-xs shadow-2xs active:scale-95 transition-transform">+</button>
+                        </div>
+                        <button type="button" onclick="tenantCart.removeItem(${it.id}, '${it.source}')" class="text-slate-400 hover:text-rose-600 p-1 transition-colors" title="حذف کالا">
+                            <span class="material-symbols-outlined text-sm">delete</span>
+                        </button>
+                    </div>`;
+                });
+                container.innerHTML = html;
+                
+                // Update Summary Fields
+                const elSubtotal = document.getElementById('cart-summary-subtotal');
+                const elShipping = document.getElementById('cart-summary-shipping');
+                const elVat = document.getElementById('cart-summary-vat');
+                const elTotal = document.getElementById('cart-summary-total');
+                const elBtnOrderLabel = document.getElementById('btn-submit-order-label');
+                
+                if (elSubtotal) elSubtotal.innerText = this.formatPrice(totals.subtotal) + ' تومان';
+                if (elShipping) elShipping.innerText = totals.shipping === 0 ? 'رایگان (سفارش بالای ۵۰۰ هزار)' : this.formatPrice(totals.shipping) + ' تومان';
+                if (elVat) elVat.innerText = this.formatPrice(totals.vat) + ' تومان';
+                if (elTotal) elTotal.innerText = this.formatPrice(totals.total) + ' تومان';
+                if (elBtnOrderLabel) elBtnOrderLabel.innerText = `پرداخت امن (${this.formatPrice(totals.total)} تومان)`;
+            },
+            
+            async submitOrder(e) {
+                e.preventDefault();
+                const form = e.target;
+                const btn = document.getElementById('btn-submit-order');
+                const items = this.getItems();
+                
+                if (items.length === 0) {
+                    this.toast('سبد خرید شما خالی است.', 'warning');
+                    return;
+                }
+                
+                const formData = new FormData(form);
+                const payload = {
+                    slug: this.slug,
+                    csrf_token: formData.get('csrf_token'),
+                    customer_name: formData.get('customer_name'),
+                    customer_phone: formData.get('customer_phone'),
+                    province: formData.get('province'),
+                    city: formData.get('city'),
+                    address: formData.get('address'),
+                    postal_code: formData.get('postal_code'),
+                    shipping_method: formData.get('shipping_method'),
+                    order_notes: formData.get('order_notes'),
+                    items: items.map(i => ({ id: i.id, source: i.source, qty: i.qty }))
+                };
+                
+                if (btn) {
+                    btn.disabled = true;
+                    btn.classList.add('opacity-70', 'cursor-not-allowed');
+                    btn.innerHTML = '<span class="material-symbols-outlined text-sm animate-spin">progress_activity</span><span>در حال اتصال به درگاه شاپرک...</span>';
+                }
+                
+                try {
+                    const resp = await fetch('actions/tenant_order_action.php', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    const data = await resp.json();
+                    
+                    if (data.success && data.redirect_url) {
+                        this.clear();
+                        window.location.href = data.redirect_url;
+                    } else {
+                        this.toast(data.message || 'خطا در ثبت سفارش.', 'error');
+                        if (btn) {
+                            btn.disabled = false;
+                            btn.classList.remove('opacity-70', 'cursor-not-allowed');
+                            btn.innerHTML = '<span class="material-symbols-outlined text-sm">lock</span><span>تلاش مجدد پرداخت</span>';
+                        }
+                    }
+                } catch (err) {
+                    this.toast('خطای اتصال به سرور: ' + err.message, 'error');
+                    if (btn) {
+                        btn.disabled = false;
+                        btn.classList.remove('opacity-70', 'cursor-not-allowed');
+                        btn.innerHTML = '<span class="material-symbols-outlined text-sm">lock</span><span>تلاش مجدد</span>';
+                    }
+                }
+            },
+            
+            toast(msg, type = 'info') {
+                const old = document.getElementById('tenant-toast');
+                if (old) old.remove();
+                
+                const colors = {
+                    success: 'bg-emerald-900 text-white border-emerald-600',
+                    warning: 'bg-amber-900 text-white border-amber-600',
+                    error: 'bg-rose-900 text-white border-rose-600',
+                    info: 'bg-slate-900 text-white border-slate-700'
+                };
+                const icons = {
+                    success: 'check_circle',
+                    warning: 'warning',
+                    error: 'error',
+                    info: 'info'
+                };
+                
+                const toast = document.createElement('div');
+                toast.id = 'tenant-toast';
+                toast.className = `fixed top-5 left-1/2 -translate-x-1/2 z-50 px-4 py-3 rounded-2xl border shadow-2xl flex items-center gap-2.5 text-xs font-bold backdrop-blur-md transition-all duration-300 transform scale-95 opacity-0 ${colors[type] || colors.info}`;
+                toast.innerHTML = `<span class="material-symbols-outlined text-base">${icons[type] || 'info'}</span><span>${msg}</span>`;
+                document.body.appendChild(toast);
+                
+                requestAnimationFrame(() => {
+                    toast.classList.remove('scale-95', 'opacity-0');
+                    toast.classList.add('scale-100', 'opacity-100');
+                });
+                
+                setTimeout(() => {
+                    toast.classList.remove('scale-100', 'opacity-100');
+                    toast.classList.add('scale-95', 'opacity-0');
+                    setTimeout(() => toast.remove(), 300);
+                }, 3500);
+            }
+        };
+
+        // Initialize tenant cart on DOM ready
+        document.addEventListener('DOMContentLoaded', () => {
+            tenantCart.render();
+        });
+
         // Interactive Cost Calculator State
         let currentPetMultiplier = 1.0;
         let currentPetTitle = 'سگ';

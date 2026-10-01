@@ -20,10 +20,11 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POST['action'])) {
         if (!$authorized && $orderId > 0) {
             $chk = $pdo->prepare("
                 SELECT 1 FROM order_items oi
-                WHERE oi.order_id = ? AND (oi.seller_id = ? OR oi.seller_id = ?)
+                LEFT JOIN orders o ON oi.order_id = o.id
+                WHERE oi.order_id = ? AND (oi.seller_id = ? OR oi.seller_id = ? OR oi.organization_id = ? OR (o.source_tenant_type = 'organization' AND o.source_tenant_id = ?))
                 LIMIT 1
             ");
-            $chk->execute([$orderId, (int)($currentOrg['user_id'] ?? 0), (int)$currentUser['id']]);
+            $chk->execute([$orderId, (int)($currentOrg['user_id'] ?? 0), (int)$currentUser['id'], $orgId, $orgId]);
             $authorized = (bool)$chk->fetchColumn();
         }
 
@@ -96,10 +97,11 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POST['action'])) {
         if (!$authorized && $orderId > 0) {
             $chk = $pdo->prepare("
                 SELECT 1 FROM order_items oi
-                WHERE oi.order_id = ? AND (oi.seller_id = ? OR oi.seller_id = ?)
+                LEFT JOIN orders o ON oi.order_id = o.id
+                WHERE oi.order_id = ? AND (oi.seller_id = ? OR oi.seller_id = ? OR oi.organization_id = ? OR (o.source_tenant_type = 'organization' AND o.source_tenant_id = ?))
                 LIMIT 1
             ");
-            $chk->execute([$orderId, (int)($currentOrg['user_id'] ?? 0), (int)$currentUser['id']]);
+            $chk->execute([$orderId, (int)($currentOrg['user_id'] ?? 0), (int)$currentUser['id'], $orgId, $orgId]);
             $authorized = (bool)$chk->fetchColumn();
         }
 
@@ -135,9 +137,13 @@ if ($filter === 'pending') {
 $orgUserId = (int)($currentOrg['user_id'] ?? 0);
 $currUserId = (int)($currentUser['id'] ?? 0);
 
-$whereClauses[] = "(EXISTS (SELECT 1 FROM order_items oi WHERE oi.order_id = o.id AND (oi.seller_id = :org_user OR oi.seller_id = :curr_user)))";
+$whereClauses[] = "(
+    (EXISTS (SELECT 1 FROM order_items oi WHERE oi.order_id = o.id AND (oi.seller_id = :org_user OR oi.seller_id = :curr_user OR oi.organization_id = :current_org_id)))
+    OR (o.source_tenant_type = 'organization' AND o.source_tenant_id = :current_org_id)
+)";
 $params[':org_user'] = $orgUserId;
 $params[':curr_user'] = $currUserId;
+$params[':current_org_id'] = $orgId;
 
 $whereSql = implode(' AND ', $whereClauses);
 
@@ -165,12 +171,12 @@ $orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
 if (!empty($orders)) {
     $orderIds = array_column($orders, 'id');
     $ph = implode(',', array_fill(0, count($orderIds), '?'));
-    $itemParams = array_merge($orderIds, [$orgUserId, $currUserId]);
+    $itemParams = array_merge($orderIds, [$orgUserId, $currUserId, $orgId]);
     $itemStmt = $pdo->prepare("
         SELECT oi.*, p.image_url, p.category 
         FROM order_items oi
         LEFT JOIN products p ON oi.product_id = p.id
-        WHERE oi.order_id IN ($ph) AND (oi.seller_id = ? OR oi.seller_id = ?)
+        WHERE oi.order_id IN ($ph) AND (oi.seller_id = ? OR oi.seller_id = ? OR oi.organization_id = ?)
     ");
     $itemStmt->execute($itemParams);
     $itemsByOrder = [];

@@ -19,8 +19,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         if ($orderId > 0 && !empty($trackingCode)) {
             // Verify this seller owns at least one item in this order
-            $checkStmt = $pdo->prepare("SELECT COUNT(*) FROM order_items WHERE order_id = ? AND seller_id = ?");
-            $checkStmt->execute([$orderId, $sellerId]);
+            $checkStmt = $pdo->prepare("
+                SELECT COUNT(*) FROM order_items oi
+                LEFT JOIN orders o ON oi.order_id = o.id
+                WHERE oi.order_id = ? AND (oi.seller_id = ? OR (o.source_tenant_type = 'seller' AND o.source_tenant_id = ?))
+            ");
+            $checkStmt->execute([$orderId, $sellerId, $sellerId]);
             if ($checkStmt->fetchColumn() > 0 || $currentUser['role'] === 'admin') {
                 require_once __DIR__ . '/../includes/OrderLifecycleService.php';
                 $lifecycle = new OrderLifecycleService($pdo);
@@ -188,9 +192,9 @@ $pendingOrdersStmt = $pdo->prepare("
     SELECT COUNT(DISTINCT o.id) 
     FROM orders o
     JOIN order_items oi ON o.id = oi.order_id
-    WHERE (oi.seller_id = ? OR ? = 'admin') AND o.status IN ('processing', 'pending_payment')
+    WHERE (oi.seller_id = ? OR ? = 'admin' OR (o.source_tenant_type = 'seller' AND o.source_tenant_id = ?)) AND o.status IN ('processing', 'pending_payment')
 ");
-$pendingOrdersStmt->execute([$sellerId, $currentUser['role']]);
+$pendingOrdersStmt->execute([$sellerId, $currentUser['role'], $sellerId]);
 $pendingOrdersCount = (int)$pendingOrdersStmt->fetchColumn();
 
 // 2. Active products count
@@ -228,11 +232,11 @@ $ordersQuery = $pdo->prepare("
     FROM orders o
     JOIN order_items oi ON o.id = oi.order_id
     LEFT JOIN users u ON o.user_id = u.id
-    WHERE (oi.seller_id = ? OR ? = 'admin')
+    WHERE (oi.seller_id = ? OR ? = 'admin' OR (o.source_tenant_type = 'seller' AND o.source_tenant_id = ?))
     ORDER BY o.id DESC
     LIMIT 100
 ");
-$ordersQuery->execute([$sellerId, $currentUser['role']]);
+$ordersQuery->execute([$sellerId, $currentUser['role'], $sellerId]);
 $sellerOrders = $ordersQuery->fetchAll(PDO::FETCH_ASSOC);
 
 // Rule 11: Calculate 4-Stage Fulfillment Pipeline Counts
