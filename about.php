@@ -591,7 +591,7 @@ require_once 'includes/header.php';
                         </div>
 
                         <div class="flex items-center gap-3 pt-2">
-                            <a href="https://trustseal.enamad.ir/?id=7936941&Code=fHqzrN234gpBPdweBuMdc1CQU97V3Q1p" target="_blank" rel="noopener noreferrer" class="px-5 py-3 rounded-xl bg-primary text-white font-bold text-xs hover:bg-primary-light active:scale-[0.98] transition flex items-center justify-center gap-2 w-full sm:w-auto min-h-[44px]">
+                            <a href="https://trustseal.enamad.ir/?id=7936941&Code=fHqzrN234gpBPdweBuMdc1CQU97V3Q1p" target="_blank" referrerpolicy="origin" class="px-5 py-3 rounded-xl bg-primary text-white font-bold text-xs hover:bg-primary-light active:scale-[0.98] transition flex items-center justify-center gap-2 w-full sm:w-auto min-h-[44px]">
                                 <span class="material-symbols-outlined text-sm">verified</span>
                                 <span>استعلام زنده اینماد در سامانه صمت</span>
                             </a>
