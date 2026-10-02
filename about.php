@@ -584,14 +584,14 @@ require_once 'includes/header.php';
                         </p>
 
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 text-xs bg-slate-50 p-3.5 sm:p-4 rounded-xl sm:rounded-2xl border border-slate-200">
-                            <div>شناسه رهگیری اینماد: <strong class="font-mono text-slate-900">7706608</strong></div>
+                            <div>شناسه رهگیری اینماد: <strong class="font-mono text-slate-900">7936941</strong></div>
                             <div>کد درگاه پرداخت شاپرک: <strong class="font-mono text-slate-900">92df0362-5e43...</strong></div>
                             <div>دامنه رسمی احراز شده: <strong class="font-mono text-slate-900">asena.company</strong></div>
                             <div>شبکه تسویه بانکی: <strong class="text-slate-900">پایا و ساتنا بانک مرکزی</strong></div>
                         </div>
 
                         <div class="flex items-center gap-3 pt-2">
-                            <a href="https://trustseal.enamad.ir/?id=7706608&Code=qBmonKZeAe36PvBvs1zpTGrrRb7uFJs8" target="_blank" rel="noopener noreferrer" class="px-5 py-3 rounded-xl bg-primary text-white font-bold text-xs hover:bg-primary-light active:scale-[0.98] transition flex items-center justify-center gap-2 w-full sm:w-auto min-h-[44px]">
+                            <a href="https://trustseal.enamad.ir/?id=7936941&Code=fHqzrN234gpBPdweBuMdc1CQU97V3Q1p" target="_blank" rel="noopener noreferrer" class="px-5 py-3 rounded-xl bg-primary text-white font-bold text-xs hover:bg-primary-light active:scale-[0.98] transition flex items-center justify-center gap-2 w-full sm:w-auto min-h-[44px]">
                                 <span class="material-symbols-outlined text-sm">verified</span>
                                 <span>استعلام زنده اینماد در سامانه صمت</span>
                             </a>
