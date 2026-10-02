@@ -69,6 +69,15 @@ $isPreview = isset($_GET['preview']) && (int)$_GET['preview'] === 1;
 $tenantType = $site['tenant_type'];
 $tenantId = (int)$site['tenant_id'];
 $siteTier = $site['site_tier'] ?? 'enterprise';
+$archetype = $site['layout']['theme']['archetype'] ?? match($site['theme_palette'] ?? '') {
+    'purple' => 'pharmacist',
+    'orange' => 'seller',
+    'navy' => 'organization',
+    default => $tenantType
+};
+if (!in_array($archetype, ['doctor', 'pharmacist', 'seller', 'organization'])) {
+    $archetype = $tenantType;
+}
 
 $savedBlocks = [];
 if (!empty($site['layout']['blocks']) && is_array($site['layout']['blocks'])) {
@@ -911,6 +920,41 @@ $heroSecondaryHref = !empty($heroBlock['cta_secondary_url']) ? $heroBlock['cta_s
                     <?= htmlspecialchars($heroBlock['subtitle'] ?? '') ?>
                 </p>
 
+                <!-- Archetype-Specific Interactive Strip -->
+                <?php if ($archetype === 'seller'): ?>
+                <div class="flex flex-wrap items-center justify-center lg:justify-start gap-2 pt-1 pb-1">
+                    <span class="text-xs font-bold text-slate-500 ml-1">دسته‌بندی حیوانات:</span>
+                    <a href="#storefront" class="px-3 py-1.5 rounded-xl bg-orange-600 text-white text-xs font-bold shadow-sm hover:bg-orange-700 transition flex items-center gap-1">🐶 سگ</a>
+                    <a href="#storefront" class="px-3 py-1.5 rounded-xl bg-amber-500 text-white text-xs font-bold shadow-sm hover:bg-amber-600 transition flex items-center gap-1">🐱 گربه</a>
+                    <a href="#storefront" class="px-3 py-1.5 rounded-xl bg-emerald-600 text-white text-xs font-bold shadow-sm hover:bg-emerald-700 transition flex items-center gap-1">🦜 پرندگان</a>
+                    <a href="#storefront" class="px-3 py-1.5 rounded-xl bg-purple-600 text-white text-xs font-bold shadow-sm hover:bg-purple-700 transition flex items-center gap-1">🐹 جوندگان</a>
+                </div>
+                <?php elseif ($archetype === 'pharmacist'): ?>
+                <div class="flex flex-wrap items-center justify-center lg:justify-start gap-2 pt-1 pb-1">
+                    <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-cyan-50 border border-cyan-200 text-cyan-800 text-xs font-bold shadow-2xs">
+                        <span class="material-symbols-outlined text-sm text-cyan-600">ac_unit</span>
+                        <span>پایش مداوم دمای زنجیره سرد: ۲ الی ۸ درجه سانتی‌گراد</span>
+                    </span>
+                    <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-purple-50 border border-purple-200 text-purple-800 text-xs font-bold shadow-2xs">
+                        <span class="material-symbols-outlined text-sm text-purple-600">prescription</span>
+                        <span>پذیرش نسخه الکترونیک و ارسال با یخ خشک</span>
+                    </span>
+                </div>
+                <?php elseif ($archetype === 'organization'): ?>
+                <div class="flex flex-wrap items-center justify-center lg:justify-start gap-2 pt-1 pb-1">
+                    <span class="px-3 py-1.5 rounded-xl bg-slate-100 text-slate-700 text-xs font-bold flex items-center gap-1">🏥 مرکز جراحی و بستری ۲۴ ساعته</span>
+                    <span class="px-3 py-1.5 rounded-xl bg-slate-100 text-slate-700 text-xs font-bold flex items-center gap-1">🩺 تیم پزشکان و متخصصین همکار</span>
+                    <span class="px-3 py-1.5 rounded-xl bg-slate-100 text-slate-700 text-xs font-bold flex items-center gap-1">🚑 تریاژ و اعزام آمبولانس شبانه‌روزی</span>
+                </div>
+                <?php elseif ($archetype === 'doctor'): ?>
+                <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-50 text-emerald-800 text-xs font-bold border border-emerald-200">
+                    <span class="material-symbols-outlined text-sm">stethoscope</span>
+                    <span>دامپزشک و جراح متخصص حیوانات خانگی</span>
+                    <span class="text-emerald-300">|</span>
+                    <span class="font-mono">کد نظام: <?= htmlspecialchars($site['vet_council_number'] ?? '۲۴۹۱۸') ?></span>
+                </div>
+                <?php endif; ?>
+
                 <!-- Dual High-Intent CTAs -->
                 <div class="pt-2 flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-3.5">
                     <a href="<?= htmlspecialchars($heroPrimaryHref) ?>" id="live-hero-primary-cta" target="<?= str_starts_with($heroPrimaryHref, '#') ? '_self' : '_blank' ?>" class="w-full sm:w-auto px-8 py-4 rounded-2xl bg-tenant-primary bg-tenant-primary-hover text-white text-sm font-black shadow-xl shadow-emerald-900/15 hover:shadow-2xl transition-all flex items-center justify-center gap-2 group">
@@ -944,6 +988,35 @@ $heroSecondaryHref = !empty($heroBlock['cta_secondary_url']) ? $heroBlock['cta_s
             </div>
 
             <div class="lg:col-span-5 relative flex justify-center">
+                <?php if ($archetype === 'pharmacist'): ?>
+                <!-- Pharmacy Interactive Prescription (Rx) Dropzone Card -->
+                <div class="w-full max-w-md bg-white/95 backdrop-blur-md rounded-3xl p-6 shadow-2xl border-2 border-purple-200 relative group overflow-hidden">
+                    <div class="flex items-center justify-between pb-3.5 border-b border-slate-100">
+                        <div class="flex items-center gap-2">
+                            <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping"></span>
+                            <span class="text-xs font-black text-slate-900">پذیرش سریع نسخه آنلاین</span>
+                        </div>
+                        <span class="px-2.5 py-0.5 rounded-full bg-purple-100 text-purple-800 text-[10px] font-bold">زنجیره سرد ۲-۸°C</span>
+                    </div>
+                    <div class="mt-4 space-y-3">
+                        <p class="text-[11px] text-slate-600 leading-relaxed">
+                            عکس نسخه دامپزشک یا نام داروها را ثبت فرمایید تا کارشناسان داروخانه در کمتر از ۱۵ دقیقه هزینه و نحوه ارسال را اعلام نمایند.
+                        </p>
+                        <div class="border-2 border-dashed border-purple-300 hover:border-purple-500 rounded-2xl p-4 text-center bg-purple-50/50 hover:bg-purple-50 transition-colors cursor-pointer" onclick="document.getElementById('rx-hero-file').click()">
+                            <input type="file" id="rx-hero-file" accept="image/*,.pdf" class="hidden" onchange="document.getElementById('rx-hero-status').innerText = '✓ ' + this.files[0].name;">
+                            <span class="material-symbols-outlined text-3xl text-purple-600">add_a_photo</span>
+                            <div class="text-xs font-bold text-purple-900 mt-1" id="rx-hero-status">انتخاب یا تصویربرداری از نسخه</div>
+                            <div class="text-[10px] text-slate-400 mt-0.5">پشتیبانی از عکس و PDF</div>
+                        </div>
+                        <input type="tel" id="rx-hero-phone" placeholder="شماره موبایل جهت ارسال پیامک تأیید" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs focus:border-purple-600 focus:outline-none" dir="ltr">
+                        <button type="button" onclick="alert('نسخه شما با موفقیت دریافت شد. کارشناسان داروخانه تا دقایقی دیگر با شما تماس خواهند گرفت.')" class="w-full py-3 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-black shadow-lg shadow-purple-600/20 active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer">
+                            <span class="material-symbols-outlined text-sm">send</span>
+                            <span>ارسال نسخه و برآورد آنلاین قیمت</span>
+                        </button>
+                    </div>
+                </div>
+                <?php else: ?>
+                <!-- Standard & Doctor/Seller/Hospital Hero Card with Badges -->
                 <div class="w-full max-w-md aspect-[4/3] rounded-3xl overflow-hidden shadow-2xl border-4 border-white bg-slate-100 relative group" style="aspect-ratio: 4 / 3; min-height: 280px; width: 100%;">
                     <?php $heroImg = !empty($heroBlock['image']) ? $heroBlock['image'] : $site['banner_url']; ?>
                     <img src="<?= htmlspecialchars($heroImg ?: 'assets/images/clinic-banner.jpg') ?>" id="live-hero-image" alt="<?= htmlspecialchars($site['site_title']) ?>" style="width: 100%; height: 100%; object-fit: cover;" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" onerror="this.onerror=null; this.src='assets/images/presentation-dog.jpg';">
@@ -980,7 +1053,7 @@ $heroSecondaryHref = !empty($heroBlock['cta_secondary_url']) ? $heroBlock['cta_s
                     </div>
                     <div>
                         <div class="text-xs font-black text-slate-900" id="live-hero-cert-title" data-studio-editable="hero_cert_title">
-                            <?= htmlspecialchars($heroBlock['cert_title'] ?? match($tenantType) {
+                            <?= htmlspecialchars($heroBlock['cert_title'] ?? match($archetype) {
                                 'pharmacist' => 'زنجیره سرد استاندارد (۲-۸°C)',
                                 'seller' => 'تضمین ۱۰۰٪ اصالت کالا',
                                 default => 'بورد تخصصی و مجهز به ICU'
@@ -992,6 +1065,7 @@ $heroSecondaryHref = !empty($heroBlock['cta_secondary_url']) ? $heroBlock['cta_s
                         </div>
                     </div>
                 </div>
+                <?php endif; ?>
             </div>
         </div>
     </section>
@@ -1957,34 +2031,36 @@ $heroSecondaryHref = !empty($heroBlock['cta_secondary_url']) ? $heroBlock['cta_s
                 <p class="text-xs sm:text-sm text-slate-500 mt-2 leading-relaxed" id="live-social-subtitle" data-studio-editable="social_subtitle"><?= htmlspecialchars($socialSubtitle) ?></p>
             </div>
 
-            <!-- Social Links Grid -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" id="live-social-grid">
+            <!-- Social Links Symmetrical 4-Column Grid -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4" id="live-social-grid">
                 <?php foreach ($socialLinks as $slink): ?>
                 <?php if (!empty($slink['enabled']) || !isset($slink['enabled'])): ?>
-                <div class="bg-white p-4 rounded-3xl border border-slate-200/80 shadow-sm hover:shadow-md hover:border-purple-200 transition-all flex items-center justify-between group">
-                    <div class="flex items-center gap-3 min-w-0 flex-1 pl-2">
-                        <div class="w-11 h-11 rounded-2xl flex items-center justify-center text-white shrink-0 shadow-sm transition-transform group-hover:scale-105" style="background: <?= htmlspecialchars($slink['color'] ?? '#7c3aed') ?>;">
+                <div class="bg-white/90 backdrop-blur-md p-4 rounded-3xl border border-slate-200/80 shadow-xs hover:shadow-lg hover:border-slate-300 transition-all duration-300 flex flex-col justify-between group relative overflow-hidden">
+                    <div class="absolute top-0 inset-x-0 h-1 rounded-t-3xl transition-all group-hover:h-1.5" style="background: <?= htmlspecialchars($slink['color'] ?? '#7c3aed') ?>;"></div>
+                    <div class="flex items-center gap-3 pt-1">
+                        <div class="w-11 h-11 rounded-2xl flex items-center justify-center text-white shrink-0 shadow-md transition-transform duration-300 group-hover:scale-105" style="background: <?= htmlspecialchars($slink['color'] ?? '#7c3aed') ?>;">
                             <span class="material-symbols-outlined text-xl"><?= htmlspecialchars($slink['icon'] ?? 'share') ?></span>
                         </div>
                         <div class="min-w-0 flex-1">
                             <div class="text-xs font-black text-slate-800 truncate"><?= htmlspecialchars($slink['title'] ?? 'شبکه اجتماعی') ?></div>
                             <?php if (!empty($slink['badge'])): ?>
-                            <div class="text-[10px] text-purple-700 font-bold truncate"><?= htmlspecialchars($slink['badge']) ?></div>
+                            <div class="text-[10px] text-purple-700 font-bold truncate mt-0.5"><?= htmlspecialchars($slink['badge']) ?></div>
                             <?php elseif (!empty($slink['handle'])): ?>
-                            <div class="text-[10px] text-slate-400 font-mono truncate" dir="ltr"><?= htmlspecialchars($slink['handle']) ?></div>
+                            <div class="text-[10px] text-slate-400 font-mono truncate mt-0.5" dir="ltr" title="<?= htmlspecialchars($slink['handle']) ?>"><?= htmlspecialchars($slink['handle']) ?></div>
                             <?php endif; ?>
                         </div>
                     </div>
-                    <div class="flex items-center gap-1.5 shrink-0">
+                    <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
                         <?php if (!empty($slink['handle'])): ?>
-                        <button type="button" onclick="copySocialHandle('<?= htmlspecialchars($slink['handle'], ENT_QUOTES) ?>')" title="کپی آیدی" class="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-all cursor-pointer">
-                            <span class="material-symbols-outlined text-sm">content_copy</span>
+                        <button type="button" onclick="copySocialHandle('<?= htmlspecialchars($slink['handle'], ENT_QUOTES) ?>')" title="کپی آیدی" class="px-2.5 py-1.5 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-600 hover:text-slate-900 text-[11px] font-bold transition-all flex items-center gap-1 cursor-pointer">
+                            <span class="material-symbols-outlined text-xs">content_copy</span>
+                            <span>کپی</span>
                         </button>
                         <?php endif; ?>
                         <?php if (!empty($slink['url'])): ?>
-                        <a href="<?= htmlspecialchars($slink['url']) ?>" target="_blank" rel="noopener noreferrer" class="px-3 py-2 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-800 text-xs font-black transition-all flex items-center gap-1">
+                        <a href="<?= htmlspecialchars($slink['url']) ?>" target="_blank" referrerpolicy="origin" class="flex-1 py-1.5 px-3 rounded-xl text-center text-xs font-black text-white transition-all flex items-center justify-center gap-1 shadow-sm group-hover:shadow-md" style="background: <?= htmlspecialchars($slink['color'] ?? '#7c3aed') ?>;">
                             <span>ورود</span>
-                            <span class="material-symbols-outlined text-sm">arrow_left</span>
+                            <span class="material-symbols-outlined text-xs">arrow_left</span>
                         </a>
                         <?php endif; ?>
                     </div>
@@ -1993,21 +2069,35 @@ $heroSecondaryHref = !empty($heroBlock['cta_secondary_url']) ? $heroBlock['cta_s
                 <?php endforeach; ?>
             </div>
 
-            <!-- Digital Business Card Teaser Pill -->
-            <div class="mt-8 p-4 rounded-3xl bg-slate-900 text-white flex flex-col sm:flex-row items-center justify-between gap-4 shadow-xl">
-                <div class="flex items-center gap-3 text-right">
-                    <div class="w-10 h-10 rounded-2xl bg-white/10 text-white flex items-center justify-center shrink-0">
-                        <span class="material-symbols-outlined text-xl">contact_page</span>
+            <!-- Digital Business Card Luxury Showcase Pill -->
+            <div class="mt-10 p-6 rounded-3xl bg-gradient-to-br from-slate-900 via-[#001a48] to-slate-900 text-white shadow-xl border border-white/10 relative overflow-hidden">
+                <div class="absolute -top-12 -right-12 w-48 h-48 rounded-full bg-purple-500/10 blur-3xl pointer-events-none"></div>
+                <div class="absolute -bottom-12 -left-12 w-48 h-48 rounded-full bg-amber-500/10 blur-3xl pointer-events-none"></div>
+                
+                <div class="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
+                    <div class="flex items-center gap-4 text-center md:text-right">
+                        <div class="w-14 h-14 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 text-white flex items-center justify-center shrink-0 shadow-inner">
+                            <span class="material-symbols-outlined text-3xl text-amber-400">qr_code_2</span>
+                        </div>
+                        <div>
+                            <div class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-400/20 text-amber-300 text-[10px] font-bold mb-1 border border-amber-400/30">
+                                <span class="material-symbols-outlined text-xs">tap_and_play</span>
+                                <span>فناوری NFC و استند QR رومیزی</span>
+                            </div>
+                            <h4 class="text-base font-black text-white">کارت ویزیت دیجیتال هوشمند مراجعین</h4>
+                            <p class="text-xs text-slate-300 mt-1 max-w-xl leading-relaxed">
+                                ذخیره مستقیم اطلاعات تماس، آدرس و پیوندها در تلفن همراه مراجعین تنها با یک اسکن ساده بدون نیاز به نصب نرم‌افزار
+                            </p>
+                        </div>
                     </div>
-                    <div>
-                        <div class="text-xs font-black">کارت ویزیت دیجیتال هوشمند و استند رومیزی QR</div>
-                        <div class="text-[11px] text-slate-300">امکان دانلود مستقیم فایل مخاطب (vCard) و ذخیره فوری در تلفن همراه مراجعه‌کنندگان</div>
+                    
+                    <div class="flex items-center gap-3 shrink-0">
+                        <button type="button" onclick="openVCardModal()" class="px-5 py-3 rounded-2xl bg-gradient-to-r from-[#fd8100] to-[#ea580c] hover:from-[#ea580c] hover:to-[#fd8100] text-white text-xs font-black shadow-lg shadow-orange-500/20 active:scale-95 transition-all flex items-center gap-2 cursor-pointer">
+                            <span class="material-symbols-outlined text-base">contact_page</span>
+                            <span>نمایش کارت ویزیت و دانلود (vCard)</span>
+                        </button>
                     </div>
                 </div>
-                <button type="button" onclick="openVCardModal()" class="px-4 py-2.5 rounded-2xl bg-[#fd8100] hover:bg-[#ea580c] text-white text-xs font-black transition-all shadow-md active:scale-95 flex items-center gap-2 cursor-pointer shrink-0">
-                    <span class="material-symbols-outlined text-base">qr_code_2</span>
-                    <span>نمایش کارت ویزیت دیجیتال</span>
-                </button>
             </div>
         </div>
     </section>
@@ -4982,25 +5072,27 @@ $heroSecondaryHref = !empty($heroBlock['cta_secondary_url']) ? $heroBlock['cta_s
                             const pColor = slink.color || '#7c3aed';
 
                             gHtml += `
-                            <div class="bg-white p-4 rounded-3xl border border-slate-200/80 shadow-sm hover:shadow-md hover:border-purple-200 transition-all flex items-center justify-between group">
-                                <div class="flex items-center gap-3 min-w-0 flex-1 pl-2">
-                                    <div class="w-11 h-11 rounded-2xl flex items-center justify-center text-white shrink-0 shadow-sm transition-transform group-hover:scale-105" style="background: ${escapePreviewHtml(pColor)};">
+                            <div class="bg-white/90 backdrop-blur-md p-4 rounded-3xl border border-slate-200/80 shadow-xs hover:shadow-lg hover:border-slate-300 transition-all duration-300 flex flex-col justify-between group relative overflow-hidden">
+                                <div class="absolute top-0 inset-x-0 h-1 rounded-t-3xl transition-all group-hover:h-1.5" style="background: ${escapePreviewHtml(pColor)};"></div>
+                                <div class="flex items-center gap-3 pt-1">
+                                    <div class="w-11 h-11 rounded-2xl flex items-center justify-center text-white shrink-0 shadow-md transition-transform duration-300 group-hover:scale-105" style="background: ${escapePreviewHtml(pColor)};">
                                         <span class="material-symbols-outlined text-xl">${escapePreviewHtml(pIcon)}</span>
                                     </div>
                                     <div class="min-w-0 flex-1">
                                         <div class="text-xs font-black text-slate-800 truncate">${escapePreviewHtml(pTitle)}</div>
-                                        ${pBadge ? `<div class="text-[10px] text-purple-700 font-bold truncate">${escapePreviewHtml(pBadge)}</div>` : (pHandle ? `<div class="text-[10px] text-slate-400 font-mono truncate" dir="ltr">${escapePreviewHtml(pHandle)}</div>` : '')}
+                                        ${pBadge ? `<div class="text-[10px] text-purple-700 font-bold truncate mt-0.5">${escapePreviewHtml(pBadge)}</div>` : (pHandle ? `<div class="text-[10px] text-slate-400 font-mono truncate mt-0.5" dir="ltr" title="${escapePreviewHtml(pHandle)}">${escapePreviewHtml(pHandle)}</div>` : '')}
                                     </div>
                                 </div>
-                                <div class="flex items-center gap-1.5 shrink-0">
+                                <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
                                     ${pHandle ? `
-                                    <button type="button" onclick="copySocialHandle('${escapePreviewHtml(pHandle)}')" title="کپی آیدی" class="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-all cursor-pointer">
-                                        <span class="material-symbols-outlined text-sm">content_copy</span>
+                                    <button type="button" onclick="copySocialHandle('${escapePreviewHtml(pHandle)}')" title="کپی آیدی" class="px-2.5 py-1.5 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-600 hover:text-slate-900 text-[11px] font-bold transition-all flex items-center gap-1 cursor-pointer">
+                                        <span class="material-symbols-outlined text-xs">content_copy</span>
+                                        <span>کپی</span>
                                     </button>` : ''}
                                     ${pUrl && pUrl !== '#' ? `
-                                    <a href="${escapePreviewHtml(pUrl)}" target="_blank" rel="noopener noreferrer" class="px-3 py-2 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-800 text-xs font-black transition-all flex items-center gap-1">
+                                    <a href="${escapePreviewHtml(pUrl)}" target="_blank" referrerpolicy="origin" class="flex-1 py-1.5 px-3 rounded-xl text-center text-xs font-black text-white transition-all flex items-center justify-center gap-1 shadow-sm group-hover:shadow-md" style="background: ${escapePreviewHtml(pColor)};">
                                         <span>ورود</span>
-                                        <span class="material-symbols-outlined text-sm">arrow_left</span>
+                                        <span class="material-symbols-outlined text-xs">arrow_left</span>
                                     </a>` : ''}
                                 </div>
                             </div>`;

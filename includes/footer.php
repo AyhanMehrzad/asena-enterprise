@@ -42,6 +42,10 @@ if (basename($_SERVER['SCRIPT_FILENAME'] ?? '') === basename(__FILE__)) {
                         <a class="text-xs text-on-surface-variant hover:text-secondary-container transition-colors" href="pharmacy">داروخانه و مکمل‌ها</a>
                         <a class="text-xs text-on-surface-variant hover:text-secondary-container transition-colors" href="booking">نوبت‌دهی کلینیک و گرومینگ</a>
                         <a class="text-xs text-on-surface-variant hover:text-secondary-container transition-colors" href="subscriptions">سفارش خودکار Autoship</a>
+                        <a class="text-xs text-on-surface-variant hover:text-secondary-container transition-colors font-bold text-primary flex items-center justify-center sm:justify-start gap-1" href="websites">
+                            <span class="material-symbols-outlined text-[15px] text-[#fd8100]">web</span>
+                            سفارش وب‌سایت اختصاصی
+                        </a>
                     </nav>
                 </div>
                 <div class="flex flex-col gap-4">

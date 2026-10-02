@@ -58,6 +58,16 @@ $slug = htmlspecialchars($site['slug']);
 $previewUrl = "../site.php?slug=" . urlencode($site['slug']) . "&preview=1";
 $publicUrl = "../site.php?slug=" . urlencode($site['slug']);
 
+$currentArchetype = $site['layout']['theme']['archetype'] ?? match($site['theme_palette'] ?? '') {
+    'purple' => 'pharmacist',
+    'orange' => 'seller',
+    'navy' => 'organization',
+    default => ($builderTenantType ?? 'doctor')
+};
+if (!in_array($currentArchetype, ['doctor', 'pharmacist', 'seller', 'organization'])) {
+    $currentArchetype = $builderTenantType ?? 'doctor';
+}
+
 $paletteColorDefaults = [
     'emerald' => ['primary' => '#059669', 'secondary' => '#fd8100'],
     'navy' => ['primary' => '#001a48', 'secondary' => '#fd8100'],
@@ -2026,6 +2036,50 @@ if (empty($layout['theme']['primary_color']) && $activePaletteKey !== 'navy' && 
                 <!-- TAB 3: TIERS & SETTINGS -->
                 <div id="tab-panel-settings" class="space-y-4 hidden">
                     
+                    <!-- Archetype / Template Model Selector -->
+                    <div class="p-3.5 rounded-2xl bg-gradient-to-br from-slate-50 to-indigo-50/40 border border-indigo-100/80 space-y-2.5">
+                        <div class="flex items-center justify-between">
+                            <label class="text-xs font-black text-slate-800 flex items-center gap-1.5">
+                                <span class="material-symbols-outlined text-indigo-600 text-sm">dashboard_customize</span>
+                                <span>قالب و ساختار تخصصی وب‌سایت</span>
+                            </label>
+                            <span class="text-[10px] text-indigo-700 font-bold bg-indigo-100 px-2 py-0.5 rounded-full">۴ حوزه تخصصی</span>
+                        </div>
+                        <p class="text-[11px] text-slate-500 leading-relaxed">
+                            متناسب با تخصص خود یکی از ۴ الگوی ساختاری را انتخاب کنید تا ماژول‌ها و هویت بصری فعال گردد:
+                        </p>
+                        <div class="grid grid-cols-2 gap-2 text-[11px]">
+                            <button type="button" onclick="switchStudioArchetype('doctor')" id="studio-arch-doctor" class="p-2.5 rounded-xl border text-right font-bold transition-all flex flex-col gap-1 cursor-pointer bg-white <?= $currentArchetype === 'doctor' ? 'border-emerald-500 bg-emerald-50/40 ring-2 ring-emerald-500/30' : 'border-slate-200 hover:border-emerald-400' ?>">
+                                <div class="flex items-center gap-1 text-emerald-700">
+                                    <span class="material-symbols-outlined text-base">stethoscope</span>
+                                    <span>پزشکان و جراحان</span>
+                                </div>
+                                <span class="text-[10px] text-slate-400 font-normal">نوبت‌دهی، اسلایدر درمان</span>
+                            </button>
+                            <button type="button" onclick="switchStudioArchetype('pharmacist')" id="studio-arch-pharmacist" class="p-2.5 rounded-xl border text-right font-bold transition-all flex flex-col gap-1 cursor-pointer bg-white <?= $currentArchetype === 'pharmacist' ? 'border-purple-500 bg-purple-50/40 ring-2 ring-purple-500/30' : 'border-slate-200 hover:border-purple-400' ?>">
+                                <div class="flex items-center gap-1 text-purple-700">
+                                    <span class="material-symbols-outlined text-base">medication</span>
+                                    <span>داروخانه‌ها</span>
+                                </div>
+                                <span class="text-[10px] text-slate-400 font-normal">نسخه آنلاین، زنجیره سرد</span>
+                            </button>
+                            <button type="button" onclick="switchStudioArchetype('seller')" id="studio-arch-seller" class="p-2.5 rounded-xl border text-right font-bold transition-all flex flex-col gap-1 cursor-pointer bg-white <?= $currentArchetype === 'seller' ? 'border-orange-500 bg-orange-50/40 ring-2 ring-orange-500/30' : 'border-slate-200 hover:border-orange-400' ?>">
+                                <div class="flex items-center gap-1 text-orange-700">
+                                    <span class="material-symbols-outlined text-base">storefront</span>
+                                    <span>پت‌شاپ‌ها</span>
+                                </div>
+                                <span class="text-[10px] text-slate-400 font-normal">اتوشیپ، فیلتر گونه‌ها</span>
+                            </button>
+                            <button type="button" onclick="switchStudioArchetype('organization')" id="studio-arch-organization" class="p-2.5 rounded-xl border text-right font-bold transition-all flex flex-col gap-1 cursor-pointer bg-white <?= $currentArchetype === 'organization' ? 'border-blue-600 bg-blue-50/40 ring-2 ring-blue-500/30' : 'border-slate-200 hover:border-blue-400' ?>">
+                                <div class="flex items-center gap-1 text-blue-800">
+                                    <span class="material-symbols-outlined text-base">apartment</span>
+                                    <span>بیمارستان‌ها</span>
+                                </div>
+                                <span class="text-[10px] text-slate-400 font-normal">اورژانس ۲۴/۷، دپارتمان‌ها</span>
+                            </button>
+                        </div>
+                    </div>
+
                     <!-- Website Tier Selector matching config/tiers.php -->
                     <div>
                         <label class="block text-xs font-black text-slate-800 mb-1.5 flex items-center gap-1.5">
@@ -4238,6 +4292,44 @@ async function saveSiteConfig() {
             saveIcon.classList.remove('animate-spin');
             saveText.innerText = 'ذخیره و انتشار';
         }
+    }
+async function switchStudioArchetype(archetype) {
+    const archNames = {
+        doctor: 'پزشکان و جراحان',
+        pharmacist: 'داروخانه‌ها و مکمل‌ها',
+        seller: 'پت‌شاپ‌ها و فروشگاه',
+        organization: 'بیمارستان‌ها و مراکز جامع'
+    };
+    const title = archNames[archetype] || archetype;
+    if (!confirm(`آیا مطمئن هستید که می‌خواهید قالب وب‌سایت به «${title}» تغییر کند؟ چیدمان و ماژول‌های اختصاصی این حوزه فعال خواهند شد.`)) {
+        return;
+    }
+
+    showToast('در حال تغییر ساختار قالب تخصصی...', 'info');
+
+    try {
+        const fd = new FormData();
+        fd.append('action', 'switch_archetype');
+        fd.append('archetype', archetype);
+        fd.append('tenant_type', tenantType);
+
+        const res = await fetch('../actions/site_builder_action.php', { method: 'POST', body: fd });
+        const data = await res.json();
+
+        if (data.success) {
+            showToast(data.message || 'قالب وب‌سایت با موفقیت تغییر یافت.', 'success');
+            const iframe = document.getElementById('preview-iframe');
+            if (iframe) {
+                iframe.src = iframe.src;
+            }
+            setTimeout(() => {
+                window.location.reload();
+            }, 900);
+        } else {
+            showToast(data.message || 'خطا در تغییر قالب وب‌سایت.', 'error');
+        }
+    } catch (e) {
+        showToast('خطا در برقراری ارتباط با سرور.', 'error');
     }
 }
 

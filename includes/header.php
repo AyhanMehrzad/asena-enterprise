@@ -129,6 +129,10 @@ $seo_defaults = [
     'interactions.php' => [
         'title' => 'سامانه بررسی تداخلات دارویی دامپزشکی | آسنا',
         'desc'  => 'پایش هوشمند سازگاری داروهای تجویزی و مکمل‌های حیوانات خانگی جهت پیشگیری از عوارض و مسمومیت‌های دارویی.'
+    ],
+    'websites.php' => [
+        'title' => 'سفارش و خرید وب‌سایت اختصاصی دامپزشکی، داروخانه و پت‌شاپ | آسنا',
+        'desc'  => 'ساخت فوری وب‌سایت مستقل و حرفه‌ای متناسب با حوزه فعالیت شما: ویژه پزشکان، داروخانه‌ها، پت‌شاپ‌ها و بیمارستان‌های دامپزشکی، متصل به نوبت‌دهی و درگاه شاپرک.'
     ]
 ];
 
@@ -447,6 +451,11 @@ if (function_exists('get_curated_recommendations')) {
                         <a class="text-white text-sm font-semibold hover:text-secondary-container transition-all duration-200 <?php echo $current_page == 'booking.php' ? 'border-b-2 border-white pb-1 opacity-100' : 'opacity-90'; ?>" href="booking">نوبت‌دهی</a>
                     <?php endif; ?>
 
+                    <a class="text-white text-sm font-semibold hover:text-secondary-container transition-all duration-200 flex items-center gap-1.5 <?php echo in_array($current_page, ['websites.php', 'websites']) ? 'border-b-2 border-white pb-1 opacity-100' : 'opacity-90'; ?>" href="websites">
+                        <span>سفارش سایت</span>
+                        <span class="bg-[#fd8100] text-white text-[9px] px-1.5 py-0.5 rounded-full font-black tracking-tighter">اختصاصی</span>
+                    </a>
+
                     <!-- Dropdown for Smart Tools & Services (Clean, Complete & Progressive) -->
                     <div class="relative group">
                         <button type="button" class="text-white text-sm font-semibold hover:text-secondary-container transition-all duration-200 flex items-center gap-1 opacity-90 group-hover:opacity-100 cursor-pointer py-2">
@@ -456,6 +465,19 @@ if (function_exists('get_curated_recommendations')) {
                         <div class="absolute right-0 top-full pt-1 w-64 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 transform origin-top-right">
                             <div class="bg-white rounded-2xl shadow-2xl border border-slate-100 py-2 overflow-hidden text-right">
                                 
+                                <a href="websites" class="flex items-center gap-3 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 hover:text-[#fd8100] transition-colors border-b border-slate-100">
+                                    <div class="w-8 h-8 rounded-lg bg-orange-50 text-[#fd8100] flex items-center justify-center shrink-0">
+                                        <span class="material-symbols-outlined text-lg">web</span>
+                                    </div>
+                                    <div>
+                                        <div class="font-bold text-xs text-slate-800 flex items-center gap-1.5">
+                                            <span>سفارش وب‌سایت اختصاصی</span>
+                                            <span class="bg-amber-100 text-amber-800 text-[9px] px-1.5 py-0.5 rounded-full font-bold">۴ قالب</span>
+                                        </div>
+                                        <div class="text-[10px] text-slate-400">ویژه پزشکان، داروخانه‌ها و پت‌شاپ‌ها</div>
+                                    </div>
+                                </a>
+
                                 <a href="calculator" class="flex items-center gap-3 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 hover:text-emerald-600 transition-colors">
                                     <div class="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
                                         <span class="material-symbols-outlined text-lg">calculate</span>
@@ -667,6 +689,10 @@ if (function_exists('get_curated_recommendations')) {
                             <span class="material-symbols-outlined text-outline">local_hospital</span> مراکز درمانی و کلینیک‌ها
                         </a>
                     <?php endif; ?>
+                    <a class="flex items-center gap-4 text-on-surface font-bold p-3 rounded-xl hover:bg-primary-container/10 hover:text-primary transition-colors" href="websites">
+                        <span class="material-symbols-outlined text-[#fd8100]">web</span> سفارش وب‌سایت اختصاصی
+                        <span class="mr-auto text-[10px] bg-[#fd8100] text-white px-2 py-0.5 rounded-full font-bold">جدید</span>
+                    </a>
                     <?php if (Feature::has('autoship')): ?>
                         <a class="flex items-center gap-4 text-on-surface font-bold p-3 rounded-xl hover:bg-primary-container/10 hover:text-primary transition-colors" href="subscriptions">
                             <span class="material-symbols-outlined text-outline">autorenew</span> اشتراک خودکار

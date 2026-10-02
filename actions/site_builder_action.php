@@ -123,6 +123,80 @@ if ($action === 'apply_preset') {
     exit;
 }
 
+if ($action === 'switch_archetype') {
+    $archetype = sanitize_input($_POST['archetype'] ?? 'doctor');
+    $validArchetypes = ['doctor', 'pharmacist', 'seller', 'organization'];
+    if (!in_array($archetype, $validArchetypes)) {
+        $archetype = 'doctor';
+    }
+
+    $existingSite = $tenantService->getSiteByTenant($tenantType, $tenantId);
+    $siteTier = $existingSite['site_tier'] ?? 'enterprise';
+
+    $palette = match($archetype) {
+        'doctor' => 'emerald',
+        'pharmacist' => 'purple',
+        'seller' => 'orange',
+        'organization' => 'emerald'
+    };
+
+    $primaryColor = match($archetype) {
+        'doctor' => '#065f46',
+        'pharmacist' => '#7c3aed',
+        'seller' => '#ea580c',
+        'organization' => '#001a48'
+    };
+
+    $secondaryColor = match($archetype) {
+        'doctor' => '#10b981',
+        'pharmacist' => '#0284c7',
+        'seller' => '#f59e0b',
+        'organization' => '#fd8100'
+    };
+
+    $info = [
+        'name' => $existingSite['site_title'] ?? 'مجموعه ما',
+        'tagline' => $existingSite['site_tagline'] ?? '',
+        'banner_url' => $existingSite['banner_url'] ?? '',
+        'theme_palette' => $palette
+    ];
+
+    $newLayout = $tenantService->buildDefaultLayout($tenantType, $info, $siteTier, $archetype);
+    
+    $saveData = [
+        'site_title' => $existingSite['site_title'] ?? 'مجموعه ما',
+        'site_tagline' => $existingSite['site_tagline'] ?? '',
+        'slug' => $existingSite['slug'] ?? ('site-' . $tenantId),
+        'site_tier' => $siteTier,
+        'theme_palette' => $palette,
+        'primary_color' => $primaryColor,
+        'secondary_color' => $secondaryColor,
+        'font_family' => $existingSite['font_family'] ?? 'Vazirmatn',
+        'layout' => $newLayout,
+        'is_published' => (int)($existingSite['is_published'] ?? 1),
+        'logo_url' => $existingSite['logo_url'] ?? '',
+        'banner_url' => $existingSite['banner_url'] ?? '',
+        'meta_description' => $existingSite['meta_description'] ?? ''
+    ];
+
+    $res = $tenantService->saveSite($tenantType, $tenantId, $saveData);
+    if (!empty($res['success'])) {
+        echo json_encode([
+            'success' => true,
+            'archetype' => $archetype,
+            'palette' => $palette,
+            'message' => 'قالب ساختاری وب‌سایت با موفقیت به ' . ($tenantService->getWebsiteArchetypes()[$archetype]['title'] ?? $archetype) . ' تغییر یافت.',
+            'layout' => $newLayout
+        ], JSON_UNESCAPED_UNICODE);
+    } else {
+        echo json_encode([
+            'success' => false,
+            'message' => $res['message'] ?? 'خطا در تغییر قالب.'
+        ], JSON_UNESCAPED_UNICODE);
+    }
+    exit;
+}
+
 if ($action === 'get_section_defaults') {
     $section = sanitize_input($_POST['section'] ?? '');
     $items = $tenantService->getDefaultSectionItems($tenantType, $section);

@@ -140,6 +140,7 @@ class TenantSiteService {
                     } catch (Throwable $e4) {}
                 }
             } catch (Throwable $eIgnore) {}
+            $this->ensureDemoSites();
         } catch (Throwable $e) {
             error_log("[TenantSiteService::ensureTable] " . $e->getMessage());
         }
@@ -302,31 +303,204 @@ class TenantSiteService {
     }
 
     /**
-     * Build role-specific default block structure with Tier Archetype awareness
+     * Return definitions of the 4 official website archetypes
      */
-    public function buildDefaultLayout(string $tenantType, array $info, string $siteTier = 'enterprise'): array {
+    public function getWebsiteArchetypes(): array {
+        return [
+            'doctor' => [
+                'id' => 'doctor',
+                'title' => 'وب‌سایت پزشکان و متخصصین',
+                'english_title' => 'Doctor Clinical Authority',
+                'tagline' => 'ویژه دامپزشکان، جراحان و متخصصین حیوانات خانگی',
+                'icon' => 'stethoscope',
+                'color' => '#065f46',
+                'badge' => 'اتوریتی پزشکی و نوبت‌دهی آنلاین',
+                'palette' => 'emerald',
+                'hero_preview' => 'assets/images/presentation-dog.jpg',
+                'demo_slug' => 'dr-alavi',
+                'features' => [
+                    'تقویم اختصاصی نوبت‌دهی آنلاین و رزرو ویزیت با بررسی تایم‌اسلات‌های آزاد',
+                    'اسلایدر تعاملی مقایسه نتایج درمان قبل و بعد (Before & After)',
+                    'محاسبه‌گر شفاف تعرفه خدمات و جراحی‌ها با ۱۰٪ تخفیف رزرو آنلاین',
+                    'اتصال مستقیم به سامانه مشاوره و ویزیت ویدیویی تله‌هلث',
+                    'نمایش شماره پروانه نظام دامپزشکی، مدارک تخصصی و بورد بالینی'
+                ],
+                'ideal_for' => 'پزشکان عمومی و متخصص، جراحان ارتوپد و بافت نرم، دندانپزشکان دامپزشکی'
+            ],
+            'pharmacist' => [
+                'id' => 'pharmacist',
+                'title' => 'وب‌سایت داروخانه‌های تخصصی',
+                'english_title' => 'Pharmacy Cold-Chain & Rx',
+                'tagline' => 'ویژه داروخانه‌های دامپزشکی، مکمل‌ها و زنجیره سرد',
+                'icon' => 'medication',
+                'color' => '#7c3aed',
+                'badge' => 'پذیرش نسخه الکترونیک و زنجیره سرد',
+                'palette' => 'purple',
+                'hero_preview' => 'assets/images/clinic-banner.jpg',
+                'demo_slug' => 'sina-pharmacy',
+                'features' => [
+                    'باکس تعاملی آپلود سریع عکس نسخه پزشک (Rx) و استعلام کمتر از ۱۵ دقیقه',
+                    'دیده‌بان زنده پایش دمای زنجیره سرد داروها (۲ الی ۸ درجه سانتی‌گراد)',
+                    'کاتالوگ تخصصی داروهای درمانی، واکسن‌ها، مکمل‌ها و شیرخشک‌های خاص',
+                    'اتصال به سامانه هوشمند بررسی تداخلات دارویی و هشدارهای دوز مصرف',
+                    'پشتیبانی از ارسال سریع با بسته‌بندی یخ خشک و حمل ایمن پستی'
+                ],
+                'ideal_for' => 'داروخانه‌های مستقل دامپزشکی، داروخانه‌های بیمارستانی، مراکز توزیع واکسن و مکمل'
+            ],
+            'seller' => [
+                'id' => 'seller',
+                'title' => 'وب‌سایت پت‌شاپ و فروشگاه ملزومات',
+                'english_title' => 'Pet Shop Retail Storefront',
+                'tagline' => 'ویژه پت‌شاپ‌ها، پرورش‌دهندگان و تامین‌کنندگان لوازم پت',
+                'icon' => 'storefront',
+                'color' => '#ea580c',
+                'badge' => 'فروشگاه کامل و تحویل دوره‌ای اتوشیپ',
+                'palette' => 'orange',
+                'hero_preview' => 'assets/images/presentation-dog.jpg',
+                'demo_slug' => 'petland-store',
+                'features' => [
+                    'فروشگاه آنلاین کالا با فیلتر دسته‌بندی حیوانات (سگ، گربه، پرنده، جونده)',
+                    'ویترین شگفت‌انگیزها، تخفیف‌های زمان‌دار و نشانگر موجودی انبار زنده',
+                    'ماژول تحویل دوره‌ای خودکار (Autoship) با ۱۵٪ تخفیف اشتراک ادواری',
+                    'اتصال مستقیم به درگاه پرداخت اینترنتی شاپرک و تسویه بانکی منظم پایا',
+                    'سبد خرید هوشمند و محاسبه هزینه ارسال بر اساس شهر و استان'
+                ],
+                'ideal_for' => 'پت‌شاپ‌های آنلاین و حضوری، تولیدکنندگان لوازم و تشویقی، واردکنندگان غذای پت'
+            ],
+            'organization' => [
+                'id' => 'organization',
+                'title' => 'وب‌سایت بیمارستان‌ها و مجتمع‌های درمانی',
+                'english_title' => 'Hospital Multi-Department Ecosystem',
+                'tagline' => 'ویژه بیمارستان‌ها، کلینیک‌های شبانه‌روزی و مراکز جراحی',
+                'icon' => 'apartment',
+                'color' => '#001a48',
+                'badge' => 'اکوسیستم جامع چنددپارتمانی و تریاژ ۲۴/۷',
+                'palette' => 'navy',
+                'hero_preview' => 'assets/images/clinic-banner.jpg',
+                'demo_slug' => 'razi-hospital',
+                'features' => [
+                    'نوار قرمز اختصاصی اورژانس ۲۴ ساعته، تریاژ و اعزام فوری آمبولانس',
+                    'چیدمان بنتو برای دپارتمان‌های مرکز (جراحی، رادیولوژی، ICU، آزمایشگاه)',
+                    'دایرکتوری و کارتابل معرفی کادر پزشکان همکار با برنامه شیفت‌ها',
+                    'ساعات ملاقات بخش بستری، تجهیزات تصویربرداری و ظرفیت پذیرش تخت‌ها',
+                    'بخش طرف قرارداد با شرکت‌های بیمه حیوانات و صدور فاکتور رسمی نظام'
+                ],
+                'ideal_for' => 'بیمارستان‌های دامپزشکی، پلی‌کلینیک‌های شبانه‌روزی، مراکز جامع جراحی و ارجاعی'
+            ]
+        ];
+    }
+
+    /**
+     * Self-healing demo seeds for all 4 website archetypes
+     */
+    public function ensureDemoSites(): void {
+        try {
+            // Ensure pharmacist demo (sina-pharmacy)
+            $pharmacy = $this->getSiteBySlug('sina-pharmacy');
+            if (!$pharmacy) {
+                $pLayout = $this->buildDefaultLayout('pharmacist', [
+                    'name' => 'داروخانه تخصصی دامپزشکی دکتر فیروزی (سینا)',
+                    'tagline' => 'مرکز تخصصی تأمین دارو، مکمل‌ها و واکسن‌های زنجیره سرد',
+                    'phone' => '۰۲۱-۸۸۹۹۰۰۱۱',
+                    'emergency_phone' => '۰۹۱۲۹۹۹۸۸۷۷',
+                    'operating_hours' => 'شنبه تا پنجشنبه ۸:۰۰ الی ۲۲:۰۰ - جمعه‌ها ۱۰:۰۰ الی ۱۸:۰۰',
+                    'banner_url' => 'assets/images/clinic-banner.jpg',
+                    'theme_palette' => 'purple'
+                ], 'enterprise', 'pharmacist');
+
+                $stmt = $this->pdo->prepare("
+                    INSERT INTO tenant_sites (
+                        tenant_type, tenant_id, slug, site_title, site_tagline,
+                        logo_url, banner_url, theme_palette, primary_color, secondary_color,
+                        font_family, layout_json, is_published, views_count, site_tier, meta_description, created_at, updated_at
+                    ) VALUES (
+                        'pharmacist', 1, 'sina-pharmacy', 'داروخانه تخصصی دامپزشکی دکتر فیروزی (سینا)',
+                        'مرکز تخصصی تأمین دارو، مکمل‌ها و واکسن‌های زنجیره سرد',
+                        'assets/images/logo.png', 'assets/images/clinic-banner.jpg', 'purple', '#7c3aed', '#0284c7',
+                        'Vazirmatn', ?, 1, 1420, 'enterprise', 'داروخانه تخصصی دامپزشکی و ارسال سریع دارو با شرایط زنجیره سرد ۲ تا ۸ درجه',
+                        CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+                    )
+                ");
+                $stmt->execute([json_encode($pLayout, JSON_UNESCAPED_UNICODE)]);
+            }
+
+            // Ensure seller demo (petland-store)
+            $seller = $this->getSiteBySlug('petland-store');
+            if (!$seller) {
+                $sLayout = $this->buildDefaultLayout('seller', [
+                    'name' => 'پت‌شاپ آنلاین و هایپرمارکت پت‌لند',
+                    'tagline' => 'تنوع بی‌نظیر غذا، تشویقی، بهداشتی و ملزومات سگ و گربه با تحویل دوره‌ای اتوشیپ',
+                    'phone' => '۰۲۱-۷۷۸۸۹۹۰۰',
+                    'operating_hours' => 'همه‌روزه ۹:۰۰ الی ۲۳:۰۰',
+                    'banner_url' => 'assets/images/presentation-dog.jpg',
+                    'theme_palette' => 'orange'
+                ], 'enterprise', 'seller');
+
+                $stmt = $this->pdo->prepare("
+                    INSERT INTO tenant_sites (
+                        tenant_type, tenant_id, slug, site_title, site_tagline,
+                        logo_url, banner_url, theme_palette, primary_color, secondary_color,
+                        font_family, layout_json, is_published, views_count, site_tier, meta_description, created_at, updated_at
+                    ) VALUES (
+                        'seller', 1, 'petland-store', 'پت‌شاپ آنلاین و هایپرمارکت پت‌لند',
+                        'تنوع بی‌نظیر غذا، تشویقی، بهداشتی و ملزومات سگ و گربه با تحویل دوره‌ای اتوشیپ',
+                        'assets/images/logo.png', 'assets/images/presentation-dog.jpg', 'orange', '#ea580c', '#f59e0b',
+                        'Vazirmatn', ?, 1, 2890, 'enterprise', 'هایپرمارکت تخصصی غذای سگ و گربه با تضمین اصالت و ارسال سریع',
+                        CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+                    )
+                ");
+                $stmt->execute([json_encode($sLayout, JSON_UNESCAPED_UNICODE)]);
+            }
+        } catch (Throwable $e) {
+            error_log("[TenantSiteService::ensureDemoSites] " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Build role-specific default block structure with Tier & Archetype awareness
+     */
+    public function buildDefaultLayout(string $tenantType, array $info, string $siteTier = 'enterprise', ?string $archetype = null): array {
         $name = $info['name'] ?? 'مجموعه ما';
         $address = $info['address'] ?? 'تهران، خیابان ولیعصر، نرسیده به میدان ونک';
         $phone = $info['phone'] ?? '+98-21-91000000';
         $hours = $info['operating_hours'] ?? 'شنبه تا پنجشنبه: ۸:۰۰ الی ۲۲:۰۰';
 
+        $archetype = $archetype ?: ($info['theme']['archetype'] ?? ($info['archetype'] ?? $tenantType));
+        if (!in_array($archetype, ['doctor', 'pharmacist', 'seller', 'organization'])) {
+            $archetype = $tenantType;
+        }
+
         $isBasic = ($siteTier === 'basic');
         $isStandard = in_array($siteTier, ['standard', 'premium', 'pharmacy', 'enterprise']);
         $isPremium = in_array($siteTier, ['premium', 'enterprise']);
-        $isPharmacyTier = ($siteTier === 'pharmacy');
+        $isPharmacyTier = ($siteTier === 'pharmacy') || ($archetype === 'pharmacist');
         $isEnterprise = ($siteTier === 'enterprise');
+
+        $palette = $info['theme_palette'] ?? match($archetype) {
+            'pharmacist' => 'purple',
+            'seller' => 'orange',
+            'organization' => 'navy',
+            default => 'emerald'
+        };
 
         $layout = [
             'theme' => [
-                'palette' => $info['theme_palette'] ?? 'emerald',
+                'archetype' => $archetype,
+                'palette' => $palette,
                 'ambient_mode' => 'atmospheric_glow',
                 'card_radius' => 'rounded-3xl',
                 'trust_anchor' => 'floating_pill'
             ],
-            'blocks_order' => ['emergency_bar', 'hero', 'stats_strip', 'duty_hours', 'before_after', 'cost_calculator', 'bento_facilities', 'about', 'services', 'asena_services', 'doctors_roster', 'booking', 'storefront', 'reviews', 'faq', 'contact'],
+            'blocks_order' => match($archetype) {
+                'doctor' => ['emergency_bar', 'hero', 'stats_strip', 'booking', 'before_after', 'cost_calculator', 'services', 'about', 'reviews', 'faq', 'social_links', 'contact'],
+                'pharmacist' => ['duty_hours', 'hero', 'stats_strip', 'storefront', 'services', 'about', 'reviews', 'faq', 'social_links', 'contact'],
+                'seller' => ['hero', 'stats_strip', 'storefront', 'services', 'about', 'reviews', 'faq', 'social_links', 'contact'],
+                'organization' => ['emergency_bar', 'hero', 'stats_strip', 'duty_hours', 'bento_facilities', 'doctors_roster', 'booking', 'services', 'about', 'reviews', 'faq', 'social_links', 'contact'],
+                default => ['emergency_bar', 'hero', 'stats_strip', 'duty_hours', 'before_after', 'cost_calculator', 'bento_facilities', 'about', 'services', 'asena_services', 'doctors_roster', 'booking', 'storefront', 'reviews', 'faq', 'social_links', 'contact']
+            },
             'blocks' => [
                 'emergency_bar' => [
-                    'enabled' => in_array($tenantType, ['organization', 'doctor']) && !$isBasic,
+                    'enabled' => (!$isBasic && in_array($archetype, ['organization', 'doctor'])),
                     'headline' => 'اورژانس ۲۴ ساعته و مراقبت‌های فوری حیوانات خانگی',
                     'subheadline' => 'پذیرش شبانه‌روزی حوادث، تروما، تصادفات و مسمومیت‌ها با امکانات احیای بالینی پیشرفته',
                     'phone' => $info['emergency_phone'] ?? $phone,
@@ -334,14 +508,18 @@ class TenantSiteService {
                 ],
                 'duty_hours' => [
                     'enabled' => !$isBasic,
-                    'heading' => 'وضعیت شیفت و پذیرش حضوری مراجعین',
+                    'heading' => match($archetype) {
+                        'pharmacist' => 'ساعات کاری و تحویل داروهای زنجیره سرد',
+                        'seller' => 'ساعات کاری و ارسال سفارشات فروشگاه',
+                        default => 'وضعیت شیفت و پذیرش حضوری مراجعین'
+                    },
                     'hours_text' => $hours,
                     'open_time' => '08:30',
                     'close_time' => '22:30',
-                    'emergency_open_24h' => ($tenantType === 'organization')
+                    'emergency_open_24h' => ($archetype === 'organization')
                 ],
                 'before_after' => [
-                    'enabled' => in_array($tenantType, ['doctor', 'organization']) && !$isBasic && !$isPharmacyTier,
+                    'enabled' => in_array($archetype, ['doctor', 'organization']) && !$isBasic && !$isPharmacyTier,
                     'heading' => 'نتایج ملموس خدمات و مراقبت‌های بالینی',
                     'subtitle' => 'مشاهده تفاوت کیفیت خدمات قبل و بعد از رسیدگی تخصصی و بالینی',
                     'service_label' => 'جرم‌گیری اولتراسونیک و درمان لثه',
@@ -351,7 +529,7 @@ class TenantSiteService {
                     'label_after' => 'پس از درمان'
                 ],
                 'cost_calculator' => [
-                    'enabled' => in_array($tenantType, ['doctor', 'organization']) && !$isBasic && !$isPharmacyTier,
+                    'enabled' => in_array($archetype, ['doctor', 'organization']) && !$isBasic && !$isPharmacyTier,
                     'badge' => 'تعرفه شفاف خدمات درمانی و جراحی',
                     'heading' => 'برآورد آنلاین و شفاف تعرفه خدمات و جراحی‌های تخصصی',
                     'subtitle' => 'گونه حیوان خانگی و خدمات تشخیصی، بالینی یا جراحی مدنظر را انتخاب فرمایید تا تعرفه مصوب رسمی همراه با ۱۰٪ تخفیف رزرو آنلاین برآورد گردد.',

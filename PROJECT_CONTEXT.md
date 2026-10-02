@@ -1122,6 +1122,29 @@
     - **سینک همزمان با مخزن پروداکشن ([`asena.company`](file:///opt/lampp/htdocs/asena/asena.company/)):**
       - اعمال دقیق تغییرات در هر دو ساختار جهت دیپلوی خودکار cPanel.
 
+68. **بازطراحی کارت‌های ارتباطی و پیاده‌سازی ۴ الگوی متمایز وب‌سایت‌های اختصاصی و صفحه خرید (`websites.php`, Multi-Archetype Engine & Studio Switcher):**
+    - **بازطراحی بخش شبکه‌های اجتماعی و کارت ویزیت هوشمند ([`site.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/site.php)):**
+      - رفع عدم تقارن کارت‌های قبلی و تبدیل به گرید ۴ ستونه متقارن (`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4`) با شیدهای رنگی ملایم برند، نمایش واضح آیدی، دکمه کپی فوری و کلید ورود مستقیم.
+      - حذف باکس تیره و جایگزینی با کارت بنتو لوکس و تعاملی کارت ویزیت دیجیتال هوشمند و استند رومیزی QR با پشتیبانی از فایل مخاطب vCard.
+      - همگام‌سازی بلادرنگ رندرر جاوااسکریپت پیش‌نمایش در استودیو (`live-social-grid`).
+    - **موتور چندالگویی وب‌سایت‌های اختصاصی دامپزشکی ([`includes/TenantSiteService.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/includes/TenantSiteService.php)):**
+      - تفکیک کامل ساختار و هویت وب‌سایت‌ها به ۴ الگوی متمایز و سفارشی متناسب با حوزه فعالیت خریدار:
+        ۱. **پزشکان و جراحان (Doctor):** پالت زمردی، اتوریتی پزشکی و نوبت‌دهی آنلاین، اسلایدر قبل و بعد درمان، محاسبه‌گر هزینه جراحی‌ها، شماره پروانه نظام دامپزشکی.
+        ۲. **داروخانه‌های تخصصی (Pharmacist):** پالت بنفش دارویی، آپلود سریع نسخه پزشک (Rx)، دیده‌بان زنده دمای زنجیره سرد (۲ تا ۸ درجه)، پایشگر تداخلات دارویی.
+        ۳. **پت‌شاپ‌ها و هایپرمارکت‌ها (Seller):** پالت نارنجی پویا، فیلتر سریع گونه حیوانات (سگ، گربه، پرنده، آبزیان)، ویترین شگفت‌انگیزها، اشتراک ماهانه اتوشیپ با ۱۰٪ تخفیف.
+        ۴. **بیمارستان‌ها و مراکز جامع (Organization):** پالت سرمه‌ای سازمانی، نوار قرمز اورژانس و تریاژ ۲۴/۷، چیدمان بنتو دپارتمان‌ها و برنامه هفتگی شیفت پزشکان.
+      - ایجاد خودکار ۴ سایت دمو فعال در پایگاه داده: `dr-alavi`, `sina-pharmacy`, `petland-store`, `razi-hospital`.
+    - **صفحه عمومی معرفی، مقایسه و خرید وب‌سایت‌ها ([`websites.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/websites.php)):**
+      - صفحه اختصاصی آژانسی با تب‌های تعاملی ۴ قالب، پیش‌نمایش زنده در دیوایس‌های مختلف و لینک مستقیم به دموهای زنده.
+      - ابزار استعلام لحظه‌ای ساب‌دامین (`check_slug`) متصل به پلتفرم با اعتبارسنجی بلادرنگ.
+      - جدول شفاف تعرفه‌ها منطبق بر `config/tiers.php` با فرمت‌دهی سه‌رقمی قیمت‌ها.
+      - مودال ثبت سفارش و راه‌اندازی سریع با ذخیره‌سازی امن در جدول `website_orders` ([`actions/website_order_action.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/actions/website_order_action.php) و مایگریشن ۲۳).
+    - **سوئیچر تعاملی قالب در استودیو طراح سایت ([`includes/site_builder_studio.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/includes/site_builder_studio.php) و [`actions/site_builder_action.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/actions/site_builder_action.php)):**
+      - افزودن انتخابگر تصویری قالب‌های ۴گانه در تب تنظیمات استودیو جهت تغییر ساختار و بازنشانی بلوک‌های سایت با رفرش هوشمند آی‌فریم پیش‌نمایش.
+    - **به‌روزرسانی هدر، منوها و فوتر سراسری ([`includes/header.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/includes/header.php), [`includes/footer.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/includes/footer.php)):**
+      - افزودن پیوند «سفارش سایت اختصاصی» در منوی دسکتاپ، زیرمنوی خدمات و ابزارها، کشوی موبایل و فوتر سایت.
+    - **توسعه تابع سراسری پاکسازی ورودی‌ها (`sanitize_input` در [`includes/functions.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/includes/functions.php)).**
+
 ---
 
 ## ۴. پروتکل ثبت تغییرات آینده (Maintenance Rule)
