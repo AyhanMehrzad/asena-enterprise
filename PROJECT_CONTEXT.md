@@ -83,6 +83,23 @@
 
 ## ۳. تاریخچه تغییرات اخیر (Change Log)
 
+### نسخه ۱.۰.۳۲ (اکتبر ۲۰۲۶ - برطرف‌سازی جامع خطاهای ممیزی AryaSEO، اصلاح پیوندهای نسبی و رفع خطاهای ۵۰۰ روتینگ سرور، پالایش تگ‌های سئو و اینماد)
+1. **کشف و رفع ریشه‌ای ۲۱۶ خطای زنجیره‌ای وضعیت ۵۰۰ ناشی از پیوندهای نسبی خزنده‌ها:**
+   - کشف خطای ناشی از لینک‌های نسبی بدون اسلش اولیه (`href="shop"`, `href="booking"` و ...) در قالب‌های جزئیات محصول (`product_details.php`): خزنده‌ها در مسیر `/product/1` این لینک‌ها را به صورت اشتباه به نشانی‌های تو در توی نامعتبر مانند `/product/shop` و `/product/booking` تفسیر می‌کردند که به دلیل فقدان قانون بازنویسی، خطای HTTP 500 در لایت‌اسپید تولید کرده و ۲۱۶ خطای ثانویه (عدم ایندکس، فقدان توضیحات متا، فقدان تگ کانونیکال، خطای محتوای کم‌حجم، نبود اوپن‌گراف و اسکیما) در ممیزی AryaSEO ثبت کرده بود.
+   - تزریق تگ جهانی `<base href="https://asena.company/">` در سربرگ سامانه ([`includes/header.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/includes/header.php)) جهت رفع قطعی هرگونه تفسیر نسبی پیوندها.
+   - اصلاح تمامی لینک‌های هدر، منوی موبایل، فوتر و بردکرامب‌ها به مسیرهای ریشه مطلق (`/shop`, `/pharmacy`, `/booking`, `/websites` و ...).
+   - تعبیه ریدایرکت‌های دائمی ۳۰۱ در [`.htaccess`](file:///opt/lampp/htdocs/asena/asena-enterprise/.htaccess) برای هدایت خودکار تمام مسیرهای خراب خزنده‌ها به ریشه و کاتالوگ اصلی.
+2. **اصلاح روتینگ و تاب‌آوری صفحه اختصاصی وب‌سایت‌ساز (`/websites`):**
+   - افزودن رول بازنویسی مستقیم `RewriteRule ^websites/?$ websites.php [QSA,L]` در [`.htaccess`](file:///opt/lampp/htdocs/asena/asena-enterprise/.htaccess).
+   - پاکسازی فراخوانی‌های سنگین و بلااستفاده پایگاه‌داده و متدهای درون‌سازمانی از [`websites.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/websites.php) و حل خطای ۵۰۰ صفحه لایو.
+   - افزودن تگ کانونیکال خودارجاع و اسکیما ساختاریافته `schema.org/Service` جهت شناسایی توسط گوگل.
+3. **رفع خطای خالی بودن ویژگی ALT تصاویر در ۶۱ صفحه (Enamad & Live Search Alt Fix):**
+   - شناسایی دلیل خالی بودن ویژگی alt لوگوی اینماد در فوتر ([`includes/footer.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/includes/footer.php)) به دلیل ساختار کد دریافتی از اینماد؛ تعبیه فیلتر رجکس هوشمند برای تزریق الزامی `alt="نماد اعتماد الکترونیکی آسنا"`.
+   - الصاق متن‌های جایگزین داینامیک و توصیفی به تصاویر تکمیل خودکار جستجوی زنده در [`includes/header.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/includes/header.php).
+4. **اصلاح تگ H1 در صفحه خیریه و کوتاه‌سازی عنوان صفحه ورود:**
+   - تبدیل تیترهای کمپین در [`charity.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/charity.php) از `<h2>` به `<h1>` استاندارد جهت رفع اخطار فقدان تگ H1 در سئو.
+   - کوتاه‌سازی عنوان صفحه ورود [`login.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/login.php) به ۲۵ کاراکتر (`ورود به حساب کاربری | آسنا`) جهت تطابق با سقف ۶۰ کاراکتری استانداردهای SERP گوگل.
+
 ### نسخه ۱.۰.۳۱ (اکتبر ۲۰۲۶ - تعبیه فیلدهای اختصاصی لینک آدرس، مسیریابی مستقیم با بلد و نشان، اتصال سرویس‌های لایو به asena.company و سیستم لینک‌دهی جامع در بخش‌های خدمات و بنتو)
 1. **فیلدهای اختصاصی لینک آدرس و مسیریابی مستقیم («مسیریابی با بلد / نشان»):**
    - افزودن فیلدهای اختصاصی `map_link` و `nav_btn_text` به بلوک اطلاعات تماس (`contact`) در معماری پیش‌فرض و دیتابیس سایت‌ساز ([`includes/TenantSiteService.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/includes/TenantSiteService.php)).

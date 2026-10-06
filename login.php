@@ -362,7 +362,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
     <meta charset="utf-8"/>
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-    <title>ورود به حساب کاربری | پلتفرم سلامت و خدمات حیوانات خانگی آسنا</title>
+    <title>ورود به حساب کاربری | آسنا</title>
     <link rel="stylesheet" href="assets/css/tailwind.output.css?v=<?= time() ?>">
     <link href="assets/css/material-symbols.css" rel="stylesheet"/>
     <link href="assets/css/geist.css" rel="stylesheet"/>

@@ -14,13 +14,23 @@ require_once __DIR__ . '/includes/db.php';
 require_once __DIR__ . '/includes/App.php';
 require_once __DIR__ . '/includes/functions.php';
 
-$tenantService = App::tenantSite();
-$archetypes = $tenantService->getWebsiteArchetypes();
-$tiersConfig = require __DIR__ . '/config/tiers.php';
-$tiers = $tiersConfig['tiers'] ?? [];
-
 $page_title = 'سفارش و خرید وب‌سایت اختصاصی دامپزشکی، داروخانه و پت‌شاپ | آسنا';
 $page_desc = 'ساخت فوری وب‌سایت مستقل و حرفه‌ای متناسب با حوزه فعالیت شما: ویژه پزشکان، داروخانه‌ها، پت‌شاپ‌ها و بیمارستان‌های دامپزشکی، متصل به نوبت‌دهی و درگاه شاپرک.';
+$canonical_url = 'https://asena.company/websites';
+
+$page_schema = [
+    '@context' => 'https://schema.org',
+    '@type' => 'Service',
+    'name' => 'پلتفرم ساخت وب‌سایت اختصاصی دامپزشکی، داروخانه و پت‌شاپ آسنا',
+    'description' => $page_desc,
+    'provider' => [
+        '@type' => 'Organization',
+        'name' => 'آسنا | ASENA',
+        'url' => 'https://asena.company/'
+    ],
+    'serviceType' => 'Website Development & Veterinary Digital Presence',
+    'url' => 'https://asena.company/websites'
+];
 
 include __DIR__ . '/includes/header.php';
 ?>

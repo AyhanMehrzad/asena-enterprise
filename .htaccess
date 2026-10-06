@@ -1,8 +1,15 @@
 RewriteEngine On
 
-# 0. Pharmacy Enterprise Route Handling (neutralize trailing slash and guarantee routing to pharmacy.php)
+# 0. Pharmacy & Websites Enterprise Route Handling
 RewriteRule ^pharmacy/$ /pharmacy [R=301,L]
 RewriteRule ^pharmacy$ pharmacy.php [QSA,L]
+RewriteRule ^websites/$ /websites [R=301,L]
+RewriteRule ^websites$ websites.php [QSA,L]
+
+# 0.1 Canonical Recovery 301 Redirects for Broken /product/ Relative Crawler Permutations
+RewriteRule ^product/?$ /shop [R=301,L]
+RewriteRule ^product/product_details(?:\.php)?$ /shop [R=301,L]
+RewriteRule ^product/(shop|pharmacy|booking|websites|calculator|interactions|organizations|subscriptions|knowledge_base|charity|rewards|about|login|cart|contact|terms|privacy|index)(.*)$ /$1$2 [R=301,L]
 
 # 1. Allow authorization headers
 RewriteCond %{HTTP:Authorization} ^(.*)

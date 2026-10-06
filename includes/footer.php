@@ -38,11 +38,11 @@ if (basename($_SERVER['SCRIPT_FILENAME'] ?? '') === basename(__FILE__)) {
                 <div class="flex flex-col gap-4">
                     <h4 class="font-bold text-base text-primary">فروشگاه و خدمات</h4>
                     <nav class="flex flex-col gap-2.5">
-                        <a class="text-xs text-on-surface-variant hover:text-secondary-container transition-colors" href="shop">غذای خشک و کنسرو</a>
-                        <a class="text-xs text-on-surface-variant hover:text-secondary-container transition-colors" href="pharmacy">داروخانه و مکمل‌ها</a>
-                        <a class="text-xs text-on-surface-variant hover:text-secondary-container transition-colors" href="booking">نوبت‌دهی کلینیک و گرومینگ</a>
-                        <a class="text-xs text-on-surface-variant hover:text-secondary-container transition-colors" href="subscriptions">سفارش خودکار Autoship</a>
-                        <a class="text-xs text-on-surface-variant hover:text-secondary-container transition-colors font-bold text-primary flex items-center justify-center sm:justify-start gap-1" href="websites">
+                        <a class="text-xs text-on-surface-variant hover:text-secondary-container transition-colors" href="/shop">غذای خشک و کنسرو</a>
+                        <a class="text-xs text-on-surface-variant hover:text-secondary-container transition-colors" href="/pharmacy">داروخانه و مکمل‌ها</a>
+                        <a class="text-xs text-on-surface-variant hover:text-secondary-container transition-colors" href="/booking">نوبت‌دهی کلینیک و گرومینگ</a>
+                        <a class="text-xs text-on-surface-variant hover:text-secondary-container transition-colors" href="/subscriptions">سفارش خودکار Autoship</a>
+                        <a class="text-xs text-on-surface-variant hover:text-secondary-container transition-colors font-bold text-primary flex items-center justify-center sm:justify-start gap-1" href="/websites">
                             <span class="material-symbols-outlined text-[15px] text-[#fd8100]">web</span>
                             سفارش وب‌سایت اختصاصی
                         </a>
@@ -51,28 +51,28 @@ if (basename($_SERVER['SCRIPT_FILENAME'] ?? '') === basename(__FILE__)) {
                 <div class="flex flex-col gap-4">
                     <h4 class="font-bold text-base text-primary">قوانین و امور مشتریان</h4>
                     <nav class="flex flex-col gap-2.5">
-                        <a class="text-xs text-on-surface-variant hover:text-secondary-container transition-colors" href="about">درباره آسنا و همکاران</a>
-                        <a class="text-xs text-on-surface-variant hover:text-secondary-container transition-colors font-bold text-primary" href="contact">تماس با ما و ثبت شکایات</a>
-                        <a class="text-xs text-on-surface-variant hover:text-secondary-container transition-colors" href="terms">قوانین و شرایط خدمات (مهلت ۷ روزه)</a>
-                        <a class="text-xs text-on-surface-variant hover:text-secondary-container transition-colors" href="privacy">سیاست حفظ حریم خصوصی</a>
+                        <a class="text-xs text-on-surface-variant hover:text-secondary-container transition-colors" href="/about">درباره آسنا و همکاران</a>
+                        <a class="text-xs text-on-surface-variant hover:text-secondary-container transition-colors font-bold text-primary" href="/contact">تماس با ما و ثبت شکایات</a>
+                        <a class="text-xs text-on-surface-variant hover:text-secondary-container transition-colors" href="/terms">قوانین و شرایط خدمات (مهلت ۷ روزه)</a>
+                        <a class="text-xs text-on-surface-variant hover:text-secondary-container transition-colors" href="/privacy">سیاست حفظ حریم خصوصی</a>
                     </nav>
                 </div>
                 <div class="flex flex-col gap-4">
                     <h4 class="font-bold text-base text-primary">ابزارهای سلامت و دانشنامه</h4>
                     <nav class="flex flex-col gap-2.5">
-                        <a class="text-xs text-on-surface-variant hover:text-secondary-container transition-colors flex items-center justify-center sm:justify-start gap-1" href="calculator">
+                        <a class="text-xs text-on-surface-variant hover:text-secondary-container transition-colors flex items-center justify-center sm:justify-start gap-1" href="/calculator">
                             <span class="material-symbols-outlined text-[15px] text-emerald-600">calculate</span>
                             محاسبه‌گر کالری و غذای پت
                         </a>
-                        <a class="text-xs text-on-surface-variant hover:text-secondary-container transition-colors flex items-center justify-center sm:justify-start gap-1" href="interactions">
+                        <a class="text-xs text-on-surface-variant hover:text-secondary-container transition-colors flex items-center justify-center sm:justify-start gap-1" href="/interactions">
                             <span class="material-symbols-outlined text-[15px] text-blue-600">medication</span>
                             تداخل‌سنج دارویی دامپزشکی
                         </a>
-                        <a class="text-xs text-on-surface-variant hover:text-secondary-container transition-colors flex items-center justify-center sm:justify-start gap-1" href="knowledge_base">
+                        <a class="text-xs text-on-surface-variant hover:text-secondary-container transition-colors flex items-center justify-center sm:justify-start gap-1" href="/knowledge_base">
                             <span class="material-symbols-outlined text-[15px] text-primary">auto_stories</span>
                             مقالات و راهنمای سلامت
                         </a>
-                        <a class="text-xs text-on-surface-variant hover:text-secondary-container transition-colors flex items-center justify-center sm:justify-start gap-1" href="charity">
+                        <a class="text-xs text-on-surface-variant hover:text-secondary-container transition-colors flex items-center justify-center sm:justify-start gap-1" href="/charity">
                             <span class="material-symbols-outlined text-[15px] text-rose-500">volunteer_activism</span>
                             خیریه و درمان حیوانات
                         </a>
@@ -92,6 +92,14 @@ if (basename($_SERVER['SCRIPT_FILENAME'] ?? '') === basename(__FILE__)) {
                         $enamadHtml = ($pdo instanceof PDO) ? get_setting($pdo, 'enamad_html_code', $defaultEnamadCode) : $defaultEnamadCode;
                         if (empty(trim((string)$enamadHtml))) {
                             $enamadHtml = $defaultEnamadCode;
+                        }
+                        if (!empty($enamadHtml)) {
+                            if (str_contains($enamadHtml, 'alt=""') || str_contains($enamadHtml, "alt=''") || !str_contains($enamadHtml, 'alt=')) {
+                                $enamadHtml = preg_replace('/alt=[\'"][^\'"]*[\'"]/', 'alt="نماد اعتماد الکترونیکی آسنا"', $enamadHtml);
+                                if (!str_contains($enamadHtml, 'alt=')) {
+                                    $enamadHtml = str_replace('<img ', '<img alt="نماد اعتماد الکترونیکی آسنا" ', $enamadHtml);
+                                }
+                            }
                         }
                         ?>
                         <!-- Official Enamad Trust Seal Badge Slot -->
@@ -163,37 +171,38 @@ if (basename($_SERVER['SCRIPT_FILENAME'] ?? '') === basename(__FILE__)) {
     <!-- Autoship Web Worker Trigger (Poor Man's Cron) -->
     <script>
         // Trigger the autoship worker asynchronously. 
-        // It checks its own lock file so it only actually runs once a day.
-        fetch('actions/autoship_worker.php', { method: 'POST' }).catch(() => {});
-    </script>
-
-    <!-- Ambient Offline Network Resilience Strip -->
-    <div id="offline-status-strip" role="status" aria-live="polite">
-        <span class="material-symbols-outlined text-sm text-amber-400">cloud_off</span>
-        <span>شما در وضعیت آفلاین هستید - اطلاعات پرونده سلامت و کش محلی در دسترس است</span>
-    </div>
-
-    <!-- Digikala-Style 5-Tab Mobile Bottom Navigation Bar -->
-    <nav class="mobile-bottom-nav" id="mobileBottomNavBar" role="navigation" aria-label="ناوبری اصلی موبایل">
-        <!-- 1. خانه (Home) -->
-        <a href="./" class="bottom-nav-link <?php echo ($current_page === 'index.php') ? 'active' : ''; ?>">
+        // It checks its own loc        <!-- 1. خانه (Home) -->
+        <a href="/" class="bottom-nav-link <?php echo $current_page === 'index.php' ? 'active' : ''; ?>">
             <span class="material-symbols-outlined">home</span>
             <span>خانه</span>
         </a>
 
         <!-- 2. دسته‌بندی‌ها (Categories Sheet) -->
-        <a href="shop" onclick="openMobileCategoriesSheet(); return false;" aria-label="دسته‌بندی‌های محصولات و خدمات" class="bottom-nav-link <?php echo in_array($current_page, ['shop.php', 'pharmacy.php', 'shop', 'pharmacy']) ? 'active' : ''; ?>">
+        <a href="/shop" onclick="openMobileCategoriesSheet(); return false;" aria-label="دسته‌بندی‌های محصولات و خدمات" class="bottom-nav-link <?php echo in_array($current_page, ['shop.php', 'pharmacy.php', 'shop', 'pharmacy']) ? 'active' : ''; ?>">
             <span class="material-symbols-outlined">grid_view</span>
             <span>دسته‌بندی‌ها</span>
         </a>
 
         <!-- 3. سبد خرید (Cart with Live Counter Badge) -->
-        <a href="cart" class="bottom-nav-link <?php echo ($current_page === 'cart.php') ? 'active' : ''; ?>">
+        <a href="/cart" class="bottom-nav-link <?php echo ($current_page === 'cart.php') ? 'active' : ''; ?>">
             <div class="relative flex items-center justify-center">
                 <span class="material-symbols-outlined">shopping_cart</span>
                 <span id="mobile-nav-cart-badge" class="nav-cart-badge cart-badge-count <?php echo (!empty($cart_count) && $cart_count > 0) ? '' : 'hidden'; ?>"><?php echo $cart_count ?? 0; ?></span>
             </div>
             <span>سبد خرید</span>
+        </a>
+
+        <!-- 4. خدمات و پزشکان (Services / Booking) -->
+        <a href="/booking" class="bottom-nav-link <?php echo in_array($current_page, ['booking.php', 'organizations.php']) ? 'active' : ''; ?>">
+            <span class="material-symbols-outlined">medical_services</span>
+            <span>خدمات پزشکان</span>
+        </a>
+
+        <!-- 5. آسنای من (My Asena / Profile) -->
+        <a href="<?php echo isset($_SESSION['user_id']) ? '/profile' : '/login'; ?>" class="bottom-nav-link <?php echo in_array($current_page, ['profile.php', 'profile_settings.php', 'login.php', 'rewards.php', 'wishlist.php']) ? 'active' : ''; ?>">
+            <span class="material-symbols-outlined">person</span>
+            <span>آسنای من</span>
+        </a>span>سبد خرید</span>
         </a>
 
         <!-- 4. خدمات و پزشکان (Services / Booking) -->
@@ -230,7 +239,7 @@ if (basename($_SERVER['SCRIPT_FILENAME'] ?? '') === basename(__FILE__)) {
         <div class="p-5 overflow-y-auto custom-scrollbar flex-1 space-y-4 max-h-[65vh]">
             <div class="grid grid-cols-2 gap-3">
                 <!-- 1. Pet Shop -->
-                <a href="shop" onclick="closeMobileCategoriesSheet()" class="p-3.5 rounded-2xl bg-gradient-to-br from-amber-50 to-orange-50/60 border border-amber-200/60 hover:shadow-md transition-all flex flex-col gap-2 group">
+                <a href="/shop" onclick="closeMobileCategoriesSheet()" class="p-3.5 rounded-2xl bg-gradient-to-br from-amber-50 to-orange-50/60 border border-amber-200/60 hover:shadow-md transition-all flex flex-col gap-2 group">
                     <div class="w-10 h-10 rounded-xl bg-amber-500 text-white flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform">
                         <span class="material-symbols-outlined text-2xl">pets</span>
                     </div>
@@ -241,7 +250,7 @@ if (basename($_SERVER['SCRIPT_FILENAME'] ?? '') === basename(__FILE__)) {
                 </a>
 
                 <!-- 2. Pharmacy -->
-                <a href="pharmacy" onclick="closeMobileCategoriesSheet()" class="p-3.5 rounded-2xl bg-gradient-to-br from-blue-50 to-indigo-50/60 border border-blue-200/60 hover:shadow-md transition-all flex flex-col gap-2 group">
+                <a href="/pharmacy" onclick="closeMobileCategoriesSheet()" class="p-3.5 rounded-2xl bg-gradient-to-br from-blue-50 to-indigo-50/60 border border-blue-200/60 hover:shadow-md transition-all flex flex-col gap-2 group">
                     <div class="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform">
                         <span class="material-symbols-outlined text-2xl">medication</span>
                     </div>
@@ -252,7 +261,7 @@ if (basename($_SERVER['SCRIPT_FILENAME'] ?? '') === basename(__FILE__)) {
                 </a>
 
                 <!-- 3. Vet Appointments -->
-                <a href="booking" onclick="closeMobileCategoriesSheet()" class="p-3.5 rounded-2xl bg-gradient-to-br from-teal-50 to-emerald-50/60 border border-teal-200/60 hover:shadow-md transition-all flex flex-col gap-2 group">
+                <a href="/booking" onclick="closeMobileCategoriesSheet()" class="p-3.5 rounded-2xl bg-gradient-to-br from-teal-50 to-emerald-50/60 border border-teal-200/60 hover:shadow-md transition-all flex flex-col gap-2 group">
                     <div class="w-10 h-10 rounded-xl bg-teal-600 text-white flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform">
                         <span class="material-symbols-outlined text-2xl">calendar_month</span>
                     </div>
@@ -263,7 +272,7 @@ if (basename($_SERVER['SCRIPT_FILENAME'] ?? '') === basename(__FILE__)) {
                 </a>
 
                 <!-- 4. Hospitals & 24/7 -->
-                <a href="organizations" onclick="closeMobileCategoriesSheet()" class="p-3.5 rounded-2xl bg-gradient-to-br from-rose-50 to-red-50/60 border border-rose-200/60 hover:shadow-md transition-all flex flex-col gap-2 group">
+                <a href="/organizations" onclick="closeMobileCategoriesSheet()" class="p-3.5 rounded-2xl bg-gradient-to-br from-rose-50 to-red-50/60 border border-rose-200/60 hover:shadow-md transition-all flex flex-col gap-2 group">
                     <div class="w-10 h-10 rounded-xl bg-rose-600 text-white flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform">
                         <span class="material-symbols-outlined text-2xl">local_hospital</span>
                     </div>
@@ -274,7 +283,7 @@ if (basename($_SERVER['SCRIPT_FILENAME'] ?? '') === basename(__FILE__)) {
                 </a>
 
                 <!-- 5. Grooming & Spa -->
-                <a href="booking?service=grooming" onclick="closeMobileCategoriesSheet()" class="p-3.5 rounded-2xl bg-gradient-to-br from-pink-50 to-purple-50/60 border border-pink-200/60 hover:shadow-md transition-all flex flex-col gap-2 group">
+                <a href="/booking?service=grooming" onclick="closeMobileCategoriesSheet()" class="p-3.5 rounded-2xl bg-gradient-to-br from-pink-50 to-purple-50/60 border border-pink-200/60 hover:shadow-md transition-all flex flex-col gap-2 group">
                     <div class="w-10 h-10 rounded-xl bg-pink-600 text-white flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform">
                         <span class="material-symbols-outlined text-2xl">content_cut</span>
                     </div>
@@ -285,7 +294,7 @@ if (basename($_SERVER['SCRIPT_FILENAME'] ?? '') === basename(__FILE__)) {
                 </a>
 
                 <!-- 6. Autoship -->
-                <a href="subscriptions" onclick="closeMobileCategoriesSheet()" class="p-3.5 rounded-2xl bg-gradient-to-br from-orange-50 to-amber-50/60 border border-orange-200/60 hover:shadow-md transition-all flex flex-col gap-2 group">
+                <a href="/subscriptions" onclick="closeMobileCategoriesSheet()" class="p-3.5 rounded-2xl bg-gradient-to-br from-orange-50 to-amber-50/60 border border-orange-200/60 hover:shadow-md transition-all flex flex-col gap-2 group">
                     <div class="w-10 h-10 rounded-xl bg-orange-500 text-white flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform">
                         <span class="material-symbols-outlined text-2xl">autorenew</span>
                     </div>
@@ -296,7 +305,7 @@ if (basename($_SERVER['SCRIPT_FILENAME'] ?? '') === basename(__FILE__)) {
                 </a>
 
                 <!-- 7. Knowledge Base -->
-                <a href="knowledge_base" onclick="closeMobileCategoriesSheet()" class="p-3.5 rounded-2xl bg-gradient-to-br from-sky-50 to-blue-50/60 border border-sky-200/60 hover:shadow-md transition-all flex flex-col gap-2 group">
+                <a href="/knowledge_base" onclick="closeMobileCategoriesSheet()" class="p-3.5 rounded-2xl bg-gradient-to-br from-sky-50 to-blue-50/60 border border-sky-200/60 hover:shadow-md transition-all flex flex-col gap-2 group">
                     <div class="w-10 h-10 rounded-xl bg-sky-600 text-white flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform">
                         <span class="material-symbols-outlined text-2xl">auto_stories</span>
                     </div>
@@ -307,7 +316,7 @@ if (basename($_SERVER['SCRIPT_FILENAME'] ?? '') === basename(__FILE__)) {
                 </a>
 
                 <!-- 8. Pet Charity -->
-                <a href="charity" onclick="closeMobileCategoriesSheet()" class="p-3.5 rounded-2xl bg-gradient-to-br from-emerald-50 to-teal-50/60 border border-emerald-200/60 hover:shadow-md transition-all flex flex-col gap-2 group">
+                <a href="/charity" onclick="closeMobileCategoriesSheet()" class="p-3.5 rounded-2xl bg-gradient-to-br from-emerald-50 to-teal-50/60 border border-emerald-200/60 hover:shadow-md transition-all flex flex-col gap-2 group">
                     <div class="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform">
                         <span class="material-symbols-outlined text-2xl">volunteer_activism</span>
                     </div>
@@ -318,7 +327,7 @@ if (basename($_SERVER['SCRIPT_FILENAME'] ?? '') === basename(__FILE__)) {
                 </a>
 
                 <!-- 9. Calorie Calculator -->
-                <a href="calculator" onclick="closeMobileCategoriesSheet()" class="p-3.5 rounded-2xl bg-gradient-to-br from-emerald-50 to-green-50/60 border border-emerald-200/60 hover:shadow-md transition-all flex flex-col gap-2 group">
+                <a href="/calculator" onclick="closeMobileCategoriesSheet()" class="p-3.5 rounded-2xl bg-gradient-to-br from-emerald-50 to-green-50/60 border border-emerald-200/60 hover:shadow-md transition-all flex flex-col gap-2 group">
                     <div class="w-10 h-10 rounded-xl bg-emerald-700 text-white flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform">
                         <span class="material-symbols-outlined text-2xl">calculate</span>
                     </div>
@@ -329,7 +338,7 @@ if (basename($_SERVER['SCRIPT_FILENAME'] ?? '') === basename(__FILE__)) {
                 </a>
 
                 <!-- 10. Drug Interactions -->
-                <a href="interactions" onclick="closeMobileCategoriesSheet()" class="p-3.5 rounded-2xl bg-gradient-to-br from-sky-50 to-indigo-50/60 border border-sky-200/60 hover:shadow-md transition-all flex flex-col gap-2 group">
+                <a href="/interactions" onclick="closeMobileCategoriesSheet()" class="p-3.5 rounded-2xl bg-gradient-to-br from-sky-50 to-indigo-50/60 border border-sky-200/60 hover:shadow-md transition-all flex flex-col gap-2 group">
                     <div class="w-10 h-10 rounded-xl bg-sky-700 text-white flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform">
                         <span class="material-symbols-outlined text-2xl">medication</span>
                     </div>
@@ -342,7 +351,7 @@ if (basename($_SERVER['SCRIPT_FILENAME'] ?? '') === basename(__FILE__)) {
 
             <!-- Fast View All Link -->
             <div class="pt-2">
-                <a href="shop" onclick="closeMobileCategoriesSheet()" class="w-full bg-primary text-white py-3 px-4 rounded-xl text-xs font-black flex items-center justify-center gap-2 shadow-md hover:bg-primary-container transition-all">
+                <a href="/shop" onclick="closeMobileCategoriesSheet()" class="w-full bg-primary text-white py-3 px-4 rounded-xl text-xs font-black flex items-center justify-center gap-2 shadow-md hover:bg-primary-container transition-all">
                     <span>مشاهده کل کاتالوگ فروشگاه آسنا</span>
                     <span class="material-symbols-outlined text-sm">arrow_back</span>
                 </a>

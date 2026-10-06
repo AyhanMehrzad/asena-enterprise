@@ -126,8 +126,8 @@ $recentDonations = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 <div class="swiper-slide flex items-center justify-center h-full bg-primary-container text-white p-8 sm:p-12 text-center">
                     <div>
                         <span class="material-symbols-outlined text-5xl sm:text-6xl mb-4">volunteer_activism</span>
-                        <h2 class="text-2xl sm:text-3xl font-bold">در حال حاضر کمپین فعالی وجود ندارد</h2>
-                        <p class="mt-4 opacity-80 text-sm sm:text-base">اما شما همیشه می‌توانید به صورت عمومی حمایت کنید.</p>
+                        <h1 class="text-2xl sm:text-3xl font-bold">پلتفرم نیکوکاری و حمایت از حیوانات آسنا</h1>
+                        <p class="mt-4 opacity-80 text-sm sm:text-base">در حال حاضر کمپین جدیدی ثبت نشده است، اما شما همیشه می‌توانید به صورت عمومی حمایت کنید.</p>
                     </div>
                 </div>
                 <?php else: ?>
@@ -151,7 +151,7 @@ $recentDonations = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                         آمار زنده
                                     </span>
                                 </div>
-                                <h2 class="text-2xl sm:text-3xl md:text-5xl lg:text-6xl font-black leading-snug sm:leading-tight"><?php echo htmlspecialchars($camp['title']); ?></h2>
+                                <h1 class="text-2xl sm:text-3xl md:text-5xl lg:text-6xl font-black leading-snug sm:leading-tight"><?php echo htmlspecialchars($camp['title']); ?></h1>
                                 <p class="text-xs sm:text-base md:text-lg font-light opacity-90 leading-relaxed max-w-2xl line-clamp-2 sm:line-clamp-none"><?php echo nl2br(htmlspecialchars($camp['description'])); ?></p>
                                 
                                 <!-- Dynamic Progress Card -->

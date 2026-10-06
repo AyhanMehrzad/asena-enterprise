@@ -196,6 +196,7 @@ $effective_geo_icbm = $geo_icbm ?? '35.7350, 51.4110';
 <!DOCTYPE html>
 <html dir="rtl" lang="fa" data-edition="standard">
 <head>
+    <base href="https://asena.company/">
     <meta charset="utf-8">
     <meta content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover" name="viewport">
     <title><?php echo htmlspecialchars($effective_title); ?></title>
@@ -477,18 +478,18 @@ if (function_exists('get_curated_recommendations')) {
             <div class="flex items-center gap-8 flex-1">
                 <!-- Desktop Links (Streamlined) -->
                 <div class="flex gap-5 xl:gap-7 flex-row shrink-0 items-center">
-                    <a class="text-white text-sm font-semibold hover:text-secondary-container transition-all duration-200 <?php echo $current_page == 'index.php' ? 'border-b-2 border-white pb-1 opacity-100' : 'opacity-90'; ?>" href="./">خانه</a>
+                    <a class="text-white text-sm font-semibold hover:text-secondary-container transition-all duration-200 <?php echo $current_page == 'index.php' ? 'border-b-2 border-white pb-1 opacity-100' : 'opacity-90'; ?>" href="/">خانه</a>
                     <?php if (Feature::has('petshop_catalog')): ?>
-                        <a class="text-white text-sm font-semibold hover:text-secondary-container transition-all duration-200 <?php echo $current_page == 'shop.php' ? 'border-b-2 border-white pb-1 opacity-100' : 'opacity-90'; ?>" href="shop">فروشگاه</a>
+                        <a class="text-white text-sm font-semibold hover:text-secondary-container transition-all duration-200 <?php echo $current_page == 'shop.php' ? 'border-b-2 border-white pb-1 opacity-100' : 'opacity-90'; ?>" href="/shop">فروشگاه</a>
                     <?php endif; ?>
                     <?php if (Feature::has('pharmacy_catalog')): ?>
-                        <a class="text-white text-sm font-semibold hover:text-secondary-container transition-all duration-200 <?php echo ($current_page == 'pharmacy.php' || $current_page == 'pharmacy') ? 'border-b-2 border-white pb-1 opacity-100' : 'opacity-90'; ?>" href="pharmacy">داروخانه تخصصی</a>
+                        <a class="text-white text-sm font-semibold hover:text-secondary-container transition-all duration-200 <?php echo ($current_page == 'pharmacy.php' || $current_page == 'pharmacy') ? 'border-b-2 border-white pb-1 opacity-100' : 'opacity-90'; ?>" href="/pharmacy">داروخانه تخصصی</a>
                     <?php endif; ?>
                     <?php if (Feature::has('clinic_booking')): ?>
-                        <a class="text-white text-sm font-semibold hover:text-secondary-container transition-all duration-200 <?php echo $current_page == 'booking.php' ? 'border-b-2 border-white pb-1 opacity-100' : 'opacity-90'; ?>" href="booking">نوبت‌دهی</a>
+                        <a class="text-white text-sm font-semibold hover:text-secondary-container transition-all duration-200 <?php echo $current_page == 'booking.php' ? 'border-b-2 border-white pb-1 opacity-100' : 'opacity-90'; ?>" href="/booking">نوبت‌دهی</a>
                     <?php endif; ?>
 
-                    <a class="text-white text-sm font-semibold hover:text-secondary-container transition-all duration-200 flex items-center gap-1.5 <?php echo in_array($current_page, ['websites.php', 'websites']) ? 'border-b-2 border-white pb-1 opacity-100' : 'opacity-90'; ?>" href="websites">
+                    <a class="text-white text-sm font-semibold hover:text-secondary-container transition-all duration-200 flex items-center gap-1.5 <?php echo in_array($current_page, ['websites.php', 'websites']) ? 'border-b-2 border-white pb-1 opacity-100' : 'opacity-90'; ?>" href="/websites">
                         <span>سفارش سایت</span>
                         <span class="bg-[#fd8100] text-white text-[9px] px-1.5 py-0.5 rounded-full font-black tracking-tighter">اختصاصی</span>
                     </a>
@@ -502,7 +503,7 @@ if (function_exists('get_curated_recommendations')) {
                         <div class="absolute right-0 top-full pt-1 w-64 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 transform origin-top-right">
                             <div class="bg-white rounded-2xl shadow-2xl border border-slate-100 py-2 overflow-hidden text-right">
                                 
-                                <a href="websites" class="flex items-center gap-3 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 hover:text-[#fd8100] transition-colors border-b border-slate-100">
+                                <a href="/websites" class="flex items-center gap-3 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 hover:text-[#fd8100] transition-colors border-b border-slate-100">
                                     <div class="w-8 h-8 rounded-lg bg-orange-50 text-[#fd8100] flex items-center justify-center shrink-0">
                                         <span class="material-symbols-outlined text-lg">web</span>
                                     </div>
@@ -515,7 +516,7 @@ if (function_exists('get_curated_recommendations')) {
                                     </div>
                                 </a>
 
-                                <a href="calculator" class="flex items-center gap-3 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 hover:text-emerald-600 transition-colors">
+                                <a href="/calculator" class="flex items-center gap-3 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 hover:text-emerald-600 transition-colors">
                                     <div class="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
                                         <span class="material-symbols-outlined text-lg">calculate</span>
                                     </div>
@@ -525,7 +526,7 @@ if (function_exists('get_curated_recommendations')) {
                                     </div>
                                 </a>
 
-                                <a href="interactions" class="flex items-center gap-3 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 hover:text-blue-600 transition-colors">
+                                <a href="/interactions" class="flex items-center gap-3 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 hover:text-blue-600 transition-colors">
                                     <div class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
                                         <span class="material-symbols-outlined text-lg">medication</span>
                                     </div>
@@ -536,7 +537,7 @@ if (function_exists('get_curated_recommendations')) {
                                 </a>
 
                                 <?php if (Feature::has('clinic_booking')): ?>
-                                    <a href="organizations" class="flex items-center gap-3 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 hover:text-primary transition-colors">
+                                    <a href="/organizations" class="flex items-center gap-3 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 hover:text-primary transition-colors">
                                         <div class="w-8 h-8 rounded-lg bg-teal-50 text-teal-600 flex items-center justify-center shrink-0">
                                             <span class="material-symbols-outlined text-lg">domain</span>
                                         </div>
@@ -548,7 +549,7 @@ if (function_exists('get_curated_recommendations')) {
                                 <?php endif; ?>
 
                                 <?php if (Feature::has('autoship')): ?>
-                                    <a href="subscriptions" class="flex items-center gap-3 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 hover:text-secondary-container transition-colors">
+                                    <a href="/subscriptions" class="flex items-center gap-3 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 hover:text-secondary-container transition-colors">
                                         <div class="w-8 h-8 rounded-lg bg-orange-50 text-secondary-container flex items-center justify-center shrink-0">
                                             <span class="material-symbols-outlined text-lg">autorenew</span>
                                         </div>
@@ -560,7 +561,7 @@ if (function_exists('get_curated_recommendations')) {
                                 <?php endif; ?>
 
                                 <?php if (Feature::has('blog_engine')): ?>
-                                    <a href="knowledge_base" class="flex items-center gap-3 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 hover:text-indigo-600 transition-colors">
+                                    <a href="/knowledge_base" class="flex items-center gap-3 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 hover:text-indigo-600 transition-colors">
                                         <div class="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">
                                             <span class="material-symbols-outlined text-lg">auto_stories</span>
                                         </div>
@@ -572,7 +573,7 @@ if (function_exists('get_curated_recommendations')) {
                                 <?php endif; ?>
 
                                 <?php if (Feature::has('charity_campaigns')): ?>
-                                    <a href="charity" class="flex items-center gap-3 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 hover:text-rose-600 transition-colors">
+                                    <a href="/charity" class="flex items-center gap-3 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 hover:text-rose-600 transition-colors">
                                         <div class="w-8 h-8 rounded-lg bg-rose-50 text-rose-500 flex items-center justify-center shrink-0">
                                             <span class="material-symbols-outlined text-lg">volunteer_activism</span>
                                         </div>
@@ -583,7 +584,7 @@ if (function_exists('get_curated_recommendations')) {
                                     </a>
                                 <?php endif; ?>
 
-                                <a href="rewards" class="flex items-center gap-3 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 hover:text-amber-600 transition-colors border-t border-slate-100">
+                                <a href="/rewards" class="flex items-center gap-3 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 hover:text-amber-600 transition-colors border-t border-slate-100">
                                     <div class="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
                                         <span class="material-symbols-outlined text-lg">loyalty</span>
                                     </div>
@@ -593,7 +594,7 @@ if (function_exists('get_curated_recommendations')) {
                                     </div>
                                 </a>
 
-                                <a href="about" class="flex items-center gap-3 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 hover:text-primary transition-colors border-t border-slate-100">
+                                <a href="/about" class="flex items-center gap-3 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 hover:text-primary transition-colors border-t border-slate-100">
                                     <div class="w-8 h-8 rounded-lg bg-blue-50 text-primary flex items-center justify-center shrink-0">
                                         <span class="material-symbols-outlined text-lg">info</span>
                                     </div>
@@ -705,47 +706,47 @@ if (function_exists('get_curated_recommendations')) {
 
                 <!-- Mobile Links -->
                 <nav class="flex flex-col gap-2">
-                    <a class="flex items-center gap-4 text-on-surface font-bold p-3 rounded-xl hover:bg-primary-container/10 hover:text-primary transition-colors" href="./">
+                    <a class="flex items-center gap-4 text-on-surface font-bold p-3 rounded-xl hover:bg-primary-container/10 hover:text-primary transition-colors" href="/">
                         <span class="material-symbols-outlined text-outline">home</span> خانه
                     </a>
                     <?php if (Feature::has('petshop_catalog')): ?>
-                        <a class="flex items-center gap-4 text-on-surface font-bold p-3 rounded-xl hover:bg-primary-container/10 hover:text-primary transition-colors" href="shop">
+                        <a class="flex items-center gap-4 text-on-surface font-bold p-3 rounded-xl hover:bg-primary-container/10 hover:text-primary transition-colors" href="/shop">
                             <span class="material-symbols-outlined text-outline">storefront</span> فروشگاه
                         </a>
                     <?php endif; ?>
                     <?php if (Feature::has('pharmacy_catalog')): ?>
-                        <a class="flex items-center gap-4 text-on-surface font-bold p-3 rounded-xl hover:bg-primary-container/10 hover:text-primary transition-colors" href="pharmacy">
+                        <a class="flex items-center gap-4 text-on-surface font-bold p-3 rounded-xl hover:bg-primary-container/10 hover:text-primary transition-colors" href="/pharmacy">
                             <span class="material-symbols-outlined text-outline">medication</span> داروخانه تخصصی
                         </a>
                     <?php endif; ?>
                     <?php if (Feature::has('clinic_booking')): ?>
-                        <a class="flex items-center gap-4 text-on-surface font-bold p-3 rounded-xl hover:bg-primary-container/10 hover:text-primary transition-colors" href="booking">
+                        <a class="flex items-center gap-4 text-on-surface font-bold p-3 rounded-xl hover:bg-primary-container/10 hover:text-primary transition-colors" href="/booking">
                             <span class="material-symbols-outlined text-outline">calendar_month</span> نوبت‌دهی آنلاین
                         </a>
-                        <a class="flex items-center gap-4 text-on-surface font-bold p-3 rounded-xl hover:bg-primary-container/10 hover:text-primary transition-colors" href="organizations">
+                        <a class="flex items-center gap-4 text-on-surface font-bold p-3 rounded-xl hover:bg-primary-container/10 hover:text-primary transition-colors" href="/organizations">
                             <span class="material-symbols-outlined text-outline">local_hospital</span> مراکز درمانی و کلینیک‌ها
                         </a>
                     <?php endif; ?>
-                    <a class="flex items-center gap-4 text-on-surface font-bold p-3 rounded-xl hover:bg-primary-container/10 hover:text-primary transition-colors" href="websites">
+                    <a class="flex items-center gap-4 text-on-surface font-bold p-3 rounded-xl hover:bg-primary-container/10 hover:text-primary transition-colors" href="/websites">
                         <span class="material-symbols-outlined text-[#fd8100]">web</span> سفارش وب‌سایت اختصاصی
                         <span class="mr-auto text-[10px] bg-[#fd8100] text-white px-2 py-0.5 rounded-full font-bold">جدید</span>
                     </a>
                     <?php if (Feature::has('autoship')): ?>
-                        <a class="flex items-center gap-4 text-on-surface font-bold p-3 rounded-xl hover:bg-primary-container/10 hover:text-primary transition-colors" href="subscriptions">
+                        <a class="flex items-center gap-4 text-on-surface font-bold p-3 rounded-xl hover:bg-primary-container/10 hover:text-primary transition-colors" href="/subscriptions">
                             <span class="material-symbols-outlined text-outline">autorenew</span> اشتراک خودکار
                         </a>
                     <?php endif; ?>
                     <?php if (Feature::has('blog_engine')): ?>
-                        <a class="flex items-center gap-4 text-on-surface font-bold p-3 rounded-xl hover:bg-primary-container/10 hover:text-primary transition-colors" href="knowledge_base">
+                        <a class="flex items-center gap-4 text-on-surface font-bold p-3 rounded-xl hover:bg-primary-container/10 hover:text-primary transition-colors" href="/knowledge_base">
                             <span class="material-symbols-outlined text-outline">menu_book</span> دانشنامه
                         </a>
                     <?php endif; ?>
                     <?php if (Feature::has('charity_campaigns')): ?>
-                        <a class="flex items-center gap-4 text-on-surface font-bold p-3 rounded-xl hover:bg-primary-container/10 hover:text-primary transition-colors" href="charity">
+                        <a class="flex items-center gap-4 text-on-surface font-bold p-3 rounded-xl hover:bg-primary-container/10 hover:text-primary transition-colors" href="/charity">
                             <span class="material-symbols-outlined text-outline">volunteer_activism</span> خیریه
                         </a>
                     <?php endif; ?>
-                    <a class="flex items-center gap-4 text-on-surface font-bold p-3 rounded-xl hover:bg-primary-container/10 hover:text-primary transition-colors" href="about">
+                    <a class="flex items-center gap-4 text-on-surface font-bold p-3 rounded-xl hover:bg-primary-container/10 hover:text-primary transition-colors" href="/about">
                         <span class="material-symbols-outlined text-outline">info</span> درباره آسنا
                     </a>
                 </nav>
@@ -963,7 +964,7 @@ if (function_exists('get_curated_recommendations')) {
                     html += `
                         <a href="${p.url}" class="live-search-item flex items-center justify-between gap-3 p-2 rounded-xl hover:bg-slate-50 transition-colors group cursor-pointer">
                             <div class="flex items-center gap-3 overflow-hidden">
-                                <img src="${p.image}" class="w-11 h-11 rounded-xl object-cover bg-slate-100 shrink-0 border border-slate-200 group-hover:border-primary/40 transition-colors" alt="">
+                                <img src="${p.image}" class="w-11 h-11 rounded-xl object-cover bg-slate-100 shrink-0 border border-slate-200 group-hover:border-primary/40 transition-colors" alt="${p.title || 'تصویر محصول'}">
                                 <div class="truncate">
                                     <div class="text-xs font-bold text-slate-800 group-hover:text-primary transition-colors truncate">${h(p.title, query)}</div>
                                     <div class="text-[10px] text-slate-400 flex items-center gap-1.5 mt-0.5">
@@ -993,7 +994,7 @@ if (function_exists('get_curated_recommendations')) {
                     html += `
                         <a href="${m.url}" class="live-search-item flex items-center justify-between gap-3 p-2 rounded-xl hover:bg-indigo-50/40 transition-colors group cursor-pointer">
                             <div class="flex items-center gap-3 overflow-hidden">
-                                <img src="${m.image}" class="w-11 h-11 rounded-xl object-cover bg-slate-100 shrink-0 border border-slate-200 group-hover:border-indigo-300" alt="">
+                                <img src="${m.image}" class="w-11 h-11 rounded-xl object-cover bg-slate-100 shrink-0 border border-slate-200 group-hover:border-indigo-300" alt="${m.title || 'تصویر داروی دامپزشکی'}">
                                 <div class="truncate">
                                     <div class="text-xs font-bold text-slate-800 group-hover:text-indigo-700 transition-colors truncate">
                                         ${h(m.title, query)} ${rxBadge} ${coldBadge}
@@ -1018,7 +1019,7 @@ if (function_exists('get_curated_recommendations')) {
                     html += `
                         <div class="live-search-item flex items-center justify-between gap-3 p-2 rounded-xl hover:bg-emerald-50/40 transition-colors group">
                             <a href="${d.profile_url}" class="flex items-center gap-3 overflow-hidden flex-1 cursor-pointer">
-                                <img src="${d.image}" class="w-11 h-11 rounded-full object-cover bg-emerald-100 shrink-0 border-2 border-emerald-200" alt="">
+                                <img src="${d.image}" class="w-11 h-11 rounded-full object-cover bg-emerald-100 shrink-0 border-2 border-emerald-200" alt="${d.name || 'تصویر دامپزشک'}">
                                 <div class="truncate">
                                     <div class="text-xs font-bold text-slate-800 group-hover:text-emerald-700 transition-colors flex items-center gap-1.5 truncate">
                                         <span>${h(d.name, query)}</span>
@@ -1048,7 +1049,7 @@ if (function_exists('get_curated_recommendations')) {
                     html += `
                         <a href="${o.profile_url}" class="live-search-item flex items-center justify-between gap-3 p-2 rounded-xl hover:bg-teal-50/40 transition-colors group cursor-pointer">
                             <div class="flex items-center gap-3 overflow-hidden">
-                                <img src="${o.image}" class="w-11 h-11 rounded-xl object-cover bg-teal-50 shrink-0 border border-teal-200" alt="">
+                                <img src="${o.image}" class="w-11 h-11 rounded-xl object-cover bg-teal-50 shrink-0 border border-teal-200" alt="${o.name || 'لوگوی کلینیک'}">
                                 <div class="truncate">
                                     <div class="text-xs font-bold text-slate-800 group-hover:text-teal-700 transition-colors truncate">
                                         ${h(o.name, query)} ${badge247}

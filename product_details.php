@@ -298,10 +298,10 @@ require_once 'includes/header.php';
     
     <!-- Breadcrumb -->
     <div class="text-label-sm text-on-surface-variant mb-8 flex items-center gap-2">
-        <a href="index.php" class="hover:underline">خانه</a> > 
-        <a href="shop.php" class="hover:underline">فروشگاه</a> > 
+        <a href="/" class="hover:underline">خانه</a> > 
+        <a href="/shop" class="hover:underline">فروشگاه</a> > 
         <?php if(!empty($product['target_animal'])): ?>
-            <a href="shop.php?animal=<?php echo $product['target_animal']; ?>" class="hover:underline"><?php echo $animal_display; ?></a> >
+            <a href="/shop?animal=<?php echo $product['target_animal']; ?>" class="hover:underline"><?php echo $animal_display; ?></a> >
         <?php endif; ?>
         <span class="text-on-surface font-medium"><?php echo htmlspecialchars($product['name']); ?></span>
     </div>
@@ -648,7 +648,7 @@ require_once 'includes/header.php';
                     <p class="text-xs text-on-surface-variant">پیشنهادات تخصصی برای <?php echo $animal_display; ?></p>
                 </div>
             </div>
-            <a href="<?php echo ($item_source === 'pharmacy') ? 'pharmacy' : 'shop?animal=' . urlencode($product['target_animal'] ?? ''); ?>" class="text-xs font-bold text-primary hover:underline">مشاهده همه محصولات این دسته ></a>
+            <a href="<?php echo ($item_source === 'pharmacy') ? '/pharmacy' : '/shop?animal=' . urlencode($product['target_animal'] ?? ''); ?>" class="text-xs font-bold text-primary hover:underline">مشاهده همه محصولات این دسته ></a>
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -659,7 +659,7 @@ require_once 'includes/header.php';
                 </div>
                 <div>
                     <span class="text-[11px] text-on-surface-variant font-bold"><?php echo htmlspecialchars($rel['brand'] ?? 'آسنا'); ?></span>
-                    <a href="product_details.php?id=<?php echo $rel['id']; ?><?php echo ($item_source === 'pharmacy') ? '&type=pharmacy' : ''; ?>">
+                    <a href="/product/<?php echo $rel['id']; ?><?php echo ($item_source === 'pharmacy') ? '?type=pharmacy' : ''; ?>">
                         <h3 class="text-sm font-bold text-on-surface mb-3 line-clamp-2 hover:text-primary transition-colors cursor-pointer">
                             <?php echo htmlspecialchars($rel['name']); ?>
                         </h3>
