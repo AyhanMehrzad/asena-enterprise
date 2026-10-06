@@ -7,8 +7,49 @@ if (!Feature::has('clinic_booking')) {
     exit;
 }
 
-$page_title = "رزرو آنلاین نوبت کلینیک دامپزشکی | ویزیت تخصصی دکتر دامپزشک - آسنا";
-$page_description = "سامانه نوبت‌دهی اینترنتی پزشکان دامپزشک کشور؛ رزرو وقت ویزیت عمومی و تخصصی سگ، گربه، پرندگان، جراحی، دندانپزشکی و واکسیناسیون با کادر مجرب در آسنا.";
+$page_title = "رزرو آنلاین نوبت کلینیک و ویزیت دامپزشکی | آسنا";
+$page_description = "سامانه نوبت‌دهی اینترنتی پزشکان دامپزشک کشور؛ رزرو وقت ویزیت عمومی و تخصصی سگ، گربه، جراحی، دندانپزشکی و واکسیناسیون با کادر مجرب در آسنا.";
+
+$proto = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') || (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https') ? 'https' : 'http';
+$host = $_SERVER['HTTP_HOST'] ?? 'asena.company';
+$canonical_url = "$proto://$host/booking";
+
+$page_schema = json_encode([
+    "@context" => "https://schema.org",
+    "@graph" => [
+        [
+            "@type" => "VeterinaryCare",
+            "@id" => "$proto://$host/booking#service",
+            "name" => "نوبت‌دهی آنلاین خدمات دامپزشکی و کلینیکی آسنا",
+            "description" => $page_description,
+            "url" => $canonical_url,
+            "telephone" => "+98-914-667-6978",
+            "medicalSpecialty" => ["VeterinaryCare", "Surgery", "Dentistry"],
+            "areaServed" => [
+                "@type" => "Country",
+                "name" => "Iran"
+            ],
+            "availableService" => [
+                [
+                    "@type" => "MedicalTherapy",
+                    "name" => "ویزیت عمومی و معاینه دوره‌ای"
+                ],
+                [
+                    "@type" => "MedicalTherapy",
+                    "name" => "واکسیناسیون و صدور شناسنامه بهداشتی"
+                ],
+                [
+                    "@type" => "MedicalProcedure",
+                    "name" => "جراحی و عقیم‌سازی تخصصی"
+                ],
+                [
+                    "@type" => "MedicalProcedure",
+                    "name" => "دندانپزشکی و جرم‌گیری اولتراسونیک پت"
+                ]
+            ]
+        ]
+    ]
+], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
 
 require_once 'includes/header.php';
 
@@ -134,9 +175,17 @@ $booked_slots_json = json_encode($booked_slots);
 
 <main class="max-w-container-max mx-auto overflow-hidden py-8 px-margin-desktop min-h-[70vh]">
     <!-- Breadcrumb -->
-    <div class="text-label-sm text-on-surface-variant mb-6">
+    <div class="text-label-sm text-on-surface-variant mb-4">
         <a href="index.php" class="hover:underline">خانه</a> > 
-        <a href="booking.php" class="text-on-surface">رزرو نوبت</a>
+        <a href="booking" class="text-on-surface">رزرو نوبت</a>
+    </div>
+
+    <!-- Main Service Heading (Primary H1 for Page) -->
+    <div class="mb-8">
+        <h1 class="text-2xl sm:text-3xl font-black text-slate-800 tracking-tight mb-2">نوبت‌دهی آنلاین دامپزشکی و خدمات کلینیکی پت</h1>
+        <p class="text-xs sm:text-sm text-slate-500 max-w-3xl leading-relaxed">
+            رزرو آنلاین و سریع نوبت معاینه، واکسیناسیون، جراحی، دندانپزشکی و اصلاح با کادر مجرب دامپزشکان و کلینیک‌های معتبر کشور
+        </p>
     </div>
 
     <?php if(isset($_SESSION['booking_error'])): ?>
@@ -561,7 +610,7 @@ $booked_slots_json = json_encode($booked_slots);
                 <div class="space-y-6">
                     <!-- Selected Doctor/Groomer Summary Card -->
                     <div id="summary-doctor" class="flex items-center gap-4 p-4 bg-slate-50 border border-slate-100 rounded-2xl opacity-50 transition-all duration-300 group">
-                        <img id="summary-doctor-img" class="w-16 h-16 rounded-2xl object-cover border-2 border-white shadow-md transition-transform group-hover:scale-105" src="assets/images/presentation-dog.jpg" alt="متخصص"/>
+                        <img id="summary-doctor-img" class="w-16 h-16 rounded-2xl object-cover border-2 border-white shadow-md transition-transform group-hover:scale-105" src="assets/images/presentation-dog.jpg" alt="تصویر متخصص انتخابی درمان پت"/>
                         <div class="min-w-0 flex-1">
                             <p id="summary-role-label" class="text-[11px] font-bold text-slate-400 mb-0.5">متخصص انتخابی</p>
                             <h4 id="summary-doctor-name" class="text-base font-black text-slate-900 truncate">متخصص را انتخاب کنید</h4>
@@ -630,6 +679,78 @@ $booked_slots_json = json_encode($booked_slots);
             </div>
         </aside>
     </form>
+
+    <!-- ========================================================================= -->
+    <!-- SECTION: CLINICAL BOOKING & TELE-VET SEO CONTENT & FAQ ACCORDION         -->
+    <!-- ========================================================================= -->
+    <section class="mt-16 bg-white rounded-3xl p-6 sm:p-8 border border-outline-variant/30 shadow-xs">
+        <div class="max-w-4xl mx-auto mb-8 text-center">
+            <span class="inline-flex items-center gap-1.5 px-3 py-1 bg-indigo-50 text-indigo-700 text-xs font-bold rounded-full mb-3 border border-indigo-200">
+                <span class="material-symbols-outlined text-[16px]">verified</span>
+                شبکه رسمی درمان و سلامت حیوانات خانگی کشور
+            </span>
+            <h2 class="text-xl sm:text-2xl font-bold text-slate-800 mb-2">راهنمای جامع نوبت‌دهی آنلاین دامپزشکی و خدمات کلینیکی آسنا</h2>
+            <p class="text-xs sm:text-sm text-slate-500 leading-relaxed max-w-3xl mx-auto text-justify sm:text-center">
+                سامانه هوشمند آسنا دسترسی مستقیم به معتبرترین پزشکان دامپزشک، جراحان متخصص، دندانپزشکان، بیمارستان‌های شبانه‌روزی و استایلیست‌های حرفه‌ای گرومینگ را در سراسر کشور فراهم آورده است. کلیه نوبت‌ها با ضمانت استرداد وجه و قفل زمانی قطعی ثبت می‌شوند.
+            </p>
+        </div>
+
+        <div class="max-w-3xl mx-auto space-y-3 mb-6">
+            <h3 class="text-base font-bold text-slate-800 mb-3 flex items-center gap-2">
+                <span class="material-symbols-outlined text-indigo-600 text-lg">help</span>
+                پرسش‌های متداول رزرو نوبت و خدمات دامپزشکی
+            </h3>
+
+            <div class="border border-slate-200 rounded-2xl p-4 hover:border-indigo-300 transition-colors">
+                <div class="font-bold text-slate-800 text-xs sm:text-sm flex items-center justify-between cursor-pointer select-none" onclick="this.nextElementSibling.classList.toggle('hidden'); this.querySelector('.arrow-icon').classList.toggle('rotate-180')">
+                    <span>۱. آیا امکان لغو یا جابجایی نوبت رزرو شده وجود دارد؟</span>
+                    <span class="material-symbols-outlined text-slate-400 arrow-icon transition-transform">expand_more</span>
+                </div>
+                <p class="text-xs text-slate-500 mt-2.5 leading-relaxed hidden">
+                    بله؛ تا ۲۴ ساعت پیش از فرا رسیدن موعد نوبت ویزیت، می‌توانید از طریق داشبورد کاربری نوبت خود را بدون کسر هیچ‌گونه جریمه لغو کرده یا ساعت آن را جابجا کنید. وجه پرداختی بلافاصله به کیف پول یا حساب بانکی شما بازگردانده می‌شود.
+                </p>
+            </div>
+
+            <div class="border border-slate-200 rounded-2xl p-4 hover:border-indigo-300 transition-colors">
+                <div class="font-bold text-slate-800 text-xs sm:text-sm flex items-center justify-between cursor-pointer select-none" onclick="this.nextElementSibling.classList.toggle('hidden'); this.querySelector('.arrow-icon').classList.toggle('rotate-180')">
+                    <span>۲. تعرفه ویزیت و خدمات دامپزشکی بر چه اساسی تعیین می‌شود؟</span>
+                    <span class="material-symbols-outlined text-slate-400 arrow-icon transition-transform">expand_more</span>
+                </div>
+                <p class="text-xs text-slate-500 mt-2.5 leading-relaxed hidden">
+                    تمامی تعرفه‌ها مطابق نرخ‌نامه رسمی سازمان نظام دامپزشکی جمهوری اسلامی ایران و بر اساس رتبه علمی پزشک (عمومی، متخصص یا فلوشیپ) شفاف‌سازی شده و هیچ‌گونه هزینه مازاد یا غیررسمی دریافت نمی‌شود.
+                </p>
+            </div>
+
+            <div class="border border-slate-200 rounded-2xl p-4 hover:border-indigo-300 transition-colors">
+                <div class="font-bold text-slate-800 text-xs sm:text-sm flex items-center justify-between cursor-pointer select-none" onclick="this.nextElementSibling.classList.toggle('hidden'); this.querySelector('.arrow-icon').classList.toggle('rotate-180')">
+                    <span>۳. مشاوره آنلاین تصویری (تله‌هلث) چه زمانی توصیه می‌شود؟</span>
+                    <span class="material-symbols-outlined text-slate-400 arrow-icon transition-transform">expand_more</span>
+                </div>
+                <p class="text-xs text-slate-500 mt-2.5 leading-relaxed hidden">
+                    تله‌هلث برای تریاژ فوری علائم بالینی، بازبینی آزمایش‌ها، مشاوره رفتارشناسی و رژیم غذایی و همچنین پیگیری بهبودی پس از جراحی بسیار ایده‌آل است. در صورت نیاز به معاینه فیزیکی یا اقدامات فوری، بیمار مستقیماً به نزدیک‌ترین کلینیک شبانه‌روزی ارجاع داده می‌شود.
+                </p>
+            </div>
+
+            <div class="border border-slate-200 rounded-2xl p-4 hover:border-indigo-300 transition-colors">
+                <div class="font-bold text-slate-800 text-xs sm:text-sm flex items-center justify-between cursor-pointer select-none" onclick="this.nextElementSibling.classList.toggle('hidden'); this.querySelector('.arrow-icon').classList.toggle('rotate-180')">
+                    <span>۴. پرونده سلامت الکترونیک پت (Pet EHR) چگونه تکمیل می‌شود؟</span>
+                    <span class="material-symbols-outlined text-slate-400 arrow-icon transition-transform">expand_more</span>
+                </div>
+                <p class="text-xs text-slate-500 mt-2.5 leading-relaxed hidden">
+                    پس از هر ویزیت، پزشک معالج تشخیص، نسخه‌های دارویی و توصیه‌های مراقبتی را مستقیماً در پرونده دیجیتال پت شما در پروفایل کاربری ثبت می‌کند که همواره به‌صورت آنلاین و قابل استناد در دسترس شماست.
+                </p>
+            </div>
+        </div>
+
+        <!-- Quick Links Hub -->
+        <div class="pt-6 border-t border-slate-100 flex flex-wrap items-center justify-center gap-3 text-xs">
+            <span class="text-slate-400 font-bold">بخش‌های مرتبط:</span>
+            <a href="pharmacy" class="px-3 py-1.5 rounded-xl bg-purple-50 text-purple-700 hover:bg-purple-100 font-bold transition">داروخانه تخصصی دامپزشکی</a>
+            <a href="shop" class="px-3 py-1.5 rounded-xl bg-amber-50 text-amber-700 hover:bg-amber-100 font-bold transition">پت‌شاپ و ملزومات حیوانات</a>
+            <a href="calculator" class="px-3 py-1.5 rounded-xl bg-emerald-50 text-emerald-700 hover:bg-emerald-100 font-bold transition">محاسبه‌گر جیره غذایی و کالری</a>
+            <a href="interactions" class="px-3 py-1.5 rounded-xl bg-blue-50 text-blue-700 hover:bg-blue-100 font-bold transition">پایش تداخلات دارویی</a>
+        </div>
+    </section>
 </main>
 
 <script>
@@ -1123,7 +1244,7 @@ $booked_slots_json = json_encode($booked_slots);
                 } else {
                     alert(data.message || 'جهت استفاده از تله‌هلث لطفاً ابتدا وارد حساب کاربری خود شوید.');
                     if (data.message === 'Not authenticated') {
-                        window.location.href = 'login.php?redirect=' + encodeURIComponent('booking.php?doctor_id=' + doctorId);
+                        window.location.href = 'login?return_to=' + encodeURIComponent('booking?doctor_id=' + doctorId);
                     }
                 }
             })

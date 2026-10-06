@@ -8,348 +8,348 @@
                             http://www.google.com/schemas/sitemap-image/1.1/sitemap-image.xsd">
     <url>
         <loc>https://asena.company/</loc>
-        <lastmod>2026-09-23</lastmod>
+        <lastmod>2026-10-06</lastmod>
         <changefreq>daily</changefreq>
         <priority>1.0</priority>
     </url>
     <url>
         <loc>https://asena.company/standard/</loc>
-        <lastmod>2026-09-23</lastmod>
+        <lastmod>2026-10-06</lastmod>
         <changefreq>daily</changefreq>
         <priority>0.9</priority>
     </url>
     <url>
         <loc>https://asena.company/pharmacy-standard/</loc>
-        <lastmod>2026-09-23</lastmod>
+        <lastmod>2026-10-06</lastmod>
         <changefreq>daily</changefreq>
         <priority>0.9</priority>
     </url>
     <url>
         <loc>https://asena.company/premium/</loc>
-        <lastmod>2026-09-23</lastmod>
+        <lastmod>2026-10-06</lastmod>
         <changefreq>weekly</changefreq>
         <priority>0.85</priority>
     </url>
     <url>
         <loc>https://asena.company/pharmacy-premium/</loc>
-        <lastmod>2026-09-23</lastmod>
+        <lastmod>2026-10-06</lastmod>
         <changefreq>weekly</changefreq>
         <priority>0.85</priority>
     </url>
     <url>
         <loc>https://asena.company/basic/</loc>
-        <lastmod>2026-09-23</lastmod>
+        <lastmod>2026-10-06</lastmod>
         <changefreq>weekly</changefreq>
         <priority>0.75</priority>
     </url>
     <url>
         <loc>https://asena.company/pharmacy-basic/</loc>
-        <lastmod>2026-09-23</lastmod>
+        <lastmod>2026-10-06</lastmod>
         <changefreq>weekly</changefreq>
         <priority>0.75</priority>
     </url>
     <url>
         <loc>https://asena.company/shop</loc>
-        <lastmod>2026-09-23</lastmod>
+        <lastmod>2026-10-06</lastmod>
         <changefreq>daily</changefreq>
         <priority>0.95</priority>
     </url>
     <url>
         <loc>https://asena.company/booking</loc>
-        <lastmod>2026-09-23</lastmod>
+        <lastmod>2026-10-06</lastmod>
         <changefreq>daily</changefreq>
         <priority>0.95</priority>
     </url>
     <url>
         <loc>https://asena.company/pharmacy</loc>
-        <lastmod>2026-09-23</lastmod>
+        <lastmod>2026-10-06</lastmod>
         <changefreq>daily</changefreq>
         <priority>0.95</priority>
     </url>
     <url>
         <loc>https://asena.company/subscriptions</loc>
-        <lastmod>2026-09-23</lastmod>
+        <lastmod>2026-10-06</lastmod>
         <changefreq>weekly</changefreq>
         <priority>0.85</priority>
     </url>
     <url>
         <loc>https://asena.company/charity</loc>
-        <lastmod>2026-09-23</lastmod>
+        <lastmod>2026-10-06</lastmod>
         <changefreq>weekly</changefreq>
         <priority>0.85</priority>
     </url>
     <url>
         <loc>https://asena.company/knowledge_base</loc>
-        <lastmod>2026-09-23</lastmod>
+        <lastmod>2026-10-06</lastmod>
         <changefreq>daily</changefreq>
         <priority>0.9</priority>
     </url>
     <url>
         <loc>https://asena.company/organizations</loc>
-        <lastmod>2026-09-23</lastmod>
+        <lastmod>2026-10-06</lastmod>
         <changefreq>daily</changefreq>
         <priority>0.85</priority>
     </url>
     <url>
         <loc>https://asena.company/standard/shop.php</loc>
-        <lastmod>2026-09-23</lastmod>
+        <lastmod>2026-10-06</lastmod>
         <changefreq>daily</changefreq>
         <priority>0.9</priority>
     </url>
     <url>
         <loc>https://asena.company/standard/booking.php</loc>
-        <lastmod>2026-09-23</lastmod>
+        <lastmod>2026-10-06</lastmod>
         <changefreq>daily</changefreq>
         <priority>0.9</priority>
     </url>
     <url>
         <loc>https://asena.company/standard/subscriptions.php</loc>
-        <lastmod>2026-09-23</lastmod>
+        <lastmod>2026-10-06</lastmod>
         <changefreq>weekly</changefreq>
         <priority>0.8</priority>
     </url>
     <url>
         <loc>https://asena.company/standard/charity.php</loc>
-        <lastmod>2026-09-23</lastmod>
+        <lastmod>2026-10-06</lastmod>
         <changefreq>weekly</changefreq>
         <priority>0.8</priority>
     </url>
     <url>
         <loc>https://asena.company/standard/knowledge_base.php</loc>
-        <lastmod>2026-09-23</lastmod>
+        <lastmod>2026-10-06</lastmod>
         <changefreq>daily</changefreq>
         <priority>0.85</priority>
     </url>
     <url>
         <loc>https://asena.company/pharmacy-standard/shop.php</loc>
-        <lastmod>2026-09-23</lastmod>
+        <lastmod>2026-10-06</lastmod>
         <changefreq>daily</changefreq>
         <priority>0.9</priority>
     </url>
     <url>
         <loc>https://asena.company/pharmacy-standard/booking.php</loc>
-        <lastmod>2026-09-23</lastmod>
+        <lastmod>2026-10-06</lastmod>
         <changefreq>daily</changefreq>
         <priority>0.85</priority>
     </url>
     <url>
         <loc>https://asena.company/shop?animal=dog</loc>
-        <lastmod>2026-09-23</lastmod>
+        <lastmod>2026-10-06</lastmod>
         <changefreq>weekly</changefreq>
         <priority>0.85</priority>
     </url>
     <url>
         <loc>https://asena.company/pharmacy?animal=dog</loc>
-        <lastmod>2026-09-23</lastmod>
+        <lastmod>2026-10-06</lastmod>
         <changefreq>weekly</changefreq>
         <priority>0.85</priority>
     </url>
     <url>
         <loc>https://asena.company/standard/shop.php?animal=dog</loc>
-        <lastmod>2026-09-23</lastmod>
+        <lastmod>2026-10-06</lastmod>
         <changefreq>weekly</changefreq>
         <priority>0.8</priority>
     </url>
     <url>
         <loc>https://asena.company/pharmacy-standard/shop.php?animal=dog</loc>
-        <lastmod>2026-09-23</lastmod>
+        <lastmod>2026-10-06</lastmod>
         <changefreq>weekly</changefreq>
         <priority>0.8</priority>
     </url>
     <url>
         <loc>https://asena.company/shop?animal=cat</loc>
-        <lastmod>2026-09-23</lastmod>
+        <lastmod>2026-10-06</lastmod>
         <changefreq>weekly</changefreq>
         <priority>0.85</priority>
     </url>
     <url>
         <loc>https://asena.company/pharmacy?animal=cat</loc>
-        <lastmod>2026-09-23</lastmod>
+        <lastmod>2026-10-06</lastmod>
         <changefreq>weekly</changefreq>
         <priority>0.85</priority>
     </url>
     <url>
         <loc>https://asena.company/standard/shop.php?animal=cat</loc>
-        <lastmod>2026-09-23</lastmod>
+        <lastmod>2026-10-06</lastmod>
         <changefreq>weekly</changefreq>
         <priority>0.8</priority>
     </url>
     <url>
         <loc>https://asena.company/pharmacy-standard/shop.php?animal=cat</loc>
-        <lastmod>2026-09-23</lastmod>
+        <lastmod>2026-10-06</lastmod>
         <changefreq>weekly</changefreq>
         <priority>0.8</priority>
     </url>
     <url>
         <loc>https://asena.company/shop?animal=bird</loc>
-        <lastmod>2026-09-23</lastmod>
+        <lastmod>2026-10-06</lastmod>
         <changefreq>weekly</changefreq>
         <priority>0.85</priority>
     </url>
     <url>
         <loc>https://asena.company/pharmacy?animal=bird</loc>
-        <lastmod>2026-09-23</lastmod>
+        <lastmod>2026-10-06</lastmod>
         <changefreq>weekly</changefreq>
         <priority>0.85</priority>
     </url>
     <url>
         <loc>https://asena.company/standard/shop.php?animal=bird</loc>
-        <lastmod>2026-09-23</lastmod>
+        <lastmod>2026-10-06</lastmod>
         <changefreq>weekly</changefreq>
         <priority>0.8</priority>
     </url>
     <url>
         <loc>https://asena.company/pharmacy-standard/shop.php?animal=bird</loc>
-        <lastmod>2026-09-23</lastmod>
+        <lastmod>2026-10-06</lastmod>
         <changefreq>weekly</changefreq>
         <priority>0.8</priority>
     </url>
     <url>
         <loc>https://asena.company/shop?animal=smallpet</loc>
-        <lastmod>2026-09-23</lastmod>
+        <lastmod>2026-10-06</lastmod>
         <changefreq>weekly</changefreq>
         <priority>0.85</priority>
     </url>
     <url>
         <loc>https://asena.company/pharmacy?animal=smallpet</loc>
-        <lastmod>2026-09-23</lastmod>
+        <lastmod>2026-10-06</lastmod>
         <changefreq>weekly</changefreq>
         <priority>0.85</priority>
     </url>
     <url>
         <loc>https://asena.company/standard/shop.php?animal=smallpet</loc>
-        <lastmod>2026-09-23</lastmod>
+        <lastmod>2026-10-06</lastmod>
         <changefreq>weekly</changefreq>
         <priority>0.8</priority>
     </url>
     <url>
         <loc>https://asena.company/pharmacy-standard/shop.php?animal=smallpet</loc>
-        <lastmod>2026-09-23</lastmod>
+        <lastmod>2026-10-06</lastmod>
         <changefreq>weekly</changefreq>
         <priority>0.8</priority>
     </url>
     <url>
         <loc>https://asena.company/shop?animal=horse</loc>
-        <lastmod>2026-09-23</lastmod>
+        <lastmod>2026-10-06</lastmod>
         <changefreq>weekly</changefreq>
         <priority>0.85</priority>
     </url>
     <url>
         <loc>https://asena.company/pharmacy?animal=horse</loc>
-        <lastmod>2026-09-23</lastmod>
+        <lastmod>2026-10-06</lastmod>
         <changefreq>weekly</changefreq>
         <priority>0.85</priority>
     </url>
     <url>
         <loc>https://asena.company/standard/shop.php?animal=horse</loc>
-        <lastmod>2026-09-23</lastmod>
+        <lastmod>2026-10-06</lastmod>
         <changefreq>weekly</changefreq>
         <priority>0.8</priority>
     </url>
     <url>
         <loc>https://asena.company/pharmacy-standard/shop.php?animal=horse</loc>
-        <lastmod>2026-09-23</lastmod>
+        <lastmod>2026-10-06</lastmod>
         <changefreq>weekly</changefreq>
         <priority>0.8</priority>
     </url>
     <url>
         <loc>https://asena.company/shop?animal=cow</loc>
-        <lastmod>2026-09-23</lastmod>
+        <lastmod>2026-10-06</lastmod>
         <changefreq>weekly</changefreq>
         <priority>0.85</priority>
     </url>
     <url>
         <loc>https://asena.company/pharmacy?animal=cow</loc>
-        <lastmod>2026-09-23</lastmod>
+        <lastmod>2026-10-06</lastmod>
         <changefreq>weekly</changefreq>
         <priority>0.85</priority>
     </url>
     <url>
         <loc>https://asena.company/standard/shop.php?animal=cow</loc>
-        <lastmod>2026-09-23</lastmod>
+        <lastmod>2026-10-06</lastmod>
         <changefreq>weekly</changefreq>
         <priority>0.8</priority>
     </url>
     <url>
         <loc>https://asena.company/pharmacy-standard/shop.php?animal=cow</loc>
-        <lastmod>2026-09-23</lastmod>
+        <lastmod>2026-10-06</lastmod>
         <changefreq>weekly</changefreq>
         <priority>0.8</priority>
     </url>
     <url>
         <loc>https://asena.company/pharmacy?tag=%D8%AF%D8%A7%D8%B1%D9%88</loc>
-        <lastmod>2026-09-23</lastmod>
+        <lastmod>2026-10-06</lastmod>
         <changefreq>weekly</changefreq>
         <priority>0.85</priority>
     </url>
     <url>
         <loc>https://asena.company/pharmacy-standard/shop.php?tag=%D8%AF%D8%A7%D8%B1%D9%88</loc>
-        <lastmod>2026-09-23</lastmod>
+        <lastmod>2026-10-06</lastmod>
         <changefreq>weekly</changefreq>
         <priority>0.8</priority>
     </url>
     <url>
         <loc>https://asena.company/pharmacy?tag=%D9%85%DA%A9%D9%85%D9%84</loc>
-        <lastmod>2026-09-23</lastmod>
+        <lastmod>2026-10-06</lastmod>
         <changefreq>weekly</changefreq>
         <priority>0.85</priority>
     </url>
     <url>
         <loc>https://asena.company/pharmacy-standard/shop.php?tag=%D9%85%DA%A9%D9%85%D9%84</loc>
-        <lastmod>2026-09-23</lastmod>
+        <lastmod>2026-10-06</lastmod>
         <changefreq>weekly</changefreq>
         <priority>0.8</priority>
     </url>
     <url>
         <loc>https://asena.company/pharmacy?tag=%D9%88%D8%A7%DA%A9%D8%B3%D9%86</loc>
-        <lastmod>2026-09-23</lastmod>
+        <lastmod>2026-10-06</lastmod>
         <changefreq>weekly</changefreq>
         <priority>0.85</priority>
     </url>
     <url>
         <loc>https://asena.company/pharmacy-standard/shop.php?tag=%D9%88%D8%A7%DA%A9%D8%B3%D9%86</loc>
-        <lastmod>2026-09-23</lastmod>
+        <lastmod>2026-10-06</lastmod>
         <changefreq>weekly</changefreq>
         <priority>0.8</priority>
     </url>
     <url>
         <loc>https://asena.company/pharmacy?tag=%D8%B6%D8%AF+%D8%A7%D9%86%DA%AF%D9%84</loc>
-        <lastmod>2026-09-23</lastmod>
+        <lastmod>2026-10-06</lastmod>
         <changefreq>weekly</changefreq>
         <priority>0.85</priority>
     </url>
     <url>
         <loc>https://asena.company/pharmacy-standard/shop.php?tag=%D8%B6%D8%AF+%D8%A7%D9%86%DA%AF%D9%84</loc>
-        <lastmod>2026-09-23</lastmod>
+        <lastmod>2026-10-06</lastmod>
         <changefreq>weekly</changefreq>
         <priority>0.8</priority>
     </url>
     <url>
         <loc>https://asena.company/pharmacy?tag=%D8%A8%D9%87%D8%AF%D8%A7%D8%B4%D8%AA%DB%8C</loc>
-        <lastmod>2026-09-23</lastmod>
+        <lastmod>2026-10-06</lastmod>
         <changefreq>weekly</changefreq>
         <priority>0.85</priority>
     </url>
     <url>
         <loc>https://asena.company/pharmacy-standard/shop.php?tag=%D8%A8%D9%87%D8%AF%D8%A7%D8%B4%D8%AA%DB%8C</loc>
-        <lastmod>2026-09-23</lastmod>
+        <lastmod>2026-10-06</lastmod>
         <changefreq>weekly</changefreq>
         <priority>0.8</priority>
     </url>
     <url>
         <loc>https://asena.company/pharmacy?tag=%D8%AA%D8%AC%D9%87%DB%8C%D8%B2%D8%A7%D8%AA</loc>
-        <lastmod>2026-09-23</lastmod>
+        <lastmod>2026-10-06</lastmod>
         <changefreq>weekly</changefreq>
         <priority>0.85</priority>
     </url>
     <url>
         <loc>https://asena.company/pharmacy-standard/shop.php?tag=%D8%AA%D8%AC%D9%87%DB%8C%D8%B2%D8%A7%D8%AA</loc>
-        <lastmod>2026-09-23</lastmod>
+        <lastmod>2026-10-06</lastmod>
         <changefreq>weekly</changefreq>
         <priority>0.8</priority>
     </url>
     <url>
-        <loc>https://asena.company/knowledge_base.php?article=vaccination-schedule-dogs-cats</loc>
+        <loc>https://asena.company/article/vaccination-schedule-dogs-cats</loc>
         <lastmod>2026-09-02</lastmod>
         <changefreq>weekly</changefreq>
         <priority>0.9</priority>
@@ -365,7 +365,7 @@
         <priority>0.85</priority>
     </url>
     <url>
-        <loc>https://asena.company/knowledge_base.php?article=toxic-foods-and-plants-for-pets</loc>
+        <loc>https://asena.company/article/toxic-foods-and-plants-for-pets</loc>
         <lastmod>2026-09-02</lastmod>
         <changefreq>weekly</changefreq>
         <priority>0.9</priority>
@@ -381,7 +381,7 @@
         <priority>0.85</priority>
     </url>
     <url>
-        <loc>https://asena.company/knowledge_base.php?article=pharmacy-prescription-guidelines</loc>
+        <loc>https://asena.company/article/pharmacy-prescription-guidelines</loc>
         <lastmod>2026-09-02</lastmod>
         <changefreq>weekly</changefreq>
         <priority>0.9</priority>
@@ -397,7 +397,7 @@
         <priority>0.85</priority>
     </url>
     <url>
-        <loc>https://asena.company/knowledge_base.php?article=charity-stray-pet-healthcare-guide</loc>
+        <loc>https://asena.company/article/charity-stray-pet-healthcare-guide</loc>
         <lastmod>2026-09-02</lastmod>
         <changefreq>weekly</changefreq>
         <priority>0.9</priority>
@@ -413,7 +413,7 @@
         <priority>0.85</priority>
     </url>
     <url>
-        <loc>https://asena.company/knowledge_base.php?article=admin-panel-guide</loc>
+        <loc>https://asena.company/article/admin-panel-guide</loc>
         <lastmod>2026-09-02</lastmod>
         <changefreq>weekly</changefreq>
         <priority>0.9</priority>
@@ -429,7 +429,7 @@
         <priority>0.85</priority>
     </url>
     <url>
-        <loc>https://asena.company/knowledge_base.php?article=doctor-panel-guide</loc>
+        <loc>https://asena.company/article/doctor-panel-guide</loc>
         <lastmod>2026-09-02</lastmod>
         <changefreq>weekly</changefreq>
         <priority>0.9</priority>
@@ -445,7 +445,7 @@
         <priority>0.85</priority>
     </url>
     <url>
-        <loc>https://asena.company/knowledge_base.php?article=pet-hair-loss-causes-and-treatments</loc>
+        <loc>https://asena.company/article/pet-hair-loss-causes-and-treatments</loc>
         <lastmod>2026-09-02</lastmod>
         <changefreq>weekly</changefreq>
         <priority>0.9</priority>
@@ -461,7 +461,7 @@
         <priority>0.85</priority>
     </url>
     <url>
-        <loc>https://asena.company/knowledge_base.php?article=pet-neutering-benefits-and-post-op</loc>
+        <loc>https://asena.company/article/pet-neutering-benefits-and-post-op</loc>
         <lastmod>2026-09-02</lastmod>
         <changefreq>weekly</changefreq>
         <priority>0.9</priority>
@@ -477,7 +477,7 @@
         <priority>0.85</priority>
     </url>
     <url>
-        <loc>https://asena.company/knowledge_base.php?article=pet-deworming-schedule-and-medications</loc>
+        <loc>https://asena.company/article/pet-deworming-schedule-and-medications</loc>
         <lastmod>2026-09-02</lastmod>
         <changefreq>weekly</changefreq>
         <priority>0.9</priority>
@@ -493,7 +493,7 @@
         <priority>0.85</priority>
     </url>
     <url>
-        <loc>https://asena.company/knowledge_base.php?article=parvovirus-symptoms-and-treatment-in-puppies</loc>
+        <loc>https://asena.company/article/parvovirus-symptoms-and-treatment-in-puppies</loc>
         <lastmod>2026-09-02</lastmod>
         <changefreq>weekly</changefreq>
         <priority>0.9</priority>
@@ -509,7 +509,7 @@
         <priority>0.85</priority>
     </url>
     <url>
-        <loc>https://asena.company/knowledge_base.php?article=pet-diabetes-symptoms-and-insulin-guide</loc>
+        <loc>https://asena.company/article/pet-diabetes-symptoms-and-insulin-guide</loc>
         <lastmod>2026-09-02</lastmod>
         <changefreq>weekly</changefreq>
         <priority>0.9</priority>
@@ -525,7 +525,7 @@
         <priority>0.85</priority>
     </url>
     <url>
-        <loc>https://asena.company/knowledge_base.php?article=cat-urinary-blockage-emergency-guide</loc>
+        <loc>https://asena.company/article/cat-urinary-blockage-emergency-guide</loc>
         <lastmod>2026-09-02</lastmod>
         <changefreq>weekly</changefreq>
         <priority>0.9</priority>
@@ -541,7 +541,7 @@
         <priority>0.85</priority>
     </url>
     <url>
-        <loc>https://asena.company/knowledge_base.php?article=pet-dental-care-and-scaling-guide</loc>
+        <loc>https://asena.company/article/pet-dental-care-and-scaling-guide</loc>
         <lastmod>2026-09-02</lastmod>
         <changefreq>weekly</changefreq>
         <priority>0.9</priority>
@@ -557,7 +557,7 @@
         <priority>0.85</priority>
     </url>
     <url>
-        <loc>https://asena.company/knowledge_base.php?article=pet-fleas-ticks-and-mites-treatment</loc>
+        <loc>https://asena.company/article/pet-fleas-ticks-and-mites-treatment</loc>
         <lastmod>2026-09-02</lastmod>
         <changefreq>weekly</changefreq>
         <priority>0.9</priority>

@@ -5,14 +5,15 @@ require_once __DIR__ . '/includes/functions.php';
 require_once __DIR__ . '/includes/SmsService.php';
 require_once __DIR__ . '/includes/SecurityMiddleware.php';
 
-// Capture and sanitize return URL
-$returnUrl = trim($_GET['return_url'] ?? $_POST['return_url'] ?? '');
-if (!empty($returnUrl)) {
-    if (preg_match('#^(https?:)?//#i', $returnUrl) || !preg_match('#^[a-zA-Z0-9_\-\./\?=&%]+$#', $returnUrl)) {
-        $returnUrl = '';
-    }
+// Enforce anti-indexing on authentication routes
+if (!headers_sent()) {
+    header('X-Robots-Tag: noindex, nofollow, noarchive');
 }
-$returnQuery = !empty($returnUrl) ? '&return_url=' . urlencode($returnUrl) : '';
+$meta_robots = 'noindex, nofollow';
+
+// Capture and sanitize return URL via unified enterprise sanitizer (CWE-601 guard)
+$returnUrl = get_safe_return_url('');
+$returnQuery = !empty($returnUrl) ? '&return_to=' . urlencode($returnUrl) : '';
 $clientIp = get_client_ip();
 
 // Generate OAuth URLs
@@ -66,7 +67,7 @@ if (!in_array($activeTab, ['password', 'otp', 'signup'])) {
 // Helper: redirect authenticated user based on role or returnUrl
 function redirectAfterLogin(?array $user, string $returnUrl = ''): void {
     if (!empty($returnUrl)) {
-        header("Location: " . $returnUrl);
+        safe_redirect($returnUrl, 'profile');
         exit;
     }
     $role = $user['role'] ?? 'user';

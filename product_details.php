@@ -205,17 +205,91 @@ $autoship_discount = $product['autoship_discount'] ?? 10;
 $base_price = $product['discount_price'] ?? $product['price'];
 $autoship_price = round($base_price * (100 - $autoship_discount) / 100);
 
-// Dynamic On-Page SEO, OpenGraph & GEO for Product Details
-$page_title = htmlspecialchars($product['name']) . ' | خرید اینترنتی با تحویل فوری - آسنا';
-$clean_desc = mb_substr(strip_tags($product['description'] ?? $product['name']), 0, 150, 'UTF-8');
-$page_description = "خرید آنلاین {$product['name']} با ضمانت اصالت کالا، مشاوره تخصصی و ارسال فوری به سراسر کشور در سامانه خدمات دامپزشکی و پت‌شاپ آسنا.";
+// Dynamic On-Page SEO, OpenGraph & Structured Schema for Product Details
+$prodName = trim((string)$product['name']);
+$page_title = (mb_strlen($prodName, 'UTF-8') <= 45) ? "خرید {$prodName} | آسنا" : mb_substr($prodName, 0, 50, 'UTF-8') . ' | آسنا';
+
+$shortDesc = mb_substr(strip_tags($product['description'] ?? ''), 0, 100, 'UTF-8');
+$page_description = "خرید آنلاین {$prodName} با ضمانت اصالت و ارسال اکسپرس در آسنا. " . ($shortDesc ? $shortDesc : 'مشاوره تخصصی و بهترین قیمت ملزومات پت.');
+if (mb_strlen($page_description, 'UTF-8') > 155) {
+    $page_description = mb_substr($page_description, 0, 152, 'UTF-8') . '...';
+}
+
 $og_image = !empty($product['image_url']) ? $product['image_url'] : 'assets/images/pharma-default.svg';
 $og_type = 'product';
 $product_price_irr = ($product['discount_price'] ?: $product['price']) * 10;
 
 $proto = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') || (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https') ? 'https' : 'http';
 $host = $_SERVER['HTTP_HOST'] ?? 'asena.company';
-$canonical_url = "$proto://$host/product_details.php?id={$product_id}" . ($type === 'pharmacy' ? '&type=pharmacy' : '');
+
+$product_slug = preg_replace('/[^\p{L}\p{N}\-_]+/u', '-', mb_strtolower($prodName, 'UTF-8'));
+$product_slug = trim($product_slug, '-');
+$canonical_url = "$proto://$host/product/{$product_id}" . (!empty($product_slug) ? "/{$product_slug}" : "");
+
+$abs_image = strpos($product['image_url'] ?? '', 'http') === 0 
+    ? $product['image_url'] 
+    : "$proto://$host/" . ltrim($product['image_url'] ?: 'assets/images/pharma-default.svg', '/');
+
+$page_schema_data = [
+    "@context" => "https://schema.org",
+    "@graph" => [
+        [
+            "@type" => "Product",
+            "@id" => "{$canonical_url}#product",
+            "name" => $prodName,
+            "image" => [$abs_image],
+            "description" => mb_substr(strip_tags($product['description'] ?? $prodName), 0, 300, 'UTF-8'),
+            "sku" => "ASENA-PROD-{$product_id}",
+            "mpn" => "ASENA-PROD-{$product_id}",
+            "brand" => [
+                "@type" => "Brand",
+                "name" => $product['brand'] ?? 'داروخانه و پت‌شاپ آسنا'
+            ],
+            "category" => $product['category'] ?? ($type === 'pharmacy' ? 'داروخانه دامپزشکی' : 'پت‌شاپ'),
+            "offers" => [
+                "@type" => "Offer",
+                "url" => $canonical_url,
+                "priceCurrency" => "IRR",
+                "price" => (string)$product_price_irr,
+                "priceValidUntil" => date('Y-12-31'),
+                "itemCondition" => "https://schema.org/NewCondition",
+                "availability" => ($product['stock'] > 0) ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
+                "seller" => [
+                    "@type" => ($type === 'pharmacy' ? "Pharmacy" : "Store"),
+                    "name" => ($type === 'pharmacy' ? "داروخانه آنلاین و تخصصی آسنا" : "پت‌شاپ تخصصی آسنا")
+                ],
+                "hasMerchantReturnPolicy" => [
+                    "@type" => "MerchantReturnPolicy",
+                    "applicableCountry" => "IR",
+                    "returnPolicyCategory" => "https://schema.org/MerchantReturnFiniteReturnWindow",
+                    "merchantReturnDays" => 7
+                ],
+                "shippingDetails" => [
+                    "@type" => "OfferShippingDetails",
+                    "shippingRate" => [
+                        "@type" => "MonetaryAmount",
+                        "value" => "0",
+                        "currency" => "IRR"
+                    ],
+                    "shippingDestination" => [
+                        "@type" => "DefinedRegion",
+                        "addressCountry" => "IR"
+                    ]
+                ]
+            ]
+        ]
+    ]
+];
+
+if (!empty($product['rating_cache']) && $product['rating_cache'] > 0) {
+    $page_schema_data['@graph'][0]['aggregateRating'] = [
+        "@type" => "AggregateRating",
+        "ratingValue" => (string)$product['rating_cache'],
+        "reviewCount" => (string)max(1, (int)($product['review_count_cache'] ?? count($reviews ?? [])))
+    ];
+}
+
+$page_schema = json_encode($page_schema_data, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
 
 require_once 'includes/header.php';
 ?>
@@ -716,68 +790,6 @@ function addToCart(btn, productId) {
     } else if (typeof window.addToCart === 'function' && window.addToCart !== addToCart) {
         window.addToCart(btn, productId, purchaseType);
     }
-}
-</script>
-
-<!-- Schema.org JSON-LD Structured Data for Google Rich Snippets (Product, Offer, Rating) -->
-<?php
-$abs_image = strpos($product['image_url'] ?? '', 'http') === 0 
-    ? $product['image_url'] 
-    : "$proto://$host/" . ltrim($product['image_url'] ?: 'assets/images/pharma-default.svg', '/');
-?>
-<script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@type": "Product",
-  "name": <?php echo json_encode($product['name']); ?>,
-  "image": [
-    <?php echo json_encode($abs_image); ?>
-  ],
-  "description": <?php echo json_encode(strip_tags($product['description'] ?? $product['name'])); ?>,
-  "sku": "ASENA-PROD-<?php echo $product['id']; ?>",
-  "mpn": "ASENA-PROD-<?php echo $product['id']; ?>",
-  "brand": {
-    "@type": "Brand",
-    "name": <?php echo json_encode($product['brand'] ?? 'داروخانه و پت‌شاپ آسنا'); ?>
-  },
-  "category": <?php echo json_encode($product['category'] ?? 'دامپزشکی'); ?>,
-  "offers": {
-    "@type": "Offer",
-    "url": <?php echo json_encode((isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http") . "://$_SERVER[HTTP_HOST]$_SERVER[REQUEST_URI]"); ?>,
-    "priceCurrency": "IRR",
-    "price": "<?php echo ($product['discount_price'] ?: $product['price']) * 10; ?>",
-    "priceValidUntil": "<?php echo date('Y-12-31'); ?>",
-    "itemCondition": "https://schema.org/NewCondition",
-    "availability": "<?php echo ($product['stock'] > 0) ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock'; ?>",
-    "seller": {
-      "@type": "Pharmacy",
-      "name": "داروخانه آنلاین و تخصصی آسنا"
-    },
-    "hasMerchantReturnPolicy": {
-      "@type": "MerchantReturnPolicy",
-      "applicableCountry": "IR",
-      "returnPolicyCategory": "https://schema.org/MerchantReturnFiniteReturnWindow",
-      "merchantReturnDays": 7
-    },
-    "shippingDetails": {
-      "@type": "OfferShippingDetails",
-      "shippingRate": {
-        "@type": "MonetaryAmount",
-        "value": "0",
-        "currency": "IRR"
-      },
-      "shippingDestination": {
-        "@type": "DefinedRegion",
-        "addressCountry": "IR"
-      }
-    }
-  }<?php if(!empty($product['rating_cache']) && $product['rating_cache'] > 0): ?>,
-  "aggregateRating": {
-    "@type": "AggregateRating",
-    "ratingValue": "<?php echo $product['rating_cache']; ?>",
-    "reviewCount": "<?php echo max(1, (int)($product['review_count_cache'] ?? count($reviews))); ?>"
-  }
-  <?php endif; ?>
 }
 </script>
 

@@ -133,7 +133,7 @@ $masterArticleSlugs = [
 foreach ($masterArticleSlugs as $slug => $artTitle) {
     sitemapAdd(
         $urls,
-        "{$siteUrl}/knowledge_base.php?article={$slug}",
+        "{$siteUrl}/article/{$slug}",
         '0.9',
         'weekly',
         '2026-09-02',
@@ -156,7 +156,7 @@ if ($pdo) {
                 $pDate = substr($post['updated_at'] ?? $post['created_at'] ?? $today, 0, 10);
                 sitemapAdd(
                     $urls,
-                    "{$siteUrl}/knowledge_base.php?article={$pSlug}",
+                    "{$siteUrl}/article/{$pSlug}",
                     '0.9',
                     'weekly',
                     $pDate,
@@ -184,7 +184,7 @@ if ($pdo) {
                         'title' => 'دکتر ' . ($doc['name'] ?? '')
                     ];
                 }
-                sitemapAdd($urls, "{$siteUrl}/doctor_profile.php?id={$docId}", '0.85', 'weekly', $docDate, $docImages);
+                sitemapAdd($urls, "{$siteUrl}/doctor/{$docId}", '0.85', 'weekly', $docDate, $docImages);
             }
         }
     } catch (Throwable $e) {}
@@ -204,7 +204,7 @@ if ($pdo) {
                         'title' => $org['name'] ?? 'کلینیک دامپزشکی'
                     ];
                 }
-                sitemapAdd($urls, "{$siteUrl}/organization_profile.php?slug={$slug}", '0.85', 'weekly', $orgDate, $orgImages);
+                sitemapAdd($urls, "{$siteUrl}/clinic/{$slug}", '0.85', 'weekly', $orgDate, $orgImages);
             }
         }
     } catch (Throwable $e) {}
@@ -224,7 +224,7 @@ if ($pdo) {
                         'title' => $prod['name'] ?? 'محصول پت‌شاپ آسنا'
                     ];
                 }
-                sitemapAdd($urls, "{$siteUrl}/product_details.php?id={$pId}", '0.8', 'weekly', $pDate, $pImages);
+                sitemapAdd($urls, "{$siteUrl}/product/{$pId}", '0.8', 'weekly', $pDate, $pImages);
                 sitemapAdd($urls, "{$siteUrl}/standard/product_details.php?id={$pId}", '0.75', 'weekly', $pDate, $pImages);
             }
         }
@@ -245,7 +245,7 @@ if ($pdo) {
                         'title' => $med['name'] ?? 'داروی دامپزشکی آسنا'
                     ];
                 }
-                sitemapAdd($urls, "{$siteUrl}/product_details.php?id={$mId}&type=pharmacy", '0.8', 'weekly', $mDate, $mImages);
+                sitemapAdd($urls, "{$siteUrl}/product/{$mId}", '0.8', 'weekly', $mDate, $mImages);
                 sitemapAdd($urls, "{$siteUrl}/pharmacy-standard/product_details.php?id={$mId}&type=pharmacy", '0.75', 'weekly', $mDate, $mImages);
             }
         }

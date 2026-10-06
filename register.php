@@ -15,6 +15,10 @@ require_once __DIR__ . '/includes/RoleVerificationService.php';
 // Initialize session and security
 App::boot();
 
+if (!headers_sent()) {
+    header('X-Robots-Tag: noindex, nofollow, noarchive');
+}
+
 $error = '';
 $success = '';
 $step = 1; // 1: Role, 2: Info & OTP, 3: Credentials, 4: Complete
@@ -199,7 +203,8 @@ if (isset($_SESSION['reg_flow']) && $step === 1) {
 <head>
     <meta charset="utf-8"/>
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-    <title>ثبت‌نام</title>
+    <meta name="robots" content="noindex, nofollow"/>
+    <title>ثبت‌نام و عضویت در آسنا</title>
     <link rel="stylesheet" href="assets/css/tailwind.output.css?v=<?= time() ?>">
     <link href="assets/css/material-symbols.css" rel="stylesheet"/>
     <link href="assets/css/geist.css" rel="stylesheet"/>

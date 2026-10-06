@@ -1145,6 +1145,33 @@
       - افزودن پیوند «سفارش سایت اختصاصی» در منوی دسکتاپ، زیرمنوی خدمات و ابزارها، کشوی موبایل و فوتر سایت.
     - **توسعه تابع سراسری پاکسازی ورودی‌ها (`sanitize_input` در [`includes/functions.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/includes/functions.php)).**
 
+69. **پیاده‌سازی جامع و برطرف‌سازی یافته‌های گزارش ممیزی فنی، امنیتی و سئو (SEO, Security & Architectural Audit Resolution - P0 & P1):**
+    - **یکپارچه‌سازی پارامتر ریدایرکت و رفع قطعی آسیب‌پذیری Open Redirect (CWE-601):**
+      - تعریف تابع جامع `get_safe_return_url()` در [`includes/functions.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/includes/functions.php) با پشتیبانی همزمان و اعتبارسنجی پارامترهای `return_to`, `return_url`, `redirect` و انسداد کامل ریدایرکت‌های پروتکل‌نسبی (`//`)، اسکیماهای خارجی و شکستگی‌های CRLF.
+      - ارتقای فرآیند لاگین در [`login.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/login.php) جهت استفاده از `safe_redirect()` و انتقال امن `return_to`.
+      - اصلاح پیوندهای ارجاع لاگین در [`booking.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/booking.php)، [`calculator.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/calculator.php)، [`interactions.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/interactions.php) و [`wishlist.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/wishlist.php).
+    - **اصلاح باگ تغییر وضعیت ناامن GET در محاسبه‌گر (`auto_issue=1`):**
+      - حذف ارسال پارامتر جهش وضعیت `auto_issue=1` در URLها و انتقال امن سابقه به `localStorage` و ارسال با توکن CSRF معتبر؛ پاکسازی خودکار URL در صورت وجود پارامتر کوئری در [`calculator.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/calculator.php).
+    - **رفع معضل دوگانگی تگ‌های `<h1>` در ۷۹ صفحه پلتفرم:**
+      - تبدیل تگ لوگوی برند از `<h1 class="...">ASENA</h1>` به `<span class="...">ASENA</span>` در [`includes/header.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/includes/header.php)، به‌طوری که هر صفحه اختصاصاً یک عنوان اصلی `<h1>` مفهومی داشته باشد.
+      - تعریف تگ اصلی و سمانتیک `<h1>نوبت‌دهی آنلاین دامپزشکی و خدمات کلینیکی پت</h1>` در [`booking.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/booking.php).
+    - **ایمن‌سازی صفحات احراز هویت در برابر ایندکس اشتباه و بودجه کراول (Anti-Indexing Guard):**
+      - تزریق پویا و سراسری `<meta name="robots" content="noindex, nofollow">` و هدر `X-Robots-Tag: noindex, nofollow, noarchive` برای صفحات خصوصی، احراز هویت و پارامترهای کوئری ریدایرکت در [`includes/header.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/includes/header.php)، [`login.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/login.php) و [`register.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/register.php).
+      - افزودن `rel="nofollow"` به لینک‌های ورود، ثبت‌نام و سبد خرید در هدر و مدال‌های احراز هویت.
+      - به‌روزرسانی قوانین Disallow در [`robots.txt`](file:///opt/lampp/htdocs/asena/asena-enterprise/robots.txt) برای مسیرهای احراز هویت و متغیرهای `?redirect=`, `?return_url=`, `?tab=`.
+    - **مهاجرت به آدرس‌های سمانتیک SEF و ریدایرکت ۳۰۱ کالاها و پزشکان:**
+      - اعمال ریدایرکت‌های ۳۰۱ دائمی از `product_details.php?id=X` و `product_details?id=X` به ساختار تمیز `/product/:id` در [`.htaccess`](file:///opt/lampp/htdocs/asena/asena-enterprise/.htaccess).
+      - تنظیم تگ کنونیکال تمیز و سمانتیک در [`product_details.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/product_details.php) به همراه اسلاگ محصول.
+      - اصلاح پیوندهای کارت‌های محصول در [`shop.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/shop.php)، [`pharmacy.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/pharmacy.php) و [`index.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/index.php).
+      - به‌روزرسانی نقشه سایت [`sitemap.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/sitemap.php) و بازتولید فایل [`sitemap.xml`](file:///opt/lampp/htdocs/asena/asena-enterprise/sitemap.xml) با آدرس‌های تمیز `/product/:id`، `/doctor/:id`، `/clinic/:slug` و `/article/:slug`.
+    - **تزریق ساختار داده غنی اسکیما (JSON-LD) در هدر صفحات اصلی:**
+      - تنظیم ساختار استاندارد `$page_schema` برای Product در [`product_details.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/product_details.php)، VeterinaryCare در [`booking.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/booking.php)، PetStore در [`shop.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/shop.php) و Pharmacy در [`pharmacy.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/pharmacy.php).
+    - **پوشش محتوایی و جذب کلاستر «بهترین پت شاپ آنلاین ایران» و رفع Thin Content:**
+      - افزودن جدول جامع و مقایسه‌ای ۵ معیاره اکوسیستم آسنا در برابر بازار در بخش ۶ سئو [`shop.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/shop.php).
+      - افزودن راهنما و آکاردئون پرسش‌های متداول نوبت‌دهی بالینی و تله‌هلث در انتهای [`booking.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/booking.php).
+      - کنترل طول عناوین و متاتگ‌های توصیفی (Title <= 60 chars و Description <= 160 chars) در هدر و قالب‌ها.
+      - تکمیل شناسه و اتربیوت‌های `alt` تصاویر برای افزایش دسترس‌پذیری در [`booking.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/booking.php) و [`doctor/index.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/doctor/index.php).
+
 ---
 
 ## ۴. پروتکل ثبت تغییرات آینده (Maintenance Rule)

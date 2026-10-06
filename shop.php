@@ -54,9 +54,32 @@ if (!empty($category)) {
     $page_title = "جستجوی کالا: {$qClean} | پت‌شاپ آنلاین آسنا";
     $page_description = "نتایج جستجو برای {$qClean} در پت‌شاپ و داروخانه تخصصی آسنا با ضمانت اصالت کالا.";
 } else {
-    $page_title = "پت‌شاپ آنلاین آسنا | خرید غذای سگ، گربه و ملزومات حیوانات خانگی";
+    $page_title = "پت‌شاپ آنلاین آسنا | خرید غذای سگ، گربه و ملزومات پت";
     $page_description = "فروشگاه اینترنتی ملزومات حیوانات خانگی آسنا؛ خرید انواع غذای سگ و گربه، مکمل‌ها، خاک بستر، تشویقی و تحویل دوره‌ای خودکار (Autoship) با ارسال سریع.";
 }
+
+$proto = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') || (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https') ? 'https' : 'http';
+$host = $_SERVER['HTTP_HOST'] ?? 'asena.company';
+$canonical_url = "$proto://$host/shop" . (!empty($animal) ? "?animal={$animal}" : (!empty($category) ? "?category=" . urlencode($category) : ''));
+
+$page_schema = json_encode([
+    "@context" => "https://schema.org",
+    "@graph" => [
+        [
+            "@type" => ["PetStore", "Store"],
+            "@id" => "$proto://$host/shop#store",
+            "name" => "پت‌شاپ آنلاین و تخصصی آسنا",
+            "url" => $canonical_url,
+            "description" => $page_description,
+            "telephone" => "+98-914-667-6978",
+            "priceRange" => "$$",
+            "areaServed" => [
+                "@type" => "Country",
+                "name" => "Iran"
+            ]
+        ]
+    ]
+], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
 
 require_once 'includes/header.php';
 
@@ -585,7 +608,7 @@ function buildUrlRemoveArrayItem($arrayName, $valueToRemove) {
                         <span>ارسال دوره‌ای</span>
                     </div>
 
-                    <a href="product_details.php?id=<?= (int)$auto_item['id'] ?>" class="w-full h-full flex items-center justify-center">
+                    <a href="product/<?= (int)$auto_item['id'] ?>" class="w-full h-full flex items-center justify-center">
                         <img loading="lazy" 
                              src="<?= htmlspecialchars($auto_item['image_url']) ?>" 
                              onerror="this.src='assets/images/pharma-default.svg'" 
@@ -607,7 +630,7 @@ function buildUrlRemoveArrayItem($arrayName, $valueToRemove) {
                             </div>
                         </div>
 
-                        <a href="product_details.php?id=<?= (int)$auto_item['id'] ?>">
+                        <a href="product/<?= (int)$auto_item['id'] ?>">
                             <h4 class="text-xs font-black text-slate-900 line-clamp-2 hover:text-emerald-700 transition-colors leading-relaxed min-h-[2.5rem]" title="<?= htmlspecialchars($auto_item['name']) ?>">
                                 <?= htmlspecialchars($auto_item['name']) ?>
                             </h4>
@@ -980,7 +1003,7 @@ function buildUrlRemoveArrayItem($arrayName, $valueToRemove) {
 
                     <!-- Product Image & Overlay -->
                     <div class="aspect-square bg-surface-container-lowest rounded-2xl mb-4 sm:mb-6 overflow-hidden relative">
-                        <a href="product_details.php?id=<?php echo $product['id']; ?>" class="block w-full h-full">
+                        <a href="product/<?php echo $product['id']; ?>" class="block w-full h-full">
                             <img loading="lazy" src="<?php echo htmlspecialchars($product['image_url']); ?>" onerror="this.src='assets/images/pharma-default.svg'" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" alt="<?php echo htmlspecialchars($product['name']); ?>">
                         </a>
                         
@@ -1009,7 +1032,7 @@ function buildUrlRemoveArrayItem($arrayName, $valueToRemove) {
                             </div>
                         </div>
 
-                        <a href="product_details.php?id=<?php echo $product['id']; ?>" class="block mb-2">
+                        <a href="product/<?php echo $product['id']; ?>" class="block mb-2">
                             <h3 class="text-sm sm:text-base font-bold text-on-surface line-clamp-2 hover:text-primary transition-colors cursor-pointer leading-snug">
                                 <?php echo htmlspecialchars($product['name']); ?>
                             </h3>
@@ -1155,7 +1178,7 @@ function buildUrlRemoveArrayItem($arrayName, $valueToRemove) {
                         <span>شگفت‌انگیز</span>
                     </div>
 
-                    <a href="product_details.php?id=<?= (int)$bo_item['id'] ?>" class="w-full h-full flex items-center justify-center">
+                    <a href="product/<?= (int)$bo_item['id'] ?>" class="w-full h-full flex items-center justify-center">
                         <img loading="lazy" 
                              src="<?= htmlspecialchars($bo_item['image_url']) ?>" 
                              onerror="this.src='assets/images/pharma-default.svg'" 
@@ -1179,7 +1202,7 @@ function buildUrlRemoveArrayItem($arrayName, $valueToRemove) {
                         </div>
 
                         <!-- Product Title -->
-                        <a href="product_details.php?id=<?= (int)$bo_item['id'] ?>">
+                        <a href="product/<?= (int)$bo_item['id'] ?>">
                             <h4 class="text-xs sm:text-sm font-black text-slate-900 line-clamp-2 hover:text-primary transition-colors leading-relaxed min-h-[2.5rem] mb-2" title="<?= htmlspecialchars($bo_item['name']) ?>">
                                 <?= htmlspecialchars($bo_item['name']) ?>
                             </h4>
@@ -1235,7 +1258,7 @@ function buildUrlRemoveArrayItem($arrayName, $valueToRemove) {
                     <h4 class="text-xs font-bold text-on-surface line-clamp-2 mb-2"><?php echo htmlspecialchars($rec['name']); ?></h4>
                     <div class="flex items-center justify-between">
                         <span class="text-xs font-bold text-primary"><?php echo number_format($rec['discount_price'] ?? $rec['price']); ?> تومان</span>
-                        <a href="product_details.php?id=<?php echo $rec['id']; ?>" class="text-xs text-primary font-bold hover:underline">مشاهده</a>
+                        <a href="product/<?php echo $rec['id']; ?>" class="text-xs text-primary font-bold hover:underline">مشاهده</a>
                     </div>
                 </div>
             </div>
@@ -1296,6 +1319,55 @@ function buildUrlRemoveArrayItem($arrayName, $valueToRemove) {
             </span>
             <h3 class="text-2xl md:text-3xl font-bold text-primary mb-3"><?= htmlspecialchars($seo_guide_title) ?></h3>
             <p class="text-xs md:text-sm text-on-surface-variant leading-relaxed text-justify md:text-center"><?= htmlspecialchars($seo_guide_text) ?></p>
+        </div>
+
+        <!-- Buyer's Comparison Guide: Why ASENA is the Top Online Pet Shop in Iran -->
+        <div class="max-w-4xl mx-auto my-10 bg-slate-50/80 rounded-2xl p-5 border border-slate-200">
+            <h4 class="text-sm sm:text-base font-black text-slate-900 mb-3 flex items-center gap-2">
+                <span class="material-symbols-outlined text-[#fd8100]">trophy</span>
+                <span>راهنمای مقایسه و انتخاب بهترین پت شاپ آنلاین در ایران</span>
+            </h4>
+            <p class="text-xs text-slate-600 mb-4 leading-relaxed">
+                در ارزیابی برترین فروشگاه‌های آنلاین حیوانات خانگی در ایران، معیارهای نظارت دامپزشکی، زنجیره تامین قانونی، شرایط نگهداری استاندارد و سرعت تحویل تعیین‌کننده سلامت و طول عمر پت شما هستند:
+            </p>
+            <div class="overflow-x-auto rounded-xl border border-slate-200">
+                <table class="w-full text-right text-xs bg-white">
+                    <thead class="bg-slate-100 text-slate-700 font-bold border-b border-slate-200">
+                        <tr>
+                            <th class="p-3">معیار ارزیابی</th>
+                            <th class="p-3 text-primary">اکوسیستم تخصصی آسنا (ASENA)</th>
+                            <th class="p-3 text-slate-500">پت‌شاپ‌های سنتی بازار</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100 text-slate-700">
+                        <tr>
+                            <td class="p-3 font-bold">اصالت و تاریخ انقضا</td>
+                            <td class="p-3 text-emerald-700 font-bold flex items-center gap-1"><span class="material-symbols-outlined text-sm">check_circle</span> ضمانت ۱۰۰٪ اصالت کالا و برچسب شبنم/اصالت</td>
+                            <td class="p-3 text-slate-500">عدم تضمین اصالت بار و خطر کالای قاچاق تاریخ‌گذشته</td>
+                        </tr>
+                        <tr>
+                            <td class="p-3 font-bold">نظارت بالینی و درمانی</td>
+                            <td class="p-3 text-emerald-700 font-bold flex items-center gap-1"><span class="material-symbols-outlined text-sm">check_circle</span> پشتیبانی مستقیم داروخانه و پزشکان متخصص دامپزشک</td>
+                            <td class="p-3 text-slate-500">فروشندگی صرف بدون دانش بالینی تغذیه</td>
+                        </tr>
+                        <tr>
+                            <td class="p-3 font-bold">زنجیره سرما و انبارداری</td>
+                            <td class="p-3 text-emerald-700 font-bold flex items-center gap-1"><span class="material-symbols-outlined text-sm">check_circle</span> انبار مجهز به تهویه رطوبتی و کلمن آیس‌پک ویژه واکسن</td>
+                            <td class="p-3 text-slate-500">انبارهای غیراستاندارد گرم و فاسدکننده چربی غذا</td>
+                        </tr>
+                        <tr>
+                            <td class="p-3 font-bold">سرعت ارسال اکسپرس</td>
+                            <td class="p-3 text-emerald-700 font-bold flex items-center gap-1"><span class="material-symbols-outlined text-sm">check_circle</span> تحویل فوری ۲ تا ۴ ساعته در تهران + ۲۴ تا ۷۲ ساعت پیشتاز</td>
+                            <td class="p-3 text-slate-500">تاخیر طولانی ۳ تا ۷ روزه بدون رهگیری زنده</td>
+                        </tr>
+                        <tr>
+                            <td class="p-3 font-bold">تخفیف سفارش خودکار</td>
+                            <td class="p-3 text-emerald-700 font-bold flex items-center gap-1"><span class="material-symbols-outlined text-sm">check_circle</span> سرویس دوره‌ای Autoship با ۱۰٪ تخفیف مادام‌العمر</td>
+                            <td class="p-3 text-slate-500">فاقد زیرساخت اشتراک خودکار ملزومات</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
 
         <div class="max-w-3xl mx-auto mb-6">

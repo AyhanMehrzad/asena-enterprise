@@ -142,13 +142,50 @@ $default_seo = $seo_defaults[$current_page] ?? [
 ];
 
 $effective_title = isset($page_title) ? $page_title : $default_seo['title'];
+if (mb_strlen($effective_title, 'UTF-8') > 60) {
+    $effective_title = mb_substr($effective_title, 0, 57, 'UTF-8') . '...';
+}
+
 $effective_desc = isset($page_description) ? $page_description : (isset($page_desc) ? $page_desc : $default_seo['desc']);
+if (mb_strlen($effective_desc, 'UTF-8') > 160) {
+    $effective_desc = mb_substr($effective_desc, 0, 157, 'UTF-8') . '...';
+}
 
 $proto = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') || (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https') ? 'https' : 'http';
 $host = $_SERVER['HTTP_HOST'] ?? 'asena.company';
-$effective_canonical = isset($canonical_url) ? $canonical_url : "$proto://$host" . strtok($_SERVER['REQUEST_URI'] ?? '/', '?');
+
+if (!isset($canonical_url)) {
+    $cleanPath = strtok($_SERVER['REQUEST_URI'] ?? '/', '?');
+    if (str_ends_with($cleanPath, '.php')) {
+        $cleanPath = substr($cleanPath, 0, -4);
+    }
+    $effective_canonical = "$proto://$host" . ($cleanPath === '/index' ? '/' : $cleanPath);
+} else {
+    $effective_canonical = $canonical_url;
+}
+
 $effective_og_image = isset($og_image) ? (strpos($og_image, 'http') === 0 ? $og_image : "$proto://$host/" . ltrim($og_image, '/')) : "$proto://$host/assets/images/og-asena.png";
 $effective_og_type = $og_type ?? 'website';
+
+// Dynamic Robots Noindex Enforcement for Private/Stateful Pages and Query Permutations
+$noindex_pages = [
+    'login.php', 'register.php', 'cart.php', 'checkout.php', 'profile.php', 
+    'reset_password.php', 'forgot_password.php', 'payment.php', 'order_receipt.php',
+    'auto_login.php', 'subscription_checkout.php', 'charity_payment.php', 'dev_login.php',
+    'complete_profile.php', 'contract_acceptance.php', 'user_tickets.php', 'mock_payment_gateway.php'
+];
+
+if (!isset($meta_robots)) {
+    if (in_array($current_page, $noindex_pages, true) || !empty($_GET['redirect']) || !empty($_GET['return_url']) || !empty($_GET['return_to']) || !empty($_GET['auto_issue'])) {
+        $meta_robots = 'noindex, nofollow';
+    } else {
+        $meta_robots = 'index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1';
+    }
+}
+
+if (str_contains($meta_robots, 'noindex') && !headers_sent()) {
+    header('X-Robots-Tag: noindex, nofollow, noarchive');
+}
 
 // Dynamic Geo & Local Search Variables
 $effective_geo_region = $geo_region ?? 'IR-07';
@@ -163,7 +200,7 @@ $effective_geo_icbm = $geo_icbm ?? '35.7350, 51.4110';
     <meta content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover" name="viewport">
     <title><?php echo htmlspecialchars($effective_title); ?></title>
     <meta name="description" content="<?php echo htmlspecialchars($effective_desc); ?>">
-    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
+    <meta name="robots" content="<?php echo htmlspecialchars($meta_robots); ?>">
     <meta name="google-site-verification" content="LBsu_9wpFihCnRoY9_g6YwFJJ_bvUDZAZ6lAMMRn-8k">
     <meta name="google-site-verification" content="google82c161050c864f06">
     <meta name="enamad" content="7936941" />
@@ -630,9 +667,9 @@ if (function_exists('get_curated_recommendations')) {
                         <span class="notification-badge-count hidden absolute top-0.5 right-0.5 bg-rose-500 text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-black shadow-sm">0</span>
                     </button>
 
-                    <a href="<?php echo isset($_SESSION['user_id']) ? 'profile' : 'login'; ?>" class="material-symbols-outlined text-white p-1.5 lg:p-2 hover:bg-white/10 rounded-full transition-colors flex text-xl lg:text-2xl" title="حساب کاربری">person</a>
+                    <a href="<?php echo isset($_SESSION['user_id']) ? 'profile' : 'login'; ?>" rel="nofollow" class="material-symbols-outlined text-white p-1.5 lg:p-2 hover:bg-white/10 rounded-full transition-colors flex text-xl lg:text-2xl" title="حساب کاربری">person</a>
                     
-                    <a href="cart" id="header-cart-btn" class="relative material-symbols-outlined text-white p-1.5 lg:p-2 hover:bg-white/10 rounded-full transition-colors flex text-xl lg:text-2xl" title="سبد خرید">
+                    <a href="cart" rel="nofollow" id="header-cart-btn" class="relative material-symbols-outlined text-white p-1.5 lg:p-2 hover:bg-white/10 rounded-full transition-colors flex text-xl lg:text-2xl" title="سبد خرید">
                         shopping_cart
                         <span id="header-cart-badge" class="header-cart-badge cart-badge-count absolute top-0 right-0 bg-secondary-container text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-bold shadow transition-transform duration-200 <?php echo ($cart_count > 0) ? '' : 'hidden'; ?>"><?php echo $cart_count; ?></span>
                     </a>
@@ -640,7 +677,7 @@ if (function_exists('get_curated_recommendations')) {
                 
                 <a href="./" class="flex items-center gap-2 group" dir="ltr" title="صفحه اصلی آسنا">
                     <img src="assets/images/logo.png" alt="لوگوی آسنا" class="w-7 h-7 lg:w-9 lg:h-9 object-contain drop-shadow group-hover:scale-105 transition-transform duration-200">
-                    <h1 class="text-lg lg:text-2xl font-black text-white tracking-tight group-hover:text-secondary-container transition-colors">ASENA</h1>
+                    <span class="text-lg lg:text-2xl font-black text-white tracking-tight group-hover:text-secondary-container transition-colors">ASENA</span>
                 </a>
             </div>
         </div>

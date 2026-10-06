@@ -711,7 +711,7 @@ try {
                 <div class="flex items-start gap-4">
                     <div class="w-16 h-16 rounded-2xl bg-white/10 border border-white/20 overflow-hidden flex items-center justify-center shrink-0 shadow-sm">
                         <?php if (!empty($currentActiveAppt['pet_image'])): ?>
-                            <img src="../<?= ltrim($currentActiveAppt['pet_image'], '/') ?>" class="w-full h-full object-cover" alt="">
+                            <img src="../<?= ltrim($currentActiveAppt['pet_image'], '/') ?>" class="w-full h-full object-cover" alt="تصویر پرونده بالینی <?= htmlspecialchars($activePetName) ?>">
                         <?php else: ?>
                             <span class="material-symbols-outlined text-3xl text-emerald-300">pets</span>
                         <?php endif; ?>

@@ -25,7 +25,7 @@ if (!empty($selected_animal_param) && isset($animal_seo_map[$selected_animal_par
     $page_title = "خرید {$tagName} دامپزشکی | داروخانه آنلاین آسنا";
     $page_description = "مرجع رسمی خرید اینترنتی {$tagName} با ضمانت اصالت، تاریخ انقضای معتبر و ارسال اکسپرس در سامانه جامع آسنا.";
 } else {
-    $page_title = "داروخانه آنلاین دامپزشکی آسنا | خرید دارو، مکمل و واکسن با تایید نسخه";
+    $page_title = "داروخانه آنلاین دامپزشکی آسنا | دارو و مکمل پت";
     $page_description = "داروخانه تخصصی دامپزشکی آسنا؛ مرجع رسمی خرید آنلاین داروهای دام، طیور و پت، مکمل‌های درمانی و واکسن با تاییدیه نسخه پزشک داروساز و ارسال زنجیره سرد.";
 }
 
@@ -38,6 +38,31 @@ if (!Feature::has('pharmacy_catalog')) {
     header('Location: index.php');
     exit;
 }
+
+$proto = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') || (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https') ? 'https' : 'http';
+$host = $_SERVER['HTTP_HOST'] ?? 'asena.company';
+$canonical_url = "$proto://$host/pharmacy" . (!empty($selected_animal_param) ? "?animal={$selected_animal_param}" : (!empty($selected_tag_param) ? "?tag=" . urlencode($selected_tag_param) : ''));
+
+$page_schema = json_encode([
+    "@context" => "https://schema.org",
+    "@graph" => [
+        [
+            "@type" => "Pharmacy",
+            "@id" => "$proto://$host/pharmacy#organization",
+            "name" => "داروخانه آنلاین دامپزشکی آسنا",
+            "url" => $canonical_url,
+            "description" => $page_description,
+            "telephone" => "+98-914-667-6978",
+            "priceRange" => "$$",
+            "openingHours" => "Mo-Su 00:00-24:00",
+            "areaServed" => [
+                "@type" => "Country",
+                "name" => "Iran"
+            ]
+        ]
+    ]
+], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+
 require_once 'includes/header.php';
 
 $userPets = [];
@@ -686,7 +711,7 @@ function buildUrl($updates) {
 
                     <!-- Product Image Container -->
                     <div class="aspect-square bg-surface-container-lowest rounded-2xl mb-4 sm:mb-6 overflow-hidden relative">
-                        <a href="product_details.php?id=<?php echo $product['id']; ?>" class="block w-full h-full">
+                        <a href="product/<?php echo $product['id']; ?>" class="block w-full h-full">
                             <img loading="lazy" src="<?php echo htmlspecialchars($product['image_url']); ?>" onerror="this.src='assets/images/pharma-default.svg'" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" alt="<?php echo htmlspecialchars($product['name']); ?>">
                         </a>
                         
@@ -708,7 +733,7 @@ function buildUrl($updates) {
                                 <?php echo $product['rating_cache'] ?? 4.8; ?>
                             </span>
                         </div>
-                        <a href="product_details.php?id=<?php echo $product['id']; ?>" class="block mb-2">
+                        <a href="product/<?php echo $product['id']; ?>" class="block mb-2">
                             <h3 class="text-sm sm:text-base font-bold text-on-surface line-clamp-2 hover:text-primary transition-colors leading-snug"><?php echo htmlspecialchars($product['name']); ?></h3>
                         </a>
 

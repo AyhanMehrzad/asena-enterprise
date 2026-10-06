@@ -771,11 +771,11 @@ $calcPrice = (int)get_setting($pdo, 'calculator_price_toman', 49000);
             </div>
 
             <div class="space-y-2 pt-2">
-                <a href="login.php?redirect=calculator.php%3Fauto_issue%3D1" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-3.5 px-4 rounded-xl font-black text-xs text-center shadow-md transition flex items-center justify-center gap-2 min-h-[48px]">
+                <a href="login?return_to=%2Fcalculator" rel="nofollow" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-3.5 px-4 rounded-xl font-black text-xs text-center shadow-md transition flex items-center justify-center gap-2 min-h-[48px]">
                     <span class="material-symbols-outlined text-base">login</span>
                     <span>ورود با شماره موبایل / حساب کاربری</span>
                 </a>
-                <a href="register.php?redirect=calculator.php%3Fauto_issue%3D1" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-800 py-3.5 px-4 rounded-xl font-bold text-xs text-center transition flex items-center justify-center gap-2 border border-slate-200 min-h-[48px]">
+                <a href="register?return_to=%2Fcalculator" rel="nofollow" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-800 py-3.5 px-4 rounded-xl font-bold text-xs text-center transition flex items-center justify-center gap-2 border border-slate-200 min-h-[48px]">
                     <span class="material-symbols-outlined text-base">person_add</span>
                     <span>ثبت‌نام سریع در آسنا (رایگان)</span>
                 </a>
@@ -1473,19 +1473,28 @@ $calcPrice = (int)get_setting($pdo, 'calculator_price_toman', 49000);
         }
     });
 
-    // Check for auto-issue after redirect login
+    // Check for auto-issue / pending meal plan after authentication
     try {
+        const isUserLoggedIn = <?php echo isset($_SESSION['user_id']) ? 'true' : 'false'; ?>;
         const urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.get('auto_issue') === '1') {
+        const hasAutoIssueQuery = urlParams.get('auto_issue') === '1';
+
+        // Sanitize URL query if legacy auto_issue was present
+        if (hasAutoIssueQuery && window.history && window.history.replaceState) {
+            window.history.replaceState({}, document.title, window.location.pathname);
+        }
+
+        if (isUserLoggedIn) {
             const saved = localStorage.getItem('asena_pending_meal_plan');
             if (saved) {
                 const parsed = JSON.parse(saved);
                 if (parsed && typeof parsed === 'object') {
                     Object.assign(calcState, parsed);
+                    localStorage.removeItem('asena_pending_meal_plan');
+                    setTimeout(() => {
+                        issueAndSendMealPlanToProfile();
+                    }, 800);
                 }
-                setTimeout(() => {
-                    issueAndSendMealPlanToProfile();
-                }, 800);
             }
         }
     } catch(e) {}

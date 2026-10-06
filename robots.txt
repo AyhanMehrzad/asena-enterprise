@@ -68,31 +68,44 @@ Allow: /llms.txt
 Allow: /llms-full.txt
 
 # Disallow internal scripts, APIs, admin panels, and payment processing
+Disallow: /login
+Disallow: /login.php
+Disallow: /register
+Disallow: /register.php
+Disallow: /profile
+Disallow: /profile.php
+Disallow: /cart
+Disallow: /cart.php
+Disallow: /payment
+Disallow: /payment.php
+Disallow: /mock_payment_gateway.php
+Disallow: /charity_payment.php
+Disallow: /subscription_checkout.php
+Disallow: /reset_password.php
+Disallow: /forgot_password.php
 Disallow: /auto_login.php
 Disallow: /*/auto_login.php
 Disallow: /includes/
 Disallow: /*/includes/
 Disallow: /admin/
+Disallow: /*/admin/
 Disallow: /actions/
+Disallow: /*/actions/
 Disallow: /logs/
 Disallow: /tmp/
-Disallow: /*/admin/
-Disallow: /*/actions/
-Disallow: /cart.php
-Disallow: /*/cart.php
-Disallow: /payment.php
-Disallow: /*/payment.php
-Disallow: /mock_payment_gateway.php
-Disallow: /*/mock_payment_gateway.php
-Disallow: /charity_payment.php
-Disallow: /*/charity_payment.php
-Disallow: /subscription_checkout.php
-Disallow: /*/subscription_checkout.php
 Disallow: /setup_db.php
 Disallow: /*/setup_db.php
 Disallow: /config.php
 Disallow: /*/config.php
 Disallow: /.env*
+
+# Disallow session and tracking/redirect query variations
+Disallow: /*?redirect=
+Disallow: /*?return_url=
+Disallow: /*?return_to=
+Disallow: /*?tab=
+Disallow: /*?auto_issue=
+Disallow: /*?cancel_
 
 # Declare dynamic XML Sitemap for Search Engines
 Sitemap: https://asena.company/sitemap.xml

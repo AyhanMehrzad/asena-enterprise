@@ -403,7 +403,7 @@ try {
                             <span class="text-[10px] line-through text-slate-400 font-mono"><?= number_format($price) ?></span>
                         <?php endif; ?>
                     </div>
-                    <a href="product_details.php?id=<?= (int)$prod['id'] ?>" class="p-2 bg-primary hover:bg-[#002d72] text-white rounded-xl transition shadow-xs flex items-center justify-center cursor-pointer" title="مشاهده و خرید">
+                    <a href="product/<?= (int)$prod['id'] ?>" class="p-2 bg-primary hover:bg-[#002d72] text-white rounded-xl transition shadow-xs flex items-center justify-center cursor-pointer" title="مشاهده و خرید">
                         <span class="material-symbols-outlined text-base">add_shopping_cart</span>
                     </a>
                 </div>

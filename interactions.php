@@ -500,11 +500,11 @@ if ($userId > 0 && isset($pdo)) {
                 </div>
 
                 <div class="space-y-2 pt-2">
-                    <a href="login.php?redirect=interactions.php" class="w-full bg-blue-600 hover:bg-blue-500 text-white py-3.5 px-4 rounded-xl font-black text-xs text-center shadow-md transition flex items-center justify-center gap-2 min-h-[48px]">
+                    <a href="login?return_to=%2Finteractions" rel="nofollow" class="w-full bg-blue-600 hover:bg-blue-500 text-white py-3.5 px-4 rounded-xl font-black text-xs text-center shadow-md transition flex items-center justify-center gap-2 min-h-[48px]">
                         <span class="material-symbols-outlined text-base">login</span>
                         <span>ورود به حساب کاربری آسنا</span>
                     </a>
-                    <a href="register.php?redirect=interactions.php" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 py-3.5 px-4 rounded-xl font-bold text-xs text-center transition flex items-center justify-center gap-2 min-h-[48px]">
+                    <a href="register?return_to=%2Finteractions" rel="nofollow" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 py-3.5 px-4 rounded-xl font-bold text-xs text-center transition flex items-center justify-center gap-2 min-h-[48px]">
                         <span class="material-symbols-outlined text-base">person_add</span>
                         <span>ایجاد حساب کاربری جدید</span>
                     </a>

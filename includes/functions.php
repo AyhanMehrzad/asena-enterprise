@@ -61,6 +61,38 @@ function safe_redirect(string $url, string $fallback = '/'): void {
     exit;
 }
 
+/**
+ * Resolves and strictly sanitizes return URLs from GET/POST query parameters.
+ * Mitigates Open Redirect risks (CWE-601) and unifies parameter naming (return_to, return_url, redirect).
+ */
+function get_safe_return_url(string $default = 'profile'): string {
+    $target = $_GET['return_to'] ?? $_GET['return_url'] ?? $_GET['redirect'] ?? $_POST['return_to'] ?? $_POST['return_url'] ?? $_POST['redirect'] ?? '';
+    $target = trim((string)$target);
+    if (empty($target)) {
+        return $default;
+    }
+
+    // Strip null bytes and control / CRLF characters
+    $target = str_replace(["\0", "\r", "\n"], '', $target);
+
+    // Prevent protocol-relative (//evil.com), backslash evasion (\/evil.com or \\evil.com), or explicit schemes (http:, https:, javascript:, data:)
+    if (preg_match('#^(https?:|javascript:|data:)?//|^\\\\#i', $target)) {
+        return $default;
+    }
+
+    $parsed = parse_url($target);
+    if ($parsed === false || isset($parsed['host']) || isset($parsed['scheme'])) {
+        return $default;
+    }
+
+    // Allow only legitimate relative paths with safe query characters
+    if (!preg_match('#^[a-zA-Z0-9_\-\./\?=&%#]+$#', $target)) {
+        return $default;
+    }
+
+    return $target;
+}
+
 function validate_upload(array $file, array $allowed_mimes, int $max_bytes = 5_242_880): array {
     if ($file['error'] !== UPLOAD_ERR_OK) {
         return ['ok' => false, 'error' => 'خطا در آپلود فایل (کد: ' . $file['error'] . ').'];

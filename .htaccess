@@ -15,6 +15,13 @@ RewriteRule ^sitemap\.xml$ sitemap.php [L]
 RewriteRule ^torob\.json$ api/torob_feed.php [L]
 RewriteRule ^torob$ api/torob_feed.php [L]
 
+# 3.8 Canonical 301 Redirects for Legacy Query Routes
+RewriteCond %{THE_REQUEST} ^[A-Z]{3,}\s/+product_details(?:\.php)?\?id=([0-9]+) [NC]
+RewriteRule ^product_details(?:\.php)?$ /product/%1? [R=301,L]
+
+RewriteCond %{THE_REQUEST} ^[A-Z]{3,}\s/+doctor_profile(?:\.php)?\?id=([0-9]+) [NC]
+RewriteRule ^doctor_profile(?:\.php)?$ /doctor/%1? [R=301,L]
+
 # 4. Clean SEF URLs for Products, Doctors, Articles, Clinics
 RewriteRule ^product/([0-9]+)(/.*)?$ product_details.php?id=$1 [QSA,L]
 RewriteRule ^doctor/([0-9]+)(/.*)?$ doctor_profile.php?id=$1 [QSA,L]

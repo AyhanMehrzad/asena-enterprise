@@ -3,7 +3,7 @@ ob_start();
 require_once __DIR__ . '/includes/db.php';
 
 if (!isset($_SESSION['user_id'])) {
-    header('Location: login.php?return_url=' . urlencode('wishlist.php'));
+    header('Location: login?return_to=' . urlencode('/wishlist'));
     exit;
 }
 
