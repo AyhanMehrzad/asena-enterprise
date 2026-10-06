@@ -346,6 +346,10 @@ $effective_geo_icbm = $geo_icbm ?? '35.7350, 51.4110';
     <?php endif; ?>
 
     <?php $asset_v = '2.2.1'; ?>
+    <!-- Preload Critical WOFF2 Fonts for Immediate First Contentful Paint -->
+    <link rel="preload" href="assets/fonts/Dxxo8j6PP2D_kU2muijlGMWWMmk.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="assets/fonts/material-symbols-subset.woff2" as="font" type="font/woff2" crossorigin>
+
     <!-- Fonts & Icons (Self-Hosted with font-display: swap) -->
     <link href="assets/css/vazirmatn.css?v=<?= $asset_v ?>" rel="stylesheet">
     <link href="assets/css/geist.css?v=<?= $asset_v ?>" rel="stylesheet">
