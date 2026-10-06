@@ -349,14 +349,14 @@ $effective_geo_icbm = $geo_icbm ?? '35.7350, 51.4110';
     <!-- Fonts & Icons (Self-Hosted with font-display: swap) -->
     <link href="assets/css/vazirmatn.css?v=<?= $asset_v ?>" rel="stylesheet">
     <link href="assets/css/geist.css?v=<?= $asset_v ?>" rel="stylesheet">
-    <link href="assets/css/material-symbols.css?v=<?= $asset_v ?>" rel="stylesheet">
-    
     <!-- Critical & Tailwind CSS -->
     <link rel="stylesheet" href="assets/css/tailwind.output.css?v=<?= $asset_v ?>">
     <link rel="stylesheet" href="assets/css/style.css?v=<?= $asset_v ?>">
+    <link rel="stylesheet" href="assets/css/material-symbols.css?v=<?= $asset_v ?>" media="print" onload="this.media='all'">
     <link rel="stylesheet" href="assets/css/enterprise-ui.css?v=<?= $asset_v ?>" media="print" onload="this.media='all'">
     <link rel="stylesheet" href="assets/css/paw-loader.css?v=<?= $asset_v ?>" media="print" onload="this.media='all'">
     <noscript>
+        <link rel="stylesheet" href="assets/css/material-symbols.css?v=<?= $asset_v ?>">
         <link rel="stylesheet" href="assets/css/enterprise-ui.css?v=<?= $asset_v ?>">
         <link rel="stylesheet" href="assets/css/paw-loader.css?v=<?= $asset_v ?>">
     </noscript>
