@@ -474,7 +474,7 @@ class TenantSiteService {
                         'seller', 1, 'petland-store', 'پت‌شاپ آنلاین و هایپرمارکت پت‌لند',
                         'تنوع بی‌نظیر غذا، تشویقی، بهداشتی و ملزومات سگ و گربه با تحویل دوره‌ای اتوشیپ',
                         'assets/images/logo.png', 'assets/images/presentation-dog.jpg', 'orange', '#ea580c', '#f59e0b',
-                        'Vazirmatn', ?, 1, 2890, 'enterprise', 'هایپرمارکت تخصصی غذای سگ و گربه با تضمین اصالت و ارسال سریع',
+                        'Vazirmatn', ?, 1, 2890, 'enterprise', 'پت‌شاپ آنلاین و هایپرمارکت تخصصی پت‌لند؛ خرید آنلاین انواع غذای خشک، کنسرو، تشویقی و لوازم بهداشتی سگ و گربه با تضمین اصالت کالا و تحویل دوره‌ای اتوشیپ در آسنا.',
                         CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
                     )
                 ");
@@ -503,12 +503,15 @@ class TenantSiteService {
                         'organization', 1, 'razi-hospital', 'بیمارستان شبانه‌روزی دامپزشکی رازی',
                         'مرکز جامع جراحی، تصویربرداری، آزمایشگاه و بخش بستری و ICU حیوانات خانگی',
                         'assets/images/logo.png', 'assets/images/clinic-banner.jpg', 'navy', '#001a48', '#fd8100',
-                        'Vazirmatn', ?, 1, 5410, 'enterprise', 'بیمارستان شبانه‌روزی دامپزشکی رازی با امکانات پیشرفته جراحی، آزمایشگاه و بستری شبانه‌روزی',
+                        'Vazirmatn', ?, 1, 5410, 'enterprise', 'بیمارستان شبانه‌روزی دامپزشکی رازی؛ ارائه خدمات تخصصی درمانی، جراحی پیشرفته، رادیولوژی و سونوگرافی، آزمایشگاه تشخیصی و بخش بستری و ICU مجهز ۲۴ ساعته.',
                         CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
                     )
                 ");
                 $stmt->execute([json_encode($oLayout, JSON_UNESCAPED_UNICODE)]);
             }
+
+            // Sync short meta descriptions for existing demo rows to satisfy SEO 70+ chars threshold
+            $this->pdo->exec("UPDATE tenant_sites SET meta_description = 'پت‌شاپ آنلاین و هایپرمارکت تخصصی پت‌لند؛ خرید آنلاین انواع غذای خشک، کنسرو، تشویقی و لوازم بهداشتی سگ و گربه با تضمین اصالت کالا و تحویل دوره‌ای اتوشیپ در آسنا.' WHERE slug = 'petland-store' AND CHAR_LENGTH(meta_description) < 70");
         } catch (Throwable $e) {
             error_log("[TenantSiteService::ensureDemoSites] " . $e->getMessage());
         }

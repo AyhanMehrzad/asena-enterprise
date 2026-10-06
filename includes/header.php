@@ -169,7 +169,7 @@ $effective_og_type = $og_type ?? 'website';
 
 // Dynamic Robots Noindex Enforcement for Private/Stateful Pages and Query Permutations
 $noindex_pages = [
-    'login.php', 'register.php', 'cart.php', 'checkout.php', 'profile.php', 
+    'login.php', 'register.php', 'checkout.php', 'profile.php', 
     'reset_password.php', 'forgot_password.php', 'payment.php', 'order_receipt.php',
     'auto_login.php', 'subscription_checkout.php', 'charity_payment.php', 'dev_login.php',
     'complete_profile.php', 'contract_acceptance.php', 'user_tickets.php', 'mock_payment_gateway.php'

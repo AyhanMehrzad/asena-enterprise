@@ -402,9 +402,32 @@ if (!empty($customSecondary) && preg_match('/^#[a-f0-9]{6}$/i', $customSecondary
     $theme['accent'] = $customSecondary;
 }
 
-// SEO & Meta
-$metaTitle = htmlspecialchars($site['site_title'] . (!empty($site['site_tagline']) ? ' - ' . $site['site_tagline'] : ''));
-$metaDesc = htmlspecialchars($site['meta_description'] ?: ($site['site_title'] . ' - وب‌سایت رسمی، خدمات تخصصی و نوبت‌دهی آنلاین.'));
+// SEO & Meta - Strictly enforce optimal length (Title: 40-60 chars, Desc: 70-160 chars)
+$rawTitle = trim($site['site_title'] ?? '');
+if (!empty($site['site_tagline']) && (mb_strlen($rawTitle . ' - ' . $site['site_tagline'], 'UTF-8') <= 60)) {
+    $rawTitle .= ' - ' . $site['site_tagline'];
+} elseif (mb_strlen($rawTitle . ' | آسنا', 'UTF-8') <= 60) {
+    $rawTitle .= ' | آسنا';
+}
+if (mb_strlen($rawTitle, 'UTF-8') > 60) {
+    $rawTitle = mb_substr($rawTitle, 0, 57, 'UTF-8') . '...';
+}
+$metaTitle = htmlspecialchars($rawTitle);
+
+$rawDesc = trim($site['meta_description'] ?? '');
+if (empty($rawDesc) || mb_strlen($rawDesc, 'UTF-8') < 70) {
+    $rawDesc = match($tenantType) {
+        'doctor' => ($site['site_title'] . '؛ خدمات تخصصی دامپزشکی، ویزیت، جراحی بافت نرم و ارتوپدی، واکسیناسیون و رزرو آنلاین نوبت حیوانات خانگی در آسنا.'),
+        'pharmacist' => ($site['site_title'] . '؛ مرجع تأمین داروهای تخصصی دامپزشکی، واکسن‌ها و مکمل‌های غذایی با استاندارد زنجیره سرد و ارسال سریع اکسپرس.'),
+        'seller' => ($site['site_title'] . '؛ هایپرمارکت تخصصی خرید غذای خشک، کنسرو، لوازم بهداشتی و ملزومات سگ و گربه با تضمین اصالت و ارسال سریع سراسری.'),
+        'organization' => ($site['site_title'] . '؛ بیمارستان و مرکز درمانی شبانه‌روزی دامپزشکی با تجهیزات جراحی، رادیولوژی دیجیتال، آزمایشگاه و بستری ۲۴ ساعته.'),
+        default => ($site['site_title'] . '؛ وب‌سایت رسمی، خدمات تخصصی و نوبت‌دهی آنلاین در پلتفرم جامع سلامت و خدمات حیوانات خانگی آسنا.')
+    };
+}
+if (mb_strlen($rawDesc, 'UTF-8') > 160) {
+    $rawDesc = mb_substr($rawDesc, 0, 157, 'UTF-8') . '...';
+}
+$metaDesc = htmlspecialchars($rawDesc);
 $siteLogo = !empty($site['logo_url']) ? $site['logo_url'] : 'assets/images/clinic-default-logo.svg';
 $asenaLogo = 'assets/images/logo.png';
 

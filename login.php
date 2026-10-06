@@ -489,26 +489,42 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </p>
 
             <!-- Feature Bento Highlights -->
-            <div class="grid grid-cols-2 gap-4">
-                <div class="bg-white/10 backdrop-blur-md p-5 rounded-2xl border border-white/15 hover:bg-white/15 transition-all">
-                    <div class="w-10 h-10 rounded-xl bg-primary-container/60 flex items-center justify-center mb-3 text-blue-200 border border-blue-400/20">
-                        <span class="material-symbols-outlined text-2xl">medical_services</span>
+            <div class="grid grid-cols-2 gap-3.5">
+                <div class="bg-white/10 backdrop-blur-md p-4 rounded-2xl border border-white/15 hover:bg-white/15 transition-all">
+                    <div class="w-9 h-9 rounded-xl bg-primary-container/60 flex items-center justify-center mb-2.5 text-blue-200 border border-blue-400/20">
+                        <span class="material-symbols-outlined text-xl">medical_services</span>
                     </div>
-                    <h3 class="font-bold text-white text-base mb-1">پرونده پزشکی یکپارچه</h3>
-                    <p class="text-xs text-blue-100/75 leading-relaxed">دسترسی دائم به سوابق واکسیناسیون، نسخ الکترونیک و آزمایش‌ها</p>
+                    <h3 class="font-bold text-white text-sm mb-1">پرونده سلامت یکپارچه</h3>
+                    <p class="text-[11px] text-blue-100/75 leading-relaxed">دسترسی دائمی به سوابق واکسیناسیون، نسخ الکترونیک و آزمایش‌های پت</p>
                 </div>
 
-                <div class="bg-white/10 backdrop-blur-md p-5 rounded-2xl border border-white/15 hover:bg-white/15 transition-all">
-                    <div class="w-10 h-10 rounded-xl bg-secondary-container/20 flex items-center justify-center mb-3 text-secondary-container border border-secondary-container/30">
-                        <span class="material-symbols-outlined text-2xl">event_available</span>
+                <div class="bg-white/10 backdrop-blur-md p-4 rounded-2xl border border-white/15 hover:bg-white/15 transition-all">
+                    <div class="w-9 h-9 rounded-xl bg-secondary-container/20 flex items-center justify-center mb-2.5 text-secondary-container border border-secondary-container/30">
+                        <span class="material-symbols-outlined text-xl">event_available</span>
                     </div>
-                    <h3 class="font-bold text-white text-base mb-1">نوبت‌دهی آنلاین ۲۴/۷</h3>
-                    <p class="text-xs text-blue-100/75 leading-relaxed">رزرو سریع ویزیت حضوری یا آنلاین با برترین دامپزشکان کشور</p>
+                    <h3 class="font-bold text-white text-sm mb-1">نوبت‌دهی آنلاین ۲۴/۷</h3>
+                    <p class="text-[11px] text-blue-100/75 leading-relaxed">رزرو سریع ویزیت حضوری یا آنلاین با برترین دامپزشکان کشور</p>
+                </div>
+
+                <div class="bg-white/10 backdrop-blur-md p-4 rounded-2xl border border-white/15 hover:bg-white/15 transition-all">
+                    <div class="w-9 h-9 rounded-xl bg-purple-500/20 flex items-center justify-center mb-2.5 text-purple-300 border border-purple-400/30">
+                        <span class="material-symbols-outlined text-xl">ac_unit</span>
+                    </div>
+                    <h3 class="font-bold text-white text-sm mb-1">داروخانه زنجیره سرد</h3>
+                    <p class="text-[11px] text-blue-100/75 leading-relaxed">ارسال ایمن و سریع داروها و واکسن‌ها با شرایط استاندارد ۲ تا ۸ درجه</p>
+                </div>
+
+                <div class="bg-white/10 backdrop-blur-md p-4 rounded-2xl border border-white/15 hover:bg-white/15 transition-all">
+                    <div class="w-9 h-9 rounded-xl bg-amber-500/20 flex items-center justify-center mb-2.5 text-amber-300 border border-amber-400/30">
+                        <span class="material-symbols-outlined text-xl">autorenew</span>
+                    </div>
+                    <h3 class="font-bold text-white text-sm mb-1">تحویل دوره‌ای اتوشیپ</h3>
+                    <p class="text-[11px] text-blue-100/75 leading-relaxed">تأمین منظم غذای خشک و ملزومات سگ و گربه با تخفیف‌های ویژه دوره‌ای</p>
                 </div>
             </div>
 
             <!-- Stats Bar -->
-            <div class="mt-10 pt-6 border-t border-white/10 flex items-center justify-between text-xs text-blue-200/80">
+            <div class="mt-8 pt-5 border-t border-white/10 flex items-center justify-between text-xs text-blue-200/80">
                 <div class="flex items-center gap-2">
                     <span class="material-symbols-outlined text-base text-secondary-container">verified_user</span>
                     <span>ضمانت پرداخت امن و تسویه رسمی پایا</span>
@@ -890,6 +906,56 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <span class="material-symbols-outlined text-sky-600 text-sm">pets</span>
                             <span>کاربر عادی</span>
                         </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Comprehensive Service Guide & FAQ (Enhanced for Search Engines & Users) -->
+            <div class="mt-8 pt-6 border-t border-slate-200/80 text-right space-y-3.5">
+                <div class="flex items-center gap-2 mb-1">
+                    <span class="material-symbols-outlined text-primary text-base">help_outline</span>
+                    <h3 class="text-xs font-black text-slate-800">راهنما و مزایای عضویت در اکوسیستم آسنا</h3>
+                </div>
+
+                <div class="space-y-2 text-xs text-slate-600 leading-relaxed">
+                    <div class="bg-slate-50 border border-slate-200/70 rounded-xl p-3">
+                        <h4 class="font-bold text-slate-900 mb-1 flex items-center gap-1.5 text-xs">
+                            <span class="material-symbols-outlined text-emerald-600 text-sm">verified</span>
+                            <span>پرونده سلامت الکترونیک و یادآور درمانی پت</span>
+                        </h4>
+                        <p class="text-[11px] text-slate-500 leading-normal">
+                            با عضویت در آسنا، سوابق واکسیناسیون، معاینات کلینیکی، نسخه‌های آنلاین و یادآورهای دوره‌ای دارویی پت خود را در یک پرونده یکپارچه، امن و همیشه در دسترس مدیریت فرمایید.
+                        </p>
+                    </div>
+
+                    <div class="bg-slate-50 border border-slate-200/70 rounded-xl p-3">
+                        <h4 class="font-bold text-slate-900 mb-1 flex items-center gap-1.5 text-xs">
+                            <span class="material-symbols-outlined text-blue-600 text-sm">local_shipping</span>
+                            <span>خرید دوره‌ای اتوشیپ و ارسال زنجیره سرد</span>
+                        </h4>
+                        <p class="text-[11px] text-slate-500 leading-normal">
+                            امکان زمان‌بندی تحویل خودکار ملزومات با تخفیف اختصاصی، پیگیری آنی سفارشات پت‌شاپ و ارسال ایمن داروهای یخچالی تحت شرایط استاندارد ۲ تا ۸ درجه سانتی‌گراد فراهم است.
+                        </p>
+                    </div>
+
+                    <div class="bg-slate-50 border border-slate-200/70 rounded-xl p-3">
+                        <h4 class="font-bold text-slate-900 mb-1 flex items-center gap-1.5 text-xs">
+                            <span class="material-symbols-outlined text-amber-600 text-sm">sms</span>
+                            <span>ورود سریع پیامکی (OTP) بدون رمز عبور</span>
+                        </h4>
+                        <p class="text-[11px] text-slate-500 leading-normal">
+                            تنها با وارد کردن شماره همراه، کد تأیید ۶ رقمی از طریق پیامک ارسال شده و بدون دغدغه فراموشی رمز عبور وارد می‌شوید. در صورت اولین ورود، حساب شما خودکار فعال می‌گردد.
+                        </p>
+                    </div>
+
+                    <div class="bg-slate-50 border border-slate-200/70 rounded-xl p-3">
+                        <h4 class="font-bold text-slate-900 mb-1 flex items-center gap-1.5 text-xs">
+                            <span class="material-symbols-outlined text-purple-600 text-sm">shield</span>
+                            <span>امنیت پرداخت و پشتیبانی شبانه‌روزی</span>
+                        </h4>
+                        <p class="text-[11px] text-slate-500 leading-normal">
+                            کلیه تبادلات مالی از طریق درگاه‌های امن شاپرک و تسویه رسمی پایا انجام می‌گیرد و تیم پشتیبانی تخصصی در تمامی ساعات شبانه‌روز پاسخگوی سوالات شماست.
+                        </p>
                     </div>
                 </div>
             </div>

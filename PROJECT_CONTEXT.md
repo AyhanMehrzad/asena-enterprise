@@ -1194,6 +1194,16 @@
       - کنترل طول عناوین و متاتگ‌های توصیفی (Title <= 60 chars و Description <= 160 chars) در هدر و قالب‌ها.
       - تکمیل شناسه و اتربیوت‌های `alt` تصاویر برای افزایش دسترس‌پذیری در [`booking.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/booking.php) و [`doctor/index.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/doctor/index.php).
 
+70. **رفع خطاهای گزارش ابزار ممیزی AryaSEO و ارتقای سئو فنی و محتوایی (AryaSEO Audit 100% Resolution):**
+    - **رفع خطای بحرانی Noindex مسیر سبد خرید (`/cart`):**
+      - حذف `'cart.php'` از آرایه `$noindex_pages` در [`includes/header.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/includes/header.php) جهت اجازه ایندکس با تگ کنونیکال تمیز `https://asena.company/cart`، عنوان استاندارد ۴۶ کاراکتری و متای توصیفی ۱۰۴ کاراکتری.
+    - **اصلاح هشدار طولانی بودن عناوین مایکروسایت‌های مستأجران (Titles > 60 chars):**
+      - بهینه‌سازی فرمول تولید `$metaTitle` در [`site.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/site.php) با اعمال سقف سخت‌گیرانه ۶۰ کاراکتر برای تمامی صفحات مستأجران (`dr-alavi`, `sina-pharmacy`, `petland-store`, `razi-hospital`) و تنظیم عناوین دقیق در بازه ۳۹ الی ۴۹ کاراکتر.
+    - **اصلاح هشدار کم‌حجم بودن محتوای صفحه لاگین (Thin Content < 300 words روی `/login`):**
+      - غنی‌سازی ساختار محتوایی [`login.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/login.php) با ۴ بنتوکارت معرفی اکوسیستم (پرونده سلامت EMR، نوبت‌دهی آنلاین ۲۴/۷، داروخانه زنجیره سرد، تحویل دوره‌ای اتوشیپ) و افزودن بخش سمانتیک «راهنما و مزایای عضویت در اکوسیستم آسنا» شامل توضیحات پرونده بالینی، ورود پیامکی OTP، امنیت پرداخت شاپرک و پنل همکاران، که حجم کلمات مفید صفحه را از ۱۷۳ به بیش از ۴۵۰ کلمه ارتقا داده و سقف ۳۰۰ کلمه را پشت سر گذاشت.
+    - **اصلاح پیشنهاد کوتاهی دیسکریپشن در مایکروسایت پت‌لند (Description < 70 chars):**
+      - افزایش طول متای توصیفی `petland-store` در [`includes/TenantSiteService.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/includes/TenantSiteService.php) به ۱۵۹ کاراکتر، تعریف مکانیزم فال‌بک هوشمند در [`site.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/site.php) برای تضمین حداقل ۷۰ کاراکتر در تمامی مایکروسایت‌ها، و تزریق دستور همگام‌سازی خودکار دیتابیس برای رکوردهای دمو.
+
 ---
 
 ## ۴. پروتکل ثبت تغییرات آینده (Maintenance Rule)
