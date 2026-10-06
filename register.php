@@ -15,9 +15,7 @@ require_once __DIR__ . '/includes/RoleVerificationService.php';
 // Initialize session and security
 App::boot();
 
-if (!headers_sent()) {
-    header('X-Robots-Tag: noindex, nofollow, noarchive');
-}
+
 
 $error = '';
 $success = '';
@@ -203,11 +201,32 @@ if (isset($_SESSION['reg_flow']) && $step === 1) {
 <head>
     <meta charset="utf-8"/>
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-    <meta name="robots" content="noindex, nofollow"/>
-    <title>ثبت‌نام و عضویت در آسنا</title>
-    <link rel="stylesheet" href="assets/css/tailwind.output.css?v=<?= time() ?>">
-    <link href="assets/css/material-symbols.css" rel="stylesheet"/>
-    <link href="assets/css/geist.css" rel="stylesheet"/>
+    <title>ثبت‌نام و عضویت در سامانه تخصصی | آسنا</title>
+    <meta name="description" content="عضویت و ثبت‌نام سریع در سامانه جامع خدمات دامپزشکی، داروخانه آنلاین و پت‌شاپ آسنا. دسترسی به پرونده سلامت، نوبت‌دهی آنلاین و سفارش دوره‌ای ملزومات پت."/>
+    <link rel="canonical" href="https://asena.company/register"/>
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1"/>
+
+    <!-- Open Graph & Social Cards -->
+    <meta property="og:title" content="ثبت‌نام و عضویت در سامانه تخصصی | آسنا"/>
+    <meta property="og:description" content="عضویت و ثبت‌نام سریع در سامانه جامع خدمات دامپزشکی، داروخانه آنلاین و پت‌شاپ آسنا. دسترسی به پرونده سلامت، نوبت‌دهی آنلاین و سفارش دوره‌ای ملزومات پت."/>
+    <meta property="og:url" content="https://asena.company/register"/>
+    <meta property="og:image" content="https://asena.company/assets/images/logo.png"/>
+    <meta property="og:type" content="website"/>
+
+    <!-- Structured Data (JSON-LD) -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "WebPage",
+        "name": "ثبت‌نام و عضویت در سامانه تخصصی | آسنا",
+        "description": "عضویت و ثبت‌نام سریع در سامانه جامع خدمات دامپزشکی، داروخانه آنلاین و پت‌شاپ آسنا.",
+        "url": "https://asena.company/register"
+    }
+    </script>
+
+    <link rel="stylesheet" href="assets/css/tailwind.output.css?v=2.2.1">
+    <link href="assets/css/material-symbols.css?v=2.2.1" rel="stylesheet"/>
+    <link href="assets/css/geist.css?v=2.2.1" rel="stylesheet"/>
     <style>
         .role-card {
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -661,6 +680,115 @@ if (isset($_SESSION['reg_flow']) && $step === 1) {
             </div>
         <?php endif; ?>
 
+        <!-- Comprehensive Service Guide & FAQ (Enhanced for Users & Search Engines) -->
+        <div class="mt-12 bg-white rounded-3xl p-6 sm:p-10 shadow-sm border border-slate-200/80 text-right space-y-6">
+            <div class="flex items-center gap-2.5 pb-4 border-b border-slate-100">
+                <span class="material-symbols-outlined text-sky-600 text-2xl">verified_user</span>
+                <div>
+                    <h2 class="text-base sm:text-lg font-black text-slate-900">راهنما و مزایای عضویت در زیست‌بوم جامع آسنا</h2>
+                    <p class="text-xs text-slate-500 mt-0.5">آسنا ارائه‌دهنده بستر یکپارچه نوبت‌دهی، EMR، داروخانه زنجیره سرد و پت‌شاپ تخصصی در ایران</p>
+                </div>
+            </div>
+
+            <!-- Bento Feature Guide -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs text-slate-600">
+                <div class="bg-slate-50 border border-slate-200/80 rounded-2xl p-4">
+                    <div class="flex items-center gap-2 mb-2 text-sky-700 font-bold text-sm">
+                        <span class="material-symbols-outlined text-lg">medical_services</span>
+                        <span>پرونده سلامت الکترونیک (EMR)</span>
+                    </div>
+                    <p class="text-[11px] text-slate-500 leading-relaxed mb-3">
+                        ثبت دائم سوابق واکسیناسیون، معاینات کلینیکی، تاریخچه جراحی، نسخه‌های الکترونیک و یادآورهای دارویی با دسترسی ۲۴ ساعته در سراسر کشور.
+                    </p>
+                    <a href="booking" class="text-sky-600 hover:text-sky-800 font-bold text-[11px] inline-flex items-center gap-1">
+                        <span>رزرو نوبت دکتر دامپزشک</span>
+                        <span class="material-symbols-outlined text-xs">arrow_back</span>
+                    </a>
+                </div>
+
+                <div class="bg-slate-50 border border-slate-200/80 rounded-2xl p-4">
+                    <div class="flex items-center gap-2 mb-2 text-emerald-700 font-bold text-sm">
+                        <span class="material-symbols-outlined text-lg">ac_unit</span>
+                        <span>داروخانه تخصصی با ارسال زنجیره سرد</span>
+                    </div>
+                    <p class="text-[11px] text-slate-500 leading-relaxed mb-3">
+                        تأمین بدون واسطه واکسن‌ها، مکمل‌ها و داروهای نایاب دامپزشکی با رعایت دقیق استاندارد دمایی ۲ تا ۸ درجه سانتی‌گراد و بسته‌بندی امن اکسپرس.
+                    </p>
+                    <a href="pharmacy" class="text-emerald-600 hover:text-emerald-800 font-bold text-[11px] inline-flex items-center gap-1">
+                        <span>مشاهده کاتالوگ داروخانه</span>
+                        <span class="material-symbols-outlined text-xs">arrow_back</span>
+                    </a>
+                </div>
+
+                <div class="bg-slate-50 border border-slate-200/80 rounded-2xl p-4">
+                    <div class="flex items-center gap-2 mb-2 text-amber-700 font-bold text-sm">
+                        <span class="material-symbols-outlined text-lg">autorenew</span>
+                        <span>تحویل دوره‌ای خودکار اتوشیپ (Autoship)</span>
+                    </div>
+                    <p class="text-[11px] text-slate-500 leading-relaxed mb-3">
+                        زمان‌بندی هوشمند تأمین غذای خشک، کنسرو، خاک گربه و ملزومات بهداشتی پت با تخفیف‌های ویژه باشگاه مشتریان آسنا و ارسال منظم سر موعد.
+                    </p>
+                    <a href="subscriptions" class="text-amber-600 hover:text-amber-800 font-bold text-[11px] inline-flex items-center gap-1">
+                        <span>سفارش دوره‌ای ملزومات پت</span>
+                        <span class="material-symbols-outlined text-xs">arrow_back</span>
+                    </a>
+                </div>
+
+                <div class="bg-slate-50 border border-slate-200/80 rounded-2xl p-4">
+                    <div class="flex items-center gap-2 mb-2 text-indigo-700 font-bold text-sm">
+                        <span class="material-symbols-outlined text-lg">calculate</span>
+                        <span>محاسبه‌گر کالری و رژیم استاندارد پت</span>
+                    </div>
+                    <p class="text-[11px] text-slate-500 leading-relaxed mb-3">
+                        تعیین دقیق میزان نیاز انرژی روزانه (MER) و گرم غذای خشک مصرفی سگ و گربه بر اساس سن، وزن و فعالیت طبق فرمول‌های جهانی FEDIAF و WSAVA.
+                    </p>
+                    <a href="calculator" class="text-indigo-600 hover:text-indigo-800 font-bold text-[11px] inline-flex items-center gap-1">
+                        <span>ورود به محاسبه‌گر هوشمند</span>
+                        <span class="material-symbols-outlined text-xs">arrow_back</span>
+                    </a>
+                </div>
+            </div>
+
+            <!-- FAQ Section -->
+            <div class="pt-4 border-t border-slate-150 space-y-3">
+                <h3 class="text-xs font-black text-slate-800 flex items-center gap-1.5">
+                    <span class="material-symbols-outlined text-slate-500 text-base">help</span>
+                    <span>پرسش‌های متداول عضویت و ثبت‌نام در آسنا</span>
+                </h3>
+
+                <div class="space-y-2 text-xs">
+                    <details class="bg-slate-50 border border-slate-200/70 rounded-xl p-3 cursor-pointer group">
+                        <summary class="font-bold text-slate-800 list-none flex items-center justify-between">
+                            <span>آیا ثبت‌نام و تشکیل پرونده سلامت پت در آسنا رایگان است؟</span>
+                            <span class="material-symbols-outlined text-sm text-slate-400 group-open:rotate-180 transition-transform">expand_more</span>
+                        </summary>
+                        <p class="text-[11px] text-slate-500 mt-2 leading-relaxed">
+                            بله، عضویت عمومی و ثبت اطلاعات بالینی حیوان خانگی در سامانه آسنا ۱۰۰٪ رایگان بوده و هیچ‌گونه هزینه اشتراک اولیه‌ای دریافت نمی‌شود.
+                        </p>
+                    </details>
+
+                    <details class="bg-slate-50 border border-slate-200/70 rounded-xl p-3 cursor-pointer group">
+                        <summary class="font-bold text-slate-800 list-none flex items-center justify-between">
+                            <span>فرآیند تأیید حساب پزشکان، داروخانه‌ها و کلینیک‌ها چقدر زمان می‌برد؟</span>
+                            <span class="material-symbols-outlined text-sm text-slate-400 group-open:rotate-180 transition-transform">expand_more</span>
+                        </summary>
+                        <p class="text-[11px] text-slate-500 mt-2 leading-relaxed">
+                            پس از بارگذاری مدارک هویتی و شماره نظام دامپزشکی، کارشناسان کنترل کیفی آسنا حداکثر ظرف مدت ۲۴ ساعت کاری مدارک را تطبیق داده و دسترسی کامل پنل فعال می‌گردد.
+                        </p>
+                    </details>
+
+                    <details class="bg-slate-50 border border-slate-200/70 rounded-xl p-3 cursor-pointer group">
+                        <summary class="font-bold text-slate-800 list-none flex items-center justify-between">
+                            <span>امنیت داده‌ها و حریم خصوصی چگونه تضمین می‌شود؟</span>
+                            <span class="material-symbols-outlined text-sm text-slate-400 group-open:rotate-180 transition-transform">expand_more</span>
+                        </summary>
+                        <p class="text-[11px] text-slate-500 mt-2 leading-relaxed">
+                            اطلاعات کاربران و پرونده‌های درمانی تحت نظارت استانداردهای رمزنگاری ایمن نگهداری شده و تمامی تراکنش‌های مالی مستقیماً از طریق شاپرک و درگاه‌های رسمی بانک مرکزی انجام می‌پذیرد.
+                        </p>
+                    </details>
+                </div>
+            </div>
+        </div>
     </main>
 
     <!-- Footer -->

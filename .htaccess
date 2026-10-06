@@ -87,6 +87,13 @@ Options -Indexes
     ExpiresByType application/xml "access plus 1 hour"
 </IfModule>
 
+<IfModule mod_headers.c>
+    # 1 Year Immutable Browser & CDN Cache for Static Assets & Fonts
+    <FilesMatch "\.(css|js|woff2|woff|ttf|svg|png|jpg|jpeg|webp|ico)$">
+        Header set Cache-Control "max-age=31536000, public, immutable"
+    </FilesMatch>
+</IfModule>
+
 # 7. Security Headers for Search Quality & User Trust & CDN Iran Compatibility
 <IfModule mod_headers.c>
     Header set X-Content-Type-Options "nosniff"

@@ -167,16 +167,16 @@ if (!isset($canonical_url)) {
 $effective_og_image = isset($og_image) ? (strpos($og_image, 'http') === 0 ? $og_image : "$proto://$host/" . ltrim($og_image, '/')) : "$proto://$host/assets/images/og-asena.png";
 $effective_og_type = $og_type ?? 'website';
 
-// Dynamic Robots Noindex Enforcement for Private/Stateful Pages and Query Permutations
+// Dynamic Robots Noindex Enforcement for Private/Stateful Pages
 $noindex_pages = [
-    'login.php', 'register.php', 'checkout.php', 'profile.php', 
+    'checkout.php', 'profile.php', 
     'reset_password.php', 'forgot_password.php', 'payment.php', 'order_receipt.php',
     'auto_login.php', 'subscription_checkout.php', 'charity_payment.php', 'dev_login.php',
     'complete_profile.php', 'contract_acceptance.php', 'user_tickets.php', 'mock_payment_gateway.php'
 ];
 
 if (!isset($meta_robots)) {
-    if (in_array($current_page, $noindex_pages, true) || !empty($_GET['redirect']) || !empty($_GET['return_url']) || !empty($_GET['return_to']) || !empty($_GET['auto_issue'])) {
+    if (in_array($current_page, $noindex_pages, true) || !empty($_GET['auto_issue'])) {
         $meta_robots = 'noindex, nofollow';
     } else {
         $meta_robots = 'index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1';
@@ -345,27 +345,32 @@ $effective_geo_icbm = $geo_icbm ?? '35.7350, 51.4110';
     </script>
     <?php endif; ?>
 
-    <!-- Fonts & Icons -->
-    <link href="assets/css/material-symbols.css" rel="stylesheet">
-    <link href="assets/css/vazirmatn.css" rel="stylesheet">
-    <link href="assets/css/geist.css" rel="stylesheet">
+    <?php $asset_v = '2.2.1'; ?>
+    <!-- Fonts & Icons (Self-Hosted with font-display: swap) -->
+    <link href="assets/css/vazirmatn.css?v=<?= $asset_v ?>" rel="stylesheet">
+    <link href="assets/css/geist.css?v=<?= $asset_v ?>" rel="stylesheet">
+    <link href="assets/css/material-symbols.css?v=<?= $asset_v ?>" rel="stylesheet">
     
-    <!-- Custom & Tailwind CSS -->
-    <link rel="stylesheet" href="assets/css/tailwind.output.css?v=<?php echo time(); ?>">
-    <link rel="stylesheet" href="assets/css/style.css?v=<?php echo time(); ?>">
-    <link rel="stylesheet" href="assets/css/enterprise-ui.css?v=<?php echo time(); ?>">
-    <link rel="stylesheet" href="assets/css/paw-loader.css?v=<?php echo time(); ?>">
+    <!-- Critical & Tailwind CSS -->
+    <link rel="stylesheet" href="assets/css/tailwind.output.css?v=<?= $asset_v ?>">
+    <link rel="stylesheet" href="assets/css/style.css?v=<?= $asset_v ?>">
+    <link rel="stylesheet" href="assets/css/enterprise-ui.css?v=<?= $asset_v ?>" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="assets/css/paw-loader.css?v=<?= $asset_v ?>" media="print" onload="this.media='all'">
+    <noscript>
+        <link rel="stylesheet" href="assets/css/enterprise-ui.css?v=<?= $asset_v ?>">
+        <link rel="stylesheet" href="assets/css/paw-loader.css?v=<?= $asset_v ?>">
+    </noscript>
     
-    <!-- Universal Lazy Loading & Progress Animation Engine -->
-    <script src="assets/js/paw-loader.js?v=<?php echo time(); ?>"></script>
-    <script src="assets/js/lazy-loader.js?v=<?php echo time(); ?>" defer></script>
-    <script src="assets/js/bidi-direction.js?v=<?php echo time(); ?>" defer></script>
-    <script src="assets/js/currency-formatter.js?v=<?php echo time(); ?>" defer></script>
+    <!-- Universal Lazy Loading & High-Performance Scripts (Deferred for Zero Render-Blocking) -->
+    <script src="assets/js/paw-loader.js?v=<?= $asset_v ?>" defer></script>
+    <script src="assets/js/lazy-loader.js?v=<?= $asset_v ?>" defer></script>
+    <script src="assets/js/bidi-direction.js?v=<?= $asset_v ?>" defer></script>
+    <script src="assets/js/currency-formatter.js?v=<?= $asset_v ?>" defer></script>
     
     <!-- Universal Live Cart Manager & CSRF Context -->
     <meta name="csrf-token" content="<?php echo csrf_token(); ?>">
     <script>window.ASENA_CSRF_TOKEN = "<?php echo csrf_token(); ?>";</script>
-    <script src="assets/js/cart-manager.js?v=<?php echo time(); ?>"></script>
+    <script src="assets/js/cart-manager.js?v=<?= $asset_v ?>" defer></script>
     <!-- PWA Service Worker Registration -->
     <script>
     if ('serviceWorker' in navigator) {
