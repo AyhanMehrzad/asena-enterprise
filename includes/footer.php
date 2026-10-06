@@ -10,7 +10,7 @@ if (basename($_SERVER['SCRIPT_FILENAME'] ?? '') === basename(__FILE__)) {
         <div class="flex flex-col lg:flex-row-reverse justify-between px-6 lg:px-10 py-10 lg:py-16 gap-10 lg:gap-16">
             <div class="flex flex-col gap-6 lg:w-1/3 text-center lg:text-right items-center lg:items-start">
                 <a href="./" class="flex items-center gap-3 group" dir="ltr">
-                    <img src="assets/images/logo.png" alt="لوگوی آسنا" class="w-9 h-9 object-contain group-hover:scale-105 transition-transform duration-200">
+                    <img src="assets/images/logo-sm.webp" alt="لوگوی آسنا" width="36" height="36" loading="lazy" decoding="async" class="w-9 h-9 object-contain group-hover:scale-105 transition-transform duration-200" onerror="this.src='assets/images/logo.png'">
                     <h3 class="text-3xl font-bold text-primary group-hover:text-secondary-container transition-colors">ASENA</h3>
                 </a>
                 <p class="text-sm text-on-surface-variant leading-relaxed">اولین اکوسیستم هوشمند مراقبت از حیوانات خانگی. تلفیقی از تخصص پزشکی، تکنولوژی روز و عشق به حیوانات.</p>
@@ -821,7 +821,7 @@ if (basename($_SERVER['SCRIPT_FILENAME'] ?? '') === basename(__FILE__)) {
     </script>
     
     <!-- Universal Wishlist Manager (Instant Optimistic UI + Micro-Animations + Toast Alerts) -->
-    <script src="assets/js/wishlist-manager.js?v=<?php echo time(); ?>"></script>
+    <script src="assets/js/wishlist-manager.js?v=2.2.1" defer></script>
 
     <?php require_once __DIR__ . '/cookie_consent.php'; ?>
 </body>

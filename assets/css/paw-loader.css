@@ -58,6 +58,7 @@ html.dark #asena-paw-loader {
 }
 
 #asena-paw-loader.loader-hidden {
+    display: none !important;
     opacity: 0 !important;
     visibility: hidden !important;
     transform: scale(0.96) !important;

@@ -682,7 +682,7 @@ if (function_exists('get_curated_recommendations')) {
                 </div>
                 
                 <a href="./" class="flex items-center gap-2 group" dir="ltr" title="صفحه اصلی آسنا">
-                    <img src="assets/images/logo.png" alt="لوگوی آسنا" class="w-7 h-7 lg:w-9 lg:h-9 object-contain drop-shadow group-hover:scale-105 transition-transform duration-200">
+                    <img src="assets/images/logo-sm.webp" alt="لوگوی آسنا" width="36" height="36" decoding="async" class="w-7 h-7 lg:w-9 lg:h-9 object-contain drop-shadow group-hover:scale-105 transition-transform duration-200" onerror="this.src='assets/images/logo.png'">
                     <span class="text-lg lg:text-2xl font-black text-white tracking-tight group-hover:text-secondary-container transition-colors">ASENA</span>
                 </a>
             </div>
@@ -694,7 +694,7 @@ if (function_exists('get_curated_recommendations')) {
         <div id="mobile-menu-panel" class="absolute top-0 right-0 h-full w-4/5 max-w-sm bg-surface-container-lowest shadow-2xl translate-x-full transition-transform duration-300 flex flex-col">
             <div class="p-6 border-b border-outline-variant/20 flex justify-between items-center bg-primary text-white">
                 <a href="./" class="flex items-center gap-2.5 text-white group">
-                    <img src="assets/images/logo.png" alt="لوگوی آسنا" class="w-7 h-7 object-contain group-hover:scale-105 transition-transform">
+                    <img src="assets/images/logo-sm.webp" alt="لوگوی آسنا" width="28" height="28" decoding="async" class="w-7 h-7 object-contain group-hover:scale-105 transition-transform" onerror="this.src='assets/images/logo.png'">
                     <h2 class="text-xl font-bold">منوی کاربری</h2>
                 </a>
                 <button type="button" onclick="toggleMobileMenu()" class="w-10 h-10 rounded-full hover:bg-white/10 flex items-center justify-center transition-colors">
@@ -1112,4 +1112,4 @@ if (function_exists('get_curated_recommendations')) {
             }
         });
     </script>
-    <script src="assets/js/notification-system.js?v=<?php echo time(); ?>"></script>
+    <script src="assets/js/notification-system.js?v=<?= $asset_v ?>" defer></script>

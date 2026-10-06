@@ -315,7 +315,7 @@ try {
                     <div class="flex items-center gap-3">
                         <div class="w-14 h-14 rounded-2xl bg-slate-100 overflow-hidden shrink-0 border border-slate-200">
                             <?php if (!empty($doc['image_url'])): ?>
-                                <img src="<?= htmlspecialchars($doc['image_url']) ?>" alt="<?= htmlspecialchars($doc['name']) ?>" class="w-full h-full object-cover" onerror="this.src='assets/images/vet-avatar.png'">
+                                <img src="<?= htmlspecialchars($doc['image_url']) ?>" alt="<?= htmlspecialchars($doc['name']) ?>" width="56" height="56" loading="lazy" decoding="async" class="w-full h-full object-cover" onerror="this.src='assets/images/vet-avatar.png'">
                             <?php else: ?>
                                 <div class="w-full h-full flex items-center justify-center text-slate-400">
                                     <span class="material-symbols-outlined text-2xl">person</span>
@@ -378,7 +378,7 @@ try {
                 <div class="space-y-2">
                     <div class="aspect-square rounded-2xl bg-slate-50 overflow-hidden relative border border-slate-100 flex items-center justify-center">
                         <?php if (!empty($prod['image_url'])): ?>
-                            <img src="<?= htmlspecialchars($prod['image_url']) ?>" alt="<?= htmlspecialchars($prod['name']) ?>" class="w-full h-full object-cover group-hover:scale-105 transition duration-300" onerror="this.src='assets/images/product-placeholder.png'">
+                            <img src="<?= htmlspecialchars($prod['image_url']) ?>" alt="<?= htmlspecialchars($prod['name']) ?>" width="260" height="260" loading="lazy" decoding="async" class="w-full h-full object-cover group-hover:scale-105 transition duration-300" onerror="this.src='assets/images/product-placeholder.png'">
                         <?php else: ?>
                             <span class="material-symbols-outlined text-4xl text-slate-300">inventory_2</span>
                         <?php endif; ?>
@@ -442,7 +442,7 @@ try {
                 <div class="space-y-4 relative z-10">
                     <!-- 3D Render Asset Showcase -->
                     <div class="w-full h-44 rounded-2xl bg-black/30 border border-emerald-500/20 overflow-hidden flex items-center justify-center p-2 relative shadow-inner">
-                        <img src="assets/images/tool-calculator-3d.webp" alt="محاسبه‌گر کالری و تغذیه پت ۳ بعدی" class="w-full h-full object-contain filter drop-shadow-[0_12px_20px_rgba(0,0,0,0.6)] group-hover:scale-110 group-hover:-rotate-2 transition-transform duration-500" onerror="this.src='assets/images/tool-calculator-3d.jpg'">
+                        <img src="assets/images/tool-calculator-3d.webp" alt="محاسبه‌گر کالری و تغذیه پت ۳ بعدی" width="176" height="176" loading="lazy" decoding="async" class="w-full h-full object-contain filter drop-shadow-[0_12px_20px_rgba(0,0,0,0.6)] group-hover:scale-110 group-hover:-rotate-2 transition-transform duration-500" onerror="this.src='assets/images/tool-calculator-3d.jpg'">
                         <span class="absolute top-2.5 right-2.5 px-2.5 py-1 rounded-lg bg-emerald-500/90 text-slate-950 font-black text-[10px] tracking-wide shadow-md flex items-center gap-1">
                             <span class="material-symbols-outlined text-xs">tune</span>
                             <span>استاندارد FEDIAF</span>
@@ -486,7 +486,7 @@ try {
                 <div class="space-y-4 relative z-10">
                     <!-- 3D Render Asset Showcase -->
                     <div class="w-full h-44 rounded-2xl bg-black/30 border border-blue-500/20 overflow-hidden flex items-center justify-center p-2 relative shadow-inner">
-                        <img src="assets/images/tool-drug-3d.webp" alt="سامانه پایش تداخلات دارویی ۳ بعدی" class="w-full h-full object-contain filter drop-shadow-[0_12px_20px_rgba(0,0,0,0.6)] group-hover:scale-110 group-hover:rotate-2 transition-transform duration-500" onerror="this.src='assets/images/tool-drug-3d.jpg'">
+                        <img src="assets/images/tool-drug-3d.webp" alt="سامانه پایش تداخلات دارویی ۳ بعدی" width="176" height="176" loading="lazy" decoding="async" class="w-full h-full object-contain filter drop-shadow-[0_12px_20px_rgba(0,0,0,0.6)] group-hover:scale-110 group-hover:rotate-2 transition-transform duration-500" onerror="this.src='assets/images/tool-drug-3d.jpg'">
                         <span class="absolute top-2.5 right-2.5 px-2.5 py-1 rounded-lg bg-blue-500/90 text-white font-black text-[10px] tracking-wide shadow-md flex items-center gap-1">
                             <span class="material-symbols-outlined text-xs">verified</span>
                             <span>پایش فارماکولوژی</span>
@@ -529,7 +529,7 @@ try {
                 <div class="space-y-4 relative z-10">
                     <!-- 3D Render Asset Showcase -->
                     <div class="w-full h-44 rounded-2xl bg-black/30 border border-orange-500/20 overflow-hidden flex items-center justify-center p-2 relative shadow-inner">
-                        <img src="assets/images/tool-autoship-3d.webp" alt="سرویس تحویل خودکار دوره‌ای ۳ بعدی" class="w-full h-full object-contain filter drop-shadow-[0_12px_20px_rgba(0,0,0,0.6)] group-hover:scale-110 group-hover:-rotate-2 transition-transform duration-500" onerror="this.src='assets/images/tool-autoship-3d.jpg'">
+                        <img src="assets/images/tool-autoship-3d.webp" alt="سرویس تحویل خودکار دوره‌ای ۳ بعدی" width="176" height="176" loading="lazy" decoding="async" class="w-full h-full object-contain filter drop-shadow-[0_12px_20px_rgba(0,0,0,0.6)] group-hover:scale-110 group-hover:-rotate-2 transition-transform duration-500" onerror="this.src='assets/images/tool-autoship-3d.jpg'">
                         <span class="absolute top-2.5 right-2.5 px-2.5 py-1 rounded-lg bg-[#fd8100] text-white font-black text-[10px] tracking-wide shadow-md flex items-center gap-1">
                             <span class="material-symbols-outlined text-xs">rocket_launch</span>
                             <span>مدل محبوب Chewy</span>
