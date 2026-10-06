@@ -131,7 +131,7 @@ $recentDonations = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     </div>
                 </div>
                 <?php else: ?>
-                    <?php foreach($campaigns as $camp): 
+                    <?php foreach($campaigns as $campIdx => $camp): 
                         $currentAmount = (int)($camp['calc_current_amount'] ?? $camp['current_amount']);
                         $goalAmount = (int)$camp['goal_amount'];
                         $percent = $goalAmount > 0 ? min(100, round(($currentAmount / $goalAmount) * 100)) : 0;
@@ -151,7 +151,11 @@ $recentDonations = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                         آمار زنده
                                     </span>
                                 </div>
+                                <?php if ($campIdx === 0): ?>
                                 <h1 class="text-2xl sm:text-3xl md:text-5xl lg:text-6xl font-black leading-snug sm:leading-tight"><?php echo htmlspecialchars($camp['title']); ?></h1>
+                                <?php else: ?>
+                                <h2 class="text-2xl sm:text-3xl md:text-5xl lg:text-6xl font-black leading-snug sm:leading-tight"><?php echo htmlspecialchars($camp['title']); ?></h2>
+                                <?php endif; ?>
                                 <p class="text-xs sm:text-base md:text-lg font-light opacity-90 leading-relaxed max-w-2xl line-clamp-2 sm:line-clamp-none"><?php echo nl2br(htmlspecialchars($camp['description'])); ?></p>
                                 
                                 <!-- Dynamic Progress Card -->

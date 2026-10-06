@@ -263,7 +263,7 @@ $effective_geo_icbm = $geo_icbm ?? '35.7350, 51.4110';
     <?php if (isset($page_schema) && !empty($page_schema)): ?>
     <!-- Page Specific Schema.org JSON-LD -->
     <script type="application/ld+json">
-    <?php echo $page_schema; ?>
+    <?php echo is_array($page_schema) ? json_encode($page_schema, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) : $page_schema; ?>
     </script>
     <?php else: ?>
     <!-- Master Platform Schema.org Graph (WebSite Sitelinks Searchbox, Veterinary Organization & Breadcrumbs) -->

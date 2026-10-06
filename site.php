@@ -423,7 +423,35 @@ $heroSecondaryHref = !empty($heroBlock['cta_secondary_url']) ? $heroBlock['cta_s
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title><?= $metaTitle ?></title>
     <meta name="description" content="<?= $metaDesc ?>">
+    <link rel="canonical" href="<?= htmlspecialchars($siteCanonicalUrl) ?>">
     <link rel="icon" href="<?= htmlspecialchars($siteLogo) ?>">
+
+    <!-- Open Graph & Social Cards -->
+    <meta property="og:title" content="<?= htmlspecialchars($metaTitle) ?>">
+    <meta property="og:description" content="<?= htmlspecialchars($metaDesc) ?>">
+    <meta property="og:url" content="<?= htmlspecialchars($siteCanonicalUrl) ?>">
+    <meta property="og:image" content="<?= htmlspecialchars(!empty($siteBanner) ? $siteBanner : 'https://asena.company/assets/images/logo.png') ?>">
+    <meta property="og:type" content="website">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="<?= htmlspecialchars($metaTitle) ?>">
+    <meta name="twitter:description" content="<?= htmlspecialchars($metaDesc) ?>">
+
+    <!-- Structured Data (JSON-LD) -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "LocalBusiness",
+        "name": <?= json_encode($site['site_title'], JSON_UNESCAPED_UNICODE) ?>,
+        "description": <?= json_encode($metaDesc, JSON_UNESCAPED_UNICODE) ?>,
+        "url": <?= json_encode($siteCanonicalUrl, JSON_UNESCAPED_UNICODE) ?>,
+        "telephone": <?= json_encode($vcardCleanPhone ?: '021-91000000', JSON_UNESCAPED_UNICODE) ?>,
+        "address": {
+            "@type": "PostalAddress",
+            "streetAddress": <?= json_encode($rawAddress, JSON_UNESCAPED_UNICODE) ?>,
+            "addressCountry": "IR"
+        }
+    }
+    </script>
     
     <!-- Fonts & Icons -->
     <link rel="stylesheet" href="assets/css/style.css">

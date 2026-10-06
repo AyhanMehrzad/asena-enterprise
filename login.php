@@ -363,6 +363,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta charset="utf-8"/>
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
     <title>ورود به حساب کاربری | آسنا</title>
+    <meta name="description" content="ورود به حساب کاربری پلتفرم سلامت و خدمات حیوانات خانگی آسنا. دسترسی به نوبت‌دهی آنلاین، داروخانه و فروشگاه."/>
+    <link rel="canonical" href="https://asena.company/login"/>
+
+    <!-- Open Graph & Social Cards -->
+    <meta property="og:title" content="ورود به حساب کاربری | آسنا"/>
+    <meta property="og:description" content="ورود به حساب کاربری پلتفرم سلامت و خدمات حیوانات خانگی آسنا. دسترسی به نوبت‌دهی آنلاین، داروخانه و فروشگاه."/>
+    <meta property="og:url" content="https://asena.company/login"/>
+    <meta property="og:image" content="https://asena.company/assets/images/logo.png"/>
+    <meta property="og:type" content="website"/>
+
+    <!-- Structured Data (JSON-LD) -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "WebPage",
+        "name": "ورود به حساب کاربری | آسنا",
+        "description": "ورود به حساب کاربری پلتفرم سلامت و خدمات حیوانات خانگی آسنا.",
+        "url": "https://asena.company/login"
+    }
+    </script>
     <link rel="stylesheet" href="assets/css/tailwind.output.css?v=<?= time() ?>">
     <link href="assets/css/material-symbols.css" rel="stylesheet"/>
     <link href="assets/css/geist.css" rel="stylesheet"/>

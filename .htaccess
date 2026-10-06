@@ -1,10 +1,11 @@
 RewriteEngine On
 
-# 0. Pharmacy & Websites Enterprise Route Handling
+# 0. Pharmacy, Websites & Tenant Site Enterprise Route Handling
 RewriteRule ^pharmacy/$ /pharmacy [R=301,L]
 RewriteRule ^pharmacy$ pharmacy.php [QSA,L]
 RewriteRule ^websites/$ /websites [R=301,L]
 RewriteRule ^websites$ websites.php [QSA,L]
+RewriteRule ^site/?$ site.php [QSA,L]
 
 # 0.1 Canonical Recovery 301 Redirects for Broken /product/ Relative Crawler Permutations
 RewriteRule ^product/?$ /shop [R=301,L]

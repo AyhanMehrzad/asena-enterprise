@@ -97,8 +97,13 @@
    - شناسایی دلیل خالی بودن ویژگی alt لوگوی اینماد در فوتر ([`includes/footer.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/includes/footer.php)) به دلیل ساختار کد دریافتی از اینماد؛ تعبیه فیلتر رجکس هوشمند برای تزریق الزامی `alt="نماد اعتماد الکترونیکی آسنا"`.
    - الصاق متن‌های جایگزین داینامیک و توصیفی به تصاویر تکمیل خودکار جستجوی زنده در [`includes/header.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/includes/header.php).
 4. **اصلاح تگ H1 در صفحه خیریه و کوتاه‌سازی عنوان صفحه ورود:**
-   - تبدیل تیترهای کمپین در [`charity.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/charity.php) از `<h2>` به `<h1>` استاندارد جهت رفع اخطار فقدان تگ H1 در سئو.
+   - تبدیل تیترهای کمپین در [`charity.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/charity.php) از `<h2>` به `<h1>` و تثبیت دقیقاً یک H1 منفرد روی اسلاید فعال جهت رفع اخطارهای عدم وجود یا تعدد تگ‌های H1.
    - کوتاه‌سازی عنوان صفحه ورود [`login.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/login.php) به ۲۵ کاراکتر (`ورود به حساب کاربری | آسنا`) جهت تطابق با سقف ۶۰ کاراکتری استانداردهای SERP گوگل.
+5. **ارتقای نمره سئو به ۹۵/۱۰۰ و رفع خطای ۵۰۰ میکروسایت‌های دمو و متاتگ‌های ورود:**
+   - همگام‌سازی متد `App::tenantSite()` در پروداکشن و ایجاد خودکار کلیه ۴ سایت دمو (`dr-alavi`, `sina-pharmacy`, `petland-store`, `razi-hospital`) در [`includes/TenantSiteService.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/includes/TenantSiteService.php).
+   - اصلاح پارامترهای `LIMIT` در کوئری‌های انبار، مقالات و نظرات با تبدیل مستقیم به فرمت صحیح عددی جهت سازگاری با آماده‌سازی نیتیو PDO در مای‌اس‌کیوال.
+   - تزریق تگ کانونیکال، اوپن‌گراف و اسکیمای JSON-LD اختصاصی به [`site.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/site.php) و [`login.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/login.php).
+   - اصلاح دلیمیتر رجکس مسیرها در [`includes/functions.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/includes/functions.php) و جلوگیری از اخطار آرایه در [`includes/header.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/includes/header.php).
 
 ### نسخه ۱.۰.۳۱ (اکتبر ۲۰۲۶ - تعبیه فیلدهای اختصاصی لینک آدرس، مسیریابی مستقیم با بلد و نشان، اتصال سرویس‌های لایو به asena.company و سیستم لینک‌دهی جامع در بخش‌های خدمات و بنتو)
 1. **فیلدهای اختصاصی لینک آدرس و مسیریابی مستقیم («مسیریابی با بلد / نشان»):**

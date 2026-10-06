@@ -86,7 +86,7 @@ function get_safe_return_url(string $default = 'profile'): string {
     }
 
     // Allow only legitimate relative paths with safe query characters
-    if (!preg_match('#^[a-zA-Z0-9_\-\./\?=&%#]+$#', $target)) {
+    if (!preg_match('~^[a-zA-Z0-9_\-\./\?=&%#]+$~', $target)) {
         return $default;
     }
 

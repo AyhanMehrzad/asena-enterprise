@@ -395,6 +395,35 @@ class TenantSiteService {
      */
     public function ensureDemoSites(): void {
         try {
+            // Ensure doctor demo (dr-alavi)
+            $doctor = $this->getSiteBySlug('dr-alavi');
+            if (!$doctor) {
+                $dLayout = $this->buildDefaultLayout('doctor', [
+                    'name' => 'کلینیک و مرکز جراحی تخصصی دکتر علوی',
+                    'tagline' => 'جراحی تخصصی بافت نرم، ارتوپدی و مراقبت‌های ویژه حیوانات خانگی',
+                    'phone' => '۰۲۱-۲۲۳۳۴۴۵۵',
+                    'emergency_phone' => '۰۹۱۲۱۱۱۴۴۵۵',
+                    'operating_hours' => 'شنبه تا پنجشنبه ۱۰:۰۰ الی ۲۱:۰۰ - جمعه‌ها با هماهنگی قبلی',
+                    'banner_url' => 'assets/images/presentation-dog.jpg',
+                    'theme_palette' => 'emerald'
+                ], 'enterprise', 'doctor');
+
+                $stmt = $this->pdo->prepare("
+                    INSERT INTO tenant_sites (
+                        tenant_type, tenant_id, slug, site_title, site_tagline,
+                        logo_url, banner_url, theme_palette, primary_color, secondary_color,
+                        font_family, layout_json, is_published, views_count, site_tier, meta_description, created_at, updated_at
+                    ) VALUES (
+                        'doctor', 1, 'dr-alavi', 'کلینیک و مرکز جراحی تخصصی دکتر علوی',
+                        'جراحی تخصصی بافت نرم، ارتوپدی و مراقبت‌های ویژه حیوانات خانگی',
+                        'assets/images/clinic-default-logo.svg', 'assets/images/presentation-dog.jpg', 'emerald', '#059669', '#fd8100',
+                        'Vazirmatn', ?, 1, 3120, 'enterprise', 'کلینیک و مرکز جراحی تخصصی دامپزشکی دکتر علوی، نوبت‌دهی آنلاین و مشاوره تخصصی',
+                        CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+                    )
+                ");
+                $stmt->execute([json_encode($dLayout, JSON_UNESCAPED_UNICODE)]);
+            }
+
             // Ensure pharmacist demo (sina-pharmacy)
             $pharmacy = $this->getSiteBySlug('sina-pharmacy');
             if (!$pharmacy) {
@@ -450,6 +479,35 @@ class TenantSiteService {
                     )
                 ");
                 $stmt->execute([json_encode($sLayout, JSON_UNESCAPED_UNICODE)]);
+            }
+
+            // Ensure organization demo (razi-hospital)
+            $org = $this->getSiteBySlug('razi-hospital');
+            if (!$org) {
+                $oLayout = $this->buildDefaultLayout('organization', [
+                    'name' => 'بیمارستان شبانه‌روزی دامپزشکی رازی',
+                    'tagline' => 'مرکز جامع جراحی، تصویربرداری، آزمایشگاه و بخش بستری و ICU حیوانات خانگی',
+                    'phone' => '۰۲۱-۴۴۵۵۶۶۷۷',
+                    'emergency_phone' => '۰۹۱۲۴۴۵۵۶۶۷',
+                    'operating_hours' => 'شبانه‌روزی و بدون تعطیلی (۲۴/۷)',
+                    'banner_url' => 'assets/images/clinic-banner.jpg',
+                    'theme_palette' => 'navy'
+                ], 'enterprise', 'organization');
+
+                $stmt = $this->pdo->prepare("
+                    INSERT INTO tenant_sites (
+                        tenant_type, tenant_id, slug, site_title, site_tagline,
+                        logo_url, banner_url, theme_palette, primary_color, secondary_color,
+                        font_family, layout_json, is_published, views_count, site_tier, meta_description, created_at, updated_at
+                    ) VALUES (
+                        'organization', 1, 'razi-hospital', 'بیمارستان شبانه‌روزی دامپزشکی رازی',
+                        'مرکز جامع جراحی، تصویربرداری، آزمایشگاه و بخش بستری و ICU حیوانات خانگی',
+                        'assets/images/logo.png', 'assets/images/clinic-banner.jpg', 'navy', '#001a48', '#fd8100',
+                        'Vazirmatn', ?, 1, 5410, 'enterprise', 'بیمارستان شبانه‌روزی دامپزشکی رازی با امکانات پیشرفته جراحی، آزمایشگاه و بستری شبانه‌روزی',
+                        CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+                    )
+                ");
+                $stmt->execute([json_encode($oLayout, JSON_UNESCAPED_UNICODE)]);
             }
         } catch (Throwable $e) {
             error_log("[TenantSiteService::ensureDemoSites] " . $e->getMessage());
@@ -1028,6 +1086,7 @@ class TenantSiteService {
      */
     public function getTenantProducts(string $tenantType, int $tenantId, int $limit = 8): array {
         $items = [];
+        $limit = max(1, (int)$limit);
         try {
             if ($tenantType === 'pharmacist') {
                 // Strictly fetch medicines belonging to this pharmacy/seller
@@ -1035,9 +1094,9 @@ class TenantSiteService {
                     SELECT id, name, brand, price, image_url, description, requires_prescription, stock, 'pharmacy' as item_source
                     FROM pharmacy_medicines
                     WHERE (organization_id = ? OR seller_id = ?) AND stock > 0
-                    ORDER BY id DESC LIMIT ?
+                    ORDER BY id DESC LIMIT {$limit}
                 ");
-                $stmt->execute([$tenantId, $tenantId, $limit]);
+                $stmt->execute([$tenantId, $tenantId]);
                 $items = $stmt->fetchAll(PDO::FETCH_ASSOC);
             } elseif ($tenantType === 'organization') {
                 // 1. Fetch items stocked in organization_inventory
@@ -1057,22 +1116,22 @@ class TenantSiteService {
                     LEFT JOIN pharmacy_medicines m ON (oi.item_type = 'medicine' AND oi.item_id = m.id)
                     LEFT JOIN products p ON (oi.item_type = 'product' AND oi.item_id = p.id)
                     WHERE oi.organization_id = ? AND oi.is_in_stock = 1 AND oi.stock > 0
-                    ORDER BY oi.id DESC LIMIT ?
+                    ORDER BY oi.id DESC LIMIT {$limit}
                 ");
-                $orgInvStmt->execute([$tenantId, $limit]);
+                $orgInvStmt->execute([$tenantId]);
                 $items = $orgInvStmt->fetchAll(PDO::FETCH_ASSOC);
 
                 // 2. Also fetch any products directly assigned to this organization
                 if (count($items) < $limit) {
-                    $rem = $limit - count($items);
+                    $rem = max(1, $limit - count($items));
                     $prodStmt = $this->pdo->prepare("
                         SELECT id, name, price, COALESCE(image_url, image, 'assets/images/placeholders/placeholder-product.svg') as image_url, 
                                description, category, stock, 0 as requires_prescription, 'product' as item_source
                         FROM products
                         WHERE organization_id = ? AND stock > 0
-                        ORDER BY id DESC LIMIT ?
+                        ORDER BY id DESC LIMIT {$rem}
                     ");
-                    $prodStmt->execute([$tenantId, $rem]);
+                    $prodStmt->execute([$tenantId]);
                     $directProds = $prodStmt->fetchAll(PDO::FETCH_ASSOC);
 
                     $existingKeys = [];
@@ -1094,9 +1153,9 @@ class TenantSiteService {
                            description, category, stock, 0 as requires_prescription, 'product' as item_source
                     FROM products
                     WHERE (seller_id = ? OR organization_id = ?) AND stock > 0
-                    ORDER BY id DESC LIMIT ?
+                    ORDER BY id DESC LIMIT {$limit}
                 ");
-                $stmt->execute([$tenantId, $tenantId, $limit]);
+                $stmt->execute([$tenantId, $tenantId]);
                 $items = $stmt->fetchAll(PDO::FETCH_ASSOC);
             }
         } catch (Throwable $e) {
@@ -1256,15 +1315,15 @@ class TenantSiteService {
      */
     public function getTenantArticles(int $limit = 3): array {
         $articles = [];
+        $limit = max(1, (int)$limit);
         try {
-            $stmt = $this->pdo->prepare("
+            $stmt = $this->pdo->query("
                 SELECT id, slug, title, short_desc, category_name, read_time, created_at
                 FROM blog_posts
                 WHERE status = 'published'
-                ORDER BY id DESC LIMIT ?
+                ORDER BY id DESC LIMIT {$limit}
             ");
-            $stmt->execute([$limit]);
-            $articles = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            $articles = $stmt ? $stmt->fetchAll(PDO::FETCH_ASSOC) : [];
         } catch (Throwable $e) {}
 
         if (empty($articles)) {
@@ -1308,15 +1367,16 @@ class TenantSiteService {
      */
     public function getTenantReviews(string $tenantType, int $tenantId, int $limit = 3): array {
         $reviews = [];
+        $limit = max(1, (int)$limit);
         try {
             $stmt = $this->pdo->prepare("
                 SELECT r.*, u.name as user_name
                 FROM reviews r
                 LEFT JOIN users u ON r.user_id = u.id
                 WHERE r.target_type = ? AND r.target_id = ?
-                ORDER BY r.id DESC LIMIT ?
+                ORDER BY r.id DESC LIMIT {$limit}
             ");
-            $stmt->execute([$tenantType, $tenantId, $limit]);
+            $stmt->execute([$tenantType, $tenantId]);
             $reviews = $stmt->fetchAll(PDO::FETCH_ASSOC);
         } catch (Throwable $e) {}
 
