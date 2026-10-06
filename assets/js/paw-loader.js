@@ -10,8 +10,7 @@
 (function() {
     'use strict';
 
-    const isAuditBot = /Lighthouse|Googlebot|PageSpeed|Chrome-Lighthouse|GTmetrix|AryaSEO|HeadlessChrome/i.test(navigator.userAgent) || navigator.webdriver;
-    const ANIMATION_MIN_MS = isAuditBot ? 0 : 350; // Snappy dismissal for high Core Web Vitals (FCP/LCP)
+    const ANIMATION_MIN_MS = 0; // Immediate dismissal on initial render across all devices for sub-second FCP/LCP
     const pageStartTime = performance.now();
 
     // -------------------------------------------------------------
@@ -30,6 +29,7 @@
     const AsenaProgress = {
         start: function() {
             if (!topBar) return;
+            topBar.style.display = 'block';
             topBar.classList.remove('bar-hidden');
             currentProgress = 25;
             topBar.style.width = currentProgress + '%';
@@ -54,14 +54,15 @@
             setTimeout(function() {
                 topBar.classList.add('bar-hidden');
                 setTimeout(function() {
+                    topBar.style.display = 'none';
                     topBar.style.width = '0%';
                     currentProgress = 0;
-                }, 350);
-            }, 200);
+                }, 250);
+            }, 150);
         }
     };
     window.AsenaProgress = AsenaProgress;
-    AsenaProgress.start();
+    // Note: AsenaProgress.start() is not run automatically on initial load to avoid layout shifts.
 
     // -------------------------------------------------------------
     // 2. Liquid Paw Loader Controller

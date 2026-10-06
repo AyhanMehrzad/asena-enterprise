@@ -78,10 +78,10 @@ $gradId = 'serverPawGrad_' . bin2hex(random_bytes(4));
 $loaderTitle = 'سامانه مراکز و بیمارستان‌های دامپزشکی آسنا';
 ?>
 <!-- Top Turbo Progress Bar -->
-<div id="asena-top-bar"></div>
+<div id="asena-top-bar" class="bar-hidden" style="position: fixed; top: 0; left: 0; width: 0; height: 3px; display: none; z-index: 999999; pointer-events: none;"></div>
 
 <!-- Signature Liquid Paw Loader Splash (Hidden by default for instant FCP/LCP; activated via window.AsenaLoader.show()) -->
-<div id="asena-paw-loader" class="loader-hidden" role="dialog" aria-label="در حال بارگذاری آسنا">
+<div id="asena-paw-loader" class="loader-hidden" style="display: none !important;" role="dialog" aria-label="در حال بارگذاری آسنا">
     <div class="paw-loader-card">
         <div class="paw-svg-container" style="box-shadow: 0 10px 25px -5px rgba(2, 132, 199, 0.25);">
             <svg viewBox="<?= $chosenAnimal['viewBox'] ?>" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
