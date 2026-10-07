@@ -3,6 +3,11 @@ if (basename($_SERVER['SCRIPT_FILENAME'] ?? '') === basename(__FILE__)) {
     http_response_code(403);
     exit('Direct access forbidden');
 }
+
+if (!isset($has_special_role)) {
+    require_once __DIR__ . '/AuthGuard.php';
+    $has_special_role = AuthGuard::hasSpecialRole(($pdo ?? null) instanceof PDO ? $pdo : null);
+}
 ?>
 <?php if (empty($hideMarketingFooter)): ?>
     <!-- Footer -->
@@ -15,7 +20,7 @@ if (basename($_SERVER['SCRIPT_FILENAME'] ?? '') === basename(__FILE__)) {
                 </a>
                 <p class="text-sm text-on-surface-variant leading-relaxed">اولین اکوسیستم هوشمند مراقبت از حیوانات خانگی. تلفیقی از تخصص پزشکی، تکنولوژی روز و عشق به حیوانات.</p>
                 <?php 
-                $footerSupportPhone = ($pdo instanceof PDO) ? get_setting($pdo, 'support_phone_fixed', '02191000000') : '02191000000';
+                $footerSupportPhone = (($pdo ?? null) instanceof PDO) ? get_setting($pdo, 'support_phone_fixed', '02191000000') : '02191000000';
                 ?>
                 <div class="flex gap-4">
                     <a class="w-12 h-12 rounded-2xl bg-white shadow-sm flex items-center justify-center text-primary hover:bg-primary-container hover:text-white transition-colors" href="#" title="اشتراک‌گذاری">
@@ -42,10 +47,12 @@ if (basename($_SERVER['SCRIPT_FILENAME'] ?? '') === basename(__FILE__)) {
                         <a class="text-xs text-on-surface-variant hover:text-secondary-container transition-colors" href="/pharmacy">داروخانه و مکمل‌ها</a>
                         <a class="text-xs text-on-surface-variant hover:text-secondary-container transition-colors" href="/booking">نوبت‌دهی کلینیک و گرومینگ</a>
                         <a class="text-xs text-on-surface-variant hover:text-secondary-container transition-colors" href="/subscriptions">سفارش خودکار Autoship</a>
+                        <?php if (!empty($has_special_role)): ?>
                         <a class="text-xs text-on-surface-variant hover:text-secondary-container transition-colors font-bold text-primary flex items-center justify-center sm:justify-start gap-1" href="/websites">
                             <span class="material-symbols-outlined text-[15px] text-[#fd8100]">web</span>
                             سفارش وب‌سایت اختصاصی
                         </a>
+                        <?php endif; ?>
                     </nav>
                 </div>
                 <div class="flex flex-col gap-4">

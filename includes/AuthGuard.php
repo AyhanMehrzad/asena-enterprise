@@ -9,7 +9,32 @@ require_once __DIR__ . '/SecurityMiddleware.php';
 require_once __DIR__ . '/ContractService.php';
 
 class AuthGuard {
+    public const SPECIAL_ROLES = [
+        'admin',
+        'superadmin',
+        'doctor',
+        'organization',
+        'organization_manager',
+        'pharmacist',
+        'pharmacy',
+        'seller',
+        'clinic',
+    ];
+
     private static ?array $cachedUser = null;
+
+    /**
+     * Check if current user has a special provider/business/admin role
+     */
+    public static function hasSpecialRole(?PDO $pdo = null): bool {
+        self::ensureSession();
+        $role = $_SESSION['user_role'] ?? $_SESSION['role'] ?? null;
+        if (empty($role) && !empty($_SESSION['user_id'])) {
+            $u = self::user($pdo);
+            $role = $u['role'] ?? null;
+        }
+        return !empty($role) && in_array($role, self::SPECIAL_ROLES, true);
+    }
 
     /**
      * Ensure session is started with strict security flags

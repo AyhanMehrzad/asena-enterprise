@@ -1226,6 +1226,17 @@
       - غنی‌سازی ساختار محتوایی [`login.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/login.php) با ۴ بنتوکارت معرفی اکوسیستم (پرونده سلامت EMR، نوبت‌دهی آنلاین ۲۴/۷، داروخانه زنجیره سرد، تحویل دوره‌ای اتوشیپ) و افزودن بخش سمانتیک «راهنما و مزایای عضویت در اکوسیستم آسنا» شامل توضیحات پرونده بالینی، ورود پیامکی OTP، امنیت پرداخت شاپرک و پنل همکاران، که حجم کلمات مفید صفحه را از ۱۷۳ به بیش از ۴۵۰ کلمه ارتقا داده و سقف ۳۰۰ کلمه را پشت سر گذاشت.
     - **اصلاح پیشنهاد کوتاهی دیسکریپشن در مایکروسایت پت‌لند (Description < 70 chars):**
       - افزایش طول متای توصیفی `petland-store` در [`includes/TenantSiteService.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/includes/TenantSiteService.php) به ۱۵۹ کاراکتر، تعریف مکانیزم فال‌بک هوشمند در [`site.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/site.php) برای تضمین حداقل ۷۰ کاراکتر در تمامی مایکروسایت‌ها، و تزریق دستور همگام‌سازی خودکار دیتابیس برای رکوردهای دمو.
+71. **محدودسازی پیوند و دسترسی سفارش وب‌سایت به نقش‌های ویژه سازمانی و همکاران (Role-Based Website Ordering Visibility):**
+    - **تعریف نقش‌های ویژه در محافظ مرکزی احراز هویت ([`includes/AuthGuard.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/includes/AuthGuard.php)):**
+      - تعریف ثابت `AuthGuard::SPECIAL_ROLES` شامل (`admin`, `superadmin`, `doctor`, `organization`, `organization_manager`, `pharmacist`, `pharmacy`, `seller`, `clinic`).
+      - پیاده‌سازی متد `AuthGuard::hasSpecialRole()` جهت بررسی بلادرنگ نشست یا اعتبارسنجی کاربر جاری در دیتابیس.
+    - **پالایش هدر دسکتاپ، منوی ابزارها، دراور موبایل و فوتر سایت ([`includes/header.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/includes/header.php), [`includes/footer.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/includes/footer.php)):**
+      - حذف کامل دکمه و لینک «سفارش سایت اختصاصی» از صفحه اصلی (`index.php`) و هدر سراسری برای کاربران عادی (پت‌اولیا) و بازدیدکنندگان عمومی (مهمان).
+      - نمایش شرطی پیوند تنها برای همکاران تجاری و دارندگان نقش‌های تخصصی (`$has_special_role`).
+    - **محافظت از صفحه کاتالوگ و خرید وب‌سایت ([`websites.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/websites.php)):**
+      - هدایت خودکار کاربران عادی لاگین‌شده (`role === 'user'`) به صفحه اصلی و مهمانان به صفحه لاگین با حفظ بازگشت امن (`return_url`).
+    - **طراحی و اجرای تست جامع بررسی دسترسی و دیده‌شدن بر اساس نقش ([`tests/test_website_special_role_visibility.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/tests/test_website_special_role_visibility.php)):**
+      - پاس شدن ۱۰۰٪ ۱۹ آزمون اعتبارسنجی وضعیت‌های کاربری مهمان، عادی، پزشک، داروساز، فروشنده و مدیر در هدر و فوتر.
 
 ---
 

@@ -13,6 +13,19 @@
 require_once __DIR__ . '/includes/db.php';
 require_once __DIR__ . '/includes/App.php';
 require_once __DIR__ . '/includes/functions.php';
+require_once __DIR__ . '/includes/AuthGuard.php';
+
+// Only allow users with special roles (doctors, pharmacists, sellers, clinics, admins)
+if (php_sapi_name() !== 'cli' && empty($GLOBALS['IS_TEST_SUITE'])) {
+    if (!AuthGuard::hasSpecialRole($pdo ?? null)) {
+        if (!empty($_SESSION['user_id'])) {
+            safe_redirect('/index.php');
+        } else {
+            safe_redirect('/login.php?return_url=' . urlencode('/websites'));
+        }
+        exit;
+    }
+}
 
 $page_title = 'سفارش و خرید وب‌سایت اختصاصی دامپزشکی، داروخانه و پت‌شاپ | آسنا';
 $page_desc = 'ساخت فوری وب‌سایت مستقل و حرفه‌ای متناسب با حوزه فعالیت شما: ویژه پزشکان، داروخانه‌ها، پت‌شاپ‌ها و بیمارستان‌های دامپزشکی، متصل به نوبت‌دهی و درگاه شاپرک.';
