@@ -178,8 +178,20 @@ if (!isset($has_special_role)) {
     <!-- Autoship Web Worker Trigger (Poor Man's Cron) -->
     <script>
         // Trigger the autoship worker asynchronously. 
-        // It checks its own loc        <!-- 1. خانه (Home) -->
-        <a href="/" class="bottom-nav-link <?php echo $current_page === 'index.php' ? 'active' : ''; ?>">
+        // It checks its own lock file so it only actually runs once a day.
+        fetch('actions/autoship_worker.php', { method: 'POST' }).catch(() => {});
+    </script>
+
+    <!-- Ambient Offline Network Resilience Strip -->
+    <div id="offline-status-strip" role="status" aria-live="polite">
+        <span class="material-symbols-outlined text-sm text-amber-400">cloud_off</span>
+        <span>شما در وضعیت آفلاین هستید - اطلاعات پرونده سلامت و کش محلی در دسترس است</span>
+    </div>
+
+    <!-- Digikala-Style 5-Tab Mobile Bottom Navigation Bar -->
+    <nav class="mobile-bottom-nav" id="mobileBottomNavBar" role="navigation" aria-label="ناوبری اصلی موبایل">
+        <!-- 1. خانه (Home) -->
+        <a href="/" class="bottom-nav-link <?php echo in_array($current_page, ['index.php', 'index', '']) ? 'active' : ''; ?>">
             <span class="material-symbols-outlined">home</span>
             <span>خانه</span>
         </a>
@@ -191,7 +203,7 @@ if (!isset($has_special_role)) {
         </a>
 
         <!-- 3. سبد خرید (Cart with Live Counter Badge) -->
-        <a href="/cart" class="bottom-nav-link <?php echo ($current_page === 'cart.php') ? 'active' : ''; ?>">
+        <a href="/cart" class="bottom-nav-link <?php echo in_array($current_page, ['cart.php', 'cart']) ? 'active' : ''; ?>">
             <div class="relative flex items-center justify-center">
                 <span class="material-symbols-outlined">shopping_cart</span>
                 <span id="mobile-nav-cart-badge" class="nav-cart-badge cart-badge-count <?php echo (!empty($cart_count) && $cart_count > 0) ? '' : 'hidden'; ?>"><?php echo $cart_count ?? 0; ?></span>
@@ -200,26 +212,13 @@ if (!isset($has_special_role)) {
         </a>
 
         <!-- 4. خدمات و پزشکان (Services / Booking) -->
-        <a href="/booking" class="bottom-nav-link <?php echo in_array($current_page, ['booking.php', 'organizations.php']) ? 'active' : ''; ?>">
+        <a href="/booking" class="bottom-nav-link <?php echo in_array($current_page, ['booking.php', 'organizations.php', 'booking', 'organizations']) ? 'active' : ''; ?>">
             <span class="material-symbols-outlined">medical_services</span>
             <span>خدمات پزشکان</span>
         </a>
 
         <!-- 5. آسنای من (My Asena / Profile) -->
-        <a href="<?php echo isset($_SESSION['user_id']) ? '/profile' : '/login'; ?>" class="bottom-nav-link <?php echo in_array($current_page, ['profile.php', 'profile_settings.php', 'login.php', 'rewards.php', 'wishlist.php']) ? 'active' : ''; ?>">
-            <span class="material-symbols-outlined">person</span>
-            <span>آسنای من</span>
-        </a>span>سبد خرید</span>
-        </a>
-
-        <!-- 4. خدمات و پزشکان (Services / Booking) -->
-        <a href="booking" class="bottom-nav-link <?php echo in_array($current_page, ['booking.php', 'organizations.php']) ? 'active' : ''; ?>">
-            <span class="material-symbols-outlined">medical_services</span>
-            <span>خدمات پزشکان</span>
-        </a>
-
-        <!-- 5. آسنای من (My Asena / Profile) -->
-        <a href="<?php echo isset($_SESSION['user_id']) ? 'profile' : 'login'; ?>" class="bottom-nav-link <?php echo in_array($current_page, ['profile.php', 'profile_settings.php', 'login.php', 'rewards.php', 'wishlist.php']) ? 'active' : ''; ?>">
+        <a href="<?php echo isset($_SESSION['user_id']) ? '/profile' : '/login'; ?>" class="bottom-nav-link <?php echo in_array($current_page, ['profile.php', 'profile_settings.php', 'login.php', 'rewards.php', 'wishlist.php', 'profile', 'login', 'rewards', 'wishlist']) ? 'active' : ''; ?>">
             <span class="material-symbols-outlined">person</span>
             <span>آسنای من</span>
         </a>

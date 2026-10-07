@@ -1237,6 +1237,13 @@
       - هدایت خودکار کاربران عادی لاگین‌شده (`role === 'user'`) به صفحه اصلی و مهمانان به صفحه لاگین با حفظ بازگشت امن (`return_url`).
     - **طراحی و اجرای تست جامع بررسی دسترسی و دیده‌شدن بر اساس نقش ([`tests/test_website_special_role_visibility.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/tests/test_website_special_role_visibility.php)):**
       - پاس شدن ۱۰۰٪ ۱۹ آزمون اعتبارسنجی وضعیت‌های کاربری مهمان، عادی، پزشک، داروساز، فروشنده و مدیر در هدر و فوتر.
+72. **احیا و ترمیم نوار ناوبری ۵ زبانه موبایل و وب‌اپلیکیشن پیش‌رونده (Mobile PWA Bottom Navigation Bar Restoration):**
+    - **اصلاح باگ حیاتی تگ اسکریپت باز و گم‌شدن المان ناوبری در فوتر ([`includes/footer.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/includes/footer.php)):**
+      - رفع شکستگی کدهای اسکریپت ورکر اتوشیپ و بستن معتبر تگ `</script>`.
+      - احیای تگ اصلی `<nav class="mobile-bottom-nav" id="mobileBottomNavBar">` و بازگرداندن نوار ظریف پایش آفلاین (`#offline-status-strip`).
+      - پاکسازی کدهای شکسته و تکراری تب‌های ۴ و ۵ و اعتبارسنجی هایپرلینک‌های ریشه (`/`, `/shop`, `/cart`, `/booking`, `/profile`).
+    - **طراحی و اجرای تست جامع بررسی ساختار نوار ناوبری موبایل ([`tests/test_mobile_pwa_bottom_nav.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/tests/test_mobile_pwa_bottom_nav.php)):**
+      - پاس شدن ۱۰۰٪ ۱۰ آزمون صحه‌گذاری المان ناوبری شناور، نوار وضعیت آفلاین، ۵ زبانه اصلی، باتم شیت دسته‌بندی‌ها و استقلال کامل از تگ‌های جاوااسکریپت.
 
 ---
 
