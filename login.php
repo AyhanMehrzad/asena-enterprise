@@ -862,7 +862,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </a>
             </div>
 
-            <!-- Developer Quick Switch Pill & 1-Click Role Switcher -->
+            <?php if (!empty($_GET['dev']) || !empty($_GET['debug'])): ?>
+            <!-- Developer Quick Switch Pill & 1-Click Role Switcher (Hidden from regular users, accessible via ?dev=1 or direct auto_login.php) -->
             <div class="mt-8 text-center space-y-3">
                 <div class="flex items-center justify-center gap-2">
                     <a href="auto_login.php<?= !empty($returnUrl) ? '?return_url=' . urlencode($returnUrl) : '' ?>" class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 hover:text-primary text-[11px] font-bold transition-all border border-slate-200/80 shadow-2xs">
@@ -909,6 +910,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </div>
                 </div>
             </div>
+            <?php endif; ?>
 
             <!-- Comprehensive Service Guide & FAQ (Enhanced for Search Engines & Users) -->
             <div class="mt-8 pt-6 border-t border-slate-200/80 text-right space-y-3.5">

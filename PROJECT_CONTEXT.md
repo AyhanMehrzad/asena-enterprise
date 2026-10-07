@@ -1251,6 +1251,11 @@
       - بازگرداندن فایل کامل و مرجع فونت خودمیزبان گوگل (`kJEPBvYX7BgnkSrUwT8OhrdQw4oELdPIeeII9v6oDMzBwG-RpA6RzaxHMPdY40KH8nGzv3fzfVJO1Q.woff2`) دارای تمامی ۴۲۶۸ لیگاچر رسمی در [`assets/css/material-symbols.css`](file:///opt/lampp/htdocs/asena/asena-enterprise/assets/css/material-symbols.css) و بازنویسی نسخه ساب‌ست با فونت معتبر.
       - به‌روزرسانی پیش‌بارگذاری فونت (Preload) در [`includes/header.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/includes/header.php) و ارتقای متغیر کش‌باستر `$asset_v = '2.2.2'` جهت نوسازی آنی کش مرورگر کاربران.
 
+74. **پالایش فرم ورود و مخفی‌سازی سوئیچ سریع توسعه‌دهندگان از دید کاربران عادی ([`login.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/login.php)):**
+    - **حذف دکمه‌های «ورود ۱-کلیک» و «Auto-Login Hub» از دید عمومی:**
+      - پیوندها و دراور سوئیچ سریع از نمای پیش‌فرض صفحه ورود حذف و مشروط به ارسال پارامتر تستی `?dev=1` یا `?debug=1` شدند تا تجربه کاربری تمیز و بدون سردرگمی برای مراجعین عادی حفظ شود.
+      - کلیه مسیرها، اندپوینت‌ها و قابلیت‌های هاب توسعه‌دهندگان در [`auto_login.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/auto_login.php) و [`dev_login.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/dev_login.php) به‌صورت کامل و دست‌نخورده جهت استفاده تیم فنی و تست‌ها در دسترس باقی ماندند.
+
 ---
 
 ## ۴. پروتکل ثبت تغییرات آینده (Maintenance Rule)
