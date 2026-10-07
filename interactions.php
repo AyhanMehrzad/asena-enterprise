@@ -4,12 +4,6 @@
  * سامانه هوشمند پایش تداخلات دارویی و منع مصرف حیوانات خانگی با هوش مصنوعی بالینی
  */
 
-// Route to partner portal if accessed from partner/SMS context
-if (isset($_GET['tab']) || isset($_GET['portal']) || isset($_POST['send_direct_sms']) || (isset($_POST['action']) && in_array($_POST['action'], ['send_direct_sms', 'purchase_sms_package', 'purchase_sms_gateway', 'save_bank_settings'], true))) {
-    require_once __DIR__ . '/partner_interactions.php';
-    exit;
-}
-
 $page_title = "پایشگر هوشمند تداخلات دارویی و منع مصرف پت | هوش مصنوعی آسنا";
 $page_description = "بررسی بالینی هم‌پوشانی داروها، مکمل‌ها و موارد منع مصرف در سگ، گربه، اسب و پرندگان با هوش مصنوعی بر اساس رفرنس‌های جهانی دامپزشکی Plumb's و BSAVA.";
 

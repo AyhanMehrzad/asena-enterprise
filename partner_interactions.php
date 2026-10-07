@@ -58,103 +58,12 @@ if (!$wallet) {
 $flashMessage = '';
 $flashType = 'info';
 
-// SMS Package Definitions loaded dynamically from Site Settings with profitable pricing
-$pack100Price = (int)get_setting($pdo, 'sms_pack_100_price', 85000);
-$pack500Price = (int)get_setting($pdo, 'sms_pack_500_price', 375000);
-$pack1000Price = (int)get_setting($pdo, 'sms_pack_1000_price', 680000);
-
-$smsPackages = [
-    'pack_100' => ['name' => 'بسته ۱۰۰ پیامک', 'credits' => 100, 'price' => $pack100Price, 'desc' => 'مناسب اطلاع‌رسانی نوبت‌ها و سفارشات سبک (هر پیامک ' . number_format(round($pack100Price / 100)) . ' ت)'],
-    'pack_500' => ['name' => 'بسته ۵۰۰ پیامک', 'credits' => 500, 'price' => $pack500Price, 'desc' => 'صرفه‌جویی ۱۲٪ — ویژه فروشگاه‌ها و مطب‌های پرمخاطب (هر پیامک ' . number_format(round($pack500Price / 500)) . ' ت)'],
-    'pack_1000' => ['name' => 'بسته ۱۰۰۰ پیامک طلایی', 'credits' => 1000, 'price' => $pack1000Price, 'desc' => 'صرفه‌جویی ۲۰٪ — ویژه کلینیک‌ها و بیمارستان‌های تخصصی (هر پیامک ' . number_format(round($pack1000Price / 1000)) . ' ت)']
-];
-
 // Handle Actions
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     csrf_verify();
     $act = $_POST['action'];
 
-    if ($act === 'send_direct_sms') {
-        $currCredits = (int)$wallet['sms_credits'];
-        $recipient = SmsService::normalizePhone(trim($_POST['recipient_phone'] ?? ''));
-        $msgText = trim($_POST['sms_message'] ?? '');
-
-        if ($currCredits <= 0) {
-            $flashMessage = "خطا: اعتبار پیامک شما ۰ عدد است! ارسال پیامک محدود و مسدود می‌باشد مگر با تهیه بسته پیامکی از گزینه‌های زیر.";
-            $flashType = 'error';
-        } elseif (empty($recipient) || strlen($recipient) < 10) {
-            $flashMessage = "لطفاً شماره تلفن همراه گیرنده را به صورت معتبر وارد فرمایید (مانند ۰۹۱۲۳۴۵۶۷۸۹).";
-            $flashType = 'error';
-        } elseif (empty($msgText) || mb_strlen($msgText) < 5) {
-            $flashMessage = "لطفاً متن پیامک را وارد نمایید (حداقل ۵ کاراکتر).";
-            $flashType = 'error';
-        } else {
-            // Deduct credit first (atomic overdraft protection)
-            $deducted = SmsService::deductUserSmsCredits($pdo, $userId, $recipient, $msgText, 1);
-            if ($deducted) {
-                $smsInstance = new SmsService();
-                $res = $smsInstance->sendDirectSms($recipient, $msgText);
-                // Refresh wallet
-                $wStmt->execute([$userId]);
-                $wallet = $wStmt->fetch(PDO::FETCH_ASSOC);
-
-                $flashMessage = "پیامک اختصاصی با موفقیت به شماره {$recipient} ارسال شد و ۱ اعتبار از بسته شما کسر گردید. مانده فعلی: {$wallet['sms_credits']} عدد.";
-                $flashType = 'success';
-            } else {
-                $flashMessage = "خطا در کسر اعتبار پیامک یا مانده ناکافی.";
-                $flashType = 'error';
-            }
-        }
-    } elseif ($act === 'buy_sms_wallet') {
-        $pkgKey = trim($_POST['package_key'] ?? '');
-        if (isset($smsPackages[$pkgKey])) {
-            $pkg = $smsPackages[$pkgKey];
-            $cost = $pkg['price'];
-            $credits = $pkg['credits'];
-            $available = (int)$wallet['balance_available_for_payout'];
-
-            if ($available >= $cost) {
-                // Deduct from wallet and add credits
-                $pdo->beginTransaction();
-                try {
-                    $pdo->prepare("UPDATE seller_wallets SET balance_available_for_payout = balance_available_for_payout - ?, sms_credits = sms_credits + ? WHERE seller_id = ?")
-                        ->execute([$cost, $credits, $userId]);
-
-                    $pdo->prepare("INSERT INTO sms_package_purchases (user_id, package_name, credits, price, payment_method, payment_ref, status) VALUES (?, ?, ?, ?, 'wallet', 'WALLET_DEDUCT', 'completed')")
-                        ->execute([$userId, $pkg['name'], $credits, $cost]);
-
-                    $pdo->commit();
-                    $flashMessage = "بسته «{$pkg['name']}» با موفقیت از محل موجودی کیف‌پول شما خریداری شد و {$credits} پیامک به حسابتان افزوده گردید.";
-                    $flashType = 'success';
-                    // Refresh wallet
-                    $wStmt->execute([$userId]);
-                    $wallet = $wStmt->fetch(PDO::FETCH_ASSOC);
-                } catch (Exception $e) {
-                    $pdo->rollBack();
-                    $flashMessage = "خطا در خرید بسته از کیف پول: " . $e->getMessage();
-                    $flashType = 'error';
-                }
-            } else {
-                $flashMessage = "موجودی قابل تسویه شما (" . number_format($available) . " تومان) برای خرید این بسته (" . number_format($cost) . " تومان) کافی نیست. لطفاً از گزینه پرداخت آنلاین استفاده فرمایید.";
-                $flashType = 'error';
-            }
-        }
-    } elseif ($act === 'buy_sms_gateway') {
-        $pkgKey = trim($_POST['package_key'] ?? '');
-        if (isset($smsPackages[$pkgKey])) {
-            $pkg = $smsPackages[$pkgKey];
-            $_SESSION['pending_order'] = [
-                'type' => 'sms_package',
-                'package_key' => $pkgKey,
-                'package_name' => $pkg['name'],
-                'credits' => $pkg['credits'],
-                'total_amount' => $pkg['price'],
-                'created_at' => time()
-            ];
-            header('Location: payment.php');
-            exit;
-        }
-    } elseif ($act === 'new_ticket_with_asena') {
+    if ($act === 'new_ticket_with_asena') {
         $subject = trim($_POST['subject'] ?? 'درخواست پشتیبانی و حسابرسی');
         $dept = trim($_POST['department'] ?? 'امور مالی و تسویه پایا');
         $initialMessage = trim($_POST['message'] ?? '');
@@ -268,7 +177,7 @@ $myTickets = $ticketsStmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Active Tab
 $activeTab = $_GET['tab'] ?? 'overview';
-if (!in_array($activeTab, ['overview', 'debits', 'payouts', 'sms', 'tickets'])) {
+if (!in_array($activeTab, ['overview', 'debits', 'payouts', 'tickets'])) {
     $activeTab = 'overview';
 }
 ?>
@@ -342,7 +251,7 @@ if (!in_array($activeTab, ['overview', 'debits', 'payouts', 'sms', 'tickets'])) 
                 </div>
                 <h1 class="text-xl lg:text-2xl font-black">تعاملات مالی، صورت‌حساب کارمزد و خدمات با پلتفرم آسنا</h1>
                 <p class="text-xs text-slate-300 mt-1 max-w-2xl leading-relaxed">
-                    شفافیت کامل در مبالغ پرداختی به آسنا (<?= $effectiveCommissionRate > 0 ? ('کارمزد ' . $displayCommRate . '٪ کاتالوگ و بسته‌های پیامک') : 'معاف از کارمزد در کمپین مارکتینگ و بسته‌های پیامک' ?>)، واریزی‌های هفتگی پایا، مانده پیامک اختصاصی و تیکت‌های پشتیبانی با خزانه‌داری
+                    شفافیت کامل در مبالغ پرداختی به آسنا (<?= $effectiveCommissionRate > 0 ? ('کارمزد ' . $displayCommRate . '٪ کاتالوگ') : 'معاف از کارمزد در کمپین مارکتینگ' ?>)، واریزی‌های هفتگی پایا و تیکت‌های پشتیبانی با خزانه‌داری
                 </p>
             </div>
 
@@ -365,13 +274,13 @@ if (!in_array($activeTab, ['overview', 'debits', 'payouts', 'sms', 'tickets'])) 
     <?php endif; ?>
 
     <!-- Overview Stat Cards -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <!-- 1. What You Pay Asena (15% Commission + SMS) -->
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <!-- 1. What You Pay Asena (Platform Commission) -->
         <div class="p-5 rounded-2xl bg-white border border-slate-200/80 shadow-sm flex items-center justify-between">
             <div>
-                <span class="text-xs font-bold text-slate-500 block mb-1">کل پرداختی شما به آسنا (کارمزد+پیامک):</span>
-                <span class="text-xl font-black text-rose-600 font-mono"><?= number_format($totalCommissionPaid + $smsSpentTotal) ?> تومان</span>
-                <span class="text-[10px] text-slate-400 block mt-1">کارمزد پلتفرم: <?= number_format($totalCommissionPaid) ?> ت</span>
+                <span class="text-xs font-bold text-slate-500 block mb-1">کل کارمزد پلتفرم آسنا:</span>
+                <span class="text-xl font-black text-rose-600 font-mono"><?= number_format($totalCommissionPaid) ?> تومان</span>
+                <span class="text-[10px] text-slate-400 block mt-1"><?= $effectiveCommissionRate > 0 ? ('نرخ کارمزد: ' . $displayCommRate . '٪') : 'معاف از کارمزد' ?></span>
             </div>
             <div class="w-12 h-12 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center shrink-0">
                 <span class="material-symbols-outlined text-2xl">receipt</span>
@@ -401,18 +310,6 @@ if (!in_array($activeTab, ['overview', 'debits', 'payouts', 'sms', 'tickets'])) 
                 <span class="material-symbols-outlined text-2xl">payments</span>
             </div>
         </div>
-
-        <!-- 4. Remaining SMS Credits -->
-        <div class="p-5 rounded-2xl bg-white border border-slate-200/80 shadow-sm flex items-center justify-between">
-            <div>
-                <span class="text-xs font-bold text-slate-500 block mb-1">اعتبار پیامک اختصاصی آسنا:</span>
-                <span class="text-xl font-black text-[#fd8100] font-mono"><?= number_format((int)$wallet['sms_credits']) ?> <span class="text-xs font-normal text-slate-500">عدد</span></span>
-                <span class="text-[10px] text-slate-400 block mt-1">جهت ارسال پیامک به مشتریان/بیماران</span>
-            </div>
-            <div class="w-12 h-12 rounded-xl bg-amber-50 text-[#fd8100] flex items-center justify-center shrink-0">
-                <span class="material-symbols-outlined text-2xl">sms</span>
-            </div>
-        </div>
     </div>
 
     <!-- Navigation Tabs -->
@@ -428,10 +325,6 @@ if (!in_array($activeTab, ['overview', 'debits', 'payouts', 'sms', 'tickets'])) 
         <a href="?tab=payouts" class="tab-btn px-4 py-2.5 rounded-xl font-bold text-xs flex items-center gap-1.5 text-slate-600 hover:text-primary transition <?= $activeTab === 'payouts' ? 'active' : 'bg-white' ?>">
             <span class="material-symbols-outlined text-base">receipt_long</span>
             <span>واریزی‌های پایا از آسنا و رسیدهای رسمی</span>
-        </a>
-        <a href="?tab=sms" class="tab-btn px-4 py-2.5 rounded-xl font-bold text-xs flex items-center gap-1.5 text-slate-600 hover:text-primary transition <?= $activeTab === 'sms' ? 'active' : 'bg-white' ?>">
-            <span class="material-symbols-outlined text-base">send_to_mobile</span>
-            <span>خرید بسته پیامک و گزارش مصرف</span>
         </a>
         <a href="?tab=tickets" class="tab-btn px-4 py-2.5 rounded-xl font-bold text-xs flex items-center gap-1.5 text-slate-600 hover:text-primary transition <?= $activeTab === 'tickets' ? 'active' : 'bg-white' ?>">
             <span class="material-symbols-outlined text-base">support_agent</span>
@@ -463,10 +356,6 @@ if (!in_array($activeTab, ['overview', 'debits', 'payouts', 'sms', 'tickets'])) 
                     <span class="font-mono font-bold text-rose-700">-<?= number_format($totalCommissionPaid) ?> تومان</span>
                 </div>
 
-                <div class="flex justify-between items-center p-3 rounded-xl bg-amber-50/70 border border-amber-100 text-amber-900">
-                    <span>هزینه بسته‌های پیامک خریداری شده از آسنا:</span>
-                    <span class="font-mono font-bold text-amber-800">-<?= number_format($smsSpentTotal) ?> تومان</span>
-                </div>
 
                 <div class="flex justify-between items-center p-3 rounded-xl bg-blue-50/70 border border-blue-100 text-blue-900">
                     <span>وجوه در حال سپری کردن مهلت ۷ روزه تست (اسکرو):</span>
@@ -494,24 +383,15 @@ if (!in_array($activeTab, ['overview', 'debits', 'payouts', 'sms', 'tickets'])) 
 
         <!-- Quick Actions & SMS Topup (Col 5) -->
         <div class="lg:col-span-5 space-y-6">
-            <!-- SMS Quick Recharge -->
-            <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-4">
-                <div class="flex justify-between items-center border-b border-slate-100 pb-3">
-                    <h4 class="font-bold text-sm text-slate-900 flex items-center gap-1.5">
-                        <span class="material-symbols-outlined text-[#fd8100] text-base">forward_to_inbox</span>
-                        شارژ پیامک اختصاصی آسنا
-                    </h4>
-                    <span class="text-xs font-mono font-bold text-[#fd8100] bg-amber-50 px-2 py-0.5 rounded-lg">
-                        <?= (int)$wallet['sms_credits'] ?> پیامک موجود
-                    </span>
+            <!-- Free SMS Infrastructure Notice -->
+            <div class="bg-gradient-to-r from-emerald-50 to-teal-50 p-6 rounded-3xl border border-emerald-200/80 shadow-2xs space-y-3">
+                <div class="flex items-center gap-2 text-emerald-800">
+                    <span class="material-symbols-outlined text-xl">mark_chat_read</span>
+                    <h4 class="font-bold text-sm">ارسال رایگان پیامک‌های اطلاع‌رسانی</h4>
                 </div>
-                <p class="text-xs text-slate-500 leading-relaxed">
-                    برای ارسال پیامک‌های رهگیری سفارشات، یادآوری نوبت‌ها یا پیام به مشتریان، نیاز به شارژ اعتبار پیامک پلتفرم دارید.
+                <p class="text-xs text-emerald-700 leading-relaxed">
+                    کلیه پیامک‌های اطلاع‌رسانی نوبت‌ها، تغییر زمان، فاکتورها و وضعیت مرسولات به مراجعین و خریداران به‌صورت ۱۰۰٪ رایگان و تحت پوشش زیرساخت پلتفرم آسنا ارائه می‌گردد.
                 </p>
-                <a href="?tab=sms" class="w-full bg-[#fd8100] hover:bg-[#ea580c] text-white py-3 rounded-xl font-bold text-xs flex items-center justify-center gap-2 shadow-sm transition">
-                    <span class="material-symbols-outlined text-sm">add_shopping_cart</span>
-                    <span>مشاهده و خرید بسته‌های پیامک</span>
-                </a>
             </div>
 
             <!-- Dedicated Support Ticket Quick Launch -->

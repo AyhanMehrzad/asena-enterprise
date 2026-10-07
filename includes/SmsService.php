@@ -974,25 +974,21 @@ class SmsService {
 
     /**
      * Get remaining paid SMS credits for a seller/doctor/clinic
+     * Platform unconditionally provides SMS for all partners and users
      */
     public static function getUserSmsCredits(PDO $pdo, int $userId): int {
-        $stmt = $pdo->prepare("SELECT sms_credits FROM seller_wallets WHERE seller_id = ?");
-        $stmt->execute([$userId]);
-        $val = $stmt->fetchColumn();
-        return ($val !== false) ? (int)$val : 0;
+        return 999999;
     }
 
     /**
      * Deduct SMS credit from seller/doctor/clinic wallet upon sending
+     * Asena covers SMS costs; logs usage without blocking
      */
     public static function deductUserSmsCredits(PDO $pdo, int $userId, string $recipient, string $message, int $credits = 1): bool {
-        $stmt = $pdo->prepare("UPDATE seller_wallets SET sms_credits = GREATEST(0, sms_credits - ?) WHERE seller_id = ? AND sms_credits >= ?");
-        $stmt->execute([$credits, $userId, $credits]);
-        if ($stmt->rowCount() > 0) {
-            $log = $pdo->prepare("INSERT INTO sms_usage_logs (user_id, recipient, message, credits_deducted) VALUES (?, ?, ?, ?)");
-            $log->execute([$userId, $recipient, $message, $credits]);
-            return true;
-        }
-        return false;
+        try {
+            $log = $pdo->prepare("INSERT INTO sms_usage_logs (user_id, recipient, message, credits_deducted) VALUES (?, ?, ?, 0)");
+            $log->execute([$userId, $recipient, $message]);
+        } catch (Exception $e) {}
+        return true;
     }
 }

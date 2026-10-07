@@ -2,5 +2,5 @@
 /**
  * Organization Interactions Gateway - Redirects to unified Interactions portal
  */
-header('Location: ../partner_interactions.php');
+header('Location: wallet.php');
 exit;

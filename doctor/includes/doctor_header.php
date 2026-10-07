@@ -91,7 +91,6 @@ if (!$doctorProfile) {
             'emr'          => ['icon' => 'manage_accounts', 'title' => 'رجیستری بیماران و EMR', 'tab' => 'emr-tab'],
             'bpms'         => ['icon' => 'medication', 'title' => 'نسخه‌نویسی و گردش کار BPMS', 'tab' => 'bpms-tab'],
             'site_builder' => ['icon' => 'web', 'title' => 'وب‌سایت اختصاصی من', 'url' => 'site_builder.php'],
-            'interactions' => ['icon' => 'hub', 'title' => 'تعاملات، مالی و پیامک آسنا', 'url' => '../partner_interactions.php'],
             'profile'      => ['icon' => 'contact_phone', 'title' => 'اطلاعات تماس و پیامک نوبت', 'tab' => 'profile-tab'],
         ];
 

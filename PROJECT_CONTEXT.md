@@ -1261,6 +1261,18 @@
       - تبدیل کارت وضعیت رسته حقوقی و تخصصی مرکز به کارت تمام‌عرض مستقل و ارتقای ساختار فلکس با ریسپانسیو اختصاصی (`flex-col sm:flex-row gap-3 w-full sm:w-auto`) جهت جلوگیری کامل از هرگونه بیرون‌زدگی افقی دکمه «درخواست تغییر رسته (تیکت)» در ستون‌های باریک و تبلت.
       - اختصاص عرض کامل به ورودی «نام رسمی بیمارستان / کلینیک» و چینش متقارن دو ستونه فیلدهای «نام مدیر / مسئول فنی» و «شماره پروانه نظام دامپزشکی».
 
+76. **حذف منوی تعاملات مالی و پیامک و استقرار ارائه رایگان پیامک توسط پلتفرم آسنا:**
+    - **حذف آیتم منوی تعاملات و پیامک از پنل‌های همکاران:**
+      - حذف پیوند «تعاملات مالی و پیامک با آسنا» از نوار کناری پنل سازمان ([`organization/includes/organization_header.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/organization/includes/organization_header.php)).
+      - حذف پیوند «تعاملات، مالی و پیامک آسنا» از نوار کناری پنل پزشکان ([`doctor/includes/doctor_header.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/doctor/includes/doctor_header.php)).
+      - حذف «تعاملات و صورت‌حساب آسنا» و تب دسترسی سریع موبایل از پنل فروشندگان ([`seller/includes/seller_header.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/seller/includes/seller_header.php)).
+      - تصحیح ریدایرکت‌های ورودی به داشبورد و کیف پول در [`organization/interactions.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/organization/interactions.php)، [`doctor/interactions.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/doctor/interactions.php) و [`seller/interactions.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/seller/interactions.php).
+    - **حذف محدودیت‌ها و بسته‌های پولی پیامک و ارائه نامحدود توسط آسنا:**
+      - حذف فروش بسته‌های پیامکی، مسدودی ارسال به علت اعتبار صفر، و کسر اعتبار در [`partner_interactions.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/partner_interactions.php).
+      - حذف شرط بررسی و کسر اعتبار پیامک پزشکان در تغییر زمان نوبت ([`doctor/index.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/doctor/index.php)) و ارسال پیامک رهگیری مرسولات توسط فروشندگان ([`includes/OrderLifecycleService.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/includes/OrderLifecycleService.php))، و ارائه قطعی و بی‌قیدوشرط پیامک به مراجعین و بیماران توسط زیرساخت مرکزی آسنا.
+      - تنظیم متدهای `getUserSmsCredits` و `deductUserSmsCredits` در [`includes/SmsService.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/includes/SmsService.php) جهت ارائه نامحدود و عدم کسر یا بلاک پیامک همکاران.
+      - تفکیک صفحه پایشگر تداخلات دارویی پت ([`interactions.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/interactions.php)) از سیستم همکاران و حذف مسیرهای انحرافی.
+
 ---
 
 ## ۴. پروتکل ثبت تغییرات آینده (Maintenance Rule)
