@@ -511,7 +511,7 @@ class TenantSiteService {
             }
 
             // Sync short meta descriptions for existing demo rows to satisfy SEO 70+ chars threshold
-            $this->pdo->exec("UPDATE tenant_sites SET meta_description = 'پت‌شاپ آنلاین و هایپرمارکت تخصصی پت‌لند؛ خرید آنلاین انواع غذای خشک، کنسرو، تشویقی و لوازم بهداشتی سگ و گربه با تضمین اصالت کالا و تحویل دوره‌ای اتوشیپ در آسنا.' WHERE slug = 'petland-store' AND CHAR_LENGTH(meta_description) < 70");
+            $this->pdo->exec("UPDATE tenant_sites SET meta_description = 'پت‌شاپ آنلاین و هایپرمارکت تخصصی پت‌لند؛ خرید آنلاین انواع غذای خشک، کنسرو، تشویقی و لوازم بهداشتی سگ و گربه با تضمین اصالت کالا و تحویل دوره‌ای اتوشیپ در آسنا.' WHERE slug = 'petland-store' AND LENGTH(meta_description) < 70");
         } catch (Throwable $e) {
             error_log("[TenantSiteService::ensureDemoSites] " . $e->getMessage());
         }

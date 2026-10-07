@@ -51,87 +51,116 @@ include __DIR__ . '/includes/header.php';
 <div class="w-[96%] max-w-[1550px] mx-auto py-6 md:py-10 space-y-16 md:space-y-24">
 
     <!-- 1. Hero Beat: Value Proposition & Subdomain Availability Checker -->
-    <section class="relative overflow-hidden rounded-[2.5rem] md:rounded-[3.5rem] bg-gradient-to-br from-[#001a48] via-[#022869] to-[#043d99] text-white p-6 sm:p-10 md:p-16 shadow-2xl border border-white/10">
-        <!-- Ambient Glowing Background Orbs -->
-        <div class="absolute -top-32 -left-32 w-96 h-96 bg-[#fd8100]/20 rounded-full blur-3xl pointer-events-none"></div>
+    <section class="relative overflow-hidden rounded-[2.5rem] md:rounded-[3.5rem] bg-gradient-to-b from-[#000d27] via-[#001744] to-[#002263] text-white p-6 sm:p-10 md:p-16 shadow-2xl border border-white/10">
+        <!-- Ambient Glowing Background Orbs & Luxury Grid Texture -->
+        <div class="absolute -top-32 -left-32 w-96 h-96 bg-[#fd8100]/25 rounded-full blur-3xl pointer-events-none"></div>
         <div class="absolute -bottom-32 -right-32 w-96 h-96 bg-emerald-500/20 rounded-full blur-3xl pointer-events-none"></div>
-        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[300px] bg-indigo-500/10 rounded-full blur-3xl pointer-events-none"></div>
+        <div class="absolute top-10 right-10 w-80 h-80 bg-sky-500/15 rounded-full blur-3xl pointer-events-none"></div>
+        <div class="absolute inset-0 bg-[radial-gradient(#ffffff0a_1px,transparent_1px)] [background-size:24px_24px] pointer-events-none"></div>
 
-        <div class="relative z-10 max-w-4xl mx-auto text-center space-y-6">
-            <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-xs md:text-sm font-bold text-amber-300 shadow-sm animate-pulse">
-                <span class="material-symbols-outlined text-base">web_stories</span>
-                <span>نسل نوین پلتفرم وب‌سایت‌ساز اختصاصی اکوسیستم آسنا</span>
+        <div class="relative z-10 max-w-4xl mx-auto text-center space-y-6 md:space-y-7">
+            <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-md border border-amber-400/30 text-xs md:text-sm font-bold text-amber-300 shadow-lg shadow-amber-500/10">
+                <span class="w-2 h-2 rounded-full bg-amber-400 animate-ping"></span>
+                <span class="material-symbols-outlined text-base text-amber-400">language</span>
+                <span>سامانه هوشمند راه‌اندازی وب‌سایت‌های تخصصی اکوسیستم آسنا</span>
             </div>
 
-            <h1 class="text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-black tracking-tight leading-tight md:leading-tight">
+            <h1 class="text-3xl sm:text-5xl md:text-6xl font-black tracking-tight leading-[1.25] md:leading-[1.2] text-white">
                 وب‌سایت اختصاصی، مستقل و مدرن؛<br class="hidden sm:inline">
-                <span class="bg-clip-text text-transparent bg-gradient-to-r from-amber-300 via-orange-400 to-amber-200">
-                    دقیقاً متناسب با تخصص و برند شما
+                <span class="bg-clip-text text-transparent bg-gradient-to-r from-amber-300 via-orange-400 to-amber-200 drop-shadow-sm">
+                    دقیقاً متناسب با تخصص و هویت برند شما
                 </span>
             </h1>
 
             <p class="text-sm sm:text-base md:text-lg text-slate-200 font-medium leading-relaxed max-w-2xl mx-auto">
-                دیگر نیازی نیست همه وب‌سایت‌ها شبیه به هم باشند! ما برای پزشکان، داروخانه‌ها، پت‌شاپ‌ها و بیمارستان‌های دامپزشکی، وب‌سایت‌هایی با ساختار، هویت بصری و ماژول‌های کاملاً متفاوت و متناسب با نیاز مشتریانشان خلق کرده‌ایم.
+                دیگر نیازی نیست وب‌سایت شما یک قالب تکراری باشد! در آسنا، هر وب‌سایت یک پایگاه مستقل با آدرس و برند اختصاصی شماست؛ مجهز به ماژول‌های کاملاً متفاوت و متناسب با نیازهای کاری حوزه شما (مطب، داروخانه، پت‌شاپ یا بیمارستان).
             </p>
 
-            <!-- Interactive Live Subdomain Availability Search -->
-            <div class="max-w-2xl mx-auto pt-4">
-                <div class="bg-white/10 backdrop-blur-xl p-2.5 rounded-2xl md:rounded-3xl border border-white/20 shadow-2xl flex flex-col sm:flex-row items-center gap-2">
-                    <div class="flex-1 w-full flex items-center bg-white rounded-xl md:rounded-2xl px-4 py-2.5 border border-slate-200 text-slate-800 shadow-inner">
-                        <span class="material-symbols-outlined text-slate-400 text-xl ml-2">language</span>
-                        <input type="text" id="hero-subdomain-input" placeholder="نام برند یا نام خانوادگی شما (انگلیسی)" dir="ltr" class="w-full bg-transparent border-none outline-none text-left font-mono font-bold text-sm sm:text-base text-slate-900 placeholder:text-slate-400" autocomplete="off">
-                        <span class="text-xs sm:text-sm font-mono text-slate-500 font-bold mr-1 shrink-0">.asena.company</span>
+            <!-- Interactive Live Subdomain Availability Search Engine -->
+            <div class="max-w-2xl mx-auto pt-2">
+                <div class="bg-white/10 backdrop-blur-2xl p-2 md:p-2.5 rounded-2xl md:rounded-3xl border border-white/20 shadow-2xl">
+                    <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                        <div class="flex-1 flex items-center bg-white rounded-xl md:rounded-2xl px-3.5 py-3 border border-slate-200 text-slate-800 shadow-inner group focus-within:border-amber-500 focus-within:ring-2 focus-within:ring-amber-400/20 transition-all">
+                            <div class="flex items-center gap-1.5 text-slate-400 pl-2 shrink-0 border-l border-slate-200 ml-2" dir="ltr">
+                                <span class="material-symbols-outlined text-emerald-600 text-base">lock</span>
+                                <span class="font-mono text-xs text-slate-500 font-bold">https://</span>
+                            </div>
+                            <input type="text" id="hero-subdomain-input" placeholder="نام دلخواه انگلیسی (مثلاً dr-alavi یا petland)" class="w-full bg-transparent border-none outline-none text-right sm:text-left font-mono font-bold text-xs sm:text-sm md:text-base text-slate-900 placeholder:text-slate-400 placeholder:font-sans placeholder:text-xs" autocomplete="off" spellcheck="false">
+                            <span class="text-xs sm:text-sm font-mono text-slate-500 font-bold mr-1 shrink-0" dir="ltr">.asena.company</span>
+                        </div>
+                        <button type="button" onclick="checkSubdomainFromHero()" id="hero-check-btn" class="px-6 py-3.5 rounded-xl md:rounded-2xl bg-gradient-to-r from-[#fd8100] via-orange-500 to-amber-500 hover:from-[#e57400] hover:to-amber-600 text-white font-black text-xs sm:text-sm shadow-xl hover:shadow-orange-500/40 transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95 shrink-0">
+                            <span class="material-symbols-outlined text-lg">search_check</span>
+                            <span>بررسی وضعیت آدرس</span>
+                        </button>
                     </div>
-                    <button type="button" onclick="checkSubdomainFromHero()" id="hero-check-btn" class="w-full sm:w-auto px-6 py-3.5 rounded-xl md:rounded-2xl bg-gradient-to-r from-[#fd8100] to-amber-500 hover:from-[#e57400] hover:to-amber-600 text-white font-black text-xs sm:text-sm shadow-lg hover:shadow-orange-500/30 transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95 shrink-0">
-                        <span class="material-symbols-outlined text-lg">search_check</span>
-                        <span>بررسی آدرس</span>
-                    </button>
                 </div>
+
+                <!-- Subtitle Hint -->
+                <div class="flex items-center justify-center gap-2 text-slate-300 text-[11px] sm:text-xs mt-2.5 font-medium">
+                    <span class="material-symbols-outlined text-sm text-amber-400">verified</span>
+                    <span>امکان اتصال دامنه اختصاصی خودتان (.ir و .com) در تمامی نسخه‌ها فراهم است</span>
+                </div>
+
                 <!-- Status Feedback Badge -->
                 <div id="hero-subdomain-feedback" class="mt-3 text-xs md:text-sm font-bold hidden transition-all duration-300"></div>
             </div>
 
             <!-- Quick Action Links -->
             <div class="flex flex-wrap items-center justify-center gap-3 pt-2">
-                <a href="#archetypes-section" class="px-6 py-3 rounded-xl bg-white/15 hover:bg-white/25 backdrop-blur-md text-white font-bold text-xs sm:text-sm transition-all flex items-center gap-2 border border-white/15">
-                    <span class="material-symbols-outlined text-base">dashboard_customize</span>
-                    <span>مشاهده و مقایسه ۴ قالب تخصصی</span>
+                <a href="#archetypes-section" class="px-6 py-3 rounded-xl bg-white/10 hover:bg-white/20 backdrop-blur-md text-white font-bold text-xs sm:text-sm transition-all flex items-center gap-2 border border-white/20 hover:border-white/40 shadow-sm">
+                    <span class="material-symbols-outlined text-base text-amber-300">dashboard_customize</span>
+                    <span>مشاهده و بررسی ۴ نسخه وب‌سایت</span>
                 </a>
-                <button type="button" onclick="openOrderModal()" class="px-6 py-3 rounded-xl bg-white text-[#001a48] hover:bg-slate-100 font-black text-xs sm:text-sm transition-all shadow-md flex items-center gap-2 cursor-pointer">
+                <button type="button" onclick="openOrderModal()" class="px-6 py-3 rounded-xl bg-white hover:bg-amber-50 text-[#001a48] font-black text-xs sm:text-sm transition-all shadow-xl hover:shadow-2xl flex items-center gap-2 cursor-pointer active:scale-95">
                     <span class="material-symbols-outlined text-base text-[#fd8100]">rocket_launch</span>
                     <span>سفارش فوری وب‌سایت</span>
                 </button>
             </div>
 
-            <!-- Trust Anchors Strip -->
-            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-8 border-t border-white/15 text-center">
-                <div class="p-3 rounded-2xl bg-white/5 backdrop-blur-xs border border-white/10">
-                    <div class="text-base sm:text-lg font-black text-amber-300 flex items-center justify-center gap-1">
-                        <span class="material-symbols-outlined text-base">bolt</span>
-                        <span>۵ دقیقه</span>
+            <!-- Trust Anchors Strip (High-Contrast Glass Bento) -->
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 pt-8 border-t border-white/15 text-right">
+                <!-- Badge 1: 5-minute setup -->
+                <div class="p-4 rounded-2xl bg-white/[0.08] hover:bg-white/[0.12] backdrop-blur-md border border-white/15 transition-all shadow-lg flex items-center gap-3.5 group">
+                    <div class="w-11 h-11 rounded-xl bg-gradient-to-br from-amber-400/20 to-orange-500/30 border border-amber-400/40 flex items-center justify-center text-amber-300 shrink-0 group-hover:scale-105 transition-transform shadow-sm">
+                        <span class="material-symbols-outlined text-2xl text-amber-300">bolt</span>
                     </div>
-                    <div class="text-[11px] text-slate-300 mt-0.5">تحویل آنلاین و فوری</div>
+                    <div>
+                        <div class="text-sm sm:text-base font-black text-white group-hover:text-amber-200 transition-colors">تحویل آنلاین ۵ دقیقه‌ای</div>
+                        <div class="text-[11px] text-slate-300 mt-0.5 font-medium leading-tight">راه‌اندازی فوری بدون معطلی</div>
+                    </div>
                 </div>
-                <div class="p-3 rounded-2xl bg-white/5 backdrop-blur-xs border border-white/10">
-                    <div class="text-base sm:text-lg font-black text-amber-300 flex items-center justify-center gap-1">
-                        <span class="material-symbols-outlined text-base">credit_card</span>
-                        <span>شاپرک</span>
+
+                <!-- Badge 2: Shaparak -->
+                <div class="p-4 rounded-2xl bg-white/[0.08] hover:bg-white/[0.12] backdrop-blur-md border border-white/15 transition-all shadow-lg flex items-center gap-3.5 group">
+                    <div class="w-11 h-11 rounded-xl bg-gradient-to-br from-emerald-400/20 to-teal-500/30 border border-emerald-400/40 flex items-center justify-center text-emerald-300 shrink-0 group-hover:scale-105 transition-transform shadow-sm">
+                        <span class="material-symbols-outlined text-2xl text-emerald-300">credit_card</span>
                     </div>
-                    <div class="text-[11px] text-slate-300 mt-0.5">درگاه پرداخت و تسویه پایا</div>
+                    <div>
+                        <div class="text-sm sm:text-base font-black text-white group-hover:text-emerald-200 transition-colors">درگاه مستقیم شاپرک</div>
+                        <div class="text-[11px] text-slate-300 mt-0.5 font-medium leading-tight">تسویه روزانه پایا بدون کارمزد</div>
+                    </div>
                 </div>
-                <div class="p-3 rounded-2xl bg-white/5 backdrop-blur-xs border border-white/10">
-                    <div class="text-base sm:text-lg font-black text-amber-300 flex items-center justify-center gap-1">
-                        <span class="material-symbols-outlined text-base">qr_code_2</span>
-                        <span>کارت هوشمند</span>
+
+                <!-- Badge 3: Smart QR Card -->
+                <div class="p-4 rounded-2xl bg-white/[0.08] hover:bg-white/[0.12] backdrop-blur-md border border-white/15 transition-all shadow-lg flex items-center gap-3.5 group">
+                    <div class="w-11 h-11 rounded-xl bg-gradient-to-br from-purple-400/20 to-indigo-500/30 border border-purple-400/40 flex items-center justify-center text-purple-300 shrink-0 group-hover:scale-105 transition-transform shadow-sm">
+                        <span class="material-symbols-outlined text-2xl text-purple-300">qr_code_2</span>
                     </div>
-                    <div class="text-[11px] text-slate-300 mt-0.5">استند رومیزی و vCard</div>
+                    <div>
+                        <div class="text-sm sm:text-base font-black text-white group-hover:text-purple-200 transition-colors">کارت ویزیت هوشمند</div>
+                        <div class="text-[11px] text-slate-300 mt-0.5 font-medium leading-tight">استند رومیزی و کد vCard مطب</div>
+                    </div>
                 </div>
-                <div class="p-3 rounded-2xl bg-white/5 backdrop-blur-xs border border-white/10">
-                    <div class="text-base sm:text-lg font-black text-amber-300 flex items-center justify-center gap-1">
-                        <span class="material-symbols-outlined text-base">verified</span>
-                        <span>۱۰۰٪ مستقل</span>
+
+                <!-- Badge 4: Independent Domain -->
+                <div class="p-4 rounded-2xl bg-white/[0.08] hover:bg-white/[0.12] backdrop-blur-md border border-white/15 transition-all shadow-lg flex items-center gap-3.5 group">
+                    <div class="w-11 h-11 rounded-xl bg-gradient-to-br from-cyan-400/20 to-blue-500/30 border border-cyan-400/40 flex items-center justify-center text-cyan-300 shrink-0 group-hover:scale-105 transition-transform shadow-sm">
+                        <span class="material-symbols-outlined text-2xl text-cyan-300">domain</span>
                     </div>
-                    <div class="text-[11px] text-slate-300 mt-0.5">دامنه اختصاصی (.ir / .com)</div>
+                    <div>
+                        <div class="text-sm sm:text-base font-black text-white group-hover:text-cyan-200 transition-colors">دامنه و هاست ۱۰۰٪ مستقل</div>
+                        <div class="text-[11px] text-slate-300 mt-0.5 font-medium leading-tight">اتصال دامنه .ir و .com با SSL</div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -236,46 +265,116 @@ include __DIR__ . '/includes/header.php';
                             </div>
                         </div>
 
-                        <!-- Visual Mockup Showcase -->
-                        <div class="lg:col-span-5 flex flex-col items-center">
-                            <div class="w-full bg-slate-900 rounded-3xl p-3 shadow-2xl border-4 border-slate-800 relative group overflow-hidden">
+                        <!-- Visual Mockup Showcase (Interactive Desktop / Mobile PWA) -->
+                        <div class="lg:col-span-5 flex flex-col items-center w-full">
+                            <!-- Device Switcher Controls -->
+                            <div class="w-full flex items-center justify-between mb-3 px-1">
+                                <div class="inline-flex items-center gap-1 bg-slate-100 p-1 rounded-xl text-xs border border-slate-200">
+                                    <button type="button" onclick="switchArchetypeDevice('doctor', 'desktop')" id="arch-dev-btn-doctor-desktop" class="px-3 py-1 rounded-lg font-black text-xs bg-white text-slate-900 shadow-xs flex items-center gap-1 cursor-pointer transition-all">
+                                        <span class="material-symbols-outlined text-sm">desktop_windows</span>
+                                        <span>دسکتاپ</span>
+                                    </button>
+                                    <button type="button" onclick="switchArchetypeDevice('doctor', 'mobile')" id="arch-dev-btn-doctor-mobile" class="px-3 py-1 rounded-lg font-bold text-xs text-slate-500 hover:text-slate-800 flex items-center gap-1 cursor-pointer transition-all">
+                                        <span class="material-symbols-outlined text-sm">smartphone</span>
+                                        <span>موبایل PWA</span>
+                                    </button>
+                                </div>
+                                <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-bold">
+                                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                                    <span>دمو فعال و آنلاین</span>
+                                </div>
+                            </div>
+
+                            <!-- 1. Desktop Browser Frame -->
+                            <div id="arch-mockup-desktop-doctor" class="w-full bg-slate-900 rounded-3xl p-3 shadow-2xl border-4 border-slate-800 relative group overflow-hidden transition-all duration-300">
                                 <div class="flex items-center justify-between px-3 py-1.5 bg-slate-800 rounded-xl mb-3 text-slate-400 text-[11px] font-mono" dir="ltr">
                                     <div class="flex items-center gap-1.5">
                                         <span class="w-2.5 h-2.5 rounded-full bg-rose-500"></span>
                                         <span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
                                         <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
                                     </div>
-                                    <span class="text-slate-300 font-bold">dr-alavi.asena.company</span>
-                                    <span class="material-symbols-outlined text-xs text-emerald-400">lock</span>
+                                    <div class="flex items-center gap-1.5 text-slate-300 font-bold">
+                                        <span class="material-symbols-outlined text-xs text-emerald-400">lock</span>
+                                        <span>dr-alavi.asena.company</span>
+                                    </div>
+                                    <a href="site.php?slug=dr-alavi" target="_blank" class="text-slate-400 hover:text-white" title="باز کردن در تب جدید">
+                                        <span class="material-symbols-outlined text-xs">open_in_new</span>
+                                    </a>
                                 </div>
-                                <div class="relative rounded-2xl overflow-hidden bg-slate-950 aspect-[4/3] flex flex-col justify-between p-4 text-white">
-                                    <div class="space-y-2">
-                                        <div class="inline-flex items-center gap-1 bg-emerald-500/20 text-emerald-300 text-[10px] px-2.5 py-1 rounded-full border border-emerald-400/30">
-                                            <span class="material-symbols-outlined text-xs">verified</span>
-                                            <span>نظام دامپزشکی: ۲۴۵۹۸</span>
+                                <div class="relative rounded-2xl overflow-hidden bg-slate-950 p-4 text-white space-y-3.5">
+                                    <!-- Doctor Profile Header -->
+                                    <div class="flex items-center justify-between border-b border-slate-800/80 pb-3">
+                                        <div class="flex items-center gap-2.5">
+                                            <div class="w-10 h-10 rounded-full bg-emerald-600/30 border border-emerald-500/50 flex items-center justify-center text-emerald-300 font-bold text-sm">
+                                                <span class="material-symbols-outlined text-xl">stethoscope</span>
+                                            </div>
+                                            <div>
+                                                <h4 class="text-sm font-black text-white">کلینیک دکتر محمدرضا علوی</h4>
+                                                <div class="text-[10px] text-slate-400">بورد تخصصی جراحی بافت نرم و ارتوپدی</div>
+                                            </div>
                                         </div>
-                                        <h4 class="text-lg font-black text-white">کلینیک و جراحی تخصصی دکتر علوی</h4>
-                                        <p class="text-xs text-slate-300 leading-normal">بورد تخصصی جراحی بافت نرم و ارتوپدی حیوانات خانگی</p>
+                                        <span class="bg-emerald-500/20 text-emerald-300 text-[10px] px-2 py-0.5 rounded-full border border-emerald-400/30 font-mono">نظام: ۲۴۵۹۸</span>
                                     </div>
-                                    <!-- Interactive mini widgets teaser in mockup -->
-                                    <div class="grid grid-cols-2 gap-2 text-center text-xs">
-                                        <div class="bg-white/10 rounded-xl p-2 backdrop-blur-xs border border-white/10">
-                                            <div class="text-emerald-400 font-bold">۹ نوبت آزاد امروز</div>
-                                            <div class="text-[10px] text-slate-400">رزرو آنلاین ویزیت</div>
+                                    <!-- Live Status & Time-Slots Widget -->
+                                    <div class="bg-slate-900/90 rounded-xl p-3 border border-slate-800 space-y-2">
+                                        <div class="flex items-center justify-between text-xs">
+                                            <span class="text-emerald-400 font-black flex items-center gap-1">
+                                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span>
+                                                <span>نوبت‌های آزاد ویزیت امروز</span>
+                                            </span>
+                                            <span class="text-[10px] text-slate-400">رزرو آنلاین با ۱۰٪ تخفیف</span>
                                         </div>
-                                        <div class="bg-white/10 rounded-xl p-2 backdrop-blur-xs border border-white/10">
-                                            <div class="text-amber-400 font-bold">مشاوره تله‌هلث</div>
-                                            <div class="text-[10px] text-slate-400">ویزیت فوری آنلاین</div>
+                                        <div class="grid grid-cols-3 gap-1.5 text-center text-[10px]">
+                                            <div class="bg-emerald-950/60 text-emerald-300 py-1.5 px-2 rounded-lg border border-emerald-700/50 font-mono font-bold">۱۶:۳۰ امروز</div>
+                                            <div class="bg-emerald-950/60 text-emerald-300 py-1.5 px-2 rounded-lg border border-emerald-700/50 font-mono font-bold">۱۷:۱۵ امروز</div>
+                                            <div class="bg-slate-800 text-slate-300 py-1.5 px-2 rounded-lg border border-slate-700 font-mono">۱۱:۰۰ فردا</div>
                                         </div>
                                     </div>
-                                    <a href="site.php?slug=dr-alavi" target="_blank" class="w-full py-2 bg-emerald-600 hover:bg-emerald-500 rounded-xl text-center text-xs font-bold transition-colors">
-                                        مشاهده پیش‌نمایش زنده در تب جدید
+                                    <!-- Mini Before/After & Teaser Row -->
+                                    <div class="grid grid-cols-2 gap-2 text-xs">
+                                        <div class="bg-white/5 rounded-xl p-2 border border-white/10 flex items-center gap-2">
+                                            <span class="material-symbols-outlined text-emerald-400 text-lg">compare</span>
+                                            <div class="text-[10px] leading-tight text-slate-300">اسلایدر قبل و بعد جراحی ارتوپدی</div>
+                                        </div>
+                                        <div class="bg-white/5 rounded-xl p-2 border border-white/10 flex items-center gap-2">
+                                            <span class="material-symbols-outlined text-amber-400 text-lg">calculate</span>
+                                            <div class="text-[10px] leading-tight text-slate-300">محاسبه تعرفه خدمات و جراحی</div>
+                                        </div>
+                                    </div>
+                                    <a href="site.php?slug=dr-alavi" target="_blank" class="w-full py-2.5 bg-emerald-700 hover:bg-emerald-600 rounded-xl text-center text-xs font-black transition-colors flex items-center justify-center gap-1.5 text-white shadow-md">
+                                        <span>مشاهده وب‌سایت زنده دکتر علوی</span>
+                                        <span class="material-symbols-outlined text-sm">open_in_new</span>
                                     </a>
                                 </div>
                             </div>
-                            <div class="text-[11px] text-slate-400 mt-2 font-medium flex items-center gap-1">
+
+                            <!-- 2. Mobile PWA Smartphone Frame (Hidden by default) -->
+                            <div id="arch-mockup-mobile-doctor" class="hidden w-full max-w-[280px] bg-slate-900 rounded-[2.8rem] p-3 shadow-2xl border-4 border-slate-700 relative group overflow-hidden transition-all duration-300">
+                                <!-- Dynamic Island / Phone Notch -->
+                                <div class="w-24 h-4 bg-black rounded-full mx-auto mb-2 flex items-center justify-center">
+                                    <span class="w-2 h-2 rounded-full bg-slate-800 mr-2"></span>
+                                </div>
+                                <div class="relative rounded-2xl overflow-hidden bg-slate-950 p-3 text-white space-y-3 text-xs">
+                                    <div class="text-center space-y-1">
+                                        <div class="w-10 h-10 rounded-full bg-emerald-600/30 border border-emerald-500/50 mx-auto flex items-center justify-center text-emerald-300">
+                                            <span class="material-symbols-outlined text-lg">stethoscope</span>
+                                        </div>
+                                        <div class="font-black text-xs text-white">دکتر محمدرضا علوی</div>
+                                        <div class="text-[9px] text-emerald-300">جراح و متخصص ارتوپدی</div>
+                                    </div>
+                                    <div class="bg-slate-900 rounded-xl p-2 border border-slate-800 space-y-1 text-center">
+                                        <div class="text-[10px] text-emerald-400 font-bold">رزرو آنلاین ویزیت مطب</div>
+                                        <div class="text-[9px] text-slate-400">تایم‌اسلات آزاد امروز: ۱۶:۳۰</div>
+                                    </div>
+                                    <a href="site.php?slug=dr-alavi" target="_blank" class="w-full py-2 bg-emerald-700 hover:bg-emerald-600 rounded-lg text-center text-[11px] font-black transition-colors block text-white">
+                                        ورود به نسخه موبایل PWA ↗
+                                    </a>
+                                </div>
+                            </div>
+
+                            <div class="text-[11px] text-slate-400 mt-2.5 font-medium flex items-center gap-1">
                                 <span class="material-symbols-outlined text-sm text-emerald-600">check_circle</span>
-                                <span>پالت رنگی: سبز زمردی کلینیکی (#065f46) و سفید درمانی</span>
+                                <span>پالت اختصاصی: سبز زمردی کلینیکی (#065f46) و سفید درمانی</span>
                             </div>
                         </div>
                     </div>
@@ -343,46 +442,117 @@ include __DIR__ . '/includes/header.php';
                             </div>
                         </div>
 
-                        <!-- Visual Mockup Showcase -->
-                        <div class="lg:col-span-5 flex flex-col items-center">
-                            <div class="w-full bg-slate-900 rounded-3xl p-3 shadow-2xl border-4 border-slate-800 relative group overflow-hidden">
+                        <!-- Visual Mockup Showcase (Interactive Desktop / Mobile PWA) -->
+                        <div class="lg:col-span-5 flex flex-col items-center w-full">
+                            <!-- Device Switcher Controls -->
+                            <div class="w-full flex items-center justify-between mb-3 px-1">
+                                <div class="inline-flex items-center gap-1 bg-slate-100 p-1 rounded-xl text-xs border border-slate-200">
+                                    <button type="button" onclick="switchArchetypeDevice('pharmacist', 'desktop')" id="arch-dev-btn-pharmacist-desktop" class="px-3 py-1 rounded-lg font-black text-xs bg-white text-slate-900 shadow-xs flex items-center gap-1 cursor-pointer transition-all">
+                                        <span class="material-symbols-outlined text-sm">desktop_windows</span>
+                                        <span>دسکتاپ</span>
+                                    </button>
+                                    <button type="button" onclick="switchArchetypeDevice('pharmacist', 'mobile')" id="arch-dev-btn-pharmacist-mobile" class="px-3 py-1 rounded-lg font-bold text-xs text-slate-500 hover:text-slate-800 flex items-center gap-1 cursor-pointer transition-all">
+                                        <span class="material-symbols-outlined text-sm">smartphone</span>
+                                        <span>موبایل PWA</span>
+                                    </button>
+                                </div>
+                                <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-purple-50 text-purple-800 border border-purple-200 text-xs font-bold">
+                                    <span class="w-2 h-2 rounded-full bg-purple-500 animate-pulse"></span>
+                                    <span>دمو فعال و آنلاین</span>
+                                </div>
+                            </div>
+
+                            <!-- 1. Desktop Browser Frame -->
+                            <div id="arch-mockup-desktop-pharmacist" class="w-full bg-slate-900 rounded-3xl p-3 shadow-2xl border-4 border-slate-800 relative group overflow-hidden transition-all duration-300">
                                 <div class="flex items-center justify-between px-3 py-1.5 bg-slate-800 rounded-xl mb-3 text-slate-400 text-[11px] font-mono" dir="ltr">
                                     <div class="flex items-center gap-1.5">
                                         <span class="w-2.5 h-2.5 rounded-full bg-rose-500"></span>
                                         <span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
                                         <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
                                     </div>
-                                    <span class="text-slate-300 font-bold">sina-pharmacy.asena.company</span>
-                                    <span class="material-symbols-outlined text-xs text-purple-400">lock</span>
+                                    <div class="flex items-center gap-1.5 text-slate-300 font-bold">
+                                        <span class="material-symbols-outlined text-xs text-purple-400">lock</span>
+                                        <span>sina-pharmacy.asena.company</span>
+                                    </div>
+                                    <a href="site.php?slug=sina-pharmacy" target="_blank" class="text-slate-400 hover:text-white" title="باز کردن در تب جدید">
+                                        <span class="material-symbols-outlined text-xs">open_in_new</span>
+                                    </a>
                                 </div>
-                                <div class="relative rounded-2xl overflow-hidden bg-slate-950 aspect-[4/3] flex flex-col justify-between p-4 text-white">
-                                    <div class="space-y-2">
-                                        <div class="inline-flex items-center gap-1 bg-purple-500/20 text-purple-300 text-[10px] px-2.5 py-1 rounded-full border border-purple-400/30">
-                                            <span class="material-symbols-outlined text-xs">ac_unit</span>
-                                            <span>زنجیره سرد فعال: ۳.۸°C</span>
+                                <div class="relative rounded-2xl overflow-hidden bg-slate-950 p-4 text-white space-y-3.5">
+                                    <!-- Pharmacy Header -->
+                                    <div class="flex items-center justify-between border-b border-slate-800/80 pb-3">
+                                        <div class="flex items-center gap-2.5">
+                                            <div class="w-10 h-10 rounded-full bg-purple-600/30 border border-purple-500/50 flex items-center justify-center text-purple-300 font-bold text-sm">
+                                                <span class="material-symbols-outlined text-xl">medication</span>
+                                            </div>
+                                            <div>
+                                                <h4 class="text-sm font-black text-white">داروخانه تخصصی دکتر فیروزی (سینا)</h4>
+                                                <div class="text-[10px] text-slate-400">مرکز تأمین واکسن‌ها، سرم‌ها و مکمل‌های حیوانات</div>
+                                            </div>
                                         </div>
-                                        <h4 class="text-lg font-black text-white">داروخانه تخصصی دکتر فیروزی (سینا)</h4>
-                                        <p class="text-xs text-slate-300 leading-normal">تأمین و توزیع تخصصی واکسن‌ها، سرم‌ها و مکمل‌های تقویتی</p>
+                                        <span class="bg-purple-500/20 text-purple-300 text-[10px] px-2 py-0.5 rounded-full border border-purple-400/30 font-bold">مجوز رسمی غذا و دارو</span>
                                     </div>
-                                    <!-- Interactive mini widgets teaser in mockup -->
-                                    <div class="grid grid-cols-2 gap-2 text-center text-xs">
-                                        <div class="bg-white/10 rounded-xl p-2 backdrop-blur-xs border border-white/10">
-                                            <div class="text-purple-300 font-bold">آپلود سریع نسخه</div>
-                                            <div class="text-[10px] text-slate-400">پاسخگویی زیر ۱۵ دقیقه</div>
+                                    <!-- Cold-Chain Telemetry & Rx Dropzone -->
+                                    <div class="bg-slate-900/90 rounded-xl p-3 border border-slate-800 space-y-2">
+                                        <div class="flex items-center justify-between text-xs">
+                                            <span class="text-cyan-300 font-black flex items-center gap-1">
+                                                <span class="material-symbols-outlined text-sm">ac_unit</span>
+                                                <span>دیده‌بان زنجیره سرد: ۳.۸°C</span>
+                                            </span>
+                                            <span class="text-[10px] text-emerald-400 font-bold">پایدار در بازه استاندارد ۲-۸°C</span>
                                         </div>
-                                        <div class="bg-white/10 rounded-xl p-2 backdrop-blur-xs border border-white/10">
-                                            <div class="text-cyan-300 font-bold">بسته‌بندی ایزوله یخ</div>
-                                            <div class="text-[10px] text-slate-400">ارسال بدون افت دما</div>
+                                        <div class="p-2.5 rounded-lg bg-purple-950/40 border border-dashed border-purple-500/40 text-center space-y-1">
+                                            <div class="text-xs text-purple-200 font-bold flex items-center justify-center gap-1">
+                                                <span class="material-symbols-outlined text-sm">upload_file</span>
+                                                <span>آپلود سریع عکس نسخه پزشک (Rx)</span>
+                                            </div>
+                                            <div class="text-[9px] text-slate-400">بررسی توسط داروساز مقیم زیر ۱۵ دقیقه با ارسال فاکتور</div>
                                         </div>
                                     </div>
-                                    <a href="site.php?slug=sina-pharmacy" target="_blank" class="w-full py-2 bg-purple-600 hover:bg-purple-500 rounded-xl text-center text-xs font-bold transition-colors">
-                                        مشاهده پیش‌نمایش زنده در تب جدید
+                                    <!-- Insulated Delivery Badge -->
+                                    <div class="grid grid-cols-2 gap-2 text-xs">
+                                        <div class="bg-white/5 rounded-xl p-2 border border-white/10 flex items-center gap-2">
+                                            <span class="material-symbols-outlined text-purple-400 text-lg">inventory_2</span>
+                                            <div class="text-[10px] leading-tight text-slate-300">بسته‌بندی ایزوله یونولیت و ژل یخ</div>
+                                        </div>
+                                        <div class="bg-white/5 rounded-xl p-2 border border-white/10 flex items-center gap-2">
+                                            <span class="material-symbols-outlined text-cyan-400 text-lg">local_shipping</span>
+                                            <div class="text-[10px] leading-tight text-slate-300">ارسال فوری داخل‌شهری و پستی</div>
+                                        </div>
+                                    </div>
+                                    <a href="site.php?slug=sina-pharmacy" target="_blank" class="w-full py-2.5 bg-purple-700 hover:bg-purple-600 rounded-xl text-center text-xs font-black transition-colors flex items-center justify-center gap-1.5 text-white shadow-md">
+                                        <span>مشاهده وب‌سایت زنده داروخانه سینا</span>
+                                        <span class="material-symbols-outlined text-sm">open_in_new</span>
                                     </a>
                                 </div>
                             </div>
-                            <div class="text-[11px] text-slate-400 mt-2 font-medium flex items-center gap-1">
+
+                            <!-- 2. Mobile PWA Smartphone Frame (Hidden by default) -->
+                            <div id="arch-mockup-mobile-pharmacist" class="hidden w-full max-w-[280px] bg-slate-900 rounded-[2.8rem] p-3 shadow-2xl border-4 border-slate-700 relative group overflow-hidden transition-all duration-300">
+                                <div class="w-24 h-4 bg-black rounded-full mx-auto mb-2 flex items-center justify-center">
+                                    <span class="w-2 h-2 rounded-full bg-slate-800 mr-2"></span>
+                                </div>
+                                <div class="relative rounded-2xl overflow-hidden bg-slate-950 p-3 text-white space-y-3 text-xs">
+                                    <div class="text-center space-y-1">
+                                        <div class="w-10 h-10 rounded-full bg-purple-600/30 border border-purple-500/50 mx-auto flex items-center justify-center text-purple-300">
+                                            <span class="material-symbols-outlined text-lg">medication</span>
+                                        </div>
+                                        <div class="font-black text-xs text-white">داروخانه دکتر فیروزی</div>
+                                        <div class="text-[9px] text-cyan-300">زنجیره سرد فعال: ۳.۸°C</div>
+                                    </div>
+                                    <div class="bg-slate-900 rounded-xl p-2 border border-slate-800 space-y-1 text-center">
+                                        <div class="text-[10px] text-purple-400 font-bold">آپلود سریع عکس نسخه</div>
+                                        <div class="text-[9px] text-slate-400">پاسخ داروساز زیر ۱۵ دقیقه</div>
+                                    </div>
+                                    <a href="site.php?slug=sina-pharmacy" target="_blank" class="w-full py-2 bg-purple-700 hover:bg-purple-600 rounded-lg text-center text-[11px] font-black transition-colors block text-white">
+                                        ورود به نسخه موبایل PWA ↗
+                                    </a>
+                                </div>
+                            </div>
+
+                            <div class="text-[11px] text-slate-400 mt-2.5 font-medium flex items-center gap-1">
                                 <span class="material-symbols-outlined text-sm text-purple-600">check_circle</span>
-                                <span>پالت رنگی: بنفش دارویی های‌تک (#7c3aed) و آبی زنجیره سرد</span>
+                                <span>پالت اختصاصی: بنفش دارویی های‌تک (#7c3aed) و آبی زنجیره سرد</span>
                             </div>
                         </div>
                     </div>
@@ -450,46 +620,117 @@ include __DIR__ . '/includes/header.php';
                             </div>
                         </div>
 
-                        <!-- Visual Mockup Showcase -->
-                        <div class="lg:col-span-5 flex flex-col items-center">
-                            <div class="w-full bg-slate-900 rounded-3xl p-3 shadow-2xl border-4 border-slate-800 relative group overflow-hidden">
+                        <!-- Visual Mockup Showcase (Interactive Desktop / Mobile PWA) -->
+                        <div class="lg:col-span-5 flex flex-col items-center w-full">
+                            <!-- Device Switcher Controls -->
+                            <div class="w-full flex items-center justify-between mb-3 px-1">
+                                <div class="inline-flex items-center gap-1 bg-slate-100 p-1 rounded-xl text-xs border border-slate-200">
+                                    <button type="button" onclick="switchArchetypeDevice('seller', 'desktop')" id="arch-dev-btn-seller-desktop" class="px-3 py-1 rounded-lg font-black text-xs bg-white text-slate-900 shadow-xs flex items-center gap-1 cursor-pointer transition-all">
+                                        <span class="material-symbols-outlined text-sm">desktop_windows</span>
+                                        <span>دسکتاپ</span>
+                                    </button>
+                                    <button type="button" onclick="switchArchetypeDevice('seller', 'mobile')" id="arch-dev-btn-seller-mobile" class="px-3 py-1 rounded-lg font-bold text-xs text-slate-500 hover:text-slate-800 flex items-center gap-1 cursor-pointer transition-all">
+                                        <span class="material-symbols-outlined text-sm">smartphone</span>
+                                        <span>موبایل PWA</span>
+                                    </button>
+                                </div>
+                                <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-orange-50 text-orange-800 border border-orange-200 text-xs font-bold">
+                                    <span class="w-2 h-2 rounded-full bg-orange-500 animate-pulse"></span>
+                                    <span>دمو فعال و آنلاین</span>
+                                </div>
+                            </div>
+
+                            <!-- 1. Desktop Browser Frame -->
+                            <div id="arch-mockup-desktop-seller" class="w-full bg-slate-900 rounded-3xl p-3 shadow-2xl border-4 border-slate-800 relative group overflow-hidden transition-all duration-300">
                                 <div class="flex items-center justify-between px-3 py-1.5 bg-slate-800 rounded-xl mb-3 text-slate-400 text-[11px] font-mono" dir="ltr">
                                     <div class="flex items-center gap-1.5">
                                         <span class="w-2.5 h-2.5 rounded-full bg-rose-500"></span>
                                         <span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
                                         <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
                                     </div>
-                                    <span class="text-slate-300 font-bold">petland-store.asena.company</span>
-                                    <span class="material-symbols-outlined text-xs text-orange-400">lock</span>
+                                    <div class="flex items-center gap-1.5 text-slate-300 font-bold">
+                                        <span class="material-symbols-outlined text-xs text-orange-400">lock</span>
+                                        <span>petland-store.asena.company</span>
+                                    </div>
+                                    <a href="site.php?slug=petland-store" target="_blank" class="text-slate-400 hover:text-white" title="باز کردن در تب جدید">
+                                        <span class="material-symbols-outlined text-xs">open_in_new</span>
+                                    </a>
                                 </div>
-                                <div class="relative rounded-2xl overflow-hidden bg-slate-950 aspect-[4/3] flex flex-col justify-between p-4 text-white">
-                                    <div class="space-y-2">
-                                        <div class="inline-flex items-center gap-1 bg-orange-500/20 text-orange-300 text-[10px] px-2.5 py-1 rounded-full border border-orange-400/30">
-                                            <span class="material-symbols-outlined text-xs">local_shipping</span>
-                                            <span>ارسال فوری به تمام کشور</span>
+                                <div class="relative rounded-2xl overflow-hidden bg-slate-950 p-4 text-white space-y-3.5">
+                                    <!-- Store Header & Species Filter -->
+                                    <div class="flex items-center justify-between border-b border-slate-800/80 pb-3">
+                                        <div class="flex items-center gap-2.5">
+                                            <div class="w-10 h-10 rounded-full bg-orange-600/30 border border-orange-500/50 flex items-center justify-center text-orange-400 font-bold text-sm">
+                                                <span class="material-symbols-outlined text-xl">shopping_cart</span>
+                                            </div>
+                                            <div>
+                                                <h4 class="text-sm font-black text-white">پت‌شاپ و هایپرمارکت پت‌لند</h4>
+                                                <div class="text-[10px] text-slate-400">غذای خشک، کنسرو، تشویقی و بهداشتی</div>
+                                            </div>
                                         </div>
-                                        <h4 class="text-lg font-black text-white">هایپرمارکت آنلاین ملزومات پت‌لند</h4>
-                                        <p class="text-xs text-slate-300 leading-normal">تنوع بی‌نظیر غذا، تشویقی و بهداشتی با ۱۰٪ تخفیف اتوشیپ</p>
+                                        <span class="bg-orange-500/20 text-orange-300 text-[10px] px-2 py-0.5 rounded-full border border-orange-400/30 font-bold">نماد اعتماد و درگاه</span>
                                     </div>
-                                    <!-- Interactive mini widgets teaser in mockup -->
-                                    <div class="grid grid-cols-2 gap-2 text-center text-xs">
-                                        <div class="bg-white/10 rounded-xl p-2 backdrop-blur-xs border border-white/10">
-                                            <div class="text-orange-400 font-bold">تخفیف اشتراک Autoship</div>
-                                            <div class="text-[10px] text-slate-400">۱۰٪ کسر ماهانه دائمی</div>
+                                    <!-- Species Tabs & Autoship Teaser -->
+                                    <div class="bg-slate-900/90 rounded-xl p-3 border border-slate-800 space-y-2.5">
+                                        <div class="grid grid-cols-4 gap-1 text-center text-[10px] font-bold">
+                                            <div class="bg-orange-600 text-white py-1 rounded-lg">🐶 سگ</div>
+                                            <div class="bg-slate-800 text-slate-300 py-1 rounded-lg">🐱 گربه</div>
+                                            <div class="bg-slate-800 text-slate-300 py-1 rounded-lg">🦜 پرنده</div>
+                                            <div class="bg-slate-800 text-slate-300 py-1 rounded-lg">🐠 آبزیان</div>
                                         </div>
-                                        <div class="bg-white/10 rounded-xl p-2 backdrop-blur-xs border border-white/10">
-                                            <div class="text-amber-300 font-bold">ضمانت اصالت و مرجوعی</div>
-                                            <div class="text-[10px] text-slate-400">مهلت تست ۷ روزه کالا</div>
+                                        <!-- Autoship Highlight Strip -->
+                                        <div class="p-2 rounded-lg bg-orange-950/40 border border-orange-500/30 flex items-center justify-between text-xs">
+                                            <div class="flex items-center gap-1.5 text-orange-300 font-black text-[11px]">
+                                                <span class="material-symbols-outlined text-sm">autorenew</span>
+                                                <span>تحویل دوره‌ای اتوشیپ</span>
+                                            </div>
+                                            <span class="bg-orange-500 text-white text-[9px] px-1.5 py-0.5 rounded font-black">۱۰٪ تخفیف دائمی</span>
                                         </div>
                                     </div>
-                                    <a href="site.php?slug=petland-store" target="_blank" class="w-full py-2 bg-orange-600 hover:bg-orange-500 rounded-xl text-center text-xs font-bold transition-colors">
-                                        مشاهده پیش‌نمایش زنده در تب جدید
+                                    <!-- Product Card Simulation -->
+                                    <div class="grid grid-cols-2 gap-2 text-xs">
+                                        <div class="bg-white/5 rounded-xl p-2 border border-white/10 flex items-center gap-2">
+                                            <span class="material-symbols-outlined text-orange-400 text-lg">package_2</span>
+                                            <div class="text-[10px] leading-tight text-slate-300">غذای رویال کنین مینی (موجود در انبار)</div>
+                                        </div>
+                                        <div class="bg-white/5 rounded-xl p-2 border border-white/10 flex items-center gap-2">
+                                            <span class="material-symbols-outlined text-emerald-400 text-lg">local_shipping</span>
+                                            <div class="text-[10px] leading-tight text-slate-300">ارسال به تمام کشور با پیشتاز</div>
+                                        </div>
+                                    </div>
+                                    <a href="site.php?slug=petland-store" target="_blank" class="w-full py-2.5 bg-orange-600 hover:bg-orange-500 rounded-xl text-center text-xs font-black transition-colors flex items-center justify-center gap-1.5 text-white shadow-md">
+                                        <span>مشاهده وب‌سایت زنده پت‌شاپ پت‌لند</span>
+                                        <span class="material-symbols-outlined text-sm">open_in_new</span>
                                     </a>
                                 </div>
                             </div>
-                            <div class="text-[11px] text-slate-400 mt-2 font-medium flex items-center gap-1">
+
+                            <!-- 2. Mobile PWA Smartphone Frame (Hidden by default) -->
+                            <div id="arch-mockup-mobile-seller" class="hidden w-full max-w-[280px] bg-slate-900 rounded-[2.8rem] p-3 shadow-2xl border-4 border-slate-700 relative group overflow-hidden transition-all duration-300">
+                                <div class="w-24 h-4 bg-black rounded-full mx-auto mb-2 flex items-center justify-center">
+                                    <span class="w-2 h-2 rounded-full bg-slate-800 mr-2"></span>
+                                </div>
+                                <div class="relative rounded-2xl overflow-hidden bg-slate-950 p-3 text-white space-y-3 text-xs">
+                                    <div class="text-center space-y-1">
+                                        <div class="w-10 h-10 rounded-full bg-orange-600/30 border border-orange-500/50 mx-auto flex items-center justify-center text-orange-300">
+                                            <span class="material-symbols-outlined text-lg">pets</span>
+                                        </div>
+                                        <div class="font-black text-xs text-white">پت‌شاپ تخصصی پت‌لند</div>
+                                        <div class="text-[9px] text-orange-300">تخفیف ۱۰٪ خرید دوره‌ای اتوشیپ</div>
+                                    </div>
+                                    <div class="bg-slate-900 rounded-xl p-2 border border-slate-800 space-y-1 text-center">
+                                        <div class="text-[10px] text-orange-400 font-bold">خرید آنلاین و تحویل اکسپرس</div>
+                                        <div class="text-[9px] text-slate-400">تنوع بیش از ۱۲۰۰ کالای معتبر</div>
+                                    </div>
+                                    <a href="site.php?slug=petland-store" target="_blank" class="w-full py-2 bg-orange-600 hover:bg-orange-500 rounded-lg text-center text-[11px] font-black transition-colors block text-white">
+                                        ورود به نسخه موبایل PWA ↗
+                                    </a>
+                                </div>
+                            </div>
+
+                            <div class="text-[11px] text-slate-400 mt-2.5 font-medium flex items-center gap-1">
                                 <span class="material-symbols-outlined text-sm text-orange-600">check_circle</span>
-                                <span>پالت رنگی: نارنجی پویا و پرانرژی (#ea580c) و زرد عسلی</span>
+                                <span>پالت اختصاصی: نارنجی پویا و پرانرژی (#ea580c) و زرد عسلی</span>
                             </div>
                         </div>
                     </div>
@@ -557,46 +798,107 @@ include __DIR__ . '/includes/header.php';
                             </div>
                         </div>
 
-                        <!-- Visual Mockup Showcase -->
-                        <div class="lg:col-span-5 flex flex-col items-center">
-                            <div class="w-full bg-slate-900 rounded-3xl p-3 shadow-2xl border-4 border-slate-800 relative group overflow-hidden">
+                        <!-- Visual Mockup Showcase (Interactive Desktop / Mobile PWA) -->
+                        <div class="lg:col-span-5 flex flex-col items-center w-full">
+                            <!-- Device Switcher Controls -->
+                            <div class="w-full flex items-center justify-between mb-3 px-1">
+                                <div class="inline-flex items-center gap-1 bg-slate-100 p-1 rounded-xl text-xs border border-slate-200">
+                                    <button type="button" onclick="switchArchetypeDevice('organization', 'desktop')" id="arch-dev-btn-organization-desktop" class="px-3 py-1 rounded-lg font-black text-xs bg-white text-slate-900 shadow-xs flex items-center gap-1 cursor-pointer transition-all">
+                                        <span class="material-symbols-outlined text-sm">desktop_windows</span>
+                                        <span>دسکتاپ</span>
+                                    </button>
+                                    <button type="button" onclick="switchArchetypeDevice('organization', 'mobile')" id="arch-dev-btn-organization-mobile" class="px-3 py-1 rounded-lg font-bold text-xs text-slate-500 hover:text-slate-800 flex items-center gap-1 cursor-pointer transition-all">
+                                        <span class="material-symbols-outlined text-sm">smartphone</span>
+                                        <span>موبایل PWA</span>
+                                    </button>
+                                </div>
+                                <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 text-blue-900 border border-blue-200 text-xs font-bold">
+                                    <span class="w-2 h-2 rounded-full bg-blue-600 animate-pulse"></span>
+                                    <span>دمو فعال و آنلاین</span>
+                                </div>
+                            </div>
+
+                            <!-- 1. Desktop Browser Frame -->
+                            <div id="arch-mockup-desktop-organization" class="w-full bg-slate-900 rounded-3xl p-3 shadow-2xl border-4 border-slate-800 relative group overflow-hidden transition-all duration-300">
                                 <div class="flex items-center justify-between px-3 py-1.5 bg-slate-800 rounded-xl mb-3 text-slate-400 text-[11px] font-mono" dir="ltr">
                                     <div class="flex items-center gap-1.5">
                                         <span class="w-2.5 h-2.5 rounded-full bg-rose-500"></span>
                                         <span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
                                         <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
                                     </div>
-                                    <span class="text-slate-300 font-bold">razi-hospital.asena.company</span>
-                                    <span class="material-symbols-outlined text-xs text-teal-400">lock</span>
+                                    <div class="flex items-center gap-1.5 text-slate-300 font-bold">
+                                        <span class="material-symbols-outlined text-xs text-teal-400">lock</span>
+                                        <span>razi-hospital.asena.company</span>
+                                    </div>
+                                    <a href="site.php?slug=razi-hospital" target="_blank" class="text-slate-400 hover:text-white" title="باز کردن در تب جدید">
+                                        <span class="material-symbols-outlined text-xs">open_in_new</span>
+                                    </a>
                                 </div>
-                                <div class="relative rounded-2xl overflow-hidden bg-slate-950 aspect-[4/3] flex flex-col justify-between p-4 text-white">
-                                    <div class="space-y-2">
-                                        <div class="inline-flex items-center gap-1 bg-rose-500/20 text-rose-300 text-[10px] px-2.5 py-1 rounded-full border border-rose-400/30">
-                                            <span class="material-symbols-outlined text-xs">emergency</span>
-                                            <span>اورژانس و تریاژ ۲۴ ساعته فعال</span>
+                                <div class="relative rounded-2xl overflow-hidden bg-slate-950 p-4 text-white space-y-3">
+                                    <!-- 24/7 Red Siren Emergency Bar -->
+                                    <div class="p-2 rounded-xl bg-gradient-to-r from-rose-900/80 via-red-800/80 to-rose-900/80 border border-rose-500/50 flex items-center justify-between text-xs animate-pulse">
+                                        <div class="flex items-center gap-1.5 text-rose-200 font-black">
+                                            <span class="material-symbols-outlined text-base text-rose-300">emergency</span>
+                                            <span>اورژانس و تریاژ ۲۴/۷ شبانه‌روزی</span>
                                         </div>
-                                        <h4 class="text-lg font-black text-white">بیمارستان تخصصی دامپزشکی رازی</h4>
-                                        <p class="text-xs text-slate-300 leading-normal">مجتمع درمانی ارجاعی، جراحی پیشرفته و رادیولوژی دیجیتال</p>
+                                        <span class="bg-rose-500 text-white text-[10px] px-2 py-0.5 rounded-full font-bold">تماس فوری: ۰۲۱-۸۸۸۸xxxx</span>
                                     </div>
-                                    <!-- Interactive mini widgets teaser in mockup -->
-                                    <div class="grid grid-cols-2 gap-2 text-center text-xs">
-                                        <div class="bg-white/10 rounded-xl p-2 backdrop-blur-xs border border-white/10">
-                                            <div class="text-teal-400 font-bold">۱۴ پزشک متخصص مقیم</div>
-                                            <div class="text-[10px] text-slate-400">برنامه هفتگی شیفت‌ها</div>
+                                    <!-- Hospital Name & Department Roster -->
+                                    <div class="border-b border-slate-800/80 pb-2.5 space-y-1">
+                                        <h4 class="text-sm font-black text-white">بیمارستان تخصصی دامپزشکی رازی</h4>
+                                        <div class="text-[10px] text-slate-400">مجتمع درمانی ارجاعی، جراحی پیشرفته و رادیولوژی دیجیتال</div>
+                                    </div>
+                                    <!-- Department Navigation Tabs Simulation -->
+                                    <div class="grid grid-cols-4 gap-1 text-center text-[10px] font-bold">
+                                        <div class="bg-blue-900/80 text-blue-200 py-1 rounded-lg border border-blue-700/50">جراحی</div>
+                                        <div class="bg-slate-800 text-slate-300 py-1 rounded-lg">رادیولوژی</div>
+                                        <div class="bg-slate-800 text-slate-300 py-1 rounded-lg">بستری ICU</div>
+                                        <div class="bg-slate-800 text-slate-300 py-1 rounded-lg">آزمایشگاه</div>
+                                    </div>
+                                    <!-- On-duty stats -->
+                                    <div class="grid grid-cols-2 gap-2 text-xs">
+                                        <div class="bg-white/5 rounded-xl p-2 border border-white/10 flex items-center gap-2">
+                                            <span class="material-symbols-outlined text-teal-400 text-lg">medical_services</span>
+                                            <div class="text-[10px] leading-tight text-slate-300">۳ پزشک مقیم شیفت شب</div>
                                         </div>
-                                        <div class="bg-white/10 rounded-xl p-2 backdrop-blur-xs border border-white/10">
-                                            <div class="text-rose-400 font-bold">اتاق عمل و بستری ICU</div>
-                                            <div class="text-[10px] text-slate-400">تجهیزات بیهوشی ایمن</div>
+                                        <div class="bg-white/5 rounded-xl p-2 border border-white/10 flex items-center gap-2">
+                                            <span class="material-symbols-outlined text-rose-400 text-lg">airport_shuttle</span>
+                                            <div class="text-[10px] leading-tight text-slate-300">اعزام فوری آمبولانس</div>
                                         </div>
                                     </div>
-                                    <a href="site.php?slug=razi-hospital" target="_blank" class="w-full py-2 bg-[#001a48] hover:bg-[#022869] border border-white/20 rounded-xl text-center text-xs font-bold transition-colors">
-                                        مشاهده پیش‌نمایش زنده در تب جدید
+                                    <a href="site.php?slug=razi-hospital" target="_blank" class="w-full py-2.5 bg-[#001a48] hover:bg-[#022869] border border-white/20 rounded-xl text-center text-xs font-black transition-colors flex items-center justify-center gap-1.5 text-white shadow-md">
+                                        <span>مشاهده وب‌سایت زنده بیمارستان رازی</span>
+                                        <span class="material-symbols-outlined text-sm">open_in_new</span>
                                     </a>
                                 </div>
                             </div>
-                            <div class="text-[11px] text-slate-400 mt-2 font-medium flex items-center gap-1">
+
+                            <!-- 2. Mobile PWA Smartphone Frame (Hidden by default) -->
+                            <div id="arch-mockup-mobile-organization" class="hidden w-full max-w-[280px] bg-slate-900 rounded-[2.8rem] p-3 shadow-2xl border-4 border-slate-700 relative group overflow-hidden transition-all duration-300">
+                                <div class="w-24 h-4 bg-black rounded-full mx-auto mb-2 flex items-center justify-center">
+                                    <span class="w-2 h-2 rounded-full bg-slate-800 mr-2"></span>
+                                </div>
+                                <div class="relative rounded-2xl overflow-hidden bg-slate-950 p-3 text-white space-y-3 text-xs">
+                                    <div class="p-2 rounded-lg bg-rose-900/80 text-center text-rose-200 font-black text-[10px] border border-rose-600/40">
+                                        🚨 تریاژ و اورژانس ۲۴ ساعته فعال
+                                    </div>
+                                    <div class="text-center space-y-1">
+                                        <div class="font-black text-xs text-white">بیمارستان تخصصی رازی</div>
+                                        <div class="text-[9px] text-teal-300">کادر درمانی چندتخصصی و ICU</div>
+                                    </div>
+                                    <div class="bg-slate-900 rounded-xl p-2 border border-slate-800 space-y-1 text-center">
+                                        <div class="text-[10px] text-rose-400 font-bold">تماس فوری اورژانس</div>
+                                        <div class="text-[9px] text-slate-400">مسیریابی مستقیم درب اورژانس</div>
+                                    </div>
+                                    <a href="site.php?slug=razi-hospital" target="_blank" class="w-full py-2 bg-[#001a48] hover:bg-[#022869] border border-white/20 rounded-lg text-center text-[11px] font-black transition-colors block text-white">
+                                        ورود به نسخه موبایل PWA ↗
+                                    </a>
+                                </div>
+                            </div>
+
+                            <div class="text-[11px] text-slate-400 mt-2.5 font-medium flex items-center gap-1">
                                 <span class="material-symbols-outlined text-sm text-[#001a48]">check_circle</span>
-                                <span>پالت رنگی: سرمه‌ای سازمانی (#001a48)، فیروزه‌ای تیره و قرمز اضطراری</span>
+                                <span>پالت اختصاصی: سرمه‌ای سازمانی (#001a48)، فیروزه‌ای و قرمز اورژانس</span>
                             </div>
                         </div>
                     </div>
@@ -690,118 +992,263 @@ include __DIR__ . '/includes/header.php';
         </div>
     </section>
 
-    <!-- 4. Beat 4: Pricing Matrix (Matching config/tiers.php) -->
-    <section id="pricing-matrix" class="space-y-8 scroll-mt-24">
+    <!-- 4. Beat 4: Dedicated Website Editions (No Class Discrimination - Tailored for Use Cases) -->
+    <section id="website-editions" class="space-y-8 scroll-mt-24">
+        <div id="pricing-matrix" class="hidden"></div>
         <div class="text-center max-w-3xl mx-auto space-y-3">
-            <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold">
-                <span class="material-symbols-outlined text-sm">sell</span>
-                <span>پلن‌های شفاف، اقتصادی و بدون درصد کارمزد پنهان</span>
+            <div class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-indigo-50 border border-indigo-200 text-indigo-800 text-xs font-black">
+                <span class="material-symbols-outlined text-sm text-indigo-600">tune</span>
+                <span>انعطاف‌پذیری ۱۰۰٪ بر اساس نیاز واقعی و صنف شما</span>
             </div>
             <h2 class="text-2xl sm:text-3xl md:text-4xl font-black text-slate-900">
-                تعرفه راه‌اندازی و پکیج‌های لایسنس
+                نسخه‌های تخصصی وب‌سایت آسنا
             </h2>
-            <p class="text-xs sm:text-sm text-slate-600 leading-relaxed">
-                متناسب با حجم مراجعین و نیازهای مرکز خود، پکیج مناسب را انتخاب کنید. امکان ارتقا در هر زمان وجود دارد.
+            <p class="text-xs sm:text-sm md:text-base text-slate-600 leading-relaxed max-w-2xl mx-auto">
+                بدون طبقه‌بندی کیفی و بدون امکانات قفل‌شده! در آسنا هیچ وب‌سایتی «درجه دو» یا محدود نیست؛ همه نسخه‌ها وب‌سایت کامل، مستقل و با امکانات زیرساختی ۱۰۰٪ هستند و تفاوت آن‌ها در ماژول‌های ویژه متناسب با شیوه کاری شماست.
             </p>
+        </div>
+
+        <!-- Shared Foundation Assurance Banner -->
+        <div class="p-4 sm:p-5 rounded-3xl bg-gradient-to-r from-slate-950 via-[#001a48] to-slate-900 text-white border border-white/10 shadow-xl flex flex-col md:flex-row items-center justify-between gap-4 text-xs sm:text-sm">
+            <div class="flex items-center gap-3">
+                <div class="w-11 h-11 rounded-2xl bg-amber-400/20 border border-amber-400/40 flex items-center justify-center text-amber-300 shrink-0 shadow-sm">
+                    <span class="material-symbols-outlined text-2xl">verified</span>
+                </div>
+                <div>
+                    <div class="font-black text-white text-sm sm:text-base flex items-center gap-2">
+                        <span>امکانات زیرساختی استاندارد در تمامی نسخه‌ها بدون استثنا</span>
+                        <span class="hidden sm:inline-block px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-bold border border-emerald-400/30">۱۰۰٪ فول امکانات</span>
+                    </div>
+                    <div class="text-slate-300 text-xs mt-1 leading-relaxed">
+                        دامنه مستقل (.ir / .com) • هاست ابری نامحدود با SSL رایگان • درگاه شاپرک با تسویه مستقیم پایا • کارت هوشمند QR و استند مطب • بدون کارمزد تراکنش • استودیو ویرایشگر زنده • پشتیبانی فنی مداوم
+                    </div>
+                </div>
+            </div>
+            <div class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white/10 text-amber-300 font-bold text-xs shrink-0 border border-white/15 backdrop-blur-sm">
+                <span class="material-symbols-outlined text-sm">lock_open</span>
+                <span>بدون هیچ قابلیت قفل‌شده</span>
+            </div>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
 
-            <!-- Tier 1: Basic -->
-            <div class="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-sm hover:shadow-lg transition-all flex flex-col justify-between space-y-6">
+            <!-- Edition 1: Doctor / Clinic Edition -->
+            <div class="bg-white rounded-3xl p-6 sm:p-7 border-2 border-emerald-200 shadow-lg hover:shadow-xl hover:border-emerald-400 transition-all flex flex-col justify-between space-y-6 relative group">
                 <div class="space-y-4">
-                    <div class="text-xs font-black text-slate-500 uppercase tracking-wider">شروع فعالیت آنلاین</div>
-                    <h3 class="text-xl font-black text-slate-900">نسخه پایه (Basic)</h3>
-                    <p class="text-xs text-slate-500 leading-relaxed">مناسب پزشکان تک‌مطب و فروشگاه‌های نوپا جهت معرفی خدمات و نوبت‌دهی آنلاین.</p>
-                    <div class="py-2 border-y border-slate-100">
-                        <div class="text-2xl sm:text-3xl font-black text-slate-900 font-mono">۴,۹۰۰,۰۰۰</div>
-                        <div class="text-[11px] text-slate-400">تومان / سالانه (شامل هاست و پشتیبانی)</div>
+                    <div class="flex items-center justify-between">
+                        <span class="px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 text-[11px] font-black flex items-center gap-1">
+                            <span class="material-symbols-outlined text-xs">stethoscope</span>
+                            <span>ویژه پزشکان و جراحان</span>
+                        </span>
+                        <span class="text-xs font-mono font-bold text-slate-400">نسخه ۱</span>
                     </div>
-                    <ul class="space-y-2.5 text-xs text-slate-600">
-                        <li class="flex items-center gap-2"><span class="material-symbols-outlined text-emerald-500 text-sm">check</span>سامانه نوبت‌دهی و رزرو آنلاین</li>
-                        <li class="flex items-center gap-2"><span class="material-symbols-outlined text-emerald-500 text-sm">check</span>ویترین آنلاین خدمات یا کالاها</li>
-                        <li class="flex items-center gap-2"><span class="material-symbols-outlined text-emerald-500 text-sm">check</span>کارت ویزیت دیجیتال و QR اختصاصی</li>
-                        <li class="flex items-center gap-2"><span class="material-symbols-outlined text-emerald-500 text-sm">check</span>ساب‌دامین اختصاصی رایگان (.asena.company)</li>
-                        <li class="flex items-center gap-2 text-slate-400"><span class="material-symbols-outlined text-slate-300 text-sm">close</span>سفارش خودکار ادواری (Autoship)</li>
-                        <li class="flex items-center gap-2 text-slate-400"><span class="material-symbols-outlined text-slate-300 text-sm">close</span>اتوماسیون پیامک و دانشنامه سئو</li>
+                    <div>
+                        <h3 class="text-xl font-black text-slate-900">مطب و نوبت‌دهی بالینی</h3>
+                        <p class="text-xs text-slate-500 mt-1 leading-relaxed">ساختار اختصاصی اتوریتی پزشکی و نوبت‌دهی آنلاین بدون اتلاف وقت منشی مطب.</p>
+                    </div>
+                    <div class="py-3 border-y border-slate-100">
+                        <div class="text-2xl sm:text-3xl font-black text-emerald-800 font-mono">۷,۹۰۰,۰۰۰</div>
+                        <div class="text-[11px] text-slate-400 mt-0.5">تومان / سالانه (شامل هاست، دامنه و پشتیبانی)</div>
+                    </div>
+                    <ul class="space-y-2.5 text-xs text-slate-700">
+                        <li class="flex items-start gap-2">
+                            <span class="material-symbols-outlined text-emerald-600 text-base shrink-0 mt-0.5">check_circle</span>
+                            <span class="font-bold">سامانه تقویم نوبت‌دهی آنلاین و تایم‌اسلات‌ها</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="material-symbols-outlined text-emerald-600 text-base shrink-0 mt-0.5">check_circle</span>
+                            <span>اسلایدر تعاملی درمان قبل و بعد (Before/After)</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="material-symbols-outlined text-emerald-600 text-base shrink-0 mt-0.5">check_circle</span>
+                            <span>محاسبه‌گر شفاف تعرفه خدمات با ۱۰٪ تخفیف آنلاین</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="material-symbols-outlined text-emerald-600 text-base shrink-0 mt-0.5">check_circle</span>
+                            <span>تابلوی بیوگرافی و استعلام پروانه نظام دامپزشکی</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="material-symbols-outlined text-emerald-600 text-base shrink-0 mt-0.5">check_circle</span>
+                            <span>کارت ویزیت دیجیتال و استند رومیزی هوشمند QR</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="material-symbols-outlined text-emerald-600 text-base shrink-0 mt-0.5">check_circle</span>
+                            <span>وبلاگ و دانشنامه سئو محلی نتایج اول گوگل</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="material-symbols-outlined text-emerald-600 text-base shrink-0 mt-0.5">check_circle</span>
+                            <span>ارسال پیامک تایید و یادآوری وقت ویزیت به بیمار</span>
+                        </li>
                     </ul>
                 </div>
-                <button type="button" onclick="openOrderModal(null, 'basic')" class="w-full py-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-black text-xs transition-colors cursor-pointer">
-                    انتخاب نسخه پایه
+                <button type="button" onclick="openOrderModal('doctor')" class="w-full py-3.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-black text-xs shadow-md hover:shadow-emerald-700/20 transition-all flex items-center justify-center gap-1.5 cursor-pointer active:scale-95">
+                    <span class="material-symbols-outlined text-base">task_alt</span>
+                    <span>انتخاب نسخه مطب و پزشکان</span>
                 </button>
             </div>
 
-            <!-- Tier 2: Standard (Popular) -->
-            <div class="bg-white rounded-3xl p-6 sm:p-8 border-2 border-indigo-600 shadow-xl relative flex flex-col justify-between space-y-6">
-                <div class="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full bg-indigo-600 text-white text-[11px] font-black shadow-md">
-                    محبوب‌ترین انتخاب پزشکان
-                </div>
-                <div class="space-y-4 pt-2">
-                    <div class="text-xs font-black text-indigo-600 uppercase tracking-wider">تجاری و وفاداری</div>
-                    <h3 class="text-xl font-black text-slate-900">نسخه تجاری (Standard)</h3>
-                    <p class="text-xs text-slate-500 leading-relaxed">مجهز به دانشنامه تخصصی جهت سئو گوگل، ثبت نظرات بیماران و باشگاه مشتریان.</p>
-                    <div class="py-2 border-y border-slate-100">
-                        <div class="text-2xl sm:text-3xl font-black text-indigo-700 font-mono">۸,۸۰۰,۰۰۰</div>
-                        <div class="text-[11px] text-slate-400">تومان / سالانه (شامل هاست و لایسنس کامل)</div>
+            <!-- Edition 2: Pharmacy Edition -->
+            <div class="bg-white rounded-3xl p-6 sm:p-7 border-2 border-purple-200 shadow-lg hover:shadow-xl hover:border-purple-400 transition-all flex flex-col justify-between space-y-6 relative group">
+                <div class="space-y-4">
+                    <div class="flex items-center justify-between">
+                        <span class="px-3 py-1 rounded-full bg-purple-100 text-purple-800 text-[11px] font-black flex items-center gap-1">
+                            <span class="material-symbols-outlined text-xs">medication</span>
+                            <span>ویژه داروخانه‌ها و مکمل‌ها</span>
+                        </span>
+                        <span class="text-xs font-mono font-bold text-slate-400">نسخه ۲</span>
                     </div>
-                    <ul class="space-y-2.5 text-xs text-slate-600">
-                        <li class="flex items-center gap-2"><span class="material-symbols-outlined text-emerald-500 text-sm">check</span>تمامی امکانات نسخه پایه</li>
-                        <li class="flex items-center gap-2"><span class="material-symbols-outlined text-emerald-500 text-sm">check</span>وبلاگ و دانشنامه سئو محلی گوگل</li>
-                        <li class="flex items-center gap-2"><span class="material-symbols-outlined text-emerald-500 text-sm">check</span>باشگاه مشتریان و سیستم امتیاز وفاداری</li>
-                        <li class="flex items-center gap-2"><span class="material-symbols-outlined text-emerald-500 text-sm">check</span>ثبت نظرات و اعتبارسنجی مراجعین</li>
-                        <li class="flex items-center gap-2"><span class="material-symbols-outlined text-emerald-500 text-sm">check</span>اتصال به دامنه اختصاصی (.ir / .com)</li>
-                        <li class="flex items-center gap-2 text-slate-400"><span class="material-symbols-outlined text-slate-300 text-sm">close</span>سامانه ویزیت تله‌هلث و چت</li>
+                    <div>
+                        <h3 class="text-xl font-black text-slate-900">داروخانه و دراگ‌استور هوشمند</h3>
+                        <p class="text-xs text-slate-500 mt-1 leading-relaxed">سامانه پذیرش نسخه، پایش دمای زنجیره سرد و عرضه داروهای کمیاب و واکسن.</p>
+                    </div>
+                    <div class="py-3 border-y border-slate-100">
+                        <div class="text-2xl sm:text-3xl font-black text-purple-800 font-mono">۹,۴۰۰,۰۰۰</div>
+                        <div class="text-[11px] text-slate-400 mt-0.5">تومان / سالانه (شامل هاست، دامنه و پشتیبانی)</div>
+                    </div>
+                    <ul class="space-y-2.5 text-xs text-slate-700">
+                        <li class="flex items-start gap-2">
+                            <span class="material-symbols-outlined text-purple-600 text-base shrink-0 mt-0.5">check_circle</span>
+                            <span class="font-bold">سامانه آپلود و پذیرش عکس نسخه پزشک (Rx)</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="material-symbols-outlined text-purple-600 text-base shrink-0 mt-0.5">check_circle</span>
+                            <span>دیده‌بان زنده پایش دمای زنجیره سرد (۲ تا ۸ درجه)</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="material-symbols-outlined text-purple-600 text-base shrink-0 mt-0.5">check_circle</span>
+                            <span>کاتالوگ آنلاین داروهای کمیاب، واکسن و مکمل‌ها</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="material-symbols-outlined text-purple-600 text-base shrink-0 mt-0.5">check_circle</span>
+                            <span>پایشگر هوشمند تداخلات دارویی و راهنمای مصرف</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="material-symbols-outlined text-purple-600 text-base shrink-0 mt-0.5">check_circle</span>
+                            <span>ارسال اکسپرس در بسته‌بندی عایق یونولیت و ژل یخ</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="material-symbols-outlined text-purple-600 text-base shrink-0 mt-0.5">check_circle</span>
+                            <span>درگاه پرداخت مستقیم شاپرک و تسویه حساب پایا</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="material-symbols-outlined text-purple-600 text-base shrink-0 mt-0.5">check_circle</span>
+                            <span>صدور پیش‌فاکتور دیجیتال و پیگیری لحظه‌ای مرسوله</span>
+                        </li>
                     </ul>
                 </div>
-                <button type="button" onclick="openOrderModal(null, 'standard')" class="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs shadow-md transition-colors cursor-pointer">
-                    انتخاب نسخه تجاری
+                <button type="button" onclick="openOrderModal('pharmacist')" class="w-full py-3.5 rounded-xl bg-purple-700 hover:bg-purple-800 text-white font-black text-xs shadow-md hover:shadow-purple-700/20 transition-all flex items-center justify-center gap-1.5 cursor-pointer active:scale-95">
+                    <span class="material-symbols-outlined text-base">task_alt</span>
+                    <span>انتخاب نسخه داروخانه تخصصی</span>
                 </button>
             </div>
 
-            <!-- Tier 3: Premium -->
-            <div class="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-sm hover:shadow-lg transition-all flex flex-col justify-between space-y-6">
+            <!-- Edition 3: Pet Shop Edition -->
+            <div class="bg-white rounded-3xl p-6 sm:p-7 border-2 border-orange-200 shadow-lg hover:shadow-xl hover:border-orange-400 transition-all flex flex-col justify-between space-y-6 relative group">
                 <div class="space-y-4">
-                    <div class="text-xs font-black text-amber-600 uppercase tracking-wider">حرفه‌ای و تمام‌عیار</div>
-                    <h3 class="text-xl font-black text-slate-900">نسخه حرفه‌ای (Premium)</h3>
-                    <p class="text-xs text-slate-500 leading-relaxed">ویژه کلینیک‌های پرتردد با سفارش دوره‌ای اتوشیپ، تله‌هلث و اتوماسیون پیامکی.</p>
-                    <div class="py-2 border-y border-slate-100">
-                        <div class="text-2xl sm:text-3xl font-black text-slate-900 font-mono">۱۴,۵۰۰,۰۰۰</div>
-                        <div class="text-[11px] text-slate-400">تومان / سالانه (شامل پشتیبانی VIP)</div>
+                    <div class="flex items-center justify-between">
+                        <span class="px-3 py-1 rounded-full bg-orange-100 text-orange-800 text-[11px] font-black flex items-center gap-1">
+                            <span class="material-symbols-outlined text-xs">pets</span>
+                            <span>ویژه پت‌شاپ‌ها و فروشگاه</span>
+                        </span>
+                        <span class="text-xs font-mono font-bold text-slate-400">نسخه ۳</span>
                     </div>
-                    <ul class="space-y-2.5 text-xs text-slate-600">
-                        <li class="flex items-center gap-2"><span class="material-symbols-outlined text-emerald-500 text-sm">check</span>تمامی امکانات نسخه استاندارد</li>
-                        <li class="flex items-center gap-2"><span class="material-symbols-outlined text-emerald-500 text-sm">check</span>اشتراک دوره‌ای اتوشیپ (Autoship)</li>
-                        <li class="flex items-center gap-2"><span class="material-symbols-outlined text-emerald-500 text-sm">check</span>مشاوره آنلاین و تله‌هلث تصویری</li>
-                        <li class="flex items-center gap-2"><span class="material-symbols-outlined text-emerald-500 text-sm">check</span>اتوماسیون پیامک‌های نوبت و یادآوری واکسن</li>
-                        <li class="flex items-center gap-2"><span class="material-symbols-outlined text-emerald-500 text-sm">check</span>مدیریت چند ادمین و منشی مطب</li>
-                        <li class="flex items-center gap-2"><span class="material-symbols-outlined text-emerald-500 text-sm">check</span>سرعت لود اولترا با CDN اختصاصی</li>
+                    <div>
+                        <h3 class="text-xl font-black text-slate-900">پت‌شاپ و فروشگاه ملزومات</h3>
+                        <p class="text-xs text-slate-500 mt-1 leading-relaxed">فروشگاه آنلاین با قابلیت خرید دوره‌ای خودکار جهت ایجاد درآمد مستمر ماهانه.</p>
+                    </div>
+                    <div class="py-3 border-y border-slate-100">
+                        <div class="text-2xl sm:text-3xl font-black text-orange-800 font-mono">۱۰,۸۰۰,۰۰۰</div>
+                        <div class="text-[11px] text-slate-400 mt-0.5">تومان / سالانه (شامل هاست، دامنه و پشتیبانی)</div>
+                    </div>
+                    <ul class="space-y-2.5 text-xs text-slate-700">
+                        <li class="flex items-start gap-2">
+                            <span class="material-symbols-outlined text-orange-600 text-base shrink-0 mt-0.5">check_circle</span>
+                            <span class="font-bold">سرویس خرید دوره‌ای ماهانه با تخفیف (Autoship)</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="material-symbols-outlined text-orange-600 text-base shrink-0 mt-0.5">check_circle</span>
+                            <span>فیلتر هوشمند کالاها بر اساس گونه (سگ، گربه، پرنده) و سن</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="material-symbols-outlined text-orange-600 text-base shrink-0 mt-0.5">check_circle</span>
+                            <span>ویترین شگفت‌انگیزها و شمارشگر معکوس تخفیف</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="material-symbols-outlined text-orange-600 text-base shrink-0 mt-0.5">check_circle</span>
+                            <span>انبارداری هوشمند و هشدار خودکار اتمام موجودی</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="material-symbols-outlined text-orange-600 text-base shrink-0 mt-0.5">check_circle</span>
+                            <span>باشگاه مشتریان، نظرات خریداران و کدهای تخفیف</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="material-symbols-outlined text-orange-600 text-base shrink-0 mt-0.5">check_circle</span>
+                            <span>سبد خرید هوشمند و محاسبه هزینه ارسال پست و پیک</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="material-symbols-outlined text-orange-600 text-base shrink-0 mt-0.5">check_circle</span>
+                            <span>تسویه حساب مستقیم و آنی پایا به شماره شبا</span>
+                        </li>
                     </ul>
                 </div>
-                <button type="button" onclick="openOrderModal(null, 'premium')" class="w-full py-3 rounded-xl bg-slate-900 hover:bg-black text-white font-black text-xs transition-colors cursor-pointer">
-                    انتخاب نسخه حرفه‌ای
+                <button type="button" onclick="openOrderModal('seller')" class="w-full py-3.5 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-black text-xs shadow-md hover:shadow-orange-600/20 transition-all flex items-center justify-center gap-1.5 cursor-pointer active:scale-95">
+                    <span class="material-symbols-outlined text-base">task_alt</span>
+                    <span>انتخاب نسخه پت‌شاپ و فروشگاه</span>
                 </button>
             </div>
 
-            <!-- Tier 4: Enterprise -->
-            <div class="bg-gradient-to-b from-[#001a48] to-[#01112e] text-white rounded-3xl p-6 sm:p-8 border border-white/10 shadow-xl flex flex-col justify-between space-y-6">
+            <!-- Edition 4: Hospital Edition -->
+            <div class="bg-gradient-to-b from-[#001a48] to-[#011438] text-white rounded-3xl p-6 sm:p-7 border-2 border-blue-400/30 shadow-xl hover:shadow-2xl transition-all flex flex-col justify-between space-y-6 relative group">
                 <div class="space-y-4">
-                    <div class="text-xs font-black text-amber-300 uppercase tracking-wider">سازمانی و بیمارستانی</div>
-                    <h3 class="text-xl font-black text-white">اینترپرایز جامع (Enterprise)</h3>
-                    <p class="text-xs text-slate-300 leading-relaxed">اکوسیستم همه‌جانبه بیمارستان‌ها، پلی‌کلینیک‌ها، داروخانه‌ها و شعب چندگانه.</p>
-                    <div class="py-2 border-y border-white/10">
-                        <div class="text-2xl sm:text-3xl font-black text-amber-300 font-mono">۲۲,۰۰۰,۰۰۰</div>
-                        <div class="text-[11px] text-slate-300">تومان / سالانه (مشاوره معماری و پشتیبانی ۲۴/۷)</div>
+                    <div class="flex items-center justify-between">
+                        <span class="px-3 py-1 rounded-full bg-rose-500/20 text-rose-300 border border-rose-400/30 text-[11px] font-black flex items-center gap-1">
+                            <span class="material-symbols-outlined text-xs">emergency</span>
+                            <span>ویژه بیمارستان‌ها و مراکز جامع</span>
+                        </span>
+                        <span class="text-xs font-mono font-bold text-amber-300">نسخه ۴</span>
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-black text-white">بیمارستان و اورژانس شبانه‌روزی</h3>
+                        <p class="text-xs text-slate-300 mt-1 leading-relaxed">اکوسیستم همه‌جانبه مراکز بزرگ با کادر چندنفره، دپارتمان‌های پاراکلینیک و بستری.</p>
+                    </div>
+                    <div class="py-3 border-y border-white/10">
+                        <div class="text-2xl sm:text-3xl font-black text-amber-300 font-mono">۱۶,۵۰۰,۰۰۰</div>
+                        <div class="text-[11px] text-slate-300 mt-0.5">تومان / سالانه (شامل هاست، دامنه و پشتیبانی VIP)</div>
                     </div>
                     <ul class="space-y-2.5 text-xs text-slate-200">
-                        <li class="flex items-center gap-2"><span class="material-symbols-outlined text-amber-300 text-sm">check</span>تمامی امکانات تمامی نسخه‌ها بدون محدودیت</li>
-                        <li class="flex items-center gap-2"><span class="material-symbols-outlined text-amber-300 text-sm">check</span>ماژول داروخانه تخصصی، نسخه الکترونیک و زنجیره سرد</li>
-                        <li class="flex items-center gap-2"><span class="material-symbols-outlined text-amber-300 text-sm">check</span>پشتیبانی از چندین دپارتمان و ده‌ها پزشک مقیم</li>
-                        <li class="flex items-center gap-2"><span class="material-symbols-outlined text-amber-300 text-sm">check</span>مدیریت دسترسی‌های پیشرفته و کارتابل حسابداری</li>
-                        <li class="flex items-center gap-2"><span class="material-symbols-outlined text-amber-300 text-sm">check</span>پشتیبان فنی اختصاصی و توافق‌نامه SLA ۹۹.۹٪</li>
+                        <li class="flex items-start gap-2">
+                            <span class="material-symbols-outlined text-amber-400 text-base shrink-0 mt-0.5">check_circle</span>
+                            <span class="font-bold">نوار قرمز تریاژ اورژانس ۲۴ ساعته و اعزام آمبولانس</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="material-symbols-outlined text-amber-400 text-base shrink-0 mt-0.5">check_circle</span>
+                            <span>ساختار چنددپارتمانه (جراحی، رادیولوژی، بستری، ICU)</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="material-symbols-outlined text-amber-400 text-base shrink-0 mt-0.5">check_circle</span>
+                            <span>کارتابل معرفی پزشکان متخصص و برنامه شیفت‌ها</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="material-symbols-outlined text-amber-400 text-base shrink-0 mt-0.5">check_circle</span>
+                            <span>سامانه نوبت‌دهی تفکیک‌شده به ازای هر بخش و پزشک</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="material-symbols-outlined text-amber-400 text-base shrink-0 mt-0.5">check_circle</span>
+                            <span>قوانین بستری، شرایط ناشتایی و بیمه‌های طرف قرارداد</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="material-symbols-outlined text-amber-400 text-base shrink-0 mt-0.5">check_circle</span>
+                            <span>کارتابل چندکاربره با دسترسی منشی، پذیرش و مدیریت</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="material-symbols-outlined text-amber-400 text-base shrink-0 mt-0.5">check_circle</span>
+                            <span>مانیتورینگ مداوم سرور، پشتیبانی VIP و توافق SLA</span>
+                        </li>
                     </ul>
                 </div>
-                <button type="button" onclick="openOrderModal(null, 'enterprise')" class="w-full py-3 rounded-xl bg-gradient-to-r from-[#fd8100] to-amber-500 hover:from-[#e57400] hover:to-amber-600 text-white font-black text-xs shadow-lg transition-all cursor-pointer">
-                    سفارش نسخه اینترپرایز
+                <button type="button" onclick="openOrderModal('organization')" class="w-full py-3.5 rounded-xl bg-gradient-to-r from-[#fd8100] via-orange-500 to-amber-500 hover:from-[#e57400] hover:to-amber-600 text-white font-black text-xs shadow-lg hover:shadow-orange-500/30 transition-all flex items-center justify-center gap-1.5 cursor-pointer active:scale-95">
+                    <span class="material-symbols-outlined text-base">task_alt</span>
+                    <span>انتخاب نسخه بیمارستان و اورژانس</span>
                 </button>
             </div>
 
@@ -895,38 +1342,68 @@ include __DIR__ . '/includes/header.php';
         <!-- Form -->
         <form id="websiteOrderForm" onsubmit="submitWebsiteOrder(event)" class="space-y-4">
             
-            <!-- Step 1: Select Archetype -->
+            <!-- Step 1: Select Dedicated Edition -->
             <div>
-                <label class="block text-xs font-bold text-slate-800 mb-1.5">۱. انتخاب نوع وب‌سایت متناسب با تخصص شما *</label>
-                <div class="grid grid-cols-2 gap-2 text-xs">
-                    <label class="flex items-center gap-2 p-3 rounded-xl border border-slate-200 cursor-pointer has-[:checked]:border-emerald-600 has-[:checked]:bg-emerald-50/50">
-                        <input type="radio" name="order_archetype" value="doctor" checked class="text-emerald-600">
-                        <span class="font-bold text-slate-800">پزشکان و جراحان</span>
+                <label class="block text-xs font-bold text-slate-800 mb-1.5">۱. انتخاب نسخه تخصصی وب‌سایت متناسب با حوزه فعالیت *</label>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs">
+                    <label class="flex items-center justify-between p-3 rounded-xl border border-slate-200 cursor-pointer has-[:checked]:border-emerald-600 has-[:checked]:bg-emerald-50/50 hover:border-emerald-300 transition-all">
+                        <div class="flex items-center gap-2.5">
+                            <input type="radio" name="order_archetype" value="doctor" data-tier="standard" checked class="text-emerald-600" onchange="updateSelectedEditionTier(this)">
+                            <div>
+                                <div class="font-black text-slate-900 flex items-center gap-1.5">
+                                    <span class="material-symbols-outlined text-emerald-600 text-sm">stethoscope</span>
+                                    <span>مطب و نوبت‌دهی بالینی</span>
+                                </div>
+                                <div class="text-[10px] text-slate-500 mt-0.5">پزشکان، جراحان و کلینیک‌های تک‌پزشک</div>
+                            </div>
+                        </div>
+                        <span class="text-[11px] font-mono font-black text-emerald-800 bg-white px-2 py-1 rounded-lg border border-emerald-100 shadow-xs">۷,۹۰۰,۰۰۰ ت</span>
                     </label>
-                    <label class="flex items-center gap-2 p-3 rounded-xl border border-slate-200 cursor-pointer has-[:checked]:border-purple-600 has-[:checked]:bg-purple-50/50">
-                        <input type="radio" name="order_archetype" value="pharmacist" class="text-purple-600">
-                        <span class="font-bold text-slate-800">داروخانه‌های تخصصی</span>
+
+                    <label class="flex items-center justify-between p-3 rounded-xl border border-slate-200 cursor-pointer has-[:checked]:border-purple-600 has-[:checked]:bg-purple-50/50 hover:border-purple-300 transition-all">
+                        <div class="flex items-center gap-2.5">
+                            <input type="radio" name="order_archetype" value="pharmacist" data-tier="pharmacy" class="text-purple-600" onchange="updateSelectedEditionTier(this)">
+                            <div>
+                                <div class="font-black text-slate-900 flex items-center gap-1.5">
+                                    <span class="material-symbols-outlined text-purple-600 text-sm">medication</span>
+                                    <span>داروخانه و دراگ‌استور هوشمند</span>
+                                </div>
+                                <div class="text-[10px] text-slate-500 mt-0.5">آپلود نسخه و پایش زنجیره سرد</div>
+                            </div>
+                        </div>
+                        <span class="text-[11px] font-mono font-black text-purple-800 bg-white px-2 py-1 rounded-lg border border-purple-100 shadow-xs">۹,۴۰۰,۰۰۰ ت</span>
                     </label>
-                    <label class="flex items-center gap-2 p-3 rounded-xl border border-slate-200 cursor-pointer has-[:checked]:border-orange-600 has-[:checked]:bg-orange-50/50">
-                        <input type="radio" name="order_archetype" value="seller" class="text-orange-600">
-                        <span class="font-bold text-slate-800">پت‌شاپ‌ها و فروشگاه</span>
+
+                    <label class="flex items-center justify-between p-3 rounded-xl border border-slate-200 cursor-pointer has-[:checked]:border-orange-600 has-[:checked]:bg-orange-50/50 hover:border-orange-300 transition-all">
+                        <div class="flex items-center gap-2.5">
+                            <input type="radio" name="order_archetype" value="seller" data-tier="premium" class="text-orange-600" onchange="updateSelectedEditionTier(this)">
+                            <div>
+                                <div class="font-black text-slate-900 flex items-center gap-1.5">
+                                    <span class="material-symbols-outlined text-orange-600 text-sm">pets</span>
+                                    <span>پت‌شاپ و فروشگاه ملزومات</span>
+                                </div>
+                                <div class="text-[10px] text-slate-500 mt-0.5">خرید دوره‌ای خودکار (Autoship) و انبارداری</div>
+                            </div>
+                        </div>
+                        <span class="text-[11px] font-mono font-black text-orange-800 bg-white px-2 py-1 rounded-lg border border-orange-100 shadow-xs">۱۰,۸۰۰,۰۰۰ ت</span>
                     </label>
-                    <label class="flex items-center gap-2 p-3 rounded-xl border border-slate-200 cursor-pointer has-[:checked]:border-blue-700 has-[:checked]:bg-blue-50/50">
-                        <input type="radio" name="order_archetype" value="organization" class="text-blue-700">
-                        <span class="font-bold text-slate-800">بیمارستان‌ها و مراکز</span>
+
+                    <label class="flex items-center justify-between p-3 rounded-xl border border-slate-200 cursor-pointer has-[:checked]:border-blue-700 has-[:checked]:bg-blue-50/50 hover:border-blue-300 transition-all">
+                        <div class="flex items-center gap-2.5">
+                            <input type="radio" name="order_archetype" value="organization" data-tier="enterprise" class="text-blue-700" onchange="updateSelectedEditionTier(this)">
+                            <div>
+                                <div class="font-black text-slate-900 flex items-center gap-1.5">
+                                    <span class="material-symbols-outlined text-blue-700 text-sm">emergency</span>
+                                    <span>بیمارستان و اورژانس شبانه‌روزی</span>
+                                </div>
+                                <div class="text-[10px] text-slate-500 mt-0.5">چنددپارتمانه، بستری و تریاژ ۲۴ ساعته</div>
+                            </div>
+                        </div>
+                        <span class="text-[11px] font-mono font-black text-blue-800 bg-white px-2 py-1 rounded-lg border border-blue-100 shadow-xs">۱۶,۵۰۰,۰۰۰ ت</span>
                     </label>
                 </div>
-            </div>
-
-            <!-- Step 2: Select Tier -->
-            <div>
-                <label class="block text-xs font-bold text-slate-800 mb-1">۲. سطح لایسنس و نسخه مورد نظر *</label>
-                <select name="order_tier" id="order_tier" class="w-full text-xs p-3 rounded-xl border border-slate-200 font-bold text-slate-800 focus:border-indigo-600 focus:outline-none">
-                    <option value="standard" selected>نسخه تجاری (Standard) - ۸,۸۰۰,۰۰۰ تومان (پیشنهادی)</option>
-                    <option value="basic">نسخه پایه (Basic) - ۴,۹۰۰,۰۰۰ تومان</option>
-                    <option value="premium">نسخه حرفه‌ای فول کلینیک (Premium) - ۱۴,۵۰۰,۰۰۰ تومان</option>
-                    <option value="enterprise">نسخه اینترپرایز جامع سازمانی (Enterprise) - ۲۲,۰۰۰,۰۰۰ تومان</option>
-                </select>
+                <!-- Hidden Tier Parameter to maintain backend compatibility -->
+                <input type="hidden" name="order_tier" id="order_tier" value="standard">
             </div>
 
             <!-- Step 3: Desired Subdomain -->
@@ -1001,6 +1478,48 @@ function selectArchetypeTab(archetype) {
     }
 }
 
+// Archetype Device Switcher (Desktop Frame vs Mobile PWA Frame)
+function switchArchetypeDevice(archetype, device) {
+    const desktopFrame = document.getElementById('arch-mockup-desktop-' + archetype);
+    const mobileFrame = document.getElementById('arch-mockup-mobile-' + archetype);
+    const desktopBtn = document.getElementById('arch-dev-btn-' + archetype + '-desktop');
+    const mobileBtn = document.getElementById('arch-dev-btn-' + archetype + '-mobile');
+
+    if (!desktopFrame || !mobileFrame) return;
+
+    if (device === 'mobile') {
+        desktopFrame.classList.add('hidden');
+        mobileFrame.classList.remove('hidden');
+
+        if (desktopBtn && mobileBtn) {
+            desktopBtn.classList.remove('bg-white', 'text-slate-900', 'shadow-xs', 'font-black');
+            desktopBtn.classList.add('text-slate-500', 'font-bold');
+
+            mobileBtn.classList.remove('text-slate-500', 'font-bold');
+            mobileBtn.classList.add('bg-white', 'text-slate-900', 'shadow-xs', 'font-black');
+        }
+    } else {
+        mobileFrame.classList.add('hidden');
+        desktopFrame.classList.remove('hidden');
+
+        if (desktopBtn && mobileBtn) {
+            mobileBtn.classList.remove('bg-white', 'text-slate-900', 'shadow-xs', 'font-black');
+            mobileBtn.classList.add('text-slate-500', 'font-bold');
+
+            desktopBtn.classList.remove('text-slate-500', 'font-bold');
+            desktopBtn.classList.add('bg-white', 'text-slate-900', 'shadow-xs', 'font-black');
+        }
+    }
+}
+
+// Update tier based on chosen dedicated edition
+function updateSelectedEditionTier(radioEl) {
+    const tierInput = document.getElementById('order_tier');
+    if (radioEl && tierInput) {
+        tierInput.value = radioEl.getAttribute('data-tier') || 'standard';
+    }
+}
+
 // Hero Subdomain Live Checker
 let heroTimer = null;
 function checkSubdomainFromHero() {
@@ -1048,12 +1567,15 @@ function openOrderModal(archetype = null, tier = null, slug = null) {
     
     if (archetype) {
         const rad = modal.querySelector(`input[name="order_archetype"][value="${archetype}"]`);
-        if (rad) rad.checked = true;
+        if (rad) {
+            rad.checked = true;
+            updateSelectedEditionTier(rad);
+        }
     }
 
     if (tier) {
-        const select = document.getElementById('order_tier');
-        if (select) select.value = tier;
+        const tierInput = document.getElementById('order_tier');
+        if (tierInput) tierInput.value = tier;
     }
 
     if (slug) {
