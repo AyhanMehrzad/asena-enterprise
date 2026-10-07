@@ -403,14 +403,10 @@ $activeFacilities = !empty($currentOrg['facilities']) ? array_filter(array_map('
                 </div>
 
                 <!-- 4. Basic Details -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-xs font-bold text-slate-700 mb-1.5">نام رسمی بیمارستان / کلینیک *</label>
-                        <input type="text" name="name" id="nameInput" required value="<?= htmlspecialchars($currentOrg['name']) ?>" class="w-full h-11 px-3.5 rounded-xl border border-slate-300 focus:border-sky-500 text-xs font-bold">
-                    </div>
-
-                    <div>
-                        <div class="flex items-center justify-between mb-1.5">
+                <div class="space-y-4">
+                    <!-- Specialty / Legal Classification (Full Width Status Card) -->
+                    <div class="p-3.5 bg-slate-50 rounded-2xl border border-slate-200">
+                        <div class="flex items-center justify-between mb-2">
                             <label class="block text-xs font-bold text-slate-700">رسته حقوقی و تخصصی مرکز *</label>
                             <span class="inline-flex items-center gap-1 text-[10px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200/80">
                                 <span class="material-symbols-outlined text-xs">lock</span>
@@ -418,29 +414,29 @@ $activeFacilities = !empty($currentOrg['facilities']) ? array_filter(array_map('
                             </span>
                         </div>
                         
-                        <div class="p-2.5 bg-slate-50 rounded-xl border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
-                            <div class="flex items-center gap-2.5">
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                            <div class="flex items-center gap-2.5 min-w-0">
                                 <?php 
                                     $cType = $currentOrg['type'] ?? 'clinic';
                                     $cInfo = $orgTypeMap[$cType] ?? ['title' => 'مرکز درمانی', 'icon' => 'local_hospital', 'color' => 'slate'];
                                 ?>
-                                <div class="w-9 h-9 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-sky-600 shadow-sm shrink-0">
+                                <div class="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-sky-600 shadow-2xs shrink-0">
                                     <span class="material-symbols-outlined text-xl"><?= $cInfo['icon'] ?></span>
                                 </div>
-                                <div>
+                                <div class="min-w-0">
                                     <span class="text-xs font-black text-slate-900 block"><?= htmlspecialchars($cInfo['title']) ?></span>
-                                    <span class="text-[10px] text-slate-400">ثبت‌شده در هنگام عضویت و احراز پروانه</span>
+                                    <span class="text-[10px] text-slate-400 block">ثبت‌شده در هنگام عضویت و احراز پروانه</span>
                                 </div>
                             </div>
                             
-                            <button type="button" onclick="openTypeChangeModal()" class="px-3 py-1.5 bg-sky-50 hover:bg-sky-100 text-sky-700 rounded-lg text-xs font-bold border border-sky-200 flex items-center gap-1.5 transition-colors shrink-0 shadow-sm">
+                            <button type="button" onclick="openTypeChangeModal()" class="px-3.5 py-2 bg-sky-50 hover:bg-sky-100 text-sky-700 rounded-xl text-xs font-bold border border-sky-200 flex items-center justify-center gap-1.5 transition-colors shrink-0 shadow-2xs w-full sm:w-auto">
                                 <span class="material-symbols-outlined text-sm">mail</span>
                                 <span>درخواست تغییر رسته (تیکت)</span>
                             </button>
                         </div>
                         
                         <?php if (!empty($activeChangeTicket)): ?>
-                            <div class="mt-2 p-2.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-center justify-between gap-2">
+                            <div class="mt-2.5 p-2.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-center justify-between gap-2">
                                 <div class="flex items-center gap-1.5">
                                     <span class="material-symbols-outlined text-amber-600 text-sm">schedule</span>
                                     <span>تیکت درخواست تغییر رسته (شماره #<?= $activeChangeTicket['id'] ?>) در صف بررسی مدیریت است.</span>
@@ -449,17 +445,22 @@ $activeFacilities = !empty($currentOrg['facilities']) ? array_filter(array_map('
                             </div>
                         <?php endif; ?>
                     </div>
-                </div>
 
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-xs font-bold text-slate-700 mb-1.5">نام مدیر / مسئول فنی</label>
-                        <input type="text" name="manager_name" id="managerInput" value="<?= htmlspecialchars($currentOrg['manager_name'] ?? '') ?>" class="w-full h-11 px-3.5 rounded-xl border border-slate-300 focus:border-sky-500 text-xs">
-                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div class="sm:col-span-2">
+                            <label class="block text-xs font-bold text-slate-700 mb-1.5">نام رسمی بیمارستان / کلینیک *</label>
+                            <input type="text" name="name" id="nameInput" required value="<?= htmlspecialchars($currentOrg['name']) ?>" class="w-full h-11 px-3.5 rounded-xl border border-slate-300 focus:border-sky-500 text-xs font-bold">
+                        </div>
 
-                    <div>
-                        <label class="block text-xs font-bold text-slate-700 mb-1.5">شماره پروانه نظام دامپزشکی</label>
-                        <input type="text" name="license_number" id="licenseInput" value="<?= htmlspecialchars($currentOrg['license_number'] ?? '') ?>" placeholder="مثال: پروانه رسمی ۱۴۰۲-۹۸۷۶" class="w-full h-11 px-3.5 rounded-xl border border-slate-300 focus:border-sky-500 text-xs">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1.5">نام مدیر / مسئول فنی</label>
+                            <input type="text" name="manager_name" id="managerInput" value="<?= htmlspecialchars($currentOrg['manager_name'] ?? '') ?>" class="w-full h-11 px-3.5 rounded-xl border border-slate-300 focus:border-sky-500 text-xs">
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1.5">شماره پروانه نظام دامپزشکی</label>
+                            <input type="text" name="license_number" id="licenseInput" value="<?= htmlspecialchars($currentOrg['license_number'] ?? '') ?>" placeholder="مثال: پروانه رسمی ۱۴۰۲-۹۸۷۶" class="w-full h-11 px-3.5 rounded-xl border border-slate-300 focus:border-sky-500 text-xs">
+                        </div>
                     </div>
                 </div>
 
