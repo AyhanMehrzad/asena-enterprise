@@ -1245,6 +1245,12 @@
     - **طراحی و اجرای تست جامع بررسی ساختار نوار ناوبری موبایل ([`tests/test_mobile_pwa_bottom_nav.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/tests/test_mobile_pwa_bottom_nav.php)):**
       - پاس شدن ۱۰۰٪ ۱۰ آزمون صحه‌گذاری المان ناوبری شناور، نوار وضعیت آفلاین، ۵ زبانه اصلی، باتم شیت دسته‌بندی‌ها و استقلال کامل از تگ‌های جاوااسکریپت.
 
+73. **اصلاح ریشه‌ای فونت آیکون‌ها و احیای کامل ۴۲۶۸ لیگاچر در سراسر پلتفرم (Material Symbols Font & Ligatures Restoration):**
+    - **حل معضل متن شدن نام آیکون‌ها (مانند `ARROW_BACK`, `G_CART`, `MEDICAL_SERVICES`, `_VERIFICATION`):**
+      - کشف نقص در ساب‌ست ناقص قبلی (`material-symbols-subset.woff2`) که فاقد جدول پیوند گلیف‌ها (`GSUB liga`) برای بیش از ۳۳۰۰ آیکون اصلی سیستم بود.
+      - بازگرداندن فایل کامل و مرجع فونت خودمیزبان گوگل (`kJEPBvYX7BgnkSrUwT8OhrdQw4oELdPIeeII9v6oDMzBwG-RpA6RzaxHMPdY40KH8nGzv3fzfVJO1Q.woff2`) دارای تمامی ۴۲۶۸ لیگاچر رسمی در [`assets/css/material-symbols.css`](file:///opt/lampp/htdocs/asena/asena-enterprise/assets/css/material-symbols.css) و بازنویسی نسخه ساب‌ست با فونت معتبر.
+      - به‌روزرسانی پیش‌بارگذاری فونت (Preload) در [`includes/header.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/includes/header.php) و ارتقای متغیر کش‌باستر `$asset_v = '2.2.2'` جهت نوسازی آنی کش مرورگر کاربران.
+
 ---
 
 ## ۴. پروتکل ثبت تغییرات آینده (Maintenance Rule)

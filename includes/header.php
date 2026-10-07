@@ -348,10 +348,10 @@ $effective_geo_icbm = $geo_icbm ?? '35.7350, 51.4110';
     </script>
     <?php endif; ?>
 
-    <?php $asset_v = '2.2.1'; ?>
+    <?php $asset_v = '2.2.2'; ?>
     <!-- Preload Critical WOFF2 Fonts for Immediate First Contentful Paint -->
     <link rel="preload" href="assets/fonts/Dxxo8j6PP2D_kU2muijlGMWWMmk.woff2" as="font" type="font/woff2" crossorigin>
-    <link rel="preload" href="assets/fonts/material-symbols-subset.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="assets/fonts/kJEPBvYX7BgnkSrUwT8OhrdQw4oELdPIeeII9v6oDMzBwG-RpA6RzaxHMPdY40KH8nGzv3fzfVJO1Q.woff2" as="font" type="font/woff2" crossorigin>
 
     <!-- Fonts & Icons (Self-Hosted with font-display: swap) -->
     <link href="assets/css/vazirmatn.css?v=<?= $asset_v ?>" rel="stylesheet">
