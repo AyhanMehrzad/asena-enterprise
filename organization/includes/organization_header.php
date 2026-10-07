@@ -8,9 +8,18 @@ require_once dirname(__DIR__, 2) . '/includes/functions.php';
 $currentUser = AuthGuard::requireRole(['organization', 'admin'], $pdo);
 
 // Find organization managed by this user (check owner first)
-$orgStmt = $pdo->prepare("SELECT * FROM organizations WHERE user_id = ? OR manager_name = ? OR email = ? LIMIT 1");
-$orgStmt->execute([$currentUser['id'], $currentUser['name'], $currentUser['email'] ?? '']);
-$currentOrg = $orgStmt->fetch(PDO::FETCH_ASSOC);
+$currentOrg = null;
+try {
+    $orgStmt = $pdo->prepare("SELECT * FROM organizations WHERE user_id = ? OR manager_name = ? OR email = ? LIMIT 1");
+    $orgStmt->execute([$currentUser['id'], $currentUser['name'], $currentUser['email'] ?? '']);
+    $currentOrg = $orgStmt->fetch(PDO::FETCH_ASSOC);
+} catch (Throwable $eOrg) {
+    try {
+        $orgStmt = $pdo->prepare("SELECT * FROM organizations WHERE user_id = ? LIMIT 1");
+        $orgStmt->execute([$currentUser['id']]);
+        $currentOrg = $orgStmt->fetch(PDO::FETCH_ASSOC);
+    } catch (Throwable $eOrgFallback) {}
+}
 
 $currentAdminRole = 'owner';
 $currentAdminTitle = 'مدیر ارشد و موسس مرکز';

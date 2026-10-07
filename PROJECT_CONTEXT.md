@@ -1273,6 +1273,20 @@
       - تنظیم متدهای `getUserSmsCredits` و `deductUserSmsCredits` در [`includes/SmsService.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/includes/SmsService.php) جهت ارائه نامحدود و عدم کسر یا بلاک پیامک همکاران.
       - تفکیک صفحه پایشگر تداخلات دارویی پت ([`interactions.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/interactions.php)) از سیستم همکاران و حذف مسیرهای انحرافی.
 
+77. **رفع خطای صفحه سفید و همگام‌سازی دفاعی پایگاه‌داده میز تیکت سازمان ([`organization/tickets.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/organization/tickets.php)):**
+    - **ریشه‌یابی و رفع خطای اسکریپت در اثر عدم وجود ستون‌های `organization_id` و `subject` در جدول `tickets`:**
+      - پیاده‌سازی متد خودترمیم `ensure_tickets_system_schema($pdo)` جهت ایجاد یا تکمیل فیلدهای کلیدی `organization_id`, `subject`, `doctor_id`, `target_role`, `target_id`, `closed_by`, `resolution_notes`, `last_notified_at` در پایگاه‌داده محیط‌های مختلف (MySQL/MariaDB و SQLite).
+      - تبدیل ستون‌های `tickets.mode` و `ticket_messages.sender_type` به مقادیر پویا و باز بدون محدودیت Enumهای قدیمی.
+    - **ایمن‌سازی کوئری‌های واکشی تیکت‌های مراجعین و مدیریت آسنا:**
+      - اضافه کردن مکانیسم بررسی ستون‌ها (`SHOW COLUMNS` و `PRAGMA table_info`) به همراه عبارت جایگزین هوشمند برای `subject` با استفاده از پیش‌نمایش اولین پیام گفتگو.
+      - قرار دادن تمام واکشی‌ها و عملیات ثبت تیکت درون بلوک‌های محافظت‌شده `try/catch` برای جلوگیری قطعی از بروز هرگونه صفحه سفید یا توقف اجرا.
+    - **اصلاح اندپوینت ارتباطی و دسترسی پرسنل و مدیران مرکز ([`actions/chat_action.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/actions/chat_action.php)):**
+      - ارتقای متد خودترمیم شمای تله‌هلث `ensure_chat_telehealth_schema`.
+      - به‌روزرسانی تابع کنترل دسترسی `can_user_access_ticket` تا کلیه مدیران و دستیاران فعال در `organization_admins` به تیکت‌های اداری مرکز با مدیریت آسنا و سوالات مراجعین دسترسی داشته باشند.
+      - ارتقای فرانت‌اند و جاوااسکریپت `organization/tickets.php` برای پشتیبانی از `sender_type === 'organization'` در کنار `admin`.
+    - **ایجاد مایگریشن نسخه ۲۴ پایگاه‌داده ([`database/migrations/24_tickets_multitenant_alignment.sql`](file:///opt/lampp/htdocs/asena/asena-enterprise/database/migrations/24_tickets_multitenant_alignment.sql)):**
+      - ثبت استاندارد تغییرات ساختار جدول `tickets` و `ticket_messages`.
+
 ---
 
 ## ۴. پروتکل ثبت تغییرات آینده (Maintenance Rule)

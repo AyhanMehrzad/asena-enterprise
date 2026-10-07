@@ -20,12 +20,29 @@ if (!function_exists('ensure_chat_telehealth_schema')) {
         $checked = true;
 
         try {
-            $cols = $pdo->query("SHOW COLUMNS FROM `tickets`")->fetchAll(PDO::FETCH_COLUMN);
+            $driver = $pdo->getAttribute(PDO::ATTR_DRIVER_NAME);
+            if ($driver === 'sqlite') {
+                $cols = $pdo->query("PRAGMA table_info(tickets)")->fetchAll(PDO::FETCH_COLUMN, 1) ?: [];
+            } else {
+                $cols = $pdo->query("SHOW COLUMNS FROM `tickets`")->fetchAll(PDO::FETCH_COLUMN) ?: [];
+            }
+            if (!in_array('organization_id', $cols)) {
+                $pdo->exec("ALTER TABLE `tickets` ADD `organization_id` INT(11) NULL AFTER `user_id`");
+            }
+            if (!in_array('subject', $cols)) {
+                $pdo->exec("ALTER TABLE `tickets` ADD `subject` VARCHAR(255) NULL AFTER `organization_id`");
+            }
             if (!in_array('doctor_id', $cols)) {
-                $pdo->exec("ALTER TABLE `tickets` ADD `doctor_id` INT(11) NULL");
+                $pdo->exec("ALTER TABLE `tickets` ADD `doctor_id` INT(11) NULL AFTER `subject`");
+            }
+            if (!in_array('target_role', $cols)) {
+                $pdo->exec("ALTER TABLE `tickets` ADD `target_role` VARCHAR(50) NULL AFTER `doctor_id`");
+            }
+            if (!in_array('target_id', $cols)) {
+                $pdo->exec("ALTER TABLE `tickets` ADD `target_id` INT(11) NULL AFTER `target_role`");
             }
             if (!in_array('closed_by', $cols)) {
-                $pdo->exec("ALTER TABLE `tickets` ADD `closed_by` INT(11) NULL");
+                $pdo->exec("ALTER TABLE `tickets` ADD `closed_by` INT(11) NULL AFTER `status`");
             }
             if (!in_array('resolution_notes', $cols)) {
                 $pdo->exec("ALTER TABLE `tickets` ADD `resolution_notes` TEXT NULL");
@@ -38,7 +55,11 @@ if (!function_exists('ensure_chat_telehealth_schema')) {
             }
 
             try {
-                $pdo->exec("ALTER TABLE `ticket_messages` MODIFY COLUMN `sender_type` ENUM('user', 'ai', 'admin', 'doctor', 'organization') NOT NULL");
+                $pdo->exec("ALTER TABLE `tickets` MODIFY COLUMN `mode` VARCHAR(50) NOT NULL DEFAULT 'admin'");
+            } catch (Throwable $e) {}
+
+            try {
+                $pdo->exec("ALTER TABLE `ticket_messages` MODIFY COLUMN `sender_type` VARCHAR(50) NOT NULL DEFAULT 'user'");
             } catch (Throwable $e) {}
 
             try {
@@ -195,8 +216,8 @@ function can_user_access_ticket(PDO $pdo, int $userId, array $ticket): bool {
 
     $mode = $ticket['mode'] ?? 'admin';
 
-    // 1. Organization Tickets: ONLY the assigned organization staff has access (NOT platform admin, NOT other orgs)
-    if ($mode === 'organization' && !empty($ticket['organization_id'])) {
+    // Organization Staff Access: Check if user is owner or active sub-admin of the organization
+    if (!empty($ticket['organization_id'])) {
         $orgId = (int)$ticket['organization_id'];
         // Check if user owns the organization
         $ownerStmt = $pdo->prepare("SELECT id FROM organizations WHERE id = ? AND user_id = ?");
@@ -212,6 +233,10 @@ function can_user_access_ticket(PDO $pdo, int $userId, array $ticket): bool {
                 return true;
             }
         } catch (Throwable $e) {}
+    }
+
+    // 1. Organization Tickets: If user is not the organization staff, reject access
+    if ($mode === 'organization') {
         return false;
     }
 

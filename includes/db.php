@@ -139,6 +139,9 @@ if (!$connected && !empty($is_local)) {
         ]);
         $pdo->exec("CREATE TABLE IF NOT EXISTS site_settings (key TEXT PRIMARY KEY, value TEXT)");
         $pdo->exec("CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY, role TEXT, loyalty_points INTEGER, password TEXT, last_monthly_points_date TEXT, verification_status TEXT, contract_accepted_version TEXT, contract_accepted_at TEXT)");
+        if (method_exists($pdo, 'sqliteCreateFunction')) {
+            $pdo->sqliteCreateFunction('NOW', function() { return date('Y-m-d H:i:s'); });
+        }
         $connected = true;
     } catch (Throwable $eSqlite) {
         $lastError .= ' | SQLite fallback failed: ' . $eSqlite->getMessage();

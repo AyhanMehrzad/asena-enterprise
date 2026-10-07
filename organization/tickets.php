@@ -9,6 +9,153 @@
 
 require_once 'includes/organization_header.php';
 
+/**
+ * Self-healing tickets & ticket_messages schema alignment
+ * Guarantees cross-database resilience across local SQLite and cPanel production MySQL
+ */
+if (!function_exists('ensure_tickets_system_schema')) {
+    function ensure_tickets_system_schema(PDO $pdo): void {
+        static $ensured = false;
+        if ($ensured) return;
+        $ensured = true;
+
+        try {
+            $driver = $pdo->getAttribute(PDO::ATTR_DRIVER_NAME);
+            if ($driver === 'sqlite') {
+                $pdo->exec("
+                    CREATE TABLE IF NOT EXISTS tickets (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        user_id INTEGER NOT NULL,
+                        organization_id INTEGER NULL,
+                        doctor_id INTEGER NULL,
+                        subject TEXT NULL,
+                        mode TEXT DEFAULT 'admin',
+                        status TEXT DEFAULT 'open',
+                        target_role TEXT NULL,
+                        target_id INTEGER NULL,
+                        closed_by INTEGER NULL,
+                        resolution_notes TEXT NULL,
+                        last_notified_at DATETIME NULL,
+                        last_user_notified_at DATETIME NULL,
+                        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                    )
+                ");
+                $pdo->exec("
+                    CREATE TABLE IF NOT EXISTS ticket_messages (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        ticket_id INTEGER NOT NULL,
+                        sender_type TEXT NOT NULL DEFAULT 'user',
+                        message TEXT NULL,
+                        image_url TEXT NULL,
+                        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                    )
+                ");
+                $cols = $pdo->query("PRAGMA table_info(tickets)")->fetchAll(PDO::FETCH_COLUMN, 1);
+                if (!in_array('organization_id', $cols)) {
+                    @$pdo->exec("ALTER TABLE tickets ADD COLUMN organization_id INTEGER");
+                }
+                if (!in_array('subject', $cols)) {
+                    @$pdo->exec("ALTER TABLE tickets ADD COLUMN subject TEXT");
+                }
+                if (!in_array('doctor_id', $cols)) {
+                    @$pdo->exec("ALTER TABLE tickets ADD COLUMN doctor_id INTEGER");
+                }
+            } else {
+                // MySQL / MariaDB
+                $pdo->exec("
+                    CREATE TABLE IF NOT EXISTS `tickets` (
+                        `id` int(11) NOT NULL AUTO_INCREMENT,
+                        `user_id` int(11) NOT NULL,
+                        `organization_id` int(11) NULL DEFAULT NULL,
+                        `doctor_id` int(11) NULL DEFAULT NULL,
+                        `subject` varchar(255) NULL DEFAULT NULL,
+                        `mode` varchar(50) NOT NULL DEFAULT 'admin',
+                        `status` enum('open','closed','resolved') NOT NULL DEFAULT 'open',
+                        `target_role` varchar(50) NULL DEFAULT NULL,
+                        `target_id` int(11) NULL DEFAULT NULL,
+                        `closed_by` int(11) NULL DEFAULT NULL,
+                        `resolution_notes` text NULL DEFAULT NULL,
+                        `last_notified_at` datetime NULL DEFAULT NULL,
+                        `last_user_notified_at` datetime NULL DEFAULT NULL,
+                        `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                        `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                        PRIMARY KEY (`id`),
+                        KEY `idx_tickets_user` (`user_id`),
+                        KEY `idx_tickets_org` (`organization_id`),
+                        KEY `idx_tickets_status` (`status`)
+                    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+                ");
+
+                $pdo->exec("
+                    CREATE TABLE IF NOT EXISTS `ticket_messages` (
+                        `id` int(11) NOT NULL AUTO_INCREMENT,
+                        `ticket_id` int(11) NOT NULL,
+                        `sender_type` varchar(50) NOT NULL DEFAULT 'user',
+                        `message` text DEFAULT NULL,
+                        `image_url` varchar(500) DEFAULT NULL,
+                        `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                        PRIMARY KEY (`id`),
+                        KEY `idx_messages_ticket` (`ticket_id`)
+                    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+                ");
+
+                $cols = $pdo->query("SHOW COLUMNS FROM `tickets`")->fetchAll(PDO::FETCH_COLUMN);
+                if (!in_array('organization_id', $cols)) {
+                    try {
+                        $pdo->exec("ALTER TABLE `tickets` ADD COLUMN `organization_id` INT(11) NULL AFTER `user_id`");
+                    } catch (Throwable $e) {}
+                }
+                if (!in_array('subject', $cols)) {
+                    try {
+                        $pdo->exec("ALTER TABLE `tickets` ADD COLUMN `subject` VARCHAR(255) NULL AFTER `organization_id`");
+                    } catch (Throwable $e) {}
+                }
+                if (!in_array('doctor_id', $cols)) {
+                    try {
+                        $pdo->exec("ALTER TABLE `tickets` ADD COLUMN `doctor_id` INT(11) NULL AFTER `subject`");
+                    } catch (Throwable $e) {}
+                }
+                if (!in_array('target_role', $cols)) {
+                    try {
+                        $pdo->exec("ALTER TABLE `tickets` ADD COLUMN `target_role` VARCHAR(50) NULL AFTER `doctor_id`");
+                    } catch (Throwable $e) {}
+                }
+                if (!in_array('target_id', $cols)) {
+                    try {
+                        $pdo->exec("ALTER TABLE `tickets` ADD COLUMN `target_id` INT(11) NULL AFTER `target_role`");
+                    } catch (Throwable $e) {}
+                }
+
+                // Expand mode and sender_type
+                try {
+                    $pdo->exec("ALTER TABLE `tickets` MODIFY COLUMN `mode` VARCHAR(50) NOT NULL DEFAULT 'admin'");
+                } catch (Throwable $e) {}
+                try {
+                    $pdo->exec("ALTER TABLE `ticket_messages` MODIFY COLUMN `sender_type` VARCHAR(50) NOT NULL DEFAULT 'user'");
+                } catch (Throwable $e) {}
+            }
+        } catch (Throwable $e) {
+            error_log("ensure_tickets_system_schema notice: " . $e->getMessage());
+        }
+    }
+}
+ensure_tickets_system_schema($pdo);
+
+// Inspect available columns on tickets for maximum defensive queries
+$ticketsCols = [];
+try {
+    $driver = $pdo->getAttribute(PDO::ATTR_DRIVER_NAME);
+    if ($driver === 'sqlite') {
+        $ticketsCols = $pdo->query("PRAGMA table_info(tickets)")->fetchAll(PDO::FETCH_COLUMN, 1) ?: [];
+    } else {
+        $ticketsCols = $pdo->query("SHOW COLUMNS FROM `tickets`")->fetchAll(PDO::FETCH_COLUMN) ?: [];
+    }
+} catch (Throwable $e) {}
+
+$hasOrgCol = in_array('organization_id', $ticketsCols);
+$hasSubjectCol = in_array('subject', $ticketsCols);
+
 $orgId = (int)($currentOrg['id'] ?? 0);
 $orgUserId = (int)($currentOrg['user_id'] ?? $currentUser['id']);
 
@@ -18,11 +165,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     $ticketId = (int)($_POST['ticket_id'] ?? 0);
     $newStatus = ($_POST['status'] === 'closed') ? 'closed' : 'open';
     if ($ticketId > 0) {
-        // IDOR verify ticket belongs to this organization
-        $chk = $pdo->prepare("SELECT id FROM tickets WHERE id = ? AND (organization_id = ? OR (user_id = ? AND mode = 'admin'))");
-        $chk->execute([$ticketId, $orgId, $orgUserId]);
-        if ($chk->fetchColumn()) {
-            $pdo->prepare("UPDATE tickets SET status = ?, updated_at = NOW() WHERE id = ?")->execute([$newStatus, $ticketId]);
+        try {
+            // IDOR verify ticket belongs to this organization
+            if ($hasOrgCol) {
+                $chk = $pdo->prepare("SELECT id FROM tickets WHERE id = ? AND (organization_id = ? OR (user_id = ? AND mode = 'admin'))");
+                $chk->execute([$ticketId, $orgId, $orgUserId]);
+            } else {
+                $chk = $pdo->prepare("SELECT id FROM tickets WHERE id = ? AND user_id = ?");
+                $chk->execute([$ticketId, $orgUserId]);
+            }
+            if ($chk->fetchColumn()) {
+                $pdo->prepare("UPDATE tickets SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?")->execute([$newStatus, $ticketId]);
+            }
+        } catch (Throwable $e) {
+            error_log("Ticket status toggle error: " . $e->getMessage());
         }
         header("Location: tickets.php?tab=" . urlencode($_GET['tab'] ?? 'clients'));
         exit;
@@ -39,25 +195,49 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     $message = trim($_POST['message'] ?? '');
 
     if (!empty($message)) {
-        $fullSubject = "[{$currentOrg['name']}] {$category}: {$subject}";
-        $stmt = $pdo->prepare("
-            INSERT INTO tickets (user_id, subject, mode, organization_id, status, created_at, updated_at) 
-            VALUES (?, ?, 'admin', ?, 'open', NOW(), NOW())
-        ");
-        $stmt->execute([$orgUserId, $fullSubject, $orgId]);
-        $newTicketId = (int)$pdo->lastInsertId();
+        try {
+            $orgName = $currentOrg['name'] ?? 'مرکز درمانی';
+            $fullSubject = "[{$orgName}] {$category}: {$subject}";
 
-        $msgStmt = $pdo->prepare("INSERT INTO ticket_messages (ticket_id, sender_type, message, created_at) VALUES (?, 'user', ?, NOW())");
-        $msgStmt->execute([$newTicketId, $message]);
+            if ($hasSubjectCol && $hasOrgCol) {
+                $stmt = $pdo->prepare("
+                    INSERT INTO tickets (user_id, subject, mode, organization_id, status, created_at, updated_at) 
+                    VALUES (?, ?, 'admin', ?, 'open', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                ");
+                $stmt->execute([$orgUserId, $fullSubject, $orgId]);
+            } elseif ($hasOrgCol) {
+                $stmt = $pdo->prepare("
+                    INSERT INTO tickets (user_id, mode, organization_id, status, created_at, updated_at) 
+                    VALUES (?, 'admin', ?, 'open', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                ");
+                $stmt->execute([$orgUserId, $orgId]);
+            } else {
+                $stmt = $pdo->prepare("
+                    INSERT INTO tickets (user_id, mode, status, created_at, updated_at) 
+                    VALUES (?, 'admin', 'open', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                ");
+                $stmt->execute([$orgUserId]);
+            }
+            $newTicketId = (int)$pdo->lastInsertId();
 
-        // Automated welcome acknowledgement
-        $pdo->prepare("
-            INSERT INTO ticket_messages (ticket_id, sender_type, message, created_at) 
-            VALUES (?, 'admin', 'سلام و احترام همکار گرامی. پیام شما برای تیم مدیریت ارشد و پشتیبانی تخصصی آسنا ثبت شد و در اسرع وقت بررسی خواهد شد.', NOW())
-        ")->execute([$newTicketId]);
+            $msgStmt = $pdo->prepare("INSERT INTO ticket_messages (ticket_id, sender_type, message, created_at) VALUES (?, 'user', ?, CURRENT_TIMESTAMP)");
+            $msgStmt->execute([$newTicketId, $message]);
 
-        $notice = "تیکت جدید با موفقیت برای مدیریت آسنا ارسال گردید.";
-        $noticeType = "success";
+            // Automated welcome acknowledgement
+            try {
+                $pdo->prepare("
+                    INSERT INTO ticket_messages (ticket_id, sender_type, message, created_at) 
+                    VALUES (?, 'admin', 'سلام و احترام همکار گرامی. پیام شما برای تیم مدیریت ارشد و پشتیبانی تخصصی آسنا ثبت شد و در اسرع وقت بررسی خواهد شد.', CURRENT_TIMESTAMP)
+                ")->execute([$newTicketId]);
+            } catch (Throwable $eAck) {}
+
+            $notice = "تیکت جدید با موفقیت برای مدیریت آسنا ارسال گردید.";
+            $noticeType = "success";
+        } catch (Throwable $e) {
+            error_log("Error creating admin ticket: " . $e->getMessage());
+            $notice = "خطا در ثبت تیکت. لطفاً مجدداً تلاش فرمایید.";
+            $noticeType = "error";
+        }
     } else {
         $notice = "لطفاً متن پیام را وارد فرمایید.";
         $noticeType = "error";
@@ -72,42 +252,75 @@ if (!in_array($activeTab, ['clients', 'admin'])) {
 
 // Fetch Client Inquiries for THIS organization only
 $clientTickets = [];
-if ($orgId > 0) {
-    $cStmt = $pdo->prepare("
-        SELECT t.id, t.status, t.created_at, t.updated_at, t.subject,
-               u.name as client_name, u.phone as client_phone,
-               COALESCE((SELECT message FROM ticket_messages WHERE ticket_id = t.id ORDER BY id DESC LIMIT 1), 'پیامی ثبت نشده') as last_message,
-               (SELECT sender_type FROM ticket_messages WHERE ticket_id = t.id ORDER BY id DESC LIMIT 1) as last_sender
-        FROM tickets t
-        JOIN users u ON t.user_id = u.id
-        WHERE t.mode = 'organization' AND t.organization_id = ?
-        ORDER BY (t.status = 'open') DESC, t.updated_at DESC
-    ");
-    $cStmt->execute([$orgId]);
-    $clientTickets = $cStmt->fetchAll(PDO::FETCH_ASSOC);
+if ($orgId > 0 && $hasOrgCol) {
+    try {
+        $subjectExpr = $hasSubjectCol 
+            ? "t.subject" 
+            : "COALESCE((SELECT message FROM ticket_messages WHERE ticket_id = t.id ORDER BY id ASC LIMIT 1), 'پیام مراجعین')";
+
+        $cStmt = $pdo->prepare("
+            SELECT t.id, t.status, t.created_at, t.updated_at,
+                   {$subjectExpr} as subject,
+                   u.name as client_name, u.phone as client_phone,
+                   COALESCE((SELECT message FROM ticket_messages WHERE ticket_id = t.id ORDER BY id DESC LIMIT 1), 'پیامی ثبت نشده') as last_message,
+                   (SELECT sender_type FROM ticket_messages WHERE ticket_id = t.id ORDER BY id DESC LIMIT 1) as last_sender
+            FROM tickets t
+            JOIN users u ON t.user_id = u.id
+            WHERE t.mode = 'organization' AND t.organization_id = ?
+            ORDER BY (t.status = 'open') DESC, t.updated_at DESC
+        ");
+        $cStmt->execute([$orgId]);
+        $clientTickets = $cStmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    } catch (Throwable $e) {
+        error_log("Error fetching client tickets: " . $e->getMessage());
+        $clientTickets = [];
+    }
 }
 
 // Fetch Admin Tickets for THIS organization only
 $adminTickets = [];
-$aStmt = $pdo->prepare("
-    SELECT t.id, t.status, t.created_at, t.updated_at, t.subject,
-           COALESCE((SELECT message FROM ticket_messages WHERE ticket_id = t.id ORDER BY id DESC LIMIT 1), 'پیامی ثبت نشده') as last_message,
-           (SELECT sender_type FROM ticket_messages WHERE ticket_id = t.id ORDER BY id DESC LIMIT 1) as last_sender
-    FROM tickets t
-    WHERE t.mode = 'admin' AND (t.organization_id = ? OR t.user_id = ?)
-    ORDER BY (t.status = 'open') DESC, t.updated_at DESC
-");
-$aStmt->execute([$orgId, $orgUserId]);
-$adminTickets = $aStmt->fetchAll(PDO::FETCH_ASSOC);
+try {
+    $subjectExpr = $hasSubjectCol 
+        ? "t.subject" 
+        : "COALESCE((SELECT message FROM ticket_messages WHERE ticket_id = t.id ORDER BY id ASC LIMIT 1), 'مکاتبه با مدیریت')";
+
+    if ($hasOrgCol) {
+        $aStmt = $pdo->prepare("
+            SELECT t.id, t.status, t.created_at, t.updated_at,
+                   {$subjectExpr} as subject,
+                   COALESCE((SELECT message FROM ticket_messages WHERE ticket_id = t.id ORDER BY id DESC LIMIT 1), 'پیامی ثبت نشده') as last_message,
+                   (SELECT sender_type FROM ticket_messages WHERE ticket_id = t.id ORDER BY id DESC LIMIT 1) as last_sender
+            FROM tickets t
+            WHERE t.mode = 'admin' AND (t.organization_id = ? OR t.user_id = ?)
+            ORDER BY (t.status = 'open') DESC, t.updated_at DESC
+        ");
+        $aStmt->execute([$orgId, $orgUserId]);
+    } else {
+        $aStmt = $pdo->prepare("
+            SELECT t.id, t.status, t.created_at, t.updated_at,
+                   {$subjectExpr} as subject,
+                   COALESCE((SELECT message FROM ticket_messages WHERE ticket_id = t.id ORDER BY id DESC LIMIT 1), 'پیامی ثبت نشده') as last_message,
+                   (SELECT sender_type FROM ticket_messages WHERE ticket_id = t.id ORDER BY id DESC LIMIT 1) as last_sender
+            FROM tickets t
+            WHERE t.mode = 'admin' AND t.user_id = ?
+            ORDER BY (t.status = 'open') DESC, t.updated_at DESC
+        ");
+        $aStmt->execute([$orgUserId]);
+    }
+    $adminTickets = $aStmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+} catch (Throwable $e) {
+    error_log("Error fetching admin tickets: " . $e->getMessage());
+    $adminTickets = [];
+}
 
 // Counts
 $clientOpenCount = 0;
 foreach ($clientTickets as $ct) {
-    if ($ct['status'] === 'open') $clientOpenCount++;
+    if (($ct['status'] ?? '') === 'open') $clientOpenCount++;
 }
 $adminOpenCount = 0;
 foreach ($adminTickets as $at) {
-    if ($at['status'] === 'open') $adminOpenCount++;
+    if (($at['status'] ?? '') === 'open') $adminOpenCount++;
 }
 ?>
 
@@ -424,9 +637,9 @@ function renderOrgMessages(messages) {
     const container = document.getElementById('org-chat-messages');
 
     messages.forEach(msg => {
-        // When clinic is talking to clients: clinic is 'admin', user is client.
+        // When clinic is talking to clients: clinic is 'admin' or 'organization', user is client.
         // When clinic is talking to Asena Admin: clinic is 'user', admin is Asena Admin.
-        const isSelf = (currentTabType === 'clients') ? (msg.sender_type === 'admin') : (msg.sender_type === 'user');
+        const isSelf = (currentTabType === 'clients') ? (msg.sender_type === 'admin' || msg.sender_type === 'organization') : (msg.sender_type === 'user');
         const time = new Date(msg.created_at).toLocaleTimeString('fa-IR', { hour: '2-digit', minute: '2-digit' });
         const safeMessage = escapeHtml(msg.message).replace(/\n/g, '<br>');
 
