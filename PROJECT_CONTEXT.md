@@ -83,6 +83,30 @@
 
 ## ۳. تاریخچه تغییرات اخیر (Change Log)
 
+### نسخه ۱.۰.۳۷ (اکتبر ۲۰۲۶ - بازطراحی لوکس صفحه ویترین وب‌سایت‌ها، پیوند عمیق وب‌سایت به حساب کاربران، کاک‌پیت اختصاصی وب‌سایت در پنل‌های چهارگانه، و ویرایشگر پیشرفته با ذخیره زنده)
+1. **بازطراحی اساسی صفحه ویترین وب‌سایت‌ها (`websites.php` و ریدایرکت `/website`):**
+   - حذف کامل جداول قدیمی و کدهای منسوخ ۱۳۰۰ خطی و ساخت ویترین پیشرفته با گرادینت سرمه‌ای و امبر آسنا، انیمیشن‌های ملایم، و تایپوگرافی Geist/Vazirmatn.
+   - تشخیص خودکار نقش کاربر لاگین‌شده (پزشک، داروخانه، پت‌شاپ، کلینیک) با سلام نقش‌محور، هدایت مستقیم به وب‌سایت فعال یا استودیو، و پیش‌انتخاب تب تخصصی متناسب با شغل.
+   - چکر تعاملی ساب‌دامین (`hero-subdomain-input`) با استعلام زنده وضعیت آزادی دامنه، فریم‌های پیش‌نمایش تعاملی دوگانه (دسکتاپ و PWA موبایل)، و حفظ کامل المان‌های آزمون خودکار.
+2. **اتصال ساختاری وب‌سایت به حساب کاربران (`TenantSiteService` و پایگاه داده):**
+   - خودترمیمی ستون‌های `user_id` و `custom_domain` در جدول `tenant_sites` همراه با ایندکس‌های اختصاصی در هر دو محیط MySQL و SQLite.
+   - متد `getSiteForUser(userId, role)` با اولویت‌بندی جستجوی مستقیم `user_id`، `provisioned_by_user_id` و نگاشت نقش‌های شغلی.
+   - متد `getSiteByDomain(domain)` و پشتیبانی مستقیم از دامنه‌های اختصاصی شخصی (`.ir` / `.com`) در `site.php`.
+   - اکشن‌های `provision_my_site` (راه‌اندازی فوری ۱ کلیکه وب‌سایت از درون پنل) و `update_custom_domain` در بک‌اند.
+3. **ایجاد کاک‌پیت اختصاصی مدیریت وب‌سایت در پنل‌های چهارگانه (`website.php`):**
+   - ایجاد مؤلفه یکپارچه [`includes/portal_website_cockpit.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/includes/portal_website_cockpit.php) و صفحات اختصاصی در تمام پورتال‌ها:
+     - [`doctor/website.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/doctor/website.php) (پزشکان)
+     - [`pharmacist/website.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/pharmacist/website.php) (داروخانه‌ها)
+     - [`seller/website.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/seller/website.php) (فروشندگان پت‌شاپ)
+     - [`organization/website.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/organization/website.php) (کلینیک‌ها و بیمارستان‌ها)
+   - امکانات کاک‌پیت: کارت ویزیت دیجیتال و QR Code هوشمند وکتوری (تولید آفلاین SVG با قابلیت دانلود)، مدیریت دامنه اختصاصی با راهنمای رکوردهای DNS، پایش آمار بازدید و نرخ تبدیل، وضعیت ماژول‌های فعال، فریم پیش‌نمایش زنده وب‌سایت، و دکمه راه‌اندازی فوری برای کاربران فاقد وب‌سایت.
+   - به‌روزرسانی نوبارهای چهار پورتال جهت هدایت منوی وب‌سایت اختصاصی به کاک‌پیت مرکزی `website.php`.
+4. **ارتقای استودیوی ویرایشگر زنده (`includes/site_builder_studio.php`):**
+   - پیوند دکمه بازگشت به پیشخوان وب‌سایت (`website.php`).
+   - استقرار نشانگر کپسولی وضعیت ذخیره زنده (همگام‌سازی شده ✓ / تغییرات ذخیره‌نشده / در حال ذخیره‌سازی...) با گوش دادن به رویدادهای فیلدهای فرم و کلیدهای میانبر.
+5. **پوشش تست ۱۰۰٪ و همگام‌سازی دو مخزن:**
+   - نگارش سوییت تست جامع [`tests/test_website_cockpit_and_account_linking.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/tests/test_website_cockpit_and_account_linking.php) و پاس شدن تمام آزمون‌های ۵ گانه در هر دو مخزن `asena-enterprise` و `asena.company`.
+
 ### نسخه ۱.۰.۳۶ (اکتبر ۲۰۲۶ - بهینه‌سازی پوسته شبکه وب‌سایت‌ها و استقرار مهارت‌های استاندارد سیستم)
 1. بازطراحی پوسته بصری و ویترین شبکه وب‌سایت‌های تخصصی در [`websites.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/websites.php) (`website-network-shell`) با فیلتر سریع الگوها بر اساس اهداف کاری (درمان، فروش، سازمانی)، اعتبارسنجی زنده نشانی ساب‌دامین و استقرار فرآیند سه‌مرحله‌ای شفاف از انتخاب تا انتشار.
 2. استقرار مهارت‌های استاندارد عامل در پوشه `.agents/skills/` شامل راهنماهای طراحی رابط کاربری ([`asena-ui`](file:///opt/lampp/htdocs/asena/asena-enterprise/.agents/skills/asena-ui/SKILL.md))، بازبینی طراحی محصول ([`design-review`](file:///opt/lampp/htdocs/asena/asena-enterprise/.agents/skills/design-review/SKILL.md)) و کدنویسی بهینه و کم‌حجم ([`efficient-coding`](file:///opt/lampp/htdocs/asena/asena-enterprise/.agents/skills/efficient-coding/SKILL.md)).

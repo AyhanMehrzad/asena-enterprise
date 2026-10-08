@@ -88,12 +88,12 @@ $orgId = (int)($linkedOrg['id'] ?? 1);
             'autoship'      => ['icon' => 'autorenew', 'title' => 'تکرار دارو و اتوشیپ مزمن', 'tab' => 'autoship-tab'],
             'interactions'  => ['icon' => 'sync_problem', 'title' => 'راهنمای تداخلات و هشدارها', 'tab' => 'interactions-tab'],
             'history'       => ['icon' => 'history', 'title' => 'آرشیو تحویل و سوابق دارویی', 'tab' => 'history-tab'],
-            'site_builder'  => ['icon' => 'web', 'title' => 'وب‌سایت اختصاصی داروخانه', 'url' => 'site_builder.php'],
+            'site_builder'  => ['icon' => 'web', 'title' => 'وب‌سایت اختصاصی داروخانه', 'url' => 'website.php'],
             'settings'      => ['icon' => 'contact_phone', 'title' => 'اطلاعات تماس و پیامک', 'tab' => 'settings-tab'],
         ];
 
         foreach ($navItems as $key => $item):
-            $isActive = !empty($item['url']) ? (basename($_SERVER['PHP_SELF']) === $item['url']) : ($activeTabKey === $key);
+            $isActive = !empty($item['url']) ? (basename($_SERVER['PHP_SELF']) === $item['url'] || ($item['url'] === 'website.php' && basename($_SERVER['PHP_SELF']) === 'site_builder.php')) : ($activeTabKey === $key);
             $classes = $isActive 
                 ? "flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-white font-bold bg-secondary-container shadow-sm transition-all"
                 : "flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-on-tertiary-container hover:bg-white/10 hover:text-white transition-all";

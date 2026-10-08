@@ -82,13 +82,13 @@ $activeTab = $_GET['tab'] ?? 'orders';
             'orders'       => ['icon' => 'local_shipping', 'title' => 'سفارشات و ارسال کالا', 'tab' => 'orders-tab'],
             'products'     => ['icon' => 'inventory_2', 'title' => 'مدیریت موجودی و انبارداری', 'tab' => 'products-tab'],
             'wallet'       => ['icon' => 'account_balance_wallet', 'title' => 'کیف پول امانی و تسویه پایا', 'tab' => 'wallet-tab'],
-            'site_builder' => ['icon' => 'web', 'title' => 'وب‌سایت اختصاصی پت‌شاپ', 'url' => 'site_builder.php'],
+            'site_builder' => ['icon' => 'web', 'title' => 'وب‌سایت اختصاصی پت‌شاپ', 'url' => 'website.php'],
             'shipping'     => ['icon' => 'markunread_mailbox', 'title' => 'رهگیری مرسولات و پستکس', 'tab' => 'shipping-tab'],
             'settings'     => ['icon' => 'store', 'title' => 'مشخصات فروشگاه و حساب بانکی', 'tab' => 'settings-tab'],
         ];
 
         foreach ($navItems as $key => $item):
-            $isActive = ($activeTab === $key);
+            $isActive = ($activeTab === $key) || ($key === 'site_builder' && (basename($_SERVER['PHP_SELF']) === 'website.php' || basename($_SERVER['PHP_SELF']) === 'site_builder.php'));
             $classes = $isActive 
                 ? "seller-nav-link flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-white font-bold bg-secondary-container shadow-sm transition-all"
                 : "seller-nav-link flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-on-tertiary-container hover:bg-white/10 hover:text-white transition-all";

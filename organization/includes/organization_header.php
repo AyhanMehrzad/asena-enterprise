@@ -177,12 +177,12 @@ $currentFile = basename($_SERVER['PHP_SELF']);
             'subscriptions.php'=> ['icon' => 'event_repeat', 'title' => 'اشتراک‌ها و Autoship کلینیک'],
             'inventory.php'    => ['icon' => 'medication', 'title' => 'داروخانه و موجودی کالا'],
             'wallet.php'       => ['icon' => 'account_balance_wallet', 'title' => 'مدیریت مالی و تسویه (پایا)'],
-            'site_builder.php' => ['icon' => 'web', 'title' => 'وب‌سایت اختصاصی مرکز'],
+            'website.php'      => ['icon' => 'web', 'title' => 'وب‌سایت اختصاصی مرکز'],
             'admins.php'       => ['icon' => 'manage_accounts', 'title' => 'مدیران و دسترسی‌های مرکز'],
         ];
 
         foreach ($navItems as $file => $item):
-            $isActive = ($currentFile === $file);
+            $isActive = ($currentFile === $file) || ($file === 'website.php' && $currentFile === 'site_builder.php');
             $classes = $isActive
                 ? "flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-white font-bold bg-secondary-container shadow-sm transition-all"
                 : "flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-on-tertiary-container hover:bg-white/10 hover:text-white transition-all";

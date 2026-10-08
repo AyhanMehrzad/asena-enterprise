@@ -253,6 +253,45 @@ if ($action === 'upload_asset') {
         echo json_encode(['success' => false, 'message' => 'خطا در ذخیره‌سازی فایل در سرور.'], JSON_UNESCAPED_UNICODE);
     }
     exit;
+if ($action === 'update_custom_domain') {
+    $customDomain = strtolower(trim($_POST['custom_domain'] ?? ''));
+    $customDomain = preg_replace('#^https?://#i', '', $customDomain);
+    $customDomain = trim($customDomain, '/');
+
+    $existingSite = $tenantService->getSiteByTenant($tenantType, $tenantId);
+    if (!$existingSite) {
+        echo json_encode(['success' => false, 'message' => 'ابتدا وب‌سایت خود را ایجاد کنید.'], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+
+    if (!empty($customDomain)) {
+        // Validate domain format
+        if (!preg_match('/^[a-z0-9][a-z0-9\-\.]+\.[a-z]{2,}$/i', $customDomain)) {
+            echo json_encode(['success' => false, 'message' => 'فرمت دامنه نامعتبر است. نمونه صحیح: yourclinic.ir یا dr-alavi.com'], JSON_UNESCAPED_UNICODE);
+            exit;
+        }
+
+        $taken = $tenantService->getSiteByDomain($customDomain);
+        if ($taken && (int)$taken['id'] !== (int)$existingSite['id']) {
+            echo json_encode(['success' => false, 'message' => 'این دامنه قبلاً برای وب‌سایت دیگری ثبت شده است.'], JSON_UNESCAPED_UNICODE);
+            exit;
+        }
+    }
+
+    $res = $tenantService->saveSite($tenantType, $tenantId, [
+        'custom_domain' => $customDomain
+    ]);
+
+    if (!empty($res['success'])) {
+        echo json_encode([
+            'success' => true,
+            'message' => empty($customDomain) ? 'دامنه اختصاصی حذف شد.' : 'دامنه اختصاصی با موفقیت ثبت و ذخیره شد.',
+            'custom_domain' => $customDomain
+        ], JSON_UNESCAPED_UNICODE);
+    } else {
+        echo json_encode(['success' => false, 'message' => $res['message'] ?? 'خطا در ثبت دامنه.'], JSON_UNESCAPED_UNICODE);
+    }
+    exit;
 }
 
 echo json_encode(['success' => false, 'message' => 'اکشن نامعتبر است.'], JSON_UNESCAPED_UNICODE);

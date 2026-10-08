@@ -19,6 +19,52 @@ if (session_status() === PHP_SESSION_NONE) {
 $action = trim($_POST['action'] ?? $_GET['action'] ?? '');
 $tenantService = App::tenantSite();
 
+// Self-healing table creation for website_orders
+try {
+    $driver = $pdo->getAttribute(PDO::ATTR_DRIVER_NAME);
+    if ($driver === 'sqlite') {
+        $pdo->exec("
+            CREATE TABLE IF NOT EXISTS website_orders (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NULL,
+                archetype VARCHAR(32) NOT NULL,
+                tier VARCHAR(32) NOT NULL DEFAULT 'standard',
+                desired_slug VARCHAR(64) NOT NULL,
+                full_name VARCHAR(150) NOT NULL,
+                phone VARCHAR(50) NOT NULL,
+                email VARCHAR(100) NULL,
+                notes TEXT NULL,
+                status VARCHAR(32) NOT NULL DEFAULT 'pending',
+                reviewed_by_user_id INT NULL,
+                reviewed_at DATETIME NULL,
+                admin_notes TEXT NULL,
+                created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+            );
+        ");
+    } else {
+        $pdo->exec("
+            CREATE TABLE IF NOT EXISTS `website_orders` (
+                `id` INT AUTO_INCREMENT PRIMARY KEY,
+                `user_id` INT NULL,
+                `archetype` VARCHAR(32) NOT NULL,
+                `tier` VARCHAR(32) NOT NULL DEFAULT 'standard',
+                `desired_slug` VARCHAR(64) NOT NULL,
+                `full_name` VARCHAR(150) NOT NULL,
+                `phone` VARCHAR(50) NOT NULL,
+                `email` VARCHAR(100) NULL,
+                `notes` TEXT NULL,
+                `status` ENUM('pending', 'contacted', 'provisioned', 'rejected') NOT NULL DEFAULT 'pending',
+                `reviewed_by_user_id` INT NULL,
+                `reviewed_at` DATETIME NULL,
+                `admin_notes` TEXT NULL,
+                `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+        ");
+    }
+} catch (Throwable $eIgnore) {}
+
 // Subdomain live availability check
 if ($action === 'check_slug') {
     $rawSlug = trim($_POST['slug'] ?? $_GET['slug'] ?? '');
@@ -135,6 +181,109 @@ if ($action === 'submit_order') {
         echo json_encode(['success' => false, 'message' => 'خطا در ثبت سفارش. لطفاً مجدداً تلاش نمایید.'], JSON_UNESCAPED_UNICODE);
         exit;
     }
+}
+
+// Get user's active site and order status
+if ($action === 'get_my_website') {
+    $userId = isset($_SESSION['user_id']) ? (int)$_SESSION['user_id'] : 0;
+    if ($userId <= 0) {
+        echo json_encode(['success' => false, 'message' => 'کاربر وارد نشده است.'], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+    $role = $_SESSION['user_role'] ?? null;
+    $site = $tenantService->getSiteForUser($userId, $role);
+    
+    // Check pending orders
+    $stmt = $pdo->prepare("SELECT * FROM website_orders WHERE user_id = ? ORDER BY id DESC LIMIT 1");
+    $stmt->execute([$userId]);
+    $order = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    echo json_encode([
+        'success' => true,
+        'has_site' => !empty($site),
+        'site' => $site,
+        'has_order' => !empty($order),
+        'order' => $order
+    ], JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
+// Provision starter site for logged-in user
+if ($action === 'provision_my_site') {
+    $userId = isset($_SESSION['user_id']) ? (int)$_SESSION['user_id'] : 0;
+    if ($userId <= 0) {
+        echo json_encode(['success' => false, 'message' => 'لطفاً ابتدا وارد حساب کاربری خود شوید.'], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+    $role = $_SESSION['user_role'] ?? 'doctor';
+    $desiredSlug = $tenantService->sanitizeSlug($_POST['desired_slug'] ?? '');
+    
+    // Find tenant_type and tenant_id
+    $tenantType = match($role) {
+        'doctor' => 'doctor',
+        'pharmacist', 'pharmacy' => 'pharmacist',
+        'seller' => 'seller',
+        'organization', 'clinic', 'organization_manager' => 'organization',
+        default => 'doctor'
+    };
+    
+    $tenantId = $userId;
+    $info = ['user_id' => $userId];
+    if ($tenantType === 'doctor') {
+        $stmt = $pdo->prepare("SELECT * FROM doctors WHERE user_id = ? LIMIT 1");
+        $stmt->execute([$userId]);
+        $doc = $stmt->fetch(PDO::FETCH_ASSOC);
+        if ($doc) {
+            $tenantId = (int)$doc['id'];
+            $info['name'] = $doc['name'];
+            $info['specialty'] = $doc['specialty'];
+            $info['phone'] = $doc['phone'];
+            $info['avatar_url'] = $doc['avatar_url'];
+        }
+    } elseif ($tenantType === 'organization') {
+        $stmt = $pdo->prepare("SELECT * FROM organizations WHERE user_id = ? LIMIT 1");
+        $stmt->execute([$userId]);
+        $org = $stmt->fetch(PDO::FETCH_ASSOC);
+        if ($org) {
+            $tenantId = (int)$org['id'];
+            $info['name'] = $org['name'];
+            $info['phone'] = $org['phone'];
+            $info['address'] = $org['address'];
+        }
+    } elseif ($tenantType === 'seller') {
+        $stmt = $pdo->prepare("SELECT * FROM sellers WHERE user_id = ? LIMIT 1");
+        $stmt->execute([$userId]);
+        $sel = $stmt->fetch(PDO::FETCH_ASSOC);
+        if ($sel) {
+            $tenantId = (int)$sel['id'];
+            $info['name'] = $sel['shop_name'] ?? $sel['name'] ?? 'پت‌شاپ اختصاصی';
+            $info['phone'] = $sel['phone'];
+        }
+    }
+
+    $existing = $tenantService->getSiteByTenant($tenantType, $tenantId);
+    if ($existing) {
+        echo json_encode([
+            'success' => true,
+            'message' => 'وب‌سایت اختصاصی شما از قبل فعال است.',
+            'slug' => $existing['slug'],
+            'site' => $existing
+        ], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+
+    $site = $tenantService->getOrCreateDefault($tenantType, $tenantId, $info);
+    if (!empty($desiredSlug) && $tenantService->isSlugAvailable($desiredSlug, (int)$site['id'])) {
+        $site = $tenantService->saveSite($tenantType, $tenantId, ['slug' => $desiredSlug])['site'] ?? $site;
+    }
+
+    echo json_encode([
+        'success' => true,
+        'message' => 'وب‌سایت اختصاصی شما با موفقیت ایجاد و فعال شد!',
+        'slug' => $site['slug'],
+        'site' => $site
+    ], JSON_UNESCAPED_UNICODE);
+    exit;
 }
 
 echo json_encode(['success' => false, 'message' => 'عملیات نامعتبر است.'], JSON_UNESCAPED_UNICODE);

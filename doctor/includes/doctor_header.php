@@ -77,7 +77,7 @@ if (!$doctorProfile) {
 
     <nav class="flex-1 px-3 mt-2 space-y-1">
         <?php 
-        $activeTabKey = $_GET['tab'] ?? (basename($_SERVER['PHP_SELF']) === 'blogs.php' ? 'blogs' : (basename($_SERVER['PHP_SELF']) === 'telehealth.php' ? 'telehealth' : 'calendar'));
+        $activeTabKey = $_GET['tab'] ?? (basename($_SERVER['PHP_SELF']) === 'website.php' || basename($_SERVER['PHP_SELF']) === 'site_builder.php' ? 'site_builder' : (basename($_SERVER['PHP_SELF']) === 'blogs.php' ? 'blogs' : (basename($_SERVER['PHP_SELF']) === 'telehealth.php' ? 'telehealth' : 'calendar')));
         
         $navItems = [
             'calendar' => ['icon' => 'calendar_month', 'title' => 'نوبت‌ها و تقویم روزانه', 'tab' => 'calendar-tab'],
@@ -90,7 +90,7 @@ if (!$doctorProfile) {
             'history'      => ['icon' => 'history', 'title' => 'آرشیو مراجعات و پرونده‌ها', 'tab' => 'history-tab'],
             'emr'          => ['icon' => 'manage_accounts', 'title' => 'رجیستری بیماران و EMR', 'tab' => 'emr-tab'],
             'bpms'         => ['icon' => 'medication', 'title' => 'نسخه‌نویسی و گردش کار BPMS', 'tab' => 'bpms-tab'],
-            'site_builder' => ['icon' => 'web', 'title' => 'وب‌سایت اختصاصی من', 'url' => 'site_builder.php'],
+            'site_builder' => ['icon' => 'web', 'title' => 'وب‌سایت اختصاصی من', 'url' => 'website.php'],
             'profile'      => ['icon' => 'contact_phone', 'title' => 'اطلاعات تماس و پیامک نوبت', 'tab' => 'profile-tab'],
         ];
 

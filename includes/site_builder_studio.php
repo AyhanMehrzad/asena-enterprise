@@ -174,9 +174,9 @@ if (empty($layout['theme']['primary_color']) && $activePaletteKey !== 'navy' && 
                 <span class="material-symbols-outlined text-lg text-slate-600 group-hover:text-slate-900">menu</span>
                 <span class="hidden md:inline">منوی پنل</span>
             </button>
-            <a href="index.php" class="p-2 sm:px-3 sm:py-2 rounded-xl text-slate-500 hover:text-slate-800 hover:bg-slate-100 text-xs font-bold transition-all flex items-center gap-1" title="بازگشت به پیشخوان پنل">
+            <a href="website.php" class="p-2 sm:px-3 sm:py-2 rounded-xl text-slate-500 hover:text-slate-800 hover:bg-slate-100 text-xs font-bold transition-all flex items-center gap-1" title="بازگشت به مدیریت وب‌سایت">
                 <span class="material-symbols-outlined text-base">arrow_forward</span>
-                <span class="hidden md:inline">پیشخوان</span>
+                <span class="hidden md:inline">پیشخوان وب‌سایت</span>
             </a>
 
             <div class="h-6 w-[1px] bg-slate-200 hidden sm:block"></div>
@@ -235,6 +235,11 @@ if (empty($layout['theme']['primary_color']) && $activePaletteKey !== 'navy' && 
 
         <!-- Action Buttons & Studio Sidebar Toggle -->
         <div class="flex items-center gap-2 sm:gap-3">
+            <div id="studio-save-status" class="hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-slate-100 text-slate-600 border border-slate-200 transition-all">
+                <span class="w-2 h-2 rounded-full bg-emerald-500" id="studio-status-dot"></span>
+                <span id="studio-status-text">همگام‌سازی شده ✓</span>
+            </div>
+
             <button type="button" onclick="toggleSidebar()" id="btn-toggle-sidebar" class="px-3 sm:px-3.5 py-2 rounded-xl border border-slate-200 hover:border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold transition-all flex items-center gap-1.5 sm:gap-2 shadow-sm active:scale-95">
                 <span class="material-symbols-outlined text-base text-emerald-600 transition-transform duration-300" id="sidebar-toggle-icon">tune</span>
                 <span id="sidebar-toggle-text">پنل ویرایش محتوا</span>
@@ -3043,6 +3048,20 @@ document.addEventListener('DOMContentLoaded', () => {
     initLiveStudioBindings();
     initStudioRepeaters();
     studioHistory.pushState('وضعیت اولیه');
+
+    const markUnsavedChanges = () => {
+        const statusDot = document.getElementById('studio-status-dot');
+        const statusText = document.getElementById('studio-status-text');
+        if (statusDot && statusText) {
+            statusDot.className = 'w-2 h-2 rounded-full bg-amber-500';
+            statusText.textContent = 'تغییرات ذخیره‌نشده';
+        }
+    };
+    const sidebarTabContent = document.getElementById('sidebar-tab-content');
+    if (sidebarTabContent) {
+        sidebarTabContent.addEventListener('input', markUnsavedChanges);
+        sidebarTabContent.addEventListener('change', markUnsavedChanges);
+    }
 });
 
 // Real-time zero-refresh live synchronization engine with preview iframe
@@ -4033,6 +4052,13 @@ async function saveSiteConfig() {
     const btn = document.getElementById('btn-save-site');
     const saveIcon = document.getElementById('save-icon');
     const saveText = document.getElementById('save-text');
+    const statusDot = document.getElementById('studio-status-dot');
+    const statusText = document.getElementById('studio-status-text');
+
+    if (statusDot && statusText) {
+        statusDot.className = 'w-2 h-2 rounded-full bg-amber-500 animate-pulse';
+        statusText.textContent = 'در حال ذخیره‌سازی...';
+    }
 
     btn.disabled = true;
     saveIcon.innerText = 'sync';
@@ -4273,15 +4299,27 @@ async function saveSiteConfig() {
                     iframe.src = `../site.php?slug=${encodeURIComponent(data.slug)}&preview=1`;
                 }
             }
+            if (statusDot && statusText) {
+                statusDot.className = 'w-2 h-2 rounded-full bg-emerald-500';
+                statusText.textContent = 'تمام تغییرات ذخیره شد ✓';
+            }
             if (!silent) {
                 showToast('✓ وب‌سایت اختصاصی شما با موفقیت ذخیره و منتشر شد.', 'success');
             }
         } else {
+            if (statusDot && statusText) {
+                statusDot.className = 'w-2 h-2 rounded-full bg-rose-500';
+                statusText.textContent = 'خطا در ذخیره';
+            }
             if (!silent) {
                 showToast('✕ خطا: ' + (data.message || 'مشکلی رخ داد'), 'error');
             }
         }
     } catch (e) {
+        if (statusDot && statusText) {
+            statusDot.className = 'w-2 h-2 rounded-full bg-rose-500';
+            statusText.textContent = 'خطا در ارتباط با سرور';
+        }
         if (!silent) {
             showToast('✕ ارتباط با سرور برقرار نشد.', 'error');
         }

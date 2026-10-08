@@ -16,14 +16,23 @@ require_once __DIR__ . '/includes/App.php';
 require_once __DIR__ . '/includes/functions.php';
 require_once __DIR__ . '/includes/QrCode.php';
 
-// Resolve Slug from Subdomain or GET parameter
+// Resolve Slug from Subdomain, Custom Domain, or GET parameter
 $host = $_SERVER['HTTP_HOST'] ?? '';
 $slug = trim($_GET['slug'] ?? '');
+$tenantService = App::tenantSite();
+$site = null;
 
-if (empty($slug)) {
-    $hostParts = explode('.', $host);
-    if (count($hostParts) >= 3 && $hostParts[0] !== 'www') {
-        $slug = $hostParts[0];
+if (empty($slug) && !empty($host)) {
+    // Check custom domain mapping
+    $siteByDomain = $tenantService->getSiteByDomain($host);
+    if ($siteByDomain) {
+        $site = $siteByDomain;
+        $slug = $site['slug'];
+    } else {
+        $hostParts = explode('.', $host);
+        if (count($hostParts) >= 3 && $hostParts[0] !== 'www') {
+            $slug = $hostParts[0];
+        }
     }
 }
 
@@ -32,8 +41,9 @@ if (empty($slug)) {
     exit;
 }
 
-$tenantService = App::tenantSite();
-$site = $tenantService->getSiteBySlug($slug);
+if (!$site) {
+    $site = $tenantService->getSiteBySlug($slug);
+}
 
 if (!$site) {
     http_response_code(404);

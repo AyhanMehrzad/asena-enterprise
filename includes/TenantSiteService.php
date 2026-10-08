@@ -93,10 +93,19 @@ class TenantSiteService {
                 "ALTER TABLE tenant_sites ADD COLUMN approved_at DATETIME NULL",
                 "ALTER TABLE tenant_sites ADD COLUMN published_by_user_id INT NULL",
                 "ALTER TABLE tenant_sites ADD COLUMN published_at DATETIME NULL",
-                "ALTER TABLE tenant_sites ADD COLUMN admin_notes TEXT NULL"
+                "ALTER TABLE tenant_sites ADD COLUMN admin_notes TEXT NULL",
+                "ALTER TABLE tenant_sites ADD COLUMN user_id INT NULL",
+                "ALTER TABLE tenant_sites ADD COLUMN custom_domain VARCHAR(120) NULL"
             ] as $opsColumnSql) {
                 try { $this->pdo->exec($opsColumnSql); } catch (Throwable $eIgnore) {}
             }
+            try { $this->pdo->exec("CREATE INDEX IF NOT EXISTS idx_ts_user_id ON tenant_sites (user_id)"); } catch (Throwable $eIgnore) {}
+            try { $this->pdo->exec("CREATE INDEX IF NOT EXISTS idx_ts_custom_domain ON tenant_sites (custom_domain)"); } catch (Throwable $eIgnore) {}
+            try {
+                $this->pdo->exec("UPDATE tenant_sites SET user_id = (SELECT user_id FROM doctors WHERE doctors.id = tenant_sites.tenant_id) WHERE user_id IS NULL AND tenant_type = 'doctor'");
+                $this->pdo->exec("UPDATE tenant_sites SET user_id = (SELECT user_id FROM organizations WHERE organizations.id = tenant_sites.tenant_id) WHERE user_id IS NULL AND tenant_type = 'organization'");
+                $this->pdo->exec("UPDATE tenant_sites SET user_id = tenant_id WHERE user_id IS NULL AND tenant_type = 'pharmacist'");
+            } catch (Throwable $eIgnore) {}
 
             // Self-healing migration for orders and order_items tenant scoping
             try {
@@ -193,6 +202,39 @@ class TenantSiteService {
     }
 
     /**
+     * Retrieve site by custom domain (e.g. dr-alavi.com or dr-vet.ir)
+     */
+    public function getSiteByDomain(string $domain): ?array {
+        $domain = strtolower(trim($domain));
+        $domain = preg_replace('#^https?://#i', '', $domain);
+        $domain = trim($domain, '/');
+        if (empty($domain)) {
+            return null;
+        }
+
+        try {
+            $stmt = $this->pdo->prepare("SELECT * FROM tenant_sites WHERE LOWER(custom_domain) = ? LIMIT 1");
+            $stmt->execute([$domain]);
+            $site = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if ($site) {
+                try {
+                    $upStmt = $this->pdo->prepare("UPDATE tenant_sites SET views_count = views_count + 1 WHERE id = ?");
+                    $upStmt->execute([$site['id']]);
+                    $site['views_count'] = (int)$site['views_count'] + 1;
+                } catch (Throwable $e) {}
+
+                $site['layout'] = !empty($site['layout_json']) ? json_decode($site['layout_json'], true) : [];
+                return $site;
+            }
+        } catch (Throwable $e) {
+            error_log("[TenantSiteService::getSiteByDomain] " . $e->getMessage());
+        }
+
+        return null;
+    }
+
+    /**
      * Retrieve site by tenant type and ID
      */
     public function getSiteByTenant(string $tenantType, int $tenantId): ?array {
@@ -208,6 +250,90 @@ class TenantSiteService {
             error_log("[TenantSiteService::getSiteByTenant] " . $e->getMessage());
         }
 
+        return null;
+    }
+
+    /**
+     * Retrieve site belonging to a user (by direct user_id, or mapped tenant role)
+     */
+    public function getSiteForUser(int $userId, ?string $role = null): ?array {
+        if ($userId <= 0) return null;
+        try {
+            $tenantType = match($role) {
+                'doctor' => 'doctor',
+                'pharmacist', 'pharmacy' => 'pharmacist',
+                'seller' => 'seller',
+                'organization', 'clinic', 'organization_manager' => 'organization',
+                default => null
+            };
+
+            // 1. Direct user_id lookup (scoped by tenant_type if role specified)
+            if ($tenantType) {
+                $stmt = $this->pdo->prepare("SELECT * FROM tenant_sites WHERE user_id = ? AND tenant_type = ? ORDER BY id DESC LIMIT 1");
+                $stmt->execute([$userId, $tenantType]);
+                $site = $stmt->fetch(PDO::FETCH_ASSOC);
+                if ($site) {
+                    $site['layout'] = !empty($site['layout_json']) ? json_decode($site['layout_json'], true) : [];
+                    return $site;
+                }
+            } else {
+                $stmt = $this->pdo->prepare("SELECT * FROM tenant_sites WHERE user_id = ? ORDER BY id DESC LIMIT 1");
+                $stmt->execute([$userId]);
+                $site = $stmt->fetch(PDO::FETCH_ASSOC);
+                if ($site) {
+                    $site['layout'] = !empty($site['layout_json']) ? json_decode($site['layout_json'], true) : [];
+                    return $site;
+                }
+            }
+
+            // 2. Provisioned by user lookup
+            if ($tenantType) {
+                $stmt = $this->pdo->prepare("SELECT * FROM tenant_sites WHERE provisioned_by_user_id = ? AND tenant_type = ? ORDER BY id DESC LIMIT 1");
+                $stmt->execute([$userId, $tenantType]);
+            } else {
+                $stmt = $this->pdo->prepare("SELECT * FROM tenant_sites WHERE provisioned_by_user_id = ? ORDER BY id DESC LIMIT 1");
+                $stmt->execute([$userId]);
+            }
+            $site = $stmt->fetch(PDO::FETCH_ASSOC);
+            if ($site) {
+                $site['layout'] = !empty($site['layout_json']) ? json_decode($site['layout_json'], true) : [];
+                return $site;
+            }
+
+            // 3. Role-based lookup
+            if (!$role) {
+                $stmt = $this->pdo->prepare("SELECT role FROM users WHERE id = ? LIMIT 1");
+                $stmt->execute([$userId]);
+                $role = (string)$stmt->fetchColumn();
+            }
+
+            if ($role === 'doctor') {
+                $stmt = $this->pdo->prepare("SELECT id FROM doctors WHERE user_id = ? LIMIT 1");
+                $stmt->execute([$userId]);
+                $docId = (int)$stmt->fetchColumn();
+                if ($docId > 0) {
+                    return $this->getSiteByTenant('doctor', $docId);
+                }
+            } elseif ($role === 'organization' || $role === 'clinic' || $role === 'organization_manager') {
+                $stmt = $this->pdo->prepare("SELECT id FROM organizations WHERE user_id = ? LIMIT 1");
+                $stmt->execute([$userId]);
+                $orgId = (int)$stmt->fetchColumn();
+                if ($orgId > 0) {
+                    return $this->getSiteByTenant('organization', $orgId);
+                }
+            } elseif ($role === 'seller') {
+                $stmt = $this->pdo->prepare("SELECT id FROM sellers WHERE user_id = ? LIMIT 1");
+                $stmt->execute([$userId]);
+                $sellerId = (int)$stmt->fetchColumn();
+                if ($sellerId > 0) {
+                    return $this->getSiteByTenant('seller', $sellerId);
+                }
+            } elseif ($role === 'pharmacist' || $role === 'pharmacy') {
+                return $this->getSiteByTenant('pharmacist', $userId);
+            }
+        } catch (Throwable $e) {
+            error_log("[TenantSiteService::getSiteForUser] " . $e->getMessage());
+        }
         return null;
     }
 
@@ -249,17 +375,18 @@ class TenantSiteService {
         $bannerUrl = $info['banner_url'] ?? 'assets/images/clinic-banner.jpg';
 
         $layoutJson = json_encode($layout, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+        $ownerUserId = !empty($info['user_id']) ? (int)$info['user_id'] : $this->resolveTenantUserId($tenantType, $tenantId);
 
         try {
             $stmt = $this->pdo->prepare("
                 INSERT INTO tenant_sites (
                     tenant_type, tenant_id, slug, site_title, site_tagline,
                     logo_url, banner_url, theme_palette, primary_color, secondary_color,
-                    font_family, layout_json, is_published, views_count, meta_description, created_at, updated_at
+                    font_family, layout_json, is_published, views_count, meta_description, user_id, created_at, updated_at
                 ) VALUES (
                     ?, ?, ?, ?, ?,
                     ?, ?, ?, '#001a48', '#fd8100',
-                    'Vazirmatn', ?, 1, 0, ?, datetime('now'), datetime('now')
+                    'Vazirmatn', ?, 1, 0, ?, ?, datetime('now'), datetime('now')
                 )
             ");
             $driver = $this->pdo->getAttribute(PDO::ATTR_DRIVER_NAME);
@@ -268,11 +395,11 @@ class TenantSiteService {
                     INSERT INTO tenant_sites (
                         tenant_type, tenant_id, slug, site_title, site_tagline,
                         logo_url, banner_url, theme_palette, primary_color, secondary_color,
-                        font_family, layout_json, is_published, views_count, meta_description, created_at, updated_at
+                        font_family, layout_json, is_published, views_count, meta_description, user_id, created_at, updated_at
                     ) VALUES (
                         ?, ?, ?, ?, ?,
                         ?, ?, ?, '#001a48', '#fd8100',
-                        'Vazirmatn', ?, 1, 0, ?, NOW(), NOW()
+                        'Vazirmatn', ?, 1, 0, ?, ?, NOW(), NOW()
                     )
                 ");
             }
@@ -288,7 +415,8 @@ class TenantSiteService {
                 $bannerUrl,
                 $palette,
                 $layoutJson,
-                $metaDesc
+                $metaDesc,
+                $ownerUserId
             ]);
 
             return $this->getSiteByTenant($tenantType, $tenantId);
@@ -950,6 +1078,12 @@ class TenantSiteService {
         $logoUrl = trim($data['logo_url'] ?? ($existing['logo_url'] ?? ''));
         $bannerUrl = trim($data['banner_url'] ?? ($existing['banner_url'] ?? ''));
         $siteTier = trim($data['site_tier'] ?? ($existing['site_tier'] ?? 'enterprise'));
+        $customDomain = isset($data['custom_domain']) ? strtolower(trim($data['custom_domain'])) : ($existing['custom_domain'] ?? null);
+        if ($customDomain !== null) {
+            $customDomain = preg_replace('#^https?://#i', '', $customDomain);
+            $customDomain = trim($customDomain, '/');
+            if ($customDomain === '') $customDomain = null;
+        }
 
         // Handle Slug update & validation
         $newSlug = $this->sanitizeSlug($data['slug'] ?? ($existing['slug'] ?? ''));
@@ -989,9 +1123,12 @@ class TenantSiteService {
                         is_published = ?,
                         site_tier = ?,
                         meta_description = ?,
+                        user_id = ?,
+                        custom_domain = ?,
                         $updateTimeSql
                     WHERE id = ?
                 ");
+                $ownerUserId = !empty($data['user_id']) ? (int)$data['user_id'] : ($existing['user_id'] ?? $this->resolveTenantUserId($tenantType, $tenantId));
                 $stmt->execute([
                     $newSlug,
                     $siteTitle,
@@ -1006,21 +1143,24 @@ class TenantSiteService {
                     $isPublished,
                     $siteTier,
                     $metaDescription,
+                    $ownerUserId,
+                    $customDomain,
                     $existing['id']
                 ]);
             } else {
                 $driver = $this->pdo->getAttribute(PDO::ATTR_DRIVER_NAME);
                 $timeSql = ($driver === 'sqlite') ? "datetime('now'), datetime('now')" : "NOW(), NOW()";
+                $ownerUserId = !empty($data['user_id']) ? (int)$data['user_id'] : $this->resolveTenantUserId($tenantType, $tenantId);
 
                 $stmt = $this->pdo->prepare("
                     INSERT INTO tenant_sites (
                         tenant_type, tenant_id, slug, site_title, site_tagline,
                         logo_url, banner_url, theme_palette, primary_color, secondary_color,
-                        font_family, layout_json, is_published, views_count, site_tier, meta_description, created_at, updated_at
+                        font_family, layout_json, is_published, views_count, site_tier, meta_description, user_id, custom_domain, created_at, updated_at
                     ) VALUES (
                         ?, ?, ?, ?, ?,
                         ?, ?, ?, ?, ?,
-                        ?, ?, ?, 0, ?, ?, $timeSql
+                        ?, ?, ?, 0, ?, ?, ?, ?, $timeSql
                     )
                 ");
                 $stmt->execute([
@@ -1038,7 +1178,9 @@ class TenantSiteService {
                     $layoutJson,
                     $isPublished,
                     $siteTier,
-                    $metaDescription
+                    $metaDescription,
+                    $ownerUserId,
+                    $customDomain
                 ]);
             }
 
@@ -1187,16 +1329,23 @@ class TenantSiteService {
      */
     public function resolveTenantUserId(string $tenantType, int $tenantId): int {
         try {
-            if ($tenantType === 'seller' || $tenantType === 'pharmacist' || $tenantType === 'doctor') {
-                return $tenantId;
-            }
-            if ($tenantType === 'organization') {
+            if ($tenantType === 'doctor') {
+                $stmt = $this->pdo->prepare("SELECT user_id FROM doctors WHERE id = ? LIMIT 1");
+                $stmt->execute([$tenantId]);
+                $uId = (int)$stmt->fetchColumn();
+                if ($uId > 0) return $uId;
+            } elseif ($tenantType === 'organization') {
                 $stmt = $this->pdo->prepare("SELECT user_id FROM organizations WHERE id = ? LIMIT 1");
                 $stmt->execute([$tenantId]);
                 $uId = (int)$stmt->fetchColumn();
-                if ($uId > 0) {
-                    return $uId;
-                }
+                if ($uId > 0) return $uId;
+            } elseif ($tenantType === 'seller') {
+                $stmt = $this->pdo->prepare("SELECT user_id FROM sellers WHERE id = ? LIMIT 1");
+                $stmt->execute([$tenantId]);
+                $uId = (int)$stmt->fetchColumn();
+                if ($uId > 0) return $uId;
+            } elseif ($tenantType === 'pharmacist') {
+                return $tenantId;
             }
         } catch (Throwable $e) {
             error_log("[TenantSiteService::resolveTenantUserId] " . $e->getMessage());

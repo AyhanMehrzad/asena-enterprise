@@ -3,6 +3,7 @@ RewriteEngine On
 # 0. Pharmacy, Websites & Tenant Site Enterprise Route Handling
 RewriteRule ^pharmacy/$ /pharmacy [R=301,L]
 RewriteRule ^pharmacy$ pharmacy.php [QSA,L]
+RewriteRule ^website/?$ /websites [R=301,L]
 RewriteRule ^websites/$ /websites [R=301,L]
 RewriteRule ^websites$ websites.php [QSA,L]
 RewriteRule ^site/?$ site.php [QSA,L]
