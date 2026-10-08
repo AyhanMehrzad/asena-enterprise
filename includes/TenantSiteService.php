@@ -83,6 +83,20 @@ class TenantSiteService {
             try {
                 $this->pdo->exec("ALTER TABLE tenant_sites ADD COLUMN site_tier VARCHAR(32) NOT NULL DEFAULT 'enterprise'");
             } catch (Throwable $eIgnore) {}
+            // Keep older installations compatible with the central website operations cockpit.
+            foreach ([
+                "ALTER TABLE tenant_sites ADD COLUMN lifecycle_status VARCHAR(32) NOT NULL DEFAULT 'published'",
+                "ALTER TABLE tenant_sites ADD COLUMN provisioned_by_user_id INT NULL",
+                "ALTER TABLE tenant_sites ADD COLUMN provisioning_source VARCHAR(32) NOT NULL DEFAULT 'customer_order'",
+                "ALTER TABLE tenant_sites ADD COLUMN payment_required TINYINT(1) NOT NULL DEFAULT 1",
+                "ALTER TABLE tenant_sites ADD COLUMN approved_by_user_id INT NULL",
+                "ALTER TABLE tenant_sites ADD COLUMN approved_at DATETIME NULL",
+                "ALTER TABLE tenant_sites ADD COLUMN published_by_user_id INT NULL",
+                "ALTER TABLE tenant_sites ADD COLUMN published_at DATETIME NULL",
+                "ALTER TABLE tenant_sites ADD COLUMN admin_notes TEXT NULL"
+            ] as $opsColumnSql) {
+                try { $this->pdo->exec($opsColumnSql); } catch (Throwable $eIgnore) {}
+            }
 
             // Self-healing migration for orders and order_items tenant scoping
             try {

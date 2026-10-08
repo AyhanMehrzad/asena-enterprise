@@ -83,6 +83,11 @@
 
 ## ۳. تاریخچه تغییرات اخیر (Change Log)
 
+### نسخه ۱.۰.۳۵ (اکتبر ۲۰۲۶ - هسته مدیریت شبکه وب‌سایت‌های چندمستاجری)
+1. افزودن مهاجرت `25_tenant_website_operations.sql` برای وضعیت چرخه عمر، منشأ provision، مالک عملیات، وضعیت پرداخت و متادیتای انتشار وب‌سایت‌های مستاجر.
+2. افزودن کابینت مرکزی مالک در `admin/websites.php` و اکشن امن `actions/admin_websites_action.php` برای ایجاد بدون پرداخت، انتشار/تعلیق، تغییر tier و بررسی درخواست‌های `website_orders` با ثبت رویداد ممیزی.
+3. افزودن ورودی سازگار `/website` به کاتالوگ `/websites` و خودترمیمی ستون‌های عملیاتی در `TenantSiteService` برای نصب‌های قدیمی.
+
 ### نسخه ۱.۰.۳۴ (اکتبر ۲۰۲۶ - بازطراحی اساسی صفحه وب‌سایت‌ساز /websites، لغو طبقه‌بندی طبقاتی قیمت‌گذاری و معرفی نسخه‌های تخصصی وب‌سایت، سوئیچر تعاملی دسکتاپ و PWA موبایل، و نوسازی لوکس هیرو بنر)
 1. **لغو کامل طبقه‌بندی طبقاتی قیمت‌ها و جایگزینی با نسخه‌های تخصصی بر اساس حوزه کاری (Dedicated Website Editions):**
    - حذف کامل کارت‌های تفکیک طبقاتی قدیمی (Basic / Standard / Premium / Enterprise) و امکانات قفل‌شده با علامت ضربدر قرمز؛ تمامی وب‌سایت‌ها به عنوان یک نهاد واحد و مستقل تعریف شده و تنوع آن‌ها صرفاً بر پایه ماژول‌ها و نیازهای شغلی تخصصی است.
@@ -1308,6 +1313,9 @@
     - **ایجاد مایگریشن نسخه ۲۴ پایگاه‌داده ([`database/migrations/24_tickets_multitenant_alignment.sql`](file:///opt/lampp/htdocs/asena/asena-enterprise/database/migrations/24_tickets_multitenant_alignment.sql)):**
       - ثبت استاندارد تغییرات ساختار جدول `tickets` و `ticket_messages`.
 
+78. **افزودن مهارت‌های محلی Codex برای توسعه و بازبینی آسنا:**
+    - ایجاد [` .agents/skills/asena-ui/SKILL.md`](file:///opt/lampp/htdocs/asena/asena-enterprise/.agents/skills/asena-ui/SKILL.md)، [` .agents/skills/design-review/SKILL.md`](file:///opt/lampp/htdocs/asena/asena-enterprise/.agents/skills/design-review/SKILL.md) و [` .agents/skills/efficient-coding/SKILL.md`](file:///opt/lampp/htdocs/asena/asena-enterprise/.agents/skills/efficient-coding/SKILL.md) برای راهنمایی طراحی رابط، بازبینی UX و اجرای کم‌هزینه و متمرکز.
+
 ---
 
 ## ۴. پروتکل ثبت تغییرات آینده (Maintenance Rule)
@@ -1315,5 +1323,3 @@
 > هر زمان که فایل جدیدی ایجاد یا فایلی ویرایش شد:
 > ۱. بلافاصله تغییر انجام‌شده را با ذکر نام فایل و دلیل فنی، به انتهای بخش **۳. تاریخچه تغییرات اخیر (Change Log)** در همین فایل ([`PROJECT_CONTEXT.md`](file:///opt/lampp/htdocs/asena/asena-enterprise/PROJECT_CONTEXT.md)) اضافه کن.  
 > ۲. نیاز به نگهداری تاریخچه طولانی در پنجره پرامپت نیست؛ هر زمان کانتکس پر یا ریست شد، با استناد به این فایل می‌توان کار را بدون اتلاف وقت ادامه داد.
-
-

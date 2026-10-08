@@ -145,6 +145,8 @@ $adminName = $adminCheck['name'] ?? 'مدیر سیستم';
             $activeKey = 'guide';
         } elseif ($currentFile === 'notifications.php') {
             $activeKey = 'notifications';
+        } elseif ($currentFile === 'websites.php') {
+            $activeKey = 'websites';
         }
 
         $pendingVerificationsCount = 0;
@@ -166,6 +168,7 @@ $adminName = $adminCheck['name'] ?? 'مدیر سیستم';
                 'organizations'  => ['icon' => 'apartment', 'title' => 'مراکز درمانی و بیمارستان‌ها', 'url' => 'organizations.php'],
                 'doctors'        => ['icon' => 'stethoscope', 'title' => 'پزشکان و متخصصین', 'url' => 'doctors.php'],
                 'sellers'        => ['icon' => 'store', 'title' => 'فروشندگان و پت‌شاپ‌ها', 'url' => 'sellers.php'],
+                'websites'       => ['icon' => 'language', 'title' => 'شبکه وب‌سایت‌ها', 'url' => 'websites.php'],
                 'verifications'  => ['icon' => 'verified_user', 'title' => 'احراز صلاحیت مدارک', 'url' => 'verifications.php', 'badge' => $pendingVerificationsCount],
             ],
             'لجستیک و سفارشات سراسری' => [
