@@ -48,7 +48,111 @@ $page_schema = [
 include __DIR__ . '/includes/header.php';
 ?>
 
-<div class="w-[96%] max-w-[1550px] mx-auto py-6 md:py-10 space-y-16 md:space-y-24">
+<style>
+    /* Website network v2: calm marketplace surface replacing the legacy presentation layer. */
+    .website-network-shell { --wn-navy: #001a48; --wn-orange: #fd8100; --wn-ink: #122033; --wn-muted: #617087; background: #f7f9fc; color: var(--wn-ink); }
+    .website-network-shell * { box-sizing: border-box; }
+    .wn-container { width: min(1180px, calc(100% - 32px)); margin-inline: auto; }
+    .wn-hero { background: var(--wn-navy); color: white; border-bottom: 1px solid rgba(0,26,72,.12); }
+    .wn-hero-grid { display: grid; grid-template-columns: minmax(0,1.05fr) minmax(300px,.95fr); gap: 56px; align-items: center; padding: 82px 0 72px; }
+    .wn-kicker { display: inline-flex; align-items: center; gap: 8px; color: #ffd19b; font-size: 12px; font-weight: 800; letter-spacing: .02em; }
+    .wn-kicker::before { content: ''; width: 28px; height: 2px; background: var(--wn-orange); }
+    .wn-title { margin: 18px 0 16px; max-width: 680px; font-size: clamp(2.2rem, 5vw, 4.4rem); line-height: 1.08; letter-spacing: 0; font-weight: 900; }
+    .wn-lede { color: #c6d2e4; max-width: 600px; font-size: 16px; line-height: 1.9; }
+    .wn-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 28px; }
+    .wn-btn { min-height: 48px; border-radius: 10px; padding: 0 18px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; font-size: 13px; font-weight: 800; transition: transform .18s ease, background .18s ease, border-color .18s ease; }
+    .wn-btn:hover { transform: translateY(-2px); }
+    .wn-btn-primary { background: var(--wn-orange); color: white; box-shadow: 0 10px 24px rgba(253,129,0,.22); }
+    .wn-btn-primary:hover { background: #e77400; }
+    .wn-btn-ghost { color: white; border: 1px solid rgba(255,255,255,.22); background: rgba(255,255,255,.06); }
+    .wn-btn-ghost:hover { background: rgba(255,255,255,.12); }
+    .wn-url-card { background: white; color: var(--wn-ink); border-radius: 8px; padding: 22px; box-shadow: 0 24px 60px rgba(0,0,0,.18); }
+    .wn-url-card h2 { font-size: 16px; margin: 0 0 5px; font-weight: 900; }
+    .wn-url-card p { color: var(--wn-muted); font-size: 12px; margin: 0 0 16px; line-height: 1.7; }
+    .wn-url-input { display: flex; align-items: stretch; min-height: 52px; border: 1px solid #dbe2ec; border-radius: 10px; overflow: hidden; }
+    .wn-url-input input { min-width: 0; flex: 1; border: 0; outline: 0; padding: 0 12px; font: 700 13px Geist, sans-serif; color: var(--wn-ink); }
+    .wn-url-suffix { display: flex; align-items: center; padding: 0 11px; background: #f2f5f9; border-left: 1px solid #dbe2ec; color: #65748a; direction: ltr; font: 700 11px Geist, sans-serif; white-space: nowrap; }
+    .wn-url-submit { width: 52px; border: 0; background: var(--wn-orange); color: white; cursor: pointer; }
+    .wn-url-help { color: #738199; font-size: 11px; margin-top: 10px; }
+    .wn-trust { display: grid; grid-template-columns: repeat(3,1fr); border-top: 1px solid rgba(255,255,255,.14); margin-top: 54px; padding-top: 20px; gap: 18px; }
+    .wn-trust strong { display: block; font-size: 13px; color: white; }
+    .wn-trust span { display: block; color: #9fb0c9; font-size: 11px; margin-top: 4px; }
+    .wn-section { padding: 72px 0; }
+    .wn-section-head { display: flex; align-items: end; justify-content: space-between; gap: 24px; margin-bottom: 24px; }
+    .wn-section-head h2 { margin: 0; font-size: clamp(1.6rem,3vw,2.5rem); line-height: 1.15; font-weight: 900; color: var(--wn-navy); }
+    .wn-section-head p { max-width: 490px; margin: 0; color: var(--wn-muted); font-size: 13px; line-height: 1.8; }
+    .wn-filter { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 24px; scrollbar-width: none; }
+    .wn-filter::-webkit-scrollbar { display: none; }
+    .wn-filter button { min-height: 44px; white-space: nowrap; border: 1px solid #d9e1ec; background: white; color: #53647b; border-radius: 999px; padding: 0 15px; cursor: pointer; font-size: 12px; font-weight: 800; }
+    .wn-filter button.is-active, .wn-filter button:hover { border-color: var(--wn-navy); background: var(--wn-navy); color: white; }
+    .wn-template-grid { display: grid; grid-template-columns: repeat(12,1fr); gap: 16px; }
+    .wn-template { grid-column: span 4; min-height: 340px; display: flex; flex-direction: column; overflow: hidden; background: white; border: 1px solid #e0e6ef; border-radius: 8px; transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease; }
+    .wn-template:hover { transform: translateY(-4px); border-color: #b6c4d8; box-shadow: 0 18px 40px rgba(17,38,68,.1); }
+    .wn-template.is-featured { grid-column: span 6; }
+    .wn-template-visual { min-height: 152px; padding: 20px; display: flex; align-items: end; position: relative; overflow: hidden; }
+    .wn-template-visual::after { content: ''; position: absolute; inset: auto 18px 18px auto; width: 94px; height: 56px; border: 1px solid rgba(255,255,255,.36); border-radius: 8px; transform: rotate(-7deg); }
+    .wn-template-visual strong { position: relative; z-index: 1; color: white; font-size: 20px; font-weight: 900; }
+    .wn-emerald { background: #087f68; } .wn-purple { background: #5d3a9e; } .wn-orange { background: #b95112; } .wn-navy { background: #17325e; } .wn-aurora { background: #146875; }
+    .wn-template-body { display: flex; flex: 1; flex-direction: column; padding: 18px; }
+    .wn-template-body h3 { margin: 0; color: var(--wn-navy); font-size: 17px; font-weight: 900; }
+    .wn-template-body p { margin: 7px 0 14px; color: var(--wn-muted); font-size: 12px; line-height: 1.75; }
+    .wn-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 16px; }
+    .wn-tags span { padding: 5px 8px; border-radius: 6px; background: #f1f4f8; color: #53647b; font-size: 10px; font-weight: 800; }
+    .wn-template-actions { display: flex; gap: 8px; margin-top: auto; }
+    .wn-template-actions a, .wn-template-actions button { min-height: 42px; flex: 1; border-radius: 8px; font-size: 11px; font-weight: 900; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 5px; }
+    .wn-preview { border: 1px solid #d6dfeb; color: var(--wn-navy); background: white; }
+    .wn-start { border: 0; color: white; background: var(--wn-navy); }
+    .wn-start:hover { background: #082a5c; }
+    .wn-process { background: #eef3f8; border-top: 1px solid #dfe6ef; border-bottom: 1px solid #dfe6ef; }
+    .wn-process-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 26px; }
+    .wn-step { display: flex; gap: 12px; align-items: flex-start; }
+    .wn-step-number { width: 32px; height: 32px; border-radius: 50%; background: var(--wn-orange); color: white; display: grid; place-items: center; flex: none; font-weight: 900; font-size: 12px; }
+    .wn-step h3 { margin: 0 0 4px; color: var(--wn-navy); font-size: 14px; font-weight: 900; }
+    .wn-step p { margin: 0; color: var(--wn-muted); font-size: 12px; line-height: 1.7; }
+    .wn-final { background: white; border: 1px solid #dce4ee; border-radius: 8px; padding: 34px; display: flex; align-items: center; justify-content: space-between; gap: 24px; }
+    .wn-final h2 { margin: 0 0 7px; color: var(--wn-navy); font-size: 23px; font-weight: 900; }
+    .wn-final p { margin: 0; color: var(--wn-muted); font-size: 13px; }
+    @media (max-width: 900px) { .wn-hero-grid { grid-template-columns: 1fr; gap: 32px; padding: 58px 0 50px; } .wn-template, .wn-template.is-featured { grid-column: span 6; } }
+    @media (max-width: 640px) { .wn-container { width: min(100% - 24px, 560px); } .wn-title { font-size: 2.45rem; } .wn-lede { font-size: 14px; } .wn-trust { grid-template-columns: 1fr; gap: 12px; margin-top: 34px; } .wn-section { padding: 48px 0; } .wn-section-head { display: block; } .wn-section-head p { margin-top: 10px; } .wn-template, .wn-template.is-featured { grid-column: span 12; } .wn-template-visual { min-height: 132px; } .wn-process-grid { grid-template-columns: 1fr; gap: 18px; } .wn-final { display: block; padding: 24px; } .wn-final .wn-btn { width: 100%; margin-top: 18px; } }
+    #legacyShowcase { display: none !important; }
+</style>
+
+<main class="website-network-shell" dir="rtl">
+    <section class="wn-hero">
+        <div class="wn-container wn-hero-grid">
+            <div>
+                <div class="wn-kicker">ASENA WEBSITE NETWORK</div>
+                <h1 class="wn-title">یک وب‌سایت واقعی برای کاری که انجام می‌دهید.</h1>
+                <p class="wn-lede">قالبی انتخاب کنید که از همان اولین نگاه، نوبت‌دهی، فروش، نسخه‌پذیری یا اعتبار مرکز شما را جلو بیاورد. همه‌چیز به زیرساخت آسنا متصل می‌ماند؛ برند و تجربه، متعلق به شماست.</p>
+                <div class="wn-actions"><button class="wn-btn wn-btn-primary" type="button" onclick="openOrderModal()"><span class="material-symbols-outlined">arrow_back</span>شروع راه‌اندازی</button><a class="wn-btn wn-btn-ghost" href="#wn-templates"><span class="material-symbols-outlined">visibility</span>دیدن قالب‌ها</a></div>
+                <div class="wn-trust"><div><strong>آدرس اختصاصی</strong><span>yourname.asena.company</span></div><div><strong>اتصال به عملیات آسنا</strong><span>نوبت، فروش، نسخه و پرداخت</span></div><div><strong>راه‌اندازی با همراهی تیم ما</strong><span>از انتخاب قالب تا انتشار</span></div></div>
+            </div>
+            <div class="wn-url-card"><h2>قبل از شروع، آدرس خود را بررسی کنید</h2><p>یک نام کوتاه و قابل‌اعتماد برای برندتان انتخاب کنید. بعداً امکان اتصال دامنه .ir یا .com هم وجود دارد.</p><div class="wn-url-input"><input id="hero-subdomain-input" type="text" dir="ltr" placeholder="مثلاً dr-alavi" autocomplete="off" spellcheck="false"><span class="wn-url-suffix">.asena.company</span><button id="hero-check-btn" class="wn-url-submit" type="button" onclick="checkSubdomainFromHero()" aria-label="بررسی آدرس"><span class="material-symbols-outlined">search</span></button></div><div id="hero-subdomain-feedback" class="wn-url-help">حداقل ۳ کاراکتر انگلیسی · بدون فاصله</div></div>
+        </div>
+    </section>
+    <section id="wn-templates" class="wn-section"><div class="wn-container"><div class="wn-section-head"><h2>قالب را بر اساس هدف‌تان انتخاب کنید</h2><p>هر قالب یک مسیر اصلی برای مشتری دارد. جزئیات بعد از انتخاب قابل شخصی‌سازی است.</p></div><div class="wn-filter" role="tablist" aria-label="فیلتر قالب‌ها"><button class="is-active" type="button" data-filter="all">همه قالب‌ها</button><button type="button" data-filter="care">پزشکی و درمان</button><button type="button" data-filter="commerce">فروش و سفارش</button><button type="button" data-filter="enterprise">سازمانی</button></div><div class="wn-template-grid">
+        <article class="wn-template is-featured" data-kind="care"><div class="wn-template-visual wn-emerald"><strong>Clinical Emerald</strong></div><div class="wn-template-body"><h3>کلینیک و پزشک</h3><p>برای معرفی تخصص، نمایش خدمات و رزرو آنلاین. مسیر اصلی این قالب از اعتماد به نوبت می‌رسد.</p><div class="wn-tags"><span>نوبت‌دهی</span><span>خدمات</span><span>پروفایل پزشک</span></div><div class="wn-template-actions"><a class="wn-preview" href="site.php?slug=dr-alavi" target="_blank">پیش‌نمایش</a><button class="wn-start" type="button" onclick="openOrderModal('doctor','standard')">انتخاب قالب</button></div></div></article>
+        <article class="wn-template" data-kind="care"><div class="wn-template-visual wn-purple"><strong>Pharmacy Purple</strong></div><div class="wn-template-body"><h3>داروخانه دامپزشکی</h3><p>نسخه، مشاوره داروساز و کاتالوگ کالا در یک مسیر روشن برای خرید امن.</p><div class="wn-tags"><span>آپلود نسخه</span><span>زنجیره سرد</span><span>کاتالوگ</span></div><div class="wn-template-actions"><a class="wn-preview" href="site.php?slug=sina-pharmacy" target="_blank">پیش‌نمایش</a><button class="wn-start" type="button" onclick="openOrderModal('pharmacist','pharmacy')">انتخاب قالب</button></div></div></article>
+        <article class="wn-template" data-kind="commerce"><div class="wn-template-visual wn-orange"><strong>Pet Shop Orange</strong></div><div class="wn-template-body"><h3>پت‌شاپ و فروشگاه</h3><p>ویترین کالا، خرید سریع و سفارش‌های دوره‌ای برای فروشگاه‌هایی که می‌خواهند رشد کنند.</p><div class="wn-tags"><span>فروشگاه</span><span>اتوشیپ</span><span>انبار</span></div><div class="wn-template-actions"><a class="wn-preview" href="site.php?slug=petland-store" target="_blank">پیش‌نمایش</a><button class="wn-start" type="button" onclick="openOrderModal('seller','premium')">انتخاب قالب</button></div></div></article>
+        <article class="wn-template" data-kind="enterprise"><div class="wn-template-visual wn-navy"><strong>Hospital Navy</strong></div><div class="wn-template-body"><h3>بیمارستان و مرکز جامع</h3><p>دپارتمان‌ها، پزشکان، اورژانس و مسیرهای متعدد خدمت برای سازمان‌های بزرگ‌تر.</p><div class="wn-tags"><span>دپارتمان‌ها</span><span>اورژانس</span><span>پزشکان</span></div><div class="wn-template-actions"><a class="wn-preview" href="site.php?slug=razi-hospital" target="_blank">پیش‌نمایش</a><button class="wn-start" type="button" onclick="openOrderModal('organization','enterprise')">انتخاب قالب</button></div></div></article>
+        <article class="wn-template" data-kind="enterprise"><div class="wn-template-visual wn-aurora"><strong>Premium Aurora</strong></div><div class="wn-template-body"><h3>اکوسیستم پریمیوم</h3><p>برای برندهایی که هم‌زمان به معرفی، نوبت‌دهی، فروش، تله‌هلث و کمپین نیاز دارند.</p><div class="wn-tags"><span>تله‌هلث</span><span>فروش</span><span>کمپین</span></div><div class="wn-template-actions"><a class="wn-preview" href="site.php?slug=razi-hospital" target="_blank">نمونه تجربه</a><button class="wn-start" type="button" onclick="openOrderModal('organization','enterprise')">گفت‌وگو با ما</button></div></div></article>
+    </div></div></section>
+    <section class="wn-section wn-process"><div class="wn-container"><div class="wn-section-head"><h2>از انتخاب تا انتشار، سه قدم</h2><p>اطلاعات اولیه را می‌گیریم، سایت را برای نقش شما آماده می‌کنیم و قبل از انتشار با هم مرور می‌کنیم.</p></div><div class="wn-process-grid"><div class="wn-step"><span class="wn-step-number">۱</span><div><h3>قالب و آدرس</h3><p>هدف کاری و نام مناسب خود را انتخاب می‌کنید.</p></div></div><div class="wn-step"><span class="wn-step-number">۲</span><div><h3>محتوای اختصاصی</h3><p>اطلاعات مرکز، خدمات، کالاها و هویت بصری شما وارد می‌شود.</p></div></div><div class="wn-step"><span class="wn-step-number">۳</span><div><h3>پیش‌نمایش و انتشار</h3><p>نسخه موبایل و دسکتاپ را بررسی و سایت را منتشر می‌کنیم.</p></div></div></div></div></section>
+    <section class="wn-section"><div class="wn-container"><div class="wn-final"><div><h2>برای ساخت سایت مناسب نقش شما آماده‌ایم</h2><p>درخواست راه‌اندازی را ثبت کنید؛ انتخاب قالب، tier و مسیر اجرا را با شما هماهنگ می‌کنیم.</p></div><button class="wn-btn wn-btn-primary" type="button" onclick="openOrderModal()">ثبت درخواست راه‌اندازی <span class="material-symbols-outlined">arrow_back</span></button></div></div></section>
+</main>
+
+<script>
+document.querySelectorAll('.wn-filter button').forEach(function (button) {
+    button.addEventListener('click', function () {
+        document.querySelectorAll('.wn-filter button').forEach(function (item) { item.classList.remove('is-active'); });
+        button.classList.add('is-active');
+        var filter = button.dataset.filter;
+        document.querySelectorAll('.wn-template').forEach(function (card) { card.hidden = filter !== 'all' && card.dataset.kind !== filter; });
+    });
+});
+</script>
+
+<div id="legacyShowcase" class="w-[96%] max-w-[1550px] mx-auto py-6 md:py-10 space-y-16 md:space-y-24">
 
     <!-- 1. Hero Beat: Value Proposition & Subdomain Availability Checker -->
     <section class="relative overflow-hidden rounded-[2.5rem] md:rounded-[3.5rem] bg-gradient-to-b from-[#000d27] via-[#001744] to-[#002263] text-white p-6 sm:p-10 md:p-16 shadow-2xl border border-white/10">

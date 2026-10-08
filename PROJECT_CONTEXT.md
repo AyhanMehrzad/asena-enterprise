@@ -83,6 +83,10 @@
 
 ## ۳. تاریخچه تغییرات اخیر (Change Log)
 
+### نسخه ۱.۰.۳۶ (اکتبر ۲۰۲۶ - بهینه‌سازی پوسته شبکه وب‌سایت‌ها و استقرار مهارت‌های استاندارد سیستم)
+1. بازطراحی پوسته بصری و ویترین شبکه وب‌سایت‌های تخصصی در [`websites.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/websites.php) (`website-network-shell`) با فیلتر سریع الگوها بر اساس اهداف کاری (درمان، فروش، سازمانی)، اعتبارسنجی زنده نشانی ساب‌دامین و استقرار فرآیند سه‌مرحله‌ای شفاف از انتخاب تا انتشار.
+2. استقرار مهارت‌های استاندارد عامل در پوشه `.agents/skills/` شامل راهنماهای طراحی رابط کاربری ([`asena-ui`](file:///opt/lampp/htdocs/asena/asena-enterprise/.agents/skills/asena-ui/SKILL.md))، بازبینی طراحی محصول ([`design-review`](file:///opt/lampp/htdocs/asena/asena-enterprise/.agents/skills/design-review/SKILL.md)) و کدنویسی بهینه و کم‌حجم ([`efficient-coding`](file:///opt/lampp/htdocs/asena/asena-enterprise/.agents/skills/efficient-coding/SKILL.md)).
+
 ### نسخه ۱.۰.۳۵ (اکتبر ۲۰۲۶ - هسته مدیریت شبکه وب‌سایت‌های چندمستاجری)
 1. افزودن مهاجرت `25_tenant_website_operations.sql` برای وضعیت چرخه عمر، منشأ provision، مالک عملیات، وضعیت پرداخت و متادیتای انتشار وب‌سایت‌های مستاجر.
 2. افزودن کابینت مرکزی مالک در `admin/websites.php` و اکشن امن `actions/admin_websites_action.php` برای ایجاد بدون پرداخت، انتشار/تعلیق، تغییر tier و بررسی درخواست‌های `website_orders` با ثبت رویداد ممیزی.
