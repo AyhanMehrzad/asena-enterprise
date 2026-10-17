@@ -192,6 +192,7 @@ class TenantSiteService {
                 } catch (Throwable $e) {}
 
                 $site['layout'] = !empty($site['layout_json']) ? json_decode($site['layout_json'], true) : [];
+                $this->syncProfileToLayout($site['tenant_type'], (int)$site['tenant_id'], $site['layout'], (int)($site['user_id'] ?? 0));
                 return $site;
             }
         } catch (Throwable $e) {
@@ -225,6 +226,7 @@ class TenantSiteService {
                 } catch (Throwable $e) {}
 
                 $site['layout'] = !empty($site['layout_json']) ? json_decode($site['layout_json'], true) : [];
+                $this->syncProfileToLayout($site['tenant_type'], (int)$site['tenant_id'], $site['layout'], (int)($site['user_id'] ?? 0));
                 return $site;
             }
         } catch (Throwable $e) {
@@ -244,6 +246,7 @@ class TenantSiteService {
             $site = $stmt->fetch(PDO::FETCH_ASSOC);
             if ($site) {
                 $site['layout'] = !empty($site['layout_json']) ? json_decode($site['layout_json'], true) : [];
+                $this->syncProfileToLayout($site['tenant_type'], (int)$site['tenant_id'], $site['layout'], (int)($site['user_id'] ?? 0));
                 return $site;
             }
         } catch (Throwable $e) {
@@ -274,6 +277,7 @@ class TenantSiteService {
                 $site = $stmt->fetch(PDO::FETCH_ASSOC);
                 if ($site) {
                     $site['layout'] = !empty($site['layout_json']) ? json_decode($site['layout_json'], true) : [];
+                    $this->syncProfileToLayout($site['tenant_type'], (int)$site['tenant_id'], $site['layout'], (int)($site['user_id'] ?? 0));
                     return $site;
                 }
             } else {
@@ -282,6 +286,7 @@ class TenantSiteService {
                 $site = $stmt->fetch(PDO::FETCH_ASSOC);
                 if ($site) {
                     $site['layout'] = !empty($site['layout_json']) ? json_decode($site['layout_json'], true) : [];
+                    $this->syncProfileToLayout($site['tenant_type'], (int)$site['tenant_id'], $site['layout'], (int)($site['user_id'] ?? 0));
                     return $site;
                 }
             }
@@ -297,6 +302,7 @@ class TenantSiteService {
             $site = $stmt->fetch(PDO::FETCH_ASSOC);
             if ($site) {
                 $site['layout'] = !empty($site['layout_json']) ? json_decode($site['layout_json'], true) : [];
+                $this->syncProfileToLayout($site['tenant_type'], (int)$site['tenant_id'], $site['layout'], (int)($site['user_id'] ?? 0));
                 return $site;
             }
 
@@ -695,11 +701,11 @@ class TenantSiteService {
                 'trust_anchor' => 'floating_pill'
             ],
             'blocks_order' => match($archetype) {
-                'doctor' => ['emergency_bar', 'hero', 'stats_strip', 'booking', 'before_after', 'cost_calculator', 'services', 'about', 'reviews', 'faq', 'social_links', 'contact'],
-                'pharmacist' => ['duty_hours', 'hero', 'stats_strip', 'storefront', 'services', 'about', 'reviews', 'faq', 'social_links', 'contact'],
-                'seller' => ['hero', 'stats_strip', 'storefront', 'services', 'about', 'reviews', 'faq', 'social_links', 'contact'],
-                'organization' => ['emergency_bar', 'hero', 'stats_strip', 'duty_hours', 'bento_facilities', 'doctors_roster', 'booking', 'services', 'about', 'reviews', 'faq', 'social_links', 'contact'],
-                default => ['emergency_bar', 'hero', 'stats_strip', 'duty_hours', 'before_after', 'cost_calculator', 'bento_facilities', 'about', 'services', 'asena_services', 'doctors_roster', 'booking', 'storefront', 'reviews', 'faq', 'social_links', 'contact']
+                'doctor' => ['emergency_bar', 'hero', 'stats_strip', 'booking', 'before_after', 'cost_calculator', 'services', 'about', 'reviews', 'faq', 'navigation_hub', 'social_links', 'contact'],
+                'pharmacist' => ['duty_hours', 'hero', 'stats_strip', 'storefront', 'services', 'about', 'reviews', 'faq', 'navigation_hub', 'social_links', 'contact'],
+                'seller' => ['hero', 'stats_strip', 'storefront', 'services', 'about', 'reviews', 'faq', 'navigation_hub', 'social_links', 'contact'],
+                'organization' => ['emergency_bar', 'hero', 'stats_strip', 'duty_hours', 'bento_facilities', 'doctors_roster', 'booking', 'services', 'about', 'reviews', 'faq', 'navigation_hub', 'social_links', 'contact'],
+                default => ['emergency_bar', 'hero', 'stats_strip', 'duty_hours', 'before_after', 'cost_calculator', 'bento_facilities', 'about', 'services', 'asena_services', 'doctors_roster', 'booking', 'storefront', 'reviews', 'faq', 'navigation_hub', 'social_links', 'contact']
             },
             'blocks' => [
                 'emergency_bar' => [
@@ -726,8 +732,8 @@ class TenantSiteService {
                     'heading' => 'نتایج ملموس خدمات و مراقبت‌های بالینی',
                     'subtitle' => 'مشاهده تفاوت کیفیت خدمات قبل و بعد از رسیدگی تخصصی و بالینی',
                     'service_label' => 'جرم‌گیری اولتراسونیک و درمان لثه',
-                    'image_before' => 'assets/images/presentation-dog.jpg',
-                    'image_after' => 'assets/images/clinic-banner.jpg',
+                    'image_before' => 'assets/images/vet-dental-before.jpg',
+                    'image_after' => 'assets/images/vet-dental-after.jpg',
                     'label_before' => 'قبل از درمان',
                     'label_after' => 'پس از درمان'
                 ],
@@ -1354,6 +1360,224 @@ class TenantSiteService {
     }
 
     /**
+     * Automatically synchronize phone, address, operating hours, coordinates and socials from the tenant's profile
+     */
+    public function syncProfileToLayout(string $tenantType, int $tenantId, array &$layout, int $userId = 0): void {
+        try {
+            $phone = '';
+            $address = '';
+            $hours = '';
+            $lat = '';
+            $lng = '';
+            $city = '';
+
+            if ($tenantType === 'organization') {
+                try {
+                    $stmt = $this->pdo->prepare("SELECT * FROM organizations WHERE id = ? OR user_id = ? LIMIT 1");
+                    $stmt->execute([$tenantId, $userId]);
+                    $org = $stmt->fetch(PDO::FETCH_ASSOC);
+                    if ($org) {
+                        $phone = $org['phone'] ?? '';
+                        $address = $org['address'] ?? '';
+                        $city = $org['city'] ?? '';
+                        $hours = $org['operating_hours'] ?? '';
+                        if (!empty($org['user_id']) && $userId <= 0) $userId = (int)$org['user_id'];
+                    }
+                } catch (Throwable $eOrg) {}
+            } elseif ($tenantType === 'doctor') {
+                try {
+                    $stmt = $this->pdo->prepare("SELECT * FROM doctors WHERE id = ? OR user_id = ? LIMIT 1");
+                    $stmt->execute([$tenantId, $userId]);
+                    $doc = $stmt->fetch(PDO::FETCH_ASSOC);
+                    if ($doc) {
+                        $phone = $doc['phone'] ?? '';
+                        if (!empty($doc['user_id']) && $userId <= 0) $userId = (int)$doc['user_id'];
+                    }
+                } catch (Throwable $eDoc) {}
+            }
+
+            if ($userId > 0) {
+                try {
+                    $uStmt = $this->pdo->prepare("SELECT * FROM users WHERE id = ? LIMIT 1");
+                    $uStmt->execute([$userId]);
+                    $user = $uStmt->fetch(PDO::FETCH_ASSOC);
+                    if ($user) {
+                        if (empty($phone)) $phone = $user['phone'] ?? '';
+                        if (empty($address)) $address = $user['address'] ?? '';
+                        if (empty($city)) $city = $user['city'] ?? '';
+                        $lat = $user['latitude'] ?? '';
+                        $lng = $user['longitude'] ?? '';
+                    }
+                } catch (Throwable $eU) {}
+            }
+
+            // Target layout block roots (support both flat layout and nested layout.blocks)
+            $isBlocksNested = isset($layout['blocks']) && is_array($layout['blocks']);
+            $blocksRef = &$layout;
+            if ($isBlocksNested) {
+                $blocksRef = &$layout['blocks'];
+            }
+
+            if (!empty($phone)) {
+                if (empty($blocksRef['contact']['phone']) || $blocksRef['contact']['phone'] === '۰۲۱-۸۸۸۸۹۹۹۹') {
+                    $blocksRef['contact']['phone'] = $phone;
+                }
+                if (empty($blocksRef['header']['phone'])) {
+                    $blocksRef['header']['phone'] = $phone;
+                }
+            }
+
+            if (!empty($address)) {
+                if (empty($blocksRef['contact']['address']) || str_contains($blocksRef['contact']['address'], 'ولیعصر')) {
+                    $blocksRef['contact']['address'] = $address;
+                }
+            }
+
+            if (!empty($hours)) {
+                if (empty($blocksRef['contact']['hours'])) {
+                    $blocksRef['contact']['hours'] = $hours;
+                }
+                if (empty($blocksRef['duty_hours']['hours_text'])) {
+                    $blocksRef['duty_hours']['hours_text'] = $hours;
+                }
+            }
+
+            if (!empty($lat) && !empty($lng)) {
+                $blocksRef['navigation_hub']['lat'] = (string)$lat;
+                $blocksRef['navigation_hub']['lng'] = (string)$lng;
+                $blocksRef['navigation_hub']['neshan_url'] = "https://neshan.org/maps/@{$lat},{$lng},16z";
+                $blocksRef['navigation_hub']['balad_url'] = "https://balad.ir/location?latitude={$lat}&longitude={$lng}";
+                $blocksRef['navigation_hub']['waze_url'] = "https://waze.com/ul?ll={$lat},{$lng}&navigate=yes";
+                $blocksRef['navigation_hub']['google_maps_url'] = "https://maps.google.com/?q={$lat},{$lng}";
+            }
+        } catch (Throwable $e) {
+            error_log("[TenantSiteService::syncProfileToLayout] " . $e->getMessage());
+        }
+    }
+
+    /**
+     * 1-Click quick sync updating both user profile DB tables and website layout
+     */
+    public function quickSyncProfile(string $tenantType, int $tenantId, int $userId, array $data): array {
+        try {
+            $phone = trim($data['phone'] ?? '');
+            $emergencyPhone = trim($data['emergency_phone'] ?? '');
+            $address = trim($data['address'] ?? '');
+            $hours = trim($data['hours'] ?? '');
+            $lat = trim($data['lat'] ?? '');
+            $lng = trim($data['lng'] ?? '');
+            $instagram = trim($data['instagram'] ?? '');
+            $telegram = trim($data['telegram'] ?? '');
+
+            // 1. Update Profile DB Tables
+            if ($tenantType === 'organization') {
+                try {
+                    $upOrg = $this->pdo->prepare("
+                        UPDATE organizations 
+                        SET phone = COALESCE(NULLIF(?, ''), phone),
+                            address = COALESCE(NULLIF(?, ''), address),
+                            operating_hours = COALESCE(NULLIF(?, ''), operating_hours)
+                        WHERE id = ? OR user_id = ?
+                    ");
+                    $upOrg->execute([$phone, $address, $hours, $tenantId, $userId]);
+                } catch (Throwable $eOrg) {}
+            } elseif ($tenantType === 'doctor') {
+                try {
+                    $upDoc = $this->pdo->prepare("UPDATE doctors SET phone = COALESCE(NULLIF(?, ''), phone) WHERE id = ? OR user_id = ?");
+                    $upDoc->execute([$phone, $tenantId, $userId]);
+                } catch (Throwable $eDoc) {}
+            }
+
+            if ($userId > 0) {
+                try {
+                    $upU = $this->pdo->prepare("
+                        UPDATE users 
+                        SET phone = COALESCE(NULLIF(?, ''), phone),
+                            address = COALESCE(NULLIF(?, ''), address),
+                            latitude = COALESCE(NULLIF(?, ''), latitude),
+                            longitude = COALESCE(NULLIF(?, ''), longitude)
+                        WHERE id = ?
+                    ");
+                    $upU->execute([$phone, $address, $lat, $lng, $userId]);
+                } catch (Throwable $eU) {}
+            }
+
+            // 2. Fetch existing site and update layout_json
+            $site = $this->getSiteForUser($userId, $tenantType);
+            if (!$site) {
+                $site = $this->getSiteByTenant($tenantType, $tenantId);
+            }
+            if ($site) {
+                $layout = $site['layout'] ?? [];
+                if (!isset($layout['blocks'])) {
+                    $layout['blocks'] = $layout;
+                }
+                
+                if (!empty($phone)) {
+                    $layout['blocks']['contact']['phone'] = $phone;
+                    $layout['blocks']['header']['phone'] = $phone;
+                }
+                if (!empty($emergencyPhone)) {
+                    $layout['blocks']['contact']['emergency_phone'] = $emergencyPhone;
+                    $layout['blocks']['emergency_bar']['phone'] = $emergencyPhone;
+                }
+                if (!empty($address)) {
+                    $layout['blocks']['contact']['address'] = $address;
+                }
+                if (!empty($hours)) {
+                    $layout['blocks']['contact']['hours'] = $hours;
+                    $layout['blocks']['duty_hours']['hours_text'] = $hours;
+                }
+                if (!empty($lat) && !empty($lng)) {
+                    $layout['blocks']['navigation_hub']['lat'] = $lat;
+                    $layout['blocks']['navigation_hub']['lng'] = $lng;
+                    $layout['blocks']['navigation_hub']['neshan_url'] = "https://neshan.org/maps/@{$lat},{$lng},16z";
+                    $layout['blocks']['navigation_hub']['balad_url'] = "https://balad.ir/location?latitude={$lat}&longitude={$lng}";
+                    $layout['blocks']['navigation_hub']['waze_url'] = "https://waze.com/ul?ll={$lat},{$lng}&navigate=yes";
+                    $layout['blocks']['navigation_hub']['google_maps_url'] = "https://maps.google.com/?q={$lat},{$lng}";
+                }
+                if (!empty($instagram)) {
+                    $layout['blocks']['contact']['instagram'] = '@' . ltrim($instagram, '@');
+                }
+                if (!empty($telegram)) {
+                    $layout['blocks']['contact']['telegram'] = '@' . ltrim($telegram, '@');
+                }
+
+                if (isset($layout['blocks']['social_links']['items']) && is_array($layout['blocks']['social_links']['items'])) {
+                    foreach ($layout['blocks']['social_links']['items'] as &$sItem) {
+                        if (($sItem['platform'] ?? '') === 'instagram' && !empty($instagram)) {
+                            $cleanIg = ltrim($instagram, '@');
+                            $sItem['handle'] = '@' . $cleanIg;
+                            $sItem['url'] = 'https://instagram.com/' . $cleanIg;
+                        } elseif (($sItem['platform'] ?? '') === 'telegram' && !empty($telegram)) {
+                            $cleanTg = ltrim($telegram, '@');
+                            $sItem['handle'] = '@' . $cleanTg;
+                            $sItem['url'] = 'https://t.me/' . $cleanTg;
+                        } elseif (($sItem['platform'] ?? '') === 'whatsapp' && !empty($phone)) {
+                            $cleanDigits = preg_replace('/[^\d]/', '', $phone);
+                            if (str_starts_with($cleanDigits, '0')) $cleanDigits = '98' . substr($cleanDigits, 1);
+                            $sItem['handle'] = $phone;
+                            $sItem['url'] = 'https://wa.me/' . $cleanDigits;
+                        }
+                    }
+                }
+
+                $newJson = json_encode($layout, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+                try {
+                    $this->pdo->prepare("UPDATE tenant_sites SET layout_json = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?")->execute([$newJson, $site['id']]);
+                } catch (Throwable $e) {
+                    $this->pdo->prepare("UPDATE tenant_sites SET layout_json = ? WHERE id = ?")->execute([$newJson, $site['id']]);
+                }
+            }
+
+            return ['success' => true, 'message' => 'اطلاعات با موفقیت ذخیره شد و به وب‌سایت متصل گردید.'];
+        } catch (Throwable $e) {
+            error_log("[TenantSiteService::quickSyncProfile] " . $e->getMessage());
+            return ['success' => false, 'message' => 'خطا در همگام‌سازی: ' . $e->getMessage()];
+        }
+    }
+
+    /**
      * Return direct cockpit URL where this tenant manages their inventory and shipping
      */
     public function getTenantManagementUrl(string $tenantType, int $tenantId): string {
@@ -1651,9 +1875,13 @@ class TenantSiteService {
                 if (isset($blocks['doctors_roster'])) $blocks['doctors_roster']['enabled'] = ($tenantType === 'organization');
                 if (isset($blocks['reviews'])) $blocks['reviews']['enabled'] = true;
                 if (isset($blocks['asena_services'])) $blocks['asena_services']['enabled'] = true;
-                if (isset($blocks['storefront'])) $blocks['storefront']['item_limit'] = 8;
                 break;
         }
+
+        // Navigation Hub, Social Links and Contact are universal across ALL versions & tiers
+        if (isset($blocks['navigation_hub'])) $blocks['navigation_hub']['enabled'] = true;
+        if (isset($blocks['social_links'])) $blocks['social_links']['enabled'] = true;
+        if (isset($blocks['contact'])) $blocks['contact']['enabled'] = true;
 
         $currentLayout['blocks'] = $blocks;
         return $currentLayout;

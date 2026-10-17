@@ -267,7 +267,7 @@ try {
     $pendingSubmissions = [];
 }
 
-$defaultEnamadCode = "<a referrerpolicy='origin' target='_blank' href='https://trustseal.enamad.ir/?id=7936941&Code=fHqzrN234gpBPdweBuMdc1CQU97V3Q1p'><img referrerpolicy='origin' src='https://trustseal.enamad.ir/logo.aspx?id=7936941&Code=fHqzrN234gpBPdweBuMdc1CQU97V3Q1p' alt='' style='cursor:pointer' code='fHqzrN234gpBPdweBuMdc1CQU97V3Q1p'></a>";
+$defaultEnamadCode = "<a referrerpolicy='origin' target='_blank' href='https://trustseal.enamad.ir/?id=8209842&Code=RPiMnfb5yngn5NbsHgHcv2Rqa5OOpmsq'><img referrerpolicy='origin' src='https://trustseal.enamad.ir/logo.aspx?id=8209842&Code=RPiMnfb5yngn5NbsHgHcv2Rqa5OOpmsq' alt='' style='cursor:pointer' code='RPiMnfb5yngn5NbsHgHcv2Rqa5OOpmsq'></a>";
 $enamadCode        = get_setting($pdo, 'enamad_html_code', $defaultEnamadCode);
 if (empty(trim((string)$enamadCode))) {
     $enamadCode = $defaultEnamadCode;

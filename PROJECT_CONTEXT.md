@@ -1213,11 +1213,11 @@
 
 67. **به‌روزرسانی رسمی نشان و شناسه نماد اعتماد الکترونیکی (اینماد - Enamad Trust Seal Refresh):**
     - **به‌روزرسانی نشان و کدهای اینماد سراسری ([`includes/footer.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/includes/footer.php) & [`admin/finance_settings.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/admin/finance_settings.php)):**
-      - جایگزینی کد رسمی جدید اینماد با شناسه جدید `7936941` و توکن امنیتی `fHqzrN234gpBPdweBuMdc1CQU97V3Q1p` در مقدار پیش‌فرض فوتر سراسری و پنل مدیریت مالی و درگاه‌ها.
+      - جایگزینی کد رسمی جدید اینماد با شناسه جدید `8209842` و توکن امنیتی `RPiMnfb5yngn5NbsHgHcv2Rqa5OOpmsq` در مقدار پیش‌فرض فوتر سراسری و پنل مدیریت مالی و درگاه‌ها.
     - **به‌روزرسانی متاتگ‌های تاییدیه اینماد در سئو هدر ([`includes/header.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/includes/header.php)):**
-      - به‌روزرسانی تگ‌های `<meta name="enamad" content="7936941" />` و `<meta name="enamad-code" content="fHqzrN234gpBPdweBuMdc1CQU97V3Q1p" />`.
+      - به‌روزرسانی تگ‌های `<meta name="enamad" content="8209842" />` و `<meta name="enamad-code" content="RPiMnfb5yngn5NbsHgHcv2Rqa5OOpmsq" />`.
     - **به‌روزرسانی نشان و استعلام در صفحات درباره ما و تماس با ما ([`contact.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/contact.php) & [`about.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/about.php)):**
-      - تغییر شناسه ثبتی صمت به ۷۹۳۶۹۴۱ و شناسه رهگیری اینماد در جدول مجوزهای مرکز نوآوری و استعلام زنده صمت.
+      - تغییر شناسه ثبتی صمت به ۸۲۰۹۸۴۲ و شناسه رهگیری اینماد در جدول مجوزهای مرکز نوآوری و استعلام زنده صمت.
     - **سینک همزمان با مخزن پروداکشن ([`asena.company`](file:///opt/lampp/htdocs/asena/asena.company/)):**
       - اعمال دقیق تغییرات در هر دو ساختار جهت دیپلوی خودکار cPanel.
 
@@ -1343,6 +1343,16 @@
 
 78. **افزودن مهارت‌های محلی Codex برای توسعه و بازبینی آسنا:**
     - ایجاد [` .agents/skills/asena-ui/SKILL.md`](file:///opt/lampp/htdocs/asena/asena-enterprise/.agents/skills/asena-ui/SKILL.md)، [` .agents/skills/design-review/SKILL.md`](file:///opt/lampp/htdocs/asena/asena-enterprise/.agents/skills/design-review/SKILL.md) و [` .agents/skills/efficient-coding/SKILL.md`](file:///opt/lampp/htdocs/asena/asena-enterprise/.agents/skills/efficient-coding/SKILL.md) برای راهنمایی طراحی رابط، بازبینی UX و اجرای کم‌هزینه و متمرکز.
+
+79. **به‌روزرسانی رسمی نشان و شناسه نماد اعتماد الکترونیکی (اینماد - Enamad Trust Seal Refresh):**
+    - **به‌روزرسانی نشان و کدهای اینماد سراسری ([`includes/footer.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/includes/footer.php) & [`admin/finance_settings.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/admin/finance_settings.php)):**
+      - جایگزینی کد رسمی جدید اینماد با شناسه `8209842` و توکن امنیتی `RPiMnfb5yngn5NbsHgHcv2Rqa5OOpmsq` در مقدار پیش‌فرض فوتر سراسری و پنل مدیریت مالی و درگاه‌ها.
+    - **به‌روزرسانی متاتگ‌های تاییدیه اینماد در سئو هدر ([`includes/header.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/includes/header.php)):**
+      - به‌روزرسانی تگ‌های `<meta name="enamad" content="8209842" />` و `<meta name="enamad-code" content="RPiMnfb5yngn5NbsHgHcv2Rqa5OOpmsq" />`.
+    - **به‌روزرسانی نشان و استعلام در صفحات درباره ما و تماس با ما ([`contact.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/contact.php) & [`about.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/about.php)):**
+      - تغییر شناسه ثبتی صمت به ۸۲۰۹۸۴۲ و شناسه رهگیری اینماد در جدول مجوزهای مرکز نوآوری و استعلام زنده صمت.
+    - **سینک همزمان و کامیت و پوش به برنچ‌های master هر دو مخزن ([`asena.company`](file:///opt/lampp/htdocs/asena/asena.company/) و [`asena-enterprise`](file:///opt/lampp/htdocs/asena/asena-enterprise/)):**
+      - دیپلوی خودکار cPanel جهت انعکاس فوری نشان جدید در سرور عملیاتی.
 
 ---
 

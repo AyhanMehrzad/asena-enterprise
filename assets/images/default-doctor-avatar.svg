@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160" width="160" height="160">
+  <defs>
+    <linearGradient id="docGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#059669"/>
+      <stop offset="50%" stop-color="#0f766e"/>
+      <stop offset="100%" stop-color="#001a48"/>
+    </linearGradient>
+    <linearGradient id="coatGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#f1f5f9"/>
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#001a48" flood-opacity="0.25"/>
+    </filter>
+  </defs>
+  <!-- Background -->
+  <rect width="160" height="160" rx="36" fill="url(#docGrad)"/>
+  <!-- Circular Aura -->
+  <circle cx="80" cy="80" r="66" fill="#ffffff" fill-opacity="0.08"/>
+  <circle cx="80" cy="80" r="54" fill="#ffffff" fill-opacity="0.06"/>
+  <!-- Doctor Body / Lab Coat -->
+  <g filter="url(#shadow)">
+    <!-- Shoulders / Coat -->
+    <path d="M34 148 C34 116 52 104 80 104 C108 104 126 116 126 148 Z" fill="url(#coatGrad)"/>
+    <!-- V-Neck Scrub Shirt -->
+    <path d="M68 104 L80 126 L92 104 Z" fill="#0d9488"/>
+    <!-- Stethoscope -->
+    <path d="M60 106 C60 128 70 136 78 136 C86 136 100 128 100 106" fill="none" stroke="#334155" stroke-width="3.5" stroke-linecap="round"/>
+    <circle cx="78" cy="136" r="4.5" fill="#94a3b8" stroke="#1e293b" stroke-width="2"/>
+    <!-- Head -->
+    <circle cx="80" cy="68" r="26" fill="#fde047" fill-opacity="0.95"/>
+    <!-- Hair -->
+    <path d="M56 64 C56 46 66 40 80 40 C94 40 104 46 104 64 C96 56 88 56 80 56 C72 56 64 56 56 64 Z" fill="#334155"/>
+    <!-- Gentle face features -->
+    <circle cx="72" cy="68" r="2.5" fill="#1e293b"/>
+    <circle cx="88" cy="68" r="2.5" fill="#1e293b"/>
+    <path d="M75 77 C77 80 83 80 85 77" fill="none" stroke="#1e293b" stroke-width="2" stroke-linecap="round"/>
+  </g>
+  <!-- Veterinary Medical Cross Badge -->
+  <g transform="translate(112, 112)">
+    <circle cx="16" cy="16" r="16" fill="#ffffff" filter="url(#shadow)"/>
+    <circle cx="16" cy="16" r="14" fill="#059669"/>
+    <!-- Cross -->
+    <rect x="13.5" y="7" width="5" height="18" rx="1.5" fill="#ffffff"/>
+    <rect x="7" y="13.5" width="18" height="5" rx="1.5" fill="#ffffff"/>
+  </g>
+</svg>

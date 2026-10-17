@@ -249,10 +249,10 @@ if ($action === 'upload_asset') {
             'full_url' => '../' . $relativePath,
             'message' => 'تصویر با موفقیت بارگذاری شد.'
         ], JSON_UNESCAPED_UNICODE);
-    } else {
-        echo json_encode(['success' => false, 'message' => 'خطا در ذخیره‌سازی فایل در سرور.'], JSON_UNESCAPED_UNICODE);
     }
     exit;
+}
+
 if ($action === 'update_custom_domain') {
     $customDomain = strtolower(trim($_POST['custom_domain'] ?? ''));
     $customDomain = preg_replace('#^https?://#i', '', $customDomain);
@@ -291,6 +291,22 @@ if ($action === 'update_custom_domain') {
     } else {
         echo json_encode(['success' => false, 'message' => $res['message'] ?? 'خطا در ثبت دامنه.'], JSON_UNESCAPED_UNICODE);
     }
+    exit;
+}
+
+if ($action === 'quick_sync_profile') {
+    $contactData = [
+        'phone' => sanitize_input($_POST['phone'] ?? ''),
+        'emergency_phone' => sanitize_input($_POST['emergency_phone'] ?? ''),
+        'address' => sanitize_input($_POST['address'] ?? ''),
+        'hours' => sanitize_input($_POST['hours'] ?? ''),
+        'lat' => sanitize_input($_POST['lat'] ?? ''),
+        'lng' => sanitize_input($_POST['lng'] ?? ''),
+        'instagram' => sanitize_input($_POST['instagram'] ?? ''),
+        'telegram' => sanitize_input($_POST['telegram'] ?? '')
+    ];
+    $res = $tenantService->quickSyncProfile($tenantType, $tenantId, $userId, $contactData);
+    echo json_encode($res, JSON_UNESCAPED_UNICODE);
     exit;
 }
 
