@@ -599,11 +599,11 @@ require_once 'includes/header.php';
                     </div>
 
                     <div class="bg-slate-50 p-5 sm:p-6 rounded-2xl border border-slate-200 text-center space-y-3 sm:space-y-4">
-                        <div class="w-16 h-16 sm:w-20 sm:h-20 mx-auto rounded-2xl bg-white p-3 shadow-sm border border-slate-200 flex items-center justify-center">
-                            <span class="material-symbols-outlined text-3xl sm:text-4xl text-primary">security</span>
+                        <div class="w-20 h-24 mx-auto p-1.5 bg-white rounded-2xl border border-slate-200 shadow-xs flex items-center justify-center enamad-trust-seal overflow-hidden hover:border-primary transition-all">
+                            <a referrerpolicy='origin' target='_blank' href='https://trustseal.enamad.ir/?id=8209842&Code=RPiMnfb5yngn5NbsHgHcv2Rqa5OOpmsq'><img referrerpolicy='origin' src='https://trustseal.enamad.ir/logo.aspx?id=8209842&Code=RPiMnfb5yngn5NbsHgHcv2Rqa5OOpmsq' alt='' style='cursor:pointer' code='RPiMnfb5yngn5NbsHgHcv2Rqa5OOpmsq'></a>
                         </div>
                         <div>
-                            <div class="font-black text-slate-900 text-xs sm:text-sm">امنیت پرداخت با درگاه شاپرک</div>
+                            <div class="font-black text-slate-900 text-xs sm:text-sm">نشان رسمی نماد اعتماد الکترونیکی (اینماد)</div>
                             <div class="text-[11px] text-slate-500 mt-0.5">رمز دوم پویا، اتصال شاپرک و تسویه تحت نظارت بانک مرکزی</div>
                         </div>
                         <div class="text-[10px] sm:text-[11px] text-emerald-700 bg-emerald-50 py-1.5 px-3 rounded-xl border border-emerald-200 font-bold inline-block">

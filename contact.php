@@ -162,7 +162,7 @@ require_once 'includes/header.php';
                                 <span class="text-[9px] text-emerald-600 font-bold bg-emerald-50 px-2 py-0.5 rounded-full inline-block mt-1">تاییدشده رسمی</span>
                             </div>
                             <div class="w-20 h-24 p-1.5 bg-white rounded-2xl border border-slate-200 shadow-xs flex items-center justify-center text-center enamad-trust-seal overflow-hidden shrink-0 hover:border-primary transition-all">
-                                <a referrerpolicy='origin' target='_blank' href='https://trustseal.enamad.ir/?id=8209842&Code=RPiMnfb5yngn5NbsHgHcv2Rqa5OOpmsq'><img referrerpolicy='origin' src='https://trustseal.enamad.ir/logo.aspx?id=8209842&Code=RPiMnfb5yngn5NbsHgHcv2Rqa5OOpmsq' alt='نماد اعتماد الکترونیکی آسنا' style='cursor:pointer' code='RPiMnfb5yngn5NbsHgHcv2Rqa5OOpmsq'></a>
+                                <a referrerpolicy='origin' target='_blank' href='https://trustseal.enamad.ir/?id=8209842&Code=RPiMnfb5yngn5NbsHgHcv2Rqa5OOpmsq'><img referrerpolicy='origin' src='https://trustseal.enamad.ir/logo.aspx?id=8209842&Code=RPiMnfb5yngn5NbsHgHcv2Rqa5OOpmsq' alt='' style='cursor:pointer' code='RPiMnfb5yngn5NbsHgHcv2Rqa5OOpmsq'></a>
                             </div>
                         </div>
                     </div>

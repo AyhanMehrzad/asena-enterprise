@@ -1354,6 +1354,14 @@
     - **سینک همزمان و کامیت و پوش به برنچ‌های master هر دو مخزن ([`asena.company`](file:///opt/lampp/htdocs/asena/asena.company/) و [`asena-enterprise`](file:///opt/lampp/htdocs/asena/asena-enterprise/)):**
       - دیپلوی خودکار cPanel جهت انعکاس فوری نشان جدید در سرور عملیاتی.
 
+80. **استقرار مستقیم نشان و کد رسمی نماد اعتماد الکترونیکی (Enamad Trust Seal Integration):**
+    - **جایگزینی آیکون با نشان رسمی اینماد در بخش مجوزهای صفحه درباره ما ([`about.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/about.php)):**
+      - جایگزینی آیکون جنریک با قطعه‌کد رسمی اینماد، پیوند ارجاع و لوگوی زنده در تب چهارم مرکز مجوزها («اینماد و درگاه شاپرک»).
+    - **همگام‌سازی کد خام و استاندارد اینماد در فوتر، صفحه تماس و پایگاه‌داده ([`includes/footer.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/includes/footer.php) & [`contact.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/contact.php)):**
+      - استقرار دقیق کد دریافتی با شناسه `8209842` و کد امنیتی `RPiMnfb5yngn5NbsHgHcv2Rqa5OOpmsq` در تمام بخش‌ها و ذخیره در جدول تنظیمات سیستم (`site_settings.enamad_html_code`).
+    - **سینک و استقرار همزمان در مخزن پروداکشن ([`asena.company`](file:///opt/lampp/htdocs/asena/asena.company/)):**
+      - اعمال هماهنگ روی برنچ‌های master هر دو مخزن جهت انتشار مستقیم روی cPanel.
+
 ---
 
 ## ۴. پروتکل ثبت تغییرات آینده (Maintenance Rule)

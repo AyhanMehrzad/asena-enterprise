@@ -95,7 +95,7 @@ if (!isset($has_special_role)) {
                     
                     <div class="flex items-center gap-3 pt-1">
                         <?php 
-                        $defaultEnamadCode = "<a referrerpolicy='origin' target='_blank' href='https://trustseal.enamad.ir/?id=8209842&Code=RPiMnfb5yngn5NbsHgHcv2Rqa5OOpmsq'><img referrerpolicy='origin' src='https://trustseal.enamad.ir/logo.aspx?id=8209842&Code=RPiMnfb5yngn5NbsHgHcv2Rqa5OOpmsq' alt='نماد اعتماد الکترونیکی آسنا' style='cursor:pointer' code='RPiMnfb5yngn5NbsHgHcv2Rqa5OOpmsq'></a>";
+                        $defaultEnamadCode = "<a referrerpolicy='origin' target='_blank' href='https://trustseal.enamad.ir/?id=8209842&Code=RPiMnfb5yngn5NbsHgHcv2Rqa5OOpmsq'><img referrerpolicy='origin' src='https://trustseal.enamad.ir/logo.aspx?id=8209842&Code=RPiMnfb5yngn5NbsHgHcv2Rqa5OOpmsq' alt='' style='cursor:pointer' code='RPiMnfb5yngn5NbsHgHcv2Rqa5OOpmsq'></a>";
                         $enamadHtml = ($pdo instanceof PDO) ? get_setting($pdo, 'enamad_html_code', $defaultEnamadCode) : $defaultEnamadCode;
                         if (empty(trim((string)$enamadHtml))) {
                             $enamadHtml = $defaultEnamadCode;
