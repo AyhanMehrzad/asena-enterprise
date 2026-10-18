@@ -1362,6 +1362,12 @@
     - **سینک و استقرار همزمان در مخزن پروداکشن ([`asena.company`](file:///opt/lampp/htdocs/asena/asena.company/)):**
       - اعمال هماهنگ روی برنچ‌های master هر دو مخزن جهت انتشار مستقیم روی cPanel.
 
+81. **افزودن متاتگ تاییدیه پلتفرم در بخش هدر سایت (Platform Verification Meta Tag):**
+    - **درج متاتگ در هدر سراسری ([`includes/header.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/includes/header.php)):**
+      - افزودن تگ `<meta name="platform-verification" content="ksxzootlfz" />` در بخش `<head>` در کنار متاتگ‌های گوگل و اینماد جهت احراز هویت مالکیت دامنه در پلتفرم‌های تجاری/واسط.
+    - **سینک و دیپلوی خودکار cPanel ([`asena.company`](file:///opt/lampp/htdocs/asena/asena.company/)):**
+      - همگام‌سازی و پوش همزمان به برنچ master هر دو مخزن.
+
 ---
 
 ## ۴. پروتکل ثبت تغییرات آینده (Maintenance Rule)

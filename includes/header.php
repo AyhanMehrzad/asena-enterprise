@@ -209,6 +209,7 @@ $effective_geo_icbm = $geo_icbm ?? '35.7350, 51.4110';
     <meta name="google-site-verification" content="google82c161050c864f06">
     <meta name="enamad" content="8209842" />
     <meta name="enamad-code" content="RPiMnfb5yngn5NbsHgHcv2Rqa5OOpmsq" />
+    <meta name="platform-verification" content="ksxzootlfz" />
     <link rel="canonical" href="<?php echo htmlspecialchars($effective_canonical); ?>">
     <link rel="alternate" hreflang="fa-IR" href="<?php echo htmlspecialchars($effective_canonical); ?>">
     <link rel="alternate" hreflang="x-default" href="<?php echo htmlspecialchars($effective_canonical); ?>">
