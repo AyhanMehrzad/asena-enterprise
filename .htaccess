@@ -1,7 +1,7 @@
 RewriteEngine On
 
-# Samandehi Platform Verification Endpoint
-RewriteRule ^verify-platform\.txt/?$ verify_platform.php [L]
+# Samandehi Platform Verification Direct Pass-Through
+RewriteRule ^verify[-_]platform\.txt$ - [L]
 
 # 0. Pharmacy, Websites & Tenant Site Enterprise Route Handling
 RewriteRule ^pharmacy/$ /pharmacy [R=301,L]
@@ -48,6 +48,7 @@ RewriteCond %{REQUEST_METHOD} !POST
 RewriteCond %{THE_REQUEST} ^[A-Z]{3,}\s/+(.*?)\.php[\s?] [NC]
 RewriteCond %{REQUEST_URI} !actions/ [NC]
 RewriteCond %{REQUEST_URI} !api/ [NC]
+RewriteCond %{REQUEST_URI} !verify_platform [NC]
 RewriteRule ^ /%1 [R=301,L]
 
 # 5.2 Internal Rewrite: /path/file -> /path/file.php
@@ -121,6 +122,17 @@ Options -Indexes
         Header set Cache-Control "no-cache, no-store, must-revalidate"
     </IfModule>
 </Files>
+
+# 8.1 Samandehi Ownership Verification Header Rules (Strict Zero-Cache & UTF-8)
+<FilesMatch "^verify[-_]platform\.txt$">
+    <IfModule mod_headers.c>
+        Header set Cache-Control "no-store, no-cache, must-revalidate, max-age=0"
+        Header set Pragma "no-cache"
+        Header set Expires "0"
+        Header set Content-Type "text/plain; charset=utf-8"
+        Header set Access-Control-Allow-Origin "*"
+    </IfModule>
+</FilesMatch>
 
 # 9. Block access to sensitive configuration, database, container and credential files
 <FilesMatch "(^\..*|\.(env|env\.example|sql|log|md|git|gitignore|yml|yaml|dockerignore)|accounts_credentials.*|credentials.*)$">

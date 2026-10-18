@@ -137,6 +137,13 @@
    - جایگزینی متد `CHAR_LENGTH` با متد استاندارد `LENGTH` در کوئری محاسبه امتیاز سلامت در [`includes/TenantSiteService.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/includes/TenantSiteService.php) جهت سازگاری همزمان با MySQL و SQLite.
    - پاس شدن موفقیت‌آمیز ۱۰۰٪ تمامی ۳۲ آزمون سوئیت خودکار [`tests/test_website_archetypes_and_orders.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/tests/test_website_archetypes_and_orders.php).
 
+### نسخه ۱.۰.۳۴ (اکتبر ۲۰۲۶ - استقرار تاییدیه نماد رسانه‌های دیجیتال و ساماندهی، صفرسازی کش لایت‌اسپید و تگ اینماد)
+1. **استقرار جامع تاییدیه‌های مالکیت سامانه ساماندهی (`samandehi.ir`):**
+   - استقرار متاتگ اختصاصی احراز هویت `<meta name="platform-verification" content="ksxzootlfz" />` در ریشه `<head>` در [`includes/header.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/includes/header.php).
+   - ایجاد فایل‌های استاتیک روت `verify-platform.txt` و `verify_platform.txt` با دقیقاً ۱۰ بایت بدون کاراکتر اضافی (`ksxzootlfz`).
+   - خنثی‌سازی کامل کش لایت‌اسپید برای فایل‌های تاییدیه در [`.htaccess`](file:///opt/lampp/htdocs/asena/asena-enterprise/.htaccess) با هدرهای `Cache-Control: no-store, no-cache, must-revalidate, max-age=0` و `Content-Type: text/plain; charset=utf-8` جهت ممانعت از پاسخ کش‌شده به خزنده‌های ساماندهی.
+   - استقرار کد پیگیری و لوگوی رسمی اینماد با شناسه `8209842` و کد رهگیری `RPiMnfb5yngn5NbsHgHcv2Rqa5OOpmsq` در فوتر، صفحات درباره ما و تماس با ما.
+
 ### نسخه ۱.۰.۳۳ (اکتبر ۲۰۲۶ - برطرف‌سازی خطاهای ممیزی صفحه ثبت‌نام، حذف Noindex، افزودن تگ‌های کانونیکال و متادیسکریپشن، غنی‌سازی محتوا، و بهینه‌سازی جهشی سرعت لود موبایل و شاخص‌های Core Web Vitals)
 1. **برطرف‌سازی جامع خطاهای ممیزی AryaSEO در صفحه ثبت‌نام (`register?return_to=...`):**
    - حذف کامل هدر `X-Robots-Tag: noindex, nofollow` و تگ `<meta name="robots" content="noindex, nofollow">` از صفحه ثبت‌نام (`register.php`) و پالایش شرط‌های `$noindex_pages` در [`includes/header.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/includes/header.php).
