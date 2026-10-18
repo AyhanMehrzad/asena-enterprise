@@ -1362,9 +1362,11 @@
     - **سینک و استقرار همزمان در مخزن پروداکشن ([`asena.company`](file:///opt/lampp/htdocs/asena/asena.company/)):**
       - اعمال هماهنگ روی برنچ‌های master هر دو مخزن جهت انتشار مستقیم روی cPanel.
 
-81. **افزودن متاتگ تاییدیه پلتفرم در بخش هدر سایت (Platform Verification Meta Tag):**
-    - **درج متاتگ در هدر سراسری ([`includes/header.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/includes/header.php)):**
-      - افزودن تگ `<meta name="platform-verification" content="ksxzootlfz" />` در بخش `<head>` در کنار متاتگ‌های گوگل و اینماد جهت احراز هویت مالکیت دامنه در پلتفرم‌های تجاری/واسط.
+81. **احراز هویت و تایید مالکیت دامنه در سامانه ساماندهی (Samandehi Ownership Verification):**
+    - **درج متاتگ در بالاترین خط هدر سراسری ([`includes/header.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/includes/header.php)):**
+      - انتقال تگ `<meta name="platform-verification" content="ksxzootlfz" />` به ابتدای تگ `<head>` (بلافاصله پس از `charset="utf-8"`) برای شناسایی فوری توسط خزنده‌های تاییدیه ساماندهی.
+    - **ایجاد و استقرار فایل تاییدیه اختصاصی متنی ([`verify-platform.txt`](file:///opt/lampp/htdocs/asena/asena-enterprise/verify-platform.txt)):**
+      - ساخت فایل متنی در ریشه سایت با مقدار `ksxzootlfz` جهت احراز قطعی از طریق روش دوم (کد تایید اختصاصی).
     - **سینک و دیپلوی خودکار cPanel ([`asena.company`](file:///opt/lampp/htdocs/asena/asena.company/)):**
       - همگام‌سازی و پوش همزمان به برنچ master هر دو مخزن.
 
