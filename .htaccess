@@ -1,5 +1,8 @@
 RewriteEngine On
 
+# Samandehi Platform Verification Endpoint
+RewriteRule ^verify-platform\.txt/?$ verify_platform.php [L]
+
 # 0. Pharmacy, Websites & Tenant Site Enterprise Route Handling
 RewriteRule ^pharmacy/$ /pharmacy [R=301,L]
 RewriteRule ^pharmacy$ pharmacy.php [QSA,L]

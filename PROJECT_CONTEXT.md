@@ -1365,8 +1365,8 @@
 81. **احراز هویت و تایید مالکیت دامنه در سامانه ساماندهی (Samandehi Ownership Verification):**
     - **درج متاتگ در بالاترین خط هدر سراسری ([`includes/header.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/includes/header.php)):**
       - انتقال تگ `<meta name="platform-verification" content="ksxzootlfz" />` به ابتدای تگ `<head>` (بلافاصله پس از `charset="utf-8"`) برای شناسایی فوری توسط خزنده‌های تاییدیه ساماندهی.
-    - **ایجاد و استقرار فایل تاییدیه اختصاصی متنی ([`verify-platform.txt`](file:///opt/lampp/htdocs/asena/asena-enterprise/verify-platform.txt)):**
-      - ساخت فایل متنی در ریشه سایت با مقدار `ksxzootlfz` جهت احراز قطعی از طریق روش دوم (کد تایید اختصاصی).
+    - **ایجاد و استقرار فایل تاییدیه اختصاصی و اندپوینت پویا ([`verify-platform.txt`](file:///opt/lampp/htdocs/asena/asena-enterprise/verify-platform.txt) & [`verify_platform.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/verify_platform.php)):**
+      - ساخت فایل متنی و کنترلر اختصاصی بدون کش با هدرهای دقیق `text/plain; charset=utf-8` جهت احراز قطعی از طریق روش دوم (کد تایید اختصاصی) و ثبت لاگ درخواست‌های اعتبارسنجی.
     - **سینک و دیپلوی خودکار cPanel ([`asena.company`](file:///opt/lampp/htdocs/asena/asena.company/)):**
       - همگام‌سازی و پوش همزمان به برنچ master هر دو مخزن.
 
