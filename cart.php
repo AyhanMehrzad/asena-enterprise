@@ -668,10 +668,19 @@ if (empty($wishlist_products)) {
                                     <span class="text-xl text-emerald-700" id="summary_final_total"><?= number_format($std_final_price) ?></span> تومان
                                 </span>
                             </div>
+
+                            <!-- Clear Statutory VAT Declaration Callout -->
+                            <div class="p-3 bg-amber-500/10 border border-amber-500/25 rounded-2xl flex items-start gap-2.5 text-right">
+                                <span class="material-symbols-outlined text-amber-600 text-lg shrink-0 mt-0.5">info</span>
+                                <div class="text-[11px] text-amber-900 leading-relaxed">
+                                    <strong class="font-bold block text-amber-950 mb-0.5">توجه خریدار گرامی:</strong>
+                                    مبلغ قابل پرداخت فوق، با احتساب <strong>۱۰٪ مالیات بر ارزش افزوده قانونی</strong> (بر اساس قانون مالیات و پایانه‌های فروشگاهی) محاسبه شده است.
+                                </div>
+                            </div>
                             
                             <?php if(isset($_SESSION['user_id'])): ?>
                                 <a href="payment.php?type=standard" class="w-full bg-primary text-white py-4 rounded-2xl font-bold flex justify-center items-center gap-2 hover:bg-primary-container shadow-lg transition-all text-xs active:scale-95 cursor-pointer">
-                                    <span>تکمیل خرید و پرداخت عادی</span>
+                                    <span>تکمیل خرید و پرداخت آنلاین شاپرک (با احتساب ۱۰٪ مالیات)</span>
                                     <span class="material-symbols-outlined text-sm">arrow_left_alt</span>
                                 </a>
                             <?php else: ?>
@@ -952,12 +961,21 @@ if (empty($wishlist_products)) {
                                     <span class="text-xl text-secondary-container font-bold" id="todayPayableAmountText"><?= number_format($auto_final_price) ?></span> تومان
                                 </span>
                             </div>
+
+                            <!-- Clear Statutory VAT Declaration Callout -->
+                            <div class="p-3 bg-amber-500/10 border border-amber-500/25 rounded-2xl flex items-start gap-2.5 text-right">
+                                <span class="material-symbols-outlined text-amber-600 text-lg shrink-0 mt-0.5">info</span>
+                                <div class="text-[11px] text-amber-900 leading-relaxed">
+                                    <strong class="font-bold block text-amber-950 mb-0.5">توجه خریدار گرامی:</strong>
+                                    کلیه مبالغ فوق با احتساب <strong>۱۰٪ مالیات بر ارزش افزوده قانونی</strong> محاسبه شده است.
+                                </div>
+                            </div>
                             
                             <!-- 6. Proceed to Payment Button -->
                             <?php if(isset($_SESSION['user_id'])): ?>
                                 <a href="payment.php?type=autoship&duration=3&model=monthly" id="autoshipProceedLink" class="w-full bg-secondary-container hover:bg-[#ea580c] text-white py-4 rounded-2xl font-bold flex justify-center items-center gap-2 shadow-lg transition-all text-xs active:scale-95 cursor-pointer">
                                     <span class="material-symbols-outlined text-base">check_circle</span>
-                                    <span id="autoshipBtnText">تایید و پرداخت نوبت اول اشتراک</span>
+                                    <span id="autoshipBtnText">تایید و پرداخت نوبت اول اشتراک (با احتساب ۱۰٪ مالیات)</span>
                                 </a>
                             <?php else: ?>
                                 <a href="login.php" class="w-full bg-secondary-container text-white py-4 rounded-2xl font-bold flex justify-center items-center gap-2 hover:bg-[#ea580c] shadow-lg transition-all text-xs active:scale-95 cursor-pointer">
@@ -1231,7 +1249,7 @@ function updateAutoshipCalculations() {
         document.getElementById('todayPayableAmountText').textContent = basePerDeliveryPrice.toLocaleString('fa-IR');
         
         const btnText = document.getElementById('autoshipBtnText');
-        if (btnText) btnText.textContent = 'تایید و پرداخت نوبت اول اشتراک';
+        if (btnText) btnText.textContent = 'تایید و پرداخت نوبت اول اشتراک (با احتساب ۱۰٪ مالیات)';
     } else {
         labelUpfront.className = 'flex items-start gap-2.5 p-3 rounded-2xl bg-white border-2 border-secondary-container shadow-sm cursor-pointer pay-model-label';
         labelMonthly.className = 'flex items-start gap-2.5 p-3 rounded-2xl bg-white border border-outline-variant/40 hover:border-secondary-container shadow-sm cursor-pointer pay-model-label';
@@ -1243,11 +1261,11 @@ function updateAutoshipCalculations() {
         const fullTotal = Math.round((basePerDeliveryPrice * durationMonths) * 0.95);
         
         document.getElementById('payableLabelText').textContent = `مبلغ کل دوره (${durationMonths} نوبت کامل):`;
-        document.getElementById('payableSubLabelText').textContent = 'با احتساب ۵٪ تخفیف مضاعف پرداخت نقدی یک‌جا';
+        document.getElementById('payableSubLabelText').textContent = 'با احتساب ۵٪ تخفیف مضاعف پرداخت نقدی یک‌جا و ۱۰٪ مالیات قانونی';
         document.getElementById('todayPayableAmountText').textContent = fullTotal.toLocaleString('fa-IR');
         
         const btnText = document.getElementById('autoshipBtnText');
-        if (btnText) btnText.textContent = `پرداخت یک‌جا کل دوره ${durationMonths} ماهه`;
+        if (btnText) btnText.textContent = `پرداخت یک‌جا کل دوره ${durationMonths} ماهه (با احتساب ۱۰٪ مالیات)`;
     }
 
     const proceedLink = document.getElementById('autoshipProceedLink');

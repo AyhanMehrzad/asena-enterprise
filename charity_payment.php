@@ -1,7 +1,7 @@
-<?php
 require_once 'includes/db.php';
 require_once 'includes/functions.php';
 require_once 'includes/gateway.php';
+require_once 'includes/ZibalGateway.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     header('Location: charity.php');
@@ -32,7 +32,7 @@ if ($is_anonymous) {
     $donor_name = 'ناشناس';
 }
 
-$gateway = new ZarinPalGateway();
+$gateway = new ZibalGateway(null, null, $pdo);
 $callback_url = get_app_base_url() . '/actions/charity_callback.php';
 
 $metadata = [];

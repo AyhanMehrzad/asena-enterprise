@@ -100,9 +100,9 @@ try {
     $commission_amount = (int)round($doctor_price * ($commission_rate_pct / 100.0));
     $net_amount = $doctor_price - $commission_amount;
 
-    // Calculate 9% VAT for user display & payment
+    // Calculate 10% statutory VAT for user display & payment
     $tax_on_appts = (get_setting($pdo, 'tax_on_appointments_enabled', '1') === '1');
-    $tax_rate_pct = $tax_on_appts ? (float)get_setting($pdo, 'tax_rate_percent', 9) : 0;
+    $tax_rate_pct = $tax_on_appts ? (float)get_setting($pdo, 'tax_rate_percent', 10.0) : 0;
     $tax_amount = (int)round($doctor_price * ($tax_rate_pct / 100.0));
     $user_total_payable = $doctor_price + $tax_amount;
 

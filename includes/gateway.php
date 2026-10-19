@@ -1,17 +1,16 @@
 <?php
 /**
- * ASENA Payment Gateway — Dual Mode: ZarinPal Production & Local Mock Simulator
+ * ASENA Payment Gateway — Legacy Bridge & Direct Official Gateway Adapter
+ * All payments are routed directly to official Shaparak Gateways (Zibal / ZarinPal).
+ * Mock / Sample payment simulators are permanently removed.
  */
 
 require_once __DIR__ . '/Env.php';
+require_once __DIR__ . '/ZibalGateway.php';
 Env::load();
 
 if (!defined('ZARINPAL_MERCHANT_ID')) {
-    define('ZARINPAL_MERCHANT_ID', getenv('ZARINPAL_MERCHANT_ID') ?: '00000000-0000-0000-0000-000000000000');
-}
-if (!defined('ZARINPAL_SANDBOX')) {
-    $sandboxEnv = getenv('ZARINPAL_SANDBOX');
-    define('ZARINPAL_SANDBOX', ($sandboxEnv === 'true' || $sandboxEnv === '1'));
+    define('ZARINPAL_MERCHANT_ID', getenv('ZARINPAL_MERCHANT_ID') ?: '');
 }
 
 class ZarinPalGateway
@@ -20,21 +19,20 @@ class ZarinPalGateway
     private string $request_url;
     private string $verify_url;
     private string $payment_base;
-    private bool $is_mock;
+    private ZibalGateway $zibal;
 
     public function __construct()
     {
-        $this->merchant_id = ZARINPAL_MERCHANT_ID;
-        $this->is_mock = ZARINPAL_SANDBOX || empty($this->merchant_id) || $this->merchant_id === '00000000-0000-0000-0000-000000000000';
-        
-        $base = ZARINPAL_SANDBOX ? 'sandbox.zarinpal.com' : 'payment.zarinpal.com';
+        $this->merchant_id = (string)ZARINPAL_MERCHANT_ID;
+        $base = 'payment.zarinpal.com';
         $this->request_url  = "https://{$base}/pg/v4/payment/request.json";
         $this->verify_url   = "https://{$base}/pg/v4/payment/verify.json";
         $this->payment_base = "https://{$base}/pg/StartPay/";
+        $this->zibal        = new ZibalGateway();
     }
 
     /**
-     * Request a payment authority token.
+     * Request payment token. If ZarinPal is not fully configured, seamlessly delegates to official Zibal IPG.
      */
     public function requestPayment(
         int    $amount_tomans,
@@ -42,30 +40,9 @@ class ZarinPalGateway
         string $callback_url,
         array  $metadata = []
     ): array {
-        // If in Mock / Sandbox Mode or no merchant ID configured:
-        if ($this->is_mock) {
-            $authority = 'ASENA-MOCK-' . strtoupper(substr(md5(uniqid((string)mt_rand(), true)), 0, 16));
-            
-            // Build dynamic base path
-            $scheme = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') ? 'https' : 'http';
-            $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
-            $docRoot = rtrim(str_replace('\\', '/', $_SERVER['DOCUMENT_ROOT'] ?? ''), '/');
-            $appRoot = rtrim(str_replace('\\', '/', dirname(__DIR__)), '/');
-            $subDir = str_replace($docRoot, '', $appRoot);
-            $baseUrl = $scheme . '://' . $host . $subDir;
-
-            $mockUrl = $baseUrl . '/mock_payment_gateway.php?' . http_build_query([
-                'authority' => $authority,
-                'amount'    => $amount_tomans,
-                'desc'      => $description,
-                'callback'  => $callback_url
-            ]);
-
-            return [
-                'success'     => true,
-                'authority'   => $authority,
-                'payment_url' => $mockUrl,
-            ];
+        // If ZarinPal merchant is not configured or empty, immediately use real Zibal IPG
+        if (empty($this->merchant_id) || $this->merchant_id === '00000000-0000-0000-0000-000000000000') {
+            return $this->zibal->requestPayment($amount_tomans, $description, $callback_url, $metadata);
         }
 
         // Real Production ZarinPal
@@ -91,10 +68,16 @@ class ZarinPalGateway
             ];
         }
 
+        // If ZarinPal fails, fallback directly to official real Zibal IPG
+        $zibalRes = $this->zibal->requestPayment($amount_tomans, $description, $callback_url, $metadata);
+        if (!empty($zibalRes['success'])) {
+            return $zibalRes;
+        }
+
         return [
             'success' => false,
             'error'   => $response['errors']['message']
-                         ?? "کد خطا: " . ($response['data']['code'] ?? 'نامشخص'),
+                         ?? ($zibalRes['error'] ?? "کد خطا: " . ($response['data']['code'] ?? 'نامشخص')),
         ];
     }
 
@@ -103,16 +86,12 @@ class ZarinPalGateway
      */
     public function verifyPayment(int $amount_tomans, string $authority): array
     {
-        // Mock Gateway Verification
-        if (str_starts_with($authority, 'ASENA-MOCK-') || $this->is_mock) {
-            return [
-                'success'          => true,
-                'ref_id'           => 'TRX-' . rand(10000000, 99999999),
-                'already_verified' => false,
-            ];
+        // If authority is numeric or trackId format, verify via Zibal
+        if (is_numeric($authority) || strlen($authority) < 15) {
+            return $this->zibal->verifyPayment($authority);
         }
 
-        // Real Production Verification
+        // Real Production Verification via ZarinPal
         $payload = [
             'merchant_id' => $this->merchant_id,
             'amount'      => $amount_tomans * 10,
@@ -128,6 +107,12 @@ class ZarinPalGateway
                 'ref_id'           => (string)($response['data']['ref_id'] ?? ''),
                 'already_verified' => ($code === 101),
             ];
+        }
+
+        // Fallback check against Zibal
+        $zibalVerify = $this->zibal->verifyPayment($authority);
+        if (!empty($zibalVerify['success'])) {
+            return $zibalVerify;
         }
 
         return [

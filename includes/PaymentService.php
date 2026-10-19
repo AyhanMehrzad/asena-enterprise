@@ -18,7 +18,11 @@ class PaymentService {
 
     public function __construct(?PDO $db = null) {
         $this->db = $db ?? $GLOBALS['pdo'];
-        $this->activeDriver = (string)get_setting($this->db, 'active_payment_gateway', 'zibal');
+        $driver = (string)get_setting($this->db, 'active_payment_gateway', 'zibal');
+        if ($driver === 'mock' || empty($driver)) {
+            $driver = 'zibal';
+        }
+        $this->activeDriver = $driver;
     }
 
     public function getActiveDriver(): string {
@@ -126,21 +130,6 @@ class PaymentService {
                     return $res;
                 }
                 return $res;
-
-            case 'mock':
-                return [
-                    'success'     => true,
-                    'transaction_id' => $txId,
-                    'authority'   => $authority,
-                    'driver'      => 'mock',
-                    'payment_url' => $appBase . '/mock_payment_gateway.php?' . http_build_query([
-                        'authority' => $authority,
-                        'amount'    => $amountTomans,
-                        'desc'      => $description,
-                        'callback'  => $appBase . '/actions/complete_payment.php?tx=' . urlencode($authority)
-                    ]),
-                    'amount'      => $amountTomans
-                ];
         }
     }
 

@@ -1409,6 +1409,25 @@
     - **سینک و دیپلوی خودکار cPanel ([`asena.company`](file:///opt/lampp/htdocs/asena/asena.company/)):**
       - همگام‌سازی و پوش همزمان به برنچ master هر دو مخزن.
 
+82. **حذف درگاه‌های شبیه‌ساز و اتصال رسمی کلیه درگاه‌های پرداخت به زیبال و شاپرک با احتساب ۱۰٪ مالیات قانونی (Full Zibal IPG Live Integration, Mock Gateway Decommission & 10% VAT Prominence):**
+    - **از مدار خارج کردن کامل درگاه شبیه‌ساز آزمایشی ([`mock_payment_gateway.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/mock_payment_gateway.php)):**
+      - تبدیل فایل به ریدایرکت مستقیم به `payment.php` یا `cart.php` با پیام هشدار رسمی مبنی بر عدم پذیرش تراکنش‌های مجازی.
+    - **پاکسازی سوییچ‌های شبیه‌ساز در هسته پرداخت ([`includes/PaymentService.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/includes/PaymentService.php) و [`includes/gateway.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/includes/gateway.php)):**
+      - حذف شاخه `case 'mock':`، اصلاح سازنده جهت جایگزینی خودکار هر مقدار نامعتبر یا `mock` با درگاه رسمی زیبال (`zibal`).
+      - حذف تولید کدهای مرجع ساختگی (`ASENA-MOCK-...`) در `ZarinPalGateway` و واگذاری خودکار به `ZibalGateway`.
+    - **درایور و تست یکپارچگی زیبال ([`includes/ZibalGateway.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/includes/ZibalGateway.php) و [`tests/test_zibal_gateway_integration.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/tests/test_zibal_gateway_integration.php)):**
+      - پیاده‌سازی متدهای درخواست پرداخت، تاییدیه، استعلام و تست سلامت با هندلینگ دقیق خطاها و کدهای وضعیت فارسی.
+      - اجرای ۲۰ تست یکپارچگی موفق برای تولید `trackId`، ترجمه کدهای خطا، اعتبارسنجی کال‌بک، پینگ سلامت و ثبت دیتابیس.
+    - **اعمال قطعی ۱۰٪ مالیات بر ارزش افزوده در کلیه بخش‌های پرداخت:**
+      - **سبد خرید و تحویل خودکار ([`cart.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/cart.php)):** افزودن بنر شفاف طلایی/کهربایی به هر دو تب سبد خرید عادی و خرید دوره‌ای autoship جهت اعلام صریح به خریدار مبنی بر احتساب ۱۰٪ مالیات بر ارزش افزوده قانونی؛ به‌روزرسانی متن دکمه‌های پرداخت به «تکمیل خرید و پرداخت آنلاین شاپرک (با احتساب ۱۰٪ مالیات)».
+      - **خرید اشتراک‌ها ([`subscription_checkout.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/subscription_checkout.php)):** محاسبه دقیق ۱۰٪ مالیات بر ارزش افزوده روی قیمت پکیج، تفکیک سطر مالیات در فاکتور، نمایش بنر اعلام مالیات و اتصال مستقیم به درگاه زیبال با ثبت متادیتا.
+      - **کمک‌های حمایتی خیریه ([`charity_payment.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/charity_payment.php)):** ارتقای تراکنش‌های حمایتی به درگاه رسمی زیبال شاپرک.
+      - **محاسبه‌گر جیره غذایی پت ([`actions/initiate_meal_plan_payment.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/actions/initiate_meal_plan_payment.php)):** افزودن ۱۰٪ مالیات به هزینه صدور کارنامه (`calcPrice + 10% VAT`) و ارجاع به درگاه.
+      - **رزرو نوبت پزشک و کلینیک ([`actions/booking_action.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/actions/booking_action.php)):** تنظیم نرخ پیش‌فرض مالیات به ۱۰.۰٪ قانونی.
+    - **به‌روزرسانی کنسول مدیریت مالی و درگاه‌ها ([`admin/finance_settings.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/admin/finance_settings.php)):**
+      - حذف گزینه شبیه‌ساز/تستی از کارت‌های انتخاب درگاه و محدودسازی گزینه‌ها منحصراً به درگاه‌های رسمی شاپرک (زیبال به عنوان درگاه اصلی با تسویه پایا و زرین‌پال به عنوان پشتیبان ثانویه).
+      - تنظیم خودکار `active_payment_gateway` روی `zibal` و غیرفعال‌سازی سندباکس (`zibal_sandbox = 0`).
+
 ---
 
 ## ۴. پروتکل ثبت تغییرات آینده (Maintenance Rule)

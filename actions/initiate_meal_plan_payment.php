@@ -53,12 +53,15 @@ if (!verify_csrf_token($csrf)) {
     exit;
 }
 
-$calcPrice = (int)get_setting($pdo, 'calculator_price_toman', 49000);
-if ($calcPrice <= 0) {
+$calcBasePrice = (int)get_setting($pdo, 'calculator_price_toman', 49000);
+if ($calcBasePrice <= 0) {
     // If price is 0 or negative, route directly to free saver
     require_once __DIR__ . '/save_nutrition_report.php';
     exit;
 }
+
+$calcTax = (int)round($calcBasePrice * 0.10);
+$calcTotal = $calcBasePrice + $calcTax;
 
 $petName = trim((string)($inputData['pet_name'] ?? 'حیوان خانگی'));
 $species = in_array($inputData['species'] ?? '', ['dog', 'cat']) ? $inputData['species'] : 'dog';
@@ -75,7 +78,7 @@ $uStmt = $pdo->prepare("SELECT email, phone FROM users WHERE id = ?");
 $uStmt->execute([$userId]);
 $user = $uStmt->fetch(PDO::FETCH_ASSOC);
 
-$orderDesc = "پرداخت هزینه صدور رسمی و بایگانی جدول برنامه غذایی بالینی برای پت ({$petName} - نژاد {$race})";
+$orderDesc = "پرداخت صدور و بایگانی جدول رژیم غذایی بالینی ({$petName}) با احتساب ۱۰٪ مالیات";
 
 // Initiate payment via unified PaymentService
 try {
@@ -84,12 +87,14 @@ try {
     $metadata = [
         'email' => $user['email'] ?? '',
         'mobile' => (string)($user['phone'] ?? ''),
-        'meal_plan_data' => $inputData
+        'meal_plan_data' => $inputData,
+        'base_price' => $calcBasePrice,
+        'tax_amount' => $calcTax
     ];
 
     $res = $paymentService->requestPayment(
         $userId,
-        $calcPrice,
+        $calcTotal,
         $orderDesc,
         'meal_plan',
         null,
@@ -108,7 +113,9 @@ try {
     $_SESSION['pending_order'] = [
         'type' => 'meal_plan',
         'user_id' => $userId,
-        'total_amount' => $calcPrice,
+        'base_amount' => $calcBasePrice,
+        'tax_amount' => $calcTax,
+        'total_amount' => $calcTotal,
         'authority' => $res['authority'],
         'meal_plan_data' => $inputData,
         'created_at' => time()

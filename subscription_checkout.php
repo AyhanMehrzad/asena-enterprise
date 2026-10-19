@@ -80,36 +80,47 @@ if (!$selected_plan) {
     exit;
 }
 
+require_once 'includes/ZibalGateway.php';
+
+$base_price = (int)$selected_plan['price'];
+$vat_amount = (int)round($base_price * 0.10);
+$total_payable = $base_price + $vat_amount;
+
 // Handle payment request
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     csrf_verify();
     
-    $gateway = new ZarinPalGateway();
+    $gateway = new ZibalGateway(null, null, $pdo);
     $callback_url = get_app_base_url() . '/actions/complete_payment.php';
 
-    // Fetch user details for ZarinPal metadata
+    // Fetch user details for gateway metadata
     $user = $currentUser;
 
-    $metadata = [];
+    $metadata = [
+        'order_type' => 'subscription',
+        'plan_name'  => $selected_plan['name']
+    ];
     if (!empty($user['email'])) $metadata['email'] = $user['email'];
     if (!empty($user['phone'])) $metadata['mobile'] = (string)$user['phone'];
 
     $result = $gateway->requestPayment(
-        $selected_plan['price'],
-        'خرید ' . $selected_plan['name'] . ' آسنا',
+        $total_payable,
+        'خرید ' . $selected_plan['name'] . ' آسنا (با احتساب ۱۰٪ مالیات)',
         $callback_url,
         $metadata
     );
 
     if (!$result['success']) {
-        $error = 'خطا در اتصال به درگاه پرداخت: ' . $result['error'];
+        $error = 'خطا در اتصال به درگاه بانکی: ' . ($result['error'] ?? 'خطای ناشناخته درگاه');
     } else {
         $_SESSION['pending_order'] = [
             'type'         => 'subscription',
             'plan_id'      => $selected_plan['months'] ?? 3,
             'plan_name'    => $selected_plan['name'],
-            'total_amount' => $selected_plan['price'],
-            'authority'    => $result['authority'],
+            'base_amount'  => $base_price,
+            'tax_amount'   => $vat_amount,
+            'total_amount' => $total_payable,
+            'authority'    => (string)$result['authority'],
             'created_at'   => time(),
             'is_custom'    => $is_custom ? 1 : 0,
             'items'        => $custom_products
@@ -165,8 +176,21 @@ include 'includes/header.php';
             <?php endif; ?>
 
             <div class="flex justify-between items-center text-xs">
+                <span class="text-on-surface-variant">مبلغ پایه اشتراک:</span>
+                <span class="text-on-surface font-bold font-mono"><?= number_format($base_price) ?> تومان</span>
+            </div>
+
+            <div class="flex justify-between items-center text-xs">
                 <span class="text-on-surface-variant">تخفیف ویژه اشتراک:</span>
                 <span class="text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded-md">۱۵٪ تخفیف ثابت + ارسال رایگان</span>
+            </div>
+
+            <div class="flex justify-between items-center text-xs text-slate-600 bg-slate-50 p-2.5 rounded-xl border border-slate-200/60">
+                <span class="flex items-center gap-1">
+                    <span class="material-symbols-outlined text-sm text-slate-400">account_balance</span>
+                    مالیات بر ارزش افزوده (۱۰٪ قانونی):
+                </span>
+                <span class="font-bold font-mono text-slate-800">+<?= number_format($vat_amount) ?> تومان</span>
             </div>
 
             <div class="flex justify-between items-center text-xs">
@@ -175,10 +199,19 @@ include 'includes/header.php';
             </div>
 
             <div class="flex justify-between items-center pt-3 border-t border-outline-variant/30">
-                <span class="text-sm font-bold text-primary">مبلغ هر نوبت ارسال:</span>
-                <span class="text-xl font-bold text-secondary-container font-mono">
-                    <?= number_format($selected_plan['price']) ?> <span class="text-xs text-on-surface-variant font-normal">تومان</span>
+                <span class="text-sm font-bold text-primary">مبلغ کل قابل پرداخت (نوبت ۱):</span>
+                <span class="text-xl font-bold text-emerald-700 font-mono">
+                    <?= number_format($total_payable) ?> <span class="text-xs text-on-surface-variant font-normal">تومان</span>
                 </span>
+            </div>
+        </div>
+
+        <!-- Clear Statutory VAT Declaration Callout -->
+        <div class="p-3 bg-amber-500/10 border border-amber-500/25 rounded-2xl flex items-start gap-2.5 text-right mb-6">
+            <span class="material-symbols-outlined text-amber-600 text-lg shrink-0 mt-0.5">info</span>
+            <div class="text-[11px] text-amber-900 leading-relaxed">
+                <strong class="font-bold block text-amber-950 mb-0.5">توجه خریدار گرامی:</strong>
+                مبلغ نهایی فوق شامل <strong>۱۰٪ مالیات بر ارزش افزوده قانونی</strong> (بر اساس قوانین سامانه مودیان و پایانه‌های فروشگاهی) می‌باشد.
             </div>
         </div>
 
@@ -190,9 +223,9 @@ include 'includes/header.php';
                 <input type="hidden" name="custom_items" value="<?php echo htmlspecialchars($custom_items_raw); ?>">
                 <input type="hidden" name="interval_months" value="<?php echo $custom_months; ?>">
             <?php endif; ?>
-            <button type="submit" class="w-full bg-secondary-container hover:bg-[#ea580c] text-white py-4 rounded-2xl font-bold shadow-xl transition-all flex items-center justify-center gap-2 active:scale-95 text-sm">
+            <button type="submit" class="w-full bg-secondary-container hover:bg-[#ea580c] text-white py-4 rounded-2xl font-bold shadow-xl transition-all flex items-center justify-center gap-2 active:scale-95 text-sm cursor-pointer">
                 <span class="material-symbols-outlined text-lg">payment</span>
-                <span>پرداخت و شروع اشتراک</span>
+                <span>تکمیل و پرداخت آنلاین شاپرک (با احتساب ۱۰٪ مالیات)</span>
             </button>
         </form>
 

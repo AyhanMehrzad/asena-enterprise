@@ -130,6 +130,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
 
             // Payment Gateway & Zero-Tax Card Engine Settings
             $activeGateway = trim($_POST['active_payment_gateway'] ?? 'zibal');
+            if ($activeGateway === 'mock' || !in_array($activeGateway, ['zibal', 'zarinpal'], true)) {
+                $activeGateway = 'zibal';
+            }
             set_setting($pdo, 'active_payment_gateway', $activeGateway);
 
             $zibalMerchant = trim($_POST['zibal_merchant_key'] ?? '');
@@ -228,8 +231,10 @@ $adminCard      = get_setting($pdo, 'admin_bank_card', '6037991199223344');
 $adminSheba     = get_setting($pdo, 'admin_bank_sheba', 'IR120560000000100000000001');
 $adminBank      = get_setting($pdo, 'admin_bank_name', 'بانک سامان');
 $adminHolder    = get_setting($pdo, 'admin_bank_holder', 'شرکت توسعه تجارت الکترونیک آسنا');
-
 $activeGateway     = get_setting($pdo, 'active_payment_gateway', 'zibal');
+if ($activeGateway === 'mock' || !in_array($activeGateway, ['zibal', 'zarinpal'], true)) {
+    $activeGateway = 'zibal';
+}
 $zibalMerchantKey  = get_setting($pdo, 'zibal_merchant_key', getenv('ZIBAL_MERCHANT_KEY') ?: 'df600a22599f4b4085380b601df55463');
 $zibalSandbox      = (int)get_setting($pdo, 'zibal_sandbox', (getenv('ZIBAL_SANDBOX') === 'true' || getenv('ZIBAL_SANDBOX') === '1') ? 1 : 0);
 $zarinpalMerchant  = get_setting($pdo, 'zarinpal_merchant_id', getenv('ZARINPAL_MERCHANT_ID') ?: '92df0362-5e43-4565-b027-4c5b621ac1ab');
@@ -886,15 +891,15 @@ require_once __DIR__ . '/includes/admin_header.php';
                     <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">مدیریت سوییچ درگاه‌های پرداخت آنلاین بانکی، کلیدهای مرچنت، حالت آزمایشی و تست زنده پایداری</p>
                 </div>
                 <div class="flex items-center gap-2">
-                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold <?= $activeGateway === 'zibal' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-300' : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300' ?>">
-                        <span class="w-2 h-2 rounded-full <?= $activeGateway === 'zibal' ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400' ?>"></span>
-                        <span>درگاه فعال: <?= $activeGateway === 'zibal' ? 'زیبال شاپرک (Zibal)' : ($activeGateway === 'zarinpal' ? 'زرین‌پال شاپرک' : 'شبیه‌ساز تستی') ?></span>
+                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold <?= $activeGateway === 'zibal' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-300' : 'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-300' ?>">
+                        <span class="w-2 h-2 rounded-full <?= $activeGateway === 'zibal' ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500' ?>"></span>
+                        <span>درگاه فعال: <?= $activeGateway === 'zibal' ? 'زیبال شاپرک (Zibal IPG)' : 'زرین‌پال شاپرک (ZarinPal IPG)' ?></span>
                     </span>
                 </div>
             </div>
 
-            <!-- GATEWAY SELECTION CARDS -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <!-- GATEWAY SELECTION CARDS (REAL OFFICIAL GATEWAYS ONLY) -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <!-- ZIBAL (OFFICIAL RECOMMENDED) -->
                 <label class="p-5 rounded-2xl border-2 cursor-pointer transition-all flex flex-col justify-between gap-4 <?= $activeGateway === 'zibal' ? 'border-blue-600 bg-blue-50/40 dark:bg-blue-950/20 shadow-sm ring-2 ring-blue-500/20' : 'border-slate-200 dark:border-slate-700 opacity-80 hover:opacity-100 hover:border-slate-300' ?>">
                     <div class="flex items-start gap-3">
@@ -902,13 +907,13 @@ require_once __DIR__ . '/includes/admin_header.php';
                         <div>
                             <div class="flex items-center gap-1.5 flex-wrap">
                                 <span class="text-sm font-black text-slate-900 dark:text-white">زیبال (Zibal IPG)</span>
-                                <span class="px-2 py-0.5 rounded-md text-[9px] font-black bg-blue-100 text-blue-800 dark:bg-blue-900/60 dark:text-blue-300">پیش‌فرض پلتفرم</span>
+                                <span class="px-2 py-0.5 rounded-md text-[9px] font-black bg-blue-100 text-blue-800 dark:bg-blue-900/60 dark:text-blue-300">درگاه رسمی و پیش‌فرض</span>
                             </div>
-                            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">اتصال مستقیم به سوییچ چندبانکی شاپرک، سوییچ هوشمند PSP و پایداری ۹۹.۹۸٪</p>
+                            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">اتصال مستقیم به سوییچ چندبانکی شاپرک، سوییچ هوشمند PSP و پایداری ۹۹.۹۸٪ با تسویه پایا</p>
                         </div>
                     </div>
                     <div class="pt-2 border-t border-slate-200/60 dark:border-slate-700/60 flex items-center justify-between text-[11px]">
-                        <span class="text-slate-500 dark:text-slate-400">سوییچ خودکار:</span>
+                        <span class="text-slate-500 dark:text-slate-400">سوییچ خودکار شاپرک:</span>
                         <span class="font-bold text-emerald-600">فعال (تسویه پایا)</span>
                     </div>
                 </label>
@@ -928,24 +933,6 @@ require_once __DIR__ . '/includes/admin_header.php';
                     <div class="pt-2 border-t border-slate-200/60 dark:border-slate-700/60 flex items-center justify-between text-[11px]">
                         <span class="text-slate-500 dark:text-slate-400">وضعیت آماده‌باش:</span>
                         <span class="font-bold text-amber-600">پشتیبان ثانویه</span>
-                    </div>
-                </label>
-
-                <!-- SANDBOX SIMULATOR -->
-                <label class="p-5 rounded-2xl border-2 cursor-pointer transition-all flex flex-col justify-between gap-4 <?= $activeGateway === 'mock' ? 'border-slate-700 bg-slate-100 dark:bg-slate-800 shadow-sm' : 'border-slate-200 dark:border-slate-700 opacity-80 hover:opacity-100 hover:border-slate-300' ?>">
-                    <div class="flex items-start gap-3">
-                        <input type="radio" name="active_payment_gateway" value="mock" <?= $activeGateway === 'mock' ? 'checked' : '' ?> class="mt-1 text-slate-600 focus:ring-slate-500">
-                        <div>
-                            <div class="flex items-center gap-1.5 flex-wrap">
-                                <span class="text-sm font-black text-slate-900 dark:text-white">شبیه‌ساز توسعه (Simulator)</span>
-                                <span class="px-2 py-0.5 rounded-md text-[9px] font-bold bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-300">محیط تست</span>
-                            </div>
-                            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">تست پرداخت بدون کسر وجه واقعی کارت برای خطایابی جریان‌های سفارش و وب‌سایت.</p>
-                        </div>
-                    </div>
-                    <div class="pt-2 border-t border-slate-200/60 dark:border-slate-700/60 flex items-center justify-between text-[11px]">
-                        <span class="text-slate-500 dark:text-slate-400">کسر موجودی بانکی:</span>
-                        <span class="font-bold text-slate-500">صفر (مجازی)</span>
                     </div>
                 </label>
             </div>
