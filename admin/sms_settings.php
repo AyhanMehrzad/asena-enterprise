@@ -383,28 +383,28 @@ $patterns = [
                 <!-- API Key -->
                 <div class="sm:col-span-2">
                     <label class="block text-xs font-bold text-primary mb-2">کلید وب‌سرویس کنسول (API Key):</label>
-                    <input type="text" name="melipayamak_api_key" value="<?= htmlspecialchars($mApiKey) ?>" placeholder="efaec6c8-2daf-4473-9080-df7ac67eea89" class="w-full px-4 py-3 rounded-xl border border-outline-variant bg-surface text-xs font-mono focus:border-primary focus:ring-1 focus:ring-primary outline-none dir-ltr text-left">
+                    <input type="text" name="melipayamak_api_key" value="<?= htmlspecialchars($mApiKey) ?>" placeholder="cbb5b4df-086a-4afc-914c-bd1c2d50f738" class="w-full px-4 py-3 rounded-xl border border-outline-variant bg-surface text-xs font-mono focus:border-primary focus:ring-1 focus:ring-primary outline-none dir-ltr text-left">
                     <p class="text-[10px] text-on-surface-variant mt-1.5">کلید REST API صادرشده از پنل جدید console.melipayamak.com</p>
                 </div>
 
                 <!-- Username -->
                 <div>
                     <label class="block text-xs font-bold text-primary mb-2">نام کاربری / شماره همراه پنل:</label>
-                    <input type="text" name="melipayamak_username" value="<?= htmlspecialchars($mUsername) ?>" placeholder="9146676978" class="w-full px-4 py-3 rounded-xl border border-outline-variant bg-surface text-xs font-mono focus:border-primary focus:ring-1 focus:ring-primary outline-none dir-ltr text-left">
-                    <p class="text-[10px] text-on-surface-variant mt-1.5">شناسه کاربری ورود به پنل ملی‌پیامک</p>
+                    <input type="text" name="melipayamak_username" value="<?= htmlspecialchars($mUsername) ?>" placeholder="09146676978" class="w-full px-4 py-3 rounded-xl border border-outline-variant bg-surface text-xs font-mono focus:border-primary focus:ring-1 focus:ring-primary outline-none dir-ltr text-left">
+                    <p class="text-[10px] text-on-surface-variant mt-1.5">شناسه کاربری ورود به پنل ملی‌پیامک (فرمت 09...)</p>
                 </div>
 
                 <!-- Password -->
                 <div>
                     <label class="block text-xs font-bold text-primary mb-2">رمز عبور / توکن وب‌سرویس:</label>
                     <input type="password" name="melipayamak_password" value="<?= htmlspecialchars($mPassword) ?>" placeholder="••••••••" class="w-full px-4 py-3 rounded-xl border border-outline-variant bg-surface text-xs font-mono focus:border-primary focus:ring-1 focus:ring-primary outline-none dir-ltr text-left">
-                    <p class="text-[10px] text-on-surface-variant mt-1.5">رمز وب‌سرویس یا رمز ورود به حساب کاربری</p>
+                    <p class="text-[10px] text-on-surface-variant mt-1.5">رمز وب‌سرویس یا کلید API</p>
                 </div>
 
                 <!-- From Number -->
                 <div class="sm:col-span-2">
                     <label class="block text-xs font-bold text-primary mb-2">شماره خط اختصاصی ارسال‌کننده (From):</label>
-                    <input type="text" name="melipayamak_from" value="<?= htmlspecialchars($mFrom) ?>" placeholder="2170002198 یا 50004001" class="w-full px-4 py-3 rounded-xl border border-outline-variant bg-surface text-xs font-mono focus:border-primary focus:ring-1 focus:ring-primary outline-none dir-ltr text-left">
+                    <input type="text" name="melipayamak_from" value="<?= htmlspecialchars($mFrom) ?>" placeholder="50004001914667 یا 2170002198" class="w-full px-4 py-3 rounded-xl border border-outline-variant bg-surface text-xs font-mono focus:border-primary focus:ring-1 focus:ring-primary outline-none dir-ltr text-left">
                     <p class="text-[10px] text-on-surface-variant mt-1.5">خط پیامکی اختصاصی شرکت آسنا جهت ارسال پیام‌های مستقیم</p>
                 </div>
 

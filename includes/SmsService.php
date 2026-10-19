@@ -44,10 +44,10 @@ class SmsService {
             }
         }
 
-        $defaultApiKey   = 'efaec6c8-2daf-4473-9080-df7ac67eea89';
-        $defaultUsername = '9146676978';
-        $defaultPassword = 'efaec6c8-2daf-4473-9080-df7ac67eea89';
-        $defaultFrom     = '2170002198';
+        $defaultApiKey   = 'cbb5b4df-086a-4afc-914c-bd1c2d50f738';
+        $defaultUsername = '09146676978';
+        $defaultPassword = 'cbb5b4df-086a-4afc-914c-bd1c2d50f738';
+        $defaultFrom     = '50004001914667';
 
         $dbApiKey   = ($pdo instanceof PDO) ? get_setting($pdo, 'melipayamak_api_key', '') : '';
         $dbUsername = ($pdo instanceof PDO) ? get_setting($pdo, 'melipayamak_username', '') : '';
@@ -57,8 +57,8 @@ class SmsService {
 
         // Auto-heal dummy/stale seed values in database (such as on cPanel hosting)
         if ($pdo instanceof PDO) {
-            $isDummyKey  = empty($dbApiKey) || str_contains($dbApiKey, 'SANDBOX') || str_contains($dbApiKey, 'd3cbc1e6');
-            $isDummyUser = empty($dbUsername) || $dbUsername === 'asena_enterprise' || $dbUsername === 'your_username';
+            $isDummyKey  = empty($dbApiKey) || str_contains($dbApiKey, 'SANDBOX') || str_contains($dbApiKey, 'd3cbc1e6') || str_contains($dbApiKey, 'efaec6c8');
+            $isDummyUser = empty($dbUsername) || $dbUsername === 'asena_enterprise' || $dbUsername === 'your_username' || $dbUsername === '9146676978';
             if ($isDummyKey || $isDummyUser) {
                 set_setting($pdo, 'melipayamak_api_key', $defaultApiKey);
                 set_setting($pdo, 'melipayamak_username', $defaultUsername);
@@ -521,12 +521,12 @@ class SmsService {
     }
 
     /**
-     * Get effective username for Melipayamak web services (strips leading 0 for mobile numbers)
+     * Get effective username for Melipayamak web services (ensures 09... format for mobile numbers)
      */
     public function getEffectiveUsername(): string {
         $u = trim((string)$this->username);
-        if (preg_match('/^0(9\d{9})$/', $u, $m)) {
-            return $m[1]; // e.g. 9146676978
+        if (preg_match('/^9\d{9}$/', $u)) {
+            return '0' . $u;
         }
         return $u;
     }
