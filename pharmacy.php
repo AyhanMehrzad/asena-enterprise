@@ -326,7 +326,7 @@ function buildUrl($updates) {
         if ($val === null || $val === '') unset($query[$key]);
         else $query[$key] = $val;
     }
-    return '?' . http_build_query($query);
+    return '/pharmacy' . (!empty($query) ? '?' . http_build_query($query) : '');
 }
 ?>
 

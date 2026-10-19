@@ -1449,6 +1449,11 @@
     - **به‌روزرسانی کنسول مالی ([`admin/finance_settings.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/admin/finance_settings.php)):**
       - اصلاح پیش‌فرض، مقدار فیلد و دکمه‌های درج سریع به کد مرچنت فعال زیبال (`6ad4ed70241349c91a027978`).
 
+84. **اصلاح ناوبری صفحات محصولات، پیاده‌سازی پیجینیشن ایجکس بدون رفرش و اسکرول هوشمند به ابتدای لیست کالاها (Shop Products AJAX Pagination & Smooth Viewport Alignment):**
+    - **ریشه‌یابی و رفع هدایت به صفحه اصلی (Index Page Redirect Bug):** در [`includes/header.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/includes/header.php) تگ `<base href="https://asena.company/">` تعریف شده است. به همین علت، تابع `buildUrl()` در [`shop.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/shop.php) و [`pharmacy.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/pharmacy.php) که لینک‌ها را به صورت نسبی `?page=2` می‌ساخت، توسط مرورگر نسبت به تگ base محاسبه شده و کاربر را به ریشه سایت (`/?page=2`) می‌فرستاد. پیشوند صریح `/shop` و `/pharmacy` به توابع ساخت URL اضافه گردید تا همیشه نشانی مطلق و معتبر تولید شود.
+    - **پیجینیشن یکپارچه و آنی بدون رفرش (Zero-Reload AJAX Pagination):** اضافه شدن لیسنر اختصاصی کلیک روی دکمه‌های پیجینیشن کالاها (`.pagination-link`)؛ دریافت محتوای صفحه جدید با fetch پس‌زمینه و جایگزینی بدون پرش بخش کالاها (`#products-main-section`) به همراه به‌روزرسانی تاریخچه مرورگر (`history.pushState`) و پشتیبانی کامل از دکمه‌های Back/Forward مرورگر.
+    - **اسکرول هوشمند به ابتدای لیست محصولات (Precise Products Starting Point Scroll):** پس از تعویض صفحه، صفحه نه در انتهای لیست می‌ماند و نه به بالای کل سایت اسکرول می‌شود؛ تابع `scrollToProductsStart()` دقیقا ویوپورت کاربر را با احتساب ارتفاع هدر چسبان سایت روی نقطه شروع کاتالوگ محصولات (`#products-main-section`) به صورت نرم (Smooth Scroll) تراز می‌نماید.
+
 ---
 
 ## ۴. پروتکل ثبت تغییرات آینده (Maintenance Rule)

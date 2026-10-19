@@ -394,7 +394,7 @@ function buildUrl($updates) {
         if ($val === null || $val === '') unset($query[$key]);
         else $query[$key] = $val;
     }
-    return '?' . http_build_query($query);
+    return '/shop' . (!empty($query) ? '?' . http_build_query($query) : '');
 }
 
 function buildUrlRemoveArrayItem($arrayName, $valueToRemove) {
@@ -408,7 +408,7 @@ function buildUrlRemoveArrayItem($arrayName, $valueToRemove) {
         }
     }
     unset($query['page']);
-    return '?' . http_build_query($query);
+    return '/shop' . (!empty($query) ? '?' . http_build_query($query) : '');
 }
 ?>
 
@@ -872,7 +872,7 @@ function buildUrlRemoveArrayItem($arrayName, $valueToRemove) {
         </aside>
 
         <!-- Product Grid Area -->
-        <section class="w-full md:w-3/4 lg:w-4/5">
+        <section class="w-full md:w-3/4 lg:w-4/5" id="products-main-section">
             <!-- Header/Sorting -->
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 pb-4 border-b border-outline-variant/20">
                <div>
@@ -1117,21 +1117,21 @@ function buildUrlRemoveArrayItem($arrayName, $valueToRemove) {
 
             <!-- Pagination -->
             <?php if($totalPages > 1): ?>
-            <div class="flex justify-center items-center gap-2 mt-12 mb-8" dir="ltr">
+            <div id="shop-pagination" class="flex justify-center items-center gap-2 mt-12 mb-8" dir="ltr">
                 <?php if($page > 1): ?>
-                    <a href="<?php echo buildUrl(['page' => $page - 1]); ?>" class="w-10 h-10 rounded-full border border-outline-variant flex items-center justify-center hover:border-primary hover:text-primary transition-colors"><span class="material-symbols-outlined">chevron_left</span></a>
+                    <a href="<?php echo buildUrl(['page' => $page - 1]); ?>" data-page="<?php echo $page - 1; ?>" class="pagination-link w-10 h-10 rounded-full border border-outline-variant flex items-center justify-center hover:border-primary hover:text-primary transition-colors cursor-pointer" aria-label="صفحه قبل"><span class="material-symbols-outlined">chevron_left</span></a>
                 <?php endif; ?>
 
                 <?php for($i=1; $i<=$totalPages; $i++): ?>
                     <?php if($i == $page): ?>
-                        <span class="w-10 h-10 rounded-full bg-primary text-white font-bold flex items-center justify-center"><?php echo $i; ?></span>
+                        <span class="w-10 h-10 rounded-full bg-primary text-white font-bold flex items-center justify-center shadow-sm" aria-current="page"><?php echo $i; ?></span>
                     <?php else: ?>
-                        <a href="<?php echo buildUrl(['page' => $i]); ?>" class="w-10 h-10 rounded-full border border-outline-variant flex items-center justify-center hover:border-primary hover:text-primary transition-colors"><?php echo $i; ?></a>
+                        <a href="<?php echo buildUrl(['page' => $i]); ?>" data-page="<?php echo $i; ?>" class="pagination-link w-10 h-10 rounded-full border border-outline-variant flex items-center justify-center hover:border-primary hover:text-primary transition-colors cursor-pointer" aria-label="صفحه <?php echo $i; ?>"><?php echo $i; ?></a>
                     <?php endif; ?>
                 <?php endfor; ?>
 
                 <?php if($page < $totalPages): ?>
-                    <a href="<?php echo buildUrl(['page' => $page + 1]); ?>" class="w-10 h-10 rounded-full border border-outline-variant flex items-center justify-center hover:border-primary hover:text-primary transition-colors"><span class="material-symbols-outlined">chevron_right</span></a>
+                    <a href="<?php echo buildUrl(['page' => $page + 1]); ?>" data-page="<?php echo $page + 1; ?>" class="pagination-link w-10 h-10 rounded-full border border-outline-variant flex items-center justify-center hover:border-primary hover:text-primary transition-colors cursor-pointer" aria-label="صفحه بعد"><span class="material-symbols-outlined">chevron_right</span></a>
                 <?php endif; ?>
             </div>
             <?php endif; ?>
@@ -1490,6 +1490,96 @@ function addToCart(btn, productId, type = 'standard') {
         window.addToCart(btn, productId, type);
     }
 }
+
+// Seamless Products Pagination without Full Page Reload
+let isShopPageLoading = false;
+function loadShopProductsPage(targetUrl) {
+    if (isShopPageLoading) return;
+    isShopPageLoading = true;
+
+    const section = document.getElementById('products-main-section');
+    if (!section) {
+        window.location.href = targetUrl;
+        return;
+    }
+
+    // Smooth loading indicator (subtle opacity transition)
+    section.style.transition = 'opacity 0.25s ease';
+    section.style.opacity = '0.4';
+    section.style.pointerEvents = 'none';
+
+    fetch(targetUrl, {
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(res => {
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        return res.text();
+    })
+    .then(html => {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const newSection = doc.getElementById('products-main-section');
+
+        if (newSection) {
+            section.innerHTML = newSection.innerHTML;
+            window.history.pushState({ path: targetUrl }, '', targetUrl);
+        } else {
+            window.location.href = targetUrl;
+            return;
+        }
+
+        section.style.opacity = '1';
+        section.style.pointerEvents = 'auto';
+        isShopPageLoading = false;
+
+        // Smoothly scroll directly to the starting point of the products (not top, not bottom)
+        scrollToProductsStart();
+    })
+    .catch(err => {
+        console.error('[Shop] Pagination load error:', err);
+        section.style.opacity = '1';
+        section.style.pointerEvents = 'auto';
+        isShopPageLoading = false;
+        window.location.href = targetUrl;
+    });
+}
+
+function scrollToProductsStart() {
+    const target = document.getElementById('products-main-section');
+    if (target) {
+        const headerOffset = 90; // sticky header compensation
+        const elementPosition = target.getBoundingClientRect().top;
+        const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+        window.scrollTo({
+            top: Math.max(0, offsetPosition),
+            behavior: 'smooth'
+        });
+    }
+}
+
+// Intercept pagination clicks for instant AJAX transition
+document.addEventListener('click', function(e) {
+    const link = e.target.closest('.pagination-link');
+    if (!link) return;
+    
+    const section = document.getElementById('products-main-section');
+    if (!section || !section.contains(link)) return;
+
+    e.preventDefault();
+    const href = link.getAttribute('href');
+    if (href) {
+        loadShopProductsPage(href);
+    }
+});
+
+// Handle browser Back / Forward buttons seamlessly
+window.addEventListener('popstate', function() {
+    if (window.location.pathname.includes('shop')) {
+        loadShopProductsPage(window.location.href);
+    }
+});
 
 // Wishlist interactions are handled universally by assets/js/wishlist-manager.js
 // (Optimistic zero-latency UI + Particle burst + Floating toast)
