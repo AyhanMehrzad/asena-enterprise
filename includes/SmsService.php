@@ -44,9 +44,9 @@ class SmsService {
             }
         }
 
-        $defaultApiKey   = 'cbb5b4df-086a-4afc-914c-bd1c2d50f738';
-        $defaultUsername = '09146676978';
-        $defaultPassword = 'cbb5b4df-086a-4afc-914c-bd1c2d50f738';
+        $defaultApiKey   = '5b59ac8d-6a09-4373-98fe-5058911edb7b';
+        $defaultUsername = '9146676978';
+        $defaultPassword = '5b59ac8d-6a09-4373-98fe-5058911edb7b';
         $defaultFrom     = '50004001914667';
 
         $dbApiKey   = ($pdo instanceof PDO) ? get_setting($pdo, 'melipayamak_api_key', '') : '';
@@ -57,8 +57,8 @@ class SmsService {
 
         // Auto-heal dummy/stale seed values in database (such as on cPanel hosting)
         if ($pdo instanceof PDO) {
-            $isDummyKey  = empty($dbApiKey) || str_contains($dbApiKey, 'SANDBOX') || str_contains($dbApiKey, 'd3cbc1e6') || str_contains($dbApiKey, 'efaec6c8');
-            $isDummyUser = empty($dbUsername) || $dbUsername === 'asena_enterprise' || $dbUsername === 'your_username' || $dbUsername === '9146676978';
+            $isDummyKey  = empty($dbApiKey) || str_contains($dbApiKey, 'SANDBOX') || str_contains($dbApiKey, 'd3cbc1e6') || str_contains($dbApiKey, 'efaec6c8') || str_contains($dbApiKey, 'cbb5b4df');
+            $isDummyUser = empty($dbUsername) || $dbUsername === 'asena_enterprise' || $dbUsername === 'your_username' || $dbUsername === '09146676978';
             if ($isDummyKey || $isDummyUser) {
                 set_setting($pdo, 'melipayamak_api_key', $defaultApiKey);
                 set_setting($pdo, 'melipayamak_username', $defaultUsername);
@@ -521,12 +521,12 @@ class SmsService {
     }
 
     /**
-     * Get effective username for Melipayamak web services (ensures 09... format for mobile numbers)
+     * Get effective username for Melipayamak web services (ensures 9... format without leading zero for mobile usernames)
      */
     public function getEffectiveUsername(): string {
         $u = trim((string)$this->username);
-        if (preg_match('/^9\d{9}$/', $u)) {
-            return '0' . $u;
+        if (preg_match('/^0(9\d{9})$/', $u, $matches)) {
+            return $matches[1];
         }
         return $u;
     }
@@ -882,13 +882,13 @@ class SmsService {
         } elseif ($val === '-110' || $retStatus === -110) {
             $interpretation = 'خطای -110: الزام استفاده از ApiKey یا رمز عبور نامعتبر';
         } elseif ($val === '-111' || $retStatus === -111) {
-            $interpretation = 'خطای -111: عدم دسترسی یا نام کاربری نامعتبر (باید به فرمت 09... باشد)';
+            $interpretation = 'خطای -111: دسترسی غیرمجاز یا کلید API / رمز عبور نامعتبر در درگاه ملی‌پیامک';
         } elseif ($val === '-109' || $retStatus === -109) {
             $interpretation = 'خطای -109: الزام تنظیم IP مجاز در پنل ملی پیامک';
+        } elseif ($retStatus === 35 || $strRetStatus === 'InvalidData') {
+            $interpretation = 'خطای 35: اطلاعات ارسالی نامعتبر یا عدم تطابق نام کاربری/الگو در درگاه ملی‌پیامک (InvalidData)';
         } elseif ($val === '0' || $retStatus === 0) {
             $interpretation = 'خطای 0: نام کاربری یا رمز عبور اشتباه است';
-        } elseif ($retStatus === 35 || $strRetStatus === 'InvalidData') {
-            $interpretation = 'خطای 35: شماره در لیست سیاه مخابراتی (بلک‌لیست تبلیغات) قرار دارد؛ باید از وب‌سرویس خدماتی/الگو استفاده شود';
         } elseif (!empty($strRetStatus)) {
             $interpretation = "وضعیت درگاه: $strRetStatus (کد $retStatus / $val)";
         } elseif (!empty($curlError)) {
