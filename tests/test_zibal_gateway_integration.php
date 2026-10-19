@@ -33,8 +33,8 @@ $gwSandbox = new ZibalGateway('zibal', true, $pdo);
 assertTest("Sandbox mode forces merchant to 'zibal'", $gwSandbox->getMerchant() === 'zibal');
 assertTest("isSandbox returns true", $gwSandbox->isSandbox() === true);
 
-$gwCustom = new ZibalGateway('df600a22599f4b4085380b601df55463', false, $pdo);
-assertTest("Custom merchant key resolved correctly", $gwCustom->getMerchant() === 'df600a22599f4b4085380b601df55463');
+$gwCustom = new ZibalGateway('6ad4ed70241349c91a027978', false, $pdo);
+assertTest("Custom merchant key resolved correctly", $gwCustom->getMerchant() === '6ad4ed70241349c91a027978');
 assertTest("isSandbox returns false for live", $gwCustom->isSandbox() === false);
 
 // Test 2: Error & Status Code Translations

@@ -235,7 +235,10 @@ $activeGateway     = get_setting($pdo, 'active_payment_gateway', 'zibal');
 if ($activeGateway === 'mock' || !in_array($activeGateway, ['zibal', 'zarinpal'], true)) {
     $activeGateway = 'zibal';
 }
-$zibalMerchantKey  = get_setting($pdo, 'zibal_merchant_key', getenv('ZIBAL_MERCHANT_KEY') ?: 'df600a22599f4b4085380b601df55463');
+$zibalMerchantKey  = get_setting($pdo, 'zibal_merchant_key', getenv('ZIBAL_MERCHANT_KEY') ?: '6ad4ed70241349c91a027978');
+if ($zibalMerchantKey === 'df600a22599f4b4085380b601df55463' || empty($zibalMerchantKey)) {
+    $zibalMerchantKey = '6ad4ed70241349c91a027978';
+}
 $zibalSandbox      = (int)get_setting($pdo, 'zibal_sandbox', (getenv('ZIBAL_SANDBOX') === 'true' || getenv('ZIBAL_SANDBOX') === '1') ? 1 : 0);
 $zarinpalMerchant  = get_setting($pdo, 'zarinpal_merchant_id', getenv('ZARINPAL_MERCHANT_ID') ?: '92df0362-5e43-4565-b027-4c5b621ac1ab');
 $cardGatewayNum    = get_setting($pdo, 'card_gateway_number', '6037997512345678');
@@ -957,19 +960,16 @@ require_once __DIR__ . '/includes/admin_header.php';
                             <span>کلید مرچنت یا API Key زیبال:</span>
                             <span class="text-[10px] text-slate-400">شناسه اختصاصی درگاه</span>
                         </label>
-                        <input type="text" name="zibal_merchant_key" id="zibalMerchantKeyInput" value="<?= htmlspecialchars($zibalMerchantKey) ?>" placeholder="df600a22599f4b4085380b601df55463" class="w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-mono font-bold focus:border-blue-500 outline-none dir-ltr text-left transition shadow-2xs">
+                        <input type="text" name="zibal_merchant_key" id="zibalMerchantKeyInput" value="<?= htmlspecialchars($zibalMerchantKey) ?>" placeholder="6ad4ed70241349c91a027978" class="w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-mono font-bold focus:border-blue-500 outline-none dir-ltr text-left transition shadow-2xs">
                         
                         <!-- QUICK FILL PILLS -->
                         <div class="flex items-center gap-1.5 flex-wrap text-[11px] pt-1">
                             <span class="text-[10px] text-slate-400">پیش‌تنظیم‌های سریع:</span>
-                            <button type="button" onclick="setZibalMerchant('df600a22599f4b4085380b601df55463')" class="px-2 py-0.5 rounded-lg bg-blue-100 hover:bg-blue-200 dark:bg-blue-900/60 dark:hover:bg-blue-800 text-blue-800 dark:text-blue-200 font-mono text-[10px] transition cursor-pointer">
-                                کلید کاربر (df600a...)
-                            </button>
                             <button type="button" onclick="setZibalMerchant('6ad4ed70241349c91a027978')" class="px-2 py-0.5 rounded-lg bg-emerald-100 hover:bg-emerald-200 dark:bg-emerald-900/60 dark:hover:bg-emerald-800 text-emerald-800 dark:text-emerald-200 font-mono text-[10px] transition cursor-pointer">
-                                مرچنت پنل (6ad4ed...)
+                                مرچنت فعال زیبال (6ad4ed...)
                             </button>
                             <button type="button" onclick="setZibalMerchant('zibal')" class="px-2 py-0.5 rounded-lg bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-mono text-[10px] transition cursor-pointer">
-                                سندباکس (zibal)
+                                آزمایشی (zibal)
                             </button>
                         </div>
                         <p class="text-[10px] text-slate-500 dark:text-slate-400 mt-1">شناسه ۳۲ کاراکتری یا کد درگاه فعال برای دامنه asena.company که در سوییچ شاپرک زیبال ثبت گردیده است.</p>

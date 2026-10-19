@@ -16,7 +16,7 @@ require_once __DIR__ . '/functions.php';
 Env::load();
 
 if (!defined('ZIBAL_DEFAULT_MERCHANT_KEY')) {
-    define('ZIBAL_DEFAULT_MERCHANT_KEY', 'df600a22599f4b4085380b601df55463');
+    define('ZIBAL_DEFAULT_MERCHANT_KEY', '6ad4ed70241349c91a027978');
 }
 
 class ZibalGateway
@@ -42,16 +42,24 @@ class ZibalGateway
             }
         }
 
+        // Auto-heal legacy or invalid merchant keys from DB
+        if ($db) {
+            $dbVal = get_setting($db, 'zibal_merchant_key', '');
+            if ($dbVal === 'df600a22599f4b4085380b601df55463' || empty($dbVal)) {
+                set_setting($db, 'zibal_merchant_key', '6ad4ed70241349c91a027978');
+            }
+        }
+
         // Resolve merchant code
         if (!empty($merchant)) {
             $this->merchant = trim($merchant);
         } else {
             $dbMerchant = $db ? get_setting($db, 'zibal_merchant_key', '') : '';
-            if (!empty($dbMerchant)) {
+            if (!empty($dbMerchant) && $dbMerchant !== 'df600a22599f4b4085380b601df55463') {
                 $this->merchant = trim($dbMerchant);
             } else {
                 $envMerchant = getenv('ZIBAL_MERCHANT_KEY');
-                $this->merchant = !empty($envMerchant) ? trim($envMerchant) : ZIBAL_DEFAULT_MERCHANT_KEY;
+                $this->merchant = (!empty($envMerchant) && $envMerchant !== 'df600a22599f4b4085380b601df55463') ? trim($envMerchant) : ZIBAL_DEFAULT_MERCHANT_KEY;
             }
         }
 
