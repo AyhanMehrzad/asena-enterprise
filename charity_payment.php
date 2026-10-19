@@ -75,5 +75,4 @@ $_SESSION['pending_donation'] = [
     'authority' => $result['authority']
 ];
 
-header('Location: ' . $result['payment_url']);
-exit;
+redirect_to_payment_gateway($result['payment_url'], 'در حال اتصال به درگاه پرداخت شاپرک...');

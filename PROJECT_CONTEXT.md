@@ -83,6 +83,19 @@
 
 ## ۳. تاریخچه تغییرات اخیر (Change Log)
 
+### نسخه ۱.۰.۳۹ (اکتبر ۲۰۲۶ - استقرار کلید مرچنت رسمی زیبال ۶ad۴ed۷۰، وایت‌لیست آی‌پی سرور، محاسبه ۱۰٪ مالیات بر ارزش افزوده و پل هدایت امن با حفظ Referer شاپرک)
+1. **استقرار کلید مرچنت رسمی زیبال شاپرک (`6ad4ed70241349c91a027978`):**
+   - جایگزینی کلید قدیمی با کلید مرچنت فعال و تاییدشده پنل شاپرک زیبال (`6ad4ed70241349c91a027978`).
+   - تعبیه سیستم خودترمیمی در سازنده [`includes/ZibalGateway.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/includes/ZibalGateway.php) برای اصلاح خودکار پایگاه داده و تنظیمات پیش‌فرض کنسول مدیریت مالی ([`admin/finance_settings.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/admin/finance_settings.php)).
+2. **وایت‌لیست آی‌پی خروجی سرور پروداکشن در پنل زیبال:**
+   - کشف و اضافه کردن آی‌پی خروجی سرور پروداکشن پارس‌پک (`78.159.108.66`) به همراه `5.134.169.169` در بخش تنظیمات درگاه زیبال و رفع قطعی خطای ۱۱۵ (Invalid IP).
+3. **اعمال ۱۰٪ مالیات بر ارزش افزوده قانونی (VAT) و اطلاع‌رسانی شفاف خریدار:**
+   - محاسبه و اعمال دقیق ۱۰٪ مالیات بر ارزش افزوده بر پایه جمع کل اقلام و هزینه حمل در سبد خرید ([`cart.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/cart.php)) و پردازشگر پرداخت ([`payment.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/payment.php)).
+   - استقرار ردیف شفاف مالیات در فاکتور سبد خرید، بنر اعلامی طلایی توجه خریدار، و درج صریح برچسب «با احتساب ۱۰٪ مالیات» در دکمه پرداخت آنلاین شاپرک.
+4. **پل هدایت امن به درگاه با حفظ ۱۰۰٪ هدر Referer (`redirect_to_payment_gateway`):**
+   - ایجاد تابع کمکی [`redirect_to_payment_gateway`](file:///opt/lampp/htdocs/asena/asena-enterprise/includes/functions.php) با هدر `Referrer-Policy: unsafe-url`، متاتگ `<meta name="referrer" content="unsafe-url">` و هدایت کلاینت به صفحه `/start/{trackId}` جهت تطابق با ضوابط امنیتی شاپرک و رفع خطای فقدان Referrer.
+   - اعمال در تمامی مبادی پرداخت: [`payment.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/payment.php)، [`subscription_checkout.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/subscription_checkout.php) و [`charity_payment.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/charity_payment.php).
+
 ### نسخه ۱.۰.۳۸ (اکتبر ۲۰۲۶ - بازنشانی موفق کلید API ملی‌پیامک، رفع قطعی خطای نام‌کاربری و اعتبارسنجی زنده ارسال OTP)
 1. **تولید کلید وب‌سرویس جدید ملی‌پیامک (`5b59ac8d-6a09-4373-98fe-5058911edb7b`):**
    - ایجاد کلید REST API اختصاصی و تازه در پنل ملی‌پیامک و حذف کامل محدودیت آی‌پی سرور (`dummyID_txtIps`) و ذخیره موفق در پنل بدون محدودیت شبکه.

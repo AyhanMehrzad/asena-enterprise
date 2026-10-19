@@ -502,3 +502,129 @@ if (!function_exists('checkItemAllergyWarning')) {
         return null;
     }
 }
+
+/**
+ * Safe client-side payment gateway redirect with Referer preservation.
+ * Shaparak & Zibal require the browser's Referer header to match the registered merchant domain.
+ * A raw 302 redirect can drop the Referer if navigated without one or due to browser cross-origin policies.
+ * This bridge outputs an HTML page with Referrer-Policy header and meta tag, auto-clicking a link
+ * and submitting a form to guarantee 100% compliant Referer transmission.
+ */
+if (!function_exists('redirect_to_payment_gateway')) {
+    function redirect_to_payment_gateway(string $paymentUrl, string $title = 'در حال اتصال امن به درگاه شاپرک...'): void {
+        if (!headers_sent()) {
+            header('Referrer-Policy: unsafe-url');
+            header('Content-Type: text/html; charset=UTF-8');
+        }
+        ?>
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="referrer" content="unsafe-url">
+    <title><?= htmlspecialchars($title) ?></title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            background: #0f172a;
+            color: #f8fafc;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Vazirmatn", sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 1.5rem;
+            direction: rtl;
+        }
+        .bridge-card {
+            background: rgba(30, 41, 59, 0.95);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 1.5rem;
+            padding: 2.5rem 2rem;
+            text-align: center;
+            max-width: 440px;
+            width: 100%;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(12px);
+        }
+        .spinner {
+            width: 52px;
+            height: 52px;
+            border: 4px solid rgba(255, 255, 255, 0.1);
+            border-top-color: #38bdf8;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto 1.5rem;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .bridge-title {
+            font-size: 1.1rem;
+            font-weight: 800;
+            color: #ffffff;
+            margin-bottom: 0.75rem;
+        }
+        .bridge-desc {
+            font-size: 0.825rem;
+            color: #94a3b8;
+            line-height: 1.7;
+            margin-bottom: 1.75rem;
+        }
+        .bridge-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: #0284c7;
+            color: #ffffff;
+            text-decoration: none;
+            padding: 0.875rem 1.75rem;
+            border-radius: 1rem;
+            font-size: 0.875rem;
+            font-weight: 700;
+            transition: all 0.2s;
+            width: 100%;
+        }
+        .bridge-btn:hover {
+            background: #0369a1;
+        }
+        .brand-badge {
+            display: inline-block;
+            margin-top: 1.5rem;
+            font-size: 0.7rem;
+            color: #64748b;
+        }
+    </style>
+</head>
+<body>
+    <div class="bridge-card">
+        <div class="spinner"></div>
+        <div class="bridge-title">در حال اتصال امن به درگاه شاپرک</div>
+        <div class="bridge-desc">
+            در حال انتقال به شبکه پرداخت الکترونیک رسمی شاپرک (زیبال)...<br>
+            لطفاً شکیبا باشید.
+        </div>
+        <a id="payGateLink" href="<?= htmlspecialchars($paymentUrl) ?>" rel="referrer" referrerpolicy="unsafe-url" class="bridge-btn">
+            ورود به درگاه پرداخت شاپرک
+        </a>
+        <div class="brand-badge">سامانه سلامت و خدمات حیوانات خانگی آسنا &bull; اتصال شاپرک</div>
+    </div>
+    <script>
+        (function() {
+            var el = document.getElementById('payGateLink');
+            if (el && typeof el.click === 'function') {
+                setTimeout(function() {
+                    el.click();
+                }, 50);
+            } else {
+                window.location.replace("<?= addslashes($paymentUrl) ?>");
+            }
+        })();
+    </script>
+</body>
+</html>
+        <?php
+        exit;
+    }
+}

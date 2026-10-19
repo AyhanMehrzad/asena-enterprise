@@ -300,6 +300,5 @@ if ($isBooking || $isSmsPackage) {
     ];
 }
 
-// Redirect user to payment gateway
-header('Location: ' . $result['payment_url']);
-exit;
+// Redirect user to payment gateway with full Referer preservation
+redirect_to_payment_gateway($result['payment_url'], 'در حال اتصال به درگاه پرداخت شاپرک...');

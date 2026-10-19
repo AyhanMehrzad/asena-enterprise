@@ -125,8 +125,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'is_custom'    => $is_custom ? 1 : 0,
             'items'        => $custom_products
         ];
-        header('Location: ' . $result['payment_url']);
-        exit;
+        redirect_to_payment_gateway($result['payment_url'], 'در حال اتصال به درگاه پرداخت شاپرک...');
     }
 }
 
