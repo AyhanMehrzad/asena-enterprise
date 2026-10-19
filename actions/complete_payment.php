@@ -2,35 +2,60 @@
 require_once __DIR__ . '/../includes/db.php';
 require_once __DIR__ . '/../includes/functions.php';
 require_once __DIR__ . '/../includes/gateway.php';
+require_once __DIR__ . '/../includes/ZibalGateway.php';
 
-// ── Gate 1: Must arrive via GET callback from ZarinPal ───────────────────────
+// ── Gate 1: Must arrive via GET callback from Gateway (Zibal / ZarinPal) ─────
 if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
     header('Location: ../cart.php');
     exit;
 }
 
-$authority = trim($_GET['Authority'] ?? $_GET['authority'] ?? '');
-$status    = strtoupper(trim($_GET['Status'] ?? $_GET['status'] ?? ''));
+// 1. Zibal parameter parsing
+$zibalTrackId = trim((string)($_GET['trackId'] ?? ''));
+$zibalSuccess = trim((string)($_GET['success'] ?? ''));
+$zibalStatus  = trim((string)($_GET['status'] ?? ''));
+
+// 2. ZarinPal parameter parsing
+$authority = trim((string)($_GET['Authority'] ?? $_GET['authority'] ?? ''));
+$status    = strtoupper(trim((string)($_GET['Status'] ?? $_GET['status'] ?? '')));
 
 // Resilient parsing if tx parameter was passed or merged in query string
-if (empty($authority) && !empty($_GET['tx'])) {
+$txParam = '';
+if (!empty($_GET['tx'])) {
     $rawTx = trim($_GET['tx']);
     if (str_contains($rawTx, '?')) {
         $parts = explode('?', $rawTx, 2);
-        $authority = $parts[0];
-        if (empty($status) && str_contains($parts[1], 'Status=')) {
-            parse_str($parts[1], $extraParams);
-            if (!empty($extraParams['Status'])) {
-                $status = strtoupper(trim($extraParams['Status']));
-            }
+        $txParam = $parts[0];
+        parse_str($parts[1], $extraParams);
+        if (empty($zibalTrackId) && !empty($extraParams['trackId'])) {
+            $zibalTrackId = trim((string)$extraParams['trackId']);
+        }
+        if (empty($zibalSuccess) && isset($extraParams['success'])) {
+            $zibalSuccess = trim((string)$extraParams['success']);
+        }
+        if (empty($status) && !empty($extraParams['Status'])) {
+            $status = strtoupper(trim($extraParams['Status']));
+        }
+        if (empty($authority) && !empty($extraParams['Authority'])) {
+            $authority = trim($extraParams['Authority']);
         }
     } else {
-        $authority = $rawTx;
+        $txParam = $rawTx;
     }
 }
 
+// Determine if this is a Zibal callback
+$isZibal = !empty($zibalTrackId) || ($zibalSuccess !== '');
+
+if ($isZibal) {
+    $authority = $zibalTrackId;
+    $isGatewaySuccess = ($zibalSuccess === '1' || in_array($zibalStatus, ['1', '2'], true));
+} else {
+    $isGatewaySuccess = ($status === 'OK' && !empty($authority));
+}
+
 // ── Gate 2: Gateway reported failure ──────────────────────────────────────────
-if ($status !== 'OK' || empty($authority)) {
+if (!$isGatewaySuccess || empty($authority)) {
     unset($_SESSION['pending_order']);
     $_SESSION['profile_error'] = 'پرداخت لغو شد یا با خطا مواجه گردید.';
     header('Location: ../profile.php');
@@ -45,9 +70,14 @@ $is_subscription = (($pending['type'] ?? '') === 'subscription');
 $is_sms_package = (($pending['type'] ?? '') === 'sms_package');
 $is_meal_plan = (($pending['type'] ?? '') === 'meal_plan');
 
+$sessionAuthority = (string)($pending['authority'] ?? '');
+$matchesSession = !empty($sessionAuthority) && (
+    hash_equals($sessionAuthority, (string)$authority) ||
+    (!empty($txParam) && hash_equals($sessionAuthority, $txParam))
+);
+
 if (!$pending
-    || empty($pending['authority'])
-    || !hash_equals((string)$pending['authority'], (string)$authority)
+    || !$matchesSession
     || empty($pending['total_amount'])
     || (!$is_booking && !$is_subscription && !$is_sms_package && !$is_meal_plan && empty($pending['items']))
 ) {
@@ -57,19 +87,24 @@ if (!$pending
     exit;
 }
 
-
-// ── Gate 4: Server-to-server verification with ZarinPal ──────────────────────
-$gateway    = new ZarinPalGateway();
-$verified   = $gateway->verifyPayment((int)$pending['total_amount'], $authority);
+// ── Gate 4: Server-to-server verification with Gateway (Zibal / ZarinPal) ─────
+if ($isZibal) {
+    $zibalGateway = new ZibalGateway(null, null, $pdo);
+    $verified = $zibalGateway->verifyPayment((int)$pending['total_amount'], $authority);
+} else {
+    $gateway  = new ZarinPalGateway();
+    $verified = $gateway->verifyPayment((int)$pending['total_amount'], $authority);
+}
 
 if (!$verified['success']) {
     unset($_SESSION['pending_order']);
-    $_SESSION['profile_error'] = 'تأییدیه پرداخت از درگاه دریافت نشد: ' . $verified['error'];
+    $_SESSION['profile_error'] = 'تأییدیه پرداخت از درگاه دریافت نشد: ' . ($verified['error'] ?? 'خطای نامشخص');
     header('Location: ../cart.php');
     exit;
 }
 
-$ref_id = $verified['ref_id'];
+$ref_id = $verified['ref_id'] ?? $verified['refNumber'] ?? $authority;
+$card_pan = $verified['card_pan'] ?? null;
 
 // ── Verified — commit atomically ──────────────────────────────────────────────
 try {
@@ -223,8 +258,8 @@ try {
 
         // Update payment transaction status
         try {
-            $pdo->prepare("UPDATE payment_transactions SET status = 'paid', tracking_code = ? WHERE authority_or_ref = ?")
-                ->execute([$ref_id, $authority]);
+            $pdo->prepare("UPDATE payment_transactions SET status = 'paid', tracking_code = ?, card_pan = COALESCE(?, card_pan) WHERE authority_or_ref = ?")
+                ->execute([$ref_id, $card_pan, $authority]);
         } catch (Exception $eTx) {}
 
         $order_id = 0;
@@ -441,8 +476,8 @@ try {
 
     // 2.6 Update payment transaction record to paid
     try {
-        $pdo->prepare("UPDATE payment_transactions SET status = 'paid', tracking_code = ?, order_id = ? WHERE authority_or_ref = ?")
-            ->execute([$ref_id, (int)$order_id, $authority]);
+        $pdo->prepare("UPDATE payment_transactions SET status = 'paid', tracking_code = ?, card_pan = COALESCE(?, card_pan), order_id = ? WHERE authority_or_ref = ?")
+            ->execute([$ref_id, $card_pan, (int)$order_id, $authority]);
     } catch (Throwable $eTx) {}
 
     // 3. Loyalty points, booking approval & SMS Notifications

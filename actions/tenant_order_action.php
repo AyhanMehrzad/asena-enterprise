@@ -266,7 +266,13 @@ try {
     ]);
 
     $gatewayDesc = "سفارش #PC-{$orderId} از وب‌سایت اختصاصی «{$site['site_title']}»";
-    $gateway = new ZarinPalGateway();
+    require_once __DIR__ . '/../includes/ZibalGateway.php';
+    $activeGw = (string)get_setting($pdo, 'active_payment_gateway', 'zibal');
+    if ($activeGw === 'zarinpal') {
+        $gateway = new ZarinPalGateway();
+    } else {
+        $gateway = new ZibalGateway(null, null, $pdo);
+    }
     $gateRes = $gateway->requestPayment($totalAmount, $gatewayDesc, $callbackUrl, [
         'mobile' => $cleanPhone,
         'email'  => ''

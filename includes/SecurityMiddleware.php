@@ -24,13 +24,13 @@ class SecurityMiddleware {
         // Accommodates local assets, maps, and domestic payment gateways
         $csp = [
             "default-src 'self'",
-            "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.tailwindcss.com https://cdn.jsdelivr.net",
+            "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.tailwindcss.com https://cdn.jsdelivr.net https://*.zibal.ir https://gateway.zibal.ir",
             "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net",
             "font-src 'self' data: https://fonts.gstatic.com",
             "img-src 'self' data: blob: https:",
-            "connect-src 'self' https://map.ir https://*.map.ir https://api.neshan.org https://*.tile.openstreetmap.org https://*.zarinpal.com https://*.shaparak.ir",
+            "connect-src 'self' https://map.ir https://*.map.ir https://api.neshan.org https://*.tile.openstreetmap.org https://*.zarinpal.com https://*.zibal.ir https://gateway.zibal.ir https://*.shaparak.ir",
             "frame-ancestors 'self'",
-            "form-action 'self' https://*.zarinpal.com https://*.shaparak.ir",
+            "form-action 'self' https://*.zarinpal.com https://*.zibal.ir https://gateway.zibal.ir https://*.shaparak.ir",
             "base-uri 'self'"
         ];
         header("Content-Security-Policy: " . implode('; ', $csp));

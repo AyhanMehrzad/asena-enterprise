@@ -129,8 +129,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             set_setting($pdo, 'auto_payout_time', $autoPayoutTime);
 
             // Payment Gateway & Zero-Tax Card Engine Settings
-            $activeGateway = trim($_POST['active_payment_gateway'] ?? 'zarinpal');
+            $activeGateway = trim($_POST['active_payment_gateway'] ?? 'zibal');
             set_setting($pdo, 'active_payment_gateway', $activeGateway);
+
+            $zibalMerchant = trim($_POST['zibal_merchant_key'] ?? '');
+            if (!empty($zibalMerchant)) {
+                set_setting($pdo, 'zibal_merchant_key', $zibalMerchant);
+            }
+            $zibalSandbox = isset($_POST['zibal_sandbox']) ? '1' : '0';
+            set_setting($pdo, 'zibal_sandbox', $zibalSandbox);
+
+            $zarinpalMerchant = trim($_POST['zarinpal_merchant_id'] ?? '');
+            if (!empty($zarinpalMerchant)) {
+                set_setting($pdo, 'zarinpal_merchant_id', $zarinpalMerchant);
+            }
 
             $cardGatewayNum = preg_replace('/[^\d]/', '', $_POST['card_gateway_number'] ?? '');
             if (!empty($cardGatewayNum)) set_setting($pdo, 'card_gateway_number', $cardGatewayNum);
@@ -217,7 +229,10 @@ $adminSheba     = get_setting($pdo, 'admin_bank_sheba', 'IR120560000000100000000
 $adminBank      = get_setting($pdo, 'admin_bank_name', 'بانک سامان');
 $adminHolder    = get_setting($pdo, 'admin_bank_holder', 'شرکت توسعه تجارت الکترونیک آسنا');
 
-$activeGateway     = get_setting($pdo, 'active_payment_gateway', 'zarinpal');
+$activeGateway     = get_setting($pdo, 'active_payment_gateway', 'zibal');
+$zibalMerchantKey  = get_setting($pdo, 'zibal_merchant_key', getenv('ZIBAL_MERCHANT_KEY') ?: 'df600a22599f4b4085380b601df55463');
+$zibalSandbox      = (int)get_setting($pdo, 'zibal_sandbox', (getenv('ZIBAL_SANDBOX') === 'true' || getenv('ZIBAL_SANDBOX') === '1') ? 1 : 0);
+$zarinpalMerchant  = get_setting($pdo, 'zarinpal_merchant_id', getenv('ZARINPAL_MERCHANT_ID') ?: '92df0362-5e43-4565-b027-4c5b621ac1ab');
 $cardGatewayNum    = get_setting($pdo, 'card_gateway_number', '6037997512345678');
 $cardGatewayHolder = get_setting($pdo, 'card_gateway_holder', 'آسنا — حساب متمرکز امانی');
 $cardGatewayBank   = get_setting($pdo, 'card_gateway_bank', 'بانک ملی ایران');
@@ -519,7 +534,7 @@ require_once __DIR__ . '/includes/admin_header.php';
             <div>
                 <span class="text-xs text-slate-500 dark:text-slate-400 block mb-1">بانک و درگاه رسمی:</span>
                 <strong class="text-sm font-bold text-slate-900 dark:text-white block"><?= htmlspecialchars($detectedBank) ?></strong>
-                <span class="text-[10px] text-indigo-600 dark:text-indigo-400 font-mono block mt-0.5"><?= $activeGateway === 'zarinpal' ? 'زرین‌پال شاپرک' : 'شبیه‌ساز تستی' ?></span>
+                <span class="text-[10px] text-indigo-600 dark:text-indigo-400 font-mono block mt-0.5"><?= $activeGateway === 'zibal' ? 'زیبال شاپرک (پیش‌فرض فعال)' : ($activeGateway === 'zarinpal' ? 'زرین‌پال شاپرک' : 'شبیه‌ساز تستی') ?></span>
             </div>
         </div>
     </div>
@@ -859,36 +874,183 @@ require_once __DIR__ . '/includes/admin_header.php';
         </div>
 
         <!-- ========================================================================= -->
-        <!-- SECTION 3: OFFICIAL PAYMENT GATEWAY (SHAPARAK / ZARINPAL / SANDBOX)       -->
+        <!-- SECTION 3: OFFICIAL PAYMENT GATEWAY (ZIBAL / ZARINPAL / SHAPARAK IPG)     -->
         <!-- ========================================================================= -->
         <div id="gateway-section" class="scroll-mt-6 bg-white dark:bg-[#1E293B] border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-8 shadow-sm space-y-6">
-            <div class="border-b border-slate-100 dark:border-slate-800 pb-4">
-                <h2 class="text-base sm:text-lg font-black text-slate-900 dark:text-white flex items-center gap-2.5">
-                    <span class="material-symbols-outlined text-blue-600 text-2xl">payments</span>
-                    <span>۳. درگاه پرداخت الکترونیک رسمی شاپرک</span>
-                </h2>
-                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">اتصال به درگاه‌های پرداخت اینترنتی شاپرک (IPG) و تنظیم حالت آزمایشگاهی</p>
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 dark:border-slate-800 pb-4">
+                <div>
+                    <h2 class="text-base sm:text-lg font-black text-slate-900 dark:text-white flex items-center gap-2.5">
+                        <span class="material-symbols-outlined text-blue-600 text-2xl">account_balance_wallet</span>
+                        <span>۳. درگاه پرداخت اینترنتی رسمی شاپرک (Zibal IPG & Shaparak)</span>
+                    </h2>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">مدیریت سوییچ درگاه‌های پرداخت آنلاین بانکی، کلیدهای مرچنت، حالت آزمایشی و تست زنده پایداری</p>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold <?= $activeGateway === 'zibal' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-300' : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300' ?>">
+                        <span class="w-2 h-2 rounded-full <?= $activeGateway === 'zibal' ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400' ?>"></span>
+                        <span>درگاه فعال: <?= $activeGateway === 'zibal' ? 'زیبال شاپرک (Zibal)' : ($activeGateway === 'zarinpal' ? 'زرین‌پال شاپرک' : 'شبیه‌ساز تستی') ?></span>
+                    </span>
+                </div>
             </div>
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <label class="p-5 rounded-2xl border-2 cursor-pointer transition-all flex items-start gap-4 <?= $activeGateway === 'zarinpal' ? 'border-blue-600 bg-blue-50/40 dark:bg-blue-950/20 shadow-sm' : 'border-slate-200 dark:border-slate-700 opacity-70 hover:opacity-100' ?>">
-                    <input type="radio" name="active_payment_gateway" value="zarinpal" <?= $activeGateway === 'zarinpal' ? 'checked' : '' ?> class="mt-1 text-blue-600 focus:ring-blue-500">
-                    <div>
-                        <span class="text-sm font-black text-slate-900 dark:text-white block">درگاه رسمی اینترنتی شاپرک (زرین‌پال / زیبال)</span>
-                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">اتصال به شبکه شاپرک با ارجاع مستقیم به صفحه پرداخت الکترونیک بانکی با نماد اعتماد.</p>
-                        <span class="inline-block mt-2 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-800 dark:bg-blue-900/60 dark:text-blue-300">درگاه پیش‌فرض فعال</span>
+            <!-- GATEWAY SELECTION CARDS -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <!-- ZIBAL (OFFICIAL RECOMMENDED) -->
+                <label class="p-5 rounded-2xl border-2 cursor-pointer transition-all flex flex-col justify-between gap-4 <?= $activeGateway === 'zibal' ? 'border-blue-600 bg-blue-50/40 dark:bg-blue-950/20 shadow-sm ring-2 ring-blue-500/20' : 'border-slate-200 dark:border-slate-700 opacity-80 hover:opacity-100 hover:border-slate-300' ?>">
+                    <div class="flex items-start gap-3">
+                        <input type="radio" name="active_payment_gateway" value="zibal" <?= $activeGateway === 'zibal' ? 'checked' : '' ?> class="mt-1 text-blue-600 focus:ring-blue-500">
+                        <div>
+                            <div class="flex items-center gap-1.5 flex-wrap">
+                                <span class="text-sm font-black text-slate-900 dark:text-white">زیبال (Zibal IPG)</span>
+                                <span class="px-2 py-0.5 rounded-md text-[9px] font-black bg-blue-100 text-blue-800 dark:bg-blue-900/60 dark:text-blue-300">پیش‌فرض پلتفرم</span>
+                            </div>
+                            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">اتصال مستقیم به سوییچ چندبانکی شاپرک، سوییچ هوشمند PSP و پایداری ۹۹.۹۸٪</p>
+                        </div>
+                    </div>
+                    <div class="pt-2 border-t border-slate-200/60 dark:border-slate-700/60 flex items-center justify-between text-[11px]">
+                        <span class="text-slate-500 dark:text-slate-400">سوییچ خودکار:</span>
+                        <span class="font-bold text-emerald-600">فعال (تسویه پایا)</span>
                     </div>
                 </label>
 
-                <label class="p-5 rounded-2xl border-2 cursor-pointer transition-all flex items-start gap-4 <?= $activeGateway === 'mock' ? 'border-slate-700 bg-slate-100 dark:bg-slate-800 shadow-sm' : 'border-slate-200 dark:border-slate-700 opacity-70 hover:opacity-100' ?>">
-                    <input type="radio" name="active_payment_gateway" value="mock" <?= $activeGateway === 'mock' ? 'checked' : '' ?> class="mt-1 text-slate-600 focus:ring-slate-500">
-                    <div>
-                        <span class="text-sm font-black text-slate-900 dark:text-white block">شبیه‌ساز تستی (Sandbox Simulator)</span>
-                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">آزمایش بدون کسر واقعی موجودی از کارت بانکی برای تست جریان‌های سفارش و ثبت فاکتور.</p>
-                        <span class="inline-block mt-2 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-300">محیط توسعه و تست</span>
+                <!-- ZARINPAL (BACKUP) -->
+                <label class="p-5 rounded-2xl border-2 cursor-pointer transition-all flex flex-col justify-between gap-4 <?= $activeGateway === 'zarinpal' ? 'border-amber-600 bg-amber-50/40 dark:bg-amber-950/20 shadow-sm' : 'border-slate-200 dark:border-slate-700 opacity-80 hover:opacity-100 hover:border-slate-300' ?>">
+                    <div class="flex items-start gap-3">
+                        <input type="radio" name="active_payment_gateway" value="zarinpal" <?= $activeGateway === 'zarinpal' ? 'checked' : '' ?> class="mt-1 text-amber-600 focus:ring-amber-500">
+                        <div>
+                            <div class="flex items-center gap-1.5 flex-wrap">
+                                <span class="text-sm font-black text-slate-900 dark:text-white">زرین‌پال (ZarinPal IPG)</span>
+                                <span class="px-2 py-0.5 rounded-md text-[9px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-900/60 dark:text-amber-300">رزرو شاپرک</span>
+                            </div>
+                            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">درگاه پشتیبان متصل به زرین‌پال جهت مواقع اختلال شبکه یا سوییچ‌های جانبی.</p>
+                        </div>
+                    </div>
+                    <div class="pt-2 border-t border-slate-200/60 dark:border-slate-700/60 flex items-center justify-between text-[11px]">
+                        <span class="text-slate-500 dark:text-slate-400">وضعیت آماده‌باش:</span>
+                        <span class="font-bold text-amber-600">پشتیبان ثانویه</span>
+                    </div>
+                </label>
+
+                <!-- SANDBOX SIMULATOR -->
+                <label class="p-5 rounded-2xl border-2 cursor-pointer transition-all flex flex-col justify-between gap-4 <?= $activeGateway === 'mock' ? 'border-slate-700 bg-slate-100 dark:bg-slate-800 shadow-sm' : 'border-slate-200 dark:border-slate-700 opacity-80 hover:opacity-100 hover:border-slate-300' ?>">
+                    <div class="flex items-start gap-3">
+                        <input type="radio" name="active_payment_gateway" value="mock" <?= $activeGateway === 'mock' ? 'checked' : '' ?> class="mt-1 text-slate-600 focus:ring-slate-500">
+                        <div>
+                            <div class="flex items-center gap-1.5 flex-wrap">
+                                <span class="text-sm font-black text-slate-900 dark:text-white">شبیه‌ساز توسعه (Simulator)</span>
+                                <span class="px-2 py-0.5 rounded-md text-[9px] font-bold bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-300">محیط تست</span>
+                            </div>
+                            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">تست پرداخت بدون کسر وجه واقعی کارت برای خطایابی جریان‌های سفارش و وب‌سایت.</p>
+                        </div>
+                    </div>
+                    <div class="pt-2 border-t border-slate-200/60 dark:border-slate-700/60 flex items-center justify-between text-[11px]">
+                        <span class="text-slate-500 dark:text-slate-400">کسر موجودی بانکی:</span>
+                        <span class="font-bold text-slate-500">صفر (مجازی)</span>
                     </div>
                 </label>
             </div>
+
+            <!-- ZIBAL DETAILED CONFIGURATION BENTO -->
+            <div class="bg-gradient-to-br from-slate-50 to-blue-50/30 dark:from-slate-900 dark:to-blue-950/20 border border-blue-200/60 dark:border-blue-900/40 rounded-2xl p-5 sm:p-6 space-y-6">
+                <div class="flex items-center justify-between flex-wrap gap-2">
+                    <div class="flex items-center gap-2">
+                        <span class="w-3 h-3 rounded-full bg-blue-600"></span>
+                        <h3 class="text-sm font-black text-slate-900 dark:text-white">پیکربندی درگاه شاپرک زیبال (Zibal IPG Settings)</h3>
+                    </div>
+                    <a href="https://panel.zibal.ir/transactions/IPG" target="_blank" class="text-xs text-blue-600 hover:text-blue-700 font-bold flex items-center gap-1 transition">
+                        <span>ورود به پیشخوان پذیرندگان زیبال</span>
+                        <span class="material-symbols-outlined text-sm">open_in_new</span>
+                    </a>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                    <!-- FIELD 1: MERCHANT KEY / API KEY -->
+                    <div class="space-y-2">
+                        <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center justify-between">
+                            <span>کلید مرچنت یا API Key زیبال:</span>
+                            <span class="text-[10px] text-slate-400">شناسه اختصاصی درگاه</span>
+                        </label>
+                        <input type="text" name="zibal_merchant_key" id="zibalMerchantKeyInput" value="<?= htmlspecialchars($zibalMerchantKey) ?>" placeholder="df600a22599f4b4085380b601df55463" class="w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-mono font-bold focus:border-blue-500 outline-none dir-ltr text-left transition shadow-2xs">
+                        
+                        <!-- QUICK FILL PILLS -->
+                        <div class="flex items-center gap-1.5 flex-wrap text-[11px] pt-1">
+                            <span class="text-[10px] text-slate-400">پیش‌تنظیم‌های سریع:</span>
+                            <button type="button" onclick="setZibalMerchant('df600a22599f4b4085380b601df55463')" class="px-2 py-0.5 rounded-lg bg-blue-100 hover:bg-blue-200 dark:bg-blue-900/60 dark:hover:bg-blue-800 text-blue-800 dark:text-blue-200 font-mono text-[10px] transition cursor-pointer">
+                                کلید کاربر (df600a...)
+                            </button>
+                            <button type="button" onclick="setZibalMerchant('6ad4ed70241349c91a027978')" class="px-2 py-0.5 rounded-lg bg-emerald-100 hover:bg-emerald-200 dark:bg-emerald-900/60 dark:hover:bg-emerald-800 text-emerald-800 dark:text-emerald-200 font-mono text-[10px] transition cursor-pointer">
+                                مرچنت پنل (6ad4ed...)
+                            </button>
+                            <button type="button" onclick="setZibalMerchant('zibal')" class="px-2 py-0.5 rounded-lg bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-mono text-[10px] transition cursor-pointer">
+                                سندباکس (zibal)
+                            </button>
+                        </div>
+                        <p class="text-[10px] text-slate-500 dark:text-slate-400 mt-1">شناسه ۳۲ کاراکتری یا کد درگاه فعال برای دامنه asena.company که در سوییچ شاپرک زیبال ثبت گردیده است.</p>
+                    </div>
+
+                    <!-- FIELD 2: SANDBOX TOGGLE & TRUST BADGE -->
+                    <div class="space-y-4">
+                        <div class="p-4 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex items-start gap-3">
+                            <input type="checkbox" name="zibal_sandbox" id="zibalSandboxToggle" value="1" <?= $zibalSandbox ? 'checked' : '' ?> class="mt-1 w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500">
+                            <div>
+                                <label for="zibalSandboxToggle" class="text-xs font-black text-slate-900 dark:text-white block cursor-pointer">
+                                    حالت آزمایشگاهی زیبال (Sandbox Simulator)
+                                </label>
+                                <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 leading-relaxed">
+                                    در صورت فعال بودن، تمام درخواست‌ها به درگاه با شناسه مرچنت آزمایشی <code class="font-mono text-blue-600">zibal</code> ارسال شده و کسر وجهی از کارت بانکی انجام نمی‌شود.
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- LIVE PING TEST CARD -->
+                        <div class="p-4 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-3">
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs font-black text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                                    <span class="material-symbols-outlined text-base text-blue-600">network_ping</span>
+                                    <span>پایش و تست زنده اتصال به درگاه شاپرک:</span>
+                                </span>
+                                <button type="button" id="btnPingZibal" onclick="runZibalHealthPing()" class="px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center gap-1.5 transition cursor-pointer shadow-sm">
+                                    <span class="material-symbols-outlined text-sm" id="pingZibalIcon">bolt</span>
+                                    <span id="pingZibalBtnText">اجرای تست زنده ارتباط</span>
+                                </button>
+                            </div>
+
+                            <!-- PING RESULT CONTAINER -->
+                            <div id="zibalPingResultBox" class="hidden rounded-xl p-3 text-xs border transition-all"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TRUST BADGE & CARD REVENUE SAFEGUARD NOTICE -->
+                <div class="border-t border-slate-200/80 dark:border-slate-800 pt-4 flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs text-slate-500 dark:text-slate-400">
+                    <div class="flex items-center gap-2">
+                        <span class="material-symbols-outlined text-emerald-600 text-lg">verified_user</span>
+                        <span>درگاه زیبال دارای مجوز پرداخت‌یاری رسمی بانک مرکزی جمهوری اسلامی ایران و شاپرک است.</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="font-mono text-[11px] bg-slate-200 dark:bg-slate-800 px-2 py-0.5 rounded">Endpoint: gateway.zibal.ir/v1</span>
+                        <span class="font-mono text-[11px] bg-slate-200 dark:bg-slate-800 px-2 py-0.5 rounded">Redirect: gateway.zibal.ir/start</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- OPTIONAL ZARINPAL CONFIGURATION ACCORDION -->
+            <details class="group bg-slate-50/60 dark:bg-slate-900/60 rounded-2xl border border-slate-200 dark:border-slate-800 p-4 transition">
+                <summary class="flex items-center justify-between cursor-pointer text-xs font-bold text-slate-700 dark:text-slate-300 select-none">
+                    <span class="flex items-center gap-2">
+                        <span class="material-symbols-outlined text-slate-400 group-open:rotate-180 transition-transform">expand_more</span>
+                        <span>پیکربندی کلید درگاه پشتیبان زرین‌پال (ZarinPal Merchant ID)</span>
+                    </span>
+                    <span class="text-[10px] text-slate-400">اختیاری (جهت مواقع پشتیبان)</span>
+                </summary>
+                <div class="mt-4 pt-3 border-t border-slate-200 dark:border-slate-800 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">کد مرچنت زرین‌پال (Merchant ID):</label>
+                        <input type="text" name="zarinpal_merchant_id" value="<?= htmlspecialchars($zarinpalMerchant) ?>" placeholder="92df0362-5e43-4565-b027-4c5b621ac1ab" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-mono font-bold focus:border-amber-500 outline-none dir-ltr text-left">
+                        <p class="text-[10px] text-slate-400 mt-1">شناسه ۳۶ کاراکتری زرین‌پال</p>
+                    </div>
+                </div>
+            </details>
         </div>
 
         <!-- ========================================================================= -->
@@ -1557,7 +1719,111 @@ function ajaxSaveCommissionPercentage() {
     })
     .catch(err => {
         if (btn) btn.disabled = false;
-        showFinanceGlassToast('خطا در ارتباط با سرور', 'error');
+    });
+}
+
+function setZibalMerchant(key) {
+    const input = document.getElementById('zibalMerchantKeyInput');
+    const sandboxToggle = document.getElementById('zibalSandboxToggle');
+    if (input) {
+        input.value = key;
+        input.focus();
+        showFinanceGlassToast('کلید مرچنت ' + key + ' با موفقیت درج شد.', 'info');
+    }
+    if (key === 'zibal' && sandboxToggle) {
+        sandboxToggle.checked = true;
+    }
+}
+
+function runZibalHealthPing() {
+    const input = document.getElementById('zibalMerchantKeyInput');
+    const sandboxToggle = document.getElementById('zibalSandboxToggle');
+    const resultBox = document.getElementById('zibalPingResultBox');
+    const btn = document.getElementById('btnPingZibal');
+    const icon = document.getElementById('pingZibalIcon');
+    const text = document.getElementById('pingZibalBtnText');
+    const csrfToken = document.querySelector('input[name="csrf_token"]')?.value || '';
+
+    const merchant = input ? input.value.trim() : '';
+    const isSandbox = sandboxToggle && sandboxToggle.checked ? 1 : 0;
+
+    if (btn) btn.disabled = true;
+    if (icon) icon.classList.add('animate-spin');
+    if (text) text.innerText = 'در حال تست اتصال...';
+
+    if (resultBox) {
+        resultBox.classList.remove('hidden');
+        resultBox.className = 'rounded-xl p-3 text-xs border bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 flex items-center gap-2';
+        resultBox.innerHTML = '<span class="inline-block w-3 h-3 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></span><span>در حال ارسال بسته آزمایشی (Health Probe) به درگاه شاپرک زیبال...</span>';
+    }
+
+    const formData = new FormData();
+    formData.append('merchant_key', merchant);
+    formData.append('sandbox', isSandbox);
+    formData.append('csrf_token', csrfToken);
+
+    fetch('../actions/test_zibal_action.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (btn) btn.disabled = false;
+        if (icon) icon.classList.remove('animate-spin');
+        if (text) text.innerText = 'اجرای تست مجدد';
+
+        if (data.success && data.health) {
+            const h = data.health;
+            let badgeBg = 'bg-rose-50 border-rose-200 text-rose-800 dark:bg-rose-950/40 dark:border-rose-800 dark:text-rose-200';
+            let iconName = 'error';
+
+            if (h.status === 'healthy') {
+                badgeBg = 'bg-emerald-50 border-emerald-200 text-emerald-800 dark:bg-emerald-950/40 dark:border-emerald-800 dark:text-emerald-200';
+                iconName = 'check_circle';
+                showFinanceGlassToast('اتصال به درگاه زیبال با موفقیت برقرار شد!', 'success');
+            } else if (h.status === 'ip_restricted') {
+                badgeBg = 'bg-amber-50 border-amber-200 text-amber-800 dark:bg-amber-950/40 dark:border-amber-800 dark:text-amber-200';
+                iconName = 'verified_user';
+                showFinanceGlassToast('مرچنت در زیبال معتبر است (تایید IP نیاز است).', 'info');
+            } else {
+                showFinanceGlassToast(h.message || 'خطا در ارتباط با زیبال', 'error');
+            }
+
+            if (resultBox) {
+                resultBox.className = 'rounded-xl p-3 text-xs border space-y-2 ' + badgeBg;
+                resultBox.innerHTML = `
+                    <div class="flex items-center justify-between font-bold">
+                        <span class="flex items-center gap-1.5">
+                            <span class="material-symbols-outlined text-base">${iconName}</span>
+                            <span>وضعیت اتصال: ${h.status === 'healthy' ? 'آماده تراکنش (سالم)' : (h.status === 'ip_restricted' ? 'مرچنت معتبر (تایید آی‌پی)' : 'نیازمند بررسی')}</span>
+                        </span>
+                        <span class="font-mono text-[10px] bg-white/60 dark:bg-slate-900/60 px-2 py-0.5 rounded">زمان پاسخ: ${h.latency_ms}ms</span>
+                    </div>
+                    <p class="leading-relaxed text-[11px]">${h.persian_summary || h.message}</p>
+                    <div class="flex items-center gap-3 pt-1 border-t border-current/20 text-[10px] font-mono">
+                        <span>کد نتیجه: ${h.code || h.result_code}</span>
+                        <span>مرچنت: ${h.merchant_used}</span>
+                        ${h.track_id ? `<span>شناسه تست: ${h.track_id}</span>` : ''}
+                    </div>
+                `;
+            }
+        } else {
+            showFinanceGlassToast(data.message || 'خطا در دریافت پاسخ از سرور', 'error');
+            if (resultBox) {
+                resultBox.className = 'rounded-xl p-3 text-xs border bg-rose-50 border-rose-200 text-rose-800 dark:bg-rose-950/40 dark:border-rose-800 dark:text-rose-200';
+                resultBox.innerHTML = `<strong>خطا:</strong> ${data.message || 'پاسخ نامعتبر از سرور'}`;
+            }
+        }
+    })
+    .catch(err => {
+        if (btn) btn.disabled = false;
+        if (icon) icon.classList.remove('animate-spin');
+        if (text) text.innerText = 'اجرای تست مجدد';
+        showFinanceGlassToast('خطا در شبکه یا فراخوانی سرور', 'error');
+        if (resultBox) {
+            resultBox.className = 'rounded-xl p-3 text-xs border bg-rose-50 border-rose-200 text-rose-800 dark:bg-rose-950/40 dark:border-rose-800 dark:text-rose-200';
+            resultBox.innerHTML = '<strong>خطا در برقراری ارتباط با وب‌سرویس داخلی آسنا</strong>';
+        }
     });
 }
 </script>

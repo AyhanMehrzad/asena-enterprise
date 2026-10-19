@@ -10,28 +10,50 @@ require_once __DIR__ . '/../includes/functions.php';
 require_once __DIR__ . '/../includes/App.php';
 require_once __DIR__ . '/../includes/TenantSiteService.php';
 require_once __DIR__ . '/../includes/gateway.php';
+require_once __DIR__ . '/../includes/ZibalGateway.php';
 require_once __DIR__ . '/../includes/SmsService.php';
 
+// 1. Zibal parameters
+$zibalTrackId = trim((string)($_GET['trackId'] ?? ''));
+$zibalSuccess = trim((string)($_GET['success'] ?? ''));
+$zibalStatus  = trim((string)($_GET['status'] ?? ''));
+
+// 2. ZarinPal parameters
 $authority = trim((string)($_GET['Authority'] ?? $_GET['authority'] ?? ''));
 $status    = strtoupper(trim((string)($_GET['Status'] ?? $_GET['status'] ?? '')));
 $orderId   = (int)($_GET['order_id'] ?? 0);
 $slug      = trim((string)($_GET['slug'] ?? ''));
 
 // Resilient parsing if tx parameter was passed
-if (empty($authority) && !empty($_GET['tx'])) {
+if (!empty($_GET['tx'])) {
     $rawTx = trim($_GET['tx']);
     if (str_contains($rawTx, '?')) {
         $parts = explode('?', $rawTx, 2);
-        $authority = $parts[0];
-        if (empty($status) && str_contains($parts[1], 'Status=')) {
-            parse_str($parts[1], $extraParams);
-            if (!empty($extraParams['Status'])) {
-                $status = strtoupper(trim($extraParams['Status']));
-            }
+        if (empty($authority)) $authority = $parts[0];
+        parse_str($parts[1], $extraParams);
+        if (empty($zibalTrackId) && !empty($extraParams['trackId'])) {
+            $zibalTrackId = trim((string)$extraParams['trackId']);
         }
-    } else {
+        if (empty($zibalSuccess) && isset($extraParams['success'])) {
+            $zibalSuccess = trim((string)$extraParams['success']);
+        }
+        if (empty($status) && !empty($extraParams['Status'])) {
+            $status = strtoupper(trim($extraParams['Status']));
+        }
+        if (empty($authority) && !empty($extraParams['Authority'])) {
+            $authority = trim($extraParams['Authority']);
+        }
+    } elseif (empty($authority)) {
         $authority = $rawTx;
     }
+}
+
+$isZibal = !empty($zibalTrackId) || ($zibalSuccess !== '');
+if ($isZibal) {
+    $authority = $zibalTrackId;
+    $isSuccess = ($zibalSuccess === '1' || in_array($zibalStatus, ['1', '2'], true));
+} else {
+    $isSuccess = ($status === 'OK' && !empty($authority));
 }
 
 $tenantService = new TenantSiteService($pdo);
@@ -58,7 +80,7 @@ $tenantType  = $order['source_tenant_type'] ?? ($site['tenant_type'] ?? 'seller'
 $tenantId    = (int)($order['source_tenant_id'] ?? ($site['tenant_id'] ?? 1));
 
 // If gateway reported failure or customer cancelled
-if ($status !== 'OK' || empty($authority)) {
+if (!$isSuccess || empty($authority)) {
     try {
         $pdo->prepare("UPDATE orders SET status = 'cancelled' WHERE id = ? AND status = 'pending_payment'")
             ->execute([$orderId]);
@@ -69,9 +91,14 @@ if ($status !== 'OK' || empty($authority)) {
     exit;
 }
 
-// Server-to-Server Gateway Verification
-$gateway  = new ZarinPalGateway();
-$verified = $gateway->verifyPayment($totalAmount, $authority);
+// Server-to-Server Gateway Verification (Zibal or ZarinPal)
+if ($isZibal) {
+    $zibalGateway = new ZibalGateway(null, null, $pdo);
+    $verified = $zibalGateway->verifyPayment($totalAmount, $authority);
+} else {
+    $gateway  = new ZarinPalGateway();
+    $verified = $gateway->verifyPayment($totalAmount, $authority);
+}
 
 if (!$verified['success']) {
     unset($_SESSION['tenant_pending_order']);
@@ -80,7 +107,7 @@ if (!$verified['success']) {
     exit;
 }
 
-$refId = $verified['ref_id'] ?? ('REF-' . time());
+$refId = $verified['ref_id'] ?? $verified['refNumber'] ?? ('REF-' . time());
 
 // Verified Payment: Commit Order Transition Atomically
 try {

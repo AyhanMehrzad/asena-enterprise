@@ -118,6 +118,27 @@
 5. **پوشش تست ۱۰۰٪ و همگام‌سازی دو مخزن:**
    - نگارش سوییت تست جامع [`tests/test_website_cockpit_and_account_linking.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/tests/test_website_cockpit_and_account_linking.php) و پاس شدن تمام آزمون‌های ۵ گانه در هر دو مخزن `asena-enterprise` و `asena.company`.
 
+### نسخه ۱.۰.۳۷ (اکتبر ۲۰۲۶ - یکپارچه‌سازی رسمی درگاه پرداخت اینترنتی شاپرک زیبال Zibal IPG، سوییچ پیش‌فرض پلتفرم، و ارتقای کنسول مالی مدیریت)
+1. **طراحی و پیاده‌سازی درایور جامع پرداخت‌یاری زیبال شاپرک ([`includes/ZibalGateway.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/includes/ZibalGateway.php)):**
+   - پیاده‌سازی کامل پروتکل RESTful API نسخه ۱ درگاه زیبال شامل دریافت توکن پرداخت (`/v1/request`)، ارجاع مستقیم به صفحه پرداخت شاپرک (`https://gateway.zibal.ir/start/{trackId}`)، تایید تراکنش بانکی (`/v1/verify`) و استعلام وضعیت (`/v1/inquiry`).
+   - تبدیل خودکار تومان به ریال (ضرب در ۱۰) و نگاشت جامع پیام‌های خطای فارسی زیبال بر اساس مستندات رسمی.
+   - پشتیبانی از حالت سندباکس (`merchant = 'zibal'`) و مکانیزم ترمیم خودکار خطای ۱۰۴ با فال‌بک به مرچنت فعال پنل.
+   - پیاده‌سازی متد تشخیصی `checkHealth()` جهت اندازه‌گیری تاخیر زمانی (Latency)، بررسی وضعیت آی‌پی و سنجش اعتبار مرچنت.
+2. **سوییچ درایور پیش‌فرض پرداخت سامانه به زیبال در [`includes/PaymentService.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/includes/PaymentService.php):**
+   - تنظیم `active_payment_gateway = 'zibal'` به عنوان درگاه پیش‌فرض کل پلتفرم با ذخیره‌سازی خودکار `trackId` در فیلد `authority_or_ref`.
+   - ایجاد خودکار و منعطف جدول `payment_transactions` روی پایگاه‌داده‌های MySQL و SQLite جهت مقاومت کامل در محیط‌های توسعه و تست محلی.
+3. **به‌روزرسانی روت‌ها و بازگشت‌های پرداخت (Callbacks):**
+   - پشتیبانی چنددرگاهی هوشمند در [`actions/complete_payment.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/actions/complete_payment.php)، [`actions/tenant_payment_callback.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/actions/tenant_payment_callback.php)، [`actions/tenant_order_action.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/actions/tenant_order_action.php) و [`actions/charity_callback.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/actions/charity_callback.php).
+   - دریافت خودکار پارامترهای GET زیبال (`trackId`, `success`, `status`)، اعتبارسنجی در گیت‌های سه‌گانه امنیتی، استخراج شماره کارت ماسک‌شده (`card_pan`) و شناسه مرجع بانکی (`refNumber`).
+4. **طراحی کابینت تخصصی درگاه زیبال در پنل مدیریت مالی ([`admin/finance_settings.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/admin/finance_settings.php)):**
+   - بازطراحی بخش ۳ تنظیمات مالی ("۳. درگاه پرداخت اینترنتی رسمی شاپرک (Zibal IPG & Shaparak)") در ساختار مدرن Bento Grid.
+   - کارت انتخاب درگاه (زیبال شاپرک، زرین‌پال، شبیه‌ساز توسعه)، فیلد کلید مرچنت با کلید دریافتی کاربر (`df600a22599f4b4085380b601df55463`) و دکمه‌های درج سریع برای کد فعال پنل (`6ad4ed70241349c91a027978`) و سندباکس.
+   - سوییچ فعال‌سازی حالت آزمایشی (Sandbox) زیبال و پیش‌نمایش نشان اعتماد پرداخت‌یاری شاپرک.
+   - کنسول تست و پایش زنده اتصال (Live Health Ping) با فراخوانی اکشن اختصاصی [`actions/test_zibal_action.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/actions/test_zibal_action.php) با فیدبک شیشه‌ای (Glass Toast) و کارت وضعیت بلادرنگ.
+5. **ارتقای امنیت CSP و متغیرهای محیطی:**
+   - مجازسازی دامنه‌های `*.zibal.ir` و `gateway.zibal.ir` در `SecurityMiddleware.php` در بخش‌های `script-src`، `connect-src` و `form-action`.
+   - ذخیره کلید‌های مرچنت و درگاه فعال در فایل‌های `.env` و جدول `site_settings`.
+
 ### نسخه ۱.۰.۳۶ (اکتبر ۲۰۲۶ - بهینه‌سازی پوسته شبکه وب‌سایت‌ها و استقرار مهارت‌های استاندارد سیستم)
 1. بازطراحی پوسته بصری و ویترین شبکه وب‌سایت‌های تخصصی در [`websites.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/websites.php) (`website-network-shell`) با فیلتر سریع الگوها بر اساس اهداف کاری (درمان، فروش، سازمانی)، اعتبارسنجی زنده نشانی ساب‌دامین و استقرار فرآیند سه‌مرحله‌ای شفاف از انتخاب تا انتشار.
 2. استقرار مهارت‌های استاندارد عامل در پوشه `.agents/skills/` شامل راهنماهای طراحی رابط کاربری ([`asena-ui`](file:///opt/lampp/htdocs/asena/asena-enterprise/.agents/skills/asena-ui/SKILL.md))، بازبینی طراحی محصول ([`design-review`](file:///opt/lampp/htdocs/asena/asena-enterprise/.agents/skills/design-review/SKILL.md)) و کدنویسی بهینه و کم‌حجم ([`efficient-coding`](file:///opt/lampp/htdocs/asena/asena-enterprise/.agents/skills/efficient-coding/SKILL.md)).

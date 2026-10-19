@@ -2,15 +2,28 @@
 require_once __DIR__ . '/../includes/db.php';
 require_once __DIR__ . '/../includes/functions.php';
 require_once __DIR__ . '/../includes/gateway.php';
+require_once __DIR__ . '/../includes/ZibalGateway.php';
+
+$zibalTrackId = trim((string)($_GET['trackId'] ?? ''));
+$zibalSuccess = trim((string)($_GET['success'] ?? ''));
+$zibalStatus  = trim((string)($_GET['status'] ?? ''));
 
 $authority = trim($_GET['Authority'] ?? $_GET['authority'] ?? '');
 $status    = strtoupper(trim($_GET['Status'] ?? $_GET['status'] ?? ''));
 
-if (empty($authority) || empty($status)) {
+$isZibal = !empty($zibalTrackId) || ($zibalSuccess !== '');
+if ($isZibal) {
+    $authority = $zibalTrackId;
+    $isSuccess = ($zibalSuccess === '1' || in_array($zibalStatus, ['1', '2'], true));
+} else {
+    $isSuccess = ($status === 'OK' && !empty($authority));
+}
+
+if (empty($authority)) {
     die("Invalid request parameters");
 }
 
-if (!isset($_SESSION['pending_donation']) || $_SESSION['pending_donation']['authority'] !== $authority) {
+if (!isset($_SESSION['pending_donation']) || (string)$_SESSION['pending_donation']['authority'] !== (string)$authority) {
     $_SESSION['charity_error'] = "تراکنش یافت نشد یا منقضی شده است.";
     header('Location: ../charity.php');
     exit;
@@ -18,7 +31,7 @@ if (!isset($_SESSION['pending_donation']) || $_SESSION['pending_donation']['auth
 
 $donation = $_SESSION['pending_donation'];
 
-if ($status !== 'OK') {
+if (!$isSuccess) {
     $_SESSION['charity_error'] = "پرداخت توسط کاربر لغو شد یا ناموفق بود.";
     
     // Log failed
@@ -30,8 +43,13 @@ if ($status !== 'OK') {
     exit;
 }
 
-$gateway = new ZarinPalGateway();
-$verify  = $gateway->verifyPayment($donation['amount'], $authority);
+if ($isZibal) {
+    $zibalGateway = new ZibalGateway(null, null, $pdo);
+    $verify = $zibalGateway->verifyPayment($donation['amount'], $authority);
+} else {
+    $gateway = new ZarinPalGateway();
+    $verify  = $gateway->verifyPayment($donation['amount'], $authority);
+}
 
 if ($verify['success']) {
     $ref_id = $verify['ref_id'];

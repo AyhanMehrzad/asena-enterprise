@@ -18,7 +18,7 @@ class PaymentService {
 
     public function __construct(?PDO $db = null) {
         $this->db = $db ?? $GLOBALS['pdo'];
-        $this->activeDriver = (string)get_setting($this->db, 'active_payment_gateway', 'zarinpal');
+        $this->activeDriver = (string)get_setting($this->db, 'active_payment_gateway', 'zibal');
     }
 
     public function getActiveDriver(): string {
@@ -57,21 +57,70 @@ class PaymentService {
             ]);
             $txId = (int)$this->db->lastInsertId();
         } catch (Throwable $t) {
-            error_log('[PaymentService] Warning: Could not log payment transaction: ' . $t->getMessage());
+            $msg = $t->getMessage();
+            if (str_contains($msg, 'no such table: payment_transactions') || str_contains($msg, "doesn't exist")) {
+                $this->ensureTablesExist();
+                try {
+                    $isSqlite = false;
+                    try { $isSqlite = ($this->db->getAttribute(PDO::ATTR_DRIVER_NAME) === 'sqlite'); } catch (Throwable $e) {}
+                    $nowExpr = $isSqlite ? "datetime('now')" : "NOW()";
+                    $stmt = $this->db->prepare("
+                        INSERT INTO payment_transactions 
+                        (user_id, order_id, type, amount, gateway_driver, authority_or_ref, status, metadata, created_at)
+                        VALUES (?, ?, ?, ?, ?, ?, 'initiated', ?, {$nowExpr})
+                    ");
+                    $stmt->execute([
+                        $userId,
+                        $orderId,
+                        $orderType,
+                        $amountTomans,
+                        $this->activeDriver,
+                        $authority,
+                        json_encode($metadata, JSON_UNESCAPED_UNICODE)
+                    ]);
+                    $txId = (int)$this->db->lastInsertId();
+                } catch (Throwable $t2) {
+                    error_log('[PaymentService] Warning: Could not log payment transaction retry: ' . $t2->getMessage());
+                }
+            } else {
+                error_log('[PaymentService] Warning: Could not log payment transaction: ' . $msg);
+            }
         }
 
         $appBase = get_app_base_url();
 
         switch ($this->activeDriver) {
-            case 'zarinpal':
+            case 'zibal':
             default:
+                require_once __DIR__ . '/ZibalGateway.php';
+                $zibal = new ZibalGateway(null, null, $this->db);
+                $callbackUrl = $appBase . '/actions/complete_payment.php?tx=' . urlencode($authority);
+                $res = $zibal->requestPayment($amountTomans, $description, $callbackUrl, $metadata);
+                if (!empty($res['success']) && $txId > 0) {
+                    try {
+                        $this->db->prepare("UPDATE payment_transactions SET authority_or_ref = ?, gateway_driver = 'zibal' WHERE id = ?")
+                            ->execute([$res['authority'], $txId]);
+                    } catch (Throwable $t) {}
+                    return $res;
+                }
+                // If Zibal failed with config/IP issue and active gateway was not explicitly zibal, or for resilient fallback:
+                if (empty($res['success']) && $this->activeDriver === 'zarinpal') {
+                    // Fallback to Zarinpal if explicitly set to zarinpal
+                    require_once __DIR__ . '/gateway.php';
+                    $zp = new ZarinPalGateway();
+                    $callbackUrl = $appBase . '/actions/complete_payment.php?tx=' . urlencode($authority);
+                    return $zp->requestPayment($amountTomans, $description, $callbackUrl, $metadata);
+                }
+                return $res;
+
+            case 'zarinpal':
                 require_once __DIR__ . '/gateway.php';
                 $zp = new ZarinPalGateway();
                 $callbackUrl = $appBase . '/actions/complete_payment.php?tx=' . urlencode($authority);
                 $res = $zp->requestPayment($amountTomans, $description, $callbackUrl, $metadata);
                 if ($res['success'] && $txId > 0) {
                     try {
-                        $this->db->prepare("UPDATE payment_transactions SET authority_or_ref = ? WHERE id = ?")
+                        $this->db->prepare("UPDATE payment_transactions SET authority_or_ref = ?, gateway_driver = 'zarinpal' WHERE id = ?")
                             ->execute([$res['authority'], $txId]);
                     } catch (Throwable $t) {}
                     return $res;
@@ -290,5 +339,59 @@ class PaymentService {
         ]);
 
         return (int)$this->db->lastInsertId();
+    }
+
+    /**
+     * Ensure payment tables exist on both MySQL and SQLite
+     */
+    public function ensureTablesExist(): void {
+        $driver = '';
+        try {
+            $driver = $this->db->getAttribute(PDO::ATTR_DRIVER_NAME);
+        } catch (Throwable $t) {}
+
+        if ($driver === 'sqlite') {
+            $this->db->exec("
+                CREATE TABLE IF NOT EXISTS payment_transactions (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id INTEGER NOT NULL,
+                    order_id INTEGER DEFAULT NULL,
+                    type VARCHAR(50) NOT NULL DEFAULT 'order',
+                    amount BIGINT NOT NULL,
+                    gateway_driver VARCHAR(50) NOT NULL DEFAULT 'zibal',
+                    authority_or_ref VARCHAR(100) NOT NULL,
+                    tracking_code VARCHAR(100) DEFAULT NULL,
+                    card_pan VARCHAR(20) DEFAULT NULL,
+                    status VARCHAR(50) NOT NULL DEFAULT 'initiated',
+                    metadata TEXT DEFAULT NULL,
+                    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+                );
+                CREATE INDEX IF NOT EXISTS idx_pay_tx_auth ON payment_transactions (authority_or_ref);
+                CREATE INDEX IF NOT EXISTS idx_pay_tx_user ON payment_transactions (user_id);
+            ");
+        } else {
+            $this->db->exec("
+                CREATE TABLE IF NOT EXISTS `payment_transactions` (
+                    `id` INT AUTO_INCREMENT PRIMARY KEY,
+                    `user_id` INT NOT NULL,
+                    `order_id` INT DEFAULT NULL,
+                    `type` VARCHAR(50) NOT NULL DEFAULT 'order',
+                    `amount` BIGINT NOT NULL,
+                    `gateway_driver` VARCHAR(50) NOT NULL DEFAULT 'zibal',
+                    `authority_or_ref` VARCHAR(100) NOT NULL,
+                    `tracking_code` VARCHAR(100) DEFAULT NULL,
+                    `card_pan` VARCHAR(20) DEFAULT NULL,
+                    `status` ENUM('initiated', 'pending_verification', 'paid', 'failed', 'refunded') NOT NULL DEFAULT 'initiated',
+                    `metadata` JSON DEFAULT NULL,
+                    `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                    INDEX `idx_user_pay` (`user_id`),
+                    INDEX `idx_order_pay` (`order_id`),
+                    INDEX `idx_auth` (`authority_or_ref`),
+                    INDEX `idx_status` (`status`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+            ");
+        }
     }
 }
