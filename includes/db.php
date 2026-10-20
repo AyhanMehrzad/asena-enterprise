@@ -451,6 +451,97 @@ if (!file_exists(__DIR__ . '/.schema_aligned_v7')) {
     } catch (Throwable $e) {}
 }
 
+// Schema alignment v8: Self-heals Migration 26 (organization_members, pharmacologist role, multi-tenant inventory, unblocked shipping)
+if (!file_exists(__DIR__ . '/.schema_aligned_v8')) {
+    try {
+        $isSqlite = ($pdo->getAttribute(PDO::ATTR_DRIVER_NAME) === 'sqlite');
+        if ($isSqlite) {
+            try {
+                $pdo->exec("CREATE TABLE IF NOT EXISTS organization_members (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    organization_id INTEGER NOT NULL,
+                    user_id INTEGER NOT NULL,
+                    member_role TEXT NOT NULL DEFAULT 'staff',
+                    job_title TEXT NULL,
+                    notes TEXT NULL,
+                    status TEXT NOT NULL DEFAULT 'active',
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                )");
+                $pdo->exec("CREATE UNIQUE INDEX IF NOT EXISTS uq_org_user_member ON organization_members(organization_id, user_id)");
+            } catch (Throwable $e) {}
+
+            $sqliteCols = [
+                "ALTER TABLE users ADD COLUMN organization_id INTEGER NULL",
+                "ALTER TABLE pharmacy_medicines ADD COLUMN organization_id INTEGER NULL",
+                "ALTER TABLE pharmacy_medicines ADD COLUMN user_id INTEGER NULL",
+                "ALTER TABLE pharmacy_medicines ADD COLUMN batch_number TEXT NULL",
+                "ALTER TABLE pharmacy_medicines ADD COLUMN expiry_date TEXT NULL",
+                "ALTER TABLE pharmacy_medicines ADD COLUMN cold_chain INTEGER NOT NULL DEFAULT 0",
+                "ALTER TABLE pharmacy_medicines ADD COLUMN dosage_form TEXT NULL",
+                "ALTER TABLE pharmacy_medicines ADD COLUMN strength TEXT NULL",
+                "ALTER TABLE prescriptions ADD COLUMN organization_id INTEGER NULL",
+                "ALTER TABLE prescriptions ADD COLUMN pharmacy_id INTEGER NULL",
+                "ALTER TABLE prescriptions ADD COLUMN diagnosis TEXT NULL",
+                "ALTER TABLE prescriptions ADD COLUMN doctor_examination_report TEXT NULL",
+                "ALTER TABLE prescriptions ADD COLUMN items_json TEXT NULL",
+                "ALTER TABLE prescriptions ADD COLUMN rx_file_url TEXT NULL",
+                "ALTER TABLE prescriptions ADD COLUMN vet_name TEXT NULL",
+                "ALTER TABLE prescriptions ADD COLUMN vet_phone TEXT NULL",
+                "ALTER TABLE prescriptions ADD COLUMN vet_license_number TEXT NULL",
+                "ALTER TABLE prescriptions ADD COLUMN clinic_name TEXT NULL",
+                "ALTER TABLE prescriptions ADD COLUMN dispensing_status TEXT DEFAULT 'ready_for_pickup'",
+                "ALTER TABLE prescriptions ADD COLUMN bpms_state TEXT DEFAULT 'broadcasted'",
+                "ALTER TABLE prescriptions ADD COLUMN pharmacist_decision TEXT DEFAULT 'none'",
+                "ALTER TABLE prescriptions ADD COLUMN shipping_unlocked INTEGER NOT NULL DEFAULT 1"
+            ];
+            foreach ($sqliteCols as $sql) {
+                try { $pdo->exec($sql); } catch (Throwable $ignore) {}
+            }
+        } else {
+            try {
+                $pdo->exec("
+                    CREATE TABLE IF NOT EXISTS `organization_members` (
+                      `id` INT AUTO_INCREMENT PRIMARY KEY,
+                      `organization_id` INT NOT NULL,
+                      `user_id` INT NOT NULL,
+                      `member_role` ENUM('pharmacologist', 'pharmacist', 'doctor', 'receptionist', 'manager', 'assistant_manager', 'groomer', 'staff') NOT NULL DEFAULT 'staff',
+                      `job_title` VARCHAR(150) NULL,
+                      `notes` TEXT NULL,
+                      `status` ENUM('active', 'inactive') NOT NULL DEFAULT 'active',
+                      `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                      `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                      UNIQUE KEY `uq_org_user_member` (`organization_id`, `user_id`),
+                      INDEX `idx_org_members_org` (`organization_id`),
+                      INDEX `idx_org_members_user` (`user_id`),
+                      INDEX `idx_org_members_status` (`status`)
+                    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+                ");
+            } catch (Throwable $e) {}
+
+            $colsToAddV8 = [
+                "ALTER TABLE `users` ADD COLUMN `organization_id` INT NULL AFTER `role`",
+                "ALTER TABLE `users` MODIFY COLUMN `role` enum('user','admin','doctor','organization','pharmacist','pharmacologist','seller','pharmacy') DEFAULT 'user'",
+                "ALTER TABLE `pharmacy_medicines` ADD COLUMN `organization_id` INT NULL AFTER `id`",
+                "ALTER TABLE `pharmacy_medicines` ADD COLUMN `user_id` INT NULL AFTER `organization_id`",
+                "ALTER TABLE `pharmacy_medicines` ADD INDEX `idx_pm_org` (`organization_id`)",
+                "ALTER TABLE `pharmacy_medicines` ADD INDEX `idx_pm_user` (`user_id`)",
+                "ALTER TABLE `prescriptions` MODIFY COLUMN `shipping_unlocked` TINYINT(1) NOT NULL DEFAULT 1"
+            ];
+            foreach ($colsToAddV8 as $sql) {
+                try {
+                    $pdo->exec($sql);
+                } catch (Throwable $ignore) {}
+            }
+            try {
+                $pdo->exec("UPDATE `prescriptions` SET `shipping_unlocked` = 1 WHERE `shipping_unlocked` = 0");
+            } catch (Throwable $ignore) {}
+        }
+        @touch(__DIR__ . '/.schema_aligned_v8');
+    } catch (Throwable $e) {}
+}
+
+
 
 require_once __DIR__ . '/Feature.php';
 require_once __DIR__ . '/functions.php';

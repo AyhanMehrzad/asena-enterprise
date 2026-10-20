@@ -74,12 +74,12 @@ if ($mode === 'direct_doctor') {
 
         $stmt = $pdo->prepare("
             INSERT INTO prescriptions 
-                (tracking_code, user_id, doctor_id, pet_id, rx_file_url, clinic_name, vet_name, vet_phone, vet_license_number, status, dispensing_status, bpms_state, doctor_examination_report)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', 'pending_review', 'broadcasted', ?)
+                (tracking_code, user_id, doctor_id, pet_id, rx_file_url, clinic_name, vet_name, vet_phone, vet_license_number, status, dispensing_status, bpms_state, shipping_unlocked, doctor_examination_report)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'approved', 'ready_for_pickup', 'completed', 1, ?)
         ");
         $stmt->execute([
             $trackingCode, $userId, $doctorId, $petId, $fileUrl, $clinicName, $vetName, $vetPhone, $vetLicense,
-            $notes ?: 'درخواست تایید دیجیتال نسخه توسط سرپرست بیمار (Chewy-style Digital Rx)'
+            $notes ?: 'ثبت اطلاعات نسخه درمانی توسط سرپرست بیمار'
         ]);
         $rxId = (int)$pdo->lastInsertId();
 
@@ -143,8 +143,8 @@ $fileUrl = 'uploads/prescriptions/' . $fileName;
 try {
     $stmt = $pdo->prepare("
         INSERT INTO prescriptions 
-            (tracking_code, user_id, doctor_id, pet_id, rx_file_url, clinic_name, vet_name, vet_phone, vet_license_number, status, dispensing_status, bpms_state, doctor_examination_report)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', 'pending_review', 'broadcasted', ?)
+            (tracking_code, user_id, doctor_id, pet_id, rx_file_url, clinic_name, vet_name, vet_phone, vet_license_number, status, dispensing_status, bpms_state, shipping_unlocked, doctor_examination_report)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'approved', 'ready_for_pickup', 'completed', 1, ?)
     ");
     $stmt->execute([
         $trackingCode, $userId, $doctorId, $petId, $fileUrl, $clinicName, $vetName, $vetPhone, $vetLicense,

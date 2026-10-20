@@ -171,6 +171,7 @@ $currentFile = basename($_SERVER['PHP_SELF']);
             'index.php'        => ['icon' => 'dashboard', 'title' => 'پیشخوان و مشخصات مرکز'],
             'appointments.php' => ['icon' => 'calendar_month', 'title' => 'نوبت‌دهی و مراجعین کلینیک'],
             'tickets.php'      => ['icon' => 'support_agent', 'title' => 'تیکت و پشتیبانی (مراجعین / مدیریت)'],
+            'members.php'      => ['icon' => 'badge', 'title' => 'پرسنل و کادر مرکز (انتساب نقش)'],
             'doctors.php'      => ['icon' => 'groups', 'title' => 'پزشکان، داروسازان و گرومرها'],
             'shifts.php'       => ['icon' => 'schedule', 'title' => 'مدیریت زمان و تقویم شیفت‌ها'],
             'orders.php'       => ['icon' => 'local_shipping', 'title' => 'سفارشات محصولات مرکز'],

@@ -17,6 +17,7 @@ class AuthGuard {
         'organization_manager',
         'pharmacist',
         'pharmacy',
+        'pharmacologist',
         'seller',
         'clinic',
     ];
@@ -34,6 +35,32 @@ class AuthGuard {
             $role = $u['role'] ?? null;
         }
         return !empty($role) && in_array($role, self::SPECIAL_ROLES, true);
+    }
+
+    /**
+     * Check if current user has a specific role or matches any in an array of roles
+     */
+    public static function hasRole($role, ?PDO $pdo = null): bool {
+        self::ensureSession();
+        $roles = is_array($role) ? $role : [$role];
+        $currentRole = $_SESSION['user_role'] ?? $_SESSION['role'] ?? null;
+        if (empty($currentRole) && !empty($_SESSION['user_id'])) {
+            $u = self::user($pdo);
+            $currentRole = $u['role'] ?? null;
+        }
+        if (!$currentRole) return false;
+
+        if (in_array('pharmacist', $roles, true) || in_array('pharmacologist', $roles, true) || in_array('pharmacy', $roles, true)) {
+            $roles = array_unique(array_merge($roles, ['pharmacist', 'pharmacologist', 'pharmacy']));
+        }
+        return in_array($currentRole, $roles, true);
+    }
+
+    /**
+     * Check if current user is a pharmacist or pharmacologist
+     */
+    public static function isPharmacist(?PDO $pdo = null): bool {
+        return self::hasRole(['pharmacist', 'pharmacologist', 'pharmacy'], $pdo);
     }
 
     /**
@@ -166,11 +193,10 @@ class AuthGuard {
         if (in_array('organization_manager', $allowedRoles, true) && !in_array('organization', $allowedRoles, true)) {
             $allowedRoles[] = 'organization';
         }
-        if (in_array('pharmacist', $allowedRoles, true) && !in_array('pharmacy', $allowedRoles, true)) {
-            $allowedRoles[] = 'pharmacy';
-        }
-        if (in_array('pharmacy', $allowedRoles, true) && !in_array('pharmacist', $allowedRoles, true)) {
-            $allowedRoles[] = 'pharmacist';
+        if (in_array('pharmacist', $allowedRoles, true) || in_array('pharmacologist', $allowedRoles, true) || in_array('pharmacy', $allowedRoles, true)) {
+            if (!in_array('pharmacist', $allowedRoles, true)) $allowedRoles[] = 'pharmacist';
+            if (!in_array('pharmacologist', $allowedRoles, true)) $allowedRoles[] = 'pharmacologist';
+            if (!in_array('pharmacy', $allowedRoles, true)) $allowedRoles[] = 'pharmacy';
         }
 
         $currentRole = !empty($u['role']) ? $u['role'] : (!empty($_SESSION['user_role']) ? $_SESSION['user_role'] : (!empty($_SESSION['role']) ? $_SESSION['role'] : 'user'));

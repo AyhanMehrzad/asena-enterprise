@@ -83,6 +83,26 @@
 
 ## ۳. تاریخچه تغییرات اخیر (Change Log)
 
+### نسخه ۱.۰.۴۰ (اکتبر ۲۰۲۶ - حذف قفل و تایید اجباری نسخه BPMS، آزادی خرید دارو، تمرکز داروساز و فارماکولوژیست بر مدیریت انبار، و سامانه مدیریت و انتساب اعضای سازمان)
+1. **حذف قفل و فرآیند اجباری تایید نسخه دارویی (Decommissioning BPMS Prescription Gating):**
+   - برچیده شدن قفل مسدودکننده ارسال سفارشات (`shipping_unlocked = 1` به صورت پیش‌فرض) در تمام مبادی خرید و ارسال اقلام. کاربران می‌توانند دارو و مکمل را آزادانه خرید کنند.
+   - جهت حفظ سلامت حیوانات، ابزار رایگان و تعاملی بررسی تداخلات دارویی ([`interactions.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/interactions.php)) در دسترس عموم قرار گرفته و سلب مسئولیت‌های بالینی شفاف ارائه می‌شود؛ همچنین نسخه‌های صادر شده از سوی پزشکان به عنوان یک مرجع بالینی در دسترس است اما هرگز مانع ارسال سفارش خریدار نمی‌شود.
+   - حذف کامل تب و هندلرهای BPMS از پنل داروساز ([`pharmacist/index.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/pharmacist/index.php)) و حذف خطای قفل ارسال در پنل سفارشات سازمان ([`organization/orders.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/organization/orders.php)).
+2. **تمرکز پنل داروساز و فارماکولوژیست بر انبارداری و زنجیره سرد (Inventory Cockpit):**
+   - بازطراحی پیش‌فرض پرتال داروساز بر تب مدیریت انبار تخصصی دارو (`inventory`) شامل شماره بچ دارویی، تاریخ انقضا، ثبت شرایط زنجیره سرد (۲ تا ۸ درجه) و کاتالوگ اقلام.
+   - پشتیبانی رسمی از نقش شغلی «فارماکولوژیست» (`pharmacologist`) در [`includes/AuthGuard.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/includes/AuthGuard.php) و هم‌سطح‌سازی با دسترسی‌های پرتال داروسازی.
+3. **همگام‌سازی دوطرفه انبار داروخانه و سازمان (Comprehensive Inventory Sync):**
+   - متد جدید `getComprehensiveInventory($orgId)` در [`includes/OrganizationService.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/includes/OrganizationService.php) جهت تجمیع خودکار داروهای ثبت‌شده توسط فارماکولوژیست‌ها و انبار ملزومات اختصاصی سازمان.
+   - بازنویسی انبار سازمان ([`organization/inventory.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/organization/inventory.php)) با نمایش مشخصات فارماکولوژیست ثبت‌کننده، بچ نامبر، تاریخ انقضا و دکمه‌های سریع ویرایش لحظه‌ای موجودی (+1, -1, +5).
+4. **سامانه تخصیص و مدیریت پرسنل و اعضای سازمان ([`organization/members.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/organization/members.php)):**
+   - ایجاد صفحه جامع مدیریت اعضا و پرسنل متصل به سازمان با امکان جستجو و انتساب بر پایه شماره موبایل یا ثبت مستقیم، فیلتر نقش‌ها (فارماکولوژیست، داروساز، پزشک، مدیر، پذیرش)، تغییر وضعیت فعال/غیرفعال، و انفصال عضو.
+   - ثبت ویژگی `organization_members` در پیکربندی سطوح دسترسی [`config/tiers.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/config/tiers.php) و اضافه شدن پیوند مستقیم به سایدبار مدیریت سازمان.
+5. **مهاجرت دیتابیس ۲۶ و خودترمیمی خودکار نسخه ۸ پایگاه داده:**
+   - ایجاد فایل مهاجرت [`database/migrations/26_organization_members_and_pharmacologist_inventory.sql`](file:///opt/lampp/htdocs/asena/asena-enterprise/database/migrations/26_organization_members_and_pharmacologist_inventory.sql) حاوی جدول `organization_members`، ستون `organization_id` در کاربران، نقش `pharmacologist` و رفع قفل‌های پیشین.
+   - استقرار خودترمیمی سراسری `.schema_aligned_v8` در [`includes/db.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/includes/db.php) سازگار با هر دو درایور MySQL و SQLite.
+6. **سوئیت آزمون‌های خودکار و تضمین کیفیت:**
+   - پیاده‌سازی آزمون جامع [`tests/test_pharmacologist_inventory_and_organization_members.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/tests/test_pharmacologist_inventory_and_organization_members.php) و قبولی ۱۰۰٪ تمامی آزمون‌های ۶ گانه.
+
 ### نسخه ۱.۰.۳۹ (اکتبر ۲۰۲۶ - استقرار کلید مرچنت رسمی زیبال ۶ad۴ed۷۰، وایت‌لیست آی‌پی سرور، محاسبه ۱۰٪ مالیات بر ارزش افزوده و پل هدایت امن با حفظ Referer شاپرک)
 1. **استقرار کلید مرچنت رسمی زیبال شاپرک (`6ad4ed70241349c91a027978`):**
    - جایگزینی کلید قدیمی با کلید مرچنت فعال و تاییدشده پنل شاپرک زیبال (`6ad4ed70241349c91a027978`).

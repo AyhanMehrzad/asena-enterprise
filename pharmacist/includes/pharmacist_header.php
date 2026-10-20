@@ -4,28 +4,52 @@ require_once dirname(__DIR__, 2) . '/includes/App.php';
 require_once dirname(__DIR__, 2) . '/includes/AuthGuard.php';
 require_once dirname(__DIR__, 2) . '/includes/functions.php';
 
-// Route Guard: Pharmacist, Pharmacy (new role), or Admin
-$currentUser = AuthGuard::requireRole(['pharmacist', 'pharmacy', 'admin'], $pdo);
+// Route Guard: Pharmacist, Pharmacologist, Pharmacy, or Admin
+$currentUser = AuthGuard::requireRole(['pharmacist', 'pharmacy', 'pharmacologist', 'admin'], $pdo);
 
-$pharmacistName = $currentUser['name'] ?: 'داروساز گرامی';
+$pharmacistName = $currentUser['name'] ?: 'داروساز / فارماکولوژیست گرامی';
 
-// Check if linked to an organization
-$orgStmt = $pdo->prepare("
-    SELECT o.* 
-    FROM organizations o
-    JOIN organization_doctors od ON o.id = od.organization_id
-    JOIN doctors d ON od.doctor_id = d.id
-    WHERE d.user_id = ? AND od.role_type = 'pharmacist'
-    LIMIT 1
-");
-$orgStmt->execute([$currentUser['id']]);
-$linkedOrg = $orgStmt->fetch(PDO::FETCH_ASSOC);
+// Check if linked to an organization via users.organization_id or organization_members
+$linkedOrg = null;
+if (!empty($currentUser['organization_id'])) {
+    try {
+        $orgStmt = $pdo->prepare("SELECT * FROM organizations WHERE id = ? LIMIT 1");
+        $orgStmt->execute([(int)$currentUser['organization_id']]);
+        $linkedOrg = $orgStmt->fetch(PDO::FETCH_ASSOC);
+    } catch (Throwable $e) {}
+}
 
 if (!$linkedOrg) {
-    // Default to main hospital
+    try {
+        $memStmt = $pdo->prepare("
+            SELECT o.* FROM organizations o
+            JOIN organization_members om ON o.id = om.organization_id
+            WHERE om.user_id = ? AND om.status = 'active'
+            LIMIT 1
+        ");
+        $memStmt->execute([(int)$currentUser['id']]);
+        $linkedOrg = $memStmt->fetch(PDO::FETCH_ASSOC);
+    } catch (Throwable $e) {}
+}
+
+if (!$linkedOrg) {
+    try {
+        $docOrgStmt = $pdo->prepare("
+            SELECT o.* FROM organizations o
+            JOIN organization_doctors od ON o.id = od.organization_id
+            JOIN doctors d ON od.doctor_id = d.id
+            WHERE d.user_id = ?
+            LIMIT 1
+        ");
+        $docOrgStmt->execute([(int)$currentUser['id']]);
+        $linkedOrg = $docOrgStmt->fetch(PDO::FETCH_ASSOC);
+    } catch (Throwable $e) {}
+}
+
+if (!$linkedOrg) {
     $linkedOrg = $pdo->query("SELECT * FROM organizations ORDER BY id ASC LIMIT 1")->fetch(PDO::FETCH_ASSOC);
 }
-$orgName = $linkedOrg['name'] ?? 'داروخانه مرکزی بیمارستان آسنا';
+$orgName = $linkedOrg['name'] ?? 'داروخانه و مرکز درمانی آسنا';
 $orgId = (int)($linkedOrg['id'] ?? 1);
 ?>
 <!DOCTYPE html>
@@ -33,7 +57,7 @@ $orgId = (int)($linkedOrg['id'] ?? 1);
 <head>
     <meta charset="utf-8"/>
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-    <title>داروساز</title>
+    <title>پنل داروسازان و فارماکولوژیست‌ها</title>
     <link rel="stylesheet" href="../assets/css/style.css">
     <link href="../assets/css/material-symbols.css" rel="stylesheet"/>
     <link href="../assets/css/geist.css" rel="stylesheet"/>
@@ -57,7 +81,7 @@ $orgId = (int)($linkedOrg['id'] ?? 1);
                 <img src="../assets/images/logo.png" alt="لوگوی آسنا" class="w-9 h-9 object-contain drop-shadow group-hover:scale-105 transition-transform">
                 <div>
                     <h1 class="text-xl text-tertiary-fixed font-bold leading-tight group-hover:text-secondary-container transition-colors">آسنا</h1>
-                    <p class="text-sm text-on-tertiary-container/70">پنل داروسازان</p>
+                    <p class="text-sm text-on-tertiary-container/70">داروسازی و فارماکولوژی</p>
                 </div>
             </a>
             <button onclick="togglePharmacistSidebar()" class="lg:hidden text-on-tertiary-container hover:text-white transition-colors">
@@ -67,7 +91,7 @@ $orgId = (int)($linkedOrg['id'] ?? 1);
 
         <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/10 text-tertiary-fixed text-xs font-medium mb-1">
             <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-            <span>نسخه اینترپرایز جامع (فول اکوسیستم)</span>
+            <span>مدیریت یکپارچه انبار دارویی</span>
         </div>
 
         <button type="button" onclick="document.getElementById('addMedModal').classList.remove('hidden')" class="w-full bg-gradient-to-r from-blue-600 to-primary hover:from-blue-700 hover:to-indigo-800 text-white font-bold py-2.5 px-3 rounded-xl flex items-center justify-center gap-2 shadow-md transition-all text-xs my-2">
@@ -79,15 +103,14 @@ $orgId = (int)($linkedOrg['id'] ?? 1);
     <!-- Navigation Items -->
     <nav class="flex-1 px-3 mt-1 space-y-1">
         <?php 
-        $activeTabKey = $_GET['tab'] ?? 'prescriptions';
+        $activeTabKey = $_GET['tab'] ?? 'inventory';
         
         $navItems = [
-            'bpms'          => ['icon' => 'account_tree', 'title' => 'کارتابل BPMS (تأیید نسخه‌ها)', 'tab' => 'bpms-tab'],
-            'prescriptions' => ['icon' => 'prescriptions', 'title' => 'کارتابل نسخه‌های الکترونیک', 'tab' => 'prescriptions-tab'],
             'inventory'     => ['icon' => 'medication', 'title' => 'انبار دارویی و کنترل موجودی', 'tab' => 'inventory-tab'],
+            'prescriptions' => ['icon' => 'prescriptions', 'title' => 'کارتابل نسخه‌های ارجاعی', 'tab' => 'prescriptions-tab'],
             'autoship'      => ['icon' => 'autorenew', 'title' => 'تکرار دارو و اتوشیپ مزمن', 'tab' => 'autoship-tab'],
             'interactions'  => ['icon' => 'sync_problem', 'title' => 'راهنمای تداخلات و هشدارها', 'tab' => 'interactions-tab'],
-            'history'       => ['icon' => 'history', 'title' => 'آرشیو تحویل و سوابق دارویی', 'tab' => 'history-tab'],
+            'history'       => ['icon' => 'history', 'title' => 'آرشیو اقلام و سوابق دارویی', 'tab' => 'history-tab'],
             'site_builder'  => ['icon' => 'web', 'title' => 'وب‌سایت اختصاصی داروخانه', 'url' => 'website.php'],
             'settings'      => ['icon' => 'contact_phone', 'title' => 'اطلاعات تماس و پیامک', 'tab' => 'settings-tab'],
         ];

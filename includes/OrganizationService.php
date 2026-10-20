@@ -270,4 +270,186 @@ class OrganizationService {
         ");
         return $stmt->execute([$orgId, $doctorId, $isHead, $roleType, $days, $hours]);
     }
+
+    /**
+     * Get comprehensive inventory for an organization:
+     * Combines pharmacy_medicines assigned to or created by pharmacists in this organization
+     * along with custom organization_inventory items.
+     */
+    public function getComprehensiveInventory(int $orgId): array {
+        $meds = [];
+        try {
+            $stmt = $this->pdo->prepare("
+                SELECT pm.*, 
+                       pm.name as item_name,
+                       pm.category as item_category,
+                       COALESCE(pm.image_url, 'assets/images/logo.png') as item_image,
+                       pm.price as effective_price,
+                       'medicine' as item_type,
+                       u.name as pharmacist_name
+                FROM pharmacy_medicines pm
+                LEFT JOIN users u ON pm.user_id = u.id
+                WHERE pm.organization_id = ?
+                ORDER BY pm.id DESC
+            ");
+            $stmt->execute([$orgId]);
+            $meds = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (Throwable $e) {}
+
+        $custom = [];
+        try {
+            $stmt2 = $this->pdo->prepare("
+                SELECT oi.*, 
+                       COALESCE(m.name, p.name, 'داروی تخصصی دامپزشکی') as item_name,
+                       COALESCE(m.category, p.category, 'دارو و مکمل') as item_category,
+                       COALESCE(m.image_url, p.image_url, 'assets/images/logo.png') as item_image,
+                       COALESCE(oi.custom_price, m.price, p.price, 150000) as effective_price,
+                       m.batch_number, m.expiry_date, m.requires_cold_chain, m.brand
+                FROM organization_inventory oi
+                LEFT JOIN pharmacy_medicines m ON oi.item_type = 'medicine' AND oi.item_id = m.id
+                LEFT JOIN products p ON oi.item_type = 'product' AND oi.item_id = p.id
+                WHERE oi.organization_id = ?
+                ORDER BY oi.id DESC
+            ");
+            $stmt2->execute([$orgId]);
+            $custom = $stmt2->fetchAll(PDO::FETCH_ASSOC);
+        } catch (Throwable $e) {}
+
+        $seenMedIds = [];
+        $combined = [];
+        foreach ($meds as $m) {
+            $m['source'] = 'pharmacy_medicines';
+            $seenMedIds[$m['id']] = true;
+            $combined[] = $m;
+        }
+        foreach ($custom as $c) {
+            if ($c['item_type'] === 'medicine' && !empty($c['item_id']) && isset($seenMedIds[$c['item_id']])) {
+                continue;
+            }
+            $c['source'] = 'organization_inventory';
+            $combined[] = $c;
+        }
+
+        return $combined;
+    }
+
+    /**
+     * Get all staff / personnel assigned to this organization
+     */
+    public function getMembers(int $orgId, ?string $roleFilter = null): array {
+        $where = ["om.organization_id = ?"];
+        $params = [$orgId];
+
+        if (!empty($roleFilter) && $roleFilter !== 'all') {
+            $where[] = "om.member_role = ?";
+            $params[] = $roleFilter;
+        }
+
+        try {
+            $sql = "
+                SELECT om.*, 
+                       u.name as user_name, u.phone as user_phone, u.email as user_email, u.role as account_role
+                FROM organization_members om
+                JOIN users u ON om.user_id = u.id
+                WHERE " . implode(' AND ', $where) . "
+                ORDER BY om.id DESC
+            ";
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute($params);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (Throwable $e) {
+            error_log('[OrganizationService] getMembers error: ' . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * Assign a user to the organization with a designated role
+     */
+    public function assignMember(int $orgId, int $userId, string $role = 'staff', ?string $jobTitle = null, ?string $notes = null): bool {
+        try {
+            $isSqlite = ($this->pdo->getAttribute(PDO::ATTR_DRIVER_NAME) === 'sqlite');
+            if ($isSqlite) {
+                $chk = $this->pdo->prepare("SELECT id FROM organization_members WHERE organization_id = ? AND user_id = ?");
+                $chk->execute([$orgId, $userId]);
+                $existingId = $chk->fetchColumn();
+
+                if ($existingId) {
+                    $stmt = $this->pdo->prepare("
+                        UPDATE organization_members 
+                        SET member_role = ?, job_title = ?, notes = ?, status = 'active', updated_at = datetime('now')
+                        WHERE id = ?
+                    ");
+                    $ok = $stmt->execute([$role, $jobTitle, $notes, $existingId]);
+                } else {
+                    $stmt = $this->pdo->prepare("
+                        INSERT INTO organization_members (organization_id, user_id, member_role, job_title, notes, status, created_at, updated_at)
+                        VALUES (?, ?, ?, ?, ?, 'active', datetime('now'), datetime('now'))
+                    ");
+                    $ok = $stmt->execute([$orgId, $userId, $role, $jobTitle, $notes]);
+                }
+            } else {
+                $stmt = $this->pdo->prepare("
+                    INSERT INTO organization_members (organization_id, user_id, member_role, job_title, notes, status, created_at, updated_at)
+                    VALUES (?, ?, ?, ?, ?, 'active', NOW(), NOW())
+                    ON DUPLICATE KEY UPDATE
+                        member_role = VALUES(member_role),
+                        job_title = VALUES(job_title),
+                        notes = VALUES(notes),
+                        status = 'active',
+                        updated_at = NOW()
+                ");
+                $ok = $stmt->execute([$orgId, $userId, $role, $jobTitle, $notes]);
+            }
+
+            $updUser = $this->pdo->prepare("UPDATE users SET organization_id = ? WHERE id = ?");
+            $updUser->execute([$orgId, $userId]);
+
+            if (in_array($role, ['pharmacologist', 'pharmacist'], true)) {
+                $roleStmt = $this->pdo->prepare("
+                    UPDATE users 
+                    SET role = ? 
+                    WHERE id = ? AND (role = 'user' OR role IS NULL OR role = '')
+                ");
+                $roleStmt->execute([$role, $userId]);
+            }
+
+            return $ok;
+        } catch (Throwable $e) {
+            error_log('[OrganizationService] assignMember error: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Remove a member from the organization
+     */
+    public function removeMember(int $orgId, int $userId): bool {
+        try {
+            $del = $this->pdo->prepare("DELETE FROM organization_members WHERE organization_id = ? AND user_id = ?");
+            $del->execute([$orgId, $userId]);
+
+            $upd = $this->pdo->prepare("UPDATE users SET organization_id = NULL WHERE id = ? AND organization_id = ?");
+            $upd->execute([$userId, $orgId]);
+
+            return true;
+        } catch (Throwable $e) {
+            error_log('[OrganizationService] removeMember error: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Update member status (active / inactive)
+     */
+    public function updateMemberStatus(int $orgId, int $userId, string $status): bool {
+        try {
+            $isSqlite = ($this->pdo->getAttribute(PDO::ATTR_DRIVER_NAME) === 'sqlite');
+            $nowSql = $isSqlite ? "datetime('now')" : "NOW()";
+            $stmt = $this->pdo->prepare("UPDATE organization_members SET status = ?, updated_at = {$nowSql} WHERE organization_id = ? AND user_id = ?");
+            return $stmt->execute([$status, $orgId, $userId]);
+        } catch (Throwable $e) {
+            return false;
+        }
+    }
 }

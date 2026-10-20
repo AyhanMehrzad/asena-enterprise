@@ -71,8 +71,8 @@ class BpmsService
               (?, ?, ?, ?, ?,
                ?, ?, ?, ?,
                ?, ?, ?, ?,
-               'pending', 'pending_review', ?, 'none',
-               0, NOW())
+               'approved', 'ready_for_pickup', ?, 'none',
+               1, NOW())
         ");
         $stmt->execute([
             $userId, $doctorId, $petId ?: null, $orgId, $pharmacyId,

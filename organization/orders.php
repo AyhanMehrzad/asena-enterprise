@@ -32,15 +32,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POST['action'])) {
             $message = 'شما مجوز مدیریت یا ارسال این سفارش را ندارید.';
             $messageType = 'error';
         } elseif ($orderId > 0) {
-            // BPMS Gateway Check: Verify if an associated prescription exists and is unlocked
-            $rxChk = $pdo->prepare("SELECT id, shipping_unlocked, bpms_state FROM prescriptions WHERE order_id = ?");
-            $rxChk->execute([$orderId]);
-            $linkedRx = $rxChk->fetch(PDO::FETCH_ASSOC);
-
-            if ($linkedRx && (int)$linkedRx['shipping_unlocked'] !== 1) {
-                $message = '⚠️ ارسال این مرسوله به دلیل قفل امنیتی BPMS مسدود است: نسخه دارویی این سفارش هنوز توسط داروساز مسئول فنی تأیید (Accept Receipt) نشده است.';
-                $messageType = 'error';
-            } elseif (!empty($trackingCode)) {
+            if (!empty($trackingCode)) {
                 require_once __DIR__ . '/../includes/OrderLifecycleService.php';
                 $lifecycle = new OrderLifecycleService($pdo);
                 $transRes = $lifecycle->transition($orderId, 'shipped', 'organization', (int)$currentUser['id'], $carrier, $trackingCode, 'ارسال مرسوله توسط مرکز درمانی');
@@ -604,7 +596,7 @@ $fmtDate = new IntlDateFormatter('fa_IR@calendar=persian', IntlDateFormatter::FU
             <?php foreach ($orders as $ord): ?>
                 <?php
                 $linkedRx = $orderPrescriptions[$ord['id']] ?? null;
-                $isRxLocked = ($linkedRx && (int)$linkedRx['shipping_unlocked'] !== 1);
+                $isRxLocked = false;
 
                 $statusMeta = match($ord['status']) {
                     'pending_payment' => ['title' => 'در انتظار پرداخت', 'bg' => 'bg-amber-50 text-amber-800 border-amber-200'],
@@ -645,22 +637,15 @@ $fmtDate = new IntlDateFormatter('fa_IR@calendar=persian', IntlDateFormatter::FU
                         </div>
                     </div>
 
-<!-- BPMS Linked Prescription Alert -->
+                    <!-- Prescription Reference (Informational) -->
                     <?php if ($linkedRx): ?>
-                        <?php if ($isRxLocked): ?>
-                            <div class="p-3 bg-amber-50 border border-amber-300 rounded-xl text-xs font-bold text-amber-900 flex items-center justify-between">
-                                <div class="flex items-center gap-2">
-                                    <span class="material-symbols-outlined text-amber-600">lock</span>
-                                    <span>🔒 قفل امنیتی BPMS فعال است: این سفارش شامل نسخه دارویی #<?= $linkedRx['id'] ?> است و تا پیش از تأیید داروساز، ارسال آن غیرمجاز است.</span>
-                                </div>
-                                <span class="px-2.5 py-1 rounded-full bg-amber-200 text-amber-900 text-[10px] font-bold">در انتظار بررسی داروساز</span>
+                        <div class="p-2.5 bg-blue-50/70 border border-blue-200 rounded-xl text-xs font-bold text-blue-900 flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <span class="material-symbols-outlined text-blue-600 text-sm">clinical_notes</span>
+                                <span>نسخه دارویی مرتبط با سفارش: #<?= $linkedRx['id'] ?> (ارسال مستقیم و آزاد اقلام دارویی)</span>
                             </div>
-                        <?php else: ?>
-                            <div class="p-2.5 bg-emerald-50 border border-emerald-200 rounded-xl text-xs font-bold text-emerald-900 flex items-center gap-2">
-                                <span class="material-symbols-outlined text-emerald-600 text-sm">verified</span>
-                                <span>✅ نسخه دارویی این سفارش (#<?= $linkedRx['id'] ?>) به تأیید داروساز رسیده است — قفل ارسال باز می‌باشد.</span>
-                            </div>
-                        <?php endif; ?>
+                            <span class="px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-800 text-[10px] font-bold">بدون نیاز به توقف ارسال</span>
+                        </div>
                     <?php endif; ?>
 
                     <!-- Shipping Address, Postal Code & Map Location -->
@@ -759,19 +744,12 @@ $fmtDate = new IntlDateFormatter('fa_IR@calendar=persian', IntlDateFormatter::FU
                                     <option value="پیک اختصاصی کلینیک">پیک اختصاصی کلینیک</option>
                                 </select>
 
-                                <input type="text" name="post_tracking_code" placeholder="بارکد پستی ۲۴ رقمی..." required class="px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-mono dir-ltr focus:ring-2 focus:ring-sky-500 outline-none w-44 bg-white" <?= $isRxLocked ? 'disabled' : '' ?>>
+                                <input type="text" name="post_tracking_code" placeholder="بارکد پستی ۲۴ رقمی..." required class="px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-mono dir-ltr focus:ring-2 focus:ring-sky-500 outline-none w-44 bg-white">
 
-                                <?php if ($isRxLocked): ?>
-                                    <button type="button" disabled class="px-3.5 py-1.5 rounded-lg bg-slate-200 text-slate-400 text-xs font-bold cursor-not-allowed flex items-center gap-1" title="نسخه هنوز به تأیید داروساز نرسیده است">
-                                        <span class="material-symbols-outlined text-sm">lock</span>
-                                        <span>ارسال غیرمجاز (قفل BPMS)</span>
-                                    </button>
-                                <?php else: ?>
-                                    <button type="submit" class="px-3.5 py-1.5 rounded-lg bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold shadow-sm transition-all flex items-center gap-1">
-                                        <span>تغییر به ارسال شد</span>
-                                        <span class="material-symbols-outlined text-sm">arrow_forward</span>
-                                    </button>
-                                <?php endif; ?>
+                                <button type="submit" class="px-3.5 py-1.5 rounded-lg bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold shadow-sm transition-all flex items-center gap-1">
+                                    <span>تغییر به ارسال شد</span>
+                                    <span class="material-symbols-outlined text-sm">arrow_forward</span>
+                                </button>
                             </form>
                         <?php else: ?>
                             <!-- Active Shipped Tracking State -->
