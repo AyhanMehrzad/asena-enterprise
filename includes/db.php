@@ -470,8 +470,33 @@ if (!file_exists(__DIR__ . '/.schema_aligned_v8')) {
                 )");
                 $pdo->exec("CREATE UNIQUE INDEX IF NOT EXISTS uq_org_user_member ON organization_members(organization_id, user_id)");
             } catch (Throwable $e) {}
+            try {
+                $pdo->exec("CREATE TABLE IF NOT EXISTS pharmacy_medicines (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    name TEXT NOT NULL,
+                    brand TEXT,
+                    price INTEGER NOT NULL DEFAULT 0,
+                    image_url TEXT,
+                    description TEXT,
+                    requires_prescription INTEGER NOT NULL DEFAULT 0,
+                    stock INTEGER NOT NULL DEFAULT 0,
+                    organization_id INTEGER,
+                    seller_id INTEGER,
+                    category TEXT,
+                    user_id INTEGER,
+                    batch_number TEXT,
+                    expiry_date TEXT,
+                    cold_chain INTEGER NOT NULL DEFAULT 0,
+                    dosage_form TEXT,
+                    strength TEXT,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                )");
+            } catch (Throwable $e) {}
 
             $sqliteCols = [
+                "ALTER TABLE users ADD COLUMN name TEXT NULL",
+                "ALTER TABLE users ADD COLUMN phone TEXT NULL",
+                "ALTER TABLE users ADD COLUMN email TEXT NULL",
                 "ALTER TABLE users ADD COLUMN organization_id INTEGER NULL",
                 "ALTER TABLE pharmacy_medicines ADD COLUMN organization_id INTEGER NULL",
                 "ALTER TABLE pharmacy_medicines ADD COLUMN user_id INTEGER NULL",
