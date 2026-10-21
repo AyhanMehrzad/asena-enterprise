@@ -3,6 +3,15 @@
  * Automated Verification: Organization Invitations Handshake, Groomer & Pansion Roles
  */
 
+// Provide isolated SQLite test PDO if running standalone
+if (!isset($pdo)) {
+    $testDb = sys_get_temp_dir() . '/asena_test_' . getmypid() . '.sqlite';
+    $pdo = new PDO("sqlite:" . $testDb, null, null, [
+        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC
+    ]);
+}
+
 require_once __DIR__ . '/../includes/db.php';
 require_once __DIR__ . '/../includes/App.php';
 require_once __DIR__ . '/../includes/AuthGuard.php';
