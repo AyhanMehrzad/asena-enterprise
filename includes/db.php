@@ -840,6 +840,74 @@ if (!file_exists(__DIR__ . '/.schema_aligned_v9')) {
     } catch (Throwable $e) {}
 }
 
+// Automated schema alignment v10: Self-heals users address columns, prescriptions shipping fields & pet health records
+if (!file_exists(__DIR__ . '/.schema_aligned_v10')) {
+    try {
+        $isSqlite = ($pdo->getAttribute(PDO::ATTR_DRIVER_NAME) === 'sqlite');
+        if ($isSqlite) {
+            $sqliteColsV10 = [
+                "ALTER TABLE users ADD COLUMN city TEXT NULL",
+                "ALTER TABLE users ADD COLUMN postal_code TEXT NULL",
+                "ALTER TABLE users ADD COLUMN address TEXT NULL",
+                "ALTER TABLE users ADD COLUMN latitude REAL NULL",
+                "ALTER TABLE users ADD COLUMN longitude REAL NULL",
+                "ALTER TABLE orders ADD COLUMN source_tenant_type TEXT NULL",
+                "ALTER TABLE orders ADD COLUMN source_tenant_id INTEGER NULL",
+                "ALTER TABLE order_items ADD COLUMN seller_net_amount INTEGER DEFAULT 0",
+                "ALTER TABLE doctors ADD COLUMN license_number TEXT NULL",
+                "ALTER TABLE prescriptions ADD COLUMN bpms_state TEXT DEFAULT 'broadcasted'",
+                "ALTER TABLE prescriptions ADD COLUMN shipping_unlocked INTEGER NOT NULL DEFAULT 1",
+                "ALTER TABLE prescriptions ADD COLUMN pharmacist_decision TEXT DEFAULT 'none'"
+            ];
+            foreach ($sqliteColsV10 as $sql) {
+                try { $pdo->exec($sql); } catch (Throwable $e) {}
+            }
+            try {
+                $pdo->exec("CREATE TABLE IF NOT EXISTS pet_health_records (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id INTEGER,
+                    pet_name TEXT,
+                    species TEXT,
+                    breed TEXT,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                )");
+            } catch (Throwable $e) {}
+        } else {
+            $mysqlColsV10 = [
+                "ALTER TABLE `users` ADD COLUMN `city` VARCHAR(100) NULL AFTER `email`",
+                "ALTER TABLE `users` ADD COLUMN `postal_code` VARCHAR(20) NULL AFTER `city`",
+                "ALTER TABLE `users` ADD COLUMN `address` TEXT NULL AFTER `postal_code`",
+                "ALTER TABLE `users` ADD COLUMN `latitude` DECIMAL(10,8) NULL AFTER `address`",
+                "ALTER TABLE `users` ADD COLUMN `longitude` DECIMAL(11,8) NULL AFTER `latitude`",
+                "ALTER TABLE `orders` ADD COLUMN `source_tenant_type` VARCHAR(50) NULL AFTER `escrow_cleared_at`",
+                "ALTER TABLE `orders` ADD COLUMN `source_tenant_id` INT NULL AFTER `source_tenant_type`",
+                "ALTER TABLE `order_items` ADD COLUMN `seller_net_amount` BIGINT DEFAULT 0 AFTER `commission_amount`",
+                "ALTER TABLE `doctors` ADD COLUMN `license_number` VARCHAR(100) NULL AFTER `clinic_name`",
+                "ALTER TABLE `prescriptions` ADD COLUMN `bpms_state` VARCHAR(50) DEFAULT 'broadcasted' AFTER `status`",
+                "ALTER TABLE `prescriptions` ADD COLUMN `shipping_unlocked` TINYINT(1) NOT NULL DEFAULT 1 AFTER `bpms_state`",
+                "ALTER TABLE `prescriptions` ADD COLUMN `pharmacist_decision` VARCHAR(50) DEFAULT 'none' AFTER `shipping_unlocked`"
+            ];
+            foreach ($mysqlColsV10 as $sql) {
+                try { $pdo->exec($sql); } catch (Throwable $e) {}
+            }
+            try {
+                $pdo->exec("
+                    CREATE TABLE IF NOT EXISTS `pet_health_records` (
+                      `id` INT AUTO_INCREMENT PRIMARY KEY,
+                      `user_id` INT DEFAULT NULL,
+                      `pet_name` VARCHAR(100) NOT NULL,
+                      `species` VARCHAR(50) DEFAULT 'dog',
+                      `breed` VARCHAR(100) DEFAULT NULL,
+                      `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                      INDEX `idx_pet_user` (`user_id`)
+                    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+                ");
+            } catch (Throwable $e) {}
+        }
+        @touch(__DIR__ . '/.schema_aligned_v10');
+    } catch (Throwable $e) {}
+}
+
 
 
 require_once __DIR__ . '/Feature.php';

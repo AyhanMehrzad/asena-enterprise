@@ -129,9 +129,19 @@ if ($filter === 'pending') {
 $orgUserId = (int)($currentOrg['user_id'] ?? 0);
 $currUserId = (int)($currentUser['id'] ?? 0);
 
+$hasSourceTenant = false;
+try {
+    $pdo->query("SELECT source_tenant_type, source_tenant_id FROM orders LIMIT 1");
+    $hasSourceTenant = true;
+} catch (Throwable $e) {}
+
+$tenantClause = $hasSourceTenant 
+    ? " OR (o.source_tenant_type = 'organization' AND o.source_tenant_id = :current_org_id)"
+    : "";
+
 $whereClauses[] = "(
     (EXISTS (SELECT 1 FROM order_items oi WHERE oi.order_id = o.id AND (oi.seller_id = :org_user OR oi.seller_id = :curr_user OR oi.organization_id = :current_org_id)))
-    OR (o.source_tenant_type = 'organization' AND o.source_tenant_id = :current_org_id)
+    {$tenantClause}
 )";
 $params[':org_user'] = $orgUserId;
 $params[':curr_user'] = $currUserId;
@@ -139,93 +149,170 @@ $params[':current_org_id'] = $orgId;
 
 $whereSql = implode(' AND ', $whereClauses);
 
+// Check if user table has address columns defensively
+$hasUserAddressCols = false;
+try {
+    $pdo->query("SELECT city, postal_code, address FROM users LIMIT 1");
+    $hasUserAddressCols = true;
+} catch (Throwable $e) {}
+
+$userAddressSelect = $hasUserAddressCols 
+    ? ", u.city as customer_city, u.postal_code as customer_postal_code, u.address as customer_address, u.latitude as customer_lat, u.longitude as customer_lng"
+    : ", NULL as customer_city, NULL as customer_postal_code, NULL as customer_address, NULL as customer_lat, NULL as customer_lng";
+
 // Fetch orders with comprehensive customer address, postal code and coordinates
-$ordersQuery = "
-    SELECT o.*, 
-           u.name as customer_name, 
-           u.phone as customer_phone, 
-           u.city as customer_city,
-           u.postal_code as customer_postal_code,
-           u.address as customer_address,
-           u.latitude as customer_lat,
-           u.longitude as customer_lng
-    FROM orders o
-    LEFT JOIN users u ON o.user_id = u.id
-    WHERE {$whereSql}
-    ORDER BY o.id DESC
-    LIMIT 50
-";
-$stmt = $pdo->prepare($ordersQuery);
-$stmt->execute($params);
-$orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
+$orders = [];
+try {
+    $ordersQuery = "
+        SELECT o.*, 
+               u.name as customer_name, 
+               u.phone as customer_phone
+               {$userAddressSelect}
+        FROM orders o
+        LEFT JOIN users u ON o.user_id = u.id
+        WHERE {$whereSql}
+        ORDER BY o.id DESC
+        LIMIT 50
+    ";
+    $stmt = $pdo->prepare($ordersQuery);
+    $stmt->execute($params);
+    $orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (Throwable $e) {
+    error_log('[organization/orders.php] ordersQuery failed: ' . $e->getMessage());
+    try {
+        $ordersQueryFallback = "
+            SELECT o.*, 
+                   u.name as customer_name, 
+                   u.phone as customer_phone,
+                   NULL as customer_city,
+                   NULL as customer_postal_code,
+                   NULL as customer_address,
+                   NULL as customer_lat,
+                   NULL as customer_lng
+            FROM orders o
+            LEFT JOIN users u ON o.user_id = u.id
+            WHERE {$whereSql}
+            ORDER BY o.id DESC
+            LIMIT 50
+        ";
+        $stmt = $pdo->prepare($ordersQueryFallback);
+        $stmt->execute($params);
+        $orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (Throwable $e2) {
+        $orders = [];
+    }
+}
 
 // Attach items strictly belonging to this organization
+$orderPrescriptions = [];
 if (!empty($orders)) {
     $orderIds = array_column($orders, 'id');
-    $ph = implode(',', array_fill(0, count($orderIds), '?'));
-    $itemParams = array_merge($orderIds, [$orgUserId, $currUserId, $orgId]);
-    $itemStmt = $pdo->prepare("
-        SELECT oi.*, p.image_url, p.category 
-        FROM order_items oi
-        LEFT JOIN products p ON oi.product_id = p.id
-        WHERE oi.order_id IN ($ph) AND (oi.seller_id = ? OR oi.seller_id = ? OR oi.organization_id = ?)
-    ");
-    $itemStmt->execute($itemParams);
-    $itemsByOrder = [];
-    foreach ($itemStmt->fetchAll(PDO::FETCH_ASSOC) as $it) {
-        $itemsByOrder[$it['order_id']][] = $it;
+    try {
+        $ph = implode(',', array_fill(0, count($orderIds), '?'));
+        $itemParams = array_merge($orderIds, [$orgUserId, $currUserId, $orgId]);
+        $itemStmt = $pdo->prepare("
+            SELECT oi.*, p.image_url, p.category 
+            FROM order_items oi
+            LEFT JOIN products p ON oi.product_id = p.id
+            WHERE oi.order_id IN ($ph) AND (oi.seller_id = ? OR oi.seller_id = ? OR oi.organization_id = ?)
+        ");
+        $itemStmt->execute($itemParams);
+        $itemsByOrder = [];
+        foreach ($itemStmt->fetchAll(PDO::FETCH_ASSOC) as $it) {
+            $itemsByOrder[$it['order_id']][] = $it;
+        }
+        foreach ($orders as &$ord) {
+            $ord['items'] = $itemsByOrder[$ord['id']] ?? [];
+        }
+        unset($ord);
+    } catch (Throwable $e) {
+        error_log('[organization/orders.php] itemStmt error: ' . $e->getMessage());
     }
-    foreach ($orders as &$ord) {
-        $ord['items'] = $itemsByOrder[$ord['id']] ?? [];
-    }
-    unset($ord);
 
     // Attach prescription lock status to each order if exists
-    $orderPrescriptions = [];
-    $ph = implode(',', array_fill(0, count($orderIds), '?'));
-    $opStmt = $pdo->prepare("SELECT id, order_id, bpms_state, shipping_unlocked, pharmacist_decision FROM prescriptions WHERE order_id IN ($ph)");
-    $opStmt->execute($orderIds);
-    foreach ($opStmt->fetchAll(PDO::FETCH_ASSOC) as $op) {
-        $orderPrescriptions[$op['order_id']] = $op;
+    try {
+        $ph = implode(',', array_fill(0, count($orderIds), '?'));
+        $opStmt = $pdo->prepare("SELECT id, order_id, bpms_state, shipping_unlocked, pharmacist_decision FROM prescriptions WHERE order_id IN ($ph)");
+        $opStmt->execute($orderIds);
+        foreach ($opStmt->fetchAll(PDO::FETCH_ASSOC) as $op) {
+            $orderPrescriptions[$op['order_id']] = $op;
+        }
+    } catch (Throwable $e) {
+        try {
+            $ph = implode(',', array_fill(0, count($orderIds), '?'));
+            $opStmt = $pdo->prepare("SELECT id, order_id FROM prescriptions WHERE order_id IN ($ph)");
+            $opStmt->execute($orderIds);
+            foreach ($opStmt->fetchAll(PDO::FETCH_ASSOC) as $op) {
+                $op['shipping_unlocked'] = 1;
+                $op['bpms_state'] = 'broadcasted';
+                $orderPrescriptions[$op['order_id']] = $op;
+            }
+        } catch (Throwable $e2) {}
     }
-} else {
-    $orderPrescriptions = [];
 }
 
 // Fetch BPMS Clinical Prescriptions assigned to this Organization
-$bpmsParams = [];
-$bpmsWhere = "1=1";
-if ($currentUser['role'] !== 'admin') {
-    $bpmsWhere = "p.organization_id = ?";
-    $bpmsParams[] = $orgId;
-}
+$bpmsPrescriptions = [];
+try {
+    $bpmsParams = [];
+    $bpmsWhere = "1=1";
+    if ($currentUser['role'] !== 'admin') {
+        $bpmsWhere = "p.organization_id = ?";
+        $bpmsParams[] = $orgId;
+    }
 
-$bpmsStmt = $pdo->prepare("
-    SELECT p.*,
-           u.name as customer_name, u.phone as customer_phone,
-           d.name as doctor_name, d.specialty as doctor_specialty, d.license_number as doctor_license,
-           pet.pet_name, pet.species, pet.breed
-    FROM prescriptions p
-    LEFT JOIN users u ON p.user_id = u.id
-    LEFT JOIN doctors d ON p.doctor_id = d.id
-    LEFT JOIN pet_health_records pet ON p.pet_id = pet.id
-    WHERE {$bpmsWhere}
-    ORDER BY FIELD(p.bpms_state, 'pharmacist_approved', 'broadcasted', 'pharmacist_review', 'pharmacist_rejected', 'org_shipped', 'completed'), p.created_at DESC
-    LIMIT 60
-");
-$bpmsStmt->execute($bpmsParams);
-$bpmsPrescriptions = $bpmsStmt->fetchAll(PDO::FETCH_ASSOC);
+    $isSqlite = ($pdo->getAttribute(PDO::ATTR_DRIVER_NAME) === 'sqlite');
+    $orderBy = $isSqlite ? "p.created_at DESC" : "FIELD(p.bpms_state, 'pharmacist_approved', 'broadcasted', 'pharmacist_review', 'pharmacist_rejected', 'org_shipped', 'completed'), p.created_at DESC";
+
+    $hasPetTable = false;
+    try {
+        $pdo->query("SELECT 1 FROM pet_health_records LIMIT 1");
+        $hasPetTable = true;
+    } catch (Throwable $e) {}
+
+    $hasDocLicense = false;
+    try {
+        $pdo->query("SELECT license_number FROM doctors LIMIT 1");
+        $hasDocLicense = true;
+    } catch (Throwable $e) {}
+    $docLicenseSelect = $hasDocLicense ? ", d.license_number as doctor_license" : ", NULL as doctor_license";
+
+    $petJoin = $hasPetTable ? "LEFT JOIN pet_health_records pet ON p.pet_id = pet.id" : "";
+    $petSelect = $hasPetTable ? ", pet.pet_name, pet.species, pet.breed" : ", NULL as pet_name, NULL as species, NULL as breed";
+
+    $bpmsStmt = $pdo->prepare("
+        SELECT p.*,
+               u.name as customer_name, u.phone as customer_phone,
+               d.name as doctor_name, d.specialty as doctor_specialty
+               {$docLicenseSelect}
+               {$petSelect}
+        FROM prescriptions p
+        LEFT JOIN users u ON p.user_id = u.id
+        LEFT JOIN doctors d ON p.doctor_id = d.id
+        {$petJoin}
+        WHERE {$bpmsWhere}
+        ORDER BY {$orderBy}
+        LIMIT 60
+    ");
+    $bpmsStmt->execute($bpmsParams);
+    $bpmsPrescriptions = $bpmsStmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (Throwable $e) {
+    error_log('[organization/orders.php] bpms query error: ' . $e->getMessage());
+    $bpmsPrescriptions = [];
+}
 
 // Calculate BPMS metrics
 $bpmsLockedCount = 0;
 $bpmsReadyCount  = 0;
 $bpmsShippedCount = 0;
 foreach ($bpmsPrescriptions as $bRx) {
-    if ((int)$bRx['shipping_unlocked'] === 1 && $bRx['bpms_state'] !== 'org_shipped' && $bRx['bpms_state'] !== 'completed') {
+    $isUnlocked = isset($bRx['shipping_unlocked']) ? ((int)$bRx['shipping_unlocked'] === 1) : true;
+    $bState = $bRx['bpms_state'] ?? 'broadcasted';
+    if ($isUnlocked && $bState !== 'org_shipped' && $bState !== 'completed') {
         $bpmsReadyCount++;
-    } elseif ((int)$bRx['shipping_unlocked'] === 0 && !in_array($bRx['bpms_state'], ['org_shipped', 'completed'])) {
+    } elseif (!$isUnlocked && !in_array($bState, ['org_shipped', 'completed'])) {
         $bpmsLockedCount++;
-    } elseif ($bRx['bpms_state'] === 'org_shipped') {
+    } elseif ($bState === 'org_shipped') {
         $bpmsShippedCount++;
     }
 }
@@ -233,23 +320,35 @@ foreach ($bpmsPrescriptions as $bRx) {
 $mainTab = $_GET['tab'] ?? 'orders';
 
 // Quick stats strictly scoped to this organization
-$statsStmt = $pdo->prepare("
-    SELECT 
-        COUNT(DISTINCT o.id) as total_orders,
-        SUM(CASE WHEN o.status IN ('pending_payment', 'processing') THEN 1 ELSE 0 END) as pending_dispatch,
-        SUM(CASE WHEN o.status = 'shipped' THEN 1 ELSE 0 END) as shipped_orders,
-        SUM(CASE WHEN o.status = 'delivered' THEN 1 ELSE 0 END) as delivered_orders,
-        COALESCE(SUM(oi.seller_net_amount), 0) as gross_revenue
-    FROM orders o
-    JOIN order_items oi ON oi.order_id = o.id AND (oi.seller_id = :org_user OR oi.seller_id = :curr_user)
-");
-$statsStmt->execute([
-    ':org_user' => $orgUserId,
-    ':curr_user' => $currUserId
-]);
-$stats = $statsStmt->fetch(PDO::FETCH_ASSOC) ?: ['total_orders' => 0, 'pending_dispatch' => 0, 'shipped_orders' => 0, 'delivered_orders' => 0, 'gross_revenue' => 0];
+$stats = ['total_orders' => 0, 'pending_dispatch' => 0, 'shipped_orders' => 0, 'delivered_orders' => 0, 'gross_revenue' => 0];
+try {
+    $statsStmt = $pdo->prepare("
+        SELECT 
+            COUNT(DISTINCT o.id) as total_orders,
+            SUM(CASE WHEN o.status IN ('pending_payment', 'processing') THEN 1 ELSE 0 END) as pending_dispatch,
+            SUM(CASE WHEN o.status = 'shipped' THEN 1 ELSE 0 END) as shipped_orders,
+            SUM(CASE WHEN o.status = 'delivered' THEN 1 ELSE 0 END) as delivered_orders,
+            COALESCE(SUM(oi.seller_net_amount), 0) as gross_revenue
+        FROM orders o
+        JOIN order_items oi ON oi.order_id = o.id AND (oi.seller_id = :org_user OR oi.seller_id = :curr_user OR oi.organization_id = :current_org_id)
+    ");
+    $statsStmt->execute([
+        ':org_user' => $orgUserId,
+        ':curr_user' => $currUserId,
+        ':current_org_id' => $orgId
+    ]);
+    $resStats = $statsStmt->fetch(PDO::FETCH_ASSOC);
+    if ($resStats) {
+        $stats = $resStats;
+    }
+} catch (Throwable $e) {
+    error_log('[organization/orders.php] stats error: ' . $e->getMessage());
+}
 
-$fmtDate = new IntlDateFormatter('fa_IR@calendar=persian', IntlDateFormatter::FULL, IntlDateFormatter::NONE, 'Asia/Tehran', IntlDateFormatter::TRADITIONAL, 'yyyy/MM/dd');
+$fmtDate = null;
+try {
+    $fmtDate = new IntlDateFormatter('fa_IR@calendar=persian', IntlDateFormatter::FULL, IntlDateFormatter::NONE, 'Asia/Tehran', IntlDateFormatter::TRADITIONAL, 'yyyy/MM/dd');
+} catch (Throwable $e) {}
 ?>
 
 <div class="p-6 max-w-6xl mx-auto space-y-6">
@@ -615,7 +714,7 @@ $fmtDate = new IntlDateFormatter('fa_IR@calendar=persian', IntlDateFormatter::FU
                             <span class="text-slate-300">•</span>
                             <span class="text-slate-500 flex items-center gap-1 font-medium">
                                 <span class="material-symbols-outlined text-[14px]">calendar_today</span>
-                                <?= $fmtDate->format(new DateTime($ord['created_at'])) ?>
+                                <?= $fmtDate ? $fmtDate->format(new DateTime($ord['created_at'])) : substr($ord['created_at'], 0, 10) ?>
                             </span>
                             <span class="text-slate-300">•</span>
                             <span class="font-bold text-slate-700">خریدار: <?= htmlspecialchars($ord['customer_name'] ?? 'مشتری پلتفرم') ?></span>
@@ -650,8 +749,8 @@ $fmtDate = new IntlDateFormatter('fa_IR@calendar=persian', IntlDateFormatter::FU
 
                     <!-- Shipping Address, Postal Code & Map Location -->
                     <?php
-                    $fullAddr = htmlspecialchars($ord['shipping_address'] ?: ($ord['customer_address'] ?: 'نشانی ثبت نشده'));
-                    $postalCode = htmlspecialchars($ord['customer_postal_code'] ?: '');
+                    $fullAddr = htmlspecialchars(!empty($ord['shipping_address']) ? $ord['shipping_address'] : (!empty($ord['customer_address']) ? $ord['customer_address'] : 'نشانی ثبت نشده'));
+                    $postalCode = htmlspecialchars($ord['customer_postal_code'] ?? '');
                     $hasCoords = (!empty($ord['customer_lat']) && !empty($ord['customer_lng']));
                     ?>
                     <div class="p-4 rounded-2xl bg-slate-50/90 border border-slate-200/80 space-y-3">
