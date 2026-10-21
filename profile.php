@@ -234,12 +234,24 @@ $stmt->execute([$user_id]);
 $subscriptions = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // ── Fetch User Digital Credit Wallet & Transactions ────────────────────────────
+require_once __DIR__ . '/includes/App.php';
+$walletService = App::wallet();
+$userWalletBalance = $walletService->getBalance($user_id);
+
+// Ensure legacy user_wallets record exists and matches
 $userWalletStmt = $pdo->prepare("SELECT * FROM user_wallets WHERE user_id = ?");
 $userWalletStmt->execute([$user_id]);
 $userDigitalWallet = $userWalletStmt->fetch(PDO::FETCH_ASSOC);
 if (!$userDigitalWallet) {
-    $pdo->prepare("INSERT INTO user_wallets (user_id, balance, currency, created_at) VALUES (?, 0, 'IRT', NOW())")->execute([$user_id]);
-    $userDigitalWallet = ['id' => (int)$pdo->lastInsertId(), 'user_id' => $user_id, 'balance' => 0, 'currency' => 'IRT'];
+    try {
+        $pdo->prepare("INSERT INTO user_wallets (user_id, balance, currency, created_at) VALUES (?, ?, 'IRT', ?)")
+            ->execute([$user_id, $userWalletBalance, date('Y-m-d H:i:s')]);
+        $userDigitalWallet = ['id' => (int)$pdo->lastInsertId(), 'user_id' => $user_id, 'balance' => $userWalletBalance, 'currency' => 'IRT'];
+    } catch (Throwable $e) {
+        $userDigitalWallet = ['id' => $user_id, 'user_id' => $user_id, 'balance' => $userWalletBalance, 'currency' => 'IRT'];
+    }
+} else {
+    $userDigitalWallet['balance'] = $userWalletBalance;
 }
 
 // Handle User Digital Wallet Charge Action
@@ -247,17 +259,20 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POST['action']) && 
     csrf_verify();
     $amount = clean_toman_amount($_POST['amount'] ?? 0);
     if ($amount >= 10000) {
-        $upd = $pdo->prepare("UPDATE user_wallets SET balance = balance + ?, updated_at = NOW() WHERE id = ?");
-        $upd->execute([$amount, $userDigitalWallet['id']]);
-        
-        $insTx = $pdo->prepare("
-            INSERT INTO wallet_transactions (wallet_id, amount, type, description, reference_id, created_at)
-            VALUES (?, ?, 'deposit', 'شارژ آنلاین کیف پول اعتباری آسنا', ?, NOW())
-        ");
         $refId = 'DEP-' . strtoupper(substr(md5(uniqid()), 0, 8));
-        $insTx->execute([$userDigitalWallet['id'], $amount, $refId]);
+        $depRes = $walletService->deposit(
+            $user_id,
+            $amount,
+            'manual_topup',
+            $refId,
+            'شارژ آنلاین کیف پول اعتباری درون‌برنامه‌ای آسنا'
+        );
         
-        $_SESSION['profile_success'] = "کیف پول اعتباری شما با موفقیت به مبلغ " . number_format($amount) . " تومان شارژ گردید.";
+        if ($depRes['success']) {
+            $_SESSION['profile_success'] = "کیف پول اعتباری شما با موفقیت به مبلغ " . number_format($amount) . " تومان شارژ گردید.";
+        } else {
+            $_SESSION['profile_error'] = $depRes['message'];
+        }
         header("Location: profile.php#wallet-section");
         exit;
     } else {
@@ -267,12 +282,9 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POST['action']) && 
     }
 }
 
-$userTxStmt = $pdo->prepare("SELECT * FROM wallet_transactions WHERE wallet_id = ? ORDER BY created_at DESC LIMIT 20");
-$userTxStmt->execute([$userDigitalWallet['id']]);
-$userWalletTransactions = $userTxStmt->fetchAll(PDO::FETCH_ASSOC);
+$userWalletTransactions = $walletService->getTransactions($user_id, 30);
 
 // ── Fetch Marketplace Wallet, Escrow & Payout Data ───────────────────────────
-require_once __DIR__ . '/includes/App.php';
 $escrowService = App::escrow();
 $wallet = $escrowService->getSellerWallet($user_id);
 
@@ -3368,16 +3380,34 @@ function switchSellerFin(period) {
             </div>
         <?php endif; ?>
         
-        <?php if(in_array($apt['status'], ['pending', 'در انتظار', 'approved'])): ?>
-            <form action="actions/profile_action.php" method="POST" onsubmit="return confirm('آیا از لغو این نوبت اطمینان دارید؟');" class="m-0">
-                <?php echo csrf_field(); ?>
-                <input type="hidden" name="action" value="cancel_appointment">
-                <input type="hidden" name="appointment_id" value="<?php echo $apt['id']; ?>">
-                <button type="submit" class="w-full bg-error/10 text-error py-2.5 rounded-xl text-sm font-bold hover:bg-error hover:text-white transition-all flex items-center justify-center gap-2">
-                    <span class="material-symbols-outlined text-lg">cancel</span>
-                    لغو نوبت
-                </button>
-            </form>
+        <?php 
+        $aptCheck = App::cancellation()->checkAppointmentEligibility((int)$apt['id'], $user_id);
+        ?>
+        <?php if ($apt['status'] === 'cancelled' || $apt['status'] === 'لغو شده'): ?>
+            <div class="w-full py-2 px-3 rounded-xl bg-red-50 text-red-700 text-xs font-bold text-center border border-red-200 flex items-center justify-center gap-1.5">
+                <span class="material-symbols-outlined text-sm">cancel</span>
+                <span>این نوبت لغو شده است (مبلغ به کیف‌پول بازگشت داده شده)</span>
+            </div>
+        <?php elseif ($aptCheck['can_cancel']): ?>
+            <button type="button" 
+                    onclick="openCancelAppointmentModal(<?= (int)$apt['id'] ?>, <?= (int)$aptCheck['refund_amount'] ?>, '<?= addslashes(htmlspecialchars($apt['doctor_name'])) ?>', '<?= addslashes(htmlspecialchars($apt['appointment_date'])) ?>', '<?= addslashes(htmlspecialchars($apt['appointment_time'])) ?>')"
+                    class="w-full bg-error/10 hover:bg-error hover:text-white text-error py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-2xs">
+                <span class="material-symbols-outlined text-base">cancel</span>
+                <span>لغو نوبت (استرداد ۱۰۰٪ به کیف‌پول)</span>
+            </button>
+        <?php else: ?>
+            <div class="w-full p-3 rounded-xl bg-slate-50 dark:bg-slate-800/80 text-slate-500 border border-slate-200 dark:border-slate-700 flex flex-col gap-1.5 cursor-not-allowed">
+                <div class="flex items-center justify-between text-xs font-bold text-amber-700 dark:text-amber-400">
+                    <span class="flex items-center gap-1">
+                        <span class="material-symbols-outlined text-sm">lock</span>
+                        <span>لغو نوبت غیرفعال است</span>
+                    </span>
+                    <span class="text-[10px] bg-amber-100 dark:bg-amber-950 px-2 py-0.5 rounded-full font-mono">قانون ۲۴ ساعت</span>
+                </div>
+                <p class="text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed">
+                    <?= htmlspecialchars($aptCheck['reason']) ?>
+                </p>
+            </div>
         <?php endif; ?>
         </div>
     <?php endforeach; ?>
@@ -3480,19 +3510,42 @@ function switchSellerFin(period) {
                                 <?= $status_label ?>
                             </span>
                             
-                            <!-- Cancel Button if applicable -->
-                            <?php if(in_array($order['status'], ['pending_payment', 'processing'])): ?>
-                                <form action="actions/profile_action.php" method="POST" class="inline m-0" onsubmit="return confirm('آیا از لغو این سفارش اطمینان دارید؟');">
-                                    <?= csrf_field() ?>
-                                    <input type="hidden" name="action" value="cancel_order">
-                                    <input type="hidden" name="order_id" value="<?= $order['id'] ?>">
-                                    <button type="submit" class="text-error hover:bg-error/10 px-2.5 py-1 rounded-lg text-xs font-bold transition-colors">
-                                        لغو سفارش
-                                    </button>
-                                </form>
+                            <!-- Cancellation Status & Rules Engine -->
+                            <?php 
+                            $orderCheck = App::cancellation()->checkOrderEligibility((int)$order['id'], $user_id);
+                            ?>
+                            <?php if ($order['status'] === 'cancelled'): ?>
+                                <span class="text-xs text-red-700 bg-red-50 border border-red-200 px-2.5 py-1 rounded-lg font-bold flex items-center gap-1">
+                                    <span class="material-symbols-outlined text-[14px]">cancel</span>
+                                    <span>لغو شده</span>
+                                </span>
+                            <?php elseif ($orderCheck['can_cancel']): ?>
+                                <button type="button" 
+                                        onclick="openCancelOrderModal(<?= (int)$order['id'] ?>, <?= (int)$orderCheck['refund_amount'] ?>, '<?= htmlspecialchars($order['gateway_ref_id'] ?? '') ?>')" 
+                                        class="text-error hover:bg-error/10 border border-error/30 px-3 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1 shadow-2xs">
+                                    <span class="material-symbols-outlined text-[15px]">cancel</span>
+                                    <span>لغو سفارش</span>
+                                </button>
+                            <?php elseif (!in_array($order['status'], ['delivered'])): ?>
+                                <div class="inline-flex items-center gap-1 text-[11px] font-bold text-slate-500 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-2.5 py-1 rounded-lg cursor-not-allowed" 
+                                     title="<?= htmlspecialchars($orderCheck['reason']) ?>">
+                                    <span class="material-symbols-outlined text-[14px] text-amber-600">lock</span>
+                                    <span>غیرقابل لغو</span>
+                                </div>
                             <?php endif; ?>
                         </div>
                     </div>
+
+                    <?php if (!$orderCheck['can_cancel'] && !in_array($order['status'], ['cancelled', 'delivered'])): ?>
+                        <!-- Postex Logistics / Departure Alert Banner -->
+                        <div class="text-[11px] text-amber-900 bg-amber-50/90 dark:bg-amber-950/40 dark:text-amber-300 border border-amber-200 dark:border-amber-800/60 rounded-xl p-3 flex items-start gap-2.5">
+                            <span class="material-symbols-outlined text-[18px] text-amber-600 shrink-0 mt-0.5">local_shipping</span>
+                            <div class="space-y-0.5">
+                                <span class="font-bold block">محدودیت قانونی لغو مرسوله ارسالی:</span>
+                                <span class="leading-relaxed opacity-90"><?= htmlspecialchars($orderCheck['reason']) ?></span>
+                            </div>
+                        </div>
+                    <?php endif; ?>
 
                     <!-- Items Grid inside Order -->
                     <?php if (!empty($order['items'])): ?>
@@ -3925,13 +3978,26 @@ function switchSellerFin(period) {
                     </form>
                     <?php endif; ?>
 
-                    <!-- Cancel Anytime -->
-                    <form action="actions/subscription_action.php" method="POST" class="inline m-0" onsubmit="return confirm('آیا از لغو این اشتراک اطمینان دارید؟');">
-                        <?php echo csrf_field(); ?>
-                        <input type="hidden" name="action" value="cancel_subscription">
-                        <input type="hidden" name="subscription_id" value="<?php echo $sub['id']; ?>">
-                        <button type="submit" class="text-error hover:bg-error/10 px-2.5 py-1 rounded-lg font-bold transition-colors">لغو اشتراک</button>
-                    </form>
+                    <!-- Cancellation Status & Rules Engine -->
+                    <?php 
+                    $subCheck = App::cancellation()->checkSubscriptionEligibility((int)$sub['id'], $user_id);
+                    ?>
+                    <?php if ($sub['status'] === 'cancelled'): ?>
+                        <span class="text-xs text-red-700 bg-red-50 border border-red-200 px-2.5 py-1 rounded-lg font-bold">لغو شده</span>
+                    <?php elseif ($subCheck['can_cancel']): ?>
+                        <button type="button" 
+                                onclick="openCancelSubscriptionModal(<?= (int)$sub['id'] ?>, '<?= addslashes(htmlspecialchars($sub['plan_name'])) ?>', <?= (int)$subCheck['refund_amount'] ?>, <?= (int)$subCheck['remaining_deliveries'] ?>)" 
+                                class="text-error hover:bg-error/10 border border-error/30 px-3 py-1 rounded-lg font-bold transition-all flex items-center gap-1 shadow-2xs">
+                            <span class="material-symbols-outlined text-[14px]">cancel</span>
+                            <span>لغو اشتراک</span>
+                        </button>
+                    <?php else: ?>
+                        <div class="inline-flex items-center gap-1 text-[11px] font-bold text-slate-500 bg-slate-100 border border-slate-200 px-2.5 py-1 rounded-lg cursor-not-allowed" 
+                             title="<?= htmlspecialchars($subCheck['reason']) ?>">
+                            <span class="material-symbols-outlined text-[14px] text-amber-600">lock</span>
+                            <span>لغو غیرفعال (هفته ارسال بسته)</span>
+                        </div>
+                    <?php endif; ?>
                 </div>
             </div>
         </td>
@@ -4699,7 +4765,211 @@ function switchSellerFin(period) {
     </div>
 </div>
 
+<!-- Modal 1: Legal Order Cancellation & In-App Wallet Refund -->
+<div id="cancelOrderModal" class="hidden fixed inset-0 bg-slate-950/70 z-[120] flex items-center justify-center p-4 backdrop-blur-md">
+    <div class="bg-white rounded-3xl p-6 sm:p-7 max-w-lg w-full shadow-2xl space-y-5 relative border border-slate-200 animate-fade-in text-right">
+        <div class="flex items-center justify-between border-b border-slate-100 pb-4">
+            <div class="flex items-center gap-2.5">
+                <div class="w-10 h-10 rounded-2xl bg-error/10 text-error flex items-center justify-center shrink-0">
+                    <span class="material-symbols-outlined text-2xl">cancel</span>
+                </div>
+                <div>
+                    <h3 class="text-base font-black text-slate-900">لغو سفارش و استرداد وجه</h3>
+                    <p class="text-xs text-slate-500 font-mono" id="cancelOrderModalSub">#PC-...</p>
+                </div>
+            </div>
+            <button onclick="closeCancelOrderModal()" class="w-8 h-8 rounded-full bg-slate-100 text-slate-400 hover:text-slate-700 flex items-center justify-center transition-colors">
+                <span class="material-symbols-outlined text-sm">close</span>
+            </button>
+        </div>
+
+        <!-- Golden Law Notice Card -->
+        <div class="bg-indigo-50/90 border border-indigo-200/80 rounded-2xl p-4 space-y-2">
+            <div class="flex items-center gap-2 text-indigo-950 font-bold text-xs">
+                <span class="material-symbols-outlined text-indigo-600 text-base">account_balance_wallet</span>
+                <span>قانون طلایی سیستم مالی آسنا (استرداد به کیف‌پول)</span>
+            </div>
+            <p class="text-[11px] text-indigo-900/90 leading-relaxed">
+                طبق ماده ۴ نظام‌نامه مالی و تجارت الکترونیک آسنا، وجه پرداختی هرگز به شماره شبا یا کارت بانکی بازگشت داده نمی‌شود، بلکه به صورت <strong>۱۰۰٪ آنی و بدون کسر کارمزد</strong> به موجودی <strong>کیف‌پول درون‌برنامه‌ای</strong> شما واریز گردیده و بلافاصله برای خرید کالا، خدمات یا رزرو نوبت بعدی قابل استفاده است.
+            </p>
+        </div>
+
+        <!-- Refund Summary -->
+        <div class="bg-slate-50 rounded-2xl p-4 border border-slate-200/60 flex items-center justify-between">
+            <span class="text-xs font-bold text-slate-600">مبلغ واریزی به کیف‌پول شما:</span>
+            <span class="text-base font-black text-emerald-600 font-mono" id="cancelOrderRefundAmount">۰ تومان</span>
+        </div>
+
+        <form action="actions/profile_action.php" method="POST" class="m-0 space-y-4">
+            <?= csrf_field() ?>
+            <input type="hidden" name="action" value="cancel_order">
+            <input type="hidden" name="order_id" id="cancelOrderIdInput" value="0">
+
+            <div class="flex items-center justify-end gap-2.5 pt-2">
+                <button type="button" onclick="closeCancelOrderModal()" class="px-5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-all">
+                    انصراف
+                </button>
+                <button type="submit" class="px-6 py-2.5 rounded-xl bg-error hover:bg-red-700 text-white text-xs font-bold shadow-md transition-all flex items-center gap-1.5 active:scale-95">
+                    <span class="material-symbols-outlined text-sm">check_circle</span>
+                    <span>تأیید لغو و واریز ۱۰۰٪ به کیف‌پول</span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal 2: Legal Appointment Cancellation & 24h Window -->
+<div id="cancelAppointmentModal" class="hidden fixed inset-0 bg-slate-950/70 z-[120] flex items-center justify-center p-4 backdrop-blur-md">
+    <div class="bg-white rounded-3xl p-6 sm:p-7 max-w-lg w-full shadow-2xl space-y-5 relative border border-slate-200 animate-fade-in text-right">
+        <div class="flex items-center justify-between border-b border-slate-100 pb-4">
+            <div class="flex items-center gap-2.5">
+                <div class="w-10 h-10 rounded-2xl bg-amber-500/10 text-amber-600 flex items-center justify-center shrink-0">
+                    <span class="material-symbols-outlined text-2xl">event_busy</span>
+                </div>
+                <div>
+                    <h3 class="text-base font-black text-slate-900">لغو نوبت مشاوره / ویزیت</h3>
+                    <p class="text-xs text-slate-500" id="cancelAptDoctorName">دکتر ...</p>
+                </div>
+            </div>
+            <button onclick="closeCancelAppointmentModal()" class="w-8 h-8 rounded-full bg-slate-100 text-slate-400 hover:text-slate-700 flex items-center justify-center transition-colors">
+                <span class="material-symbols-outlined text-sm">close</span>
+            </button>
+        </div>
+
+        <!-- 24-Hour Rule Alert -->
+        <div class="bg-emerald-50/90 border border-emerald-200/80 rounded-2xl p-4 space-y-2">
+            <div class="flex items-center gap-2 text-emerald-950 font-bold text-xs">
+                <span class="material-symbols-outlined text-emerald-600 text-base">verified</span>
+                <span>تأیید مهلت قانونی کنسلی (بیش از ۲۴ ساعت مانده تا نوبت)</span>
+            </div>
+            <p class="text-[11px] text-emerald-900/90 leading-relaxed">
+                درخواست شما در بازه زمانی مجاز ثبت شده است. کل مبلغ پرداختی بدون کسر جریمه، بلافاصله و ۱۰۰٪ به <strong>کیف‌پول درون‌برنامه‌ای آسنا</strong> برگشت داده می‌شود.
+            </p>
+        </div>
+
+        <!-- Refund Summary -->
+        <div class="bg-slate-50 rounded-2xl p-4 border border-slate-200/60 flex items-center justify-between">
+            <span class="text-xs font-bold text-slate-600">مبلغ استرداد نوبت به کیف‌پول:</span>
+            <span class="text-base font-black text-emerald-600 font-mono" id="cancelAptRefundAmount">۰ تومان</span>
+        </div>
+
+        <form action="actions/profile_action.php" method="POST" class="m-0 space-y-4">
+            <?= csrf_field() ?>
+            <input type="hidden" name="action" value="cancel_appointment">
+            <input type="hidden" name="appointment_id" id="cancelAptIdInput" value="0">
+
+            <div class="flex items-center justify-end gap-2.5 pt-2">
+                <button type="button" onclick="closeCancelAppointmentModal()" class="px-5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-all">
+                    انصراف
+                </button>
+                <button type="submit" class="px-6 py-2.5 rounded-xl bg-error hover:bg-red-700 text-white text-xs font-bold shadow-md transition-all flex items-center gap-1.5 active:scale-95">
+                    <span class="material-symbols-outlined text-sm">check_circle</span>
+                    <span>تأیید لغو و شارژ آنی کیف‌پول</span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal 3: Legal Subscription Cancellation & Prorated Refund -->
+<div id="cancelSubscriptionModal" class="hidden fixed inset-0 bg-slate-950/70 z-[120] flex items-center justify-center p-4 backdrop-blur-md">
+    <div class="bg-white rounded-3xl p-6 sm:p-7 max-w-lg w-full shadow-2xl space-y-5 relative border border-slate-200 animate-fade-in text-right">
+        <div class="flex items-center justify-between border-b border-slate-100 pb-4">
+            <div class="flex items-center gap-2.5">
+                <div class="w-10 h-10 rounded-2xl bg-secondary-container/15 text-secondary-container flex items-center justify-center shrink-0">
+                    <span class="material-symbols-outlined text-2xl">event_repeat</span>
+                </div>
+                <div>
+                    <h3 class="text-base font-black text-slate-900">لغو اشتراک هوشمند و محاسبه مانده</h3>
+                    <p class="text-xs text-slate-500" id="cancelSubPlanName">پلن ...</p>
+                </div>
+            </div>
+            <button onclick="closeCancelSubscriptionModal()" class="w-8 h-8 rounded-full bg-slate-100 text-slate-400 hover:text-slate-700 flex items-center justify-center transition-colors">
+                <span class="material-symbols-outlined text-sm">close</span>
+            </button>
+        </div>
+
+        <!-- Prorated Autoship Rule Notice -->
+        <div class="bg-indigo-50/90 border border-indigo-200/80 rounded-2xl p-4 space-y-2">
+            <div class="flex items-center gap-2 text-indigo-950 font-bold text-xs">
+                <span class="material-symbols-outlined text-indigo-600 text-base">info</span>
+                <span>قانون استرداد مانده اشتراک‌های دوره‌ای (Autoship)</span>
+            </div>
+            <p class="text-[11px] text-indigo-900/90 leading-relaxed">
+                تعداد دوره‌های باقی‌مانده و ارسال‌نشده محاسبه گردیده و معادل آن به صورت ۱۰۰٪ به <strong>کیف‌پول درون‌برنامه‌ای</strong> شما مسترد می‌گردد. ارسال‌های آینده فوراً متوقف خواهند شد.
+            </p>
+        </div>
+
+        <div class="bg-slate-50 rounded-2xl p-4 border border-slate-200/60 space-y-2">
+            <div class="flex items-center justify-between text-xs font-bold text-slate-600">
+                <span>تعداد نوبت‌های ارسال باقی‌مانده:</span>
+                <span class="font-mono text-slate-800" id="cancelSubRemainingCycles">۰ دوره</span>
+            </div>
+            <div class="flex items-center justify-between text-xs font-bold border-t border-slate-200/50 pt-2">
+                <span class="text-slate-700">مبلغ بازگشتی به کیف‌پول:</span>
+                <span class="text-base font-black text-emerald-600 font-mono" id="cancelSubRefundAmount">۰ تومان</span>
+            </div>
+        </div>
+
+        <form action="actions/subscription_action.php" method="POST" class="m-0 space-y-4">
+            <?= csrf_field() ?>
+            <input type="hidden" name="action" value="cancel_subscription">
+            <input type="hidden" name="subscription_id" id="cancelSubIdInput" value="0">
+
+            <div class="flex items-center justify-end gap-2.5 pt-2">
+                <button type="button" onclick="closeCancelSubscriptionModal()" class="px-5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-all">
+                    انصراف
+                </button>
+                <button type="submit" class="px-6 py-2.5 rounded-xl bg-error hover:bg-red-700 text-white text-xs font-bold shadow-md transition-all flex items-center gap-1.5 active:scale-95">
+                    <span class="material-symbols-outlined text-sm">check_circle</span>
+                    <span>تأیید لغو اشتراک و واریز مانده</span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <script>
+    function openCancelOrderModal(orderId, refundAmount, refId) {
+        document.getElementById('cancelOrderIdInput').value = orderId;
+        document.getElementById('cancelOrderModalSub').textContent = '#PC-' + orderId + (refId ? (' • کد رهگیری: ' + refId) : '');
+        document.getElementById('cancelOrderRefundAmount').textContent = refundAmount > 0 
+            ? (Number(refundAmount).toLocaleString('fa-IR') + ' تومان') 
+            : '۰ تومان (سفارش پرداخت نشده)';
+        document.getElementById('cancelOrderModal').classList.remove('hidden');
+    }
+
+    function closeCancelOrderModal() {
+        document.getElementById('cancelOrderModal').classList.add('hidden');
+    }
+
+    function openCancelAppointmentModal(aptId, refundAmount, docName, aptDate, aptTime) {
+        document.getElementById('cancelAptIdInput').value = aptId;
+        document.getElementById('cancelAptDoctorName').textContent = (docName ? docName : 'متخصص کلینیک') + (aptDate ? (' • ' + aptDate + ' ساعت ' + aptTime) : '');
+        document.getElementById('cancelAptRefundAmount').textContent = refundAmount > 0 
+            ? (Number(refundAmount).toLocaleString('fa-IR') + ' تومان') 
+            : '۰ تومان';
+        document.getElementById('cancelAppointmentModal').classList.remove('hidden');
+    }
+
+    function closeCancelAppointmentModal() {
+        document.getElementById('cancelAppointmentModal').classList.add('hidden');
+    }
+
+    function openCancelSubscriptionModal(subId, planName, refundAmount, remainingCycles) {
+        document.getElementById('cancelSubIdInput').value = subId;
+        document.getElementById('cancelSubPlanName').textContent = planName;
+        document.getElementById('cancelSubRemainingCycles').textContent = remainingCycles + ' دوره ارسال تحویل‌نشده';
+        document.getElementById('cancelSubRefundAmount').textContent = refundAmount > 0 
+            ? (Number(refundAmount).toLocaleString('fa-IR') + ' تومان') 
+            : '۰ تومان';
+        document.getElementById('cancelSubscriptionModal').classList.remove('hidden');
+    }
+
+    function closeCancelSubscriptionModal() {
+        document.getElementById('cancelSubscriptionModal').classList.add('hidden');
+    }
+
     function openRatingModal(type, id, title) {
         document.getElementById('ratingTargetType').value = type;
         document.getElementById('ratingTargetId').value = id;

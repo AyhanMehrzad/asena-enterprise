@@ -679,6 +679,17 @@ if (empty($wishlist_products)) {
                             </div>
                             
                             <?php if(isset($_SESSION['user_id'])): ?>
+                                <?php 
+                                require_once __DIR__ . '/includes/App.php';
+                                $curUserWallet = App::wallet()->getBalance((int)$_SESSION['user_id']);
+                                ?>
+                                <?php if ($curUserWallet >= $std_final_price): ?>
+                                    <a href="payment.php?type=standard&pay_via=wallet" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3.5 rounded-2xl font-bold flex justify-center items-center gap-2 shadow-md transition-all text-xs active:scale-95 cursor-pointer">
+                                        <span class="material-symbols-outlined text-base">account_balance_wallet</span>
+                                        <span>پرداخت سریع ۱-کلیکه با کیف‌پول (موجودی: <?= number_format($curUserWallet) ?> ت)</span>
+                                    </a>
+                                <?php endif; ?>
+
                                 <a href="payment.php?type=standard" class="w-full bg-primary text-white py-4 rounded-2xl font-bold flex justify-center items-center gap-2 hover:bg-primary-container shadow-lg transition-all text-xs active:scale-95 cursor-pointer">
                                     <span>تکمیل خرید و پرداخت آنلاین شاپرک (با احتساب ۱۰٪ مالیات)</span>
                                     <span class="material-symbols-outlined text-sm">arrow_left_alt</span>

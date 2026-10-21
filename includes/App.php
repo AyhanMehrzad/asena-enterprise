@@ -33,10 +33,14 @@ require_once __DIR__ . '/ContractService.php';
 require_once __DIR__ . '/PromoCodeService.php';
 require_once __DIR__ . '/DoctorVerificationService.php';
 require_once __DIR__ . '/TenantSiteService.php';
+require_once __DIR__ . '/WalletService.php';
+require_once __DIR__ . '/CancellationService.php';
 
 class App {
     private static ?PDO $db = null;
     private static ?TenantSiteService $tenantSite = null;
+    private static ?WalletService $wallet = null;
+    private static ?CancellationService $cancellation = null;
     private static ?CacheService $cache = null;
     private static ?RateLimiter $rateLimiter = null;
     private static ?SmsService $sms = null;
@@ -249,6 +253,20 @@ class App {
             self::$tenantSite = new TenantSiteService(self::db());
         }
         return self::$tenantSite;
+    }
+
+    public static function wallet(): WalletService {
+        if (self::$wallet === null) {
+            self::$wallet = new WalletService(self::db());
+        }
+        return self::$wallet;
+    }
+
+    public static function cancellation(): CancellationService {
+        if (self::$cancellation === null) {
+            self::$cancellation = new CancellationService(self::db());
+        }
+        return self::$cancellation;
     }
 
     /**

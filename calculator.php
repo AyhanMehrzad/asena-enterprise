@@ -29,6 +29,10 @@ $calcPrice = (int)get_setting($pdo, 'calculator_price_toman', 49000);
         <p class="text-xs sm:text-sm text-slate-500 leading-relaxed font-normal">
             مشخصات حیوان خانگی خود را وارد کنید تا انرژی متابولیک روزانه (MER)، شاخص وضعیت بدنی (BCS)، گرم غذای خشک دقیق و شناسنامه تغذیه بالینی با تاییدیه دامپزشکی را در لحظه دریافت فرمایید.
         </p>
+        <div class="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-50 text-amber-800 border border-amber-200/80 rounded-xl text-[11px] font-medium mt-2">
+            <span class="material-symbols-outlined text-[15px] text-amber-600">info</span>
+            <span>طبق ماده ۳۷ و ۳۸ قانون تجارت الکترونیک، خدمات محاسباتی و کارنامه‌های دیجیتال آنی پس از صدور، غیرقابل استرداد و ابطال می‌باشند.</span>
+        </div>
     </div>
 
     <!-- Main Calculator Component -->

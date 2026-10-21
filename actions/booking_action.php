@@ -190,7 +190,8 @@ try {
     
     $pdo->commit();
 
-    header('Location: ../payment.php');
+    $payVia = (($_POST['payment_method'] ?? '') === 'wallet') ? '?pay_via=wallet' : '';
+    header("Location: ../payment.php{$payVia}");
     exit;
 
 } catch (PDOException $e) {

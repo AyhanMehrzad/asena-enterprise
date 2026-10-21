@@ -566,6 +566,280 @@ if (!file_exists(__DIR__ . '/.schema_aligned_v8')) {
     } catch (Throwable $e) {}
 }
 
+// Automated schema alignment v9: Organization Invitations, In-App Wallet Ledger, Groomer & Pansion Roles
+if (!file_exists(__DIR__ . '/.schema_aligned_v9')) {
+    try {
+        $isSqlite = ($pdo->getAttribute(PDO::ATTR_DRIVER_NAME) === 'sqlite');
+        if ($isSqlite) {
+            $pdo->exec("
+                CREATE TABLE IF NOT EXISTS organization_invitations (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    organization_id INTEGER NOT NULL,
+                    user_id INTEGER NOT NULL,
+                    suggested_role TEXT NOT NULL DEFAULT 'staff',
+                    job_title TEXT NULL,
+                    proposed_shifts TEXT NULL,
+                    commission_rate REAL DEFAULT 0.00,
+                    notes TEXT NULL,
+                    status TEXT NOT NULL DEFAULT 'pending',
+                    declined_reason TEXT NULL,
+                    created_at TEXT DEFAULT (datetime('now')),
+                    updated_at TEXT DEFAULT (datetime('now'))
+                );
+
+                CREATE TABLE IF NOT EXISTS wallet_transactions (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id INTEGER NOT NULL,
+                    transaction_type TEXT NOT NULL,
+                    amount INTEGER NOT NULL,
+                    balance_before INTEGER NOT NULL,
+                    balance_after INTEGER NOT NULL,
+                    reference_module TEXT NOT NULL,
+                    reference_id TEXT NULL,
+                    description TEXT NOT NULL,
+                    created_at TEXT DEFAULT (datetime('now'))
+                );
+
+                CREATE TABLE IF NOT EXISTS grooming_services (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    groomer_user_id INTEGER NOT NULL,
+                    organization_id INTEGER NULL,
+                    title TEXT NOT NULL,
+                    category TEXT NOT NULL DEFAULT 'full_grooming',
+                    duration_minutes INTEGER NOT NULL DEFAULT 60,
+                    price INTEGER NOT NULL,
+                    description TEXT NULL,
+                    is_active INTEGER NOT NULL DEFAULT 1,
+                    created_at TEXT DEFAULT (datetime('now'))
+                );
+
+                CREATE TABLE IF NOT EXISTS grooming_portfolio (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    groomer_user_id INTEGER NOT NULL,
+                    pet_type TEXT NOT NULL DEFAULT 'dog',
+                    pet_breed TEXT NULL,
+                    before_image TEXT NULL,
+                    after_image TEXT NOT NULL,
+                    title TEXT NOT NULL,
+                    description TEXT NULL,
+                    created_at TEXT DEFAULT (datetime('now'))
+                );
+
+                CREATE TABLE IF NOT EXISTS pansion_rooms (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    organization_id INTEGER NULL,
+                    pansion_user_id INTEGER NOT NULL,
+                    room_number TEXT NOT NULL,
+                    room_title TEXT NOT NULL,
+                    room_type TEXT NOT NULL DEFAULT 'standard_kennel',
+                    capacity INTEGER NOT NULL DEFAULT 1,
+                    price_per_night INTEGER NOT NULL,
+                    description TEXT NULL,
+                    status TEXT NOT NULL DEFAULT 'available',
+                    created_at TEXT DEFAULT (datetime('now'))
+                );
+
+                CREATE TABLE IF NOT EXISTS pansion_bookings (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    room_id INTEGER NOT NULL,
+                    organization_id INTEGER NULL,
+                    pansion_user_id INTEGER NOT NULL,
+                    customer_user_id INTEGER NOT NULL,
+                    pet_name TEXT NOT NULL,
+                    pet_species TEXT NOT NULL DEFAULT 'dog',
+                    pet_breed TEXT NULL,
+                    check_in_date TEXT NOT NULL,
+                    check_out_date TEXT NOT NULL,
+                    nights_count INTEGER NOT NULL DEFAULT 1,
+                    total_price INTEGER NOT NULL,
+                    status TEXT NOT NULL DEFAULT 'pending',
+                    special_diet_notes TEXT NULL,
+                    medication_notes TEXT NULL,
+                    belongings_list TEXT NULL,
+                    emergency_contact_phone TEXT NULL,
+                    created_at TEXT DEFAULT (datetime('now'))
+                );
+
+                CREATE TABLE IF NOT EXISTS appointments (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    tracking_code TEXT NULL,
+                    user_id INTEGER NOT NULL,
+                    doctor_id INTEGER NULL,
+                    organization_id INTEGER NULL,
+                    appointment_date TEXT NOT NULL,
+                    appointment_time TEXT NOT NULL,
+                    status TEXT DEFAULT 'pending',
+                    created_at TEXT DEFAULT (datetime('now')),
+                    pet_type TEXT NULL,
+                    pet_race TEXT NULL,
+                    pet_id INTEGER NULL,
+                    pet_name TEXT NULL,
+                    pet_gender TEXT NULL,
+                    pet_age TEXT NULL,
+                    pet_weight REAL NULL,
+                    visit_purpose TEXT NULL,
+                    pet_notes TEXT NULL,
+                    fee INTEGER NOT NULL DEFAULT 350000,
+                    commission_amount INTEGER NOT NULL DEFAULT 0,
+                    net_amount INTEGER NOT NULL DEFAULT 0,
+                    service_type TEXT DEFAULT 'consultation',
+                    settlement_status TEXT DEFAULT 'held_in_escrow',
+                    settlement_batch_id INTEGER NULL,
+                    doctor_diagnosis TEXT NULL,
+                    doctor_prescription TEXT NULL,
+                    reschedule_reason TEXT NULL,
+                    rescheduled_at TEXT NULL
+                );
+
+                CREATE TABLE IF NOT EXISTS user_subscriptions (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id INTEGER NOT NULL,
+                    plan_name TEXT NOT NULL,
+                    amount INTEGER NOT NULL,
+                    status TEXT DEFAULT 'active',
+                    next_delivery_date TEXT NULL,
+                    created_at TEXT DEFAULT (datetime('now')),
+                    duration_months INTEGER DEFAULT 3,
+                    payment_model TEXT DEFAULT 'monthly',
+                    delivery_frequency TEXT DEFAULT '1_month'
+                );
+
+                CREATE TABLE IF NOT EXISTS subscription_deliveries (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    subscription_id INTEGER NOT NULL,
+                    delivery_month INTEGER NOT NULL,
+                    scheduled_date TEXT NULL,
+                    status TEXT DEFAULT 'pending'
+                );
+            ");
+
+            $sqliteAlter = [
+                "ALTER TABLE users ADD COLUMN wallet_balance INTEGER NOT NULL DEFAULT 0",
+                "ALTER TABLE doctors ADD COLUMN provider_type TEXT NOT NULL DEFAULT 'doctor'"
+            ];
+            foreach ($sqliteAlter as $sql) {
+                try { $pdo->exec($sql); } catch (Throwable $e) {}
+            }
+        } else {
+            // MySQL
+            try {
+                $pdo->exec("
+                    CREATE TABLE IF NOT EXISTS `organization_invitations` (
+                      `id` INT AUTO_INCREMENT PRIMARY KEY,
+                      `organization_id` INT NOT NULL,
+                      `user_id` INT NOT NULL,
+                      `suggested_role` ENUM('doctor', 'groomer', 'pharmacist', 'pharmacologist', 'receptionist', 'manager', 'assistant_manager', 'staff') NOT NULL DEFAULT 'staff',
+                      `job_title` VARCHAR(150) NULL,
+                      `proposed_shifts` TEXT NULL,
+                      `commission_rate` DECIMAL(5,2) DEFAULT 0.00,
+                      `notes` TEXT NULL,
+                      `status` ENUM('pending', 'accepted', 'declined', 'cancelled') NOT NULL DEFAULT 'pending',
+                      `declined_reason` TEXT NULL,
+                      `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                      `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                      INDEX `idx_org_inv_org` (`organization_id`),
+                      INDEX `idx_org_inv_user` (`user_id`),
+                      INDEX `idx_org_inv_status` (`status`)
+                    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+                    CREATE TABLE IF NOT EXISTS `wallet_transactions` (
+                      `id` BIGINT AUTO_INCREMENT PRIMARY KEY,
+                      `user_id` INT NOT NULL,
+                      `transaction_type` ENUM('deposit', 'purchase', 'refund', 'bonus', 'admin_adjustment') NOT NULL,
+                      `amount` BIGINT NOT NULL,
+                      `balance_before` BIGINT NOT NULL,
+                      `balance_after` BIGINT NOT NULL,
+                      `reference_module` VARCHAR(50) NOT NULL,
+                      `reference_id` VARCHAR(100) NULL,
+                      `description` VARCHAR(255) NOT NULL,
+                      `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                      INDEX `idx_wallet_user_date` (`user_id`, `created_at`),
+                      INDEX `idx_wallet_ref` (`reference_module`, `reference_id`)
+                    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+                    CREATE TABLE IF NOT EXISTS `grooming_services` (
+                      `id` INT AUTO_INCREMENT PRIMARY KEY,
+                      `groomer_user_id` INT NOT NULL,
+                      `organization_id` INT NULL,
+                      `title` VARCHAR(150) NOT NULL,
+                      `category` ENUM('full_grooming', 'bath_blowdry', 'deshedding', 'nail_trim', 'hygiene_ears_teeth', 'styling') NOT NULL DEFAULT 'full_grooming',
+                      `duration_minutes` INT NOT NULL DEFAULT 60,
+                      `price` BIGINT NOT NULL,
+                      `description` TEXT NULL,
+                      `is_active` TINYINT(1) NOT NULL DEFAULT 1,
+                      `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                      INDEX `idx_grooming_user` (`groomer_user_id`),
+                      INDEX `idx_grooming_org` (`organization_id`)
+                    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+                    CREATE TABLE IF NOT EXISTS `grooming_portfolio` (
+                      `id` INT AUTO_INCREMENT PRIMARY KEY,
+                      `groomer_user_id` INT NOT NULL,
+                      `pet_type` VARCHAR(50) NOT NULL DEFAULT 'dog',
+                      `pet_breed` VARCHAR(100) NULL,
+                      `before_image` VARCHAR(255) NULL,
+                      `after_image` VARCHAR(255) NOT NULL,
+                      `title` VARCHAR(150) NOT NULL,
+                      `description` TEXT NULL,
+                      `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                      INDEX `idx_grooming_port_user` (`groomer_user_id`)
+                    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+                    CREATE TABLE IF NOT EXISTS `pansion_rooms` (
+                      `id` INT AUTO_INCREMENT PRIMARY KEY,
+                      `organization_id` INT NULL,
+                      `pansion_user_id` INT NOT NULL,
+                      `room_number` VARCHAR(50) NOT NULL,
+                      `room_title` VARCHAR(150) NOT NULL,
+                      `room_type` ENUM('vip_suite', 'standard_kennel', 'cat_room', 'hospital_box', 'daycare_playpen') NOT NULL DEFAULT 'standard_kennel',
+                      `capacity` INT NOT NULL DEFAULT 1,
+                      `price_per_night` BIGINT NOT NULL,
+                      `description` TEXT NULL,
+                      `status` ENUM('available', 'occupied', 'cleaning', 'maintenance') NOT NULL DEFAULT 'available',
+                      `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                      INDEX `idx_pansion_rooms_org` (`organization_id`),
+                      INDEX `idx_pansion_rooms_user` (`pansion_user_id`)
+                    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+                    CREATE TABLE IF NOT EXISTS `pansion_bookings` (
+                      `id` INT AUTO_INCREMENT PRIMARY KEY,
+                      `room_id` INT NOT NULL,
+                      `organization_id` INT NULL,
+                      `pansion_user_id` INT NOT NULL,
+                      `customer_user_id` INT NOT NULL,
+                      `pet_name` VARCHAR(100) NOT NULL,
+                      `pet_species` VARCHAR(50) NOT NULL DEFAULT 'dog',
+                      `pet_breed` VARCHAR(100) NULL,
+                      `check_in_date` DATE NOT NULL,
+                      `check_out_date` DATE NOT NULL,
+                      `nights_count` INT NOT NULL DEFAULT 1,
+                      `total_price` BIGINT NOT NULL,
+                      `status` ENUM('pending', 'confirmed', 'checked_in', 'checked_out', 'cancelled') NOT NULL DEFAULT 'pending',
+                      `special_diet_notes` TEXT NULL,
+                      `medication_notes` TEXT NULL,
+                      `belongings_list` TEXT NULL,
+                      `emergency_contact_phone` VARCHAR(30) NULL,
+                      `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                      INDEX `idx_pansion_book_room` (`room_id`),
+                      INDEX `idx_pansion_book_dates` (`check_in_date`, `check_out_date`),
+                      INDEX `idx_pansion_book_customer` (`customer_user_id`)
+                    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+                ");
+            } catch (Throwable $e) {}
+
+            $mysqlAlter = [
+                "ALTER TABLE `users` ADD COLUMN `wallet_balance` BIGINT NOT NULL DEFAULT 0 AFTER `loyalty_points`",
+                "ALTER TABLE `users` MODIFY COLUMN `role` ENUM('user','admin','doctor','organization','pharmacist','pharmacologist','seller','pharmacy','groomer','pansion') DEFAULT 'user'",
+                "ALTER TABLE `doctors` ADD COLUMN `provider_type` VARCHAR(50) NOT NULL DEFAULT 'doctor' AFTER `specialty`"
+            ];
+            foreach ($mysqlAlter as $sql) {
+                try { $pdo->exec($sql); } catch (Throwable $e) {}
+            }
+        }
+        @touch(__DIR__ . '/.schema_aligned_v9');
+    } catch (Throwable $e) {}
+}
+
 
 
 require_once __DIR__ . '/Feature.php';

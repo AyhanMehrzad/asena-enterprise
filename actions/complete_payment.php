@@ -69,6 +69,7 @@ $is_booking = (($pending['type'] ?? '') === 'booking');
 $is_subscription = (($pending['type'] ?? '') === 'subscription');
 $is_sms_package = (($pending['type'] ?? '') === 'sms_package');
 $is_meal_plan = (($pending['type'] ?? '') === 'meal_plan');
+$is_wallet_topup = (($pending['type'] ?? '') === 'wallet_topup');
 
 $sessionAuthority = (string)($pending['authority'] ?? '');
 $matchesSession = !empty($sessionAuthority) && (
@@ -79,7 +80,7 @@ $matchesSession = !empty($sessionAuthority) && (
 if (!$pending
     || !$matchesSession
     || empty($pending['total_amount'])
-    || (!$is_booking && !$is_subscription && !$is_sms_package && !$is_meal_plan && empty($pending['items']))
+    || (!$is_booking && !$is_subscription && !$is_sms_package && !$is_meal_plan && !$is_wallet_topup && empty($pending['items']))
 ) {
     unset($_SESSION['pending_order']);
     $_SESSION['profile_error'] = 'اطلاعات سفارش نامعتبر یا منقضی شده است.';
@@ -87,8 +88,15 @@ if (!$pending
     exit;
 }
 
-// ── Gate 4: Server-to-server verification with Gateway (Zibal / ZarinPal) ─────
-if ($isZibal) {
+// ── Gate 4: Server-to-server verification with Gateway (Zibal / ZarinPal / In-App Wallet) ─────
+if (str_starts_with((string)$authority, 'WLT-')) {
+    $verified = [
+        'success' => true,
+        'ref_id' => $authority,
+        'refNumber' => $authority,
+        'card_pan' => 'کیف‌پول اعتباری درون‌برنامه‌ای آسنا'
+    ];
+} elseif ($isZibal) {
     $zibalGateway = new ZibalGateway(null, null, $pdo);
     $verified = $zibalGateway->verifyPayment((int)$pending['total_amount'], $authority);
 } else {
@@ -120,7 +128,21 @@ try {
     $total_amount = (int)$pending['total_amount'];
     $items        = $pending['items'] ?? [];
 
-    if ($is_sms_package) {
+    if ($is_wallet_topup) {
+        require_once __DIR__ . '/../includes/App.php';
+        $topupRes = App::wallet()->deposit(
+            $user_id,
+            $total_amount,
+            'zibal_topup',
+            (string)$ref_id,
+            "شارژ آنلاین کیف‌پول درون‌برنامه‌ای آسنا (کد رهگیری: {$ref_id})"
+        );
+        $pdo->commit();
+        unset($_SESSION['pending_order']);
+        $_SESSION['profile_success'] = "کیف‌پول شما با موفقیت به مبلغ " . number_format($total_amount) . " تومان شارژ گردید.";
+        header('Location: ../profile.php?tab=wallet#wallet-section');
+        exit;
+    } elseif ($is_sms_package) {
         $credits = (int)($pending['credits'] ?? 0);
         $pkgName = $pending['package_name'] ?? 'بسته پیامک';
         

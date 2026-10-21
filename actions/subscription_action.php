@@ -125,21 +125,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
-    // 7. Cancel Subscription Anytime (Active or Paused)
+    // 7. Cancel Subscription with Blackout Week Enforcement and Prorated Wallet Refund
     if ($action === 'cancel_subscription' && $subscription_id > 0) {
-        $chk = $pdo->prepare("SELECT id FROM user_subscriptions WHERE id = ? AND user_id = ? AND status IN ('active', 'paused')");
-        $chk->execute([$subscription_id, $user_id]);
-        if ($chk->fetch()) {
-            $upd = $pdo->prepare("UPDATE user_subscriptions SET status = 'cancelled' WHERE id = ?");
-            $upd->execute([$subscription_id]);
-
-            // Release pending deliveries
-            try {
-                $pdo->prepare("UPDATE subscription_deliveries SET status = 'cancelled' WHERE subscription_id = ? AND status = 'pending'")
-                    ->execute([$subscription_id]);
-            } catch (Throwable $eCan) {}
-
-            $_SESSION['profile_success'] = "اشتراک شما لغو شد. هر زمان که تمایل داشتید می‌توانید آن را مجدداً فعال فرمایید.";
+        require_once __DIR__ . '/../includes/App.php';
+        $res = App::cancellation()->cancelSubscription($subscription_id, $user_id);
+        if (!empty($res['success'])) {
+            $_SESSION['profile_success'] = $res['message'];
+        } else {
+            $_SESSION['profile_error'] = $res['message'];
         }
     }
 }

@@ -665,6 +665,32 @@ $booked_slots_json = json_encode($booked_slots);
                                 </div>
                             </div>
                         </div>
+
+                        <?php 
+                        $userBal = 0;
+                        if (isset($_SESSION['user_id'])) {
+                            require_once __DIR__ . '/includes/App.php';
+                            $userBal = App::wallet()->getBalance((int)$_SESSION['user_id']);
+                        }
+                        ?>
+                        <?php if ($userBal > 0): ?>
+                        <div class="space-y-1.5 p-3 rounded-2xl bg-indigo-50/80 border border-indigo-200/70 text-xs">
+                            <span class="font-bold text-slate-800 block flex items-center gap-1">
+                                <span class="material-symbols-outlined text-sm text-indigo-600">account_balance_wallet</span>
+                                <span>روش پرداخت هزینه نوبت:</span>
+                            </span>
+                            <div class="space-y-1.5 pt-1">
+                                <label class="flex items-center gap-2 cursor-pointer p-2 rounded-xl bg-white border border-indigo-100/80 hover:border-indigo-300 transition-all">
+                                    <input type="radio" name="payment_method" value="gateway" checked class="text-indigo-600 focus:ring-indigo-500">
+                                    <span class="text-slate-800 font-bold">درگاه امن بانکی شاپرک</span>
+                                </label>
+                                <label class="flex items-center gap-2 cursor-pointer p-2 rounded-xl bg-white border border-indigo-100/80 hover:border-emerald-300 transition-all">
+                                    <input type="radio" name="payment_method" value="wallet" class="text-emerald-600 focus:ring-emerald-500">
+                                    <span class="text-emerald-800 font-bold">پرداخت سریع با کیف‌پول (موجودی: <?= number_format($userBal) ?> ت)</span>
+                                </label>
+                            </div>
+                        </div>
+                        <?php endif; ?>
                         
                         <button type="submit" id="submit-btn" disabled class="w-full bg-slate-100 text-slate-400 py-3.5 rounded-xl text-base font-bold transition-all duration-300 flex justify-center items-center gap-2 cursor-not-allowed">
                             لطفا فرم را تکمیل کنید

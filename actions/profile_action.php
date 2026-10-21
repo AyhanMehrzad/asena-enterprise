@@ -165,49 +165,50 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
     } elseif ($action === 'cancel_order') {
+        require_once __DIR__ . '/../includes/App.php';
         $order_id = (int)($_POST['order_id'] ?? 0);
         if ($order_id > 0) {
-            try {
-                $pdo->beginTransaction();
-                $stmt = $pdo->prepare("UPDATE orders SET status = 'cancelled' WHERE id = ? AND user_id = ? AND status IN ('pending_payment', 'processing')");
-                $stmt->execute([$order_id, $user_id]);
-                
-                if ($stmt->rowCount() > 0) {
-                    // Restore stock
-                    $items = $pdo->prepare("SELECT product_id, quantity FROM order_items WHERE order_id = ?");
-                    $items->execute([$order_id]);
-                    $restoreStmt = $pdo->prepare("UPDATE products SET stock = stock + ? WHERE id = ?");
-                    foreach ($items->fetchAll() as $item) {
-                        $restoreStmt->execute([$item['quantity'], $item['product_id']]);
-                    }
-                    
-                    // Deduct loyalty points
-                    $pdo->prepare("UPDATE users SET loyalty_points = GREATEST(0, loyalty_points - 50) WHERE id = ?")->execute([$user_id]);
-                    
-                    $pdo->commit();
-                    $_SESSION['profile_success'] = "سفارش شما با موفقیت لغو شد.";
-                } else {
-                    $pdo->rollBack();
-                    $_SESSION['profile_error'] = "امکان لغو این سفارش وجود ندارد (ممکن است ارسال شده باشد).";
-                }
-            } catch (PDOException $e) {
-                if ($pdo->inTransaction()) {
-                    $pdo->rollBack();
-                }
-                $_SESSION['profile_error'] = "خطای سیستمی در لغو سفارش.";
+            $res = App::cancellation()->cancelOrder($order_id, $user_id);
+            if (!empty($res['success'])) {
+                $_SESSION['profile_success'] = $res['message'];
+            } else {
+                $_SESSION['profile_error'] = $res['message'];
             }
+        } else {
+            $_SESSION['profile_error'] = "شناسه سفارش نامعتبر است.";
         }
     } elseif ($action === 'cancel_appointment') {
+        require_once __DIR__ . '/../includes/App.php';
         $apt_id = (int)($_POST['appointment_id'] ?? 0);
         if ($apt_id > 0) {
-            $stmt = $pdo->prepare("UPDATE appointments SET status = 'cancelled' WHERE id = ? AND user_id = ? AND status IN ('pending', 'approved', 'در انتظار')");
-            $stmt->execute([$apt_id, $user_id]);
-            if ($stmt->rowCount() > 0) {
-                $_SESSION['profile_success'] = "نوبت با موفقیت لغو شد.";
+            $res = App::cancellation()->cancelAppointment($apt_id, $user_id);
+            if (!empty($res['success'])) {
+                $_SESSION['profile_success'] = $res['message'];
             } else {
-                $_SESSION['profile_error'] = "امکان لغو این نوبت وجود ندارد.";
+                $_SESSION['profile_error'] = $res['message'];
             }
+        } else {
+            $_SESSION['profile_error'] = "شناسه نوبت نامعتبر است.";
         }
+    } elseif ($action === 'check_cancellation_rules') {
+        require_once __DIR__ . '/../includes/App.php';
+        header('Content-Type: application/json; charset=utf-8');
+        $module = trim($_POST['module'] ?? '');
+        $id = (int)($_POST['id'] ?? 0);
+
+        if ($module === 'order' && $id > 0) {
+            echo json_encode(App::cancellation()->checkOrderEligibility($id, $user_id), JSON_UNESCAPED_UNICODE);
+            exit;
+        } elseif ($module === 'appointment' && $id > 0) {
+            echo json_encode(App::cancellation()->checkAppointmentEligibility($id, $user_id), JSON_UNESCAPED_UNICODE);
+            exit;
+        } elseif ($module === 'subscription' && $id > 0) {
+            echo json_encode(App::cancellation()->checkSubscriptionEligibility($id, $user_id), JSON_UNESCAPED_UNICODE);
+            exit;
+        }
+
+        echo json_encode(['can_cancel' => false, 'reason' => 'درخواست نامعتبر است.'], JSON_UNESCAPED_UNICODE);
+        exit;
     } elseif ($action === 'update_bank_details') {
         require_once __DIR__ . '/../includes/App.php';
         $escrow = App::escrow();

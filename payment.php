@@ -239,6 +239,57 @@ if ($isBooking) {
     }
 }
 
+// ── In-App Wallet Direct Checkout ─────────────────────────────────────────────
+require_once __DIR__ . '/includes/App.php';
+$userId = (int)$_SESSION['user_id'];
+$wallet = App::wallet();
+$payViaWallet = (($_GET['pay_via'] ?? '') === 'wallet');
+
+if ($payViaWallet) {
+    if ($wallet->canPay($userId, $payable_today)) {
+        $txRef = 'WLT-' . strtoupper(substr(md5(uniqid()), 0, 10));
+        $deductRes = $wallet->deduct($userId, $payable_today, $orderType ?? 'cart', $txRef, $order_desc);
+        if ($deductRes['success']) {
+            if ($isBooking || $isSmsPackage) {
+                $_SESSION['pending_order']['authority'] = $txRef;
+                $_SESSION['pending_order']['user_id']   = $userId;
+            } else {
+                $_SESSION['pending_order'] = [
+                    'type'            => 'cart',
+                    'checkout_type'   => $checkout_type ?? 'standard',
+                    'user_id'         => $userId,
+                    'items'           => $pending_items ?? [],
+                    'subtotal'        => $subtotal ?? $payable_today,
+                    'discount_amount' => $promoDiscount ?? 0,
+                    'promo_code'      => $promoCode ?? null,
+                    'promo_id'        => $promoId ?? null,
+                    'tax_amount'      => $tax_amount ?? 0,
+                    'shipping_cost'   => $shipping_cost ?? 0,
+                    'carrier_name'    => $carrier_label ?? 'پست پیشتاز',
+                    'total_amount'    => $payable_today,
+                    'per_delivery'    => $final_total ?? $payable_today,
+                    'duration_months' => $duration_months ?? 3,
+                    'payment_model'   => $payment_model ?? 'monthly',
+                    'authority'       => $txRef,
+                    'created_at'      => time(),
+                ];
+            }
+            header("Location: actions/complete_payment.php?Authority={$txRef}&Status=OK");
+            exit;
+        } else {
+            $_SESSION['profile_error'] = $deductRes['message'];
+            $fallback = $isBooking ? 'booking.php' : 'cart.php';
+            header("Location: {$fallback}");
+            exit;
+        }
+    } else {
+        $_SESSION['profile_error'] = "موجودی کیف‌پول شما کافی نیست (موجودی: " . number_format($wallet->getBalance($userId)) . " تومان).";
+        $fallback = $isBooking ? 'booking.php' : 'cart.php';
+        header("Location: {$fallback}");
+        exit;
+    }
+}
+
 // ── Multi-Driver Payment Service Routing ──────────────────────────────────────
 require_once __DIR__ . '/includes/PaymentService.php';
 $paymentService = new PaymentService($pdo);
