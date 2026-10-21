@@ -1511,6 +1511,25 @@
     - **آزمون اعتبارسنجی خودکار ([`tests/test_all_cdns_self_hosted.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/tests/test_all_cdns_self_hosted.php)):**
       - اجرای ۲۶ تست موفق بررسی عدم وجود هرگونه دامنه CDN خارجی در ۶۷۰ فایل سورس پروژه و تایید وجود کلیه فایل‌های بومی.
 
+86. **موتور استرداد مالی ۱۰۰٪ به کیف‌پول درون‌برنامه‌ای، استعلام خروج کالا در پستکس، قانون ۲۴ ساعت نوبت و بلک‌اوت اشتراک (Strict Closed-Loop In-App Wallet Refund Engine, Postex City Departure Inquiry, 24-Hour Law & Autoship Blackout):**
+    - **قانون طلایی سیستم مالی آسنا (Zero External Bank Refund):** وجه پرداختی در صورت لغو سفارش، لغو نوبت کلینیک، یا ابطال اشتراک هرگز به حساب بانکی شبا واریز نمی‌شود، بلکه بلافاصله و ۱۰۰٪ به موجودی کیف‌پول درون‌برنامه‌ای کاربر (`users.wallet_balance`) واریز می‌گردد.
+    - **سرویس‌های هسته کیف‌پول و لغو قوانین ([`includes/WalletService.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/includes/WalletService.php) و [`includes/CancellationService.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/includes/CancellationService.php)):**
+      - متدهای اتمیک `deposit`، `deduct`، `refund`، `canPay` و ثبت تراکنش در `wallet_transactions`.
+      - استعلام بارکد مرسوله از وب‌سرویس پستکس (`postex.ir`). در صورت خروج از شهر مبدا یا وضعیت‌های تحویل، امکان لغو سفارش سلب و دلیل دقیق آن نمایش داده می‌شود.
+      - ممنوعیت لغو نوبت‌های پزشک و گرومر زیر ۲۴ ساعت مانده به موعد جهت جبران مسدودی زمان متخصص.
+      - قفل لغو اشتراک در هفته پایانی آماده‌سازی (Blackout Week) و امکان لغو پس از دریافت بسته با استرداد تناسبی ماه‌های باقیمانده به کیف‌پول.
+      - اعلام عدم امکان استرداد برای خدمات دیجیتال آنی (محاسبه‌گر BMI و جیره غذایی) مطابق مواد ۳۷ و ۳۸ قانون تجارت الکترونیک.
+    - **رابط کاربری و مودال‌های سه‌گانه تایید لغو ([`profile.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/profile.php)):** دکمه‌های پویا و غیرفعال‌شونده با ذکر دلیل دقیق عدم امکان لغو و ۳ مودال گلس‌مورفیسم استاندارد تایید استرداد به کیف‌پول.
+    - **تست‌های خودکار ([`tests/test_cancellation_and_wallet_rules.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/tests/test_cancellation_and_wallet_rules.php)):** اجرای موفق ۲۲ تست جامع مالی و لجیستیک.
+
+87. **بازطراحی نظام دعوت پرسنل مراکز و توسعه نقش‌های تخصصی گرومر و پانسیون (Organization Invitations Handshake, Groomer & Pansion Roles):**
+    - **حذف ساخت دستی کاربر بدون هویت ([`organization/members.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/organization/members.php)):** جلوگیری از تعریف دستی کاربران بدون حساب؛ ایجاد سامانه جستجوی زنده متخصصان احراز هویت شده بر اساس فیلتر تخصص (دامپزشک، گرومر، داروساز، کادر درمان).
+    - **موتور هندشیک دوطرفه و غیرمخرب ([`includes/OrganizationService.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/includes/OrganizationService.php)):** ثبت دعوت‌نامه در `organization_invitations` با شیفت و پورسانت، نمایش در کارتابل متخصص جهت تأیید یا رد با ذکر دلیل؛ پشتیبانی از ارسال مجدد در صورت خطای انسانی؛ و امکان ویرایش سمت و شیفت اعضای فعال.
+    - **کابین تخصصی گرومینگ و آرایش پت ([`groomer/index.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/groomer/index.php)):** میز کار زنده پیرایش، نشان‌های خلق‌وخو (آرام، حساس، تهاجمی/پوزه‌بند الزامی)، بوکسینگ زمان، ارسال پیامک تحویل به سرپرست (`complete_session_sms`)، آلبوم نمونه‌کارهای قبل و بعد (`grooming_portfolio`) و تعرفه‌ها.
+    - **سامانه جامع هتل و پانسیون پت ([`pansion/index.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/pansion/index.php)):** ماتریس زنده وضعیت سوئیت‌ها (`pansion_rooms`)، پذیرش و ترخیص مهمانان (`pansion_bookings`)، چک‌لیست وسایل امانی و رژیم غذایی، انتقال خودکار به وضعیت ضدعفونی پس از ترخیص و خط ارتباط با کلینیک پشتیبان.
+    - **به‌روزرسانی احراز هویت و ماتریس قابلیت‌ها ([`includes/AuthGuard.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/includes/AuthGuard.php)، [`config/tiers.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/config/tiers.php)، [`login.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/login.php) و [`profile.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/profile.php)):** ارتقای ریدایرکت نقش‌ها و افزودن دکمه‌های ورود به پنل در سایدبار پروفایل.
+    - **تست‌های خودکار جامع ([`tests/test_organization_invitations_and_new_roles.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/tests/test_organization_invitations_and_new_roles.php)):** اجرای موفق ۲۳ تست احراز هویت، جستجو، هندشیک دعوت‌نامه، گرومینگ و رزروهای پانسیون.
+
 ---
 
 ## ۴. پروتکل ثبت تغییرات آینده (Maintenance Rule)

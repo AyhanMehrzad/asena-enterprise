@@ -20,6 +20,8 @@ class AuthGuard {
         'pharmacologist',
         'seller',
         'clinic',
+        'groomer',
+        'pansion',
     ];
 
     private static ?array $cachedUser = null;
@@ -62,6 +64,20 @@ class AuthGuard {
     public static function isPharmacist(?PDO $pdo = null): bool {
         return self::hasRole(['pharmacist', 'pharmacologist', 'pharmacy'], $pdo);
     }
+
+    /**
+     * Check if current user is a groomer
+     */
+     public static function isGroomer(?PDO $pdo = null): bool {
+         return self::hasRole('groomer', $pdo);
+     }
+
+    /**
+     * Check if current user is a pansion / pet hotel manager
+     */
+     public static function isPansion(?PDO $pdo = null): bool {
+         return self::hasRole(['pansion', 'pet_hotel'], $pdo);
+     }
 
     /**
      * Ensure session is started with strict security flags
@@ -140,7 +156,7 @@ class AuthGuard {
         $u = self::user();
         $script = str_replace('\\', '/', $_SERVER['SCRIPT_NAME'] ?? '');
 
-        if (preg_match('#/(organization|admin|pharmacist|doctor|seller)/#', $script)) {
+        if (preg_match('#/(organization|admin|pharmacist|doctor|seller|groomer|pansion)/#', $script)) {
             $baseApp = dirname(dirname($script));
         } else {
             $baseApp = dirname($script);

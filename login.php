@@ -77,8 +77,12 @@ function redirectAfterLogin(?array $user, string $returnUrl = ''): void {
         header("Location: seller/index.php");
     } elseif ($role === 'doctor') {
         header("Location: doctor/index.php");
-    } elseif (in_array($role, ['pharmacist', 'pharmacy'])) {
+    } elseif (in_array($role, ['pharmacist', 'pharmacy', 'pharmacologist'])) {
         header("Location: pharmacist/index.php");
+    } elseif ($role === 'groomer') {
+        header("Location: groomer/index.php");
+    } elseif (in_array($role, ['pansion', 'pet_hotel'])) {
+        header("Location: pansion/index.php");
     } elseif ($role === 'admin') {
         header("Location: admin/index.php");
     } else {

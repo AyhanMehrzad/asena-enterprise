@@ -601,6 +601,36 @@ $nextPayoutFormatted = $fmtDateText->format($nextThursday) . ' ساعت ۲۲:۰�
         <span class="material-symbols-outlined text-red-500 shrink-0">favorite</span>
         <span class="text-sm sidebar-label">علاقه‌مندی‌ها</span>
     </a>
+    <?php if(isset($user['role']) && $user['role'] === 'doctor'): ?>
+        <a class="flex items-center gap-3 px-4 py-3 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-xl transition-all font-bold border border-emerald-200 mt-2" href="doctor/index.php" title="کابین تخصصی پزشک معالج">
+            <span class="material-symbols-outlined shrink-0">stethoscope</span>
+            <span class="text-xs sidebar-label">کابین تخصصی پزشک معالج</span>
+        </a>
+    <?php endif; ?>
+    <?php if(isset($user['role']) && in_array($user['role'], ['pharmacist', 'pharmacologist', 'pharmacy'])): ?>
+        <a class="flex items-center gap-3 px-4 py-3 text-purple-700 bg-purple-50 hover:bg-purple-100 rounded-xl transition-all font-bold border border-purple-200 mt-2" href="pharmacist/index.php" title="پنل مسئول فنی داروخانه">
+            <span class="material-symbols-outlined shrink-0">local_pharmacy</span>
+            <span class="text-xs sidebar-label">پنل مسئول فنی داروخانه</span>
+        </a>
+    <?php endif; ?>
+    <?php if(isset($user['role']) && $user['role'] === 'groomer'): ?>
+        <a class="flex items-center gap-3 px-4 py-3 text-amber-800 bg-amber-50 hover:bg-amber-100 rounded-xl transition-all font-bold border border-amber-200 mt-2" href="groomer/index.php" title="کابین تخصصی آرایش و گرومینگ پت">
+            <span class="material-symbols-outlined shrink-0 text-amber-600">content_cut</span>
+            <span class="text-xs sidebar-label">کابین تخصصی گرومینگ پت</span>
+        </a>
+    <?php endif; ?>
+    <?php if(isset($user['role']) && in_array($user['role'], ['pansion', 'pet_hotel'])): ?>
+        <a class="flex items-center gap-3 px-4 py-3 text-teal-800 bg-teal-50 hover:bg-teal-100 rounded-xl transition-all font-bold border border-teal-200 mt-2" href="pansion/index.php" title="سامانه جامع هتل و پانسیون پت">
+            <span class="material-symbols-outlined shrink-0 text-teal-600">holiday_village</span>
+            <span class="text-xs sidebar-label">سامانه مدیریت هتل و پانسیون</span>
+        </a>
+    <?php endif; ?>
+    <?php if(isset($user['role']) && in_array($user['role'], ['organization', 'organization_manager'])): ?>
+        <a class="flex items-center gap-3 px-4 py-3 text-sky-800 bg-sky-50 hover:bg-sky-100 rounded-xl transition-all font-bold border border-sky-200 mt-2" href="organization/index.php" title="پنل جامع مرکز درمانی">
+            <span class="material-symbols-outlined shrink-0 text-sky-600">domain</span>
+            <span class="text-xs sidebar-label">پنل جامع مرکز درمانی</span>
+        </a>
+    <?php endif; ?>
     <?php if(isset($user['role']) && $user['role'] === 'admin'): ?>
         <a class="flex items-center gap-3 px-4 py-3 text-emerald-600 hover:bg-emerald-50 rounded-xl transition-all font-bold" href="admin/index.php" title="پنل مدیریت کل سایت">
             <span class="material-symbols-outlined shrink-0">admin_panel_settings</span>

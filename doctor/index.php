@@ -100,6 +100,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             $error = "خطا در رفع مسدودی زمان.";
         }
     }
+    elseif ($action === 'accept_org_invitation') {
+        $invId = (int)($_POST['invitation_id'] ?? 0);
+        $userId = (int)($currentUser['id'] ?? ($doctorProfile['user_id'] ?? 0));
+        require_once '../includes/App.php';
+        $res = App::organization()->respondToInvitation($invId, $userId, 'accepted');
+        if (!empty($res['success'])) {
+            $success = $res['message'];
+        } else {
+            $error = $res['message'] ?? 'خطا در پذیرش دعوت‌نامه همکاری.';
+        }
+    }
+    elseif ($action === 'decline_org_invitation') {
+        $invId = (int)($_POST['invitation_id'] ?? 0);
+        $userId = (int)($currentUser['id'] ?? ($doctorProfile['user_id'] ?? 0));
+        $reason = trim($_POST['declined_reason'] ?? '');
+        require_once '../includes/App.php';
+        $res = App::organization()->respondToInvitation($invId, $userId, 'declined', $reason);
+        if (!empty($res['success'])) {
+            $success = $res['message'];
+        } else {
+            $error = $res['message'] ?? 'خطا در رد دعوت‌نامه.';
+        }
+    }
     elseif ($action === 'update_schedule') {
         $schedule_data = [];
         $days = ['sat', 'sun', 'mon', 'tue', 'wed', 'thu', 'fri'];
@@ -617,6 +640,17 @@ try {
         $orgsList = [];
     }
 }
+
+// Fetch pending organization invitations for this doctor
+$pendingOrgInvitations = [];
+$currentDoctorUserId = (int)($currentUser['id'] ?? ($doctorProfile['user_id'] ?? 0));
+if ($currentDoctorUserId > 0) {
+    try {
+        $pendingOrgInvitations = App::organization()->getUserInvitations($currentDoctorUserId, 'pending');
+    } catch (Throwable $e) {
+        $pendingOrgInvitations = [];
+    }
+}
 ?>
 
 <div class="p-4 md:p-8 max-w-[1440px] mx-auto space-y-6 md:space-y-8">
@@ -632,6 +666,67 @@ try {
         <div class="bg-error/10 text-error p-4 rounded-2xl font-bold flex items-center gap-2 border border-error/20 shadow-sm">
             <span class="material-symbols-outlined">error</span>
             <?= htmlspecialchars($error) ?>
+        </div>
+    <?php endif; ?>
+
+    <!-- Pending Organization Invitations Banner -->
+    <?php if (!empty($pendingOrgInvitations)): ?>
+        <div class="space-y-3">
+            <?php foreach ($pendingOrgInvitations as $pInv): ?>
+                <div class="p-5 rounded-3xl bg-gradient-to-r from-indigo-900 via-indigo-950 to-slate-900 text-white border border-indigo-400/30 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4 relative overflow-hidden">
+                    <div class="absolute -right-10 -bottom-10 w-40 h-40 bg-indigo-500/20 rounded-full blur-2xl pointer-events-none"></div>
+                    
+                    <div class="flex items-start gap-4 relative z-10">
+                        <div class="w-14 h-14 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center shrink-0 shadow-inner">
+                            <?php if (!empty($pInv['org_logo'])): ?>
+                                <img src="../<?= ltrim($pInv['org_logo'], '/') ?>" class="w-full h-full object-cover rounded-2xl" alt="logo">
+                            <?php else: ?>
+                                <span class="material-symbols-outlined text-3xl text-indigo-300">domain</span>
+                            <?php endif; ?>
+                        </div>
+                        <div class="space-y-1">
+                            <div class="flex items-center gap-2 flex-wrap">
+                                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-amber-400 text-slate-950 animate-pulse">دعوت‌نامه رسمی همکاری</span>
+                                <h3 class="font-black text-sm text-white">مرکز درمانی «<?= htmlspecialchars($pInv['org_name']) ?>»</h3>
+                                <span class="text-xs text-indigo-200">(<?= htmlspecialchars($pInv['org_city'] ?? 'تهران') ?>)</span>
+                            </div>
+                            <p class="text-xs text-slate-300">
+                                سمت پیشنهادی: <strong class="text-emerald-300"><?= htmlspecialchars($pInv['job_title'] ?: 'پزشک معالج کلینیک') ?></strong>
+                                <?php if (!empty($pInv['proposed_shifts'])): ?>
+                                    | شیفت: <span class="text-indigo-200"><?= htmlspecialchars($pInv['proposed_shifts']) ?></span>
+                                <?php endif; ?>
+                                <?php if ((float)$pInv['commission_rate'] > 0): ?>
+                                    | پورسانت: <strong class="text-amber-300"><?= (float)$pInv['commission_rate'] ?>٪</strong>
+                                <?php endif; ?>
+                            </p>
+                            <?php if (!empty($pInv['notes'])): ?>
+                                <p class="text-[11px] text-slate-300/80 bg-white/5 p-2 rounded-xl mt-1 border border-white/10"><?= htmlspecialchars($pInv['notes']) ?></p>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-2.5 shrink-0 relative z-10">
+                        <form method="POST" action="index.php" class="inline m-0">
+                            <?= csrf_field() ?>
+                            <input type="hidden" name="action" value="accept_org_invitation">
+                            <input type="hidden" name="invitation_id" value="<?= (int)$pInv['id'] ?>">
+                            <button type="submit" class="px-5 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-black text-xs shadow-lg shadow-emerald-500/25 flex items-center gap-1.5 transition-all">
+                                <span class="material-symbols-outlined text-sm">check_circle</span>
+                                <span>تأیید و پیوستن به کادر</span>
+                            </button>
+                        </form>
+
+                        <form method="POST" action="index.php" class="inline m-0" onsubmit="return confirm('آیا از رد این دعوت‌نامه همکاری اطمینان دارید؟')">
+                            <?= csrf_field() ?>
+                            <input type="hidden" name="action" value="decline_org_invitation">
+                            <input type="hidden" name="invitation_id" value="<?= (int)$pInv['id'] ?>">
+                            <button type="submit" class="px-4 py-2.5 rounded-xl bg-white/10 hover:bg-rose-500/30 text-rose-300 border border-white/15 hover:border-rose-400/40 font-bold text-xs transition-all">
+                                <span>رد دعوت</span>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            <?php endforeach; ?>
         </div>
     <?php endif; ?>
 
