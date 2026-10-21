@@ -252,7 +252,7 @@ if (isset($_SESSION['reg_flow']) && $step === 1) {
     <header class="bg-white/80 backdrop-blur-md border-b border-slate-200 sticky top-0 z-50">
         <div class="max-w-6xl mx-auto px-4 sm:px-6 h-18 flex items-center justify-between">
             <a href="index.php" class="flex items-center gap-3 group">
-                <img src="assets/images/logo.png" alt="ASENA Logo" class="w-9 h-9 object-contain group-hover:scale-105 transition-transform" onerror="this.src='https://via.placeholder.com/36?text=A'">
+                <img src="assets/images/logo.png" alt="ASENA Logo" class="w-9 h-9 object-contain group-hover:scale-105 transition-transform" onerror="this.onerror=null; this.src='assets/images/logo.png'">
                 <div>
                     <span class="text-xl font-black bg-gradient-to-r from-sky-600 to-indigo-600 bg-clip-text text-transparent">ASENA</span>
                     <span class="text-xs text-slate-600 block -mt-1 font-medium">پلتفرم سلامت و درمان حیوانات خانگی</span>

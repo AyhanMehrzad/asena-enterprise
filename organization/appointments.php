@@ -389,7 +389,7 @@ $fmtDate = new IntlDateFormatter('fa_IR@calendar=persian', IntlDateFormatter::FU
                                 <td class="p-4">
                                     <div class="flex items-center gap-2">
                                         <?php if (!empty($apt['doctor_image'])): ?>
-                                            <img src="../<?= htmlspecialchars($apt['doctor_image']) ?>" class="w-8 h-8 rounded-full object-cover border border-slate-200" onerror="this.src='https://via.placeholder.com/32?text=Doc'">
+                                            <img src="../<?= htmlspecialchars($apt['doctor_image']) ?>" class="w-8 h-8 rounded-full object-cover border border-slate-200" onerror="this.onerror=null; this.src='../assets/images/placeholders/placeholder-doctor.svg'">
                                         <?php else: ?>
                                             <div class="w-8 h-8 rounded-full <?= $isGroomer ? 'bg-pink-100 text-pink-700' : 'bg-indigo-100 text-indigo-700' ?> flex items-center justify-center font-bold text-xs">
                                                 <?= $isGroomer ? '✂️' : '🩺' ?>

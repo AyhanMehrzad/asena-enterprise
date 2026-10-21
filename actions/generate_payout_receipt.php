@@ -184,6 +184,7 @@ $viewMode = $_GET['view'] ?? 'beneficiary'; // 'beneficiary' or 'master'
 <head>
     <meta charset="utf-8">
     <title>رسید رسمی تسویه حساب پایا - <?= htmlspecialchars($batchCode) ?></title>
+    <link rel="stylesheet" href="../assets/css/vazirmatn.css">
     <link rel="stylesheet" href="../assets/css/material-symbols.css">
     <style>
         * { box-sizing: border-box; font-family: Tahoma, 'Vazirmatn', sans-serif; }

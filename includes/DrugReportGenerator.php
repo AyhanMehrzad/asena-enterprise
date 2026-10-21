@@ -179,9 +179,11 @@ class DrugReportGenerator
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>کارنامه بالینی پایش تداخلات دارویی پت | <?php echo $petName; ?> - آسنا</title>
-    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
+    <!-- Self-Hosted Local Typography & Icons (100% Offline / National Intranet Compatible) -->
+    <link rel="stylesheet" href="assets/css/vazirmatn.css">
+    <link rel="stylesheet" href="assets/css/material-symbols.css">
+    <link rel="stylesheet" href="../../assets/css/vazirmatn.css">
+    <link rel="stylesheet" href="../../assets/css/material-symbols.css">
     <style>
         :root {
             --primary: #002d72;

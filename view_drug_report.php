@@ -70,7 +70,7 @@ http_response_code(404);
 <head>
     <meta charset="UTF-8">
     <title>سند تداخلات دارویی یافت نشد | آسنا</title>
-    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="assets/css/vazirmatn.css">
     <style>
         body { font-family: 'Vazirmatn', sans-serif; background: #f8fafc; text-align: center; padding: 60px 20px; color: #1e293b; direction: rtl; }
         .box { max-width: 500px; margin: 0 auto; background: #ffffff; padding: 40px; border-radius: 24px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); }

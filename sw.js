@@ -3,7 +3,7 @@
  * Version: 1.0.0
  */
 
-const CACHE_NAME = 'asena-enterprise-v1.3.0';
+const CACHE_NAME = 'asena-enterprise-v1.4.0';
 const STATIC_ASSETS = [
     './offline.html',
     './assets/css/style.css',
@@ -12,13 +12,22 @@ const STATIC_ASSETS = [
     './assets/css/material-symbols.css',
     './assets/css/enterprise-ui.css',
     './assets/css/tailwind.output.css',
+    './assets/fonts/fonts.css',
     './assets/icons/ui/sprite.svg',
     './assets/js/offline-icons.js',
     './assets/js/notification-system.js',
     './assets/js/cart-manager.js',
     './assets/vendor/leaflet/leaflet.css',
     './assets/vendor/leaflet/leaflet.js',
+    './assets/vendor/leaflet/images/marker-icon.png',
+    './assets/vendor/leaflet/images/marker-shadow.png',
+    './assets/vendor/leaflet/images/layers.png',
+    './assets/fonts/Dxxo8j6PP2D_kU2muijlGMWWMmk.woff2',
     './assets/fonts/kJEPBvYX7BgnkSrUwT8OhrdQw4oELdPIeeII9v6oDMzBwG-RpA6RzaxHMPdY40KH8nGzv3fzfVJO1Q.woff2',
+    './assets/images/placeholders/placeholder-doctor.svg',
+    './assets/images/placeholders/placeholder-campaign.svg',
+    './assets/images/placeholders/placeholder-no-image.svg',
+    './assets/images/placeholders/placeholder-product.svg',
     './assets/images/logo.png',
     './assets/images/logo.webp',
     './assets/images/presentation-dog.jpg',

@@ -109,7 +109,7 @@ $totalCollected = array_sum(array_column($campaigns, 'current_amount'));
                         <td class="px-6 py-4">
                             <div class="flex items-center gap-4">
                                 <div class="w-12 h-12 rounded-lg border border-outline-variant/20 overflow-hidden flex-shrink-0">
-                                    <img class="w-full h-full object-cover" src="<?= htmlspecialchars($camp['image_url'] ?: 'https://placehold.co/100?text=No+Image') ?>" alt="Camp">
+                                    <img class="w-full h-full object-cover" src="<?= htmlspecialchars($camp['image_url'] ?: '../assets/images/placeholders/placeholder-campaign.svg') ?>" onerror="this.onerror=null; this.src='../assets/images/placeholders/placeholder-campaign.svg'" alt="Camp">
                                 </div>
                                 <div>
                                     <p class="font-label-lg text-label-lg text-primary"><?= htmlspecialchars($camp['title']) ?></p>

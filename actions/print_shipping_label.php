@@ -97,6 +97,7 @@ $orderDate = substr($order['created_at'], 0, 10);
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>برچسب پستی مرسوله #PC-<?= $order['id'] ?> | آسنا</title>
     <link rel="stylesheet" href="../assets/fonts/fonts.css">
+    <link rel="stylesheet" href="../assets/css/vazirmatn.css">
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Vazirmatn', Tahoma, sans-serif; }
         body { background-color: #f1f5f9; padding: 20px; color: #0f172a; direction: rtl; text-align: right; }

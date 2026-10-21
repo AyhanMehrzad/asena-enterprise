@@ -186,7 +186,7 @@ $pendingAppointments = count(array_filter($appointments, fn($a) => $a['status'] 
                         <div class="min-w-[280px] bg-white border border-outline-variant rounded-xl p-4 flex flex-col gap-4">
                             <div class="flex items-start gap-4">
                                 <div class="w-14 h-14 rounded-full bg-surface relative overflow-hidden flex-shrink-0">
-                                    <img class="w-full h-full object-cover" src="<?= htmlspecialchars($doctor['image_url'] ?: 'https://placehold.co/150?text=Doctor') ?>" alt="Doctor">
+                                    <img class="w-full h-full object-cover" src="<?= htmlspecialchars($doctor['image_url'] ?: '../assets/images/placeholders/placeholder-doctor.svg') ?>" onerror="this.onerror=null; this.src='../assets/images/placeholders/placeholder-doctor.svg'" alt="Doctor">
                                 </div>
                                 <div>
                                     <h4 class="font-label-lg text-primary"><?= htmlspecialchars($doctor['name']) ?></h4>
