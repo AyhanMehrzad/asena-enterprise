@@ -1557,6 +1557,17 @@
     - **به‌روزرسانی احراز هویت و ماتریس قابلیت‌ها ([`includes/AuthGuard.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/includes/AuthGuard.php)، [`config/tiers.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/config/tiers.php)، [`login.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/login.php) و [`profile.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/profile.php)):** ارتقای ریدایرکت نقش‌ها و افزودن دکمه‌های ورود به پنل در سایدبار پروفایل.
     - **تست‌های خودکار جامع ([`tests/test_organization_invitations_and_new_roles.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/tests/test_organization_invitations_and_new_roles.php)):** اجرای موفق ۲۳ تست احراز هویت، جستجو، هندشیک دعوت‌نامه، گرومینگ و رزروهای پانسیون.
 
+88. **افزودن نقش‌های جدید به صفحه ورود خودکار و کشوی دولوپر (Auto-Login Hub & Developer Switcher Role Expansion):**
+    - **ارتقای هاب توسعه‌دهندگان ([`auto_login.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/auto_login.php)):**
+      - افزودن کارت‌ها و پیکربندی کامل نقش‌های جدید: `groomer` (آرایشگر و گرومر تخصصی حیوانات خانگی)، `pansion` (مدیر پانسیون و هتل حیوانات خانگی) و `pharmacologist` (فارماکولوژیست بالینی و انبار تخصصی) با نشانگرهای رنگی، آیکون، شماره‌های تست و ویژگی‌های متمایز.
+      - ارتقای تابع `loginAsRole` جهت ایجاد خودکار رکوردهای نمونه در جداول `grooming_services` و `pansion_rooms` و مقداردهی خودکار هش رمز عبور پیش‌فرض (`Asena1234!`).
+      - سازگار کردن پرس‌وجوهای درج کاربر با ستون‌های موجود در هر دو محیط SQLite و MySQL/MariaDB و افزودن لایه فال‌بک ایمن درون‌حافظه‌ای جهت جلوگیری قطعی از هرگونه خطا.
+      - افزودن پیوندهای دسترسی سریع به پنل گرومر (`groomer/index.php`) و پانسیون (`pansion/index.php`) در نوار ابزار بالای صفحه.
+    - **ارتقای کشوی ورود سریع در صفحه لاگین ([`login.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/login.php)):**
+      - افزودن دکمه‌های ورود ۱-کلیک برای نقش‌های `groomer` و `pansion` در کشوی توسعه‌دهندگان (`#quick-login-drawer`) با چینش منظم ۴ ستونه.
+    - **به‌روزرسانی مستندات اعتبارسنجی ([`.agents/accounts_credentials.txt`](file:///opt/lampp/htdocs/asena/asena-enterprise/.agents/accounts_credentials.txt)):**
+      - ثبت کامل شماره‌های همراه تست، پسورد مشترک، نام‌ها و تفکیک دسترسی‌های پنل‌های گرومر، پانسیون، فارماکولوژیست بالینی و داروخانه مستقل.
+
 ---
 
 ## ۴. پروتکل ثبت تغییرات آینده (Maintenance Rule)

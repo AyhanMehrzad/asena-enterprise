@@ -886,10 +886,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <p class="text-[11px] font-black text-slate-700">انتخاب سریع نقش (بدون پسورد):</p>
                         <a href="auto_login.php<?= !empty($returnUrl) ? '?return_url=' . urlencode($returnUrl) : '' ?>" class="text-[10px] text-primary hover:text-secondary-container font-bold">میزکار کامل &larr;</a>
                     </div>
-                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
                         <a href="auto_login.php?role=doctor<?= !empty($returnUrl) ? '&return_url=' . urlencode($returnUrl) : '' ?>" class="p-2 rounded-xl bg-white border border-slate-200 hover:border-emerald-500 hover:bg-emerald-50/50 transition-all text-xs font-bold text-slate-800 flex items-center gap-1.5 shadow-2xs">
                             <span class="material-symbols-outlined text-emerald-600 text-sm">stethoscope</span>
                             <span>دکتر دامپزشک</span>
+                        </a>
+                        <a href="auto_login.php?role=groomer<?= !empty($returnUrl) ? '&return_url=' . urlencode($returnUrl) : '' ?>" class="p-2 rounded-xl bg-white border border-slate-200 hover:border-teal-500 hover:bg-teal-50/50 transition-all text-xs font-bold text-slate-800 flex items-center gap-1.5 shadow-2xs">
+                            <span class="material-symbols-outlined text-teal-600 text-sm">content_cut</span>
+                            <span>گرومر و اصلاح</span>
+                        </a>
+                        <a href="auto_login.php?role=pansion<?= !empty($returnUrl) ? '&return_url=' . urlencode($returnUrl) : '' ?>" class="p-2 rounded-xl bg-white border border-slate-200 hover:border-cyan-500 hover:bg-cyan-50/50 transition-all text-xs font-bold text-slate-800 flex items-center gap-1.5 shadow-2xs">
+                            <span class="material-symbols-outlined text-cyan-600 text-sm">hotel</span>
+                            <span>پانسیون و هتل</span>
                         </a>
                         <a href="auto_login.php?role=pharmacist<?= !empty($returnUrl) ? '&return_url=' . urlencode($returnUrl) : '' ?>" class="p-2 rounded-xl bg-white border border-slate-200 hover:border-purple-500 hover:bg-purple-50/50 transition-all text-xs font-bold text-slate-800 flex items-center gap-1.5 shadow-2xs">
                             <span class="material-symbols-outlined text-purple-600 text-sm">prescriptions</span>

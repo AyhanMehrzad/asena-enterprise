@@ -8,22 +8,25 @@
 
 header('X-Robots-Tag: noindex, nofollow, noarchive');
 require_once __DIR__ . '/includes/db.php';
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 
 // Role configurations and metadata
 $rolesConfig = [
-    'seller' => [
-        'title'        => 'فروشنده مستقل و پت‌شاپ',
-        'subtitle'     => 'Seller & Petshop Merchant',
-        'badge'        => 'تجاری و فروشگاهی',
-        'color'        => 'amber',
-        'gradient'     => 'from-amber-500 to-orange-600',
-        'bg_light'     => 'bg-amber-50 border-amber-200 text-amber-900',
-        'icon'         => 'storefront',
-        'phone'        => '09120000003',
-        'default_name' => 'فروشگاه پت‌پارس (فروشنده رسمی)',
-        'target'       => 'seller/index.php',
-        'description'  => 'مدیریت محصولات، پردازش سفارشات، ثبت بارکد رهگیری پست و کیف پول امانی با تسویه پایا.',
-        'features'     => ['ویترین و انبار محصولات', 'پردازش سفارشات و ارسال', 'ثبت بارکد ۲۴ رقمی پست', 'تسویه پایا بانک مرکزی']
+    'doctor' => [
+        'title'        => 'پزشک و جراح متخصص دامپزشک',
+        'subtitle'     => 'Veterinarian & Surgeon Cockpit',
+        'badge'        => 'کادر درمان',
+        'color'        => 'emerald',
+        'gradient'     => 'from-emerald-600 to-teal-700',
+        'bg_light'     => 'bg-emerald-50 border-emerald-200 text-emerald-900',
+        'icon'         => 'stethoscope',
+        'phone'        => '09129972056',
+        'default_name' => 'دکتر کیان رستمی (متخصص جراحی)',
+        'target'       => 'doctor/index.php',
+        'description'  => 'تقویم نوبت‌های روزانه، ویزیت آنلاین/حضوری، پرونده‌های بالینی و صدور نسخه الکترونیک (Rx).',
+        'features'     => ['تقویم ویزیت‌های روزانه', 'صدور نسخه الکترونیک Rx', 'پرونده الکترونیک سلامت', 'بدون دغدغه تسویه مالی']
     ],
     'organization' => [
         'title'        => 'مدیریت مرکز درمانی و بیمارستان',
@@ -39,19 +42,33 @@ $rolesConfig = [
         'description'  => 'پیشخوان بیمارستان، پزشکان همکار، نوبت‌دهی مراجعین، انبار دارویی و کیف پول مرکز درمانی.',
         'features'     => ['پیشخوان مدیریتی کلینیک', 'تقویم نوبت‌ها و مراجعین', 'کادر درمانی و پزشکان', 'انبار دارویی و ملزومات']
     ],
-    'doctor' => [
-        'title'        => 'پزشک و جراح متخصص دامپزشک',
-        'subtitle'     => 'Veterinarian & Surgeon',
-        'badge'        => 'کادر درمان',
-        'color'        => 'emerald',
-        'gradient'     => 'from-emerald-600 to-teal-700',
-        'bg_light'     => 'bg-emerald-50 border-emerald-200 text-emerald-900',
-        'icon'         => 'stethoscope',
-        'phone'        => '09129972056',
-        'default_name' => 'دکتر کیان رستمی (متخصص جراحی)',
-        'target'       => 'doctor/index.php',
-        'description'  => 'تقویم نوبت‌های روزانه، ویزیت آنلاین/حضوری، پرونده‌های بالینی و صدور نسخه الکترونیک (Rx).',
-        'features'     => ['تقویم ویزیت‌های روزانه', 'صدور نسخه الکترونیک Rx', 'پرونده الکترونیک سلامت', 'بدون دغدغه تسویه مالی']
+    'groomer' => [
+        'title'        => 'آرایشگر و گرومر تخصصی حیوانات خانگی',
+        'subtitle'     => 'Pet Groomer & Stylist Cockpit',
+        'badge'        => 'گرومینگ و آرایشگاه',
+        'color'        => 'teal',
+        'gradient'     => 'from-teal-600 to-cyan-700',
+        'bg_light'     => 'bg-teal-50 border-teal-200 text-teal-900',
+        'icon'         => 'content_cut',
+        'phone'        => '09121110002',
+        'default_name' => 'سارا افشار (استودیو گرومینگ تخصصی)',
+        'target'       => 'groomer/index.php',
+        'description'  => 'میزکار شیفت آرایشگاه، پایش خلق‌وخوی پت، رزرو وقت اصلاح، ثبت پایش بهداشتی و آلبوم قبل و بعد اصلاح.',
+        'features'     => ['میزکار شیفت و نوبت اصلاح', 'هشدار خلق‌وخو (پوزه‌بند/حساس)', 'پیامک تحویل با ۱ کلیک', 'آلبوم نمونه‌کارهای قبل و بعد']
+    ],
+    'pansion' => [
+        'title'        => 'مدیر پانسیون و هتل حیوانات خانگی',
+        'subtitle'     => 'Pet Hotel & Boarding Pansion Portal',
+        'badge'        => 'هتل و پانسیون',
+        'color'        => 'cyan',
+        'gradient'     => 'from-cyan-600 to-blue-700',
+        'bg_light'     => 'bg-cyan-50 border-cyan-200 text-cyan-900',
+        'icon'         => 'hotel',
+        'phone'        => '09121110004',
+        'default_name' => 'مجموعه اقامتی و هتل حیوانات مهر',
+        'target'       => 'pansion/index.php',
+        'description'  => 'ماتریس وضعیت اتاق‌ها و سوئیت‌ها، پذیرش مسافران پت، رژیم غذایی و داروها، و چرخه ضدعفونی پس از ترخیص.',
+        'features'     => ['ماتریس وضعیت اتاق‌ها و سوئیت‌ها', 'ثبت پذیرش و ورود/خروج مسافر', 'چک‌لیست وسایل و رژیم غذایی', 'چرخه ضدعفونی پس از ترخیص']
     ],
     'pharmacist' => [
         'title'        => 'دکتر داروساز و فارماکولوژیست',
@@ -67,6 +84,20 @@ $rolesConfig = [
         'description'  => 'مدیریت موجودی انبار دارویی، نظارت بر زنجیره سرد، کنترل سری ساخت و تاریخ انقضا و راهنمای تداخلات.',
         'features'     => ['انبار و کنترل موجودی داروها', 'پایش سری ساخت و انقضا', 'کنترل زنجیره سرد واکسن', 'راهنمای تداخلات دارویی']
     ],
+    'pharmacologist' => [
+        'title'        => 'فارماکولوژیست بالینی و انبار تخصصی',
+        'subtitle'     => 'Clinical Pharmacologist & Drug Safety',
+        'badge'        => 'فارماکولوژی بالینی',
+        'color'        => 'fuchsia',
+        'gradient'     => 'from-fuchsia-600 to-pink-700',
+        'bg_light'     => 'bg-fuchsia-50 border-fuchsia-200 text-fuchsia-900',
+        'icon'         => 'science',
+        'phone'        => '09120000007',
+        'default_name' => 'دکتر ارشیا سرمد (فارماکولوژیست بالینی)',
+        'target'       => 'pharmacist/index.php',
+        'description'  => 'پایش تداخلات دارویی پیشرفته، تایید فرمولاسیون دارویی، دوزهای وزنی پت و گزارشات عوارض ناخواسته دارویی (ADR).',
+        'features'     => ['پایش تداخلات پیشرفته دارویی', 'محاسبه دوز بر اساس گونه و وزن', 'کنترل فرمولاسیون ترکیبی', 'نظارت بر داروهای تحت کنترل']
+    ],
     'pharmacy' => [
         'title'        => 'داروخانه مستقل و انبار تخصصی',
         'subtitle'     => 'Pharmacy Store Owner — Inventory Hub',
@@ -80,6 +111,20 @@ $rolesConfig = [
         'target'       => 'pharmacist/index.php',
         'description'  => 'داروخانه مستقل با پروانه رسمی، انبار دارویی متصل به اکوسیستم، و مدیریت سفارشات و موجودی کالا.',
         'features'     => ['انبار دارویی اختصاصی', 'توزیع مستقیم دارو', 'همگام‌سازی با مراکز همکار', 'گزارش موجودی و انقضا']
+    ],
+    'seller' => [
+        'title'        => 'فروشنده مستقل و پت‌شاپ',
+        'subtitle'     => 'Seller & Petshop Merchant',
+        'badge'        => 'تجاری و فروشگاهی',
+        'color'        => 'amber',
+        'gradient'     => 'from-amber-500 to-orange-600',
+        'bg_light'     => 'bg-amber-50 border-amber-200 text-amber-900',
+        'icon'         => 'storefront',
+        'phone'        => '09120000003',
+        'default_name' => 'فروشگاه پت‌پارس (فروشنده رسمی)',
+        'target'       => 'seller/index.php',
+        'description'  => 'مدیریت محصولات، پردازش سفارشات، ثبت بارکد رهگیری پست و کیف پول امانی با تسویه پایا.',
+        'features'     => ['ویترین و انبار محصولات', 'پردازش سفارشات و ارسال', 'ثبت بارکد ۲۴ رقمی پست', 'تسویه پایا بانک مرکزی']
     ],
     'admin' => [
         'title'        => 'مدیر ارشد سامانه آسنا',
@@ -139,9 +184,9 @@ function loginAsRole($pdo, $role, $cfg) {
     $stmt->execute([$cfg['phone']]);
     $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
-    // 3. Fallback: find any user with that role
+    // 3. Fallback: find any user with that role with valid phone
     if (!$user) {
-        $stmtRole = $pdo->prepare("SELECT * FROM users WHERE role = ? OR role = ? ORDER BY id ASC LIMIT 1");
+        $stmtRole = $pdo->prepare("SELECT * FROM users WHERE (role = ? OR role = ?) AND phone IS NOT NULL AND phone != '' ORDER BY id ASC LIMIT 1");
         $stmtRole->execute([$role, $mappedDbRole]);
         $user = $stmtRole->fetch(PDO::FETCH_ASSOC);
     }
@@ -151,8 +196,8 @@ function loginAsRole($pdo, $role, $cfg) {
         $hash = password_hash('Asena1234!', PASSWORD_DEFAULT);
         try {
             $ins = $pdo->prepare("
-                INSERT INTO users (phone, name, password, role, verification_status, loyalty_points, created_at)
-                VALUES (?, ?, ?, ?, 'approved', 100, NOW())
+                INSERT INTO users (phone, name, password, role, verification_status, loyalty_points)
+                VALUES (?, ?, ?, ?, 'approved', 100)
             ");
             $ins->execute([$cfg['phone'], $cfg['default_name'], $hash, $mappedDbRole]);
             $uid = $pdo->lastInsertId();
@@ -161,9 +206,9 @@ function loginAsRole($pdo, $role, $cfg) {
             $stmt->execute([$uid]);
             $user = $stmt->fetch(PDO::FETCH_ASSOC);
         } catch (Throwable $e) {
-            // If verification_status or loyalty_points fail
+            // Fallback without loyalty_points
             try {
-                $ins = $pdo->prepare("INSERT INTO users (phone, name, password, role, created_at) VALUES (?, ?, ?, ?, NOW())");
+                $ins = $pdo->prepare("INSERT INTO users (phone, name, password, role) VALUES (?, ?, ?, ?)");
                 $ins->execute([$cfg['phone'], $cfg['default_name'], $hash, $mappedDbRole]);
                 $uid = $pdo->lastInsertId();
                 $stmt = $pdo->prepare("SELECT * FROM users WHERE id = ? LIMIT 1");
@@ -173,8 +218,28 @@ function loginAsRole($pdo, $role, $cfg) {
         }
     }
 
-    // 5. Ensure existing user has valid role and approved verification in DB
+    // Safety fallback in-memory user if DB insert failed
+    if (!$user) {
+        $user = [
+            'id' => 9999,
+            'role' => $mappedDbRole,
+            'name' => $cfg['default_name'],
+            'phone' => $cfg['phone'],
+            'password' => $hash ?? '',
+            'verification_status' => 'approved'
+        ];
+    }
+
+    // 5. Ensure existing user has valid role, password and approved verification in DB
     if ($user) {
+        if (empty($user['password'])) {
+            try {
+                $hash = password_hash('Asena1234!', PASSWORD_DEFAULT);
+                $pdo->prepare("UPDATE users SET password = ? WHERE id = ?")->execute([$hash, $user['id']]);
+                $user['password'] = $hash;
+            } catch (Throwable $e) {}
+        }
+
         $needsRoleUpdate = empty($user['role']) || 
             ($user['role'] !== $mappedDbRole && $user['role'] !== $role && $user['role'] !== 'admin');
 
@@ -207,7 +272,7 @@ function loginAsRole($pdo, $role, $cfg) {
             } catch (Throwable $e) {}
         }
 
-        if (in_array($role, ['pharmacist', 'pharmacy']) || in_array($user['role'], ['pharmacist', 'pharmacy'])) {
+        if (in_array($role, ['pharmacist', 'pharmacy', 'pharmacologist']) || in_array($user['role'], ['pharmacist', 'pharmacy', 'pharmacologist'])) {
             try {
                 $psStmt = $pdo->prepare("SELECT id FROM pharmacy_stores WHERE user_id = ? LIMIT 1");
                 $psStmt->execute([$user['id']]);
@@ -217,10 +282,34 @@ function loginAsRole($pdo, $role, $cfg) {
                 }
             } catch (Throwable $e) {}
         }
+
+        if ($role === 'groomer' || $user['role'] === 'groomer') {
+            try {
+                $gsStmt = $pdo->prepare("SELECT id FROM grooming_services WHERE groomer_user_id = ? LIMIT 1");
+                $gsStmt->execute([$user['id']]);
+                if (!$gsStmt->fetchColumn()) {
+                    $insGs = $pdo->prepare("INSERT INTO grooming_services (groomer_user_id, title, category, duration_minutes, price, is_active) VALUES (?, 'گرومینگ VIP و شستشوی ضدکک پت', 'full_grooming', 60, 480000, 1)");
+                    $insGs->execute([$user['id']]);
+                }
+            } catch (Throwable $e) {}
+        }
+
+        if ($role === 'pansion' || $user['role'] === 'pansion') {
+            try {
+                $prStmt = $pdo->prepare("SELECT id FROM pansion_rooms WHERE pansion_user_id = ? LIMIT 1");
+                $prStmt->execute([$user['id']]);
+                if (!$prStmt->fetchColumn()) {
+                    $insPr = $pdo->prepare("INSERT INTO pansion_rooms (pansion_user_id, room_number, room_title, room_type, capacity, price_per_night, status) VALUES (?, 'VIP-202', 'سوئیت گاردن با تراس اختصاصی', 'suite', 1, 750000, 'available')");
+                    $insPr->execute([$user['id']]);
+                }
+            } catch (Throwable $e) {}
+        }
     }
 
     // Set authenticated session with all unified variables
-    session_regenerate_id(true);
+    if (session_status() === PHP_SESSION_ACTIVE) {
+        @session_regenerate_id(true);
+    }
     $_SESSION['user_id']   = (int)$user['id'];
     $_SESSION['user_role'] = $user['role'] ?: $mappedDbRole;
     $_SESSION['role']      = $user['role'] ?: $mappedDbRole;
@@ -250,7 +339,9 @@ if (!empty($returnUrl)) {
 // Handle Logout
 if ($action === 'logout' || $reqRole === 'logout' || $reqRole === 'guest') {
     unset($_SESSION['user_id'], $_SESSION['user_role'], $_SESSION['role'], $_SESSION['name'], $_SESSION['user_name'], $_SESSION['phone'], $_SESSION['password_hash']);
-    session_regenerate_id(true);
+    if (session_status() === PHP_SESSION_ACTIVE) {
+        @session_regenerate_id(true);
+    }
     $logoutRedirect = "auto_login.php?logged_out=1" . (!empty($returnUrl) ? '&return_url=' . urlencode($returnUrl) : '');
     header("Location: " . $logoutRedirect);
     exit;
@@ -279,8 +370,9 @@ foreach ($rolesConfig as $rKey => $cfg) {
     $stmt->execute([$cfg['phone']]);
     $u = $stmt->fetch(PDO::FETCH_ASSOC);
     if (!$u) {
-        $stmt = $pdo->prepare("SELECT id, name, phone, role FROM users WHERE role = ? ORDER BY id ASC LIMIT 1");
-        $stmt->execute([$rKey]);
+        $stmtRole = ($rKey === 'pharmacy') ? 'pharmacist' : $rKey;
+        $stmt = $pdo->prepare("SELECT id, name, phone, role FROM users WHERE role = ? AND phone IS NOT NULL AND phone != '' ORDER BY id ASC LIMIT 1");
+        $stmt->execute([$stmtRole]);
         $u = $stmt->fetch(PDO::FETCH_ASSOC);
     }
     $usersInfo[$rKey] = $u ?: ['id' => '-', 'name' => $cfg['default_name'], 'phone' => $cfg['phone']];
@@ -330,7 +422,7 @@ foreach ($rolesConfig as $rKey => $cfg) {
                     <div class="flex items-center gap-2">
                         <h1 class="text-xl sm:text-2xl font-black tracking-tight">میزکار توسعه: ورود خودکار به نقش‌ها</h1>
                         <span class="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-amber-500/20 text-amber-300 border border-amber-500/30">
-                            حالت تست و دولوپر
+                            ۱۰ نقش فعال
                         </span>
                     </div>
                     <p class="text-xs sm:text-sm text-slate-400 mt-1">
@@ -344,6 +436,14 @@ foreach ($rolesConfig as $rKey => $cfg) {
                 <a href="index.php" class="px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition-colors flex items-center gap-1.5">
                     <span class="material-symbols-outlined text-base">home</span>
                     <span>صفحه اصلی</span>
+                </a>
+                <a href="groomer/index.php" class="px-3 py-2 rounded-xl text-xs font-bold bg-teal-900/40 hover:bg-teal-800/60 text-teal-300 border border-teal-700/50 transition-colors flex items-center gap-1.5">
+                    <span class="material-symbols-outlined text-base text-teal-400">content_cut</span>
+                    <span>پنل گرومر</span>
+                </a>
+                <a href="pansion/index.php" class="px-3 py-2 rounded-xl text-xs font-bold bg-cyan-900/40 hover:bg-cyan-800/60 text-cyan-300 border border-cyan-700/50 transition-colors flex items-center gap-1.5">
+                    <span class="material-symbols-outlined text-base text-cyan-400">hotel</span>
+                    <span>پنل پانسیون</span>
                 </a>
                 <a href="organizations.php" class="px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition-colors flex items-center gap-1.5">
                     <span class="material-symbols-outlined text-base">domain</span>
