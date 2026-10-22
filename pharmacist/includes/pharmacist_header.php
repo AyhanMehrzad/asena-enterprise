@@ -62,41 +62,57 @@ $orgId = (int)($linkedOrg['id'] ?? 1);
     <link href="../assets/css/material-symbols.css" rel="stylesheet"/>
     <link href="../assets/css/geist.css" rel="stylesheet"/>
     <link rel="stylesheet" href="../assets/css/tailwind.output.css">
+    <link rel="stylesheet" href="../assets/css/enterprise-ui.css">
     <style>
         body { font-family: 'Geist', sans-serif; }
         .stat-card-shadow { box-shadow: 0px 4px 12px rgba(0, 45, 114, 0.08); }
     </style>
     <script src="../assets/js/currency-formatter.js?v=<?php echo time(); ?>" defer></script>
+    <script src="../assets/js/panel-sidebar.js?v=<?php echo time(); ?>" defer></script>
+    <script>
+        (function() {
+            try {
+                if (localStorage.getItem('asana_panel_sidebar_collapsed') === '1' && window.innerWidth >= 1024) {
+                    document.documentElement.classList.add('sidebar-initially-collapsed');
+                }
+            } catch(e) {}
+        })();
+    </script>
 </head>
 <body class="bg-surface text-on-surface selection:bg-secondary-container/30">
 
 <!-- Mobile Backdrop -->
 <div id="pharmacist-backdrop" class="fixed inset-0 bg-black/50 z-[60] hidden lg:hidden backdrop-blur-sm transition-opacity opacity-0" onclick="togglePharmacistSidebar()"></div>
 
-<!-- SideNavBar matching Doctor panel exact layout -->
-<aside id="pharmacist-sidebar" class="fixed inset-y-0 right-0 w-64 bg-tertiary flex flex-col z-[70] lg:z-40 rtl shadow-lg transition-transform duration-300 translate-x-full lg:translate-x-0 overflow-y-auto">
+<!-- SideNavBar matching Doctor panel exact layout with desktop collapse -->
+<aside id="pharmacist-sidebar" class="panel-sidebar fixed inset-y-0 right-0 w-64 bg-tertiary flex flex-col z-[70] lg:z-40 rtl shadow-lg transition-all duration-300 translate-x-full lg:translate-x-0 overflow-y-auto">
     <div class="p-6 flex flex-col gap-2">
-        <div class="flex items-center justify-between">
-            <a href="../index.php" class="flex items-center gap-3 group" title="مشاهده سایت">
+        <div class="flex items-center justify-between sidebar-toggle-container">
+            <a href="../index.php" class="flex items-center gap-3 group sidebar-header-text" title="مشاهده سایت">
                 <img src="../assets/images/logo.png" alt="لوگوی آسنا" class="w-9 h-9 object-contain drop-shadow group-hover:scale-105 transition-transform">
                 <div>
                     <h1 class="text-xl text-tertiary-fixed font-bold leading-tight group-hover:text-secondary-container transition-colors">آسنا</h1>
                     <p class="text-sm text-on-tertiary-container/70">داروسازی و فارماکولوژی</p>
                 </div>
             </a>
-            <button onclick="togglePharmacistSidebar()" class="lg:hidden text-on-tertiary-container hover:text-white transition-colors">
-                <span class="material-symbols-outlined">close</span>
-            </button>
+            <div class="flex items-center gap-1">
+                <button type="button" class="sidebar-desktop-toggle-btn hidden lg:flex w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 text-tertiary-fixed items-center justify-center transition-colors shadow-xs" onclick="togglePanelDesktopSidebar()" title="جمع کردن / باز کردن منو">
+                    <span class="sidebar-desktop-toggle-icon material-symbols-outlined text-xl">chevron_right</span>
+                </button>
+                <button onclick="togglePharmacistSidebar()" class="lg:hidden text-on-tertiary-container hover:text-white transition-colors p-1" aria-label="بستن منو">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
         </div>
 
-        <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/10 text-tertiary-fixed text-xs font-medium mb-1">
+        <div class="sidebar-tier-badge inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/10 text-tertiary-fixed text-xs font-medium mb-1">
             <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
             <span>مدیریت یکپارچه انبار دارویی</span>
         </div>
 
-        <button type="button" onclick="document.getElementById('addMedModal').classList.remove('hidden')" class="w-full bg-gradient-to-r from-blue-600 to-primary hover:from-blue-700 hover:to-indigo-800 text-white font-bold py-2.5 px-3 rounded-xl flex items-center justify-center gap-2 shadow-md transition-all text-xs my-2">
-            <span class="material-symbols-outlined text-base">add_circle</span>
-            <span>+ ثبت داروی جدید در انبار</span>
+        <button type="button" onclick="document.getElementById('addMedModal').classList.remove('hidden')" class="sidebar-cta-btn w-full bg-gradient-to-r from-blue-600 to-primary hover:from-blue-700 hover:to-indigo-800 text-white font-bold py-2.5 px-3 rounded-xl flex items-center justify-center gap-2 shadow-md transition-all text-xs my-2" title="ثبت داروی جدید در انبار">
+            <span class="material-symbols-outlined text-base shrink-0">add_circle</span>
+            <span class="sidebar-label">+ ثبت داروی جدید در انبار</span>
         </button>
     </div>
 
@@ -123,17 +139,17 @@ $orgId = (int)($linkedOrg['id'] ?? 1);
             $href = !empty($item['url']) ? $item['url'] : "index.php?tab={$key}";
             $onclick = !empty($item['url']) ? "" : "if(typeof switchTab === 'function') { switchTab('{$item['tab']}'); if(window.innerWidth < 1024) togglePharmacistSidebar(); return false; }";
         ?>
-        <a id="nav-item-<?= $key ?>" class="<?= $classes ?>" href="<?= $href ?>" <?= !empty($onclick) ? 'onclick="'.$onclick.'"' : '' ?>>
-            <span class="material-symbols-outlined text-[20px]"><?= $item['icon'] ?></span>
-            <span class="text-xs font-bold leading-tight"><?= $item['title'] ?></span>
+        <a id="nav-item-<?= $key ?>" class="<?= $classes ?>" href="<?= $href ?>" <?= !empty($onclick) ? 'onclick="'.$onclick.'"' : '' ?> title="<?= $item['title'] ?>">
+            <span class="material-symbols-outlined text-[20px] shrink-0"><?= $item['icon'] ?></span>
+            <span class="text-xs font-bold leading-tight sidebar-label"><?= $item['title'] ?></span>
         </a>
         <?php endforeach; ?>
     </nav>
 
     <!-- Bottom Actions -->
     <div class="p-6 pt-2 flex flex-col gap-2">
-        <div class="px-1 mb-2 space-y-1.5">
-            <a href="../pharmacy" target="_blank" class="flex items-center gap-2.5 px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-bold transition-all">
+        <div class="px-1 mb-2 space-y-1.5 sidebar-footer-extra">
+            <a href="../pharmacy" target="_blank" class="flex items-center gap-2.5 px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-bold transition-all" title="داروخانه عمومی سایت">
                 <span class="material-symbols-outlined text-[20px]">storefront</span>
                 <span>داروخانه عمومی سایت</span>
                 <span class="material-symbols-outlined text-xs mr-auto">north_east</span>
@@ -144,22 +160,22 @@ $orgId = (int)($linkedOrg['id'] ?? 1);
             </div>
         </div>
 
-        <a href="../index.php" class="w-full bg-secondary-container text-white font-bold py-3 px-4 rounded-lg flex items-center justify-center gap-2 active:translate-x-1 duration-200">
+        <a href="../index.php" class="sidebar-footer-link w-full bg-secondary-container text-white font-bold py-3 px-4 rounded-lg flex items-center justify-center gap-2 active:translate-x-1 duration-200" title="بازگشت به سایت">
             <span class="material-symbols-outlined">storefront</span>
-            <span class="text-xs font-bold">بازگشت به سایت</span>
+            <span class="text-xs font-bold sidebar-label">بازگشت به سایت</span>
         </a>
 
         <div class="mt-2">
-            <a class="flex items-center gap-3 px-4 py-2 text-on-tertiary-container hover:text-white transition-all text-xs font-bold" href="../logout.php" onclick="return confirm('آیا از خروج از حساب کاربری اطمینان دارید؟');">
+            <a class="sidebar-footer-link flex items-center gap-3 px-4 py-2 text-on-tertiary-container hover:text-white transition-all text-xs font-bold" href="../logout.php" onclick="return confirm('آیا از خروج از حساب کاربری اطمینان دارید؟');" title="خروج از حساب">
                 <span class="material-symbols-outlined text-rose-400">logout</span>
-                <span>خروج از حساب</span>
+                <span class="sidebar-label">خروج از حساب</span>
             </a>
         </div>
     </div>
 </aside>
 
 <!-- Main Content Wrapper -->
-<main class="lg:mr-64 mr-0 min-h-screen transition-all duration-300">
+<main id="panel-main-content" class="panel-main-content lg:mr-64 mr-0 min-h-screen transition-all duration-300">
     <!-- TopAppBar -->
     <header class="sticky top-0 z-40 flex justify-between items-center h-16 px-4 lg:px-6 bg-surface shadow-sm border-b border-outline-variant/20">
         <div class="flex items-center gap-2 lg:gap-6">

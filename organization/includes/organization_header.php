@@ -122,6 +122,7 @@ $currentFile = basename($_SERVER['PHP_SELF']);
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
     <title>مراکز</title>
     <link rel="stylesheet" href="../assets/css/style.css">
+    <link rel="stylesheet" href="../assets/css/enterprise-ui.css">
     <link href="../assets/css/material-symbols.css" rel="stylesheet"/>
     <link href="../assets/css/geist.css" rel="stylesheet"/>
     <link rel="stylesheet" href="../assets/css/tailwind.output.css">
@@ -131,6 +132,7 @@ $currentFile = basename($_SERVER['PHP_SELF']);
     </style>
     <script src="../assets/js/bidi-direction.js?v=<?php echo time(); ?>" defer></script>
     <script src="../assets/js/currency-formatter.js?v=<?php echo time(); ?>" defer></script>
+    <script src="../assets/js/panel-sidebar.js?v=<?php echo time(); ?>" defer></script>
 </head>
 <body class="bg-surface text-on-surface selection:bg-secondary-container/30">
 
@@ -138,29 +140,34 @@ $currentFile = basename($_SERVER['PHP_SELF']);
 <div id="org-backdrop" class="fixed inset-0 bg-black/50 z-[60] hidden lg:hidden backdrop-blur-sm transition-opacity opacity-0" onclick="toggleOrgSidebar()"></div>
 
 <!-- SideNavBar matching Doctor & Pharmacist exact styling -->
-<aside id="org-sidebar" class="fixed inset-y-0 right-0 w-64 bg-tertiary flex flex-col z-[70] lg:z-40 rtl shadow-lg transition-transform duration-300 translate-x-full lg:translate-x-0 overflow-y-auto">
+<aside id="org-sidebar" class="panel-sidebar fixed inset-y-0 right-0 w-64 bg-tertiary flex flex-col z-[70] lg:z-40 rtl shadow-lg transition-transform duration-300 translate-x-full lg:translate-x-0 overflow-y-auto">
     <div class="p-6 flex flex-col gap-2">
         <div class="flex items-center justify-between">
             <a href="../index.php" class="flex items-center gap-3 group" title="مشاهده سایت">
-                <img src="../assets/images/logo.png" alt="لوگوی آسنا" class="w-9 h-9 object-contain drop-shadow group-hover:scale-105 transition-transform">
-                <div>
+                <img src="../assets/images/logo.png" alt="لوگوی آسنا" class="w-9 h-9 object-contain drop-shadow group-hover:scale-105 transition-transform shrink-0">
+                <div class="sidebar-label">
                     <h1 class="text-xl text-tertiary-fixed font-bold leading-tight group-hover:text-secondary-container transition-colors">آسنا</h1>
                     <p class="text-sm text-on-tertiary-container/70">پنل مرکز درمانی</p>
                 </div>
             </a>
-            <button onclick="toggleOrgSidebar()" class="lg:hidden text-on-tertiary-container hover:text-white transition-colors">
-                <span class="material-symbols-outlined">close</span>
-            </button>
+            <div class="flex items-center gap-1">
+                <button type="button" onclick="togglePanelDesktopSidebar('org-sidebar')" class="hidden lg:flex items-center justify-center w-8 h-8 rounded-lg text-on-tertiary-container hover:text-white hover:bg-white/10 transition-colors" title="جمع / باز کردن منو">
+                    <span class="material-symbols-outlined text-lg sidebar-toggle-icon">chevron_right</span>
+                </button>
+                <button onclick="toggleOrgSidebar()" class="lg:hidden text-on-tertiary-container hover:text-white transition-colors">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
         </div>
 
-        <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/10 text-tertiary-fixed text-xs font-medium mb-1">
+        <div class="sidebar-label inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/10 text-tertiary-fixed text-xs font-medium mb-1">
             <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
             <span>نسخه اینترپرایز جامع (فول اکوسیستم)</span>
         </div>
 
-        <a href="appointments.php" class="w-full bg-gradient-to-r from-blue-600 to-primary hover:from-blue-700 hover:to-indigo-800 text-white font-bold py-2.5 px-3 rounded-xl flex items-center justify-center gap-2 shadow-md transition-all text-xs my-2">
-            <span class="material-symbols-outlined text-base">calendar_month</span>
-            <span>+ ثبت و مدیریت نوبت‌ها</span>
+        <a href="appointments.php" title="ثبت و مدیریت نوبت‌ها" class="w-full bg-gradient-to-r from-blue-600 to-primary hover:from-blue-700 hover:to-indigo-800 text-white font-bold py-2.5 px-3 rounded-xl flex items-center justify-center gap-2 shadow-md transition-all text-xs my-2">
+            <span class="material-symbols-outlined text-base shrink-0">calendar_month</span>
+            <span class="sidebar-label">+ ثبت و مدیریت نوبت‌ها</span>
         </a>
     </div>
 
@@ -188,9 +195,9 @@ $currentFile = basename($_SERVER['PHP_SELF']);
                 ? "flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-white font-bold bg-secondary-container shadow-sm transition-all"
                 : "flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-on-tertiary-container hover:bg-white/10 hover:text-white transition-all";
         ?>
-        <a class="<?= $classes ?>" href="<?= $file ?>">
-            <span class="material-symbols-outlined text-[20px]"><?= $item['icon'] ?></span>
-            <span class="text-xs font-bold leading-tight"><?= $item['title'] ?></span>
+        <a class="<?= $classes ?>" href="<?= $file ?>" title="<?= htmlspecialchars($item['title']) ?>">
+            <span class="material-symbols-outlined text-[20px] shrink-0"><?= $item['icon'] ?></span>
+            <span class="text-xs font-bold leading-tight sidebar-label"><?= $item['title'] ?></span>
         </a>
         <?php endforeach; ?>
     </nav>
@@ -198,28 +205,28 @@ $currentFile = basename($_SERVER['PHP_SELF']);
     <!-- Bottom Actions -->
     <div class="p-4 border-t border-white/10">
         <div class="px-1 mb-2 space-y-1.5">
-            <a href="../organization_profile.php?slug=<?= urlencode($orgSlug) ?>" target="_blank" class="flex items-center gap-2.5 px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-bold transition-all">
-                <span class="material-symbols-outlined text-[20px]">open_in_new</span>
-                <span>مشاهده پروفایل عمومی</span>
-                <span class="material-symbols-outlined text-xs mr-auto">north_east</span>
+            <a href="../organization_profile.php?slug=<?= urlencode($orgSlug) ?>" target="_blank" class="flex items-center gap-2.5 px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-bold transition-all" title="مشاهده پروفایل عمومی">
+                <span class="material-symbols-outlined text-[20px] shrink-0">open_in_new</span>
+                <span class="sidebar-label">مشاهده پروفایل عمومی</span>
+                <span class="material-symbols-outlined text-xs mr-auto sidebar-label">north_east</span>
             </a>
         </div>
-        <a href="../index.php" class="w-full bg-secondary-container text-white font-bold py-3 px-4 rounded-lg flex items-center justify-center gap-2 active:translate-x-1 duration-200">
-            <span class="material-symbols-outlined">home</span>
-            <span class="text-xs">بازگشت به سایت</span>
+        <a href="../index.php" class="w-full bg-secondary-container text-white font-bold py-3 px-4 rounded-lg flex items-center justify-center gap-2 active:translate-x-1 duration-200" title="بازگشت به سایت">
+            <span class="material-symbols-outlined shrink-0">home</span>
+            <span class="text-xs sidebar-label">بازگشت به سایت</span>
         </a>
         
         <div class="mt-4 space-y-1">
-            <a class="flex items-center gap-3 px-4 py-2 text-on-tertiary-container hover:text-white transition-all text-xs" href="../logout.php" onclick="return confirm('آیا از خروج از حساب کاربری اطمینان دارید؟');">
-                <span class="material-symbols-outlined text-error text-lg">logout</span>
-                <span>خروج از حساب</span>
+            <a class="flex items-center gap-3 px-4 py-2 text-on-tertiary-container hover:text-white transition-all text-xs" href="../logout.php" onclick="return confirm('آیا از خروج از حساب کاربری اطمینان دارید؟');" title="خروج از حساب">
+                <span class="material-symbols-outlined text-error text-lg shrink-0">logout</span>
+                <span class="sidebar-label">خروج از حساب</span>
             </a>
         </div>
     </div>
 </aside>
 
 <!-- Main Content Wrapper -->
-<main class="lg:mr-64 mr-0 min-h-screen transition-all duration-300">
+<main class="panel-main-content lg:mr-64 mr-0 min-h-screen transition-all duration-300">
     <!-- TopAppBar -->
     <header class="sticky top-0 z-40 flex justify-between items-center h-16 px-4 lg:px-6 bg-surface shadow-sm border-b border-outline-variant/20">
         <div class="flex items-center gap-2 lg:gap-6">

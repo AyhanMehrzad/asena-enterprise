@@ -274,9 +274,9 @@ $occupancyRate = $totalRooms > 0 ? round(($occupiedRooms / $totalRooms) * 100) :
     <?php endif; ?>
 
     <!-- PANSION LIVE COCKPIT HERO (Rule 11) -->
-    <div class="bg-gradient-to-br from-[#06241a] via-[#093526] to-[#041a12] text-white rounded-3xl p-6 sm:p-7 shadow-xl border border-emerald-500/30 relative overflow-hidden space-y-5">
-        <div class="absolute -top-24 -left-24 w-72 h-72 bg-emerald-500/15 rounded-full blur-3xl pointer-events-none"></div>
-        <div class="absolute -bottom-24 -right-24 w-72 h-72 bg-teal-500/10 rounded-full blur-3xl pointer-events-none"></div>
+    <div class="cockpit-pansion text-white rounded-3xl p-6 sm:p-7 shadow-xl border border-emerald-500/30 relative overflow-hidden space-y-5" style="background-color: #06241a !important; background-image: linear-gradient(135deg, #06241a 0%, #093526 50%, #041a12 100%) !important; color: #ffffff !important;">
+        <div class="absolute -top-24 -left-24 w-72 h-72 bg-emerald-500/20 rounded-full blur-3xl pointer-events-none"></div>
+        <div class="absolute -bottom-24 -right-24 w-72 h-72 bg-teal-500/15 rounded-full blur-3xl pointer-events-none"></div>
 
         <!-- Top Header & Actions -->
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative z-10 border-b border-white/10 pb-4">
@@ -290,7 +290,7 @@ $occupancyRate = $totalRooms > 0 ? round(($occupiedRooms / $totalRooms) * 100) :
                             <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
                             <span>پذیرش و مراقبت شبانه‌روزی ۲۴ ساعته</span>
                         </span>
-                        <span class="text-xs text-slate-300">| نرخ اشغال هتل: <?= $occupancyRate ?>٪</span>
+                        <span class="text-xs text-emerald-200 font-bold">| نرخ اشغال هتل: <?= $occupancyRate ?>٪</span>
                     </div>
                     <h2 class="text-base sm:text-lg font-black text-white mt-1"><?= htmlspecialchars($pansionName) ?></h2>
                 </div>
@@ -312,7 +312,7 @@ $occupancyRate = $totalRooms > 0 ? round(($occupiedRooms / $totalRooms) * 100) :
         <div class="relative z-10 grid grid-cols-1 md:grid-cols-3 gap-4 pt-1">
             <div class="p-4 rounded-2xl bg-white/10 border border-white/15 space-y-2">
                 <div class="flex items-center justify-between text-xs">
-                    <span class="text-slate-300">ظرفیت تکمیل شده:</span>
+                    <span class="text-emerald-100 font-bold">ظرفیت تکمیل شده:</span>
                     <strong class="text-emerald-300 font-mono"><?= $occupiedRooms ?> از <?= $totalRooms ?> سوئیت</strong>
                 </div>
                 <div class="w-full bg-white/10 h-2.5 rounded-full overflow-hidden">
@@ -322,7 +322,7 @@ $occupancyRate = $totalRooms > 0 ? round(($occupiedRooms / $totalRooms) * 100) :
 
             <div class="p-4 rounded-2xl bg-white/10 border border-white/15 flex items-center justify-between text-xs">
                 <div>
-                    <p class="text-slate-300">اتاق‌های آماده رزرو فوری:</p>
+                    <p class="text-emerald-100 font-bold">اتاق‌های آماده رزرو فوری:</p>
                     <h4 class="text-lg font-black text-white mt-0.5"><?= $availableRooms ?> سوئیت خالی</h4>
                 </div>
                 <span class="material-symbols-outlined text-3xl text-emerald-400">meeting_room</span>
@@ -330,7 +330,7 @@ $occupancyRate = $totalRooms > 0 ? round(($occupiedRooms / $totalRooms) * 100) :
 
             <div class="p-4 rounded-2xl bg-white/10 border border-white/15 flex items-center justify-between text-xs">
                 <div>
-                    <p class="text-slate-300">پزشک و کلینیک پشتیبان:</p>
+                    <p class="text-emerald-100 font-bold">پزشک و کلینیک پشتیبان:</p>
                     <h4 class="text-xs font-black text-teal-300 mt-0.5"><?= $affiliatedOrg ? htmlspecialchars($affiliatedOrg['name']) : 'پشتیبانی اورژانس سراسری آسنا' ?></h4>
                 </div>
                 <span class="material-symbols-outlined text-3xl text-teal-400">medical_services</span>

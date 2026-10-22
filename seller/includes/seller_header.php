@@ -38,41 +38,57 @@ $activeTab = $_GET['tab'] ?? 'orders';
     <link href="../assets/css/material-symbols.css" rel="stylesheet"/>
     <link href="../assets/css/geist.css" rel="stylesheet"/>
     <link rel="stylesheet" href="../assets/css/tailwind.output.css">
+    <link rel="stylesheet" href="../assets/css/enterprise-ui.css">
     <style>
         body { font-family: 'Geist', sans-serif; }
         .stat-card-shadow { box-shadow: 0px 4px 12px rgba(0, 45, 114, 0.08); }
     </style>
     <script src="../assets/js/currency-formatter.js?v=<?php echo time(); ?>" defer></script>
+    <script src="../assets/js/panel-sidebar.js?v=<?php echo time(); ?>" defer></script>
+    <script>
+        (function() {
+            try {
+                if (localStorage.getItem('asana_panel_sidebar_collapsed') === '1' && window.innerWidth >= 1024) {
+                    document.documentElement.classList.add('sidebar-initially-collapsed');
+                }
+            } catch(e) {}
+        })();
+    </script>
 </head>
 <body class="bg-surface text-on-surface selection:bg-secondary-container/30">
 
 <!-- Mobile Backdrop -->
 <div id="seller-backdrop" class="fixed inset-0 bg-black/50 z-[60] hidden lg:hidden backdrop-blur-sm transition-opacity opacity-0" onclick="toggleSellerSidebar()"></div>
 
-<!-- SideNavBar matching Doctor & Pharmacist panels -->
-<aside id="seller-sidebar" class="fixed inset-y-0 right-0 w-64 bg-tertiary flex flex-col z-[70] lg:z-40 rtl shadow-lg transition-transform duration-300 translate-x-full lg:translate-x-0 overflow-y-auto">
+<!-- SideNavBar matching Doctor & Pharmacist panels with desktop collapse -->
+<aside id="seller-sidebar" class="panel-sidebar fixed inset-y-0 right-0 w-64 bg-tertiary flex flex-col z-[70] lg:z-40 rtl shadow-lg transition-all duration-300 translate-x-full lg:translate-x-0 overflow-y-auto">
     <div class="p-6 flex flex-col gap-2">
-        <div class="flex items-center justify-between">
-            <a href="../index.php" class="flex items-center gap-3 group" title="مشاهده فروشگاه در سایت">
+        <div class="flex items-center justify-between sidebar-toggle-container">
+            <a href="../index.php" class="flex items-center gap-3 group sidebar-header-text" title="مشاهده فروشگاه در سایت">
                 <img src="../assets/images/logo.png" alt="لوگوی آسنا" class="w-9 h-9 object-contain drop-shadow group-hover:scale-105 transition-transform">
                 <div>
                     <h1 class="text-xl text-tertiary-fixed font-bold leading-tight group-hover:text-secondary-container transition-colors">آسنا</h1>
                     <p class="text-sm text-on-tertiary-container/70">پنل فروشندگان و پت‌شاپ</p>
                 </div>
             </a>
-            <button onclick="toggleSellerSidebar()" class="lg:hidden text-on-tertiary-container hover:text-white transition-colors">
-                <span class="material-symbols-outlined">close</span>
-            </button>
+            <div class="flex items-center gap-1">
+                <button type="button" class="sidebar-desktop-toggle-btn hidden lg:flex w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 text-tertiary-fixed items-center justify-center transition-colors shadow-xs" onclick="togglePanelDesktopSidebar()" title="جمع کردن / باز کردن منو">
+                    <span class="sidebar-desktop-toggle-icon material-symbols-outlined text-xl">chevron_right</span>
+                </button>
+                <button onclick="toggleSellerSidebar()" class="lg:hidden text-on-tertiary-container hover:text-white transition-colors p-1" aria-label="بستن منو">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
         </div>
 
-        <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/10 text-tertiary-fixed text-xs font-medium mb-1">
+        <div class="sidebar-tier-badge inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/10 text-tertiary-fixed text-xs font-medium mb-1">
             <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
             <span>نسخه اینترپرایز جامع (فول اکوسیستم)</span>
         </div>
 
-        <button onclick="openNewProductModal()" class="w-full bg-gradient-to-r from-blue-600 to-primary hover:from-blue-700 hover:to-indigo-800 text-white font-bold py-2.5 px-3 rounded-xl flex items-center justify-center gap-2 shadow-md transition-all text-xs my-2">
-            <span class="material-symbols-outlined text-base">add_circle</span>
-            <span>+ ثبت کالای جدید در فروشگاه</span>
+        <button onclick="openNewProductModal()" class="sidebar-cta-btn w-full bg-gradient-to-r from-blue-600 to-primary hover:from-blue-700 hover:to-indigo-800 text-white font-bold py-2.5 px-3 rounded-xl flex items-center justify-center gap-2 shadow-md transition-all text-xs my-2" title="ثبت کالای جدید در فروشگاه">
+            <span class="material-symbols-outlined text-base shrink-0">add_circle</span>
+            <span class="sidebar-label">+ ثبت کالای جدید در فروشگاه</span>
         </button>
     </div>
 
@@ -95,37 +111,37 @@ $activeTab = $_GET['tab'] ?? 'orders';
             $onclick = !empty($item['tab']) ? "if(typeof switchSellerTab === 'function') { switchSellerTab('{$item['tab']}'); if(window.innerWidth < 1024) toggleSellerSidebar(); return false; }" : "";
             $href = !empty($item['url']) ? $item['url'] : "index.php?tab={$key}";
         ?>
-        <a id="seller-nav-<?= $key ?>" class="<?= $classes ?>" href="<?= $href ?>" <?= !empty($onclick) ? 'onclick="'.$onclick.'"' : '' ?>>
-            <span class="material-symbols-outlined text-[20px]"><?= $item['icon'] ?></span>
-            <span class="text-xs font-bold leading-tight"><?= $item['title'] ?></span>
+        <a id="seller-nav-<?= $key ?>" class="<?= $classes ?>" href="<?= $href ?>" <?= !empty($onclick) ? 'onclick="'.$onclick.'"' : '' ?> title="<?= $item['title'] ?>">
+            <span class="material-symbols-outlined text-[20px] shrink-0"><?= $item['icon'] ?></span>
+            <span class="text-xs font-bold leading-tight sidebar-label"><?= $item['title'] ?></span>
         </a>
         <?php endforeach; ?>
     </nav>
 
     <div class="p-4 border-t border-white/10">
-        <div class="px-1 mb-2 space-y-1.5">
-            <a href="../shop.php" target="_blank" class="flex items-center gap-2.5 px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-bold transition-all">
-                <span class="material-symbols-outlined text-[20px]">storefront</span>
-                <span>مشاهده فروشگاه آنلاین</span>
+        <div class="px-1 mb-2 space-y-1.5 sidebar-footer-extra">
+            <a href="../shop.php" target="_blank" class="flex items-center gap-2.5 px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-bold transition-all" title="مشاهده فروشگاه آنلاین">
+                <span class="material-symbols-outlined text-[20px] shrink-0">storefront</span>
+                <span class="sidebar-label">مشاهده فروشگاه آنلاین</span>
                 <span class="material-symbols-outlined text-xs mr-auto">north_east</span>
             </a>
         </div>
-        <a href="../index.php" class="w-full bg-secondary-container text-white font-bold py-3 px-4 rounded-lg flex items-center justify-center gap-2 active:translate-x-1 duration-200">
-            <span class="material-symbols-outlined">home</span>
-            <span class="text-xs">بازگشت به سایت</span>
+        <a href="../index.php" class="sidebar-footer-link w-full bg-secondary-container text-white font-bold py-3 px-4 rounded-lg flex items-center justify-center gap-2 active:translate-x-1 duration-200" title="بازگشت به سایت">
+            <span class="material-symbols-outlined shrink-0">home</span>
+            <span class="text-xs sidebar-label">بازگشت به سایت</span>
         </a>
         
         <div class="mt-4 space-y-1">
-            <a class="flex items-center gap-3 px-4 py-2 text-on-tertiary-container hover:text-white transition-all text-xs" href="../logout.php" onclick="return confirm('آیا از خروج از حساب کاربری اطمینان دارید؟');">
-                <span class="material-symbols-outlined text-error text-lg">logout</span>
-                <span>خروج از حساب</span>
+            <a class="sidebar-footer-link flex items-center gap-3 px-4 py-2 text-on-tertiary-container hover:text-white transition-all text-xs" href="../logout.php" onclick="return confirm('آیا از خروج از حساب کاربری اطمینان دارید؟');" title="خروج از حساب">
+                <span class="material-symbols-outlined text-rose-400 text-lg shrink-0">logout</span>
+                <span class="sidebar-label">خروج از حساب</span>
             </a>
         </div>
     </div>
 </aside>
 
 <!-- Main Content Wrapper -->
-<main class="lg:mr-64 mr-0 min-h-screen transition-all duration-300">
+<main id="panel-main-content" class="panel-main-content lg:mr-64 mr-0 min-h-screen transition-all duration-300">
     <!-- TopAppBar -->
     <header class="sticky top-0 z-40 flex justify-between items-center h-16 px-4 lg:px-6 bg-surface shadow-sm border-b border-outline-variant/20">
         <div class="flex items-center gap-2 lg:gap-6">

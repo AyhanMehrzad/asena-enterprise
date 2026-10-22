@@ -298,9 +298,9 @@ $fmtDate = new IntlDateFormatter('fa_IR@calendar=persian', IntlDateFormatter::FU
     <?php endif; ?>
 
     <!-- PHARMACIST LIVE SHIFT & COLD-CHAIN WATCHDOG COCKPIT (Rule 11) -->
-    <div class="bg-gradient-to-br from-[#1e1338] via-[#2a174d] to-[#120b24] text-white rounded-3xl p-5 sm:p-6 shadow-xl border border-purple-500/20 relative overflow-hidden space-y-4">
-        <div class="absolute -top-24 -left-24 w-72 h-72 bg-purple-600/15 rounded-full blur-3xl pointer-events-none"></div>
-        <div class="absolute -bottom-24 -right-24 w-72 h-72 bg-cyan-600/10 rounded-full blur-3xl pointer-events-none"></div>
+    <div class="cockpit-pharmacist text-white rounded-3xl p-5 sm:p-6 shadow-xl border border-purple-500/30 relative overflow-hidden space-y-4" style="background-color: #1a102f !important; background-image: linear-gradient(135deg, #1e1338 0%, #2a174d 50%, #120b24 100%) !important; color: #ffffff !important;">
+        <div class="absolute -top-24 -left-24 w-72 h-72 bg-purple-600/20 rounded-full blur-3xl pointer-events-none"></div>
+        <div class="absolute -bottom-24 -right-24 w-72 h-72 bg-cyan-600/15 rounded-full blur-3xl pointer-events-none"></div>
 
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative z-10 border-b border-white/10 pb-4">
             <div class="flex items-center gap-3">
@@ -313,7 +313,7 @@ $fmtDate = new IntlDateFormatter('fa_IR@calendar=persian', IntlDateFormatter::FU
                             <span class="w-2 h-2 rounded-full bg-purple-400 animate-pulse"></span>
                             <span>شیفت فعال توزیع و داروخانه</span>
                         </span>
-                        <span class="text-xs text-slate-300">| <?= htmlspecialchars($orgName ?? 'داروخانه مرکزی') ?></span>
+                        <span class="text-xs text-purple-200 font-bold">| <?= htmlspecialchars($orgName ?? 'داروخانه مرکزی') ?></span>
                     </div>
                     <h2 class="text-base sm:text-lg font-black text-white mt-1"><?= htmlspecialchars($pharmacistName) ?> (مسئول فنی و داروساز)</h2>
                 </div>

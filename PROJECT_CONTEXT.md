@@ -81,6 +81,20 @@
 
 ---
 
+### نسخه ۱.۰.۴۴ (اکتبر ۲۰۲۶ - اصلاح کنتراست رنگ کاک‌پیت پنل‌ها، استانداردسازی سایدبارهای پانسیون و گرومر، افزودن قابلیت سایدبار تاشو (Collapsible) دسکتاپ به تمام پنل‌ها، و ارتقای نسخه PHP هاست به ۸.۲ به همراه پایش بک‌آپ‌ها)
+1. **اصلاح مشکل کنتراست و خوانایی متن در کاک‌پیت پنل‌ها (`pharmacist`، `pansion`، `groomer`، `doctor`):**
+   - ایجاد کلاس‌های اختصاصی گرادیان تیره سازمانی با رنگ متن صریح و شفافیت تضمین‌شده (`.cockpit-pharmacist`, `.cockpit-pansion`, `.cockpit-groomer`, `.cockpit-doctor`, `.cockpit-seller`) در [`assets/css/enterprise-ui.css`](file:///opt/lampp/htdocs/asena/asena-enterprise/assets/css/enterprise-ui.css) جهت مهار فال‌بک‌های احتمالی تیلویند و رفع کامل مشکل متن سفید روی پس‌زمینه سفید.
+   - اصلاح کدهای کاک‌پیت شیفت و مشخصات در صفحات ایندکس پنل‌ها با کنتراست استاندارد و افکت شیشه‌ای.
+2. **یکپارچه‌سازی و تبدیل سایدبار پانسیون و گرومر به سایدبار اصلی و اصیل آسنا:**
+   - بازنویسی کامل هدرهای [`pansion/includes/pansion_header.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/pansion/includes/pansion_header.php) و [`groomer/includes/groomer_header.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/groomer/includes/groomer_header.php) منطبق بر طراحی اصیل آسنا (`bg-tertiary` سازمانی، بج تایر لایسنس، لوگوی رسمی، دکمه‌های اکشن و ناوبری همسان با پنل‌های پزشک و داروخانه).
+3. **افزودن قابلیت جمع‌شدن سایدبار دسکتاپ (Collapsible Sidebar) به تمامی پنل‌ها مشابه پنل کاربری:**
+   - توسعه اسکریپت کنترلر یکپارچه [`assets/js/panel-sidebar.js`](file:///opt/lampp/htdocs/asena/asena-enterprise/assets/js/panel-sidebar.js) با حفظ وضعیت در `localStorage`، انیمیشن فلوید آیکون ریل (عرض ۵ رم)، تول‌تیپ‌های بومی، و اسکرول زنجیره‌ای (Wheel Event Chaining).
+   - پیاده‌سازی دکمه تاگل و کلاس‌های تاشو در تمامی پنل‌های سیستم: پزشکان (`doctor`), داروسازان (`pharmacist`), فروشندگان (`seller`), پانسیون (`pansion`), گرومرها (`groomer`), مراکز درمانی (`organization`) و کنسول مدیریت (`admin`).
+   - به‌روزرسانی پیکربندی [`tailwind.config.js`](file:///opt/lampp/htdocs/asena/asena-enterprise/tailwind.config.js) و کامپایل مجدد استایل‌ها در [`assets/css/tailwind.output.css`](file:///opt/lampp/htdocs/asena/asena-enterprise/assets/css/tailwind.output.css).
+4. **ارتقای نسخه PHP هاست به ۸.۲ و بازرسی بک‌آپ‌های پارس‌پک:**
+   - ورود مستقیم به کنترل‌پنل هاست پارس‌پک و ارتقای نسخه فعال PHP از ۸.۱ به **۸.۲** طبق آخرین الزامات و استانداردهای امنیتی.
+   - بازرسی وضعیت بک‌آپ‌های هاست: فعال بودن پشتیبان‌گیری‌های روزانه منظم پایگاه‌داده (۷۶۹ کیلوبایت) و نسخه‌های پشتیبان کامل خودکار دوره‌ای (~۴۹۰ مگابایت).
+
 ### نسخه ۱.۰.۴۳ (اکتبر ۲۰۲۶ - رفع خطای صفحه سفید سفارشات سازمان، کوئری‌های تدافعی آدرس و لایسنس، و استقرار خودترمیمی نسخه ۱۰ پایگاه داده)
 1. **رفع خطای صفحه سفید در سفارشات سازمان ([`organization/orders.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/organization/orders.php)):**
    - برطرف کردن پرتاب خطای کنترل‌نشده PDO در کوئری واکشی سفارشات به علت ارجاع مستقیم به فیلدهای آدرس کاربر (`u.city`, `u.postal_code`, `u.address`, `u.latitude`, `u.longitude`) و ستون‌های مستأجر (`source_tenant_type`).

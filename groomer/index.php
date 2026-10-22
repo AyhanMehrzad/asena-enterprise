@@ -259,9 +259,9 @@ if (empty($services)) {
     <?php endif; ?>
 
     <!-- GROOMER LIVE SHIFT COCKPIT (Rule 11: Shift-Centric Single Cockpit) -->
-    <div class="bg-gradient-to-br from-[#1a1200] via-[#2c1a00] to-[#120b00] text-white rounded-3xl p-6 sm:p-7 shadow-xl border border-amber-500/30 relative overflow-hidden space-y-5">
-        <div class="absolute -top-24 -left-24 w-72 h-72 bg-amber-500/15 rounded-full blur-3xl pointer-events-none"></div>
-        <div class="absolute -bottom-24 -right-24 w-72 h-72 bg-orange-500/10 rounded-full blur-3xl pointer-events-none"></div>
+    <div class="cockpit-groomer text-white rounded-3xl p-6 sm:p-7 shadow-xl border border-amber-500/30 relative overflow-hidden space-y-5" style="background-color: #1a1200 !important; background-image: linear-gradient(135deg, #1a1200 0%, #2c1a00 50%, #120b00 100%) !important; color: #ffffff !important;">
+        <div class="absolute -top-24 -left-24 w-72 h-72 bg-amber-500/20 rounded-full blur-3xl pointer-events-none"></div>
+        <div class="absolute -bottom-24 -right-24 w-72 h-72 bg-orange-500/15 rounded-full blur-3xl pointer-events-none"></div>
 
         <!-- Top Bar: Shift Status & Quick Badges -->
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative z-10 border-b border-white/10 pb-4">
@@ -275,7 +275,7 @@ if (empty($services)) {
                             <span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
                             <span>شیفت فعال پیرایش و اصلاح پت</span>
                         </span>
-                        <span class="text-xs text-slate-300">| میز کار شماره ۱</span>
+                        <span class="text-xs text-amber-200 font-bold">| میز کار شماره ۱</span>
                     </div>
                     <h2 class="text-base sm:text-lg font-black text-white mt-1"><?= htmlspecialchars($groomerName) ?> (گرومر تخصصی)</h2>
                 </div>
@@ -301,11 +301,11 @@ if (empty($services)) {
                         <h3 class="text-base font-black text-white">تدی (Teddy)</h3>
                         <span class="text-xs text-amber-200">(سگ نژاد شیتزو تریر)</span>
                     </div>
-                    <div class="flex items-center gap-4 text-xs text-slate-300 flex-wrap">
+                    <div class="flex items-center gap-4 text-xs text-amber-100 font-medium flex-wrap">
                         <span>👤 سرپرست: <strong class="text-white">امیرحسین پارسا</strong></span>
                         <span>📞 تماس: <strong class="text-amber-300 font-mono">09121234567</strong></span>
                         <span>⚖️ وزن: <strong class="text-white">5.8 کیلوگرم</strong></span>
-                        <span>✂️ پکیج: <strong class="text-emerald-300">اصلاح فانتزی پامرانین و شستشو</strong></span>
+                        <span>✂️ پکیج: <strong class="text-emerald-300 font-bold">اصلاح فانتزی پامرانین و شستشو</strong></span>
                     </div>
                     
                     <!-- Temperament & Matted Coat Badges -->

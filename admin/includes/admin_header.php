@@ -50,6 +50,7 @@ $adminName = $adminCheck['name'] ?? 'مدیر سیستم';
     </style>
     <script src="../assets/js/bidi-direction.js?v=<?php echo time(); ?>" defer></script>
     <script src="../assets/js/currency-formatter.js?v=<?php echo time(); ?>" defer></script>
+    <script src="../assets/js/panel-sidebar.js?v=<?php echo time(); ?>" defer></script>
 </head>
 <body class="bg-surface text-on-surface selection:bg-secondary-container/30">
 
@@ -57,30 +58,35 @@ $adminName = $adminCheck['name'] ?? 'مدیر سیستم';
 <div id="admin-backdrop" class="fixed inset-0 bg-black/50 z-[60] hidden lg:hidden backdrop-blur-sm transition-opacity opacity-0" onclick="toggleAdminSidebar()"></div>
 
 <!-- SideNavBar -->
-<aside id="admin-sidebar" class="fixed inset-y-0 right-0 w-64 bg-tertiary dark:bg-tertiary-container flex flex-col z-[70] lg:z-40 rtl shadow-lg transition-transform duration-300 translate-x-full lg:translate-x-0 overflow-y-auto">
+<aside id="admin-sidebar" class="panel-sidebar fixed inset-y-0 right-0 w-64 bg-tertiary dark:bg-tertiary-container flex flex-col z-[70] lg:z-40 rtl shadow-lg transition-transform duration-300 translate-x-full lg:translate-x-0 overflow-y-auto">
     <div class="p-6 flex flex-col gap-2">
         <div class="flex items-center justify-between mb-2">
             <a href="../index.php" class="flex items-center gap-3 group" title="مشاهده سایت">
-                <img src="../assets/images/logo.png" alt="لوگوی آسنا" class="w-9 h-9 object-contain drop-shadow group-hover:scale-105 transition-transform">
-                <div>
+                <img src="../assets/images/logo.png" alt="لوگوی آسنا" class="w-9 h-9 object-contain drop-shadow group-hover:scale-105 transition-transform shrink-0">
+                <div class="sidebar-label">
                     <h1 class="text-xl text-tertiary-fixed font-bold leading-tight group-hover:text-secondary-container transition-colors">آسنا</h1>
                     <p class="text-sm text-on-tertiary-container/70">کنسول مدیریت</p>
                 </div>
             </a>
-            <button onclick="toggleAdminSidebar()" class="lg:hidden text-on-tertiary-container hover:text-white transition-colors">
-                <span class="material-symbols-outlined">close</span>
-            </button>
+            <div class="flex items-center gap-1">
+                <button type="button" onclick="togglePanelDesktopSidebar('admin-sidebar')" class="hidden lg:flex items-center justify-center w-8 h-8 rounded-lg text-on-tertiary-container hover:text-white hover:bg-white/10 transition-colors" title="جمع / باز کردن منو">
+                    <span class="material-symbols-outlined text-lg sidebar-toggle-icon">chevron_right</span>
+                </button>
+                <button onclick="toggleAdminSidebar()" class="lg:hidden text-on-tertiary-container hover:text-white transition-colors">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
         </div>
 
-        <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/10 text-tertiary-fixed text-xs font-medium mb-1">
+        <div class="sidebar-label inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/10 text-tertiary-fixed text-xs font-medium mb-1">
             <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
             <span><?= htmlspecialchars(Feature::tierName()) ?></span>
         </div>
 
         <?php if (Feature::has('blog_engine')): ?>
-        <a href="../blog_editor.php" class="w-full bg-gradient-to-r from-blue-600 to-primary hover:from-blue-700 hover:to-indigo-800 text-white font-bold py-2.5 px-3 rounded-xl flex items-center justify-center gap-2 shadow-md transition-all text-xs my-2">
-            <span class="material-symbols-outlined text-base">add_circle</span>
-            <span>+ ایجاد و نگارش مقاله جدید</span>
+        <a href="../blog_editor.php" title="ایجاد و نگارش مقاله جدید" class="w-full bg-gradient-to-r from-blue-600 to-primary hover:from-blue-700 hover:to-indigo-800 text-white font-bold py-2.5 px-3 rounded-xl flex items-center justify-center gap-2 shadow-md transition-all text-xs my-2">
+            <span class="material-symbols-outlined text-base shrink-0">add_circle</span>
+            <span class="sidebar-label">+ ایجاد و نگارش مقاله جدید</span>
         </a>
         <?php endif; ?>
     </div>
@@ -203,7 +209,7 @@ $adminName = $adminCheck['name'] ?? 'مدیر سیستم';
             if (empty($filteredItems)) continue;
         ?>
         <div class="space-y-1">
-            <div class="px-3 pt-2 pb-1 text-[11px] font-extrabold uppercase tracking-wider text-on-tertiary-container/50 flex items-center gap-1.5">
+            <div class="sidebar-label px-3 pt-2 pb-1 text-[11px] font-extrabold uppercase tracking-wider text-on-tertiary-container/50 flex items-center gap-1.5">
                 <span><?= $sectionTitle ?></span>
                 <div class="flex-1 h-[1px] bg-white/5"></div>
             </div>
@@ -213,13 +219,13 @@ $adminName = $adminCheck['name'] ?? 'مدیر سیستم';
                     ? "flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-secondary-container font-bold border-r-4 border-secondary-container bg-white/10 shadow-sm transition-all"
                     : "flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-on-tertiary-container hover:bg-white/10 hover:text-white transition-all";
             ?>
-            <a class="<?= $classes ?>" href="<?= $item['url'] ?>" <?= !empty($item['external']) ? 'target="_blank"' : '' ?>>
-                <span class="material-symbols-outlined text-[20px] <?= $isActive ? 'text-secondary-container' : '' ?>"><?= $item['icon'] ?></span>
-                <span class="text-xs font-bold leading-tight"><?= $item['title'] ?></span>
+            <a class="<?= $classes ?>" href="<?= $item['url'] ?>" <?= !empty($item['external']) ? 'target="_blank"' : '' ?> title="<?= htmlspecialchars($item['title']) ?>">
+                <span class="material-symbols-outlined text-[20px] shrink-0 <?= $isActive ? 'text-secondary-container' : '' ?>"><?= $item['icon'] ?></span>
+                <span class="text-xs font-bold leading-tight sidebar-label"><?= $item['title'] ?></span>
                 <?php if (!empty($item['badge']) && $item['badge'] > 0): ?>
-                    <span class="mr-auto px-2 py-0.5 rounded-full text-[10px] font-black bg-rose-500 text-white shadow-sm"><?= $item['badge'] ?></span>
+                    <span class="mr-auto px-2 py-0.5 rounded-full text-[10px] font-black bg-rose-500 text-white shadow-sm sidebar-label"><?= $item['badge'] ?></span>
                 <?php elseif (!empty($item['external'])): ?>
-                    <span class="material-symbols-outlined text-xs mr-auto opacity-70">north_east</span>
+                    <span class="material-symbols-outlined text-xs mr-auto opacity-70 sidebar-label">north_east</span>
                 <?php endif; ?>
             </a>
             <?php endforeach; ?>
@@ -228,22 +234,22 @@ $adminName = $adminCheck['name'] ?? 'مدیر سیستم';
     </nav>
 
     <div class="p-4 border-t border-white/10">
-        <a href="../index.php" class="w-full bg-secondary-container text-white font-bold py-3 px-4 rounded-lg flex items-center justify-center gap-2 active:translate-x-1 duration-200">
-            <span class="material-symbols-outlined">storefront</span>
-            <span class="font-label-lg text-label-lg">بازگشت به سایت</span>
+        <a href="../index.php" class="w-full bg-secondary-container text-white font-bold py-3 px-4 rounded-lg flex items-center justify-center gap-2 active:translate-x-1 duration-200" title="بازگشت به سایت">
+            <span class="material-symbols-outlined shrink-0">storefront</span>
+            <span class="font-label-lg text-label-lg sidebar-label">بازگشت به سایت</span>
         </a>
         
         <div class="mt-4 space-y-1">
-            <a class="flex items-center gap-3 px-4 py-2 text-on-tertiary-container hover:text-white transition-all" href="../logout.php" onclick="return confirm('آیا از خروج از حساب کاربری اطمینان دارید؟');">
-                <span class="material-symbols-outlined text-error">logout</span>
-                <span class="font-label-sm text-label-sm">خروج از حساب</span>
+            <a class="flex items-center gap-3 px-4 py-2 text-on-tertiary-container hover:text-white transition-all" href="../logout.php" onclick="return confirm('آیا از خروج از حساب کاربری اطمینان دارید؟');" title="خروج از حساب">
+                <span class="material-symbols-outlined text-error shrink-0">logout</span>
+                <span class="font-label-sm text-label-sm sidebar-label">خروج از حساب</span>
             </a>
         </div>
     </div>
 </aside>
 
 <!-- Main Content Wrapper -->
-<main class="lg:mr-64 mr-0 min-h-screen transition-all duration-300">
+<main class="panel-main-content lg:mr-64 mr-0 min-h-screen transition-all duration-300">
     <!-- TopAppBar -->
     <header class="sticky top-0 z-40 flex justify-between items-center h-16 px-4 lg:px-6 bg-surface dark:bg-surface-dim shadow-sm border-b border-outline-variant/20">
         <div class="flex items-center gap-2 lg:gap-6 flex-1">

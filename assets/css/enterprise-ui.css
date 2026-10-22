@@ -1049,3 +1049,98 @@ img.lazy-img-loaded {
 .via-teal-700 { --tw-gradient-stops: var(--tw-gradient-from, #059669), #0f766e, var(--tw-gradient-to, #064e3b); }
 .to-emerald-900 { --tw-gradient-to: #064e3b; }
 
+/* Dedicated Specialized Live Cockpit Hero Gradients & Fallbacks (Rule 11) */
+.cockpit-pharmacist {
+    background-color: #1a102f !important;
+    background-image: linear-gradient(135deg, #1e1338 0%, #2a174d 50%, #120b24 100%) !important;
+    color: #ffffff !important;
+}
+.cockpit-pansion {
+    background-color: #06241a !important;
+    background-image: linear-gradient(135deg, #06241a 0%, #093526 50%, #041a12 100%) !important;
+    color: #ffffff !important;
+}
+.cockpit-groomer {
+    background-color: #1a1200 !important;
+    background-image: linear-gradient(135deg, #1a1200 0%, #2c1a00 50%, #120b00 100%) !important;
+    color: #ffffff !important;
+}
+.cockpit-doctor,
+.cockpit-seller,
+.cockpit-admin,
+.cockpit-org {
+    background-color: #001a48 !important;
+    background-image: linear-gradient(135deg, #001a48 0%, #002868 50%, #001438 100%) !important;
+    color: #ffffff !important;
+}
+
+/* Color stops for arbitrary tailwind gradients */
+.from-\[\#1e1338\] { --tw-gradient-from: #1e1338; --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to, rgba(30, 19, 56, 0)); }
+.via-\[\#2a174d\] { --tw-gradient-stops: var(--tw-gradient-from, #1e1338), #2a174d, var(--tw-gradient-to, #120b24); }
+.to-\[\#120b24\] { --tw-gradient-to: #120b24; }
+
+.from-\[\#06241a\] { --tw-gradient-from: #06241a; --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to, rgba(6, 36, 26, 0)); }
+.via-\[\#093526\] { --tw-gradient-stops: var(--tw-gradient-from, #06241a), #093526, var(--tw-gradient-to, #041a12); }
+.to-\[\#041a12\] { --tw-gradient-to: #041a12; }
+
+.from-\[\#1a1200\] { --tw-gradient-from: #1a1200; --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to, rgba(26, 18, 0, 0)); }
+.via-\[\#2c1a00\] { --tw-gradient-stops: var(--tw-gradient-from, #1a1200), #2c1a00, var(--tw-gradient-to, #120b00); }
+.to-\[\#120b00\] { --tw-gradient-to: #120b00; }
+
+.via-\[\#002868\] { --tw-gradient-stops: var(--tw-gradient-from, #001a48), #002868, var(--tw-gradient-to, #001438); }
+.to-\[\#001438\] { --tw-gradient-to: #001438; }
+
+/* ==========================================================================
+   Unified Collapsible Panel Desktop Sidebar (All Specialized & Admin Portals)
+   ========================================================================== */
+@media (min-width: 1024px) {
+    .panel-sidebar {
+        transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), padding 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    }
+    .panel-main-content {
+        transition: margin-right 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    }
+    .panel-sidebar.sidebar-collapsed {
+        width: 5rem !important; /* 80px */
+        padding-left: 0.5rem !important;
+        padding-right: 0.5rem !important;
+    }
+    .panel-sidebar.sidebar-collapsed .sidebar-header-text,
+    .panel-sidebar.sidebar-collapsed .sidebar-label,
+    .panel-sidebar.sidebar-collapsed .sidebar-badge,
+    .panel-sidebar.sidebar-collapsed .sidebar-cta-btn span:not(.material-symbols-outlined),
+    .panel-sidebar.sidebar-collapsed .sidebar-tier-badge,
+    .panel-sidebar.sidebar-collapsed .sidebar-footer-extra {
+        display: none !important;
+    }
+    .panel-sidebar.sidebar-collapsed .sidebar-cta-btn {
+        padding-left: 0.5rem !important;
+        padding-right: 0.5rem !important;
+        justify-content: center !important;
+        gap: 0 !important;
+    }
+    .panel-sidebar.sidebar-collapsed .sidebar-cta-btn span.material-symbols-outlined {
+        margin: 0 !important;
+        font-size: 1.4rem !important;
+    }
+    .panel-sidebar.sidebar-collapsed .sidebar-toggle-container {
+        justify-content: center !important;
+    }
+    .panel-sidebar.sidebar-collapsed nav a,
+    .panel-sidebar.sidebar-collapsed .sidebar-footer-link {
+        justify-content: center !important;
+        padding-left: 0.5rem !important;
+        padding-right: 0.5rem !important;
+        gap: 0 !important;
+    }
+    .panel-sidebar.sidebar-collapsed nav a span.material-symbols-outlined,
+    .panel-sidebar.sidebar-collapsed .sidebar-footer-link span.material-symbols-outlined {
+        margin: 0 !important;
+        font-size: 1.4rem !important;
+    }
+    .panel-main-content.sidebar-collapsed {
+        margin-right: 5rem !important;
+    }
+}
+
+

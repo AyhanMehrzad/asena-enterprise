@@ -7,6 +7,8 @@ module.exports = {
     "./doctor/**/*.php",
     "./organization/**/*.php",
     "./pharmacist/**/*.php",
+    "./pansion/**/*.php",
+    "./groomer/**/*.php",
     "./seller/**/*.php",
     "./includes/**/*.php",
     "./actions/**/*.php",

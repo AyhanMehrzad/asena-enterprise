@@ -749,7 +749,7 @@ if ($currentDoctorUserId > 0) {
     ?>
 
     <!-- DOCTOR LIVE SHIFT COCKPIT (Rule 11: Shift-Centric Single Cockpit) -->
-    <div class="bg-gradient-to-br from-[#001a48] via-[#002868] to-[#001438] text-white rounded-3xl p-6 sm:p-7 shadow-xl border border-white/10 relative overflow-hidden space-y-5">
+    <div class="cockpit-doctor text-white rounded-3xl p-6 sm:p-7 shadow-xl border border-white/10 relative overflow-hidden space-y-5" style="background-color: #001a48 !important; background-image: linear-gradient(135deg, #001a48 0%, #002868 50%, #001438 100%) !important; color: #ffffff !important;">
         <!-- Background Ambient Glow -->
         <div class="absolute -top-24 -left-24 w-72 h-72 bg-emerald-500/15 rounded-full blur-3xl pointer-events-none"></div>
         <div class="absolute -bottom-24 -right-24 w-72 h-72 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none"></div>
