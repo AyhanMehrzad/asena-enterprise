@@ -81,6 +81,25 @@
 
 ---
 
+### نسخه ۱.۰.۴۵ (اکتبر ۲۰۲۶ - بازمهندسی مهد و پانسیون اجتماعی حیوانات، محاسبه ساعتی و سقف ظرفیت همزمان پویا، غربالگری نژادی پیت‌بول/ایزوله، و ارتقای پایپ‌لاین و کانبان روزانه گرومر)
+1. **معماری مهد و پانسیون تعاملی حیوانات (Pet Daycare & Social Kindergarten Model):**
+   - جایگزینی الگوی تک‌اتاقی هتلی با الگوی واقع‌گرایانه مهدکودک حیوانات در [`pansion/index.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/pansion/index.php).
+   - پیاده‌سازی گیج سقف ظرفیت همزمان زنده (Concurrent Capacity Gauge) با تفکیک پت‌های تالار بازی مشترک vs زون ایزوله امنیتی انفرادی.
+   - محاسبه و رزرو بر مبنای تعرفه ساعتی (`hourly_rate`، `hours_count`، `check_in_time` و `expected_check_out_time`).
+   - استقرار زون ایزوله امنیتی برای سگ‌های تهاجمی/پیت‌بول (`is_isolated_zone`, `isolation_reason`) جهت حفاظت کامل از امنیت سایر پت‌های در حال بازی.
+   - فراهم‌سازی آزادی کامل سرپرستان در تمدید ساعت اقامت (Stay Extension) یا ترخیص زودهنگام با آزادسازی آنی ظرفیت مهد.
+2. **ارتقای میز کار و پایپ‌لاین روزانه گرومر (Groomer Daily Activity Kanban):**
+   - استقرار خط گردش کار ۴ مرحله‌ای روزانه در [`groomer/index.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/groomer/index.php):
+     1. در انتظار مراجعه (Scheduled)
+     2. در حال اصلاح روی صندلی (In-Chair / Under Grooming)
+     3. آماده تحویل و استایل‌شده (Ready for Pickup)
+     4. پایان‌یافته و تسویه (Completed)
+   - تعبیه سیستم پذیرش حضوری سریع (Walk-in Quick Booking) در ۱۰ ثانیه.
+   - اتصال مستقیم دکمه اتمام به سامانه ارسال پیامک تحویل فوری به سرپرست پت.
+3. **پایگاه‌داده و مهاجرت خودترمیمی نسخه ۱۱ ([`includes/db.php`](file:///opt/lampp/htdocs/asena/asena-enterprise/includes/db.php)):**
+   - ایجاد میگریشن [`database/migrations/28_pansion_kindergarten_and_groomer_daily_pipeline.sql`](file:///opt/lampp/htdocs/asena/asena-enterprise/database/migrations/28_pansion_kindergarten_and_groomer_daily_pipeline.sql) و جدول `grooming_appointments`.
+   - همگام‌سازی فیلدهای ساعتی و ایزوله در جدول `pansion_bookings` و `pansion_rooms`.
+
 ### نسخه ۱.۰.۴۴ (اکتبر ۲۰۲۶ - اصلاح کنتراست رنگ کاک‌پیت پنل‌ها، استانداردسازی سایدبارهای پانسیون و گرومر، افزودن قابلیت سایدبار تاشو (Collapsible) دسکتاپ به تمام پنل‌ها، و ارتقای نسخه PHP هاست به ۸.۲ به همراه پایش بک‌آپ‌ها)
 1. **اصلاح مشکل کنتراست و خوانایی متن در کاک‌پیت پنل‌ها (`pharmacist`، `pansion`، `groomer`، `doctor`):**
    - ایجاد کلاس‌های اختصاصی گرادیان تیره سازمانی با رنگ متن صریح و شفافیت تضمین‌شده (`.cockpit-pharmacist`, `.cockpit-pansion`, `.cockpit-groomer`, `.cockpit-doctor`, `.cockpit-seller`) در [`assets/css/enterprise-ui.css`](file:///opt/lampp/htdocs/asena/asena-enterprise/assets/css/enterprise-ui.css) جهت مهار فال‌بک‌های احتمالی تیلویند و رفع کامل مشکل متن سفید روی پس‌زمینه سفید.

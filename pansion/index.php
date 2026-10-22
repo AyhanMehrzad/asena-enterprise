@@ -33,7 +33,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         }
     }
 
-    // 2. Check-in Pet into Room
+    // 2. Kindergarten Hourly / Overnight Check-in
     elseif ($action === 'check_in_pet') {
         $roomId = (int)($_POST['room_id'] ?? 0);
         $petName = trim($_POST['pet_name'] ?? '');
@@ -41,106 +41,165 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         $petBreed = trim($_POST['pet_breed'] ?? '');
         $custName = trim($_POST['customer_name'] ?? '');
         $custPhone = preg_replace('/[^0-9]/', '', trim($_POST['customer_phone'] ?? ''));
+        $careMode = in_array($_POST['care_mode'] ?? '', ['hourly', 'overnight']) ? $_POST['care_mode'] : 'hourly';
+        
         $checkInDate = trim($_POST['check_in_date'] ?? date('Y-m-d'));
-        $checkOutDate = trim($_POST['check_out_date'] ?? date('Y-m-d', strtotime('+3 days')));
+        $checkInTime = trim($_POST['check_in_time'] ?? date('H:i'));
+        $hoursCount = max(1, (int)($_POST['hours_count'] ?? 3));
+        $hourlyRate = (int)preg_replace('/[^0-9]/', '', $_POST['hourly_rate'] ?? '60000');
+        if ($hourlyRate <= 0) $hourlyRate = 60000;
+
+        $checkOutDate = trim($_POST['check_out_date'] ?? date('Y-m-d'));
+        $expectedCheckOutTime = trim($_POST['expected_check_out_time'] ?? '');
+
+        if ($careMode === 'hourly') {
+            $checkOutDate = $checkInDate;
+            if (empty($expectedCheckOutTime)) {
+                $expectedCheckOutTime = date('H:i', strtotime("{$checkInDate} {$checkInTime} + {$hoursCount} hours"));
+            }
+            $nights = 0;
+            $totalPrice = $hoursCount * $hourlyRate;
+        } else {
+            $nights = max(1, (int)round((strtotime($checkOutDate) - strtotime($checkInDate)) / 86400));
+            $expectedCheckOutTime = '12:00';
+            $hoursCount = $nights * 24;
+            $totalPrice = $nights * 450000; // default nightly rate
+        }
+
+        $isIsolated = !empty($_POST['is_isolated_zone']) ? 1 : 0;
+        $isolationReason = $isIsolated ? trim($_POST['isolation_reason'] ?? 'نیازمند نگهداری انفرادی / نژاد پرخاشگر یا ناآرام') : null;
         $dietNotes = trim($_POST['special_diet_notes'] ?? '');
         $medNotes = trim($_POST['medication_notes'] ?? '');
         $belongings = trim($_POST['belongings_list'] ?? '');
         $emergencyPhone = trim($_POST['emergency_contact_phone'] ?? '');
 
-        if ($roomId <= 0 || empty($petName) || empty($custPhone) || strlen($custPhone) !== 11) {
-            $error = 'انتخاب اتاق، نام پت و شماره همراه ۱۱ رقمی سرپرست الزامی است.';
+        if (empty($petName) || empty($custPhone) || strlen($custPhone) !== 11) {
+            $error = 'نام پت و شماره همراه ۱۱ رقمی سرپرست الزامی است.';
         } else {
-            // Fetch room
-            $rStmt = $pdo->prepare("SELECT * FROM pansion_rooms WHERE id = ?");
-            $rStmt->execute([$roomId]);
-            $room = $rStmt->fetch(PDO::FETCH_ASSOC);
+            // Check or assign default zone
+            if ($roomId <= 0) {
+                // If isolated, look for isolation zone; otherwise look for social kindergarten hall
+                $targetType = $isIsolated ? 'safety_isolation' : 'social_kindergarten';
+                $findR = $pdo->prepare("SELECT id FROM pansion_rooms WHERE pansion_user_id = ? AND (zone_type = ? OR room_type = ?) LIMIT 1");
+                $findR->execute([$pansionUserId, $targetType, $isIsolated ? 'hospital_box' : 'daycare_playpen']);
+                $roomId = (int)$findR->fetchColumn();
 
-            if (!$room) {
-                $error = 'اتاق انتخابی یافت نشد.';
+                if ($roomId <= 0) {
+                    $rAny = $pdo->prepare("SELECT id FROM pansion_rooms WHERE pansion_user_id = ? LIMIT 1");
+                    $rAny->execute([$pansionUserId]);
+                    $roomId = (int)$rAny->fetchColumn();
+                }
+            }
+
+            // Find or create customer
+            $uStmt = $pdo->prepare("SELECT id FROM users WHERE phone = ? LIMIT 1");
+            $uStmt->execute([$custPhone]);
+            $custId = (int)$uStmt->fetchColumn();
+
+            if ($custId <= 0) {
+                $defPass = password_hash('Asena@' . rand(1000, 9999), PASSWORD_DEFAULT);
+                $insU = $pdo->prepare("INSERT INTO users (name, phone, password, role, verification_status, created_at) VALUES (?, ?, ?, 'user', 'approved', {$nowSql})");
+                $insU->execute([$custName ?: 'سرپرست پت', $custPhone, $defPass]);
+                $custId = (int)$pdo->lastInsertId();
+            }
+
+            $orgId = !empty($currentUser['organization_id']) ? (int)$currentUser['organization_id'] : null;
+
+            $insB = $pdo->prepare("
+                INSERT INTO pansion_bookings 
+                (room_id, organization_id, pansion_user_id, customer_user_id, pet_name, pet_species, pet_breed, 
+                 care_mode, check_in_date, check_in_time, check_out_date, expected_check_out_time, hours_count, hourly_rate, 
+                 nights_count, total_price, status, is_isolated_zone, isolation_reason, special_diet_notes, 
+                 medication_notes, belongings_list, emergency_contact_phone, play_activity_notes, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'checked_in', ?, ?, ?, ?, ?, ?, 'پذیرش شد و به بخش مربوطه منتقل گردید.', {$nowSql})
+            ");
+            if ($insB->execute([
+                $roomId, $orgId, $pansionUserId, $custId, $petName, $petSpecies, $petBreed,
+                $careMode, $checkInDate, $checkInTime, $checkOutDate, $expectedCheckOutTime, $hoursCount, $hourlyRate,
+                $nights, $totalPrice, $isIsolated, $isolationReason, $dietNotes, $medNotes, $belongings, $emergencyPhone
+            ])) {
+                $zoneMsg = $isIsolated ? '🚨 زون ایزوله امنیتی انفرادی (پیت‌بول/پرخاشگر)' : 'تالار بازی گروهی مهد اجتماعی';
+                $success = "پذیرش ساعتی «{$petName}» با موفقیت در «{$zoneMsg}» ثبت گردید. زمان ترخیص پیش‌بینی‌شده: {$expectedCheckOutTime}.";
             } else {
-                // Find or create customer
-                $uStmt = $pdo->prepare("SELECT id FROM users WHERE phone = ? LIMIT 1");
-                $uStmt->execute([$custPhone]);
-                $custId = (int)$uStmt->fetchColumn();
-
-                if ($custId <= 0) {
-                    $defPass = password_hash('Asena@' . rand(1000, 9999), PASSWORD_DEFAULT);
-                    $insU = $pdo->prepare("INSERT INTO users (name, phone, password, role, verification_status, created_at) VALUES (?, ?, ?, 'user', 'approved', {$nowSql})");
-                    $insU->execute([$custName ?: 'سرپرست پت', $custPhone, $defPass]);
-                    $custId = (int)$pdo->lastInsertId();
-                }
-
-                $nights = max(1, (int)round((strtotime($checkOutDate) - strtotime($checkInDate)) / 86400));
-                $totalPrice = $nights * (int)$room['price_per_night'];
-                $orgId = !empty($currentUser['organization_id']) ? (int)$currentUser['organization_id'] : null;
-
-                $insB = $pdo->prepare("
-                    INSERT INTO pansion_bookings 
-                    (room_id, organization_id, pansion_user_id, customer_user_id, pet_name, pet_species, pet_breed, check_in_date, check_out_date, nights_count, total_price, status, special_diet_notes, medication_notes, belongings_list, emergency_contact_phone, created_at)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'checked_in', ?, ?, ?, ?, {$nowSql})
-                ");
-                if ($insB->execute([$roomId, $orgId, $pansionUserId, $custId, $petName, $petSpecies, $petBreed, $checkInDate, $checkOutDate, $nights, $totalPrice, $dietNotes, $medNotes, $belongings, $emergencyPhone])) {
-                    // Update room status to occupied
-                    $pdo->prepare("UPDATE pansion_rooms SET status = 'occupied' WHERE id = ?")->execute([$roomId]);
-                    $success = "پذیرش «{$petName}» با موفقیت در اتاق «{$room['room_number']}» ثبت گردید و اتاق به وضعیت اشغال تغییر یافت.";
-                } else {
-                    $error = 'خطا در ثبت پذیرش در دیتابیس.';
-                }
+                $error = 'خطا در ثبت پذیرش در دیتابیس.';
             }
         }
     }
 
-    // 3. Check-out Pet
+    // 3. Early Checkout / Pick-up Pet (Releases concurrent capacity immediately)
     elseif ($action === 'check_out_pet') {
         $bookingId = (int)($_POST['booking_id'] ?? 0);
-        $roomId = (int)($_POST['room_id'] ?? 0);
+        $actualTime = date('H:i');
 
         if ($bookingId > 0) {
-            $updB = $pdo->prepare("UPDATE pansion_bookings SET status = 'checked_out' WHERE id = ? AND pansion_user_id = ?");
-            $updB->execute([$bookingId, $pansionUserId]);
-
-            if ($roomId > 0) {
-                // Room transitions to cleaning status
-                $pdo->prepare("UPDATE pansion_rooms SET status = 'cleaning' WHERE id = ?")->execute([$roomId]);
+            $updB = $pdo->prepare("UPDATE pansion_bookings SET status = 'checked_out', actual_check_out_time = ? WHERE id = ? AND pansion_user_id = ?");
+            if ($updB->execute([$actualTime, $bookingId, $pansionUserId])) {
+                $success = "پت با موفقیت به سرپرست تحویل داده شد (ترخیص در ساعت {$actualTime}) و یک جایگاه از ظرفیت همزمان مهد بلافاصله آزاد گردید.";
             }
-            $success = "پت با موفقیت ترخیص گردید. اتاق مربوطه جهت آماده‌سازی به وضعیت «در حال ضدعفونی» منتقل شد.";
         }
     }
 
-    // 4. Add Room / Suite
+    // 4. Stay Extension (تمدید مدت نگهداری با درخواست سرپرست)
+    elseif ($action === 'extend_stay') {
+        $bookingId = (int)($_POST['booking_id'] ?? 0);
+        $extraHours = max(1, (int)($_POST['extra_hours'] ?? 1));
+
+        $bStmt = $pdo->prepare("SELECT * FROM pansion_bookings WHERE id = ? AND pansion_user_id = ? AND status = 'checked_in'");
+        $bStmt->execute([$bookingId, $pansionUserId]);
+        $bk = $bStmt->fetch(PDO::FETCH_ASSOC);
+
+        if ($bk) {
+            $newHours = (int)$bk['hours_count'] + $extraHours;
+            $baseDate = $bk['check_in_date'] ?: date('Y-m-d');
+            $baseTime = $bk['check_in_time'] ?: '09:00';
+            $newExpected = date('H:i', strtotime("{$baseDate} {$baseTime} + {$newHours} hours"));
+            $rate = (int)$bk['hourly_rate'] > 0 ? (int)$bk['hourly_rate'] : 60000;
+            $newTotal = $newHours * $rate;
+
+            $updExt = $pdo->prepare("UPDATE pansion_bookings SET hours_count = ?, expected_check_out_time = ?, total_price = ? WHERE id = ?");
+            if ($updExt->execute([$newHours, $newExpected, $newTotal, $bookingId])) {
+                $success = "مدت اقامت «{$bk['pet_name']}» به میزان {$extraHours} ساعت تمدید شد. زمان جدید ترخیص: {$newExpected} (هزینه نهایی: " . number_format($newTotal) . " تومان).";
+            }
+        }
+    }
+
+    // 5. Update Pet Play & Care Activity Notes
+    elseif ($action === 'update_activity_note') {
+        $bookingId = (int)($_POST['booking_id'] ?? 0);
+        $note = trim($_POST['play_activity_notes'] ?? '');
+        if ($bookingId > 0) {
+            $pdo->prepare("UPDATE pansion_bookings SET play_activity_notes = ? WHERE id = ? AND pansion_user_id = ?")->execute([$note, $bookingId, $pansionUserId]);
+            $success = "گزارش وضعیت و فعالیت بازی پت با موفقیت به‌روزرسانی شد.";
+        }
+    }
+
+    // 6. Adjust Concurrent Capacity Limit
+    elseif ($action === 'update_capacity_limit') {
+        $newCap = max(5, (int)($_POST['concurrent_capacity'] ?? 15));
+        $pdo->prepare("UPDATE pansion_rooms SET capacity = ? WHERE pansion_user_id = ? AND (zone_type = 'social_kindergarten' OR room_type = 'daycare_playpen')")->execute([$newCap, $pansionUserId]);
+        $success = "سقف مجاز پذیرش همزمان حیوانات در مهد به {$newCap} پت تغییر یافت.";
+    }
+
+    // 7. Add Room / Custom Zone
     elseif ($action === 'add_room') {
         $roomNumber = trim($_POST['room_number'] ?? '');
         $roomTitle = trim($_POST['room_title'] ?? '');
-        $roomType = trim($_POST['room_type'] ?? 'standard_kennel');
-        $capacity = (int)($_POST['capacity'] ?? 1);
-        $priceNight = (int)preg_replace('/[^0-9]/', '', $_POST['price_per_night'] ?? '0');
+        $zoneType = trim($_POST['zone_type'] ?? 'social_kindergarten');
+        $capacity = max(1, (int)($_POST['capacity'] ?? 1));
+        $hourlyRate = (int)preg_replace('/[^0-9]/', '', $_POST['hourly_rate'] ?? '60000');
+        $priceNight = (int)preg_replace('/[^0-9]/', '', $_POST['price_per_night'] ?? '450000');
         $desc = trim($_POST['description'] ?? '');
 
-        if (empty($roomNumber) || empty($roomTitle) || $priceNight <= 0) {
-            $error = 'شماره اتاق، عنوان سوئیت و تعرفه هر شب الزامی است.';
-        } else {
+        if (!empty($roomNumber) && !empty($roomTitle)) {
             $orgId = !empty($currentUser['organization_id']) ? (int)$currentUser['organization_id'] : null;
             $insR = $pdo->prepare("
                 INSERT INTO pansion_rooms 
-                (organization_id, pansion_user_id, room_number, room_title, room_type, capacity, price_per_night, description, status, created_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'available', {$nowSql})
+                (organization_id, pansion_user_id, room_number, room_title, room_type, zone_type, capacity, hourly_rate, price_per_night, description, status, created_at)
+                VALUES (?, ?, ?, ?, 'daycare_playpen', ?, ?, ?, ?, ?, 'available', {$nowSql})
             ");
-            if ($insR->execute([$orgId, $pansionUserId, $roomNumber, $roomTitle, $roomType, $capacity, $priceNight, $desc])) {
-                $success = "سوئیت جدید «{$roomTitle} ({$roomNumber})» با موفقیت افزوده شد.";
-            } else {
-                $error = 'خطا در افزودن اتاق.';
+            if ($insR->execute([$orgId, $pansionUserId, $roomNumber, $roomTitle, $zoneType, $capacity, $hourlyRate, $priceNight, $desc])) {
+                $success = "زون جدید «{$roomTitle}» با سقف ظرفیت {$capacity} پت با موفقیت تعریف شد.";
             }
-        }
-    }
-
-    // 5. Update Room Status (e.g. Finish cleaning -> Available)
-    elseif ($action === 'update_room_status') {
-        $roomId = (int)($_POST['room_id'] ?? 0);
-        $newStatus = trim($_POST['status'] ?? 'available');
-        if ($roomId > 0 && in_array($newStatus, ['available', 'occupied', 'cleaning', 'maintenance'])) {
-            $pdo->prepare("UPDATE pansion_rooms SET status = ? WHERE id = ? AND pansion_user_id = ?")->execute([$newStatus, $roomId, $pansionUserId]);
-            $success = "وضعیت اتاق با موفقیت به‌روزرسانی شد.";
         }
     }
 }
@@ -151,7 +210,7 @@ try {
     $pendingOrgInvitations = App::organization()->getUserInvitations($pansionUserId, 'pending');
 } catch (Throwable $e) {}
 
-// Fetch Pansion Rooms
+// Fetch Pansion Rooms / Zones
 $rooms = [];
 try {
     $rQuery = $pdo->prepare("SELECT * FROM pansion_rooms WHERE pansion_user_id = ? ORDER BY id ASC");
@@ -159,19 +218,45 @@ try {
     $rooms = $rQuery->fetchAll(PDO::FETCH_ASSOC);
 } catch (Throwable $e) {}
 
-// Seed default sample suites if empty
+// Seed default Kindergarten Zones if empty
 if (empty($rooms)) {
     $defaultRooms = [
-        ['room_number' => 'VIP-101', 'room_title' => 'سوئیت سلطنتی VIP گلدن', 'room_type' => 'vip_suite', 'capacity' => 2, 'price_per_night' => 850000, 'description' => 'مجهز به دوربین مداربسته اختصاصی ۲۴ ساعته، مبل پت، تهویه مطبوع مستقل و دسترسی به حیاط بازی'],
-        ['room_number' => 'STD-102', 'room_title' => 'اتاق استاندارد نگهداری سگ', 'room_type' => 'standard_kennel', 'capacity' => 1, 'price_per_night' => 450000, 'description' => 'محیط آرام، کف‌پوش ضدآب و آنتی‌باکتریال، گرمایش از کف و ۳ وعده پیاده‌روی روزانه'],
-        ['room_number' => 'CAT-201', 'room_title' => 'کاندوی اختصاصی گربه پرشین', 'room_type' => 'cat_room', 'capacity' => 1, 'price_per_night' => 380000, 'description' => 'درخت گربه ۳ طبقه، اسکرچر چوبی، ظرف خاک اتوماتیک و موسیقی آرامش‌بخش گربه'],
-        ['room_number' => 'ISO-301', 'room_title' => 'باکس ایزوله و بستری درمانی', 'room_type' => 'hospital_box', 'capacity' => 1, 'price_per_night' => 550000, 'description' => 'تحت نظارت مستقیم دامپزشک پشتیبان، اکسیژن‌تراپی و مراقبت‌های ویژه بعد از جراحی']
+        [
+            'room_number' => 'HALL-01',
+            'room_title'  => 'تالار و حیاط بازی مهد اجتماعی (Social Group Playpen)',
+            'room_type'   => 'daycare_playpen',
+            'zone_type'   => 'social_kindergarten',
+            'capacity'    => 15,
+            'hourly_rate' => 60000,
+            'price_per_night' => 450000,
+            'description' => 'فضای بازی دسته‌جمعی مهد با مربی مقیم، اسباب‌بازی‌های تعاملی، چمن ضدحساسیت و موسیقی آرامش‌بخش'
+        ],
+        [
+            'room_number' => 'ISO-01',
+            'room_title'  => 'زون ایزوله و نگهداری انفرادی امنیتی (Pitbull & Aggressive Quarantine)',
+            'room_type'   => 'hospital_box',
+            'zone_type'   => 'safety_isolation',
+            'capacity'    => 4,
+            'hourly_rate' => 85000,
+            'price_per_night' => 550000,
+            'description' => 'باکس‌های استاندارد ایزوله مجهز به تهویه مستقل، دوربین اختصاصی و محوطه پیاده‌روی انفرادی جهت تضمین امنیت کامل سایر حیوانات'
+        ],
+        [
+            'room_number' => 'CAT-01',
+            'room_title'  => 'مهد و سالن بازی اختصاصی گربه‌ها (Cat Lounge)',
+            'room_type'   => 'cat_room',
+            'zone_type'   => 'social_kindergarten',
+            'capacity'    => 8,
+            'hourly_rate' => 50000,
+            'price_per_night' => 380000,
+            'description' => 'درخت‌های چندطبقه گربه، اتاق بدون صدا و استرس، جای خواب‌های دیواری و تهویه اختصاصی'
+        ]
     ];
     $orgId = !empty($currentUser['organization_id']) ? (int)$currentUser['organization_id'] : null;
     foreach ($defaultRooms as $dr) {
         try {
-            $insDR = $pdo->prepare("INSERT INTO pansion_rooms (organization_id, pansion_user_id, room_number, room_title, room_type, capacity, price_per_night, description, status, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'available', {$nowSql})");
-            $insDR->execute([$orgId, $pansionUserId, $dr['room_number'], $dr['room_title'], $dr['room_type'], $dr['capacity'], $dr['price_per_night'], $dr['description']]);
+            $insDR = $pdo->prepare("INSERT INTO pansion_rooms (organization_id, pansion_user_id, room_number, room_title, room_type, zone_type, capacity, hourly_rate, price_per_night, description, status, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'available', {$nowSql})");
+            $insDR->execute([$orgId, $pansionUserId, $dr['room_number'], $dr['room_title'], $dr['room_type'], $dr['zone_type'], $dr['capacity'], $dr['hourly_rate'], $dr['price_per_night'], $dr['description']]);
         } catch (Throwable $e) {}
     }
     try {
@@ -181,14 +266,14 @@ if (empty($rooms)) {
     } catch (Throwable $e) {}
 }
 
-// Fetch Active Boarders (Current Guests)
+// Fetch Active Boarders (Currently Checked-in Guests)
 $boarders = [];
 try {
     $bQuery = $pdo->prepare("
-        SELECT b.*, r.room_number, r.room_title, r.room_type,
+        SELECT b.*, r.room_number, r.room_title, r.room_type, r.zone_type,
                u.name as customer_name, u.phone as customer_phone
         FROM pansion_bookings b
-        JOIN pansion_rooms r ON b.room_id = r.id
+        LEFT JOIN pansion_rooms r ON b.room_id = r.id
         LEFT JOIN users u ON b.customer_user_id = u.id
         WHERE b.pansion_user_id = ? AND b.status = 'checked_in'
         ORDER BY b.id DESC
@@ -197,17 +282,35 @@ try {
     $boarders = $bQuery->fetchAll(PDO::FETCH_ASSOC);
 } catch (Throwable $e) {}
 
-// Compute Stats
-$totalRooms = count($rooms);
-$occupiedRooms = count(array_filter($rooms, fn($r) => $r['status'] === 'occupied'));
-$cleaningRooms = count(array_filter($rooms, fn($r) => $r['status'] === 'cleaning'));
-$availableRooms = count(array_filter($rooms, fn($r) => $r['status'] === 'available'));
-$occupancyRate = $totalRooms > 0 ? round(($occupiedRooms / $totalRooms) * 100) : 0;
+// Calculate Dynamic Kindergarten Capacity Stats
+$totalConcurrentCapacity = 0;
+$mainPlaypenRoom = null;
+foreach ($rooms as $r) {
+    $totalConcurrentCapacity += (int)$r['capacity'];
+    if (($r['zone_type'] ?? '') === 'social_kindergarten' || ($r['room_type'] ?? '') === 'daycare_playpen') {
+        if (!$mainPlaypenRoom) $mainPlaypenRoom = $r;
+    }
+}
+if ($totalConcurrentCapacity <= 0) $totalConcurrentCapacity = 15;
+
+$activeCount = count($boarders);
+$socialPets = array_filter($boarders, fn($b) => empty($b['is_isolated_zone']));
+$isolatedPets = array_filter($boarders, fn($b) => !empty($b['is_isolated_zone']));
+$socialCount = count($socialPets);
+$isolatedCount = count($isolatedPets);
+$availableSlots = max(0, $totalConcurrentCapacity - $activeCount);
+$occupancyRate = min(100, round(($activeCount / $totalConcurrentCapacity) * 100));
+
+// Today's total earned from daycare
+$todayRevenue = 0;
+foreach ($boarders as $b) {
+    $todayRevenue += (int)($b['total_price'] ?? 0);
+}
 ?>
 
 <div class="space-y-6">
 
-    <!-- Alert Banner -->
+    <!-- Alerts -->
     <?php if ($success): ?>
         <div class="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold flex items-center gap-2.5 shadow-xs">
             <span class="material-symbols-outlined text-emerald-600">check_circle</span>
@@ -221,50 +324,32 @@ $occupancyRate = $totalRooms > 0 ? round(($occupiedRooms / $totalRooms) * 100) :
         </div>
     <?php endif; ?>
 
-    <!-- Pending Organization Invitations Banner -->
+    <!-- Pending Organization Invitations -->
     <?php if (!empty($pendingOrgInvitations)): ?>
         <div class="space-y-3">
             <?php foreach ($pendingOrgInvitations as $pInv): ?>
                 <div class="p-5 rounded-3xl bg-gradient-to-r from-emerald-950 via-slate-900 to-indigo-950 text-white border border-emerald-500/30 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4 relative overflow-hidden">
                     <div class="flex items-start gap-4 relative z-10">
-                        <div class="w-14 h-14 rounded-2xl bg-emerald-500/20 border border-emerald-400/30 flex items-center justify-center shrink-0 shadow-inner text-emerald-300">
+                        <div class="w-14 h-14 rounded-2xl bg-emerald-500/20 border border-emerald-400/30 flex items-center justify-center shrink-0 text-emerald-300">
                             <span class="material-symbols-outlined text-3xl">local_hospital</span>
                         </div>
                         <div class="space-y-1">
                             <div class="flex items-center gap-2 flex-wrap">
                                 <span class="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-emerald-400 text-slate-950 animate-pulse">دعوت‌نامه رسمی همکاری کلینیک</span>
                                 <h3 class="font-black text-sm text-white">مرکز درمانی «<?= htmlspecialchars($pInv['org_name']) ?>»</h3>
-                                <span class="text-xs text-emerald-200">(<?= htmlspecialchars($pInv['org_city'] ?? 'تهران') ?>)</span>
                             </div>
                             <p class="text-xs text-slate-300">
                                 نقش پیشنهادی: <strong class="text-emerald-300"><?= htmlspecialchars($pInv['job_title'] ?: 'واحد پانسیون و بستری همکار') ?></strong>
-                                <?php if (!empty($pInv['proposed_shifts'])): ?>
-                                    | هماهنگی: <span class="text-emerald-200"><?= htmlspecialchars($pInv['proposed_shifts']) ?></span>
-                                <?php endif; ?>
                             </p>
-                            <?php if (!empty($pInv['notes'])): ?>
-                                <p class="text-[11px] text-slate-300/80 bg-white/5 p-2 rounded-xl mt-1 border border-white/10"><?= htmlspecialchars($pInv['notes']) ?></p>
-                            <?php endif; ?>
                         </div>
                     </div>
-
                     <div class="flex items-center gap-2.5 shrink-0 relative z-10">
                         <form method="POST" action="index.php" class="inline m-0">
                             <?= csrf_field() ?>
                             <input type="hidden" name="action" value="accept_org_invitation">
                             <input type="hidden" name="invitation_id" value="<?= (int)$pInv['id'] ?>">
-                            <button type="submit" class="px-5 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-black text-xs shadow-lg shadow-emerald-500/25 flex items-center gap-1.5 transition-all">
-                                <span class="material-symbols-outlined text-sm">check_circle</span>
-                                <span>تأیید و اتصال پانسیون</span>
-                            </button>
-                        </form>
-
-                        <form method="POST" action="index.php" class="inline m-0" onsubmit="return confirm('آیا از رد این دعوت‌نامه همکاری اطمینان دارید؟')">
-                            <?= csrf_field() ?>
-                            <input type="hidden" name="action" value="decline_org_invitation">
-                            <input type="hidden" name="invitation_id" value="<?= (int)$pInv['id'] ?>">
-                            <button type="submit" class="px-4 py-2.5 rounded-xl bg-white/10 hover:bg-rose-500/30 text-rose-300 border border-white/15 hover:border-rose-400/40 font-bold text-xs transition-all">
-                                <span>رد دعوت</span>
+                            <button type="submit" class="px-5 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-black text-xs shadow-md transition-all">
+                                تأیید و اتصال پانسیون
                             </button>
                         </form>
                     </div>
@@ -273,100 +358,131 @@ $occupancyRate = $totalRooms > 0 ? round(($occupiedRooms / $totalRooms) * 100) :
         </div>
     <?php endif; ?>
 
-    <!-- PANSION LIVE COCKPIT HERO (Rule 11) -->
-    <div class="cockpit-pansion text-white rounded-3xl p-6 sm:p-7 shadow-xl border border-emerald-500/30 relative overflow-hidden space-y-5" style="background-color: #06241a !important; background-image: linear-gradient(135deg, #06241a 0%, #093526 50%, #041a12 100%) !important; color: #ffffff !important;">
+    <!-- KINDERGARTEN DYNAMIC CAPACITY COCKPIT (Rule 11) -->
+    <div class="cockpit-pansion text-white rounded-3xl p-6 sm:p-7 shadow-xl border border-emerald-500/30 relative overflow-hidden space-y-6" style="background-color: #06241a !important; background-image: linear-gradient(135deg, #06241a 0%, #093526 50%, #041a12 100%) !important; color: #ffffff !important;">
         <div class="absolute -top-24 -left-24 w-72 h-72 bg-emerald-500/20 rounded-full blur-3xl pointer-events-none"></div>
         <div class="absolute -bottom-24 -right-24 w-72 h-72 bg-teal-500/15 rounded-full blur-3xl pointer-events-none"></div>
 
         <!-- Top Header & Actions -->
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative z-10 border-b border-white/10 pb-4">
             <div class="flex items-center gap-3">
-                <div class="w-12 h-12 rounded-2xl bg-emerald-500/20 border border-emerald-400/40 text-emerald-400 flex items-center justify-center font-black shadow-inner">
-                    <span class="material-symbols-outlined text-2xl">holiday_village</span>
+                <div class="w-13 h-13 rounded-2xl bg-emerald-500/20 border border-emerald-400/40 text-emerald-400 flex items-center justify-center font-black shadow-inner">
+                    <span class="material-symbols-outlined text-3xl">toys</span>
                 </div>
                 <div>
-                    <div class="flex items-center gap-2">
+                    <div class="flex items-center gap-2 flex-wrap">
                         <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-400/30">
                             <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                            <span>پذیرش و مراقبت شبانه‌روزی ۲۴ ساعته</span>
+                            <span>مهد و پانسیون تعاملی حیوانات (Daycare & Kindergarten)</span>
                         </span>
-                        <span class="text-xs text-emerald-200 font-bold">| نرخ اشغال هتل: <?= $occupancyRate ?>٪</span>
+                        <span class="text-xs text-emerald-200 font-bold">| تعرفه ساعتی و مراقبت پویا</span>
                     </div>
                     <h2 class="text-base sm:text-lg font-black text-white mt-1"><?= htmlspecialchars($pansionName) ?></h2>
                 </div>
             </div>
 
-            <div class="flex items-center gap-2">
-                <button type="button" onclick="document.getElementById('checkin-modal').classList.remove('hidden')" class="px-4 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-black text-xs shadow-md transition-all flex items-center gap-1.5">
-                    <span class="material-symbols-outlined text-base">person_add</span>
-                    <span>پذیرش مهمان جدید (Check-in)</span>
+            <div class="flex items-center gap-2 flex-wrap">
+                <button type="button" onclick="document.getElementById('checkin-modal').classList.remove('hidden')" class="px-4 py-2.5 rounded-xl bg-emerald-400 hover:bg-emerald-500 text-slate-950 font-black text-xs shadow-md transition-all flex items-center gap-1.5">
+                    <span class="material-symbols-outlined text-base">add_circle</span>
+                    <span>+ پذیرش مهمان جدید (ساعتی / روزانه)</span>
                 </button>
-                <button type="button" onclick="document.getElementById('add-room-modal').classList.remove('hidden')" class="px-3.5 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs border border-white/20 transition-all flex items-center gap-1.5">
-                    <span class="material-symbols-outlined text-base">add_home</span>
-                    <span>تعریف اتاق جدید</span>
+                <button type="button" onclick="document.getElementById('capacity-modal').classList.remove('hidden')" class="px-3.5 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs border border-white/20 transition-all flex items-center gap-1.5" title="تغییر سقف همزمان پذیرش مهد">
+                    <span class="material-symbols-outlined text-base">tune</span>
+                    <span>سقف ظرفیت همزمان (<?= $totalConcurrentCapacity ?> پت)</span>
                 </button>
             </div>
         </div>
 
-        <!-- Occupancy Bar & Health Guard Hotline -->
-        <div class="relative z-10 grid grid-cols-1 md:grid-cols-3 gap-4 pt-1">
-            <div class="p-4 rounded-2xl bg-white/10 border border-white/15 space-y-2">
+        <!-- DYNAMIC CONCURRENT CAPACITY GAUGE & LIVE METRICS -->
+        <div class="relative z-10 grid grid-cols-1 md:grid-cols-4 gap-4 pt-1">
+            
+            <!-- Gauge 1: Real-time Concurrent Capacity -->
+            <div class="p-4 rounded-2xl bg-white/10 border border-white/15 space-y-2 md:col-span-2">
                 <div class="flex items-center justify-between text-xs">
-                    <span class="text-emerald-100 font-bold">ظرفیت تکمیل شده:</span>
-                    <strong class="text-emerald-300 font-mono"><?= $occupiedRooms ?> از <?= $totalRooms ?> سوئیت</strong>
+                    <span class="text-emerald-100 font-bold flex items-center gap-1.5">
+                        <span class="material-symbols-outlined text-base text-emerald-400">group</span>
+                        <span>سقف مجاز حیوانات همزمان در مجموعه:</span>
+                    </span>
+                    <strong class="text-emerald-300 font-mono text-sm">
+                        <?= $activeCount ?> حاضر / <?= $totalConcurrentCapacity ?> سقف مجاز
+                    </strong>
                 </div>
-                <div class="w-full bg-white/10 h-2.5 rounded-full overflow-hidden">
-                    <div class="bg-gradient-to-r from-emerald-400 to-teal-400 h-full rounded-full transition-all duration-500" style="width: <?= $occupancyRate ?>%"></div>
+                <div class="w-full bg-white/15 h-3 rounded-full overflow-hidden p-0.5">
+                    <?php 
+                        $gaugeColor = ($occupancyRate >= 90) ? 'from-rose-500 to-amber-500' : (($occupancyRate >= 70) ? 'from-amber-400 to-emerald-400' : 'from-emerald-400 to-teal-400');
+                    ?>
+                    <div class="bg-gradient-to-r <?= $gaugeColor ?> h-full rounded-full transition-all duration-500" style="width: <?= max(5, $occupancyRate) ?>%"></div>
+                </div>
+                <div class="flex items-center justify-between text-[11px] text-emerald-200">
+                    <span>ظرفیت پذیرش فوری: <strong class="text-white"><?= $availableSlots ?> جای خالی</strong></span>
+                    <span>نرخ اشغال فضا: <strong class="text-white"><?= $occupancyRate ?>٪</strong></span>
                 </div>
             </div>
 
-            <div class="p-4 rounded-2xl bg-white/10 border border-white/15 flex items-center justify-between text-xs">
-                <div>
-                    <p class="text-emerald-100 font-bold">اتاق‌های آماده رزرو فوری:</p>
-                    <h4 class="text-lg font-black text-white mt-0.5"><?= $availableRooms ?> سوئیت خالی</h4>
+            <!-- Gauge 2: Social Play Hall vs Safety Isolation Breakdown -->
+            <div class="p-4 rounded-2xl bg-white/10 border border-white/15 flex flex-col justify-between text-xs space-y-2">
+                <span class="text-emerald-100 font-bold">تفکیک بخش‌های مهد:</span>
+                <div class="space-y-1.5">
+                    <div class="flex items-center justify-between text-xs">
+                        <span class="text-emerald-300 flex items-center gap-1">
+                            <span class="material-symbols-outlined text-sm">pets</span>
+                            <span>تالار بازی اجتماعی:</span>
+                        </span>
+                        <strong class="font-mono text-white"><?= $socialCount ?> پت</strong>
+                    </div>
+                    <div class="flex items-center justify-between text-xs">
+                        <span class="text-amber-300 flex items-center gap-1" title="پیت‌بول، سگ‌های ناآرام، غیرعقیم یا تهاجمی">
+                            <span class="material-symbols-outlined text-sm">security</span>
+                            <span>زون ایزوله امنیتی:</span>
+                        </span>
+                        <strong class="font-mono text-amber-200"><?= $isolatedCount ?> پت</strong>
+                    </div>
                 </div>
-                <span class="material-symbols-outlined text-3xl text-emerald-400">meeting_room</span>
             </div>
 
-            <div class="p-4 rounded-2xl bg-white/10 border border-white/15 flex items-center justify-between text-xs">
-                <div>
-                    <p class="text-emerald-100 font-bold">پزشک و کلینیک پشتیبان:</p>
-                    <h4 class="text-xs font-black text-teal-300 mt-0.5"><?= $affiliatedOrg ? htmlspecialchars($affiliatedOrg['name']) : 'پشتیبانی اورژانس سراسری آسنا' ?></h4>
+            <!-- Gauge 3: Health Hotline & Emergency Support -->
+            <div class="p-4 rounded-2xl bg-white/10 border border-white/15 flex flex-col justify-between text-xs space-y-1.5">
+                <span class="text-emerald-100 font-bold">پشتیبانی پزشکی و اورژانس:</span>
+                <p class="text-xs font-black text-teal-300 leading-tight">
+                    <?= $affiliatedOrg ? htmlspecialchars($affiliatedOrg['name']) : 'پشتیبانی اورژانس ۲۴ ساعته آسنا' ?>
+                </p>
+                <div class="text-[11px] text-emerald-200/80 flex items-center gap-1">
+                    <span class="material-symbols-outlined text-xs">verified_user</span>
+                    <span>پوشش بیمه مسئولیت مهد</span>
                 </div>
-                <span class="material-symbols-outlined text-3xl text-teal-400">medical_services</span>
             </div>
         </div>
     </div>
 
-    <!-- 4 KPI Summary Cards -->
+    <!-- 4 KPI SUMMARY CARDS -->
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex items-center gap-3.5">
             <div class="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
-                <span class="material-symbols-outlined text-2xl">hotel</span>
+                <span class="material-symbols-outlined text-2xl">pets</span>
             </div>
             <div>
-                <p class="text-[11px] font-bold text-slate-500">کل سوئیت‌ها و اتاق‌ها</p>
-                <h3 class="text-xl font-black text-slate-900 mt-0.5"><?= $totalRooms ?> اتاق</h3>
+                <p class="text-[11px] font-bold text-slate-500">پت‌های در حال بازی مهد</p>
+                <h3 class="text-xl font-black text-slate-900 mt-0.5"><?= $socialCount ?> مهمان</h3>
             </div>
         </div>
 
         <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex items-center gap-3.5">
             <div class="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
-                <span class="material-symbols-outlined text-2xl">pets</span>
+                <span class="material-symbols-outlined text-2xl">security</span>
             </div>
             <div>
-                <p class="text-[11px] font-bold text-slate-500">پت‌های مقیم (پذیرش فعال)</p>
-                <h3 class="text-xl font-black text-amber-700 mt-0.5"><?= count($boarders) ?> مهمان</h3>
+                <p class="text-[11px] font-bold text-slate-500">زون ایزوله (پیت‌بول/انفرادی)</p>
+                <h3 class="text-xl font-black text-amber-700 mt-0.5"><?= $isolatedCount ?> پت</h3>
             </div>
         </div>
 
         <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex items-center gap-3.5">
-            <div class="w-12 h-12 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center shrink-0">
-                <span class="material-symbols-outlined text-2xl">sanitizer</span>
+            <div class="w-12 h-12 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center shrink-0">
+                <span class="material-symbols-outlined text-2xl">meeting_room</span>
             </div>
             <div>
-                <p class="text-[11px] font-bold text-slate-500">در حال ضدعفونی و نظافت</p>
-                <h3 class="text-xl font-black text-purple-700 mt-0.5"><?= $cleaningRooms ?> اتاق</h3>
+                <p class="text-[11px] font-bold text-slate-500">ظرفیت آزاد پذیرش فوری</p>
+                <h3 class="text-xl font-black text-teal-700 mt-0.5"><?= $availableSlots ?> جایگاه</h3>
             </div>
         </div>
 
@@ -375,232 +491,207 @@ $occupancyRate = $totalRooms > 0 ? round(($occupiedRooms / $totalRooms) * 100) :
                 <span class="material-symbols-outlined text-2xl">account_balance_wallet</span>
             </div>
             <div>
-                <p class="text-[11px] font-bold text-slate-500">کیف‌پول پانسیون</p>
-                <h3 class="text-lg font-black text-sky-700 mt-0.5"><?= number_format($currentUser['wallet_balance'] ?? 0) ?> ت</h3>
+                <p class="text-[11px] font-bold text-slate-500">کارکرد مهد امروز</p>
+                <h3 class="text-lg font-black text-sky-700 mt-0.5"><?= number_format($todayRevenue) ?> ت</h3>
             </div>
         </div>
     </div>
 
-    <!-- SECTION 1: SUITES & ROOMS INTERACTIVE MATRIX -->
-    <div id="rooms-section" class="bg-white rounded-3xl border border-slate-200 shadow-xs overflow-hidden">
-        <div class="p-5 border-b border-slate-100 flex items-center justify-between">
+    <!-- MAIN ROSTER: KINDERGARTEN ACTIVE RESIDENTS (پت‌های مقیم در حال بازی و مراقبت) -->
+    <div class="bg-white rounded-3xl border border-slate-200 shadow-xs overflow-hidden">
+        <div class="p-5 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
                 <h3 class="text-sm font-black text-slate-900 flex items-center gap-2">
-                    <span class="material-symbols-outlined text-emerald-600">meeting_room</span>
-                    <span>نقشه زنده سوئیت‌ها و وضعیت اشغال اتاق‌ها</span>
+                    <span class="material-symbols-outlined text-emerald-600">sports_esports</span>
+                    <span>فهرست زنده پت‌های حاضر در مهد و پانسیون</span>
                 </h3>
-                <p class="text-xs text-slate-500 mt-0.5">مشاهده اتاق‌های خالی، تحت اقامت یا نیازمند نظافت و تغییر وضعیت سریع</p>
+                <p class="text-xs text-slate-500 mt-0.5">مشاهده ساعت ورود، ساعت ترخیص، مدیریت آزادی مدت اقامت (تمدید ساعت یا ترخیص زودهنگام)</p>
             </div>
-            <button type="button" onclick="document.getElementById('add-room-modal').classList.remove('hidden')" class="px-3.5 py-2 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-1.5 transition-all shadow-xs">
-                <span class="material-symbols-outlined text-sm">add</span>
-                <span>افزودن اتاق</span>
-            </button>
+            <div class="flex items-center gap-2">
+                <button type="button" onclick="document.getElementById('checkin-modal').classList.remove('hidden')" class="px-3.5 py-2 rounded-xl text-xs font-bold bg-emerald-500 hover:bg-emerald-600 text-slate-950 flex items-center gap-1.5 transition-all shadow-xs">
+                    <span class="material-symbols-outlined text-sm">person_add</span>
+                    <span>+ پذیرش پت جدید</span>
+                </button>
+            </div>
         </div>
 
-        <div class="p-5">
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <?php foreach ($rooms as $rm): 
-                    $st = $rm['status'];
-                    $statusMeta = match($st) {
-                        'available'   => ['label' => 'آماده پذیرش', 'card_border' => 'border-emerald-200 bg-emerald-50/30', 'badge' => 'bg-emerald-100 text-emerald-800', 'icon' => 'check_circle'],
-                        'occupied'    => ['label' => 'مهمان مقیم (اشغال)', 'card_border' => 'border-rose-200 bg-rose-50/30', 'badge' => 'bg-rose-100 text-rose-800', 'icon' => 'pets'],
-                        'cleaning'    => ['label' => 'در حال ضدعفونی', 'card_border' => 'border-amber-200 bg-amber-50/30', 'badge' => 'bg-amber-100 text-amber-800', 'icon' => 'sanitizer'],
-                        'maintenance' => ['label' => 'تعمیرات و ارتقا', 'card_border' => 'border-slate-200 bg-slate-50', 'badge' => 'bg-slate-100 text-slate-700', 'icon' => 'build'],
-                        default       => ['label' => $st, 'card_border' => 'border-slate-200 bg-white', 'badge' => 'bg-slate-100 text-slate-700', 'icon' => 'info']
-                    };
+        <?php if (empty($boarders)): ?>
+            <div class="p-16 text-center text-slate-400 space-y-3">
+                <div class="w-16 h-16 rounded-3xl bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto text-3xl">
+                    <span class="material-symbols-outlined text-4xl">toys</span>
+                </div>
+                <h4 class="text-sm font-black text-slate-700">هم‌اکنون هیچ پتی در مهد پذیرش نشده است</h4>
+                <p class="text-xs text-slate-500 max-w-md mx-auto">
+                    سقف مجاز همزمان مهد شما <?= $totalConcurrentCapacity ?> پت است. با استفاده از دکمه «پذیرش پت جدید» می‌توانید ورود ساعتی مهمانان را ثبت فرمایید.
+                </p>
+                <button type="button" onclick="document.getElementById('checkin-modal').classList.remove('hidden')" class="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md transition-all">
+                    ثبت اولین پذیرش ساعتی
+                </button>
+            </div>
+        <?php else: ?>
+            <div class="p-5 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <?php foreach ($boarders as $b): 
+                    $isIso = !empty($b['is_isolated_zone']);
+                    $cardBorder = $isIso ? 'border-amber-300 bg-amber-50/20' : 'border-emerald-200 bg-emerald-50/15';
+                    $zoneBadge = $isIso 
+                        ? 'bg-amber-100 text-amber-900 border border-amber-300' 
+                        : 'bg-emerald-100 text-emerald-900 border border-emerald-300';
+                    $zoneIcon = $isIso ? 'security' : 'pets';
+                    $zoneLabel = $isIso ? '🚨 زون ایزوله امنیتی (پیت‌بول/انفرادی)' : 'تالار بازی مشترک مهد';
+
+                    // Compute elapsed / remaining time
+                    $inDate = $b['check_in_date'] ?: date('Y-m-d');
+                    $inTime = $b['check_in_time'] ?: '09:00';
+                    $expTime = $b['expected_check_out_time'] ?: '13:00';
+                    $expTimestamp = strtotime("{$inDate} {$expTime}");
+                    $nowTimestamp = time();
+                    $remainingSecs = $expTimestamp - $nowTimestamp;
+                    $isExpired = ($remainingSecs <= 0);
+                    $remHours = floor(abs($remainingSecs) / 3600);
+                    $remMins = floor((abs($remainingSecs) % 3600) / 60);
                 ?>
-                <div class="p-4 rounded-2xl border <?= $statusMeta['card_border'] ?> transition-all flex flex-col justify-between space-y-3">
-                    <div class="flex items-start justify-between">
-                        <div>
-                            <span class="font-mono text-[11px] font-black text-slate-500"><?= htmlspecialchars($rm['room_number']) ?></span>
-                            <h4 class="font-black text-xs text-slate-900 mt-0.5"><?= htmlspecialchars($rm['room_title']) ?></h4>
-                        </div>
-                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold <?= $statusMeta['badge'] ?>">
-                            <span class="material-symbols-outlined text-xs"><?= $statusMeta['icon'] ?></span>
-                            <span><?= $statusMeta['label'] ?></span>
-                        </span>
-                    </div>
-
-                    <div class="space-y-1 text-xs">
-                        <div class="flex items-center justify-between text-slate-500">
-                            <span>تعرفه هر شب:</span>
-                            <strong class="font-mono font-bold text-slate-900"><?= number_format($rm['price_per_night']) ?> تومان</strong>
-                        </div>
-                        <div class="flex items-center justify-between text-slate-500">
-                            <span>ظرفیت:</span>
-                            <span class="font-bold text-slate-700"><?= (int)$rm['capacity'] ?> پت</span>
-                        </div>
-                    </div>
-
-                    <div class="pt-2 border-t border-slate-200/60 flex items-center justify-between text-[11px]">
-                        <?php if ($st === 'cleaning'): ?>
-                            <form method="POST" action="index.php" class="w-full m-0">
-                                <?= csrf_field() ?>
-                                <input type="hidden" name="action" value="update_room_status">
-                                <input type="hidden" name="room_id" value="<?= (int)$rm['id'] ?>">
-                                <input type="hidden" name="status" value="available">
-                                <button type="submit" class="w-full py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold flex items-center justify-center gap-1 transition-all">
-                                    <span class="material-symbols-outlined text-sm">cleaning_services</span>
-                                    <span>اتمام ضدعفونی و آزادسازی</span>
-                                </button>
-                            </form>
-                        <?php elseif ($st === 'available'): ?>
-                            <span class="text-emerald-700 font-bold flex items-center gap-1">
-                                <span class="material-symbols-outlined text-sm">door_front</span>
-                                <span>آماده واگذاری</span>
+                <div class="p-5 rounded-3xl border <?= $cardBorder ?> shadow-xs flex flex-col justify-between space-y-4 transition-all hover:shadow-md">
+                    
+                    <!-- Pet Top Profile & Zone Badge -->
+                    <div class="space-y-2">
+                        <div class="flex items-start justify-between">
+                            <div>
+                                <h4 class="text-base font-black text-slate-900"><?= htmlspecialchars($b['pet_name']) ?></h4>
+                                <p class="text-xs text-slate-500 mt-0.5">
+                                    <?= htmlspecialchars($b['pet_species']) ?> • <?= htmlspecialchars($b['pet_breed'] ?: 'نژاد نامشخص') ?>
+                                </p>
+                            </div>
+                            <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black <?= $zoneBadge ?>">
+                                <span class="material-symbols-outlined text-xs"><?= $zoneIcon ?></span>
+                                <span><?= $zoneLabel ?></span>
                             </span>
-                        <?php elseif ($st === 'occupied'): ?>
-                            <span class="text-rose-700 font-bold flex items-center gap-1">
-                                <span class="material-symbols-outlined text-sm">lock</span>
-                                <span>دارای مسافر مقیم</span>
-                            </span>
+                        </div>
+
+                        <?php if ($isIso && !empty($b['isolation_reason'])): ?>
+                            <div class="p-2 rounded-xl bg-amber-100/70 text-[11px] font-bold text-amber-900 border border-amber-200 flex items-center gap-1.5">
+                                <span class="material-symbols-outlined text-xs">warning</span>
+                                <span>علت ایزوله: <?= htmlspecialchars($b['isolation_reason']) ?></span>
+                            </div>
                         <?php endif; ?>
                     </div>
+
+                    <!-- Stay Timing & Live Remaining Status -->
+                    <div class="p-3.5 rounded-2xl bg-white border border-slate-200/80 space-y-2">
+                        <div class="flex items-center justify-between text-xs">
+                            <span class="text-slate-500 font-bold">ساعت ورود و ترخیص:</span>
+                            <span class="font-mono font-bold text-slate-800">
+                                <?= htmlspecialchars($inTime) ?> تا <?= htmlspecialchars($expTime) ?> (<?= (int)$b['hours_count'] ?> ساعت)
+                            </span>
+                        </div>
+
+                        <div class="flex items-center justify-between pt-1 border-t border-slate-100 text-xs">
+                            <span class="text-slate-500 font-bold">وضعیت زمانی:</span>
+                            <?php if ($isExpired): ?>
+                                <span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-rose-100 text-rose-800 border border-rose-300 animate-pulse flex items-center gap-1">
+                                    <span class="material-symbols-outlined text-xs">alarm_on</span>
+                                    <span>ساعت ترخیص فرا رسیده (+<?= $remHours ?>h)</span>
+                                </span>
+                            <?php else: ?>
+                                <span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-800 border border-emerald-300 flex items-center gap-1">
+                                    <span class="material-symbols-outlined text-xs">schedule</span>
+                                    <span><?= $remHours ?> ساعت و <?= $remMins ?> دقیقه باقیمانده</span>
+                                </span>
+                            <?php endif; ?>
+                        </div>
+
+                        <div class="flex items-center justify-between text-xs text-slate-600">
+                            <span>سرپرست: <strong class="text-slate-800"><?= htmlspecialchars($b['customer_name'] ?: 'کاربر') ?></strong></span>
+                            <span class="font-mono text-[11px]" dir="ltr"><?= htmlspecialchars($b['customer_phone'] ?? '—') ?></span>
+                        </div>
+                    </div>
+
+                    <!-- Activity Notes / Mood -->
+                    <div class="space-y-1">
+                        <div class="flex items-center justify-between text-[11px]">
+                            <span class="font-bold text-slate-500">احوال و گزارش بازی:</span>
+                            <button type="button" onclick="openActivityModal(<?= (int)$b['id'] ?>, '<?= htmlspecialchars(addslashes($b['play_activity_notes'] ?? '')) ?>')" class="text-emerald-700 hover:underline font-bold text-[10px]">
+                                ✏️ ویرایش گزارش
+                            </button>
+                        </div>
+                        <p class="text-xs text-slate-700 bg-white p-2.5 rounded-xl border border-slate-200/80 leading-relaxed">
+                            <?= htmlspecialchars($b['play_activity_notes'] ?: 'پت در حال تعامل و بازی در محوطه مهد است.') ?>
+                        </p>
+                    </div>
+
+                    <!-- Action Buttons: Early Checkout & Stay Extension -->
+                    <div class="pt-3 border-t border-slate-200/60 grid grid-cols-2 gap-2">
+                        <!-- Early Pickup / Checkout Button -->
+                        <form method="POST" action="index.php" class="m-0" onsubmit="return confirm('آیا سرپرست برای تحویل پت مراجعه نموده است؟ ترخیص زودهنگام بلافاصله یک جایگاه به ظرفیت مهد اضافه خواهد کرد.')">
+                            <?= csrf_field() ?>
+                            <input type="hidden" name="action" value="check_out_pet">
+                            <input type="hidden" name="booking_id" value="<?= (int)$b['id'] ?>">
+                            <button type="submit" class="w-full py-2.5 px-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs flex items-center justify-center gap-1 transition-all shadow-xs" title="تحویل پت به سرپرست و آزادسازی فوری ظرفیت">
+                                <span class="material-symbols-outlined text-sm">logout</span>
+                                <span>ترخیص و تحویل</span>
+                            </button>
+                        </form>
+
+                        <!-- Extend Stay Hours Button -->
+                        <button type="button" onclick="openExtendModal(<?= (int)$b['id'] ?>, '<?= htmlspecialchars(addslashes($b['pet_name'])) ?>', <?= (int)$b['hours_count'] ?>, '<?= htmlspecialchars($expTime) ?>')" class="w-full py-2.5 px-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs flex items-center justify-center gap-1 transition-all shadow-xs" title="تمدید ساعت اقامت پت در مهد">
+                            <span class="material-symbols-outlined text-sm">more_time</span>
+                            <span>تمدید اقامت</span>
+                        </button>
+                    </div>
+
                 </div>
                 <?php endforeach; ?>
             </div>
-        </div>
+        <?php endif; ?>
     </div>
 
-    <!-- SECTION 2: ACTIVE RESIDENT PETS (BOARDERS) -->
-    <div id="boarders-section" class="bg-white rounded-3xl border border-slate-200 shadow-xs overflow-hidden">
-        <div class="p-5 border-b border-slate-100 flex items-center justify-between">
+    <!-- PET OWNER TIME RESERVATION PREVIEW CALCULATOR (راهنمای رزرو سرپرستان) -->
+    <div class="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white rounded-3xl p-6 sm:p-7 shadow-lg border border-indigo-500/20 space-y-4">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/10 pb-4">
             <div>
-                <h3 class="text-sm font-black text-slate-900 flex items-center gap-2">
-                    <span class="material-symbols-outlined text-amber-600">pets</span>
-                    <span>مهمانان مقیم هتل (پذیرش فعال هم‌اکنون)</span>
+                <h3 class="text-sm font-black text-white flex items-center gap-2">
+                    <span class="material-symbols-outlined text-amber-400">calculate</span>
+                    <span>ماشین‌حساب شفاف رزرو زمانی مهد پت (ساعتی)</span>
                 </h3>
-                <p class="text-xs text-slate-500 mt-0.5">ثبت تاریخ ورود و خروج، اطلاعات سرپرست، داروهای تجویزی و وسایل همراه پت</p>
+                <p class="text-xs text-slate-300 mt-0.5">آزادی کامل سرپرستان در انتخاب ساعات حضور، پیش‌بینی هزینه و ترخیص زودهنگام یا تمدید اقامت</p>
             </div>
-            <button type="button" onclick="document.getElementById('checkin-modal').classList.remove('hidden')" class="px-3.5 py-2 rounded-xl text-xs font-bold bg-amber-500 hover:bg-amber-600 text-slate-950 flex items-center gap-1.5 transition-all shadow-xs">
-                <span class="material-symbols-outlined text-sm">person_add</span>
-                <span>پذیرش مهمان جدید</span>
-            </button>
-        </div>
-
-        <div class="overflow-x-auto">
-            <table class="w-full text-right text-xs">
-                <thead class="bg-slate-50 text-slate-500 font-bold border-b border-slate-200">
-                    <tr>
-                        <th class="p-4">پت مهمان</th>
-                        <th class="p-4">سوئیت مقیم</th>
-                        <th class="p-4">بازه اقامت (شب‌ها)</th>
-                        <th class="p-4">اطلاعات سرپرست و تماس اضطراری</th>
-                        <th class="p-4">دستورات غذایی و دارویی</th>
-                        <th class="p-4 text-center">عملیات</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-slate-100 text-slate-700">
-                    <?php if (empty($boarders)): ?>
-                        <tr>
-                            <td colspan="6" class="p-12 text-center text-slate-400">
-                                <span class="material-symbols-outlined text-4xl text-slate-300 block mb-2">hotel_class</span>
-                                هم‌اکنون هیچ مهمان مقیمی در هتل ثبت نشده است. از دکمه «پذیرش مهمان جدید» برای ثبت چک‌این استفاده فرمایید.
-                            </td>
-                        </tr>
-                    <?php else: ?>
-                        <?php foreach ($boarders as $b): ?>
-                        <tr class="hover:bg-slate-50/80 transition-colors">
-                            <td class="p-4">
-                                <div class="font-black text-slate-900 text-sm"><?= htmlspecialchars($b['pet_name']) ?></div>
-                                <div class="text-[11px] text-slate-500 mt-0.5"><?= htmlspecialchars($b['pet_species']) ?> - <?= htmlspecialchars($b['pet_breed'] ?: 'نژاد معمولی') ?></div>
-                            </td>
-                            <td class="p-4">
-                                <span class="px-2.5 py-1 rounded-lg bg-emerald-100 text-emerald-800 font-bold font-mono">
-                                    <?= htmlspecialchars($b['room_number']) ?>
-                                </span>
-                                <div class="text-[11px] text-slate-500 mt-1"><?= htmlspecialchars($b['room_title']) ?></div>
-                            </td>
-                            <td class="p-4 font-mono">
-                                <div class="font-bold text-slate-800">از <?= htmlspecialchars($b['check_in_date']) ?> تا <?= htmlspecialchars($b['check_out_date']) ?></div>
-                                <div class="text-[11px] text-indigo-700 font-bold mt-0.5"><?= (int)$b['nights_count'] ?> شب اقامت</div>
-                            </td>
-                            <td class="p-4">
-                                <div class="font-bold text-slate-800"><?= htmlspecialchars($b['customer_name'] ?: 'سرپرست محترم') ?></div>
-                                <div class="font-mono text-slate-500 text-[11px]" dir="ltr"><?= htmlspecialchars($b['customer_phone'] ?? '—') ?></div>
-                                <?php if (!empty($b['emergency_contact_phone'])): ?>
-                                    <div class="text-[10px] text-rose-600 font-mono mt-0.5">اضطراری: <?= htmlspecialchars($b['emergency_contact_phone']) ?></div>
-                                <?php endif; ?>
-                            </td>
-                            <td class="p-4 max-w-xs">
-                                <?php if (!empty($b['special_diet_notes'])): ?>
-                                    <div class="text-[11px] text-slate-700">🥗 <?= htmlspecialchars($b['special_diet_notes']) ?></div>
-                                <?php endif; ?>
-                                <?php if (!empty($b['medication_notes'])): ?>
-                                    <div class="text-[11px] text-rose-700 font-bold mt-0.5">💊 <?= htmlspecialchars($b['medication_notes']) ?></div>
-                                <?php endif; ?>
-                            </td>
-                            <td class="p-4 text-center">
-                                <form method="POST" action="index.php" class="inline m-0" onsubmit="return confirm('آیا از ترخیص و تسویه حساب این مهمان اطمینان دارید؟ اتاق به وضعیت ضدعفونی منتقل خواهد شد.')">
-                                    <?= csrf_field() ?>
-                                    <input type="hidden" name="action" value="check_out_pet">
-                                    <input type="hidden" name="booking_id" value="<?= (int)$b['id'] ?>">
-                                    <input type="hidden" name="room_id" value="<?= (int)$b['room_id'] ?>">
-                                    <button type="submit" class="px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs transition-all shadow-xs">
-                                        ترخیص مهمان (Check-out)
-                                    </button>
-                                </form>
-                            </td>
-                        </tr>
-                        <?php endforeach; ?>
-                    <?php endif; ?>
-                </tbody>
-            </table>
-        </div>
-    </div>
-
-    <!-- SECTION 3: BELONGINGS & DIET INVENTORY TRACKER -->
-    <div id="inventory-section" class="bg-white rounded-3xl border border-slate-200 shadow-xs p-5 space-y-4">
-        <div class="flex items-center justify-between border-b border-slate-100 pb-3">
-            <div>
-                <h3 class="text-sm font-black text-slate-900 flex items-center gap-2">
-                    <span class="material-symbols-outlined text-indigo-600">inventory</span>
-                    <span>چک‌لیست وسایل امانی و رژیم غذایی مسافران</span>
-                </h3>
-                <p class="text-xs text-slate-500 mt-0.5">حفظ اموال سرپرستان، ظروف غذا، اسباب‌بازی‌ها و داروهای تحویلی جهت جلوگیری از مفقودی</p>
-            </div>
-            <span class="text-xs font-bold text-indigo-700 bg-indigo-50 px-3 py-1 rounded-full border border-indigo-200">
-                سیستم امانت‌داری هوشمند
+            <span class="px-3 py-1 rounded-full text-xs font-bold bg-amber-400/20 text-amber-300 border border-amber-400/30">
+                تعرفه ساعتی پایه: ۶۰,۰۰۰ تومان
             </span>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <?php foreach ($boarders as $b): ?>
-                <div class="p-4 rounded-2xl border border-slate-200 bg-slate-50/50 space-y-2.5">
-                    <div class="flex items-center justify-between">
-                        <span class="font-black text-xs text-slate-900"><?= htmlspecialchars($b['pet_name']) ?> (اتاق <?= htmlspecialchars($b['room_number']) ?>)</span>
-                        <span class="text-[10px] text-slate-400 font-mono"><?= htmlspecialchars($b['customer_name']) ?></span>
-                    </div>
-
-                    <div class="space-y-1.5 text-xs">
-                        <div class="p-2.5 rounded-xl bg-white border border-slate-200/80">
-                            <span class="text-[10px] font-bold text-slate-400 block mb-0.5">وسایل و ملزومات تحویلی:</span>
-                            <p class="text-slate-700"><?= htmlspecialchars($b['belongings_list'] ?: 'تشک اختصاصی، ظرف آب، قلاده کمری') ?></p>
-                        </div>
-                        <div class="p-2.5 rounded-xl bg-white border border-slate-200/80">
-                            <span class="text-[10px] font-bold text-slate-400 block mb-0.5">برنامه تغذیه:</span>
-                            <p class="text-slate-700"><?= htmlspecialchars($b['special_diet_notes'] ?: 'غذای خشک استاندارد هتل (۲ وعده صبح و شب)') ?></p>
-                        </div>
-                    </div>
-                </div>
-            <?php endforeach; ?>
-            <?php if (empty($boarders)): ?>
-                <div class="col-span-3 p-8 text-center text-slate-400 bg-slate-50 rounded-2xl">
-                    مهمان مقیمی جهت نمایش وسایل امانی وجود ندارد.
-                </div>
-            <?php endif; ?>
+        <div class="grid grid-cols-1 sm:grid-cols-4 gap-3 text-xs">
+            <div class="p-3.5 rounded-2xl bg-white/5 border border-white/10 space-y-1">
+                <span class="text-slate-400">۲ ساعت بازی و نگهداری:</span>
+                <p class="text-base font-black text-amber-300">۱۲۰,۰۰۰ تومان</p>
+                <span class="text-[10px] text-slate-400">مناسب خرید و کارهای اداری سرپرست</span>
+            </div>
+            <div class="p-3.5 rounded-2xl bg-white/5 border border-white/10 space-y-1">
+                <span class="text-slate-400">۴ ساعت مهد نیم‌روز:</span>
+                <p class="text-base font-black text-amber-300">۲۴۰,۰۰۰ تومان</p>
+                <span class="text-[10px] text-slate-400">همراه با ۱ وعده میان‌وعده و بازی گروهی</span>
+            </div>
+            <div class="p-3.5 rounded-2xl bg-white/5 border border-white/10 space-y-1">
+                <span class="text-slate-400">۸ ساعت مهد تمام‌روز:</span>
+                <p class="text-base font-black text-amber-300">۴۵۰,۰۰۰ تومان</p>
+                <span class="text-[10px] text-slate-400">تخفیف ویژه روز کامل کاری سرپرست</span>
+            </div>
+            <div class="p-3.5 rounded-2xl bg-white/5 border border-white/10 space-y-1">
+                <span class="text-slate-400">زون ایزوله پیت‌بول/پرخاشگر:</span>
+                <p class="text-base font-black text-rose-300">ساعتی ۸۵,۰۰۰ تومان</p>
+                <span class="text-[10px] text-slate-400">مراقبت اختصاصی ۱ به ۱ بدون ریسک</span>
+            </div>
         </div>
     </div>
 
 </div>
 
-<!-- Modal: Check-In Pet -->
+<!-- Modal: Quick Hourly Check-in Pet -->
 <div id="checkin-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
     <div class="bg-white w-full max-w-xl rounded-3xl p-6 shadow-2xl border border-slate-200 space-y-4 max-h-[90vh] overflow-y-auto">
         <div class="flex items-center justify-between border-b border-slate-100 pb-3">
             <h3 class="text-sm font-black text-slate-900 flex items-center gap-2">
                 <span class="material-symbols-outlined text-emerald-600">person_add</span>
-                <span>پذیرش مهمان جدید در هتل (Check-in Form)</span>
+                <span>پذیرش مهمان جدید در مهد (Check-in Form)</span>
             </h3>
             <button type="button" onclick="document.getElementById('checkin-modal').classList.add('hidden')" class="text-slate-400 hover:text-slate-600">
                 <span class="material-symbols-outlined">close</span>
@@ -611,24 +702,27 @@ $occupancyRate = $totalRooms > 0 ? round(($occupiedRooms / $totalRooms) * 100) :
             <?= csrf_field() ?>
             <input type="hidden" name="action" value="check_in_pet">
 
-            <div class="grid grid-cols-2 gap-3">
-                <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1">انتخاب اتاق / سوئیت *</label>
-                    <select name="room_id" required class="w-full h-11 px-3 rounded-xl border border-slate-300 text-xs bg-white font-bold text-slate-800">
-                        <?php foreach ($rooms as $rm): ?>
-                            <?php if ($rm['status'] === 'available'): ?>
-                                <option value="<?= (int)$rm['id'] ?>"><?= htmlspecialchars($rm['room_number']) ?> - <?= htmlspecialchars($rm['room_title']) ?> (<?= number_format($rm['price_per_night']) ?> ت/شب)</option>
-                            <?php endif; ?>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1">نام پت دلبند *</label>
-                    <input type="text" name="pet_name" required placeholder="مثال: لوسی" class="w-full h-11 px-3.5 rounded-xl border border-slate-300 text-xs">
+            <!-- Care Mode Selector -->
+            <div class="p-3 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
+                <label class="block text-xs font-bold text-slate-700">نوع خدمت اقامت و نگهداری:</label>
+                <div class="grid grid-cols-2 gap-2">
+                    <label class="flex items-center gap-2 p-2.5 rounded-xl border border-emerald-300 bg-white cursor-pointer">
+                        <input type="radio" name="care_mode" value="hourly" checked onchange="toggleCareModeInputs(this.value)">
+                        <span class="text-xs font-black text-slate-800">مهد ساعتی (Daycare Hourly)</span>
+                    </label>
+                    <label class="flex items-center gap-2 p-2.5 rounded-xl border border-slate-200 bg-white cursor-pointer">
+                        <input type="radio" name="care_mode" value="overnight" onchange="toggleCareModeInputs(this.value)">
+                        <span class="text-xs font-black text-slate-800">اقامت شبانه / چندروزه (Overnight)</span>
+                    </label>
                 </div>
             </div>
 
-            <div class="grid grid-cols-2 gap-3">
+            <!-- Pet Basic Info -->
+            <div class="grid grid-cols-3 gap-3">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">نام پت *</label>
+                    <input type="text" name="pet_name" required placeholder="مثال: لوسی" class="w-full h-11 px-3.5 rounded-xl border border-slate-300 text-xs">
+                </div>
                 <div>
                     <label class="block text-xs font-bold text-slate-700 mb-1">گونه حیوان</label>
                     <select name="pet_species" class="w-full h-11 px-3 rounded-xl border border-slate-300 text-xs bg-white font-bold text-slate-700">
@@ -640,130 +734,231 @@ $occupancyRate = $totalRooms > 0 ? round(($occupiedRooms / $totalRooms) * 100) :
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-slate-700 mb-1">نژاد پت</label>
-                    <input type="text" name="pet_breed" placeholder="مثال: گلدن رتریور، هاسکی" class="w-full h-11 px-3.5 rounded-xl border border-slate-300 text-xs">
+                    <input type="text" name="pet_breed" placeholder="مثال: پیت‌بول، تریر، گلدن" class="w-full h-11 px-3.5 rounded-xl border border-slate-300 text-xs">
                 </div>
             </div>
 
+            <!-- Safety Isolation Screening for Aggressive Breeds (Pitbulls, etc.) -->
+            <div class="p-3.5 rounded-2xl bg-amber-50 border border-amber-200 space-y-2">
+                <label class="flex items-start gap-2.5 cursor-pointer">
+                    <input type="checkbox" name="is_isolated_zone" value="1" id="is-isolated-check" onchange="document.getElementById('iso-reason-wrap').classList.toggle('hidden', !this.checked)" class="mt-0.5 w-4 h-4 text-amber-600 rounded">
+                    <div>
+                        <span class="text-xs font-black text-amber-900 block">🚨 زون ایزوله امنیتی و نگهداری انفرادی (پیت‌بول یا نژادهای پرخاشگر)</span>
+                        <p class="text-[11px] text-amber-700 mt-0.5">در صورت علامت زدن، پت به جای تالار بازی مشترک، در باکس و محوطه اختصاصی ایزوله نگهداری می‌شود تا خطری متوجه سایر حیوانات نباشد.</p>
+                    </div>
+                </label>
+                <div id="iso-reason-wrap" class="hidden pt-2 border-t border-amber-200">
+                    <label class="block text-[11px] font-bold text-amber-800 mb-1">علت و ملاحظات ایزوله انفرادی:</label>
+                    <input type="text" name="isolation_reason" placeholder="مثال: پرخاشگری نژادی پیت‌بول، استرس شدید یا عدم عقیم‌سازی" class="w-full h-10 px-3 rounded-xl border border-amber-300 text-xs bg-white">
+                </div>
+            </div>
+
+            <!-- Customer Guardian Info -->
             <div class="grid grid-cols-2 gap-3">
                 <div>
                     <label class="block text-xs font-bold text-slate-700 mb-1">نام سرپرست پت</label>
                     <input type="text" name="customer_name" placeholder="نام و نام خانوادگی" class="w-full h-11 px-3.5 rounded-xl border border-slate-300 text-xs">
                 </div>
                 <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1">شماره همراه سرپرست (ورود به سامانه) *</label>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">شماره همراه سرپرست *</label>
                     <input type="tel" name="customer_phone" required placeholder="09120000000" class="w-full h-11 px-3.5 rounded-xl border border-slate-300 text-xs font-mono" dir="ltr">
                 </div>
             </div>
 
+            <!-- Hourly Specific Timing -->
+            <div id="hourly-inputs" class="grid grid-cols-3 gap-3">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">ساعت ورود</label>
+                    <input type="time" name="check_in_time" value="<?= date('H:i') ?>" class="w-full h-11 px-3 rounded-xl border border-slate-300 text-xs font-mono">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">مدت زمان اقامت (ساعت)</label>
+                    <input type="number" name="hours_count" min="1" max="14" value="3" class="w-full h-11 px-3 rounded-xl border border-slate-300 text-xs font-mono">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">نرخ هر ساعت (تومان)</label>
+                    <input type="text" name="hourly_rate" value="60,000" class="w-full h-11 px-3 rounded-xl border border-slate-300 text-xs font-mono" dir="ltr">
+                </div>
+            </div>
+
+            <!-- Overnight Specific Timing -->
+            <div id="overnight-inputs" class="hidden grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">تاریخ ورود</label>
+                    <input type="date" name="check_in_date" value="<?= date('Y-m-d') ?>" class="w-full h-11 px-3 rounded-xl border border-slate-300 text-xs font-mono">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">تاریخ خروج</label>
+                    <input type="date" name="check_out_date" value="<?= date('Y-m-d', strtotime('+3 days')) ?>" class="w-full h-11 px-3 rounded-xl border border-slate-300 text-xs font-mono">
+                </div>
+            </div>
+
+            <!-- Notes -->
             <div class="grid grid-cols-2 gap-3">
                 <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1">تاریخ ورود (Check-in)</label>
-                    <input type="date" name="check_in_date" value="<?= date('Y-m-d') ?>" class="w-full h-11 px-3.5 rounded-xl border border-slate-300 text-xs font-mono">
+                    <label class="block text-xs font-bold text-slate-700 mb-1">وسایل امانی همراه پت</label>
+                    <input type="text" name="belongings_list" placeholder="قلاده، تشک، اسباب‌بازی..." class="w-full h-11 px-3.5 rounded-xl border border-slate-300 text-xs">
                 </div>
                 <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1">تاریخ خروج تخمینی (Check-out)</label>
-                    <input type="date" name="check_out_date" value="<?= date('Y-m-d', strtotime('+3 days')) ?>" class="w-full h-11 px-3.5 rounded-xl border border-slate-300 text-xs font-mono">
+                    <label class="block text-xs font-bold text-slate-700 mb-1">تغذیه و دارو</label>
+                    <input type="text" name="special_diet_notes" placeholder="دستور غذا، ساعت مصرف دارو..." class="w-full h-11 px-3.5 rounded-xl border border-slate-300 text-xs">
                 </div>
-            </div>
-
-            <div>
-                <label class="block text-xs font-bold text-slate-700 mb-1">وسایل و ملزومات امانی همراه پت</label>
-                <input type="text" name="belongings_list" placeholder="مثال: قلاده چرمی قرمز، تشک خواب خاکستری، ظرف غذای استیل، اسباب‌بازی اردک" class="w-full h-11 px-3.5 rounded-xl border border-slate-300 text-xs">
-            </div>
-
-            <div class="grid grid-cols-2 gap-3">
-                <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1">دستورات غذایی و حساسیت‌ها</label>
-                    <input type="text" name="special_diet_notes" placeholder="برند غذا، تعداد وعده و حساسیت..." class="w-full h-11 px-3.5 rounded-xl border border-slate-300 text-xs">
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1">دستورات دارویی (در صورت وجود)</label>
-                    <input type="text" name="medication_notes" placeholder="نام دارو، دوز و ساعت مصرف..." class="w-full h-11 px-3.5 rounded-xl border border-slate-300 text-xs">
-                </div>
-            </div>
-
-            <div>
-                <label class="block text-xs font-bold text-slate-700 mb-1">شماره تماس اضطراری جایگزین</label>
-                <input type="tel" name="emergency_contact_phone" placeholder="شماره تماس دوم در صورت عدم پاسخگویی" class="w-full h-11 px-3.5 rounded-xl border border-slate-300 text-xs font-mono" dir="ltr">
             </div>
 
             <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
                 <button type="button" onclick="document.getElementById('checkin-modal').classList.add('hidden')" class="px-4 py-2.5 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 transition-colors">
                     انصراف
                 </button>
-                <button type="submit" class="px-6 py-2.5 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm transition-all">
-                    تأیید پذیرش و واگذاری اتاق
+                <button type="submit" class="px-6 py-2.5 rounded-xl text-xs font-black bg-emerald-500 hover:bg-emerald-600 text-slate-950 shadow-sm transition-all">
+                    تأیید پذیرش و ورود پت به مهد
                 </button>
             </div>
         </form>
     </div>
 </div>
 
-<!-- Modal: Add Room -->
-<div id="add-room-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
-    <div class="bg-white w-full max-w-lg rounded-3xl p-6 shadow-2xl border border-slate-200 space-y-4">
+<!-- Modal: Extend Stay (تمدید مدت نگهداری) -->
+<div id="extend-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
+    <div class="bg-white w-full max-w-md rounded-3xl p-6 shadow-2xl border border-slate-200 space-y-4">
         <div class="flex items-center justify-between border-b border-slate-100 pb-3">
             <h3 class="text-sm font-black text-slate-900 flex items-center gap-2">
-                <span class="material-symbols-outlined text-emerald-600">add_home</span>
-                <span>تعریف اتاق یا سوئیت جدید در هتل</span>
+                <span class="material-symbols-outlined text-amber-500">more_time</span>
+                <span>تمدید ساعت اقامت پت در مهد</span>
             </h3>
-            <button type="button" onclick="document.getElementById('add-room-modal').classList.add('hidden')" class="text-slate-400 hover:text-slate-600">
+            <button type="button" onclick="document.getElementById('extend-modal').classList.add('hidden')" class="text-slate-400 hover:text-slate-600">
                 <span class="material-symbols-outlined">close</span>
             </button>
         </div>
 
         <form method="POST" action="index.php" class="space-y-4">
             <?= csrf_field() ?>
-            <input type="hidden" name="action" value="add_room">
+            <input type="hidden" name="action" value="extend_stay">
+            <input type="hidden" name="booking_id" id="extend-booking-id" value="">
 
-            <div class="grid grid-cols-2 gap-3">
-                <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1">شماره / کد اتاق *</label>
-                    <input type="text" name="room_number" required placeholder="مثال: VIP-105" class="w-full h-11 px-3.5 rounded-xl border border-slate-300 text-xs font-mono">
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1">عنوان سوئیت *</label>
-                    <input type="text" name="room_title" required placeholder="مثال: سوئیت گاردن با تراس اختصاصی" class="w-full h-11 px-3.5 rounded-xl border border-slate-300 text-xs">
-                </div>
-            </div>
-
-            <div class="grid grid-cols-2 gap-3">
-                <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1">نوع اتاق</label>
-                    <select name="room_type" class="w-full h-11 px-3 rounded-xl border border-slate-300 text-xs bg-white font-bold text-slate-700">
-                        <option value="vip_suite">سوئیت رویال VIP</option>
-                        <option value="standard_kennel">اتاق استاندارد نگهداری سگ</option>
-                        <option value="cat_room">اتاق و کاندوی اختصاصی گربه</option>
-                        <option value="hospital_box">باکس بستری و مراقبت درمانی</option>
-                        <option value="daycare_playpen">پلی‌پن دی‌کر روزانه</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1">ظرفیت پذیرش پت</label>
-                    <input type="number" min="1" max="5" name="capacity" value="1" class="w-full h-11 px-3.5 rounded-xl border border-slate-300 text-xs font-mono">
-                </div>
-            </div>
+            <p class="text-xs text-slate-600">
+                در صورت تمایل سرپرست به ماندگاری بیشتر پت «<strong id="extend-pet-name" class="text-slate-900"></strong>»، تعداد ساعات تمدید را مشخص فرمایید:
+            </p>
 
             <div>
-                <label class="block text-xs font-bold text-slate-700 mb-1">تعرفه اقامت هر شب (تومان) *</label>
-                <input type="text" name="price_per_night" required placeholder="مثال: 550,000" class="w-full h-11 px-3.5 rounded-xl border border-slate-300 text-xs font-mono" dir="ltr">
-            </div>
-
-            <div>
-                <label class="block text-xs font-bold text-slate-700 mb-1">توضیحات و امکانات سوئیت</label>
-                <textarea name="description" rows="2" placeholder="امکاناتی چون دوربین اختصاصی، سیستم تهویه، اسباب‌بازی و..." class="w-full p-3 rounded-xl border border-slate-300 text-xs"></textarea>
+                <label class="block text-xs font-bold text-slate-700 mb-1">تعداد ساعت تمدید اقامت:</label>
+                <select name="extra_hours" class="w-full h-11 px-3 rounded-xl border border-slate-300 text-xs bg-white font-bold text-slate-800">
+                    <option value="1">+ ۱ ساعت اضافه</option>
+                    <option value="2">+ ۲ ساعت اضافه</option>
+                    <option value="3">+ ۳ ساعت اضافه</option>
+                    <option value="4">+ ۴ ساعت اضافه (نیم‌روز)</option>
+                    <option value="6">+ ۶ ساعت اضافه</option>
+                </select>
             </div>
 
             <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
-                <button type="button" onclick="document.getElementById('add-room-modal').classList.add('hidden')" class="px-4 py-2.5 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 transition-colors">
+                <button type="button" onclick="document.getElementById('extend-modal').classList.add('hidden')" class="px-4 py-2.5 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 transition-colors">
                     انصراف
                 </button>
-                <button type="submit" class="px-6 py-2.5 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm transition-all">
-                    ایجاد و ثبت اتاق
+                <button type="submit" class="px-6 py-2.5 rounded-xl text-xs font-black bg-amber-500 hover:bg-amber-600 text-slate-950 shadow-sm transition-all">
+                    تأیید و اعمال تمدید
                 </button>
             </div>
         </form>
     </div>
 </div>
+
+<!-- Modal: Update Activity Notes -->
+<div id="activity-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
+    <div class="bg-white w-full max-w-md rounded-3xl p-6 shadow-2xl border border-slate-200 space-y-4">
+        <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+            <h3 class="text-sm font-black text-slate-900 flex items-center gap-2">
+                <span class="material-symbols-outlined text-emerald-600">edit_note</span>
+                <span>ثبت گزارش بازی و وضعیت پت</span>
+            </h3>
+            <button type="button" onclick="document.getElementById('activity-modal').classList.add('hidden')" class="text-slate-400 hover:text-slate-600">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+        </div>
+
+        <form method="POST" action="index.php" class="space-y-4">
+            <?= csrf_field() ?>
+            <input type="hidden" name="action" value="update_activity_note">
+            <input type="hidden" name="booking_id" id="activity-booking-id" value="">
+
+            <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">یادداشت احوال و بازی پت:</label>
+                <textarea name="play_activity_notes" id="activity-text" rows="3" class="w-full p-3 rounded-xl border border-slate-300 text-xs" placeholder="مثال: غذا را کامل خورد، در حیاط بازی کرد، با مربی تعامل خوبی داشت."></textarea>
+            </div>
+
+            <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+                <button type="button" onclick="document.getElementById('activity-modal').classList.add('hidden')" class="px-4 py-2.5 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 transition-colors">
+                    انصراف
+                </button>
+                <button type="submit" class="px-6 py-2.5 rounded-xl text-xs font-black bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm transition-all">
+                    ذخیره گزارش
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal: Adjust Concurrent Capacity Limit -->
+<div id="capacity-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
+    <div class="bg-white w-full max-w-md rounded-3xl p-6 shadow-2xl border border-slate-200 space-y-4">
+        <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+            <h3 class="text-sm font-black text-slate-900 flex items-center gap-2">
+                <span class="material-symbols-outlined text-emerald-600">tune</span>
+                <span>تنظیم سقف پذیرش همزمان مهد</span>
+            </h3>
+            <button type="button" onclick="document.getElementById('capacity-modal').classList.add('hidden')" class="text-slate-400 hover:text-slate-600">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+        </div>
+
+        <form method="POST" action="index.php" class="space-y-4">
+            <?= csrf_field() ?>
+            <input type="hidden" name="action" value="update_capacity_limit">
+
+            <p class="text-xs text-slate-600 leading-relaxed">
+                سقف همزمان، حداکثر تعداد سگ‌ها و حیواناتی است که در ساعات اوج فعالیت اجازه دارند همزمان در تالار بازی حضور داشته باشند.
+            </p>
+
+            <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">سقف ظرفیت همزمان جدید (تعداد پت):</label>
+                <input type="number" name="concurrent_capacity" min="5" max="50" value="<?= $totalConcurrentCapacity ?>" class="w-full h-11 px-3.5 rounded-xl border border-slate-300 text-xs font-mono font-bold">
+            </div>
+
+            <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+                <button type="button" onclick="document.getElementById('capacity-modal').classList.add('hidden')" class="px-4 py-2.5 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 transition-colors">
+                    انصراف
+                </button>
+                <button type="submit" class="px-6 py-2.5 rounded-xl text-xs font-black bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm transition-all">
+                    ذخیره سقف جدید
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function toggleCareModeInputs(mode) {
+    const hBox = document.getElementById('hourly-inputs');
+    const oBox = document.getElementById('overnight-inputs');
+    if (mode === 'hourly') {
+        hBox.classList.remove('hidden');
+        oBox.classList.add('hidden');
+    } else {
+        hBox.classList.add('hidden');
+        oBox.classList.remove('hidden');
+    }
+}
+
+function openExtendModal(bookingId, petName, currentHours, currentExpTime) {
+    document.getElementById('extend-booking-id').value = bookingId;
+    document.getElementById('extend-pet-name').textContent = petName;
+    document.getElementById('extend-modal').classList.remove('hidden');
+}
+
+function openActivityModal(bookingId, existingNote) {
+    document.getElementById('activity-booking-id').value = bookingId;
+    document.getElementById('activity-text').value = existingNote;
+    document.getElementById('activity-modal').classList.remove('hidden');
+}
+</script>
 
 <?php require_once 'includes/pansion_footer.php'; ?>
